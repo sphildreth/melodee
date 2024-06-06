@@ -4,6 +4,7 @@
     <option name="projectPerEditor">
       <map>
         <entry key="Melodee/Views/MainWindow.axaml" value="Melodee/Melodee.csproj" />
+        <entry key="src/Melodee/App.axaml" value="src/Melodee/Melodee.csproj" />
         <entry key="src/Melodee/Views/MainWindow.axaml" value="src/Melodee/Melodee.csproj" />
       </map>
     </option>

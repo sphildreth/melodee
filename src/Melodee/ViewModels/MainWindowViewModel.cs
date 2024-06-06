@@ -1,5 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using DynamicData;
+using Melodee.Common.Enums;
+using Melodee.Common.Models;
 using Melodee.Models;
 
 
@@ -12,6 +14,10 @@ public class MainWindowViewModel : ViewModelBase
 #pragma warning restore CA1822 // Mark members as static
     
     public ObservableCollection<Node> Nodes{ get; }
+    
+    public ObservableCollection<DirectoryInfo> DirectoryInfos { get; }
+
+    public ObservableCollection<FileInfo> FileInfos { get; }
     
     public MainWindowViewModel()
     {
@@ -31,6 +37,22 @@ public class MainWindowViewModel : ViewModelBase
                     new Node("Lion"), new Node("Cat"), new Node("Zebra")
                 })
             })            
+        };
+
+        DirectoryInfos = new ObservableCollection<DirectoryInfo>
+        {
+            new DirectoryInfo { Path = "DaPath", MusicFilesFound = 0, TotalItemsFound = 0}
+        };
+
+        FileInfos = new ObservableCollection<FileInfo>
+        {
+            new FileInfo
+            {
+                DirectoryInfo = new DirectoryInfo { Path = "DaPath", MusicFilesFound = 0, TotalItemsFound = 0},
+                Name = "Da Name",
+                Path = "Da Path File",
+                Status = FileInfoStatus.Ok
+            }
         };
     }    
 }
