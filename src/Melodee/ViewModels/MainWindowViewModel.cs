@@ -3,12 +3,14 @@ using DynamicData;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Models;
+using Melodee.Plugins.Discovery.Directory;
 
 
 namespace Melodee.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
+    private readonly IDirectoryDiscoverer _directoryDiscoverer;
 #pragma warning disable CA1822 // Mark members as static
     public string Greeting => "Welcome to Avalonia!";
 #pragma warning restore CA1822 // Mark members as static
@@ -19,8 +21,10 @@ public class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<FileInfo> FileInfos { get; }
     
-    public MainWindowViewModel()
+    public MainWindowViewModel(IDirectoryDiscoverer directoryDiscoverer)
     {
+        _directoryDiscoverer = directoryDiscoverer;
+
         Nodes = new ObservableCollection<Node>
         {                
             new Node("Incoming", new ObservableCollection<Node>

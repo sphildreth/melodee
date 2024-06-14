@@ -2,6 +2,7 @@ using Melodee.Common.Enums;
 
 namespace Melodee.Common.Models;
 
+[Serializable]
 public sealed record MetaTag<T>
 {
     public required MetaTagIdentifier Identifier { get; init; }

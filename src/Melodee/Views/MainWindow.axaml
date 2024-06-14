@@ -24,15 +24,15 @@
                 <MenuItem Header="Paste"/>
             </MenuItem>
         </Menu>
-        <Grid DockPanel.Dock="Left" ColumnDefinitions="200, 4, 370, *">
-            <TreeView ItemsSource="{Binding Nodes}">
+        <Grid DockPanel.Dock="Left" ColumnDefinitions="200, 2, 370, *">
+            <TreeView Tapped="NavigationTree_OnTapped" ItemsSource="{Binding Nodes}">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding SubNodes}">
                         <TextBlock Text="{Binding Title}"/>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
-            <GridSplitter Grid.Column="1" Background="Black" ResizeDirection="Columns"/>
+            <GridSplitter Grid.Column="1" Width="1" Background="Black" ResizeDirection="Columns"/>
             <DataGrid Grid.Column="2" 
                 Margin="5" 
                 ItemsSource="{Binding DirectoryInfos}" 

@@ -1,5 +1,6 @@
 namespace Melodee.Common.Models;
 
+[Serializable]
 public sealed record DirectoryInfo
 {
     public required string Path { get; init; }
