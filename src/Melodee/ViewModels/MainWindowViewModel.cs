@@ -84,6 +84,7 @@ public class MainWindowViewModel : ViewModelBase
             {
                 DirectoryInfo = new DirectoryInfo { Path = "DaPath", ShortName = "DaDirectoryName", MusicFilesFound = 0, TotalItemsFound = 0},
                 Name = "Da Name",
+                Extension = "mp3",
                 Path = "Da Path File",
                 Status = FileInfoStatus.Ok
             }

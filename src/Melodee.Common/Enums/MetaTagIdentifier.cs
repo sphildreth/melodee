@@ -8,6 +8,11 @@ public enum MetaTagIdentifier
     NotSet = 0,
     
     /// <summary>
+    /// Duration in Milliseconds
+    /// </summary>
+    DurationInMs,
+    
+    /// <summary>
     /// General description
     /// </summary>
     GeneralDescription,

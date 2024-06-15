@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Melodee.Common.Models;
 using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 // ReSharper disable MemberCanBePrivate.Global
@@ -23,15 +22,21 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
         "mp3",
         "ogg",
         "sfu",
+        "svg",
         "wav",
         "wma"
     ];
     
     public static readonly IEnumerable<string> ImageFileTypeExtensions =
     [
-        "jpg",
         "bmp",
-        "png"
+        "gif",
+        "jfif",
+        "jpeg",
+        "jpg",
+        "png",
+        "tiff",
+        "webp"
     ];    
 
     public string DisplayName => nameof(DirectoryDiscoverer);
@@ -42,7 +47,7 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
     
     public int SortOrder => 0;
     
-    public OperationResult<PagedResult<Common.Models.DirectoryInfo>> DirectoryInfosForDirectory(System.IO.DirectoryInfo directoryInfo, PagedRequest pagedRequest)
+    public OperationResult<PagedResult<DirectoryInfo>> DirectoryInfosForDirectory(System.IO.DirectoryInfo directoryInfo, PagedRequest pagedRequest)
     {
         var data = new List<DirectoryInfo>();
 
@@ -51,7 +56,7 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
             foreach (var directory in directoryInfo.EnumerateDirectories(pagedRequest.Filter ?? "*",
                          SearchOption.AllDirectories))
             {
-                var allExtensionsForDirectory = AllFileExtensionsForDirectory(directory);
+                var allExtensionsForDirectory = AllFileExtensionsForDirectory(directory).ToArray();
                 var dirInfo = new DirectoryInfo
                 {
                     Path = directory.FullName,
@@ -64,7 +69,7 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
                 foreach (var childDir in directory.EnumerateDirectories(pagedRequest.Filter ?? "*",
                              SearchOption.AllDirectories))
                 {
-                    var allExtensionsForChildDirectory = AllFileExtensionsForDirectory(childDir);
+                    var allExtensionsForChildDirectory = AllFileExtensionsForDirectory(childDir).ToArray();
                     data.Add(new DirectoryInfo
                     {
                         ParentId = dirInfo.Id,
@@ -93,7 +98,7 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
         return directoryInfo.EnumerateFiles("*.*", SearchOption.AllDirectories).Count();        
     }
 
-    private IEnumerable<IGrouping<string, System.IO.FileInfo>>? AllFileExtensionsForDirectory(
+    private static IEnumerable<IGrouping<string, System.IO.FileInfo>> AllFileExtensionsForDirectory(
         System.IO.DirectoryInfo directoryInfo)
     {
         return directoryInfo.EnumerateFiles("*.*", SearchOption.AllDirectories).GroupBy(x => x.Extension);
