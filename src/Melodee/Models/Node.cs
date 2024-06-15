@@ -4,7 +4,7 @@ namespace Melodee.Models;
 
 public class Node
 {
-    public ObservableCollection<Node>? SubNodes { get; }
+    public ObservableCollection<Node>? SubNodes { get; set; }
     public string Title { get; }
   
     public Node(string title)

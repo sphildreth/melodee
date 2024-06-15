@@ -9,7 +9,6 @@ public interface IDirectoryDiscoverer : IPlugin
     /// </summary>
     /// <param name="directoryInfo">DirectoryInfo to process.</param>
     /// <param name="pagedRequest">Paged Request info; take, skip, filter, etc.</param>
-    /// <param name="cancellationToken">Cancellation Token.</param>
     /// <returns>PagedResult of Discovered DirectoryInfos.</returns>
-    Task<OperationResult<PagedResult<Common.Models.DirectoryInfo>>> DirectoryInfosForDirectory(System.IO.DirectoryInfo directoryInfo, PagedRequest pagedRequest, CancellationToken cancellationToken = default);
+    OperationResult<PagedResult<Common.Models.DirectoryInfo>> DirectoryInfosForDirectory(System.IO.DirectoryInfo directoryInfo, PagedRequest pagedRequest);
 }

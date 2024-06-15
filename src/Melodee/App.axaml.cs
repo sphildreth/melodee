@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Melodee.Common.Models;
 using Melodee.Extensions;
 using Melodee.ViewModels;
 using Melodee.Views;
@@ -21,7 +22,12 @@ public partial class App : Application
         var collection = new ServiceCollection();
         collection.AddCommonServices();
 
+        var configuration =
+            System.Text.Json.JsonSerializer.Deserialize<Configuration>(
+                System.IO.File.ReadAllText("configuration.json"));
+        collection.AddSingleton(configuration!);
         
+        // TODO load plugin and see if configured to be enabled
         
         // Creates a ServiceProvider containing services from the provided IServiceCollection
         var services = collection.BuildServiceProvider();        
