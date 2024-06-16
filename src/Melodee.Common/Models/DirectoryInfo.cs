@@ -2,6 +2,9 @@ using System.Dynamic;
 
 namespace Melodee.Common.Models;
 
+/// <summary>
+/// This is a representation of a "file" directory which usually contains release files or nested release directories.
+/// </summary>
 [Serializable]
 public sealed record DirectoryInfo
 {

@@ -1,0 +1,95 @@
+﻿using Melodee.Common.Extensions;
+
+namespace Melodee.Tests.Extensions
+{
+    public class StringExtTests
+    {
+        [Theory]
+        [InlineData("Bob", "Bob", true)]
+        [InlineData("Bob", "Bob ", true)]
+        [InlineData("Bob", "bOb", true)]
+        [InlineData("Bob", "BOB ", true)]
+        [InlineData("Bob", null, false)]
+        [InlineData(null, "Bob", false)]
+        [InlineData("Bob", "Steve", false)]
+        public void DoStringMatch(string string1, string string2, bool shouldBe)
+        {
+            Assert.Equal(shouldBe, StringExt.DoStringsMatch(string1, string2));
+        }
+
+        [Theory]
+        [InlineData("Bob", "Bob")]
+        [InlineData("Bob    ", "Bob")]
+        [InlineData("   Bob   ", "Bob")]
+        [InlineData("Bob And Nancy", "Bob And Nancy")]
+        [InlineData("Bob And Nancy!", "Bob And Nancy!")]
+        [InlineData("Bob And Nancy, wITH sTEVE", "Bob And Nancy, wITH sTEVE")]
+        [InlineData(" Bob    And    Nancy", "Bob And Nancy")]
+        [InlineData(" Bob    And    Nancy   ", "Bob And Nancy")]
+        public void CleanString(string input, string shouldBe)
+        {
+            Assert.Equal(shouldBe, input.CleanString());
+        }
+
+        [Theory]
+        [InlineData("Bob", "Bob")]
+        [InlineData(null, null)]
+        [InlineData("", null)]
+        [InlineData(" ", null)]
+        [InlineData("Bob ", "Bob ")]
+        public void Nullify(string? input, string? shouldBe)
+        {
+            Assert.Equal(shouldBe, input?.Nullify());
+        }        
+        
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData("", null)]
+        [InlineData("Bob", null)]
+        [InlineData("09/Bob Rocks", null)]        
+        [InlineData("Bob Rocks", null)]        
+        [InlineData("/Discography 2001-2010/2009/Bob Rocks", 2009)]
+        [InlineData("2009/Bob Rocks", 2009)]
+        [InlineData("2009 Bob Rocks", 2009)]
+        [InlineData("2009", 2009)]
+        public void TryToGetYearFromString(string input, int? shouldBe)
+        {
+            Assert.Equal(shouldBe, input.TryToGetYearFromString());
+        }
+        
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData("", null)]
+        [InlineData("Bob", null)]
+        [InlineData("01 Steve Winwood.mp3", 1)]
+        [InlineData(" 01 Steve Winwood.mp3", 1)]
+        [InlineData(" 01  - Steve Winwood.mp3", 1)]
+        [InlineData("01-Steve Winwood.mp3", 1)]
+        [InlineData("01 - Steve Winwood.mp3", 1)]
+        [InlineData("001 - Steve Winwood.mp3", 1)]
+        [InlineData("14 - Steve Winwood.mp3", 14)]
+        [InlineData(" 01 - Steve Winwood.mp3", 1)]
+        public void TryToGetTrackNumberFromString(string input, int? shouldBe)
+        {
+            Assert.Equal(shouldBe, input.TryToGetTrackNumberFromString());
+        }    
+        
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData("", null)]
+        [InlineData("Bob", null)]
+        [InlineData("01 Steve Winwood.mp3", "Steve Winwood.mp3")]
+        [InlineData(" 01 Steve Winwood.mp3", "Steve Winwood.mp3")]
+        [InlineData(" 01  - Steve Winwood.mp3", "Steve Winwood.mp3")]
+        [InlineData("01-Steve Winwood.mp3", "Steve Winwood.mp3")]
+        [InlineData("01 - Steve Winwood.mp3", "Steve Winwood.mp3")]
+        [InlineData("001 - Steve Winwood.mp3", "Steve Winwood.mp3")]
+        [InlineData("14 - Steve Winwood.mp3", "Steve Winwood.mp3")]
+        [InlineData(" 01 - Steve Winwood.mp3", "Steve Winwood.mp3")]
+        public void RemoveTrackNumberFromString(string input, string? shouldBe)
+        {
+            Assert.Equal(shouldBe, input.RemoveTrackNumberFromString());
+        }         
+        
+    }
+}

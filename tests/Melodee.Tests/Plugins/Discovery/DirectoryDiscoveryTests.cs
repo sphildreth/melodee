@@ -1,24 +1,13 @@
 using Melodee.Common.Models;
+using Melodee.Plugins.Discovery;
 using Melodee.Plugins.Discovery.Directory;
+using Melodee.Plugins.Discovery.File;
 using DirectoryInfo = System.IO.DirectoryInfo;
 
 namespace Melodee.Tests.Plugins.Discovery;
 
 public class DirectoryDiscoveryTests
 {
-    [Theory]
-    [InlineData("mp3", true)]
-    [InlineData("MP3", true)]
-    [InlineData("Mp3", true)]
-    [InlineData(".mp3", true)]
-    [InlineData("m3u", false)]
-    [InlineData("sfv", false)]
-    [InlineData("mxx", false)]
-    [InlineData("txt", false)]
-    [InlineData("jpg", false)]
-    [InlineData("png", false)]
-    public void ValidateIsMediaTypeFile(string extension, bool shouldBe) =>
-        Assert.Equal(shouldBe, DirectoryDiscoverer.IsFileMediaType(extension));
 
     [Fact]
     public void ValidateIsEmptyResult()

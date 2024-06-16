@@ -1,44 +1,10 @@
 using Melodee.Common.Models;
 using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
-// ReSharper disable MemberCanBePrivate.Global
 
 namespace Melodee.Plugins.Discovery.Directory;
 
 public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
 {
-    public static readonly IEnumerable<string> MediaMetaDataFileTypeExtensions =
-    [
-        "m3u",
-        "sfv"
-    ];
-    
-    public static readonly IEnumerable<string> MediaFileTypeExtensions =
-    [
-        "aac",
-        "ac3",
-        "aiff",
-        "ape",
-        "flac",
-        "mp3",
-        "ogg",
-        "sfu",
-        "svg",
-        "wav",
-        "wma"
-    ];
-    
-    public static readonly IEnumerable<string> ImageFileTypeExtensions =
-    [
-        "bmp",
-        "gif",
-        "jfif",
-        "jpeg",
-        "jpg",
-        "png",
-        "tiff",
-        "webp"
-    ];    
-
     public string DisplayName => nameof(DirectoryDiscoverer);
 
     public string Id => "EBAD92EA-A49E-4502-818D-D6B36B9E5993";
@@ -56,29 +22,29 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
             foreach (var directory in directoryInfo.EnumerateDirectories(pagedRequest.Filter ?? "*",
                          SearchOption.AllDirectories))
             {
-                var allExtensionsForDirectory = AllFileExtensionsForDirectory(directory).ToArray();
+                var allExtensionsForDirectory = FileHelper.AllFileExtensionsForDirectory(directory).ToArray();
                 var dirInfo = new DirectoryInfo
                 {
                     Path = directory.FullName,
-                    ImageFilesFound = GetNumberOfImageFilesForDirectory(allExtensionsForDirectory),
-                    MusicFilesFound = GetNumberOfMediaFilesForDirectory(allExtensionsForDirectory),
-                    MusicMetaDataFilesFound = GetNumberOfMediaMetaDataFilesForDirectory(allExtensionsForDirectory),
+                    ImageFilesFound = FileHelper.GetNumberOfImageFilesForDirectory(allExtensionsForDirectory),
+                    MusicFilesFound = FileHelper.GetNumberOfMediaFilesForDirectory(allExtensionsForDirectory),
+                    MusicMetaDataFilesFound = FileHelper.GetNumberOfMediaMetaDataFilesForDirectory(allExtensionsForDirectory),
                     ShortName = directory.Name,
-                    TotalItemsFound = GetNumberOfTotalFilesForDirectory(directory)
+                    TotalItemsFound = FileHelper.GetNumberOfTotalFilesForDirectory(directory)
                 };
                 foreach (var childDir in directory.EnumerateDirectories(pagedRequest.Filter ?? "*",
                              SearchOption.AllDirectories))
                 {
-                    var allExtensionsForChildDirectory = AllFileExtensionsForDirectory(childDir).ToArray();
+                    var allExtensionsForChildDirectory = FileHelper.AllFileExtensionsForDirectory(childDir).ToArray();
                     data.Add(new DirectoryInfo
                     {
                         ParentId = dirInfo.Id,
                         Path = childDir.FullName,
-                        ImageFilesFound = GetNumberOfImageFilesForDirectory(allExtensionsForChildDirectory),
-                        MusicFilesFound = GetNumberOfMediaFilesForDirectory(allExtensionsForChildDirectory),
-                        MusicMetaDataFilesFound = GetNumberOfMediaMetaDataFilesForDirectory(allExtensionsForChildDirectory),
+                        ImageFilesFound = FileHelper.GetNumberOfImageFilesForDirectory(allExtensionsForChildDirectory),
+                        MusicFilesFound = FileHelper.GetNumberOfMediaFilesForDirectory(allExtensionsForChildDirectory),
+                        MusicMetaDataFilesFound = FileHelper.GetNumberOfMediaMetaDataFilesForDirectory(allExtensionsForChildDirectory),
                         ShortName = childDir.Name,
-                        TotalItemsFound = GetNumberOfTotalFilesForDirectory(childDir)
+                        TotalItemsFound = FileHelper.GetNumberOfTotalFilesForDirectory(childDir)
                     });
                 }
 
@@ -93,60 +59,4 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
         };
     }
 
-    private static int GetNumberOfTotalFilesForDirectory(System.IO.DirectoryInfo directoryInfo)
-    {
-        return directoryInfo.EnumerateFiles("*.*", SearchOption.AllDirectories).Count();        
-    }
-
-    private static IEnumerable<IGrouping<string, System.IO.FileInfo>> AllFileExtensionsForDirectory(
-        System.IO.DirectoryInfo directoryInfo)
-    {
-        return directoryInfo.EnumerateFiles("*.*", SearchOption.AllDirectories).GroupBy(x => x.Extension);
-    }
-    
-    private static int GetNumberOfMediaFilesForDirectory(IEnumerable<IGrouping<string, System.IO.FileInfo>> fileExtensions)
-    {
-        var result = 0;
-
-        foreach (var extGroup in fileExtensions)
-        {
-            if (IsFileMediaType(extGroup.Key))
-            {
-                result += extGroup.Count();
-            }
-        }
-        return result;
-    }
-    
-    private static int GetNumberOfImageFilesForDirectory(IEnumerable<IGrouping<string, System.IO.FileInfo>> fileExtensions)
-    {
-        var result = 0;
-        foreach (var extGroup in fileExtensions)
-        {
-            if (IsFileImageType(extGroup.Key))
-            {
-                result += extGroup.Count();
-            }
-        }
-        return result;
-    }    
-    
-    private static int GetNumberOfMediaMetaDataFilesForDirectory(IEnumerable<IGrouping<string, System.IO.FileInfo>> fileExtensions)
-    {
-        var result = 0;
-        foreach (var extGroup in fileExtensions)
-        {
-            if (IsFileMediaMetaDataType(extGroup.Key))
-            {
-                result += extGroup.Count();
-            }
-        }
-        return result;
-    }  
-
-    public static bool IsFileMediaType(string? extension) => !string.IsNullOrEmpty(extension) && MediaFileTypeExtensions.Contains(extension.Replace(".", ""), StringComparer.OrdinalIgnoreCase);
-    
-    public static bool IsFileImageType(string? extension) => !string.IsNullOrEmpty(extension) && ImageFileTypeExtensions.Contains(extension.Replace(".", ""), StringComparer.OrdinalIgnoreCase);
-    
-    public static bool IsFileMediaMetaDataType(string? extension) => !string.IsNullOrEmpty(extension) && MediaMetaDataFileTypeExtensions.Contains(extension.Replace(".", ""), StringComparer.OrdinalIgnoreCase);   
 }

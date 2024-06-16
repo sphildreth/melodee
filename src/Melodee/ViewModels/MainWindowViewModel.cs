@@ -15,69 +15,38 @@ namespace Melodee.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
-    private readonly Configuration _configuration;
-    private readonly IDirectoryDiscoverer _directoryDiscoverer;
-#pragma warning disable CA1822 // Mark members as static
-    public string Greeting => "Welcome to Avalonia!";
-#pragma warning restore CA1822 // Mark members as static
+    public Configuration Configuration { get; }
     
-    public ObservableCollection<Node> Nodes
-    {
-        get
-        {
-            var directories =
-                   _directoryDiscoverer.DirectoryInfosForDirectory(
-                    new System.IO.DirectoryInfo(_configuration.InboundDirectory), new PagedRequest());
-
-            var nodes = new List<Node>();
-
-            var dirData = directories.Data.Rows.ToArray();
-            foreach (var directory in dirData)
-            {
-                var node = new Node(directory.ShortName);
-                var hasChildren = dirData.Any(x => x.ParentId == directory.Id);
-                if (hasChildren)
-                {
-                    node.SubNodes = new ObservableCollection<Node>(dirData.Where(x => x.ParentId == directory.Id)
-                        .Select(x => new Node(x.ShortName)));
-                }
-            }
-            return new ObservableCollection<Node>(nodes);
-        }
-    }
+    public IDirectoryDiscoverer DirectoryDiscoverer { get; }
     
-    public ObservableCollection<DirectoryInfo> DirectoryInfos { get; }
-
+    public ObservableCollection<Node> InboundDirectoryInfos { get; }
+    
     public ObservableCollection<FileInfo> FileInfos { get; }
     
     public MainWindowViewModel(Configuration configuration, IDirectoryDiscoverer directoryDiscoverer)
     {
-        _configuration = configuration;
-        _directoryDiscoverer = directoryDiscoverer;
+        Configuration = configuration;
+        DirectoryDiscoverer = directoryDiscoverer;
 
-        // Nodes = new ObservableCollection<Node>
-        // {                
-        //     new Node("Incoming", new ObservableCollection<Node>
-        //     {
-        //         new Node("Mammals", new ObservableCollection<Node>
-        //         {
-        //             new Node("Lion"), new Node("Cat"), new Node("Zebra")
-        //         })
-        //     }),
-        //     new Node("Library", new ObservableCollection<Node>
-        //     {
-        //         new Node("Mammals", new ObservableCollection<Node>
-        //         {
-        //             new Node("Lion"), new Node("Cat"), new Node("Zebra")
-        //         })
-        //     })            
-        // };
+        var directories =
+            DirectoryDiscoverer.DirectoryInfosForDirectory(
+                new System.IO.DirectoryInfo(Configuration.InboundDirectory), new PagedRequest());
 
-        DirectoryInfos = new ObservableCollection<DirectoryInfo>
+        var result = new List<Node>();
+        var dirData = directories.Data.Rows.ToArray();
+        foreach (var directory in dirData)
         {
-            new DirectoryInfo { ShortName = "DaDirectoryName", Path = "DaPath", MusicFilesFound = 0, TotalItemsFound = 0}
-        };
-
+            var node = new Node(directory.ShortName);
+            var hasChildren = dirData.Any(x => x.ParentId == directory.Id);
+            if (hasChildren)
+            {
+                node.SubNodes = new ObservableCollection<Node>(dirData.Where(x => x.ParentId == directory.Id)
+                    .Select(x => new Node(x.ShortName)));
+            }
+            result.Add(node);
+        }
+        InboundDirectoryInfos = new ObservableCollection<Node>(result);        
+        
         FileInfos = new ObservableCollection<FileInfo>
         {
             new FileInfo

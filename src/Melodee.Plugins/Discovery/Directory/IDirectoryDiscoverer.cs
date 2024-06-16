@@ -2,6 +2,9 @@ using Melodee.Common.Models;
 
 namespace Melodee.Plugins.Discovery.Directory;
 
+/// <summary>
+/// For the given Directory find all other non-empty Directories. 
+/// </summary>
 public interface IDirectoryDiscoverer : IPlugin
 {
     /// <summary>

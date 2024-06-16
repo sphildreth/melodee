@@ -2,6 +2,10 @@ using Melodee.Common.Enums;
 
 namespace Melodee.Common.Models;
 
+/// <summary>
+/// This is a representation of a single MetaDat Tag (like 'TRCK') and its value.
+/// </summary>
+/// <typeparam name="T">Data type of tag.</typeparam>
 [Serializable]
 public sealed record MetaTag<T>
 {

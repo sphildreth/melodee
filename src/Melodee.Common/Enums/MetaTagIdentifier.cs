@@ -65,7 +65,7 @@ public enum MetaTagIdentifier
     /// <summary>
     /// Recording day and month
     /// </summary>
-    RecordingDaymonth,
+    RecordingDayMonth,
 
     /// <summary>
     /// Recoding time
@@ -143,9 +143,9 @@ public enum MetaTagIdentifier
     ChaptersTocDescription,
 
     /// <summary>
-    /// Unsynchronized lyrics
+    /// UnSynchronized lyrics
     /// </summary>
-    LyricsUnsynch,
+    LyricsUnSynch,
 
     /// <summary>
     /// Publishing date
@@ -249,7 +249,7 @@ public enum MetaTagIdentifier
 
     /// <summary>
     /// Mapping between functions (e.g. "producer") and names. Every odd field is a
-    /// function and every even is an name or a comma delimited list of names
+    /// function and every even is a name or a comma delimited list of names
     /// </summary>
-    InvolvedPeople = 47
+    InvolvedPeople
 }

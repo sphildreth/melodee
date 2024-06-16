@@ -48,6 +48,11 @@ public enum PictureIdentifier
     /// Artist/performer
     /// </summary>
     Artist,
+    
+    /// <summary>
+    /// Artist/performer, but not the primary like Artist01, Artist02
+    /// </summary>
+    ArtistSecondary,
 
     /// <summary>
     /// Conductor
@@ -58,6 +63,11 @@ public enum PictureIdentifier
     /// Band/Orchestra
     /// </summary>
     Band,
+    
+    /// <summary>
+    /// Band/Orchestra, not the primary image but like Band01, Band02
+    /// </summary>
+    BandSecondary,
 
     /// <summary>
     /// Composer
@@ -92,5 +102,20 @@ public enum PictureIdentifier
     /// <summary>
     /// Publisher/Studio logotype
     /// </summary>
-    PublisherLogo = 20
+    PublisherLogo,
+    
+    /// <summary>
+    /// Label logotype
+    /// </summary>
+    LabelLogo,
+    
+    /// <summary>
+    /// Track image (usually in a compilation or a single)
+    /// </summary>
+    Track,
+    
+    /// <summary>
+    /// Track image, but not the primary like Track01_01, Track01_02
+    /// </summary>
+    TrackSecondary
 }
