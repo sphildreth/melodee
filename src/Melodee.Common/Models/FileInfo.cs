@@ -18,5 +18,5 @@ public sealed record FileInfo
     public IEnumerable<MetaTag<object>>? Tags { get; init; }
     
     public IEnumerable<ImageInfo>? Images { get; init; }
-    public required FileInfoStatus Status { get; init; } = FileInfoStatus.NeedsAttention;
+    public required ReleaseStatus Status { get; init; } = ReleaseStatus.NeedsAttention;
 }

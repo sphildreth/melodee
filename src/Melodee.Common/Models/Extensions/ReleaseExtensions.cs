@@ -9,6 +9,12 @@ public static class ReleaseExtensions
             typeof(T));
 
     public static string? Artist(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Artist);
+    
+    public static string? ReleaseTitle(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Title);
+    
+    public static int? ReleaseYear(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ?? 
+                                                            release.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
+                                                            release.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
 
     public static int MediaCountValue(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.DiscNumber) ?? 0;
     

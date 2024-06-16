@@ -28,14 +28,14 @@
             <TreeView Tapped="NavigationTree_OnTapped" ItemsSource="{Binding InboundDirectoryInfos}">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding SubNodes}">
-                        <TextBlock Text="{Binding Title}"/>
+                        <TextBlock Tag="{Binding DirectoryInfo.Id}" Text="{Binding Title}"/>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
             <GridSplitter Grid.Column="1" Width="1" ResizeDirection="Columns"/>
             <DataGrid Grid.Column="2" 
                 Margin="5" 
-                ItemsSource="{Binding FileInfos}" 
+                ItemsSource="{Binding ReleaseInfos}" 
                 AutoGenerateColumns="True" 
                 IsReadOnly="True" 
                 GridLinesVisibility="All"

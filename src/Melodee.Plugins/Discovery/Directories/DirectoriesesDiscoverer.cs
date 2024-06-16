@@ -1,11 +1,11 @@
 using Melodee.Common.Models;
 using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
-namespace Melodee.Plugins.Discovery.Directory;
+namespace Melodee.Plugins.Discovery.Directories;
 
-public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
+public sealed class DirectoriesesDiscoverer : IDirectoriesDiscoverer
 {
-    public string DisplayName => nameof(DirectoryDiscoverer);
+    public string DisplayName => nameof(DirectoriesesDiscoverer);
 
     public string Id => "EBAD92EA-A49E-4502-818D-D6B36B9E5993";
 
@@ -13,14 +13,16 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
     
     public int SortOrder => 0;
     
-    public OperationResult<PagedResult<DirectoryInfo>> DirectoryInfosForDirectory(System.IO.DirectoryInfo directoryInfo, PagedRequest pagedRequest)
+    public PagedResult<DirectoryInfo> DirectoryInfosForDirectory(System.IO.DirectoryInfo directoryInfo, PagedRequest pagedRequest)
     {
         var data = new List<DirectoryInfo>();
 
         if (directoryInfo.Exists)
         {
             foreach (var directory in directoryInfo.EnumerateDirectories(pagedRequest.Filter ?? "*",
-                         SearchOption.AllDirectories))
+                         SearchOption.AllDirectories)
+                         .Skip(pagedRequest.SkipValue)
+                         .Take(pagedRequest.TakeValue))
             {
                 var allExtensionsForDirectory = FileHelper.AllFileExtensionsForDirectory(directory).ToArray();
                 var dirInfo = new DirectoryInfo
@@ -35,7 +37,9 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
                 foreach (var childDir in directory.EnumerateDirectories(pagedRequest.Filter ?? "*",
                              SearchOption.AllDirectories))
                 {
-                    var allExtensionsForChildDirectory = FileHelper.AllFileExtensionsForDirectory(childDir).ToArray();
+                    var allExtensionsForChildDirectory = FileHelper.AllFileExtensionsForDirectory(childDir)
+                        .ToArray()
+                        .Take(pagedRequest.TakeValue);
                     data.Add(new DirectoryInfo
                     {
                         ParentId = dirInfo.Id,
@@ -47,15 +51,14 @@ public sealed class DirectoryDiscoverer : IDirectoryDiscoverer
                         TotalItemsFound = FileHelper.GetNumberOfTotalFilesForDirectory(childDir)
                     });
                 }
-
                 data.Add(dirInfo);
             }
         }
 
-        return new OperationResult<PagedResult<DirectoryInfo>>
+        return new PagedResult<DirectoryInfo>
         {
-            IsSuccess = data.Count != 0,
-            Data = new PagedResult<DirectoryInfo> { Rows = data }
+            Message = data.Count != 0 ? OperationMessages.OkMessage : OperationMessages.ErrorOccured,
+            Rows = data 
         };
     }
 

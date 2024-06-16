@@ -9,19 +9,19 @@ public sealed record PagedRequest
     public const string OrderDescDirection = "DESC";
     private int? _skipValue;    
     
-    public short? Limit { get; set; } = 10;    
+    public short? Take { get; set; } = 50;    
     public string? Filter { get; init; }
     
-    public short LimitValue
+    public short TakeValue
     {
         get
         {
-            if (Limit is -1)
+            if (Take is -1)
             {
                 // Suppose to mean return all, this limits to something sane other than Int.MaxLimit
                 return 500;
             }
-            return Limit ?? 50;
+            return Take ?? 50;
         }
     }
 
@@ -40,7 +40,7 @@ public sealed record PagedRequest
             {
                 if (Page.HasValue)
                 {
-                    _skipValue = Page.Value * LimitValue - LimitValue;
+                    _skipValue = Page.Value * TakeValue - TakeValue;
                 }
                 else
                 {

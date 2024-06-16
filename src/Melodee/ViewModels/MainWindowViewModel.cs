@@ -6,8 +6,10 @@ using System.Xml.Linq;
 using DynamicData;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Grids;
 using Melodee.Models;
-using Melodee.Plugins.Discovery.Directory;
+using Melodee.Plugins.Discovery.Directories;
+using Melodee.Plugins.Discovery.Releases;
 using ReactiveUI;
 
 
@@ -17,46 +19,38 @@ public class MainWindowViewModel : ViewModelBase
 {
     public Configuration Configuration { get; }
     
-    public IDirectoryDiscoverer DirectoryDiscoverer { get; }
+    public IDirectoriesDiscoverer DirectoriesDiscoverer { get; }
+    
+    public IReleasesDiscoverer ReleasesDiscoverer { get; }
     
     public ObservableCollection<Node> InboundDirectoryInfos { get; }
+
+    public ObservableCollection<ReleaseGrid> ReleaseInfos { get; set; } = [];
     
-    public ObservableCollection<FileInfo> FileInfos { get; }
-    
-    public MainWindowViewModel(Configuration configuration, IDirectoryDiscoverer directoryDiscoverer)
+    public MainWindowViewModel(Configuration configuration, IDirectoriesDiscoverer directoriesDiscoverer, IReleasesDiscoverer releasesDiscoverer)
     {
         Configuration = configuration;
-        DirectoryDiscoverer = directoryDiscoverer;
+        DirectoriesDiscoverer = directoriesDiscoverer;
+        ReleasesDiscoverer = releasesDiscoverer;
 
         var directories =
-            DirectoryDiscoverer.DirectoryInfosForDirectory(
+            DirectoriesDiscoverer.DirectoryInfosForDirectory(
                 new System.IO.DirectoryInfo(Configuration.InboundDirectory), new PagedRequest());
 
         var result = new List<Node>();
-        var dirData = directories.Data.Rows.ToArray();
+        var dirData = directories.Rows.ToArray();
         foreach (var directory in dirData)
         {
-            var node = new Node(directory.ShortName);
+            var node = new Node(directory, directory.ShortName);
             var hasChildren = dirData.Any(x => x.ParentId == directory.Id);
             if (hasChildren)
             {
                 node.SubNodes = new ObservableCollection<Node>(dirData.Where(x => x.ParentId == directory.Id)
-                    .Select(x => new Node(x.ShortName)));
+                    .Select(x => new Node(x, x.ShortName) {  }));
             }
             result.Add(node);
         }
-        InboundDirectoryInfos = new ObservableCollection<Node>(result);        
-        
-        FileInfos = new ObservableCollection<FileInfo>
-        {
-            new FileInfo
-            {
-                DirectoryInfo = new DirectoryInfo { Path = "DaPath", ShortName = "DaDirectoryName", MusicFilesFound = 0, TotalItemsFound = 0},
-                Name = "Da Name",
-                Extension = "mp3",
-                Path = "Da Path File",
-                Status = FileInfoStatus.Ok
-            }
-        };
+        InboundDirectoryInfos = new ObservableCollection<Node>(result);      
+
     }    
 }

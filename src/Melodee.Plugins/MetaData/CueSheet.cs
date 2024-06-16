@@ -4,20 +4,36 @@ using Melodee.Plugins.Discovery;
 
 namespace Melodee.Plugins.MetaData;
 
-public sealed class CueSheet
+public sealed class CueSheet : MetaDataBase
 {
-    public bool HandlesFile(string fullFilename)
+    public override string Id => "3CAB0527-B13F-4C29-97AD-5541229240DD";
+    
+    public override string DisplayName => nameof(CueSheet);
+
+    public override bool IsEnabled { get; set; } = true;
+
+    public override int SortOrder { get; } = 0;
+
+    public override bool DoesHandleFile(FileSystemInfo fileSystemInfo)
     {
-        var ext = Path.GetExtension(fullFilename);
+        if (!fileSystemInfo.Exists)
+        {
+            return false;
+        }
+        var ext = fileSystemInfo.Extension;
         if (!FileHelper.IsFileMediaMetaDataType(ext))
         {
             return false;
         }
         return string.Equals(ext.Replace(".", ""), "cue");
     }
-    
-    public Task<OperationResult<Release>> ProcessFile(string file, CancellationToken cancellationToken = default)
+
+    public override Task<OperationResult<Release>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
+        throw new NotImplementedException();
+
+     
+        // look at TED.Models.CueSheet ; ps; it's a mess.
         
  // var result = new ConcurrentBag<ATL.Track>();
  //            var isrcCueSheets = Directory.GetFiles(dir, "*.cue");

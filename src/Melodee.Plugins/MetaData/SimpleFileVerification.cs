@@ -4,12 +4,23 @@ using Melodee.Plugins.Discovery;
 
 namespace Melodee.Plugins.MetaData;
 
-public sealed class SimpleFileVerification
+public sealed class SimpleFileVerification : MetaDataBase
 {
+    public override string Id => "6C253D42-F176-4A58-A895-C54BEB1F8A5C";
+    
+    public override string DisplayName => nameof(SimpleFileVerification);
 
-    public bool HandlesFile(string fullFilename)
+    public override bool IsEnabled { get; set; } = true;
+
+    public override int SortOrder { get; } = 0;
+
+    public override bool DoesHandleFile(FileSystemInfo fileSystemInfo)
     {
-        var ext = Path.GetExtension(fullFilename);
+        if (!fileSystemInfo.Exists)
+        {
+            return false;
+        }
+        var ext = fileSystemInfo.Extension;
         if (!FileHelper.IsFileMediaMetaDataType(ext))
         {
             return false;
@@ -17,11 +28,8 @@ public sealed class SimpleFileVerification
         return string.Equals(ext.Replace(".", ""), "sfv");
     }
 
-
-    public Task<OperationResult<Release>> ProcessFile(string file, CancellationToken cancellationToken = default)
+    public override Task<OperationResult<Release>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        
-        
         throw new NotImplementedException();
     }
     
