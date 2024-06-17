@@ -6,6 +6,7 @@ namespace Melodee.Common.Models;
 /// <summary>
 /// This is a representation of a Release (a published collection of Tracks) including all known MetaData.
 /// </summary>
+[Serializable]
 public sealed record Release
 {
     public long UniqueId => SafeParser.Hash($"{this.Artist()}{this.ReleaseYear()}{this.ReleaseTitle}"); 

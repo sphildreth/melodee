@@ -1,9 +1,9 @@
 using Melodee.Common.Models;
 using Melodee.Plugins.Discovery;
 
-namespace Melodee.Plugins.MetaData;
+namespace Melodee.Plugins.MetaData.Track;
 
-public sealed class MetaTag : MetaDataBase
+public sealed class MetaTag : MetaDataBase, ITrackPlugin
 {
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
     public override string DisplayName => nameof(MetaTag);
@@ -21,15 +21,8 @@ public sealed class MetaTag : MetaDataBase
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension);
     }
 
-    public override Task<OperationResult<Release>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
-    }
-
-    public Task<OperationResult<Release>> ProcessFile(string file, CancellationToken cancellationToken = default)
-    {
-        
-        
         throw new NotImplementedException();
     }
     

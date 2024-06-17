@@ -2,7 +2,7 @@ using Melodee.Common.Models;
 
 namespace Melodee.Plugins.MetaData;
 
-public abstract class MetaDataBase : IFilePlugin
+public abstract class MetaDataBase
 {
     public abstract string Id { get; }
     
@@ -15,6 +15,4 @@ public abstract class MetaDataBase : IFilePlugin
     public bool StopProcessing { get; internal set; }
     
     public abstract bool DoesHandleFile(FileSystemInfo fileSystemInfo);
-    
-    public abstract Task<OperationResult<Release>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default);
 }
