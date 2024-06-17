@@ -1,4 +1,5 @@
 {
   "InboundDirectory": "/home/steven/incoming/melodee_test/inbound",
+  "StagingDirectory": "/home/steven/incoming/melodee_test/staging",
   "LibraryDirectory": "/home/steven/incoming/melodee_test/library"
 }

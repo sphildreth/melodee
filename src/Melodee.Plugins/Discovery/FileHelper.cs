@@ -4,6 +4,7 @@ public static class FileHelper
 {
     private static readonly IEnumerable<string> MediaMetaDataFileTypeExtensions =
     [
+        "cue",
         "m3u",
         "sfv"
     ];

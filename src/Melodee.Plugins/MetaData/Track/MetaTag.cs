@@ -1,11 +1,15 @@
+using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Plugins.Discovery;
+using Melodee.Plugins.MetaData.Track.Extensions;
 
 namespace Melodee.Plugins.MetaData.Track;
 
 public sealed class MetaTag : MetaDataBase, ITrackPlugin
 {
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
+    
     public override string DisplayName => nameof(MetaTag);
 
     public override bool IsEnabled { get; set; } = true;
@@ -23,8 +27,46 @@ public sealed class MetaTag : MetaDataBase, ITrackPlugin
 
     public Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var tags = new List<MetaTag<object>>();        
+        if (fileSystemInfo.Exists)
+        {
+            var fileAtl = new ATL.Track(fileSystemInfo.FullName);
+            if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
+            {
+                tags.Add(new MetaTag<object>
+                {
+                    Identifier = MetaTagIdentifier.Artist,
+                    Value = (fileAtl.AlbumArtist.Nullify() ?? fileAtl.Artist).CleanString()
+                });
+            }
+        }
+        return Task.FromResult(new OperationResult<Common.Models.Track>
+        {
+            Data = new Common.Models.Track
+            {
+                FileSystemInfo = fileSystemInfo,
+                Tags = tags
+            }
+        });
     }
+    
+    private static bool IsAtlTrackForMp3(ATL.Track track)
+    {
+        if(track?.AudioFormat?.ShortName == null)
+        {
+            return false;
+        }
+        if(string.Equals(track.AudioFormat?.ShortName, "mpeg-4", StringComparison.OrdinalIgnoreCase))
+        {
+            var ext = track.FileInfo().Extension;
+            if(!ext.ToLower().EndsWith("m4a")) // M4A is an audio file using the MP4 encoding
+            {
+                Console.WriteLine($"Video file found in Scanning. File [{ track.FileInfo().FullName }]");
+                return false;
+            }
+        }
+        return track is { AudioFormat: { ID: > -1 }, Duration: > 0 };
+    }    
     
     // https://exiftool.org/TagNames/ID3.html
     

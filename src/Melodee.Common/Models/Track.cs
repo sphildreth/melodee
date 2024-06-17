@@ -3,7 +3,7 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record Track
 {
-    public required FileInfo FileInfo { get; init; }
+    public required FileSystemInfo FileSystemInfo { get; init; }
     
     public IEnumerable<ImageInfo>? Images { get; init; }
     

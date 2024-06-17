@@ -35,7 +35,7 @@ namespace Melodee.Common.Extensions
             {'ý', "y"}, {'ÿ', "y"}
         };
 
-        public static string Nullify(this string input)
+        public static string? Nullify(this string input)
         {
             if (string.IsNullOrEmpty(input) || string.IsNullOrWhiteSpace(input))
             {
