@@ -208,7 +208,7 @@ public enum MetaTagIdentifier
     EncodedBy,
 
     /// <summary>
-    /// Original release year (when target format only supports year)
+    /// Original release year (when target format only supports year) [TORY,TOR]
     /// </summary>
     OrigReleaseYear,
 

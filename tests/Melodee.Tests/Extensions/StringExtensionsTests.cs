@@ -2,7 +2,7 @@
 
 namespace Melodee.Tests.Extensions
 {
-    public class StringExtTests
+    public class StringExtensionsTests
     {
         [Theory]
         [InlineData("Bob", "Bob", true)]
@@ -14,7 +14,7 @@ namespace Melodee.Tests.Extensions
         [InlineData("Bob", "Steve", false)]
         public void DoStringMatch(string string1, string string2, bool shouldBe)
         {
-            Assert.Equal(shouldBe, StringExt.DoStringsMatch(string1, string2));
+            Assert.Equal(shouldBe, StringExtensions.DoStringsMatch(string1, string2));
         }
 
         [Theory]

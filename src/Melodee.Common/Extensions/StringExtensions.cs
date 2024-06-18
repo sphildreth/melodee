@@ -6,7 +6,7 @@ using Melodee.Common.Utility;
 
 namespace Melodee.Common.Extensions
 {
-    public static class StringExt
+    public static class StringExtensions
     {
         private static readonly string YearParseRegex = "(19|20)\\d{2}";
         
@@ -35,7 +35,7 @@ namespace Melodee.Common.Extensions
             {'ý', "y"}, {'ÿ', "y"}
         };
 
-        public static string? Nullify(this string input)
+        public static string? Nullify(this string? input)
         {
             if (string.IsNullOrEmpty(input) || string.IsNullOrWhiteSpace(input))
             {

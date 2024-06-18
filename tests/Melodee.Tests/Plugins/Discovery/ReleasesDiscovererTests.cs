@@ -1,28 +1,13 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.Discovery;
 using Melodee.Plugins.Discovery.Directories;
-using DirectoryInfo = System.IO.DirectoryInfo;
+using Melodee.Plugins.Discovery.Releases;
 
 namespace Melodee.Tests.Plugins.Discovery;
 
-public class DirectoryDiscoveryTests
+public class ReleasesDiscovererTests
 {
-
     [Fact]
-    public void ValidateIsEmptyResult()
-    {
-        var dd = new DirectoriesesDiscoverer();
-        var filesForDirectory =
-            dd.DirectoryInfosForDirectory(new DirectoryInfo(Guid.NewGuid().ToString()), new PagedRequest());
-        Assert.NotNull(filesForDirectory);
-        Assert.False(filesForDirectory.IsSuccess);
-        Assert.NotNull(filesForDirectory);
-        Assert.NotNull(filesForDirectory.Data);
-        Assert.Empty(filesForDirectory.Data);
-    }
-    
-    [Fact]
-    public void ValidateIfTestDirectorySetupNotEmpty()
+    public async void ValidReleaseGridResults()
     {
         var testDirectory = @"/home/steven/incoming/melodee_test/inbound";
         var dir = new System.IO.DirectoryInfo(testDirectory);
@@ -37,6 +22,17 @@ public class DirectoryDiscoveryTests
             Assert.NotNull(filesForDirectory.Data);
             Assert.NotEmpty(filesForDirectory.Data);
             Assert.DoesNotContain(filesForDirectory.Data, x => x.MusicFilesFound == 0);
+
+            var rd = new ReleasesDiscoverer();
+            var releasesForDirectoryAsync = await rd.ReleasesForDirectoryAsync(filesForDirectory.Data.First(), new PagedRequest());
+            Assert.NotNull(releasesForDirectoryAsync);
+            Assert.True(releasesForDirectoryAsync.IsSuccess);
+
+            var releases = releasesForDirectoryAsync.Data;
+            Assert.NotNull(releases);        
+            Assert.NotEmpty(releases);
+            
         }
+
     }
 }

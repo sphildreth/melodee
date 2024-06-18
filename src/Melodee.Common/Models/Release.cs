@@ -17,7 +17,7 @@ public sealed record Release
     
     public IEnumerable<ImageInfo>? Images { get; init; }
     
-    public IEnumerable<MetaTag<object>>? Tags { get; init; }
+    public IEnumerable<MetaTag<object?>>? Tags { get; init; }
     
     public IEnumerable<Track>? Tracks { get; init; }
 

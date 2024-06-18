@@ -1,6 +1,6 @@
 ﻿namespace Melodee.Common.Extensions
 {
-    public static class TextReaderExt
+    public static class TextReaderExtensions
     {
         public static IEnumerable<string> ReadAllLines(this TextReader textReader)
         {

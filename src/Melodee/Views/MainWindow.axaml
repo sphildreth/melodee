@@ -24,11 +24,11 @@
                 <MenuItem Header="Paste"/>
             </MenuItem>
         </Menu>
-        <Grid DockPanel.Dock="Left" ColumnDefinitions="300, 1, *">
+        <Grid DockPanel.Dock="Left" ColumnDefinitions="300, 1,600, *">
             <TreeView Tapped="NavigationTree_OnTapped" ItemsSource="{Binding InboundDirectoryInfos}">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding SubNodes}">
-                        <TextBlock Tag="{Binding DirectoryInfo.Id}" Text="{Binding Title}"/>
+                        <TextBlock Tag="{Binding DirectoryInfo.UniqueId}" Text="{Binding Title}"/>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
@@ -41,7 +41,10 @@
                 GridLinesVisibility="All"
                 BorderThickness="1" 
                 BorderBrush="Gray">
-            </DataGrid>            
+            </DataGrid>    
+            <StackPanel Grid.Column="3">
+                <TextBlock>Release Detail View Here</TextBlock>
+            </StackPanel>
         </Grid>
     </DockPanel>
 

@@ -1,11 +1,13 @@
+using System.Runtime.InteropServices.JavaScript;
 using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 using Melodee.Common.Exceptions;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models;
 
 [Serializable]
-public class OperationResult<T> where T : notnull
+public record OperationResult<T> where T : notnull
 {
     private List<Exception> _errors = [];
 
@@ -42,11 +44,11 @@ public class OperationResult<T> where T : notnull
     [JsonIgnore]
     public IEnumerable<Exception> Errors { get; set; } = [];
 
-    [JsonIgnore] public bool IsAccessDeniedResult { get; set; }
+    public bool IsSuccess => Type == OperationResponseType.Ok && 
+                             !Errors.Any() && 
+                             !Data.IsNullOrDefault();
 
-    [JsonIgnore] public bool IsNotFoundResult { get; set; }
-
-    public bool IsSuccess { get; set; }
+    public OperationResponseType Type { get; set; } = OperationResponseType.Ok;
 
     public IEnumerable<string> Messages => _messages;
 
@@ -76,9 +78,9 @@ public class OperationResult<T> where T : notnull
         AddError(error);
     }
 
-    public OperationResult(bool isNotFoundResult, IEnumerable<string>? messages = null)
+    public OperationResult(OperationResponseType type, IEnumerable<string>? messages = null)
     {
-        IsNotFoundResult = isNotFoundResult;
+        Type = type;
         if (messages?.Any() == true)
         {
             AdditionalData = new Dictionary<string, object>();
@@ -86,9 +88,9 @@ public class OperationResult<T> where T : notnull
         }
     }
 
-    public OperationResult(bool isNotFoundResult, string message)
+    public OperationResult(OperationResponseType type, string message)
     {
-        IsNotFoundResult = isNotFoundResult;
+        Type = type;
         AddMessage(message);
     }
 

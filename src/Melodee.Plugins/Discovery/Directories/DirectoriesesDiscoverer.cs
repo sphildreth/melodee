@@ -42,7 +42,7 @@ public sealed class DirectoriesesDiscoverer : IDirectoriesDiscoverer
                         .Take(pagedRequest.TakeValue);
                     data.Add(new DirectoryInfo
                     {
-                        ParentId = dirInfo.Id,
+                        ParentId = dirInfo.UniqueId,
                         Path = childDir.FullName,
                         ImageFilesFound = FileHelper.GetNumberOfImageFilesForDirectory(allExtensionsForChildDirectory),
                         MusicFilesFound = FileHelper.GetNumberOfMediaFilesForDirectory(allExtensionsForChildDirectory),
@@ -57,8 +57,8 @@ public sealed class DirectoriesesDiscoverer : IDirectoriesDiscoverer
 
         return new PagedResult<DirectoryInfo>
         {
-            Message = data.Count != 0 ? OperationMessages.OkMessage : OperationMessages.ErrorOccured,
-            Rows = data 
+            Type = data.Count != 0 ? OperationResponseType.Ok : OperationResponseType.Error,
+            Data = data 
         };
     }
 

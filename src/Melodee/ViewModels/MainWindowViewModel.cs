@@ -38,14 +38,14 @@ public class MainWindowViewModel : ViewModelBase
                 new System.IO.DirectoryInfo(Configuration.InboundDirectory), new PagedRequest());
 
         var result = new List<Node>();
-        var dirData = directories.Rows.ToArray();
+        var dirData = directories.Data.ToArray();
         foreach (var directory in dirData)
         {
             var node = new Node(directory, directory.ShortName);
-            var hasChildren = dirData.Any(x => x.ParentId == directory.Id);
+            var hasChildren = dirData.Any(x => x.ParentId == directory.UniqueId);
             if (hasChildren)
             {
-                node.SubNodes = new ObservableCollection<Node>(dirData.Where(x => x.ParentId == directory.Id)
+                node.SubNodes = new ObservableCollection<Node>(dirData.Where(x => x.ParentId == directory.UniqueId)
                     .Select(x => new Node(x, x.ShortName) {  }));
             }
             result.Add(node);

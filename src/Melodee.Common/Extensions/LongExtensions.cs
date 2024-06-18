@@ -1,6 +1,6 @@
 ﻿namespace Melodee.Common.Extensions
 {
-    public static class LongExt
+    public static class LongExtensions
     {
         public static string FormatFileSize(this long size)
         {

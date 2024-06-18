@@ -1,4 +1,5 @@
 using System.Dynamic;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
@@ -8,9 +9,9 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record DirectoryInfo
 {
-    public int Id => Path.GetHashCode() + ShortName.GetHashCode();
+    public long UniqueId => SafeParser.Hash($"{ParentId}{Path}"); 
 
-    public int ParentId { get; init; }
+    public long ParentId { get; init; }
     
     public required string Path { get; init; }
     

@@ -1,6 +1,8 @@
 using Melodee.Common.Enums;
+using Melodee.Common.Exceptions;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData.Track.Extensions;
 
@@ -18,7 +20,7 @@ public sealed class MetaTag : MetaDataBase, ITrackPlugin
 
     public override bool DoesHandleFile(FileSystemInfo fileSystemInfo)
     {
-        if (!fileSystemInfo.Exists)
+        if (!IsEnabled || !fileSystemInfo.Exists)
         {
             return false;
         }
@@ -33,11 +35,44 @@ public sealed class MetaTag : MetaDataBase, ITrackPlugin
             var fileAtl = new ATL.Track(fileSystemInfo.FullName);
             if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
             {
-                tags.Add(new MetaTag<object>
+                var atlDictionary = fileAtl.ToDictionary();
+                var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToDictionary();
+
+                foreach (var metaTagIdentifier in metaTagIdentifierDictionary)
                 {
-                    Identifier = MetaTagIdentifier.Artist,
-                    Value = (fileAtl.AlbumArtist.Nullify() ?? fileAtl.Artist).CleanString()
-                });
+                    if (atlDictionary.TryGetValue(metaTagIdentifier.Value, out var v))
+                    {
+                        if (v is string s)
+                        {
+                            v = s.Nullify();
+                        }
+                        if (v is DateTime vDt)
+                        {
+                            v = vDt > DateTime.MinValue && vDt < DateTime.MaxValue ? v : null;
+                        }
+                        if (v != null)
+                        {
+                            var identifier = SafeParser.ToEnum<MetaTagIdentifier>(metaTagIdentifier.Key);
+                            if (metaTagIdentifier.Key == (int)MetaTagIdentifier.PublishingDate)
+                            {
+                                var dt = SafeParser.ToDateTime(v);
+                                if (dt.HasValue)
+                                {
+                                    tags.Add(new MetaTag<object>
+                                    {
+                                        Identifier = MetaTagIdentifier.OrigReleaseYear,
+                                        Value = dt.Value.Year
+                                    });
+                                }
+                            }
+                            tags.Add(new MetaTag<object>
+                            {
+                                Identifier = identifier,
+                                Value = v
+                            });
+                        }
+                    }
+                }
             }
         }
         return Task.FromResult(new OperationResult<Common.Models.Track>

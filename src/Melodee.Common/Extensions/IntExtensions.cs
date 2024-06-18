@@ -1,6 +1,6 @@
 ﻿namespace Melodee.Common.Extensions
 {
-    public static class IntExt
+    public static class IntExtensions
     {
         public static string ToStringPadLeft(this int? input, short padLeft, char padWith = '0')
         {
