@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
+using DynamicData;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Grids;
 using Melodee.ViewModels;
@@ -29,7 +30,10 @@ public partial class MainWindow : Window
             .First(x => x.DirectoryInfo.UniqueId == clickedDirectoryId);
         var dc = ((sender as TreeView)!.DataContext as MainWindowViewModel)!;
         var fileDiscoverer = dc.ReleasesDiscoverer;
+        dc.IsLoading = true;
         var fileDiscovererResult = fileDiscoverer.ReleasesForDirectoryAsync(clickedDirectory.DirectoryInfo, new PagedRequest()).Result;
-        dc.ReleaseInfos = new ObservableCollection<ReleaseGrid>(fileDiscovererResult.Data);
+        dc.ReleaseInfos.Clear();
+        dc.ReleaseInfos.AddRange(fileDiscovererResult.Data);
+        dc.IsLoading = false;
     }
 }

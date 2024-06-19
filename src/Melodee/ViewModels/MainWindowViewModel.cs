@@ -27,6 +27,8 @@ public class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<ReleaseGrid> ReleaseInfos { get; set; } = [];
     
+    public bool IsLoading { get; set; }
+    
     public MainWindowViewModel(Configuration configuration, IDirectoriesDiscoverer directoriesDiscoverer, IReleasesDiscoverer releasesDiscoverer)
     {
         Configuration = configuration;

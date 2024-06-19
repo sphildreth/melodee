@@ -1,3 +1,4 @@
+using System.Reflection;
 using Melodee.Common.Enums;
 using Melodee.Common.Exceptions;
 using Melodee.Common.Extensions;
@@ -53,7 +54,8 @@ public sealed class MetaTag : MetaDataBase, ITrackPlugin
                         if (v != null)
                         {
                             var identifier = SafeParser.ToEnum<MetaTagIdentifier>(metaTagIdentifier.Key);
-                            if (metaTagIdentifier.Key == (int)MetaTagIdentifier.PublishingDate)
+                            if (metaTagIdentifier.Key == (int)MetaTagIdentifier.Date ||
+                                metaTagIdentifier.Key == (int)MetaTagIdentifier.RecordingDate)
                             {
                                 var dt = SafeParser.ToDateTime(v);
                                 if (dt.HasValue)

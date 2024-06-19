@@ -31,7 +31,13 @@ public class ReleasesDiscovererTests
             var releases = releasesForDirectoryAsync.Data;
             Assert.NotNull(releases);        
             Assert.NotEmpty(releases);
+
+            var firstRelease = releases.First();
+
+            Assert.True(firstRelease.TrackCount > 1);
+            Assert.True(firstRelease.Year > 0);
             
+
         }
 
     }

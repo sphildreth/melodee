@@ -53,7 +53,7 @@ public enum MetaTagIdentifier
     RecordingYear,
 
     /// <summary>
-    /// Recording date (when target format supports date)
+    /// Recording date (when target format supports date) [TRD, TRDA]
     /// </summary>
     RecordingDate,
 
@@ -123,7 +123,7 @@ public enum MetaTagIdentifier
     TrackTotal,
 
     /// <summary>
-    /// Alternate to TRACK_NUMBER and TRACK_TOTAL where both are in the same field
+    /// Alternate to TRACK_NUMBER and TRACK_TOTAL where both are in the same field [TRCK] ('1/8')
     /// </summary>
     TrackNumberTotal,
 
@@ -133,7 +133,7 @@ public enum MetaTagIdentifier
     DiscTotal,
 
     /// <summary>
-    /// Alternate to DISC_NUMBER and DISC_TOTAL where both are in the same field
+    /// Alternate to DISC_NUMBER and DISC_TOTAL where both are in the same field [TPOS] ('1/8')
     /// </summary>
     DiscNumberTotal,
 
@@ -146,11 +146,6 @@ public enum MetaTagIdentifier
     /// UnSynchronized lyrics
     /// </summary>
     LyricsUnSynch,
-
-    /// <summary>
-    /// Publishing date
-    /// </summary>
-    PublishingDate,
 
     /// <summary>
     /// Product ID
@@ -211,6 +206,11 @@ public enum MetaTagIdentifier
     /// Original release year (when target format only supports year) [TORY,TOR]
     /// </summary>
     OrigReleaseYear,
+    
+    /// <summary>
+    /// The ‘Date’ frame is a numeric string in the DDMM format containing the date for the recording. This field is always four characters long. [TDA, TDAT]
+    /// </summary>
+    Date, 
 
     /// <summary>
     /// Original release date (when target format supports date)
