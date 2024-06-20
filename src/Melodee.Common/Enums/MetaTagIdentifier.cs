@@ -8,27 +8,27 @@ public enum MetaTagIdentifier
     NotSet = 0,
   
     /// <summary>
-    /// General description
+    /// General description [TT1]
     /// </summary>
     GeneralDescription,
     
     /// <summary>
-    /// Artist
+    /// Artist [TP1,TPE1]
     /// </summary>
     Artist,
 
     /// <summary>
-    /// Composer
+    /// Composer [TCM, TCOM]
     /// </summary>
     Composer,
 
     /// <summary>
-    /// Comment
+    /// Comment [COM, COMM]
     /// </summary>
     Comment,
 
     /// <summary>
-    /// Genre
+    /// Genre [TCO, TCON]
     /// </summary>
     Genre,
 
@@ -47,11 +47,19 @@ public enum MetaTagIdentifier
     /// </summary>
     SubTitle,
 
+    /*
+     * Recording date <== de facto standard behind the "date" field on most taggers
+     * ID3v2.2 : TYE (year), TDA (day & month - DDMM), TIM (hour & minute - HHMM)
+     * ID3v2.3 : TYER (year), TDAT (day & month - DDMM), TIME (hour & minute - HHMM)
+     * NB : Some loose implementations actually use TDRC inside ID3v2.3 headers
+     * ID3v2.4 : TDRC (timestamp)
+     */    
+    
     /// <summary>
-    /// Recording year (when target format only supports year)
+    /// Recording year (when target format only supports year) [TYE,TYER]
     /// </summary>
     RecordingYear,
-
+    
     /// <summary>
     /// Recording date (when target format supports date) [TRD, TRDA]
     /// </summary>
@@ -63,44 +71,49 @@ public enum MetaTagIdentifier
     RecordingDateOrYear,
 
     /// <summary>
-    /// Recording day and month
+    /// Recording day and month [TDA, TDAT]
     /// </summary>
     RecordingDayMonth,
 
     /// <summary>
-    /// Recoding time
+    /// Recoding time [TIM, TIME]
     /// </summary>
     RecordingTime,
 
     /// <summary>
-    /// Track number
+    /// Track number. This should be set from parsed value from [TRK] or [TRCK]
     /// </summary>
     TrackNumber,
 
     /// <summary>
-    /// Disc number
+    /// Disc number. This should be set from parsed value from [TPA] or [TPOS]
     /// </summary>
     DiscNumber,
 
     /// <summary>
-    /// Popularity (rating)
+    /// Popularity (rating) [POP, POPM]
     /// </summary>
     Rating,
 
     /// <summary>
-    /// Original artist
+    /// Original artist [TOA, TOPE]
     /// </summary>
     OriginalArtist,
 
     /// <summary>
-    /// Original album
+    /// Original album [TOT,TOAL]
     /// </summary>
     OriginalAlbum,
 
     /// <summary>
-    /// Copyright
+    /// Copyright [TCR, TCOP]
     /// </summary>
     Copyright,
+    
+    /// <summary>
+    /// [WCP, WCOP]
+    /// </summary>
+    CopyrightUrl,
 
     /// <summary>
     /// he ‘Band/Orchestra/Accompaniment’ frame is used for additional information about the performers in the recording. [TP2, TPE2]
@@ -108,17 +121,22 @@ public enum MetaTagIdentifier
     AlbumArtist,
 
     /// <summary>
-    /// Publisher
+    /// Publisher [TPB]
     /// </summary>
     Publisher,
+    
+    /// <summary>
+    /// [WPB, WPUB]
+    /// </summary>
+    PublisherUrl,
 
     /// <summary>
-    /// Conductor
+    /// Conductor [TP3,TPE3]
     /// </summary>
     Conductor,
 
     /// <summary>
-    /// Total number of tracks
+    /// Total number of tracks [TRK]
     /// </summary>
     TrackTotal,
 
@@ -128,7 +146,7 @@ public enum MetaTagIdentifier
     TrackNumberTotal,
 
     /// <summary>
-    /// Total number of discs
+    /// Total number of discs [TPA]
     /// </summary>
     DiscTotal,
 
@@ -138,12 +156,12 @@ public enum MetaTagIdentifier
     DiscNumberTotal,
 
     /// <summary>
-    /// Chapters table of contents description
+    /// Chapters table of contents description [CTOC]
     /// </summary>
     ChaptersTocDescription,
 
     /// <summary>
-    /// UnSynchronized lyrics
+    /// UnSynchronized lyrics [USLT]
     /// </summary>
     LyricsUnSynch,
 
@@ -153,27 +171,27 @@ public enum MetaTagIdentifier
     ProductId,
 
     /// <summary>
-    /// Album sort order
+    /// Album sort order [TSOA]
     /// </summary>
     SortAlbum,
 
     /// <summary>
-    /// Album artist sort order
+    /// Album artist sort order [TS02]
     /// </summary>
     SortAlbumArtist,
 
     /// <summary>
-    /// Artist sort order
+    /// Artist sort order [TSOP]
     /// </summary>
     SortArtist,
 
     /// <summary>
-    /// Title sort order
+    /// Title sort order [TSOT]
     /// </summary>
     SortTitle,
 
     /// <summary>
-    /// Content group description
+    /// Content group description [TIT1]
     /// </summary>
     Group,
 
@@ -188,20 +206,28 @@ public enum MetaTagIdentifier
     SeriesPart,
 
     /// <summary>
-    /// Long description
+    /// Long description [TDES]
     /// </summary>
     LongDescription,
 
     /// <summary>
-    /// Beats per minute
+    /// Beats per minute [TBP, TBPM]
     /// </summary>
     Bpm,
 
     /// <summary>
-    /// Person or organization that encoded the file
+    /// Person or organization that encoded the file [TEN, TENC]
     /// </summary>
     EncodedBy,
 
+
+    /*
+     *  Original release date
+     *  ID3v2.2 : TOR (year only)
+     *  ID3v2.3 : TORY (year only)
+     *  ID3v2.4 : TDOR (timestamp according to spec)
+    */
+    
     /// <summary>
     /// Original release year (when target format only supports year) [TORY,TOR]
     /// </summary>
@@ -211,45 +237,197 @@ public enum MetaTagIdentifier
     /// The ‘Date’ frame is a numeric string in the DDMM format containing the date for the recording. This field is always four characters long. [TDA, TDAT]
     /// </summary>
     Date, 
-
+    
+    /*
+     * Release date
+     * ID3v2.2 : no standard
+     * ID3v2.3 : no standard
+     * ID3v2.4 : TDRL (timestamp according to spec; actual content may vary)
+    */
+    
     /// <summary>
-    /// Original release date (when target format supports date)
+    /// Original release date (when target format supports date) [TDOR]
     /// </summary>
     OrigReleaseDate,
+    
+    /// <summary>
+    /// Release date. [TDRL]
+    /// </summary>
+    ReleaseDate,
 
     /// <summary>
-    /// Software that encoded the file, with relevant settings if any
+    /// Software that encoded the file, with relevant settings if any [TSS, TSSE]
     /// </summary>
     Encoder,
 
     /// <summary>
-    /// Language
+    /// Language [TLA, TLAN]
     /// </summary>
     Language,
 
     /// <summary>
-    /// International Standard Recording Code (ISRC)
+    /// International Standard Recording Code [TRC, TSRC]
     /// </summary>
     Isrc,
 
     /// <summary>
-    /// Catalog number
+    /// Catalog number [CATALOGNUMBER]
     /// </summary>
     CatalogNumber,
 
     /// <summary>
-    /// Audio source URL
+    /// Audio source URL [WAS, WOAS]
     /// </summary>
     AudioSourceUrl,
 
     /// <summary>
-    /// Lyricist
+    /// Lyricist [TXT, TEXT]
     /// </summary>
     Lyricist,
 
     /// <summary>
-    /// Mapping between functions (e.g. "producer") and names. Every odd field is a
-    /// function and every even is a name or a comma delimited list of names
+    /// Mapping between functions (e.g. "producer") and names. Every odd field is a function and every even is a name or a comma delimited list of names. [IPL, IPLS, TIPL]
     /// </summary>
-    InvolvedPeople
+    InvolvedPeople,
+    
+    /// <summary>
+    /// Represents a user defined URL link ID3 frame. [WXX, WXXX]
+    /// </summary>
+    UserDefinedUrlLink,
+    
+    /// <summary>
+    /// [WPAY]
+    /// </summary>
+    PaymentUrl,
+    
+    /// <summary>
+    /// [WCM, WCOM]
+    /// </summary>
+    CommercialUrl,
+    
+    /// <summary>
+    /// [USER]
+    /// </summary>
+    TermsOfUse,
+    
+    /// <summary>
+    /// [CNT, PCNT]
+    /// </summary>
+    PlayCounter,
+    
+    /// <summary>
+    /// [CRA, AENC]
+    /// </summary>
+    AudioEncryption,
+    
+    /// <summary>
+    /// [BUF, RBUF]
+    /// </summary>
+    RecommendedBufferSize,
+    
+    /// <summary>
+    /// [ETC, ETCO]
+    /// </summary>
+    EventTimingCodes,
+    
+    /// <summary>
+    /// [EQU, EQU2]
+    /// </summary>
+    Equalisation,
+    
+    /// <summary>
+    /// [GEO, GEOB]
+    /// </summary>
+    GeneralEnscapsulatedObject,
+    
+    /// <summary>
+    /// [LNK, LINK]
+    /// </summary>
+    LinkedInformation,
+    
+    /// <summary>
+    /// [MCI, MCDI]
+    /// </summary>
+    MusicCdIdentifier,
+    
+    /// <summary>
+    /// [MLL, MLLT]
+    /// </summary>
+    MpegLocationLookupTable,
+    
+    /// <summary>
+    /// [REV, RVRB]
+    /// </summary>
+    Reverb,
+    
+    /// <summary>
+    /// [RVA, RVA2]
+    /// </summary>
+    RelativeVolumeAdjustment,
+    
+    /// <summary>
+    /// [STC, SYTC]
+    /// </summary>
+    SynchronizedTempoCodes,
+    
+    /// <summary>
+    /// [TDY, TDLY]
+    /// </summary>
+    PlaylistDelay,
+    
+    /// <summary>
+    /// [TFT, TFLT]
+    /// </summary>
+    FileType,
+    
+    /// <summary>
+    /// [TKE, TKEY]
+    /// </summary>
+    InitialKey,
+    
+    /// <summary>
+    /// [TMT, TMED]
+    /// </summary>
+    MediaType,
+    
+    /// <summary>
+    /// [TOF, TOFN]
+    /// </summary>
+    OriginalFilename,
+    
+    /// <summary>
+    /// [TOL, TOLY]
+    /// </summary>
+    OriginalLyricist,
+    
+    /// <summary>
+    /// [TP4, TPE4]
+    /// </summary>
+    InterpretedRemixedOrOtherwiseModifiedBy,
+ 
+    /// <summary>
+    /// [TXX, TXXX]
+    /// </summary>
+    UserDefinedTextInformation,
+ 
+    /// <summary>
+    /// [UFI, UFID]
+    /// </summary>
+    UniqueFileIdentifier,
+    
+    /// <summary>
+    /// [ULT, USLT]
+    /// </summary>
+    UnsynchronisedLyrics,
+    
+    /// <summary>
+    /// [WAF, WOAF]
+    /// </summary>
+    OfficialAudioFileWebpage,
+    
+    /// <summary>
+    /// [WAR, WOAR]
+    /// </summary>
+    OfficialArtistPerformerWebpage
+    
 }
