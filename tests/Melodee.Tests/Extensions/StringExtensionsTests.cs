@@ -24,7 +24,7 @@ namespace Melodee.Tests.Extensions
         [InlineData("   Bob   ", "Bob")]
         [InlineData("Bob And Nancy", "Bob And Nancy")]
         [InlineData("Bob And Nancy!", "Bob And Nancy!")]
-        [InlineData("Bob And Nancy, wITH sTEVE", "Bob And Nancy, wITH sTEVE")]
+        [InlineData("Bob And Nancy, wITH sTEVE", "Bob And Nancy, With Steve")]
         [InlineData(" Bob    And    Nancy", "Bob And Nancy")]
         [InlineData(" Bob    And    Nancy   ", "Bob And Nancy")]
         public void CleanString(string input, string shouldBe)
@@ -119,5 +119,24 @@ namespace Melodee.Tests.Extensions
         {
             Assert.Equal(shouldBe, input.IsSoundTrackAristValue());
         }          
+        
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("Something", false)]
+        [InlineData("Eternally Gifted", false)]
+        [InlineData("Shift Scene", false)]
+        [InlineData("Something With Bob", true)]
+        [InlineData("Something Ft Bob", true)]
+        [InlineData("Something ft Bob", true)]
+        [InlineData("Something Ft. Bob", true)]
+        [InlineData("Something (Ft. Bob)", true)]
+        [InlineData("Something Feat. Bob", true)]
+        [InlineData("Something Featuring Bob", true)]
+        [InlineData("Something (with Bob)", true)]
+        [InlineData("Minds Without Fear with Vishal-Shekhar", true)]
+        public void StringHasFeaturingFragments(string input, bool shouldBe)
+        {
+            Assert.Equal(shouldBe, input.HasFeaturingFragments());
+        }        
     }
 }

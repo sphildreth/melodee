@@ -86,11 +86,6 @@ public enum MetaTagIdentifier
     TrackNumber,
 
     /// <summary>
-    /// Disc number. This should be set from parsed value from [TPA] or [TPOS]
-    /// </summary>
-    DiscNumber,
-
-    /// <summary>
     /// Popularity (rating) [POP, POPM]
     /// </summary>
     Rating,
@@ -144,6 +139,11 @@ public enum MetaTagIdentifier
     /// Alternate to TRACK_NUMBER and TRACK_TOTAL where both are in the same field [TRCK] ('1/8')
     /// </summary>
     TrackNumberTotal,
+    
+    /// <summary>
+    /// Disc number. This should be set from parsed value from [TPA] or [TPOS]
+    /// </summary>
+    DiscNumber,    
 
     /// <summary>
     /// Total number of discs [TPA]
@@ -151,7 +151,7 @@ public enum MetaTagIdentifier
     DiscTotal,
 
     /// <summary>
-    /// Alternate to DISC_NUMBER and DISC_TOTAL where both are in the same field [TPOS] ('1/8')
+    /// Alternate to DiscNumber and DiscTotal where both are in the same field [TPOS] ('1/8')
     /// </summary>
     DiscNumberTotal,
 
@@ -198,12 +198,22 @@ public enum MetaTagIdentifier
     /// <summary>
     /// MovementName [MVNM]
     /// </summary>
-    SeriesTitle,
+    MovementName,
 
     /// <summary>
     /// MovementNumber [MVIN]
     /// </summary>
-    SeriesPart,
+    MovementNumber,
+    
+    /// <summary>
+    /// Total parsed number of Movements, no official tag.
+    /// </summary>
+    MovementTotal,
+    
+    /// <summary>
+    /// Alternate to MovementNumber and MovementTotal where both are in the same field [MVIN] ('1/5')
+    /// </summary>
+    MovementNumberTotal,
 
     /// <summary>
     /// Long description [TDES]

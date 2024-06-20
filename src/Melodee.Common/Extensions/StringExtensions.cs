@@ -16,6 +16,12 @@ namespace Melodee.Common.Extensions
 
         private static readonly string SoundTrackArtistParseRegex = @"(sound\s*track[s]*)";
         
+        private static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+       
+        private static readonly string RomanRegex = @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
+        
+        private static readonly string[] Conjunctions = { "Y", "E", "I" };
+        
         private static readonly Dictionary<char, string> UnicodeAccents = new Dictionary<char, string>
         {
             {'À', "A"}, {'Á', "A"}, {'Â', "A"}, {'Ã', "A"}, {'Ä', "Ae"}, {'Å', "A"}, {'Æ', "Ae"},
@@ -38,6 +44,29 @@ namespace Melodee.Common.Extensions
             {'ù', "u"}, {'ú', "u"}, {'û', "u"}, {'ü', "ue"},
             {'ý', "y"}, {'ÿ', "y"}
         };
+        
+        private static readonly Dictionary<string, string> MacExceptions = new Dictionary<string, string>
+        {
+            {@"\bMacEdo"     ,"Macedo"},
+            {@"\bMacEvicius" ,"Macevicius"},
+            {@"\bMacHado"    ,"Machado"},
+            {@"\bMacHar"     ,"Machar"},
+            {@"\bMacHin"     ,"Machin"},
+            {@"\bMacHlin"    ,"Machlin"},
+            {@"\bMacIas"     ,"Macias"},
+            {@"\bMacIulis"   ,"Maciulis"},
+            {@"\bMacKie"     ,"Mackie"},
+            {@"\bMacKle"     ,"Mackle"},
+            {@"\bMacKlin"    ,"Macklin"},
+            {@"\bMacKmin"    ,"Mackmin"},
+            {@"\bMacQuarie"  ,"Macquarie"},
+            {@"\bMacEy "     ,"Macey "}
+        };
+        
+        private static readonly Dictionary<string, string> NameCaseReplacements = new Dictionary<string, string>
+        {
+            { "o'reilly", "O'Reilly" }
+        };        
 
         public static string? Nullify(this string? input)
         {
@@ -47,20 +76,129 @@ namespace Melodee.Common.Extensions
             }
             return input;
         }
+        
+        public static string? ToTitleCase(this string input, bool doPutTheAtEnd = true)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return null;
+            }
+            input = input.Replace("’", "'");
+            var textInfo = new CultureInfo("en-US", false).TextInfo;
+            var r = textInfo.ToTitleCase(input.Trim().ToLower());
+            r = Regex.Replace(r, @"\s+", " ");
+            if (doPutTheAtEnd)
+            {
+                if (r.StartsWith("The "))
+                {
+                    r = $"{(r.Replace("The ", string.Empty))}, The";
+                }
+            }
+            return r.NameCase();
+        }       
+        
+        public static string NameCase(this string nameString, bool doFixConjuntion = false)
+        {
+            nameString = Capitalize(nameString);
+            nameString = UpdateRoman(nameString);
+            nameString = UpdateIrish(nameString);
+            if (doFixConjuntion)
+            {
+                nameString = FixConjunction(nameString);
+            }
+            nameString = Regex.Replace(nameString, @"('[A-Z])", m => m.ToString().ToLower(), RegexOptions.IgnoreCase);
+            foreach (var replacement in NameCaseReplacements.Keys)
+            {
+                nameString = nameString.Replace(replacement, NameCaseReplacements[replacement], StringComparison.OrdinalIgnoreCase);
+            }
+            return nameString;
+        }        
+        
+        public static string FixConjunction(string nameString)
+        {
+            foreach (var conjunction in Conjunctions)
+            {
+                nameString = Regex.Replace(nameString, @"\b" + conjunction + @"\b", x => x.ToString().ToLower());
+            }
+            return nameString;
+        }        
+        
+        public static string UpdateRoman(string nameString)
+        {
+            MatchCollection matches = Regex.Matches(nameString, RomanRegex);
+            if (matches.Count > 1)
+            {
+                foreach (Match match in matches)
+                {
+                    if (!string.IsNullOrEmpty(match.Value))
+                    {
+                        nameString = Regex.Replace(nameString, match.Value, x => x.ToString().ToUpper());
+                    }
+                }
+            }
+            return nameString;
+        }        
+        
+        public static string UpdateIrish(string nameString)
+        {
+            if (Regex.IsMatch(nameString, @".*?\bMac[A-Za-z^aciozj]{2,}\b") || Regex.IsMatch(nameString, @".*?\bMc"))
+            {
+                nameString = UpdateMac(nameString);
+            }
+            return nameString;
+        }        
+        
+        /// <summary>
+        /// Updates irish Mac & Mc.
+        /// </summary>
+        /// <param name="nameString"></param>
+        /// <returns></returns>
+        public static string UpdateMac(string nameString)
+        {
+            MatchCollection matches = Regex.Matches(nameString, @"\b(Ma?c)([A-Za-z]+)");
+            if (matches.Count == 1 && matches[0].Groups.Count == 3)
+            {
+                string replacement = matches[0].Groups[1].Value;
+                replacement += matches[0].Groups[2].Value.Substring(0, 1).ToUpper();
+                replacement += matches[0].Groups[2].Value.Substring(1);
+                nameString = nameString.Replace(matches[0].Groups[0].Value, replacement);
 
-        public static string CleanString(this string input)
+                // Now fix "Mac" exceptions
+                foreach (var exception in MacExceptions.Keys)
+                {
+                    nameString = Regex.Replace(nameString, exception, MacExceptions[exception]);
+                }
+            }
+            return nameString;
+        }        
+        
+        public static string Capitalize(string nameString)
+        {
+            nameString = nameString.ToLower();
+            nameString = Regex.Replace(nameString, @"\b\w", x => x.ToString().ToUpper());
+            nameString = Regex.Replace(nameString, @"'\w\b", x => x.ToString().ToLower()); // Lowercase 's
+            return nameString;
+        }        
+
+        public static string? CleanString(this string input, bool? doPutTheAtEnd = false)
         {
             if (string.IsNullOrEmpty(input) || string.IsNullOrWhiteSpace(input))
             {
                 return null;
             }
-            return Regex.Replace(input.Replace("’", "'"), @"\s+", " ").Trim();
+            var result = input;
+            result = result.Trim().ToTitleCase(doPutTheAtEnd ?? false);
+            if (string.IsNullOrEmpty(result))
+            {
+                return input;
+            }           
+            return Regex.Replace(result.Replace("’", "'"), @"\s+", " ").Trim();
         }
 
         public static bool ContainsUnicodeCharacter(this string input)
         {
-            const int MaxAnsiCode = 255;
-            return input.Any(c => c > MaxAnsiCode);
+            const int maxAnsiCode = 255;
+            return input.Any(c => c > maxAnsiCode);
         }
 
         public static string ToAlphanumericName(this string input, bool stripSpaces = true, bool stripCommas = true)
@@ -123,30 +261,30 @@ namespace Melodee.Common.Extensions
 
         public static string Translit(this string str)
         {
-            string[] lat_up =
+            string[] latUp =
             {
                 "A", "B", "V", "G", "D", "E", "Yo", "Zh", "Z", "I", "Y", "K", "L", "M", "N", "O", "P", "R", "S", "T",
                 "U", "F", "Kh", "Ts", "Ch", "Sh", "Shch", "\"", "Y", "'", "E", "Yu", "Ya"
             };
-            string[] lat_low =
+            string[] latLow =
             {
                 "a", "b", "v", "g", "d", "e", "yo", "zh", "z", "i", "y", "k", "l", "m", "n", "o", "p", "r", "s", "t",
                 "u", "f", "kh", "ts", "ch", "sh", "shch", "\"", "y", "'", "e", "yu", "ya"
             };
-            string[] rus_up =
+            string[] rusUp =
             {
                 "А", "Б", "В", "Г", "Д", "Е", "Ё", "Ж", "З", "И", "Й", "К", "Л", "М", "Н", "О", "П", "Р", "С", "Т", "У",
                 "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы", "Ь", "Э", "Ю", "Я"
             };
-            string[] rus_low =
+            string[] rusLow =
             {
                 "а", "б", "в", "г", "д", "е", "ё", "ж", "з", "и", "й", "к", "л", "м", "н", "о", "п", "р", "с", "т", "у",
                 "ф", "х", "ц", "ч", "ш", "щ", "ъ", "ы", "ь", "э", "ю", "я"
             };
             for (var i = 0; i <= 32; i++)
             {
-                str = str.Replace(rus_up[i], lat_up[i]);
-                str = str.Replace(rus_low[i], lat_low[i]);
+                str = str.Replace(rusUp[i], latUp[i]);
+                str = str.Replace(rusLow[i], latLow[i]);
             }
 
             return str;
@@ -198,7 +336,7 @@ namespace Melodee.Common.Extensions
             return null;
         }        
         
-        public static string RemoveTrackNumberFromString(this string input)
+        public static string? RemoveTrackNumberFromString(this string input)
         {
             if (input.Nullify() == null)
             {
@@ -221,17 +359,22 @@ namespace Melodee.Common.Extensions
             {
                 return true;
             }
-            return Regex.IsMatch(input, VariousArtistParseRegex, RegexOptions.IgnoreCase);
+            return Regex.IsMatch(input!, VariousArtistParseRegex, RegexOptions.IgnoreCase);
         }
         
         public static bool IsSoundTrackAristValue(this string? input)
         {
-            if (input.Nullify() == null)
-            {
-                return false;
-            }
-            return Regex.IsMatch(input, SoundTrackArtistParseRegex, RegexOptions.IgnoreCase);
-        }        
-        
+            return input.Nullify() != null && Regex.IsMatch(input!, SoundTrackArtistParseRegex, RegexOptions.IgnoreCase);
+        }
+
+        public static bool HasFeaturingFragments(this string? input)
+        {
+            return input.Nullify() != null && HasFeatureFragmentsRegex.IsMatch(input!);
+        }
+
+        public static string? RemoveFileExtension(this string? input)
+        {
+            return input.Nullify() == null ? null : Path.GetFileNameWithoutExtension(input!);
+        }
     }
 }

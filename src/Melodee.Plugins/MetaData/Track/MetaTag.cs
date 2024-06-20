@@ -6,6 +6,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData.Track.Extensions;
+using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
 namespace Melodee.Plugins.MetaData.Track;
 
@@ -151,6 +152,7 @@ public sealed class MetaTag : MetaDataBase, ITrackPlugin
                 }
             }
         }
+
         return Task.FromResult(new OperationResult<Common.Models.Track>
         {
             Data = new Common.Models.Track

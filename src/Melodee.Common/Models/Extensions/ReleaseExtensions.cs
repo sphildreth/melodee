@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 
@@ -7,6 +8,9 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class ReleaseExtensions
 {
+    private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+
     public static T? MetaTagValue<T>(this Release release, MetaTagIdentifier metaTagIdentifier)
     {
         var d = default(T?);
@@ -75,4 +79,10 @@ public static class ReleaseExtensions
     public static int TrackCountValue(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal) ?? 0;
 
     public static string? Genre(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
+
+    public static bool TitleHasUnwantedText(this Release release)
+    {
+        var title = release.ReleaseTitle();
+        return string.IsNullOrWhiteSpace(title) || UnwantedReleaseTitleTextRegex.IsMatch(title);
+    }
 }

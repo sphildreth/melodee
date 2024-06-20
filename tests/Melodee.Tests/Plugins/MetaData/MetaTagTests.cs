@@ -39,10 +39,14 @@ public class MetaTagTests
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
-            Assert.NotNull(tagResult.Data.Tags);
-            Assert.NotNull(tagResult.Data.FileSystemInfo);
-            Assert.Equal(fileInfo.FullName, tagResult.Data.FileSystemInfo.FullName);
-            Assert.NotNull(tagResult.Data.Title()?.Nullify());
+
+            var track = tagResult.Data;
+            
+            Assert.NotNull(track.Tags);
+            Assert.NotNull(track.FileSystemInfo);
+            Assert.Equal(fileInfo.FullName, track.FileSystemInfo.FullName);
+            Assert.NotNull(track.Title()?.Nullify());
+            Assert.False(track.TitleHasUnwantedText());
         }
     }    
 }

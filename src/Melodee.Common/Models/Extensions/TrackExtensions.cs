@@ -1,12 +1,16 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models.Extensions;
 
 public static class TrackExtensions
 {
+    private static readonly Regex UnwantedTrackTitleTextRegex = new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     public static T? MetaTagValue<T>(this Track track, MetaTagIdentifier metaTagIdentifier)
     {
         var d = default(T?);
@@ -66,8 +70,6 @@ public static class TrackExtensions
                                                         track.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                                                         track.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);   
     
-    public static string? TrackTitle(this Track track) => track.MetaTagValue<string?>(MetaTagIdentifier.SeriesTitle);
-    
     public static int? TrackYear(this Track track) => track.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseDate) ?? 
                                                           track.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                                                           track.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);    
@@ -88,4 +90,39 @@ public static class TrackExtensions
     
     public static int MediaTotalNumber(this Track track) => track.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
                                                             track.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ?? 0;
+
+    public static bool TitleHasUnwantedText(this Track track)
+    {
+        var releaseTitle = track.ReleaseTitle() ?? string.Empty;
+        var trackTitle = track.Title();
+        if (string.IsNullOrWhiteSpace(trackTitle))
+        {
+            return true;
+        }
+        if (trackTitle.HasFeaturingFragments())
+        {
+            return true;
+        }
+        try
+        {
+            if (UnwantedTrackTitleTextRegex.IsMatch(trackTitle))
+            {
+                return true;
+            }
+            if (trackTitle.Any(char.IsDigit))
+            {
+                var trackNumber = track.TrackNumber();
+                if (string.Equals(trackTitle.Trim(), trackNumber.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                return Regex.IsMatch(trackTitle, $@"^({Regex.Escape(releaseTitle)}\s*.*\s*)?([0-9]*{trackNumber}\s)");
+            }
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"TitleHasUnwantedText For ReleaseTitle [{releaseTitle}] for TrackTitle [{trackTitle}] Error [{ex.Message}] ", "Error");
+        }
+        return false;        
+    }
 }
