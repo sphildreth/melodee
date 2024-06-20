@@ -36,7 +36,6 @@ public class ReleasesDiscovererTests
 
             Assert.True(firstRelease.TrackCount > 1);
             Assert.True(firstRelease.Year > 0);
-            
 
         }
 

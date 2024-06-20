@@ -9,14 +9,14 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record Release
 {
-    public long UniqueId => SafeParser.Hash($"{this.Artist()}{this.ReleaseYear()}{this.ReleaseTitle}"); 
-    
+    public long UniqueId => SafeParser.Hash($"{this.Artist()}{this.ReleaseYear()}{this.ReleaseTitle}");
+
     public required DirectoryInfo DirectoryInfo { get; init; }
-   
+
     public IEnumerable<ImageInfo>? Images { get; init; }
-    
+
     public IEnumerable<MetaTag<object?>>? Tags { get; init; }
-    
+
     public IEnumerable<Track>? Tracks { get; init; }
 
     public Release MergeTracks(IEnumerable<Track> pluginResultData)
@@ -29,15 +29,16 @@ public sealed record Release
                 tracks.Add(track);
             }
         }
-        return this with { Tracks = tracks };        
+
+        return this with { Tracks = tracks };
     }
-    
+
     public Release Merge(Release pluginResultData)
     {
         var images = new List<ImageInfo>(Images ?? []);
         var tags = new List<MetaTag<object>>(Tags ?? []);
         var tracks = new List<Track>(Tracks ?? []);
-        
+
         if (UniqueId != pluginResultData.UniqueId)
         {
             if (pluginResultData.Images != null)
@@ -50,6 +51,7 @@ public sealed record Release
                     }
                 }
             }
+
             if (pluginResultData.Tags != null)
             {
                 foreach (var tag in pluginResultData.Tags)
@@ -60,6 +62,7 @@ public sealed record Release
                     }
                 }
             }
+
             if (pluginResultData.Tracks != null)
             {
                 foreach (var track in pluginResultData.Tracks)
@@ -69,8 +72,9 @@ public sealed record Release
                         tracks.Add(track);
                     }
                 }
-            }            
+            }
         }
+
         return new Release
         {
             DirectoryInfo = DirectoryInfo,
@@ -78,6 +82,5 @@ public sealed record Release
             Tags = tags,
             Tracks = tracks
         };
-
     }
 }

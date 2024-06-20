@@ -6,22 +6,12 @@ namespace Melodee.Common.Enums;
 public enum MetaTagIdentifier
 {
     NotSet = 0,
-    
-    /// <summary>
-    /// Duration in Milliseconds
-    /// </summary>
-    DurationInMs,
-    
+  
     /// <summary>
     /// General description
     /// </summary>
     GeneralDescription,
-
-    /// <summary>
-    /// Title
-    /// </summary>
-    Title,
-
+    
     /// <summary>
     /// Artist
     /// </summary>
@@ -43,9 +33,19 @@ public enum MetaTagIdentifier
     Genre,
 
     /// <summary>
-    /// Album
+    /// The ‘Album/Movie/Show title’ frame is intended for the title of the recording(/source of sound) which the audio in the file is taken from. [TALB]
     /// </summary>
     Album,
+    
+    /// <summary>
+    /// The ‘Title/Songname/Content description’ frame is the actual name of the piece [TT2, TIT2]
+    /// </summary>
+    Title,
+    
+    /// <summary>
+    /// The ‘Subtitle/Description refinement’ frame is used for information directly related to the contents title  [TT3, TIT3]
+    /// </summary>
+    SubTitle,
 
     /// <summary>
     /// Recording year (when target format only supports year)
@@ -103,7 +103,7 @@ public enum MetaTagIdentifier
     Copyright,
 
     /// <summary>
-    /// Album artist
+    /// he ‘Band/Orchestra/Accompaniment’ frame is used for additional information about the performers in the recording. [TP2, TPE2]
     /// </summary>
     AlbumArtist,
 
@@ -178,12 +178,12 @@ public enum MetaTagIdentifier
     Group,
 
     /// <summary>
-    /// Series title / Movement name
+    /// MovementName [MVNM]
     /// </summary>
     SeriesTitle,
 
     /// <summary>
-    /// Series part / Movement index
+    /// MovementNumber [MVIN]
     /// </summary>
     SeriesPart,
 

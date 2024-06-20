@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -28,11 +29,41 @@ public static class ReleaseExtensions
             Trace.WriteLine(e);
         }
         return d;
-    }    
+    }
 
+    public static ReleaseArtistType ArtistType(this Release release)
+    {
+        var artist = release.Artist();
+        if (string.IsNullOrWhiteSpace(artist))
+        {
+            return ReleaseArtistType.NotSet;
+        }
+        if (artist.IsVariousArtistValue())
+        {
+            return ReleaseArtistType.VariousArtists;
+        }
+        if (release.Genre() == Genres.Soundtrack.ToString() || artist.IsSoundTrackAristValue())
+        {
+            return ReleaseArtistType.SoundTrack;
+        }        
+        if (release.Tracks != null)
+        {
+            if (release.Tracks.Any(x => string.Equals(x.TrackArtist(), artist, StringComparison.OrdinalIgnoreCase)))
+            {
+                return ReleaseArtistType.VariousArtists;
+            }
+            if (release.Tracks.Any(x => !string.Equals(x.TrackArtist(), artist, StringComparison.OrdinalIgnoreCase)))
+            {
+                return ReleaseArtistType.VariousArtists;
+            }
+        }
+        return ReleaseArtistType.ArtistOrBand;
+    }
+    
+    
     public static string? Artist(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Artist);
     
-    public static string? ReleaseTitle(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Title);
+    public static string? ReleaseTitle(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Album);
     
     public static int? ReleaseYear(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ?? 
                                                             release.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
@@ -40,5 +71,8 @@ public static class ReleaseExtensions
     public static int MediaCountValue(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ?? 
                                                                release.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ?? 
                                                                0;
+
     public static int TrackCountValue(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal) ?? 0;
+
+    public static string? Genre(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
 }

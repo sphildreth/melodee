@@ -9,6 +9,19 @@ using Melodee.Plugins.MetaData.Track.Extensions;
 
 namespace Melodee.Plugins.MetaData.Track;
 
+/* Class Notes;
+
+ID3 Tags are tricky and vary across vendor and implementation. This attempts to normalize tags across these varying sources.
+
+Some reference sites:
+ * https://wiki.hydrogenaud.io/index.php?title=Tag_Mapping
+ * https://exiftool.org/TagNames/ID3.html
+ * https://mutagen-specs.readthedocs.io/en/latest/id3/id3v2.3.0.html
+ * https://www.mediamonkey.com/sw/webhelp/frame/index.html?abouttrackproperties.htm
+
+*/
+
+
 public sealed class MetaTag : MetaDataBase, ITrackPlugin
 {
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
@@ -30,15 +43,71 @@ public sealed class MetaTag : MetaDataBase, ITrackPlugin
 
     public Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        var tags = new List<MetaTag<object>>();        
+        var tags = new List<MetaTag<object>>();
+        var mediaAudios = new List<MediaAudio<object>>();
         if (fileSystemInfo.Exists)
         {
             var fileAtl = new ATL.Track(fileSystemInfo.FullName);
             if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
             {
                 var atlDictionary = fileAtl.ToDictionary();
-                var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToDictionary();
 
+                var metaAudioIdentifierDictionary = MediaAudioIdentifier.NotSet.ToDictionary();
+                foreach (var metaTagIdentifier in metaAudioIdentifierDictionary)
+                {
+                    if (atlDictionary.TryGetValue(metaTagIdentifier.Value, out var v))
+                    {
+                        if (v is string s)
+                        {
+                            v = s.Nullify();
+                        }
+                        if (v != null)
+                        {
+                            var identifier = SafeParser.ToEnum<MediaAudioIdentifier>(metaTagIdentifier.Key);
+                            mediaAudios.Add(new MediaAudio<object>
+                            {
+                                Identifier = identifier,
+                                Value = v
+                            });
+                        }
+                    }                    
+                }
+                if (fileAtl.IsVBR)
+                {
+                    mediaAudios.Add(new MediaAudio<object>
+                    {
+                        Identifier = MediaAudioIdentifier.IsVbr,
+                        Value = true
+                    });
+                }
+                if (fileAtl.ChannelsArrangement != null)
+                {
+                    mediaAudios.Add(new MediaAudio<object>
+                    {
+                        Identifier = MediaAudioIdentifier.ChannelsArrangementDescription,
+                        Value = fileAtl.ChannelsArrangement.Description
+                    });                    
+                    mediaAudios.Add(new MediaAudio<object>
+                    {
+                        Identifier = MediaAudioIdentifier.ChannelsArrangementNumberChannels,
+                        Value = fileAtl.ChannelsArrangement.NbChannels
+                    });
+                }
+                if (fileAtl.TechnicalInformation != null)
+                {
+                    mediaAudios.Add(new MediaAudio<object>
+                    {
+                        Identifier = MediaAudioIdentifier.AudioDataOffset,
+                        Value = fileAtl.TechnicalInformation.AudioDataOffset
+                    });                    
+                    mediaAudios.Add(new MediaAudio<object>
+                    {
+                        Identifier = MediaAudioIdentifier.AudioDataSize,
+                        Value = fileAtl.TechnicalInformation.AudioDataSize
+                    });
+                }                    
+
+                var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToDictionary();
                 foreach (var metaTagIdentifier in metaTagIdentifierDictionary)
                 {
                     if (atlDictionary.TryGetValue(metaTagIdentifier.Value, out var v))
@@ -82,7 +151,8 @@ public sealed class MetaTag : MetaDataBase, ITrackPlugin
             Data = new Common.Models.Track
             {
                 FileSystemInfo = fileSystemInfo,
-                Tags = tags
+                Tags = tags,
+                MediaAudios = mediaAudios 
             }
         });
     }
@@ -105,7 +175,7 @@ public sealed class MetaTag : MetaDataBase, ITrackPlugin
         return track is { AudioFormat: { ID: > -1 }, Duration: > 0 };
     }    
     
-    // https://exiftool.org/TagNames/ID3.html
+
     
     // // Fields allowed to have multiple values according to ID3v2.2-3 specs
     // private static readonly ISet<string> multipleValuev23Fields = new HashSet<string> { "TP1", "TCM", "TXT", "TLA", "TOA", "TOL", "TCOM", "TEXT", "TOLY", "TOPE", "TPE1" };

@@ -15,6 +15,8 @@ public sealed record Track
     public IEnumerable<ImageInfo>? Images { get; init; }
     
     public IEnumerable<MetaTag<object?>>? Tags { get; init; }
+    
+    public IEnumerable<MediaAudio<object?>>? MediaAudios { get; init; }
 
     public override string ToString() => $"ReleaseId [{ReleaseUniqueId}] TrackId [{UniqueId}] File Path [{FileSystemInfo.FullName}]";
 }

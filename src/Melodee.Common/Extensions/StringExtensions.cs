@@ -11,6 +11,10 @@ namespace Melodee.Common.Extensions
         private static readonly string YearParseRegex = "(19|20)\\d{2}";
         
         private static readonly string TrackNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
+
+        private static readonly string VariousArtistParseRegex = @"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))";
+
+        private static readonly string SoundTrackArtistParseRegex = @"(sound\s*track[s]*)";
         
         private static readonly Dictionary<char, string> UnicodeAccents = new Dictionary<char, string>
         {
@@ -205,6 +209,29 @@ namespace Melodee.Common.Extensions
                 return Regex.Replace(input, TrackNumberParseRegex, string.Empty);
             }
             return null;
-        }            
+        }
+        
+        public static bool IsVariousArtistValue(this string? input)
+        {
+            if (input.Nullify() == null)
+            {
+                return false;
+            }
+            if (string.Equals(input, "va", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            return Regex.IsMatch(input, VariousArtistParseRegex, RegexOptions.IgnoreCase);
+        }
+        
+        public static bool IsSoundTrackAristValue(this string? input)
+        {
+            if (input.Nullify() == null)
+            {
+                return false;
+            }
+            return Regex.IsMatch(input, SoundTrackArtistParseRegex, RegexOptions.IgnoreCase);
+        }        
+        
     }
 }

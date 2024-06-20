@@ -1,4 +1,5 @@
-﻿using Melodee.Common.Extensions;
+﻿using System.Runtime.InteropServices;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Tests.Extensions
 {
@@ -89,7 +90,34 @@ namespace Melodee.Tests.Extensions
         public void RemoveTrackNumberFromString(string input, string? shouldBe)
         {
             Assert.Equal(shouldBe, input.RemoveTrackNumberFromString());
-        }         
+        }
         
+        [Theory]
+        [InlineData("Bob Jones", false)]
+        [InlineData("Bob Various", false)]
+        [InlineData("Various Bob", false)]
+        [InlineData("VA", true)]
+        [InlineData("[VA]", true)]
+        [InlineData("various artists", true)]
+        [InlineData("Various Artists", true)]
+        [InlineData("[Various Artists]", true)]
+        [InlineData("VARIOUS ARTISTS", true)]
+        public void ValidateIsVariousArtists(string input, bool shouldBe)
+        {
+            Assert.Equal(shouldBe, input.IsVariousArtistValue());
+        }
+        
+        [Theory]
+        [InlineData("Bob Jones", false)]
+        [InlineData("Bob Track", false)]
+        [InlineData("Track Bob", false)]
+        [InlineData("Sound Bob", false)]
+        [InlineData("SoundTracks", true)]
+        [InlineData("Sound Track", true)]
+        [InlineData("Sound Tracks", true)]
+        public void ValidateIsSoundTrackArtists(string input, bool shouldBe)
+        {
+            Assert.Equal(shouldBe, input.IsSoundTrackAristValue());
+        }          
     }
 }
