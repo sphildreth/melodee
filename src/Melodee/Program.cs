@@ -1,6 +1,8 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
 using System;
+using Serilog;
+using Serilog.Events;
 
 namespace Melodee;
 
@@ -15,9 +17,21 @@ sealed class Program
 
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    {
+        Log.Logger = new LoggerConfiguration()
+            //.Filter.ByIncludingOnly(Matching.WithProperty("Area", LogArea.Control))
+            .MinimumLevel.Verbose()
+            .WriteTo.Console()
+            .WriteTo.File("log.txt",
+                rollingInterval: RollingInterval.Day,
+                restrictedToMinimumLevel: LogEventLevel.Information,
+                rollOnFileSizeLimit: true)            
+            .CreateLogger();
+  
+        return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace()
             .UseReactiveUI();
+    }
 }

@@ -1,13 +1,11 @@
-using System;
-using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
 using DynamicData;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Grids;
 using Melodee.ViewModels;
-using ReactiveUI;
+using SerilogTimings;
 
 namespace Melodee.Views;
 
@@ -20,20 +18,22 @@ public partial class MainWindow : Window
 
     private void NavigationTree_OnTapped(object? sender, TappedEventArgs e)
     {
-        var clickedDirectoryId = (e.Source as TextBlock)?.Tag as long?;
-        if (!clickedDirectoryId.HasValue)
+        if (!((e.Source as TextBlock)?.Tag is long clickedDirectoryId))
         {
             return;
         }
         var clickedDirectory =
             ((sender as TreeView)!.DataContext as MainWindowViewModel)!.InboundDirectoryInfos
-            .First(x => x.DirectoryInfo.UniqueId == clickedDirectoryId);
+            .First(x => x.DirectoryInfo.UniqueId == (long?)clickedDirectoryId);
         var dc = ((sender as TreeView)!.DataContext as MainWindowViewModel)!;
-        var fileDiscoverer = dc.ReleasesDiscoverer;
+        var releasesDiscoverer = dc.ReleasesDiscoverer;
         dc.IsLoading = true;
-        var fileDiscovererResult = fileDiscoverer.ReleasesForDirectoryAsync(clickedDirectory.DirectoryInfo, new PagedRequest()).Result;
-        dc.ReleaseInfos.Clear();
-        dc.ReleaseInfos.AddRange(fileDiscovererResult.Data);
-        dc.IsLoading = false;
+        using (Operation.Time("Discovering releases for [{File}]", clickedDirectory.DirectoryInfo))
+        {
+            var pagedResult = Task.Run(() => releasesDiscoverer.ReleasesForDirectoryAsync(clickedDirectory.DirectoryInfo, new PagedRequest())).Result;
+            dc.ReleaseInfos.Clear();
+            dc.ReleaseInfos.AddRange(pagedResult.Data);
+            dc.IsLoading = false;
+        }
     }
 }

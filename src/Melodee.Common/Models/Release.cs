@@ -11,6 +11,11 @@ public sealed record Release
 {
     public long UniqueId => SafeParser.Hash($"{this.Artist()}{this.ReleaseYear()}{this.ReleaseTitle}");
 
+    /// <summary>
+    /// What plugins were utilized in discovering this release.
+    /// </summary>
+    public required IEnumerable<string> ViaPlugins { get; init; }    
+    
     public required DirectoryInfo DirectoryInfo { get; init; }
 
     public IEnumerable<ImageInfo>? Images { get; init; }
@@ -38,6 +43,7 @@ public sealed record Release
         var images = new List<ImageInfo>(Images ?? []);
         var tags = new List<MetaTag<object>>(Tags ?? []);
         var tracks = new List<Track>(Tracks ?? []);
+        var viaPlugins = new List<string>(ViaPlugins ?? []);
 
         if (UniqueId != pluginResultData.UniqueId)
         {
@@ -73,6 +79,17 @@ public sealed record Release
                     }
                 }
             }
+            
+            if (pluginResultData.ViaPlugins.Any())
+            {
+                foreach (var plugin in pluginResultData.ViaPlugins)
+                {
+                    if (!viaPlugins.Contains(plugin))
+                    {
+                        viaPlugins.Add(plugin);
+                    }
+                }
+            }            
         }
 
         return new Release
@@ -80,7 +97,8 @@ public sealed record Release
             DirectoryInfo = DirectoryInfo,
             Images = images,
             Tags = tags,
-            Tracks = tracks
+            Tracks = tracks,
+            ViaPlugins = viaPlugins
         };
     }
 }

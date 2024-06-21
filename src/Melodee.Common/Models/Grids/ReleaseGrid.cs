@@ -7,6 +7,11 @@ public sealed record ReleaseGrid
 {
     public bool IsChecked { get; set; }
     
+    /// <summary>
+    /// What plugins were utilized in discovering this release.
+    /// </summary>
+    public required IEnumerable<string> ViaPlugins { get; init; }
+    
     public string? Artist { get; init; }
     
     public string? Title { get; init; }

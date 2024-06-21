@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Serilog;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -30,7 +31,7 @@ public static class ReleaseExtensions
         }
         catch (Exception e)
         {
-            Trace.WriteLine(e);
+            Log.Error(e, "Release [{Release}", release);
         }
         return d;
     }

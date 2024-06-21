@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
+using Serilog;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -30,7 +31,7 @@ public static class TrackExtensions
         }
         catch (Exception e)
         {
-            Trace.WriteLine(e);
+            Log.Debug(e, "Track [{Track}]", track);
         }
         return d;
     }
@@ -54,7 +55,7 @@ public static class TrackExtensions
         }
         catch (Exception e)
         {
-            Trace.WriteLine(e);
+            Log.Debug(e, "Track [{Track}]", track);
         }
         return d;
     }    
@@ -121,7 +122,7 @@ public static class TrackExtensions
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"TitleHasUnwantedText For ReleaseTitle [{releaseTitle}] for TrackTitle [{trackTitle}] Error [{ex.Message}] ", "Error");
+            Log.Debug($"TitleHasUnwantedText For ReleaseTitle [{releaseTitle}] for TrackTitle [{trackTitle}] Error [{ex.Message}] ", "Error");
         }
         return false;        
     }

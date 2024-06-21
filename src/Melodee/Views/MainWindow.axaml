@@ -25,7 +25,7 @@
             </MenuItem>
         </Menu>
         <Grid DockPanel.Dock="Left" ColumnDefinitions="250,1,550,1, *">
-            <TreeView Tapped="NavigationTree_OnTapped" ItemsSource="{Binding InboundDirectoryInfos}">
+            <TreeView IsEnabled="{ Binding !IsLoading}" Tapped="NavigationTree_OnTapped" ItemsSource="{Binding InboundDirectoryInfos}">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding SubNodes}">
                         <TextBlock Tag="{Binding DirectoryInfo.UniqueId}" Text="{Binding Title}"/>
