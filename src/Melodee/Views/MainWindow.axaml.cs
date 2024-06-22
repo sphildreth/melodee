@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using DynamicData;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Grids;
 using Melodee.ViewModels;
 using SerilogTimings;
 
@@ -30,10 +31,26 @@ public partial class MainWindow : Window
         dc.IsLoading = true;
         using (Operation.Time("Discovering releases for [{File}]", clickedDirectory.DirectoryInfo))
         {
-            var pagedResult = Task.Run(() => releasesDiscoverer.ReleasesForDirectoryAsync(clickedDirectory.DirectoryInfo, new PagedRequest())).Result;
+            var pagedResult = Task.Run(() => releasesDiscoverer.ReleasesGridsForDirectoryAsync(clickedDirectory.DirectoryInfo, new PagedRequest())).Result;
             dc.ReleaseInfos.Clear();
             dc.ReleaseInfos.AddRange(pagedResult.Data);
             dc.IsLoading = false;
         }
+    }
+
+    private void DataGrid_OnTapped(object? sender, TappedEventArgs e)
+    {
+        var clickedReleaseGrid = (e.Source as TextBlock).DataContext as ReleaseGrid;
+        
+        var dc = ((sender as DataGrid)!.DataContext as MainWindowViewModel)!;
+        var releasesDiscoverer = dc.ReleasesDiscoverer;
+        // dc.IsLoading = true;
+        // using (Operation.Time("Discovering releases for [{File}]", clickedDirectory.DirectoryInfo))
+        // {
+        //     var pagedResult = Task.Run(() => releasesDiscoverer.ReleasesForDirectoryAsync(clickedDirectory.DirectoryInfo, new PagedRequest())).Result;
+        //     dc.ReleaseInfos.Clear();
+        //     dc.ReleaseInfos.AddRange(pagedResult.Data);
+        //     dc.IsLoading = false;
+        // }
     }
 }

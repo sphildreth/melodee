@@ -11,32 +11,31 @@ public class DirectoryDiscoveryTests
     [Fact]
     public void ValidateIsEmptyResult()
     {
-        var dd = new DirectoriesesDiscoverer();
-        var filesForDirectory =
-            dd.DirectoryInfosForDirectory(new DirectoryInfo(Guid.NewGuid().ToString()), new PagedRequest());
-        Assert.NotNull(filesForDirectory);
-        Assert.False(filesForDirectory.IsSuccess);
-        Assert.NotNull(filesForDirectory);
-        Assert.NotNull(filesForDirectory.Data);
-        Assert.Empty(filesForDirectory.Data);
+        var dd = new DirectoriesDiscoverer();
+        var directoryInfosForDirectory = dd.DirectoryInfosForDirectory(new DirectoryInfo(Guid.NewGuid().ToString()), new PagedRequest());
+        Assert.NotNull(directoryInfosForDirectory);
+        Assert.False(directoryInfosForDirectory.IsSuccess);
+        Assert.NotNull(directoryInfosForDirectory);
+        Assert.NotNull(directoryInfosForDirectory.Data);
+        Assert.Empty(directoryInfosForDirectory.Data);
     }
     
     [Fact]
     public void ValidateIfTestDirectorySetupNotEmpty()
     {
         var testDirectory = @"/home/steven/incoming/melodee_test/inbound";
+        //var testDirectory = @"/home/steven/incoming/melodee_test/inbound/00-k 2024";
         var dir = new System.IO.DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
-            var dd = new DirectoriesesDiscoverer();
-            var filesForDirectory =
-                dd.DirectoryInfosForDirectory(dir, new PagedRequest());
-            Assert.NotNull(filesForDirectory);
-            Assert.True(filesForDirectory.IsSuccess);
-            Assert.NotNull(filesForDirectory);
-            Assert.NotNull(filesForDirectory.Data);
-            Assert.NotEmpty(filesForDirectory.Data);
-            Assert.DoesNotContain(filesForDirectory.Data, x => x.MusicFilesFound == 0);
+            var dd = new DirectoriesDiscoverer();
+            var directoryInfosForDirectory = dd.DirectoryInfosForDirectory(dir, new PagedRequest());
+            Assert.NotNull(directoryInfosForDirectory);
+            Assert.True(directoryInfosForDirectory.IsSuccess);
+            Assert.NotNull(directoryInfosForDirectory);
+            Assert.NotNull(directoryInfosForDirectory.Data);
+            Assert.NotEmpty(directoryInfosForDirectory.Data);
+            Assert.DoesNotContain(directoryInfosForDirectory.Data, x => x.MusicFilesFound == 0);
         }
     }
 }

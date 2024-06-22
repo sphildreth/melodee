@@ -25,7 +25,10 @@
             </MenuItem>
         </Menu>
         <Grid DockPanel.Dock="Left" ColumnDefinitions="250,1,550,1, *">
-            <TreeView IsEnabled="{ Binding !IsLoading}" Tapped="NavigationTree_OnTapped" ItemsSource="{Binding InboundDirectoryInfos}">
+            <TreeView 
+                IsEnabled="{ Binding !IsLoading}" 
+                Tapped="NavigationTree_OnTapped" 
+                ItemsSource="{Binding InboundDirectoryInfos}">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding SubNodes}">
                         <TextBlock Tag="{Binding DirectoryInfo.UniqueId}" Text="{Binding Title}"/>
@@ -40,7 +43,8 @@
                 CanUserResizeColumns="True"
                 CanUserSortColumns="True"
                 GridLinesVisibility="All"
-                BorderThickness="1" 
+                BorderThickness="1"
+                Tapped="DataGrid_OnTapped"
                 BorderBrush="Gray">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="✔" Binding="{Binding IsChecked}"/>

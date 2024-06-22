@@ -13,18 +13,17 @@ public class ReleasesDiscovererTests
         var dir = new System.IO.DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
-            var dd = new DirectoriesesDiscoverer();
-            var filesForDirectory =
-                dd.DirectoryInfosForDirectory(dir, new PagedRequest());
-            Assert.NotNull(filesForDirectory);
-            Assert.True(filesForDirectory.IsSuccess);
-            Assert.NotNull(filesForDirectory);
-            Assert.NotNull(filesForDirectory.Data);
-            Assert.NotEmpty(filesForDirectory.Data);
-            Assert.DoesNotContain(filesForDirectory.Data, x => x.MusicFilesFound == 0);
+            var dd = new DirectoriesDiscoverer();
+            var directoryInfosForDirectory = dd.DirectoryInfosForDirectory(dir, new PagedRequest());
+            Assert.NotNull(directoryInfosForDirectory);
+            Assert.True(directoryInfosForDirectory.IsSuccess);
+            Assert.NotNull(directoryInfosForDirectory);
+            Assert.NotNull(directoryInfosForDirectory.Data);
+            Assert.NotEmpty(directoryInfosForDirectory.Data);
+            Assert.DoesNotContain(directoryInfosForDirectory.Data, x => x.MusicFilesFound == 0);
 
             var rd = new ReleasesDiscoverer();
-            var releasesForDirectoryAsync = await rd.ReleasesForDirectoryAsync(filesForDirectory.Data.First(), new PagedRequest());
+            var releasesForDirectoryAsync = await rd.ReleasesGridsForDirectoryAsync(directoryInfosForDirectory.Data.First(), new PagedRequest());
             Assert.NotNull(releasesForDirectoryAsync);
             Assert.True(releasesForDirectoryAsync.IsSuccess);
 

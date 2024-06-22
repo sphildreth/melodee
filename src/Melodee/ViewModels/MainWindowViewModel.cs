@@ -35,13 +35,14 @@ public class MainWindowViewModel : ViewModelBase
         DirectoriesDiscoverer = directoriesDiscoverer;
         ReleasesDiscoverer = releasesDiscoverer;
 
-        var directories =
-            DirectoriesDiscoverer.DirectoryInfosForDirectory(
-                new System.IO.DirectoryInfo(Configuration.InboundDirectory), new PagedRequest());
+        var directories = DirectoriesDiscoverer.DirectoryInfosForDirectory(
+            new System.IO.DirectoryInfo(Configuration.InboundDirectory), 
+            new PagedRequest());
 
         var result = new List<Node>();
         var dirData = directories.Data.ToArray();
-        foreach (var directory in dirData)
+        var inboundDirectoryDirectoryInfo = dirData.First(x => x.ParentId == 0);
+        foreach (var directory in dirData.Where(x => x.ParentId == inboundDirectoryDirectoryInfo.UniqueId))
         {
             var node = new Node(directory, directory.ShortName);
             var hasChildren = dirData.Any(x => x.ParentId == directory.UniqueId);

@@ -8,7 +8,7 @@ namespace Melodee.Extensions;
 public static class ServiceCollectionExtensions
 {
     public static void AddCommonServices(this IServiceCollection collection) {
-        collection.AddSingleton<IDirectoriesDiscoverer, DirectoriesesDiscoverer>();
+        collection.AddSingleton<IDirectoriesDiscoverer, DirectoriesDiscoverer>();
         collection.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();
         collection.AddTransient<MainWindowViewModel>();
     }    

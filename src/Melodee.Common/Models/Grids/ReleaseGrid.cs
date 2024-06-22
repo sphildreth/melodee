@@ -5,6 +5,8 @@ namespace Melodee.Common.Models.Grids;
 [Serializable]
 public sealed record ReleaseGrid
 {
+    public required long UniqueId { get; init; }
+    
     public bool IsChecked { get; set; }
     
     /// <summary>
