@@ -111,7 +111,7 @@ public enum MetaTagIdentifier
     CopyrightUrl,
 
     /// <summary>
-    /// he ‘Band/Orchestra/Accompaniment’ frame is used for additional information about the performers in the recording. [TP2, TPE2]
+    /// The ‘Band/Orchestra/Accompaniment’ frame is used for additional information about the performers in the recording. [TP2, TPE2]
     /// </summary>
     AlbumArtist,
 

@@ -1,4 +1,6 @@
+using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Release.Models;
+using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 using SimpleFileVerification = Melodee.Plugins.MetaData.Release.SimpleFileVerification;
 
 namespace Melodee.Tests.Plugins.MetaData;
@@ -13,15 +15,24 @@ public class SimpleFileVerificationTests
         if (fileInfo.Exists)
         {
             var sfv = new SimpleFileVerification();
-            var sfvResult = await sfv.ProcessFileAsync(fileInfo);
+            var release = new Release
+            {
+                DirectoryInfo = new DirectoryInfo
+                {
+                    Path = @"/home/steven/incoming/melodee_test/tests/",
+                    ShortName = "tests"
+                },
+                ViaPlugins = []
+            };
+            var sfvResult = await sfv.ProcessReleaseAsync(release);
             Assert.NotNull(sfvResult);
             Assert.True(sfvResult.IsSuccess);
             Assert.NotNull(sfvResult.Data);
 
-            var release = sfvResult.Data;
-            Assert.NotNull(release);
-            Assert.NotNull(release.Tracks);
-            Assert.NotEmpty(release.Tracks);
+            var sfvRelease = sfvResult.Data;
+            Assert.NotNull(sfvRelease);
+            Assert.NotNull(sfvRelease.Tracks);
+            Assert.NotEmpty(sfvRelease.Tracks);
         }
     }
 

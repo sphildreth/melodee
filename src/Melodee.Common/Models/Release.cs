@@ -14,7 +14,7 @@ public sealed record Release
     /// <summary>
     /// What plugins were utilized in discovering this release.
     /// </summary>
-    public required IEnumerable<string> ViaPlugins { get; init; }    
+    public required IEnumerable<string> ViaPlugins { get; set; }    
     
     public required DirectoryInfo DirectoryInfo { get; init; }
 
@@ -23,6 +23,8 @@ public sealed record Release
     public IEnumerable<MetaTag<object?>>? Tags { get; init; }
 
     public IEnumerable<Track>? Tracks { get; init; }
+
+    public IEnumerable<string> Messages { get; set; } = [];
 
     public Release MergeTracks(IEnumerable<Track> pluginResultData)
     {
