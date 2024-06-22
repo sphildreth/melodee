@@ -1,5 +1,3 @@
-using Melodee.Common.Models;
-
 namespace Melodee.Plugins.MetaData;
 
 public abstract class MetaDataBase

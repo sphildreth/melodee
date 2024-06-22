@@ -1,12 +1,9 @@
-using System.Reflection;
 using Melodee.Common.Enums;
-using Melodee.Common.Exceptions;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData.Track.Extensions;
-using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
 namespace Melodee.Plugins.MetaData.Track;
 

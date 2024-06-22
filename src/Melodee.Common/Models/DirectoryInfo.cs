@@ -1,4 +1,3 @@
-using System.Dynamic;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
@@ -9,10 +8,15 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record DirectoryInfo
 {
-    public long UniqueId => SafeParser.Hash($"{ParentId}{Path}"); 
+    public long UniqueId => SafeParser.Hash(Path);
 
+    public bool ShowInTree => MusicFilesFound > 0;
+    
     public long ParentId { get; init; }
     
+    /// <summary>
+    /// Full path to Directory
+    /// </summary>
     public required string Path { get; init; }
     
     public required string ShortName { get; init; }

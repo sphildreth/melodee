@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-using Melodee.Plugins.MetaData.Release;
 using Melodee.Plugins.MetaData.Release.Models;
 using SimpleFileVerification = Melodee.Plugins.MetaData.Release.SimpleFileVerification;
 

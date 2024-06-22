@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using Melodee.Common.Extensions;
+﻿using Melodee.Common.Extensions;
 
 namespace Melodee.Tests.Extensions
 {

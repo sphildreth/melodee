@@ -7,7 +7,7 @@ namespace Melodee.Tests.Plugins.Discovery;
 public class ReleasesDiscovererTests
 {
     [Fact]
-    public async void ValidReleaseGridResults()
+    public async Task ValidReleaseGridResults()
     {
         var testDirectory = @"/home/steven/incoming/melodee_test/inbound";
         var dir = new System.IO.DirectoryInfo(testDirectory);
@@ -20,10 +20,9 @@ public class ReleasesDiscovererTests
             Assert.NotNull(directoryInfosForDirectory);
             Assert.NotNull(directoryInfosForDirectory.Data);
             Assert.NotEmpty(directoryInfosForDirectory.Data);
-            Assert.DoesNotContain(directoryInfosForDirectory.Data, x => x.MusicFilesFound == 0);
 
             var rd = new ReleasesDiscoverer();
-            var releasesForDirectoryAsync = await rd.ReleasesGridsForDirectoryAsync(directoryInfosForDirectory.Data.First(), new PagedRequest());
+            var releasesForDirectoryAsync = await rd.ReleasesGridsForDirectoryAsync(directoryInfosForDirectory.Data.First(x => x.ParentId > 9 && x.MusicFilesFound > 0), new PagedRequest());
             Assert.NotNull(releasesForDirectoryAsync);
             Assert.True(releasesForDirectoryAsync.IsSuccess);
 

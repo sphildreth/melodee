@@ -1,5 +1,4 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.Discovery;
 using Melodee.Plugins.Discovery.Directories;
 using DirectoryInfo = System.IO.DirectoryInfo;
 
@@ -35,7 +34,6 @@ public class DirectoryDiscoveryTests
             Assert.NotNull(directoryInfosForDirectory);
             Assert.NotNull(directoryInfosForDirectory.Data);
             Assert.NotEmpty(directoryInfosForDirectory.Data);
-            Assert.DoesNotContain(directoryInfosForDirectory.Data, x => x.MusicFilesFound == 0);
         }
     }
 }
