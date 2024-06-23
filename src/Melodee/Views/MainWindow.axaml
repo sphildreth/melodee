@@ -56,22 +56,29 @@
             </DataGrid>
             <GridSplitter Grid.Column="3" Width="1" ResizeDirection="Columns" />
             <DockPanel Grid.Column="4" IsVisible="{Binding ShowSelectedRelease}">
-                <DataGrid
-                    AutoGenerateColumns="False"
-                    BorderBrush="Gray"
-                    BorderThickness="1"
-                    CanUserResizeColumns="True"
-                    CanUserSortColumns="True"
-                    DockPanel.Dock="Top"
-                    GridLinesVisibility="All"
-                    HeadersVisibility="None"
-                    ItemsSource="{Binding SelectedRelease.Data}"
-                    Margin="5">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Width="200" Header="Tag" IsReadOnly="True" Binding="{Binding  Key}" />
-                        <DataGridTextColumn Width="*" Header="Value" IsReadOnly="True" Binding="{Binding Value}" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*, 220">
+                    <DataGrid Grid.Column="0"
+                        AutoGenerateColumns="False"
+                        BorderBrush="Gray"
+                        BorderThickness="1"
+                        CanUserResizeColumns="True"
+                        CanUserSortColumns="True"
+                        DockPanel.Dock="Top"
+                        GridLinesVisibility="All"
+                        HeadersVisibility="None"
+                        ItemsSource="{Binding SelectedRelease.Data}"
+                        Margin="5">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Width="200" Header="Tag" IsReadOnly="True" Binding="{Binding  Key}" />
+                            <DataGridTextColumn Width="*" Header="Value" IsReadOnly="True" Binding="{Binding Value}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Image Grid.Column="1"
+                           Margin="20" 
+                           Height="200" 
+                           Width="200"
+                           Source="{Binding ReleasePrimaryCoverImage}"  />
+                </Grid>
                 <DataGrid
                     AutoGenerateColumns="False"
                     BorderBrush="Gray"

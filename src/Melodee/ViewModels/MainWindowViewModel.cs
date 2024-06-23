@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Subjects;
+using Avalonia.Media.Imaging;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Grids;
 using Melodee.Models;
@@ -26,6 +27,8 @@ public class MainWindowViewModel : ViewModelBase
     public ObservableCollection<ReleaseGrid> ReleaseInfos { get; set; } = [];
     
     public DirectoryInfo SelectedDirectoryInfo { get; set; }
+    
+    public WriteableBitmap ReleasePrimaryCoverImage { get; set; }
    
     private bool _showSelectedRelease;
 
