@@ -26,13 +26,9 @@ public class SimpleFileVerificationTests
             };
             var sfvResult = await sfv.ProcessReleaseAsync(release);
             Assert.NotNull(sfvResult);
-            Assert.True(sfvResult.IsSuccess);
+            // As there are no tracks on the release there should be SFV missing messages and the result is of type validation failure.
+            Assert.False(sfvResult.IsSuccess);
             Assert.NotNull(sfvResult.Data);
-
-            var sfvRelease = sfvResult.Data;
-            Assert.NotNull(sfvRelease);
-            Assert.NotNull(sfvRelease.Tracks);
-            Assert.NotEmpty(sfvRelease.Tracks);
         }
     }
 

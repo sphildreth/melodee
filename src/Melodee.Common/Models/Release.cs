@@ -1,3 +1,4 @@
+using Melodee.Common.Enums;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 
@@ -26,6 +27,8 @@ public sealed record Release
 
     public IEnumerable<string> Messages { get; set; } = [];
 
+    public ReleaseStatus Status { get; set; } = ReleaseStatus.New;
+
     public Release MergeTracks(IEnumerable<Track> pluginResultData)
     {
         var tracks = new List<Track>(Tracks ?? []);
@@ -39,6 +42,8 @@ public sealed record Release
 
         return this with { Tracks = tracks };
     }
+    
+    public int SortOrder { get; set; }
 
     public Release Merge(Release pluginResultData)
     {

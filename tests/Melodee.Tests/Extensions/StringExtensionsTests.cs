@@ -12,7 +12,7 @@ namespace Melodee.Tests.Extensions
         [InlineData("Bob", null, false)]
         [InlineData(null, "Bob", false)]
         [InlineData("Bob", "Steve", false)]
-        public void DoStringMatch(string string1, string string2, bool shouldBe)
+        public void DoStringMatch(string? string1, string? string2, bool shouldBe)
         {
             Assert.Equal(shouldBe, StringExtensions.DoStringsMatch(string1, string2));
         }
@@ -52,9 +52,9 @@ namespace Melodee.Tests.Extensions
         [InlineData("2009/Bob Rocks", 2009)]
         [InlineData("2009 Bob Rocks", 2009)]
         [InlineData("2009", 2009)]
-        public void TryToGetYearFromString(string input, int? shouldBe)
+        public void TryToGetYearFromString(string? input, int? shouldBe)
         {
-            Assert.Equal(shouldBe, input.TryToGetYearFromString());
+            Assert.Equal(shouldBe, input?.TryToGetYearFromString());
         }
         
         [Theory]
@@ -69,9 +69,9 @@ namespace Melodee.Tests.Extensions
         [InlineData("001 - Steve Winwood.mp3", 1)]
         [InlineData("14 - Steve Winwood.mp3", 14)]
         [InlineData(" 01 - Steve Winwood.mp3", 1)]
-        public void TryToGetTrackNumberFromString(string input, int? shouldBe)
+        public void TryToGetTrackNumberFromString(string? input, int? shouldBe)
         {
-            Assert.Equal(shouldBe, input.TryToGetTrackNumberFromString());
+            Assert.Equal(shouldBe, input?.TryToGetTrackNumberFromString());
         }    
         
         [Theory]
@@ -86,9 +86,9 @@ namespace Melodee.Tests.Extensions
         [InlineData("001 - Steve Winwood.mp3", "Steve Winwood.mp3")]
         [InlineData("14 - Steve Winwood.mp3", "Steve Winwood.mp3")]
         [InlineData(" 01 - Steve Winwood.mp3", "Steve Winwood.mp3")]
-        public void RemoveTrackNumberFromString(string input, string? shouldBe)
+        public void RemoveTrackNumberFromString(string? input, string? shouldBe)
         {
-            Assert.Equal(shouldBe, input.RemoveTrackNumberFromString());
+            Assert.Equal(shouldBe, input?.RemoveTrackNumberFromString());
         }
         
         [Theory]
@@ -133,7 +133,7 @@ namespace Melodee.Tests.Extensions
         [InlineData("Something Featuring Bob", true)]
         [InlineData("Something (with Bob)", true)]
         [InlineData("Minds Without Fear with Vishal-Shekhar", true)]
-        public void StringHasFeaturingFragments(string input, bool shouldBe)
+        public void StringHasFeaturingFragments(string? input, bool shouldBe)
         {
             Assert.Equal(shouldBe, input.HasFeaturingFragments());
         }        

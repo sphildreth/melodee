@@ -1,11 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Subjects;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Grids;
 using Melodee.Models;
 using Melodee.Plugins.Discovery.Directories;
 using Melodee.Plugins.Discovery.Releases;
+using ReactiveUI;
 
 namespace Melodee.ViewModels;
 
@@ -20,6 +24,28 @@ public class MainWindowViewModel : ViewModelBase
     public ObservableCollection<Node> InboundDirectoryInfos { get; }
 
     public ObservableCollection<ReleaseGrid> ReleaseInfos { get; set; } = [];
+    
+    public DirectoryInfo SelectedDirectoryInfo { get; set; }
+   
+    private bool _showSelectedRelease;
+
+    public bool ShowSelectedRelease
+    {
+        get => _showSelectedRelease;
+        set => this.RaiseAndSetIfChanged(ref _showSelectedRelease, value);
+    }
+
+    private ReleaseDetail? _releaseDetail;
+    
+    public ReleaseDetail? SelectedRelease
+    {
+        get => _releaseDetail;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _releaseDetail, value);
+            ShowSelectedRelease = _releaseDetail != null;            
+        }
+    }
     
     public bool IsLoading { get; set; }
     

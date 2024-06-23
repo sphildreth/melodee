@@ -6,8 +6,8 @@ namespace Melodee.Models;
 public class Node
 {
     public DirectoryInfo DirectoryInfo { get; }
-    
-    public ObservableCollection<Node>? SubNodes { get; set; }
+
+    public ObservableCollection<Node> SubNodes { get; set; } = [];
     
     public string Title { get; }
   

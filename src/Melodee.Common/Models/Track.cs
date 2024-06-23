@@ -18,5 +18,7 @@ public sealed record Track
     
     public IEnumerable<MediaAudio<object?>>? MediaAudios { get; init; }
 
+    public int SortOrder { get; set; }
+    
     public override string ToString() => $"ReleaseId [{ReleaseUniqueId}] TrackId [{UniqueId}] File Path [{FileSystemInfo.FullName}]";
 }

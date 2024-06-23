@@ -10,54 +10,85 @@
         Title="Melodee">
 
     <Design.DataContext>
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel />
     </Design.DataContext>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open..."/>
-                <Separator/>
-                <MenuItem Header="_Exit"/>
+                <MenuItem Header="_Open..." />
+                <Separator />
+                <MenuItem Header="_Exit" />
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="Copy"/>
-                <MenuItem Header="Paste"/>
+                <MenuItem Header="Copy" />
+                <MenuItem Header="Paste" />
             </MenuItem>
         </Menu>
         <Grid DockPanel.Dock="Left" ColumnDefinitions="250,1,550,1, *">
-            <TreeView 
-                IsEnabled="{ Binding !IsLoading}" 
-                Tapped="NavigationTree_OnTapped" 
+            <TreeView
+                IsEnabled="{ Binding !IsLoading}"
+                Tapped="NavigationTree_OnTapped"
                 ItemsSource="{Binding InboundDirectoryInfos}">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding SubNodes}">
-                        <TextBlock Tag="{Binding DirectoryInfo.UniqueId}" Text="{Binding Title}"/>
+                        <TextBlock Tag="{Binding DirectoryInfo.UniqueId}" Text="{Binding Title}" />
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
-            <GridSplitter Grid.Column="1" Width="1" ResizeDirection="Columns"/>
-            <DataGrid Grid.Column="2" 
-                Margin="5" 
-                ItemsSource="{Binding ReleaseInfos}" 
-                AutoGenerateColumns="False"
-                CanUserResizeColumns="True"
-                CanUserSortColumns="True"
-                GridLinesVisibility="All"
-                BorderThickness="1"
-                Tapped="DataGrid_OnTapped"
-                BorderBrush="Gray">
+            <GridSplitter Grid.Column="1" Width="1" ResizeDirection="Columns" />
+            <DataGrid Grid.Column="2"
+                      Margin="5"
+                      ItemsSource="{Binding ReleaseInfos}"
+                      AutoGenerateColumns="False"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="True"
+                      GridLinesVisibility="All"
+                      BorderThickness="1"
+                      Tapped="DataGrid_OnTapped"
+                      BorderBrush="Gray">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="✔" Binding="{Binding IsChecked}"/>
+                    <DataGridCheckBoxColumn Header="✔" Binding="{Binding IsChecked}" />
                     <DataGridTextColumn Header="Year" Width="70" IsReadOnly="True" Binding="{Binding Year}" />
-                    <DataGridTextColumn Header="Trk#" Width="70" IsReadOnly="True" Binding="{Binding TrackCount}" />
-                    <DataGridTextColumn Header="Artist" IsReadOnly="True" Binding="{Binding Artist}"/>
+                    <DataGridTextColumn Header="Trk#" Width="75" IsReadOnly="True" Binding="{Binding TrackCount}" />
+                    <DataGridTextColumn Header="Artist" IsReadOnly="True" Binding="{Binding Artist}" />
                     <DataGridTextColumn Header="Title" IsReadOnly="True" Binding="{Binding Title}" />
-                </DataGrid.Columns>                
-            </DataGrid>    
-            <GridSplitter Grid.Column="3" Width="1" ResizeDirection="Columns"/>
-            <StackPanel Grid.Column="4">
-                <TextBlock>Release Detail View Here</TextBlock>
-            </StackPanel>
+                </DataGrid.Columns>
+            </DataGrid>
+            <GridSplitter Grid.Column="3" Width="1" ResizeDirection="Columns" />
+            <DockPanel Grid.Column="4" IsVisible="{Binding ShowSelectedRelease}">
+                <DataGrid
+                    AutoGenerateColumns="False"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CanUserResizeColumns="True"
+                    CanUserSortColumns="True"
+                    DockPanel.Dock="Top"
+                    GridLinesVisibility="All"
+                    HeadersVisibility="None"
+                    ItemsSource="{Binding SelectedRelease.Data}"
+                    Margin="5">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Width="200" Header="Tag" IsReadOnly="True" Binding="{Binding  Key}" />
+                        <DataGridTextColumn Width="*" Header="Value" IsReadOnly="True" Binding="{Binding Value}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <DataGrid
+                    AutoGenerateColumns="False"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CanUserResizeColumns="True"
+                    CanUserSortColumns="True"
+                    DockPanel.Dock="Left"
+                    GridLinesVisibility="All"
+                    HeadersVisibility="None"
+                    ItemsSource="{Binding SelectedRelease.Tracks}"
+                    Margin="5">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Width="75" Header="Tag" IsReadOnly="True" Binding="{Binding  TrackNumber}" />
+                        <DataGridTextColumn Width="*" Header="Value" IsReadOnly="True" Binding="{Binding Title}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
         </Grid>
     </DockPanel>
 

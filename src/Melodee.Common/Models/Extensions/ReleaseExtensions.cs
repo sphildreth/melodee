@@ -1,3 +1,4 @@
+using System.Collections;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
@@ -84,5 +85,18 @@ public static class ReleaseExtensions
     {
         var title = release.ReleaseTitle();
         return string.IsNullOrWhiteSpace(title) || UnwantedReleaseTitleTextRegex.IsMatch(title);
+    }
+    
+    public static System.IO.DirectoryInfo ToDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.DirectoryInfo.Path);
+
+   
+    public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this Release release, string extension)
+    {
+        var dirInfo = release.ToDirectoryInfo();
+        if (!dirInfo.Exists)
+        {
+            return [];
+        }
+        return dirInfo.GetFiles($"*.{extension}", SearchOption.AllDirectories).ToArray();
     }
 }
