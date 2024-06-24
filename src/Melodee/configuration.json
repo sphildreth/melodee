@@ -1,5 +1,19 @@
 {
   "InboundDirectory": "/home/steven/incoming/melodee_test/inbound",
+  "LibraryDirectory": "/home/steven/incoming/melodee_test/library",  
   "StagingDirectory": "/home/steven/incoming/melodee_test/staging",
-  "LibraryDirectory": "/home/steven/incoming/melodee_test/library"
+  "Scripting": {
+    "ScriptExecutableFullName": "python",
+    "PreDiscoveryScript": "/home/steven/incoming/melodee_test/scripts/PreDiscovery.py",
+    "PostDiscoveryScript": null
+  },
+  "ProcessFileOptions": {
+    "DoDeleteOriginal": false
+  },
+  "MediaConvertorOptions": {
+    "ConversionEnabled": true,
+    "ConvertBitrate": 384,
+    "ConvertVbrLevel": 4,
+    "ConvertSamplingRate": 48000
+  }
 }

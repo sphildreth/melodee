@@ -1,4 +1,4 @@
-namespace Melodee.Common.Models;
+namespace Melodee.Common.Models.Configuration;
 
 [Serializable]
 public sealed record Configuration
@@ -17,4 +17,14 @@ public sealed record Configuration
     /// This is the main storage library (holds all previously scanned/edited/approved Releases).
     /// </summary>
     public required string LibraryDirectory { get; init; }
+    
+    /// <summary>
+    /// Settings for scripting files.
+    /// </summary>
+    public required Scripting Scripting { get; init; }
+    
+    /// <summary>
+    /// Options for converting media plugins.
+    /// </summary>
+    public required MediaConvertorOptions MediaConvertorOptions { get; init; }
 }

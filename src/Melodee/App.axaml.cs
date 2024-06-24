@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Configuration;
 using Melodee.Extensions;
 using Melodee.ViewModels;
 using Melodee.Views;

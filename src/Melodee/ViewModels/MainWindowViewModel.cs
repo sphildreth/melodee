@@ -6,6 +6,7 @@ using System.Reactive;
 using System.Reactive.Subjects;
 using Avalonia.Media.Imaging;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Grids;
 using Melodee.Models;
 using Melodee.Plugins.Discovery.Directories;

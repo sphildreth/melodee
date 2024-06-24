@@ -1,24 +1,24 @@
 using Melodee.Common.Models;
+using Melodee.Plugins.Conversion.Models;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
 
 namespace Melodee.Plugins.Conversion.Image;
 
 /// <summary>
-/// This converts non JPG images into a JPG images.
+///     This converts non JPG images into a JPG images.
 /// </summary>
 public sealed class ImageConvertor : MetaDataBase, IConversionPlugin
 {
     public override string Id => "8A169045-C650-4DE5-A564-F0E2D28EF07D";
-    
+
     public override string DisplayName => nameof(ImageConvertor);
 
     public override bool IsEnabled { get; set; } = true;
 
     public override int SortOrder { get; } = 0;
-    
+
     public override bool DoesHandleFile(FileSystemInfo fileSystemInfo)
     {
         if (!IsEnabled || !fileSystemInfo.Exists)
@@ -28,26 +28,47 @@ public sealed class ImageConvertor : MetaDataBase, IConversionPlugin
         return FileHelper.IsFileImageType(fileSystemInfo.Extension);
     }
 
-    public Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, ProcessFileOptions processFileOptions, CancellationToken cancellationToken = default)
     {
-        // If the file isn't jpg convert to jpg and return new FileSystemInfo pointing to jpg file.
-        
-        
-        
-        throw new NotImplementedException();
-    }
-    
-    
-    
-    public static byte[] ConvertToJpegFormatViaSixLabors(ReadOnlySpan<byte> imageBytes)
-    {
-        using (var outStream = new MemoryStream())
+        if (!FileHelper.IsFileImageType(fileSystemInfo.Extension))
         {
-            using(var image = SixLabors.ImageSharp.Image.Load(imageBytes))
+            return new OperationResult<FileSystemInfo>
             {
-                image.SaveAsJpeg(outStream);
-            }
-            return outStream.ToArray();
+                Errors = new[]
+                {
+                    new Exception("Invalid file type. This convertor only processes Image type files.")
+                },
+                Data = fileSystemInfo
+            };
         }
-    }  
+
+        var fileInfo = new FileInfo(fileSystemInfo.FullName);
+        if (fileInfo.Exists && !string.Equals("jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
+        {
+            var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
+            var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));
+            await File.WriteAllBytesAsync(newName, convertedBytes, cancellationToken);
+            fileInfo = new FileInfo(newName);
+            if (processFileOptions.DoDeleteOriginal)
+            {
+                fileInfo.Delete();
+            }
+        }
+
+        return new OperationResult<FileSystemInfo>
+        {
+            Data = fileInfo
+        };
+    }
+
+    private static byte[] ConvertToJpegFormatViaSixLabors(ReadOnlySpan<byte> imageBytes)
+    {
+        using var outStream = new MemoryStream();
+        using (var image = SixLabors.ImageSharp.Image.Load(imageBytes))
+        {
+            image.SaveAsJpeg(outStream);
+        }
+
+        return outStream.ToArray();
+    }
 }
