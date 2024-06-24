@@ -3,7 +3,6 @@
   "LibraryDirectory": "/home/steven/incoming/melodee_test/library",  
   "StagingDirectory": "/home/steven/incoming/melodee_test/staging",
   "Scripting": {
-    "ScriptExecutableFullName": "python",
     "PreDiscoveryScript": "/home/steven/incoming/melodee_test/scripts/PreDiscovery.py",
     "PostDiscoveryScript": null
   },

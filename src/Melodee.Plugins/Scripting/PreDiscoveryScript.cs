@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
+using Melodee.Common.Utility;
 using Melodee.Plugins.Conversion.Models;
 using Serilog;
 using DirectoryInfo = System.IO.DirectoryInfo;
@@ -25,38 +25,24 @@ public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPl
     {
         var result = false;
         string? scriptOutput = null;
-        if (_configuration.Scripting.IsEnabled && !string.IsNullOrWhiteSpace(_configuration.Scripting.PreDiscoveryScript))
+        if (!string.IsNullOrWhiteSpace(_configuration.Scripting.PreDiscoveryScript))
         {
+            var scriptFileInfo = new FileInfo(_configuration.Scripting.PreDiscoveryScript!);
+            if (!scriptFileInfo.Exists)
+            {
+                return new OperationResult<bool>
+                {
+                    Errors = new[]
+                    {
+                        new Exception($"Unable to locate PreDiscoveryScript [{_configuration.Scripting.PreDiscoveryScript}]")
+                    },
+                    Data = false
+                };
+            }
             try
             {
-                // Process p2 = new Process();
-                // p2.StartInfo.UseShellExecute = true;
-                // p2.StartInfo.FileName = "/usr/bin/chromium";
-                // p2.StartInfo.Arguments = "www.sphildreth.com";
-                // p2.Start();                
-                
-                var argument = $"{_configuration.Scripting.PreDiscoveryScript} --directory '{directoryInfo.FullName}'";
-                if (!processFileOptions.DoDeleteOriginal)
-                {
-                    argument += $" --readonly";
-                }
-                
-                var info = new ProcessStartInfo
-                {
-                    FileName = _configuration.Scripting.ScriptExecutableFullName,
-                    RedirectStandardError = true,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    Arguments = argument
-                };
-                using var process = Process.Start(info);
-                if (process != null)
-                {
-                    using var reader = process.StandardOutput;
-                    scriptOutput = await reader.ReadToEndAsync(cancellationToken);
-                    await process.WaitForExitAsync(cancellationToken);                
-                }
+                var argument = $" -d \"{directoryInfo.FullName}\" -r {(processFileOptions.DoDeleteOriginal ? "0" :"1")}";
+                await $"{_configuration.Scripting.PreDiscoveryScript}{argument}".Bash();
             }
             catch (Exception e)
             {

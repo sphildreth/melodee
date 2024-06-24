@@ -14,10 +14,7 @@ public class PreDiscoveryScriptTests
             var convertor = new Melodee.Plugins.Scripting.PreDiscoveryScript(new Configuration
                 {
                     MediaConvertorOptions = new MediaConvertorOptions(),
-                    Scripting = new Scripting
-                    {
-                        ScriptExecutableFullName = null
-                    },
+                    Scripting = new Scripting(),
                     InboundDirectory = @"/home/steven/incoming/melodee_test/tests",
                     StagingDirectory = string.Empty,
                     LibraryDirectory = string.Empty
@@ -36,7 +33,7 @@ public class PreDiscoveryScriptTests
     [Fact] public async Task ValidatePreDiscoveryScripTests()
     {
         var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024";
-        var testScriptFile = @"/home/steven/incoming/melodee_test/scripts/PreDiscovery.py";
+        var testScriptFile = @"/home/steven/incoming/melodee_test/scripts/PreDiscoveryWrapper.sh";
         var dirInfo = new System.IO.DirectoryInfo(testFile);
         if (dirInfo.Exists && File.Exists(testScriptFile))
         {
@@ -48,8 +45,7 @@ public class PreDiscoveryScriptTests
                     MediaConvertorOptions = new MediaConvertorOptions(),
                     Scripting = new Scripting
                     {
-                        ScriptExecutableFullName = "/usr/bin/python",
-                        PreDiscoveryScript = testScriptFile
+                        PreDiscoveryScript = "/home/steven/incoming/melodee_test/scripts/PreDiscoveryWrapper.sh"
                     },
                     InboundDirectory = @"/home/steven/incoming/melodee_test/tests",
                     StagingDirectory = string.Empty,
