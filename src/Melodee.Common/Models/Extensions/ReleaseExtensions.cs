@@ -1,16 +1,19 @@
 using System.Collections;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
 using Serilog;
 
 namespace Melodee.Common.Models.Extensions;
 
 public static class ReleaseExtensions
 {
+    private static readonly IEnumerable<string> FolderSpaceReplacements = new List<string> { ".", "~", "_", "=", "-" };
+    
     private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
 
     public static T? MetaTagValue<T>(this Release release, MetaTagIdentifier metaTagIdentifier)
     {
@@ -67,6 +70,10 @@ public static class ReleaseExtensions
     
     
     public static string? Artist(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Artist);
+
+    public static long ArtistUniqueId(this Release release) => release.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(release.ArtistSort() ?? release.Artist() ?? Guid.NewGuid().ToString());
+
+    public static string? ArtistSort(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.SortAlbumArtist);
     
     public static string? ReleaseTitle(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Album);
     
@@ -88,7 +95,6 @@ public static class ReleaseExtensions
     }
     
     public static System.IO.DirectoryInfo ToDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.DirectoryInfo.Path);
-
    
     public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this Release release, string extension)
     {
@@ -98,5 +104,120 @@ public static class ReleaseExtensions
             return [];
         }
         return dirInfo.GetFiles($"*.{extension}", SearchOption.AllDirectories).ToArray();
+    }
+
+    /// <summary>
+    /// Is the given File related to this release.
+    /// </summary>
+    public static bool IsFileForRelease(this Release release, FileSystemInfo fileSystemInfo)
+    {
+        if (!fileSystemInfo.Exists)
+        {
+            return false;
+        }
+        var normalizedName = fileSystemInfo.Name.ToAlphanumericName();
+        if (string.IsNullOrEmpty(normalizedName))
+        {
+            return false;
+        }
+
+        try
+        {
+            var normalizedArtistName = release.Artist()?.ToAlphanumericName() ?? string.Empty;
+            var normalizedTitleName = release.ReleaseTitle()?.ToAlphanumericName() ?? string.Empty;
+
+            if (normalizedName.Contains(normalizedArtistName) && normalizedName.Contains(normalizedTitleName))
+            {
+                return true;
+            }
+
+            if (release.Tracks != null)
+            {
+                foreach (var track in release.Tracks)
+                {
+                    var normalizedTrackArtist = track.TrackArtist()?.ToAlphanumericName() ?? String.Empty;
+                    var normalizedTrackName = track.Title()?.ToAlphanumericName() ?? string.Empty;
+                    if ((normalizedName.Contains(normalizedArtistName) || normalizedName.Contains(normalizedTrackArtist)) && 
+                         normalizedName.Contains(normalizedTrackName))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Trace.WriteLine($"Error trying to determine if file [{fileSystemInfo.FullName}] is for Release [{release}]", "Error");
+        }
+        return false;
+    }
+
+    public static string ReleaseDirectoryName(this Release release, Configuration.Configuration configuration)
+    {
+        var releaseTitleValue = release.ReleaseTitle();
+        if (string.IsNullOrWhiteSpace(releaseTitleValue))
+        {
+            throw new Exception("Unable to determine Release title from Release.");
+        }
+        var releaseTitle = releaseTitleValue!;
+        var releasePathTitle = releaseTitle.ToAlphanumericName(false, false)?.ToFolderNameFriendly()?.ToTitleCase(false);
+        if (string.IsNullOrEmpty(releasePathTitle))
+        {
+            throw new Exception($"Unable to determine Release Path for Release [{ release }].");
+        }
+        var maxFnLength = configuration.PluginProcessOptions.MaximumReleaseDirectoryNameLength - 7;
+        if (releasePathTitle.Length > maxFnLength)
+        {
+            releasePathTitle = releasePathTitle.Substring(0, maxFnLength);
+        }
+
+        var releaseDate = release.ReleaseYear();
+        if (releaseDate.HasValue && releaseDate < configuration.PluginProcessOptions.MinimumValidReleaseYear)
+        {
+            throw new Exception($"Invalid year [{releaseDate}] for release [{release}], Minimum configured value is [{configuration.PluginProcessOptions.MinimumValidReleaseYear}]");
+        }
+        return Path.Combine(release.ArtistDirectoryName(configuration), $"[{ releaseDate}] {releasePathTitle}");
+    }
+    
+    public static string ArtistDirectoryName(this Release release, Configuration.Configuration configuration)
+    {
+        var artistNameToUse = release.ArtistSort() ?? release.Artist();
+        if (string.IsNullOrWhiteSpace(artistNameToUse))
+        {
+            throw new Exception("Neither Artist or ArtistSort tag is set on Release.");
+        }
+        var artistFolder = artistNameToUse!.ToAlphanumericName(false, false)?.ToFolderNameFriendly()?.ToTitleCase(false);
+        if (string.IsNullOrEmpty(artistFolder))
+        {
+            throw new Exception($"Unable to determine artist folder for releae ArtistNameToUse [{ artistNameToUse }].");
+        }
+        var afUpper = artistFolder.ToUpper();
+        var fnSubPart1 = afUpper.ToUpper().ToCharArray().Take(1).First();
+        if (!char.IsLetterOrDigit(fnSubPart1))
+        {
+            fnSubPart1 = '#';
+        }
+        else if (char.IsNumber(fnSubPart1))
+        {
+            fnSubPart1 = '0';
+        }
+        var fnSubPart2 = afUpper.Length > 2 ? afUpper.Substring(0, 2) : afUpper;
+        if (fnSubPart2.EndsWith(" "))
+        {
+            var pos = 1;
+            while (fnSubPart2.EndsWith(" "))
+            {
+                pos++;
+                fnSubPart2 = fnSubPart2.Substring(0, 1) + afUpper.Substring(pos, 1);
+            }
+        }
+        var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
+        var fnIdPart = $" [{ release.ArtistUniqueId() }]";
+        var maxFnLength = (configuration.PluginProcessOptions.MaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length)) - 2;
+        if (artistFolder.Length > maxFnLength)
+        {
+            artistFolder = artistFolder.Substring(0, maxFnLength);
+        }
+        return Path.Combine(fnSubPart, $"{ artistFolder }{ fnIdPart }");
     }
 }

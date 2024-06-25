@@ -2,7 +2,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Utility;
 using Serilog;
-using DirectoryInfo = System.IO.DirectoryInfo;
+using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
 namespace Melodee.Plugins.Scripting;
 
@@ -40,8 +40,9 @@ public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPl
             }
             try
             {
-                var argument = $" -d \"{directoryInfo.FullName}\" -r {(_configuration.PluginProcessOptions.DoDeleteOriginal ? "0" :"1")}";
+                var argument = $" -d \"{directoryInfo.Path}\" -r {(_configuration.PluginProcessOptions.DoDeleteOriginal ? "0" :"1")}";
                 await $"{_configuration.Scripting.PreDiscoveryScript}{argument}".Bash();
+                result = true;
             }
             catch (Exception e)
             {

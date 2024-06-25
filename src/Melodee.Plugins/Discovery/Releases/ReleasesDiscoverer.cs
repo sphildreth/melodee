@@ -4,6 +4,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Grids;
+using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Release;
 using Melodee.Plugins.MetaData.Track;
 using Serilog;
@@ -18,6 +19,11 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     public const short MinimumDiscNumber = 1;
 
     public const int MaximumDiscNumber = 500;    
+ 
+    private readonly IEnumerable<ITrackPlugin> _enabledTrackPlugins;
+
+    private readonly IEnumerable<IReleasePlugin> _enabledReleasePlugins;
+    
     
     public string DisplayName => nameof(ReleasesDiscoverer);
 
@@ -27,19 +33,16 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     
     public int SortOrder => 0;
 
-    private IEnumerable<ITrackPlugin> EnabledTrackPlugins { get; } 
-
-    private IEnumerable<IReleasePlugin> EnabledReleasePlugins { get; }
 
     public ReleasesDiscoverer(Configuration configuration)
     {
         var config = configuration;
         
-        EnabledTrackPlugins = new ITrackPlugin[]
+        _enabledTrackPlugins = new ITrackPlugin[]
         {
             new MetaTag(config)
         };
-        EnabledReleasePlugins = new IReleasePlugin[]
+        _enabledReleasePlugins = new IReleasePlugin[]
         {
             //  new CueSheet(),
             new M3UPlaylist(config),
@@ -105,7 +108,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         var processedReleasesViaPlugins = new List<Release>();
         await Parallel.ForEachAsync(resultReleases, cancellationToken, async (release, ct) =>
         {
-            processedReleasesViaPlugins.Add(await ProcessReleasePluginsOnRelease(release, ct));
+            processedReleasesViaPlugins.Add(await FindImagesForRelease(await ProcessReleasePluginsOnRelease(release, ct), ct));
         });
         
         return new PagedResult<Release>()
@@ -119,6 +122,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         var releases = new List<Release>();
         var messages = new List<string>();
         var viaPlugins = new List<string>();
+        var releaseFiles = new List<ReleaseFile>();
         
         var dirInfo = new System.IO.DirectoryInfo(directoryInfo.Path);
         if (dirInfo.Exists)
@@ -128,7 +132,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 var tracks = new List<Track>();
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
                 {
-                    foreach (var plugin in EnabledTrackPlugins.OrderBy(x => x.SortOrder))
+                    foreach (var plugin in _enabledTrackPlugins.OrderBy(x => x.SortOrder))
                     {
                         if (plugin.DoesHandleFile(fileSystemInfo))
                         {
@@ -140,7 +144,6 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                                     tracks.Add(pluginResult.Data);
                                     viaPlugins.Add(plugin.DisplayName);
                                 }
-
                                 messages.AddRange(pluginResult.Messages);
                             }
                         }
@@ -208,12 +211,73 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         };
     }
 
+    private async Task<Release> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
+    {
+        var imageInfos = new List<ImageInfo>();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(release.DirectoryInfo.Path, SearchOption.TopDirectoryOnly);
+        foreach (var imageFile in imageFiles)
+        {
+            var fileInfo = new System.IO.FileInfo(imageFile);
+            if (release.IsFileForRelease(fileInfo))
+            {
+                if (ImageHelper.IsReleaseImage(fileInfo) ||
+                    ImageHelper.IsArtistImage(fileInfo) ||
+                    ImageHelper.IsArtistSecondaryImage(fileInfo) ||
+                    ImageHelper.IsReleaseSecondaryImage(fileInfo))
+                {
+                    var pictureIdentifier = PictureIdentifier.NotSet;
+                    if (ImageHelper.IsReleaseImage(fileInfo))
+                    {
+                        pictureIdentifier = PictureIdentifier.Front;
+                    }
+                    else if (ImageHelper.IsReleaseSecondaryImage(fileInfo))
+                    {
+                        pictureIdentifier = PictureIdentifier.SecondaryFront;
+                    }
+                    else if (ImageHelper.IsArtistImage(fileInfo))
+                    {
+                        pictureIdentifier = PictureIdentifier.Band;
+                    }
+                    else if (ImageHelper.IsArtistSecondaryImage(fileInfo))
+                    {
+                        pictureIdentifier = PictureIdentifier.BandSecondary;
+                    }
+
+                    var imageInfo = await SixLabors.ImageSharp.Image.LoadAsync(fileInfo.FullName, cancellationToken);
+                    imageInfos.Add(new ImageInfo
+                    {
+                        PictureIdentifier = pictureIdentifier,
+                        Bytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken),
+                        Width = imageInfo.Width,
+                        Height = imageInfo.Height,
+                        SortOrder = 0
+                    });
+                }
+            }
+        }
+
+        if (imageInfos.Count == 0 && (release.Tracks ?? Array.Empty<Track>()).Any())
+        {
+            var allTrackImages = release.Tracks?
+                .Where(x => x.Images != null)?
+                .SelectMany(x => x.Images!)?
+                .ToArray() ?? [];
+            var firstTrackImageOfEachGroup = allTrackImages.GroupBy(x => x.PictureIdentifier).FirstOrDefault();
+            if (firstTrackImageOfEachGroup != null && firstTrackImageOfEachGroup.Any())
+            {
+                imageInfos.AddRange(firstTrackImageOfEachGroup);
+            }
+        }
+        release.Images = imageInfos;
+        return release;
+    }
+
     private async Task<Release> ProcessReleasePluginsOnRelease(Release release, CancellationToken cancellationToken = default)
     {
         // Process the given release in each enabled Release plugin. 
         //  A release plugin example is sfv which parses the Sfv and checks the files CRC and then marks the Release as complete if all sfv track files are found and valid.
         
-        foreach (var plugin in EnabledReleasePlugins.OrderBy(x => x.SortOrder))
+        foreach (var plugin in _enabledReleasePlugins.OrderBy(x => x.SortOrder))
         {
             using (Operation.Time("ProcessReleasePluginsOnRelease [{Release}] Plugin [{Plugin}]", release.ToString(), plugin.DisplayName))
             {
@@ -235,7 +299,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 
         var releasesForDirectoryInfo = await ReleasesForDirectoryAsync(directoryInfo, pagedRequest, cancellationToken);
         
-        return new PagedResult<ReleaseGrid>()
+        return new PagedResult<ReleaseGrid>
         {
             Data = releasesForDirectoryInfo.Data.Select(x => new ReleaseGrid
             {

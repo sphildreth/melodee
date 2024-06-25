@@ -219,6 +219,16 @@ namespace Melodee.Common.Extensions
             input = Regex.Replace(input, $"[^A-Za-z0-9{(!stripSpaces ? @"\s" : string.Empty)}{(!stripCommas ? "," : string.Empty)}]+", string.Empty);
             return input;
         }
+        
+        public static string? ToFolderNameFriendly(this string? input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return null;
+            }
+            input = input.Replace("$", "s");
+            return Regex.Replace(PathSanitizer.SanitizeFilename(input, ' '), @"\s+", " ").Trim().TrimEnd('.');
+        }        
 
         public static string ScrubHtml(this string value)
         {
@@ -227,6 +237,24 @@ namespace Melodee.Common.Extensions
             return step2;
         }
 
+        public static string RemoveStartsWith(this string input, string remove = "")
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+
+            var index = input.IndexOf(remove);
+            var result = input;
+            while (index == 0)
+            {
+                result = result.Remove(index, remove.Length).Trim();
+                index = result.IndexOf(remove);
+            }
+
+            return result;
+        }
+        
         public static string RemoveDiacritics(this string s)
         {
             var normalizedString = s.Normalize(NormalizationForm.FormD);

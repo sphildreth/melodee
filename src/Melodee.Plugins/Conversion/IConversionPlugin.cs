@@ -5,6 +5,8 @@ namespace Melodee.Plugins.Conversion;
 
 public interface IConversionPlugin
 {
+    string DisplayName { get; }
+    
     bool DoesHandleFile(FileSystemInfo fileSystemInfo);
     
     bool StopProcessing { get; }

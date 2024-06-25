@@ -19,7 +19,7 @@ public sealed record Release
     
     public required DirectoryInfo DirectoryInfo { get; init; }
 
-    public IEnumerable<ImageInfo>? Images { get; init; }
+    public IEnumerable<ImageInfo>? Images { get; set; }
 
     public IEnumerable<MetaTag<object?>>? Tags { get; init; }
 
@@ -28,6 +28,8 @@ public sealed record Release
     public IEnumerable<string> Messages { get; set; } = [];
 
     public ReleaseStatus Status { get; set; } = ReleaseStatus.New;
+
+    public IEnumerable<ReleaseFile> Files { get; set; } = [];
 
     public Release MergeTracks(IEnumerable<Track> pluginResultData)
     {

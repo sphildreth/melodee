@@ -438,6 +438,11 @@ public enum MetaTagIdentifier
     /// <summary>
     /// [WAR, WOAR]
     /// </summary>
-    OfficialArtistPerformerWebpage
+    OfficialArtistPerformerWebpage,
+    
+    /// <summary>
+    /// Not a ID3 standard, a unique ID given to an artist to prevent exact named artists getting the same library folder.
+    /// </summary>
+    UniqueArtistId
     
 }

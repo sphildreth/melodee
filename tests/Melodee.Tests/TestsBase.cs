@@ -17,7 +17,7 @@ public abstract class TestsBase
             PreDiscoveryScript = "/home/steven/incoming/melodee_test/scripts/PreDiscoveryWrapper.sh"
         },
         InboundDirectory = @"/home/steven/incoming/melodee_test/tests",
-        StagingDirectory = string.Empty,
+        StagingDirectory = @"/home/steven/incoming/melodee_test/staging",
         LibraryDirectory = string.Empty
     };
 }

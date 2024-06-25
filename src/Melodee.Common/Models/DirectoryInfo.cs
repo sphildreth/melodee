@@ -29,4 +29,8 @@ public sealed record DirectoryInfo
     
     public int ImageFilesFound { get; init; }
 
+    public override string ToString()
+    {
+        return $"UniqueId [{ UniqueId }] Path [{Path}] ShortName [{ShortName}]";
+    }
 }

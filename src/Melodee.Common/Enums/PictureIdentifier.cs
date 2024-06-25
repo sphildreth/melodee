@@ -18,6 +18,11 @@ public enum PictureIdentifier
     /// Front cover
     /// </summary>
     Front,
+    
+    /// <summary>
+    /// Front cover, but not the primary like Cover01, Cover02
+    /// </summary>
+    SecondaryFront,
 
     /// <summary>
     /// Back cover

@@ -1,6 +1,5 @@
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
-using DirectoryInfo = System.IO.DirectoryInfo;
+using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
 namespace Melodee.Plugins.Scripting;
 

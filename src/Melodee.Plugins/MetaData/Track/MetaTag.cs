@@ -1,3 +1,4 @@
+using ATL;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -49,6 +50,8 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
     {
         var tags = new List<MetaTag<object>>();
         var mediaAudios = new List<MediaAudio<object>>();
+        var images = new List<ImageInfo>();
+        
         if (fileSystemInfo.Exists)
         {
             var fileAtl = new ATL.Track(fileSystemInfo.FullName);
@@ -109,7 +112,23 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                         Identifier = MediaAudioIdentifier.AudioDataSize,
                         Value = fileAtl.TechnicalInformation.AudioDataSize
                     });
-                }                    
+                }
+
+                if (fileAtl.EmbeddedPictures.Any() && Configuration.PluginProcessOptions.DoLoadEmbeddedImages)
+                {
+                    foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
+                    {
+                        var imageInfo = SixLabors.ImageSharp.Image.Load(embeddedPicture.PictureData);
+                        images.Add(new ImageInfo
+                        {
+                            PictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType),
+                            Bytes = embeddedPicture.PictureData,
+                            Width = imageInfo.Width,
+                            Height = imageInfo.Height,
+                            SortOrder = embeddedPicture.Position
+                        });
+                    }
+                }
 
                 var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToDictionary();
                 foreach (var metaTagIdentifier in metaTagIdentifierDictionary)
@@ -156,6 +175,7 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
             Data = new Common.Models.Track
             {
                 FileSystemInfo = fileSystemInfo,
+                Images = images,
                 Tags = tags,
                 MediaAudios = mediaAudios 
             }

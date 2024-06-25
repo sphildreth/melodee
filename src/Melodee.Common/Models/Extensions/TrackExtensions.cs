@@ -125,4 +125,45 @@ public static class TrackExtensions
         }
         return false;        
     }
+
+    public static string TrackFileName(this Track track, Configuration.Configuration configuration)
+    {
+        var trackNumber = track.TrackNumber();
+        if (trackNumber < 1)
+        {
+            throw new Exception($"Invalid track number for Track [{ track }]");
+        }
+        var trackTitle = track.Title();
+        if (string.IsNullOrWhiteSpace(trackTitle))
+        {
+            throw new Exception($"Invalid track title for Track [{ track }]");
+        }        
+        var totalTrackNumber = track.TrackTotalNumber();
+        if (totalTrackNumber < 1)
+        {
+            throw new Exception($"Invalid total number of tracks for Track [{ track }]");
+        }         
+        // If the total number of tracks is more than 99 or the track number itself is more than 99 then 3 pad else 2 pad
+        var mediaNumber = track.MediaNumber();        
+        var trackName = totalTrackNumber > 99 || trackNumber > 99
+            ? trackNumber.ToString("D3")
+            : trackNumber.ToString("D2");
+        
+        // Put an "m" for media on the TPOS greater than 1 so the directory sorts proper
+        var disc = mediaNumber > 1 ? $"m{mediaNumber.ToString("D3")} " : string.Empty;
+
+        // Get new name for file
+        var fileNameFromTitle = trackTitle.ToTitleCase(false)?.ToFileNameFriendly();
+        if (fileNameFromTitle != null && fileNameFromTitle.StartsWith(trackName))
+        {
+            fileNameFromTitle = fileNameFromTitle
+                .RemoveStartsWith($"{trackName} -")
+                .RemoveStartsWith($"{trackName} ")
+                .RemoveStartsWith($"{trackName}.")
+                .RemoveStartsWith($"{trackName}-")
+                .ToTitleCase(false);
+        }
+        return $"{disc}{trackName} {fileNameFromTitle}.mp3";
+
+    }
 }

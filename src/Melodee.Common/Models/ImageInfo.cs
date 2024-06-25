@@ -11,10 +11,6 @@ public sealed record ImageInfo
     public int Width { get; init; }
 
     public int Height { get; init; }
-
-    public int ColorDepth { get; init; }
-    
-    public int NumColorsInPalette { get; init; }
     
     public int SortOrder  { get; init; }
 }
