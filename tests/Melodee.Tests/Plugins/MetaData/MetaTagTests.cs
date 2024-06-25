@@ -13,7 +13,7 @@ public class MetaTagTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag();
+            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(TestsBase.NewConfiguration);
             var tagResult = await metaTag.ProcessFileAsync(fileInfo);
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -32,7 +32,7 @@ public class MetaTagTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag();
+            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(TestsBase.NewConfiguration);
             var tagResult = await metaTag.ProcessFileAsync(fileInfo);
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);

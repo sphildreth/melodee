@@ -27,4 +27,9 @@ public sealed record Configuration
     /// Options for converting media plugins.
     /// </summary>
     public required MediaConvertorOptions MediaConvertorOptions { get; init; }
+    
+    /// <summary>
+    /// Options for all plugins.
+    /// </summary>
+    public required PluginProcessOptions PluginProcessOptions { get; init; }
 }

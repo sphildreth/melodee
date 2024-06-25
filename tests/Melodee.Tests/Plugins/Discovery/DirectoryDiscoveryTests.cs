@@ -23,7 +23,6 @@ public class DirectoryDiscoveryTests
     public void ValidateIfTestDirectorySetupNotEmpty()
     {
         var testDirectory = @"/home/steven/incoming/melodee_test/inbound";
-        //var testDirectory = @"/home/steven/incoming/melodee_test/inbound/00-k 2024";
         var dir = new System.IO.DirectoryInfo(testDirectory);
         if (dir.Exists)
         {

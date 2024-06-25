@@ -21,7 +21,7 @@ public class ReleasesDiscovererTests
             Assert.NotNull(directoryInfosForDirectory.Data);
             Assert.NotEmpty(directoryInfosForDirectory.Data);
 
-            var rd = new ReleasesDiscoverer();
+            var rd = new ReleasesDiscoverer(TestsBase.NewConfiguration);
             var releasesForDirectoryAsync = await rd.ReleasesGridsForDirectoryAsync(directoryInfosForDirectory.Data.First(x => x.ParentId > 9 && x.MusicFilesFound > 0), new PagedRequest());
             Assert.NotNull(releasesForDirectoryAsync);
             Assert.True(releasesForDirectoryAsync.IsSuccess);

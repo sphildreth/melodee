@@ -1,5 +1,5 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.Conversion.Models;
+using Melodee.Common.Models.Configuration;
 
 namespace Melodee.Plugins.Conversion;
 
@@ -9,5 +9,5 @@ public interface IConversionPlugin
     
     bool StopProcessing { get; }
     
-    Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, ProcessFileOptions processFileOptions, CancellationToken cancellationToken = default);
+    Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default);
 }

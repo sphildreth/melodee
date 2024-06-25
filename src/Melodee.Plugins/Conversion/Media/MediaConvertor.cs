@@ -4,7 +4,6 @@ using FFMpegCore.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Utility;
-using Melodee.Plugins.Conversion.Models;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData;
 using Melodee.Plugins.MetaData.Track.Extensions;
@@ -15,10 +14,8 @@ namespace Melodee.Plugins.Conversion.Media;
 /// <summary>
 /// This converts all Media files into MP3 files. 
 /// </summary>
-public sealed partial class MediaConvertor(Configuration configuration) : MetaDataBase, IConversionPlugin
+public sealed partial class MediaConvertor(Configuration configuration) : MetaDataBase(configuration), IConversionPlugin
 {
-    private readonly Configuration _configuration = configuration;
-    
     public override string Id => "61995E53-D998-4BD4-BC83-2AB2F9D9B931";
 
     public override string DisplayName => nameof(MediaConvertor);
@@ -36,7 +33,7 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension);
     }
 
-    public async Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, ProcessFileOptions processFileOptions, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
         if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension))
         {
@@ -51,7 +48,7 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
         }
         
         var fileInfo = new FileInfo(fileSystemInfo.FullName);
-        if (fileInfo.Exists && _configuration.MediaConvertorOptions.ConversionEnabled)
+        if (fileInfo.Exists && Configuration.MediaConvertorOptions.ConversionEnabled)
         {
             var fileAtl = new ATL.Track(fileSystemInfo.FullName);
             if (ShouldMediaTrackBeConverted(fileAtl))
@@ -67,16 +64,16 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
                     await FFMpegArguments.FromFileInput(trackFileInfo)
                         .OutputToFile(newFileName, true, options =>
                         {
-                            options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(_configuration.MediaConvertorOptions.ConvertBitrate));
-                            options.WithAudioSamplingRate(_configuration.MediaConvertorOptions.ConvertSamplingRate);
-                            options.WithVariableBitrate(_configuration.MediaConvertorOptions.ConvertVbrLevel);
+                            options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration.MediaConvertorOptions.ConvertBitrate));
+                            options.WithAudioSamplingRate(Configuration.MediaConvertorOptions.ConvertSamplingRate);
+                            options.WithVariableBitrate(Configuration.MediaConvertorOptions.ConvertVbrLevel);
                             options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                         }).ProcessAsynchronously(true);
                     var newAtl = new ATL.Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))
                     {
                         fileInfo = new FileInfo(newFileName);
-                        if (processFileOptions.DoDeleteOriginal)
+                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
                             trackFileInfo.Delete();
                         }

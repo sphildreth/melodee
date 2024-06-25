@@ -1,15 +1,17 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.Conversion.Models;
+using Melodee.Common.Models.Configuration;
+using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData;
 using SixLabors.ImageSharp;
+using Configuration = Melodee.Common.Models.Configuration.Configuration;
 
 namespace Melodee.Plugins.Conversion.Image;
 
 /// <summary>
 ///     This converts non JPG images into a JPG images.
 /// </summary>
-public sealed class ImageConvertor : MetaDataBase, IConversionPlugin
+public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(configuration), IConversionPlugin
 {
     public override string Id => "8A169045-C650-4DE5-A564-F0E2D28EF07D";
 
@@ -28,7 +30,7 @@ public sealed class ImageConvertor : MetaDataBase, IConversionPlugin
         return FileHelper.IsFileImageType(fileSystemInfo.Extension);
     }
 
-    public async Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, ProcessFileOptions processFileOptions, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
         if (!FileHelper.IsFileImageType(fileSystemInfo.Extension))
         {
@@ -49,7 +51,7 @@ public sealed class ImageConvertor : MetaDataBase, IConversionPlugin
             var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));
             await File.WriteAllBytesAsync(newName, convertedBytes, cancellationToken);
             fileInfo = new FileInfo(newName);
-            if (processFileOptions.DoDeleteOriginal)
+            if (Configuration.PluginProcessOptions.DoDeleteOriginal)
             {
                 fileInfo.Delete();
             }

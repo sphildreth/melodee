@@ -14,7 +14,7 @@ public class SimpleFileVerificationTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var sfv = new SimpleFileVerification();
+            var sfv = new SimpleFileVerification(TestsBase.NewConfiguration);
             var release = new Release
             {
                 DirectoryInfo = new DirectoryInfo

@@ -1,6 +1,7 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Configuration;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData.Track.Extensions;
@@ -25,7 +26,7 @@ Some reference sites:
 */
 
 
-public sealed class MetaTag : MetaDataBase, ITrackPlugin
+public sealed class MetaTag(Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
 {
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
     

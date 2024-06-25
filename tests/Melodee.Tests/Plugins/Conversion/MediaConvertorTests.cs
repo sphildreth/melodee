@@ -1,5 +1,5 @@
 using Melodee.Common.Models.Configuration;
-using Melodee.Plugins.Conversion.Models;
+using Melodee.Plugins;
 
 namespace Melodee.Tests.Plugins.Conversion;
 
@@ -11,19 +11,8 @@ public class MediaConvertorTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new Configuration
-                {
-                    MediaConvertorOptions = new MediaConvertorOptions(),
-                    Scripting = new Scripting(),
-                    InboundDirectory = @"/home/steven/incoming/melodee_test/tests",
-                    StagingDirectory = string.Empty,
-                    LibraryDirectory = string.Empty
-                }
-            );
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo, new ProcessFileOptions
-            {
-                DoDeleteOriginal = false
-            });
+            var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(TestsBase.NewConfiguration);
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo);
             Assert.NotNull(convertorResult);
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
@@ -44,16 +33,14 @@ public class MediaConvertorTests
             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new Configuration
                 {
                     MediaConvertorOptions = new MediaConvertorOptions(),
+                    PluginProcessOptions = new PluginProcessOptions(),
                     Scripting = new Scripting(),
                     InboundDirectory = @"/home/steven/incoming/melodee_test/tests",
                     StagingDirectory = string.Empty,
                     LibraryDirectory = string.Empty
                 }
             );
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo, new ProcessFileOptions
-            {
-                DoDeleteOriginal = false
-            });
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo);
             Assert.NotNull(convertorResult);
             Assert.False(convertorResult.IsSuccess);
         }

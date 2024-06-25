@@ -8,13 +8,21 @@ namespace Melodee.Plugins.Discovery.Releases;
 /// </summary>
 public interface IReleasesDiscoverer : IPlugin
 {
+    /// <summary>
+    /// Return a paged collection of Releases in given Directory.
+    /// </summary>
+    /// <param name="directoryInfo">Directory to load models from.</param>
+    /// <param name="pagedRequest">Pagination Request.</param> 
+    /// <param name="cancellationToken">Cancellation Token</param>
+    /// <returns>Paged Result of Release models found in directory</returns>
+    Task<PagedResult<Release>> ReleasesForDirectoryAsync(
+        DirectoryInfo directoryInfo,
+        PagedRequest pagedRequest, 
+        CancellationToken cancellationToken = default);    
+    
     Task<Release> ReleaseByUniqueIdAsync(
         DirectoryInfo directoryInfo,
         long uniqueId,
-        CancellationToken cancellationToken = default);
-    
-    Task<OperationResult<Release>> ReleaseForDirectoryInfoAsync(
-        DirectoryInfo directoryInfo,
         CancellationToken cancellationToken = default);
     
     /// <summary>

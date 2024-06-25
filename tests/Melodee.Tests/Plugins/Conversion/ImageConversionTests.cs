@@ -1,9 +1,12 @@
-using Melodee.Plugins.Conversion.Models;
+using Melodee.Common.Models.Configuration;
+using Melodee.Plugins;
 
 namespace Melodee.Tests.Plugins.Conversion;
 
 public class ImageConversionTests
 {
+    
+    
     [Fact]
     public async Task ValidateConvertingPngToJpgAsync()
     {
@@ -11,11 +14,8 @@ public class ImageConversionTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor();
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo, new ProcessFileOptions
-            {
-                DoDeleteOriginal = false
-            });
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo);
             Assert.NotNull(convertorResult);
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
@@ -33,11 +33,8 @@ public class ImageConversionTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor();
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo, new ProcessFileOptions
-            {
-                DoDeleteOriginal = false
-            });
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo);
             Assert.NotNull(convertorResult);
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
@@ -55,11 +52,8 @@ public class ImageConversionTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor();
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo, new ProcessFileOptions
-            {
-                DoDeleteOriginal = false
-            });
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo);
             Assert.NotNull(convertorResult);
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
@@ -77,11 +71,8 @@ public class ImageConversionTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor();
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo, new ProcessFileOptions
-            {
-                DoDeleteOriginal = false
-            });
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo);
             Assert.NotNull(convertorResult);
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
@@ -99,11 +90,8 @@ public class ImageConversionTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor();
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo, new ProcessFileOptions
-            {
-                DoDeleteOriginal = false
-            });
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo);
             Assert.NotNull(convertorResult);
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
@@ -121,11 +109,8 @@ public class ImageConversionTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor();
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo, new ProcessFileOptions
-            {
-                DoDeleteOriginal = false
-            });
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo);
             Assert.NotNull(convertorResult);
             Assert.False(convertorResult.IsSuccess);
         }

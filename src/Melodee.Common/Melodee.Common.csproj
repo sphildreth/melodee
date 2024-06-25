@@ -20,8 +20,4 @@
       <PackageReference Include="z440.atl.core" Version="5.25.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Services\" />
-    </ItemGroup>
-
 </Project>

@@ -1,3 +1,4 @@
+using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 
 namespace Melodee.Tests.Plugins.Discovery;

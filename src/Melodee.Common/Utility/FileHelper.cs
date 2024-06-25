@@ -1,4 +1,4 @@
-namespace Melodee.Plugins.Discovery;
+namespace Melodee.Common.Utility;
 
 public static class FileHelper
 {

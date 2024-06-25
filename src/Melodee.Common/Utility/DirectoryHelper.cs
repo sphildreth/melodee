@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using Melodee.Common.Extensions;
 using SerilogTimings;
 
-namespace Melodee.Plugins.Discovery;
+namespace Melodee.Common.Utility;
 
 public static partial class DirectoryHelper
 {

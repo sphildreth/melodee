@@ -15,7 +15,7 @@ public class M3UTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var sfv = new M3UPlaylist();
+            var sfv = new M3UPlaylist(TestsBase.NewConfiguration);
             var release = new Release
             {
                 DirectoryInfo = new DirectoryInfo

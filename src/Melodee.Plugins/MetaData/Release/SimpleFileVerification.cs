@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
@@ -12,7 +13,7 @@ namespace Melodee.Plugins.MetaData.Release;
 /// <summary>
 /// Processes Simple Verification Files (SFV) and gets files (tracks) and files CRC for release.
 /// </summary>
-public sealed class SimpleFileVerification : ReleaseMetaDataBase, IReleasePlugin
+public sealed class SimpleFileVerification(Configuration configuration) : ReleaseMetaDataBase(configuration), IReleasePlugin
 {
     public override string Id => "6C253D42-F176-4A58-A895-C54BEB1F8A5C";
     

@@ -1,13 +1,14 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Serilog;
 
 namespace Melodee.Plugins.MetaData.Release;
 
-public sealed class M3UPlaylist : ReleaseMetaDataBase, IReleasePlugin
+public sealed class M3UPlaylist(Configuration configuration) : ReleaseMetaDataBase(configuration), IReleasePlugin
 {
     public override string Id => "800EBFEF-4A9A-4DD8-8505-056D13535D45";
     

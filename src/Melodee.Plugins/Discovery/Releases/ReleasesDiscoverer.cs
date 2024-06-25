@@ -1,6 +1,7 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Grids;
 using Melodee.Plugins.MetaData.Release;
@@ -26,18 +27,26 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     
     public int SortOrder => 0;
 
-    private IEnumerable<ITrackPlugin> EnabledTrackPlugins { get; } = new ITrackPlugin[]
-    {
-        new MetaTag()
-    };
+    private IEnumerable<ITrackPlugin> EnabledTrackPlugins { get; } 
 
-    private IEnumerable<IReleasePlugin> EnabledReleasePlugins { get; } = new IReleasePlugin[]
-    {
-      //  new CueSheet(),
-      //  new M3UPlaylist(),
-        new SimpleFileVerification()
-    };
+    private IEnumerable<IReleasePlugin> EnabledReleasePlugins { get; }
 
+    public ReleasesDiscoverer(Configuration configuration)
+    {
+        var config = configuration;
+        
+        EnabledTrackPlugins = new ITrackPlugin[]
+        {
+            new MetaTag(config)
+        };
+        EnabledReleasePlugins = new IReleasePlugin[]
+        {
+            //  new CueSheet(),
+            new M3UPlaylist(config),
+            new SimpleFileVerification(config)
+        };
+    }
+    
     public async Task<Common.Models.Release> ReleaseByUniqueIdAsync(
         DirectoryInfo directoryInfo,
         long uniqueId,
@@ -56,16 +65,53 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         return result;
     }
 
-    public async Task<OperationResult<Common.Models.Release>> ReleaseForDirectoryInfoAsync(
-        DirectoryInfo directoryInfo, 
+    public async Task<PagedResult<Release>> ReleasesForDirectoryAsync(
+        DirectoryInfo directoryInfo,
+        PagedRequest pagedRequest, 
         CancellationToken cancellationToken = default)
     {
-        // return new OperationResult<Release>
-        // {
-        //     Data = (await AllReleasesForDirectoryAsync(directoryInfo, cancellationToken)).First()
-        // };
+        var releases = new List<Release>();
+        var dirInfo = new System.IO.DirectoryInfo(directoryInfo.Path);
         
-        throw new NotImplementedException();
+        var dataForDirectoryInfoResult = await AllReleasesForDirectoryAsync(directoryInfo, cancellationToken);
+        if (dataForDirectoryInfoResult.IsSuccess)
+        {
+            releases.AddRange(dataForDirectoryInfoResult.Data);
+        }
+        
+        foreach (var childDir in dirInfo.EnumerateDirectories("*.*", SearchOption.AllDirectories))
+        {
+            var dataForChildDirResult = await AllReleasesForDirectoryAsync(new DirectoryInfo
+            {
+                Path = childDir.FullName,
+                ShortName = childDir.Name
+            }, cancellationToken);
+
+            if (dataForChildDirResult.IsSuccess)
+            {
+                foreach (var r in dataForChildDirResult.Data)
+                {
+                    if (releases.All(x => x.UniqueId != r.UniqueId))
+                    {
+                        releases.Add(r);
+                    }
+                }
+            }
+        }
+        var resultReleases = releases
+            .Skip(pagedRequest.SkipValue)
+            .Take(pagedRequest.TakeValue);
+     
+        var processedReleasesViaPlugins = new List<Release>();
+        await Parallel.ForEachAsync(resultReleases, cancellationToken, async (release, ct) =>
+        {
+            processedReleasesViaPlugins.Add(await ProcessReleasePluginsOnRelease(release, ct));
+        });
+        
+        return new PagedResult<Release>()
+        {
+            Data = processedReleasesViaPlugins
+        };        
     }
 
     private async Task<OperationResult<IEnumerable<Release>>> AllReleasesForDirectoryAsync(DirectoryInfo directoryInfo, CancellationToken cancellationToken = default)
@@ -185,49 +231,13 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     public async Task<PagedResult<ReleaseGrid>> ReleasesGridsForDirectoryAsync(
         DirectoryInfo directoryInfo, 
         PagedRequest pagedRequest, 
-        CancellationToken cancellationToken = default)
-    {
-        var releases = new List<Release>();
-        var dirInfo = new System.IO.DirectoryInfo(directoryInfo.Path);
-        
-        var dataForDirectoryInfoResult = await AllReleasesForDirectoryAsync(directoryInfo, cancellationToken);
-        if (dataForDirectoryInfoResult.IsSuccess)
-        {
-            releases.AddRange(dataForDirectoryInfoResult.Data);
-        }
-        
-        foreach (var childDir in dirInfo.EnumerateDirectories("*.*", SearchOption.AllDirectories))
-        {
-            var dataForChildDirResult = await AllReleasesForDirectoryAsync(new DirectoryInfo
-            {
-                Path = childDir.FullName,
-                ShortName = childDir.Name
-            }, cancellationToken);
+        CancellationToken cancellationToken = default) {
 
-            if (dataForChildDirResult.IsSuccess)
-            {
-                foreach (var r in dataForChildDirResult.Data)
-                {
-                    if (releases.All(x => x.UniqueId != r.UniqueId))
-                    {
-                        releases.Add(r);
-                    }
-                }
-            }
-        }
-        var resultReleases = releases
-            .Skip(pagedRequest.SkipValue)
-            .Take(pagedRequest.TakeValue);
-     
-        var processedReleasesViaPlugins = new List<Release>();
-        await Parallel.ForEachAsync(resultReleases, cancellationToken, async (release, ct) =>
-        {
-            processedReleasesViaPlugins.Add(await ProcessReleasePluginsOnRelease(release, ct));
-        });
+        var releasesForDirectoryInfo = await ReleasesForDirectoryAsync(directoryInfo, pagedRequest, cancellationToken);
         
-        return new PagedResult<Common.Models.Grids.ReleaseGrid>()
+        return new PagedResult<ReleaseGrid>()
         {
-            Data = processedReleasesViaPlugins.Select(x => new Common.Models.Grids.ReleaseGrid
+            Data = releasesForDirectoryInfo.Data.Select(x => new ReleaseGrid
             {
                 Artist = x.Artist(),
                 Title = x.ReleaseTitle(),

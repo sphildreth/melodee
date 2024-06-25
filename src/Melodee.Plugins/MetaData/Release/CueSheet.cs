@@ -1,9 +1,10 @@
 using Melodee.Common.Models;
+using Melodee.Common.Models.Configuration;
 using Melodee.Plugins.Discovery;
 
 namespace Melodee.Plugins.MetaData.Release;
 
-public sealed class CueSheet : ReleaseMetaDataBase, IReleasePlugin
+public sealed class CueSheet(Configuration configuration) : ReleaseMetaDataBase(configuration), IReleasePlugin
 {
     public override string Id => "3CAB0527-B13F-4C29-97AD-5541229240DD";
     
