@@ -38,6 +38,17 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
         var processedSfvFiles = 0;
 
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+        FileSystemDirectoryInfo? parentDirectory = null;
+        if (dirInfo.Parent != null)
+        {
+            parentDirectory = new FileSystemDirectoryInfo
+            {
+                Path = dirInfo.Parent.FullName,
+                Name = dirInfo.Parent.Name
+            };
+        }        
+        
         var trackPlugin = _trackPlugins.First();
         foreach (var sfvFile in sfvFiles)
         {
@@ -56,11 +67,11 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             var firstTrack = tracks.OrderBy(x => x.SortOrder).First();
             var newReleaseTags = new List<MetaTag<object?>>
             {
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1},
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = firstTrack.Artist(), SortOrder = 2 },
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 3 },
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackTotal, Value = firstTrack.TrackTotalNumber(), SortOrder = 101 }
+                new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1},
+                new() { Identifier = MetaTagIdentifier.Artist, Value = firstTrack.Artist(), SortOrder = 2 },
+                new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 3 },
+                new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
+                new() { Identifier = MetaTagIdentifier.TrackTotal, Value = firstTrack.TrackTotalNumber(), SortOrder = 101 }
             };
             var genres = tracks
                 .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
@@ -73,19 +84,32 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                     Value = genre.Key,
                     SortOrder = 5 + i
                 }));
+
             var sfvRelease = new Release
             {
-                Directory = fileSystemDirectoryInfo,
+                Directory = new FileSystemDirectoryInfo
+                {
+                    ParentId = parentDirectory?.UniqueId ?? 0,
+                    Path = fileSystemDirectoryInfo.Path,
+                    Name = fileSystemDirectoryInfo.Name,
+                    TotalItemsFound = tracks.Count,
+                    MusicFilesFound = tracks.Count,
+                    MusicMetaDataFilesFound = 1
+                },
                 Tags = newReleaseTags,
                 Tracks = tracks,
                 ViaPlugins = new string[1] { trackPlugin.DisplayName }
             };
-
             if (sfvRelease.IsValid())
             {
-                var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, $"release-{sfvRelease.Artist().ToFileNameFriendly()}_{sfvRelease.ReleaseTitle().ToFileNameFriendly()}.json");
+                var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, $"{sfvRelease.Artist().ToFileNameFriendly()}_{sfvRelease.ReleaseTitle().ToFileNameFriendly()}.melodee.json");
                 var serialized = System.Text.Json.JsonSerializer.Serialize(sfvRelease);
                 await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                {
+                    sfvFile.Delete();
+                    Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
+                }
                 processedSfvFiles++;
             }
             else
@@ -93,7 +117,6 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 Trace.WriteLine($"Did not serialize invalid release [{sfvRelease }].", "Warning");
             }
         }
-
         return new OperationResult<bool>
         {
             Data = processedSfvFiles > 0

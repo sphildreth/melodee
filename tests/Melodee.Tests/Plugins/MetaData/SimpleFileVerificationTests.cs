@@ -26,7 +26,6 @@ public class SimpleFileVerificationTests
             });
             Assert.NotNull(sfvResult);
             Assert.True(sfvResult.IsSuccess);
-
         }
     }
 

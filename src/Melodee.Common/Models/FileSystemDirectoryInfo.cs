@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
@@ -10,6 +11,7 @@ public sealed record FileSystemDirectoryInfo
 {
     public long UniqueId => SafeParser.Hash(Path);
 
+    [JsonIgnore]
     public bool ShowInTree => MusicFilesFound > 0;
     
     public long ParentId { get; init; }
