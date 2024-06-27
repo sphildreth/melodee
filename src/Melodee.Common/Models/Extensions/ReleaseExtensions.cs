@@ -39,6 +39,17 @@ public static class ReleaseExtensions
         return d;
     }
 
+    public static bool IsValid(this Release release)
+    {
+        if (release.Tags?.Count() == 0)
+        {
+            return false;
+        }
+        return release.Artist().Nullify() != null &&
+               release.ReleaseTitle().Nullify() != null &&
+               release.ReleaseYear() > DateTime.MinValue.Year && release.ReleaseYear() < DateTime.MaxValue.Year;
+    }
+    
     public static ReleaseArtistType ArtistType(this Release release)
     {
         var artist = release.Artist();
@@ -94,7 +105,7 @@ public static class ReleaseExtensions
         return string.IsNullOrWhiteSpace(title) || UnwantedReleaseTitleTextRegex.IsMatch(title);
     }
     
-    public static System.IO.DirectoryInfo ToDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.DirectoryInfo.Path);
+    public static System.IO.DirectoryInfo ToDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.Directory.Path);
    
     public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this Release release, string extension)
     {
@@ -120,7 +131,6 @@ public static class ReleaseExtensions
         {
             return false;
         }
-
         try
         {
             var normalizedArtistName = release.Artist()?.ToAlphanumericName() ?? string.Empty;

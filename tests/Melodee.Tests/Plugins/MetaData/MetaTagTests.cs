@@ -14,13 +14,13 @@ public class MetaTagTests
         if (fileInfo.Exists)
         {
             var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(TestsBase.NewConfiguration);
-            var tagResult = await metaTag.ProcessFileAsync(fileInfo);
+            var tagResult = await metaTag.ProcessFileAsync(fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
             Assert.NotNull(tagResult.Data.Tags);
-            Assert.NotNull(tagResult.Data.FileSystemInfo);
-            Assert.Equal(fileInfo.FullName, tagResult.Data.FileSystemInfo.FullName);
+            Assert.NotNull(tagResult.Data.File);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName());
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
         }
     }
@@ -33,7 +33,7 @@ public class MetaTagTests
         if (fileInfo.Exists)
         {
             var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(TestsBase.NewConfiguration);
-            var tagResult = await metaTag.ProcessFileAsync(fileInfo);
+            var tagResult = await metaTag.ProcessFileAsync(fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
@@ -41,8 +41,8 @@ public class MetaTagTests
             var track = tagResult.Data;
             
             Assert.NotNull(track.Tags);
-            Assert.NotNull(track.FileSystemInfo);
-            Assert.Equal(fileInfo.FullName, track.FileSystemInfo.FullName);
+            Assert.NotNull(track.File);
+            Assert.Equal(fileInfo.FullName, track.File.FullName());
             Assert.NotNull(track.Title()?.Nullify());
             Assert.False(track.TitleHasUnwantedText());
         }

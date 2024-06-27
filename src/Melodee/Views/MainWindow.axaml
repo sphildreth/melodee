@@ -31,7 +31,7 @@
                 ItemsSource="{Binding InboundDirectoryInfos}">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding SubNodes}">
-                        <TextBlock Tag="{Binding DirectoryInfo.UniqueId}" Text="{Binding Title}" />
+                        <TextBlock Tag="{Binding FileSystemDirectoryInfo.UniqueId}" Text="{Binding Title}" />
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>

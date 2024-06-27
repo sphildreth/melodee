@@ -1,3 +1,4 @@
+using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 
 namespace Melodee.Plugins.MetaData;
@@ -16,5 +17,5 @@ public abstract class MetaDataBase(Configuration configuration)
     
     public bool StopProcessing { get; internal set; }
     
-    public abstract bool DoesHandleFile(FileSystemInfo fileSystemInfo);
+    public abstract bool DoesHandleFile(FileSystemFileInfo fileSystemInfo);
 }

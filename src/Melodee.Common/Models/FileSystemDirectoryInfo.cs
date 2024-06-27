@@ -3,10 +3,10 @@ using Melodee.Common.Utility;
 namespace Melodee.Common.Models;
 
 /// <summary>
-/// This is a representation of a "file" directory which usually contains release files or nested release directories.
+/// This is a representation of a "file" directory.
 /// </summary>
 [Serializable]
-public sealed record DirectoryInfo
+public sealed record FileSystemDirectoryInfo
 {
     public long UniqueId => SafeParser.Hash(Path);
 
@@ -19,7 +19,7 @@ public sealed record DirectoryInfo
     /// </summary>
     public required string Path { get; init; }
     
-    public required string ShortName { get; init; }
+    public required string Name { get; init; }
     
     public int TotalItemsFound { get; init; }
     
@@ -31,6 +31,6 @@ public sealed record DirectoryInfo
 
     public override string ToString()
     {
-        return $"UniqueId [{ UniqueId }] Path [{Path}] ShortName [{ShortName}]";
+        return $"UniqueId [{ UniqueId }] Path [{Path}] ShortName [{Name}]";
     }
 }

@@ -13,5 +13,5 @@ public interface IDirectoriesDiscoverer : IPlugin
     /// <param name="directoryInfo">DirectoryInfo to process.</param>
     /// <param name="pagedRequest">Paged Request info; take, skip, filter, etc.</param>
     /// <returns>PagedResult of Discovered DirectoryInfos.</returns>
-    PagedResult<Common.Models.DirectoryInfo> DirectoryInfosForDirectory(System.IO.DirectoryInfo directoryInfo, PagedRequest pagedRequest);
+    PagedResult<Common.Models.FileSystemDirectoryInfo> DirectoryInfosForDirectory(System.IO.DirectoryInfo directoryInfo, PagedRequest pagedRequest);
 }

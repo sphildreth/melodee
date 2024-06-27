@@ -3,6 +3,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData.Track.Extensions;
@@ -37,24 +38,24 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
 
     public override int SortOrder { get; } = 0;
 
-    public override bool DoesHandleFile(FileSystemInfo fileSystemInfo)
+    public override bool DoesHandleFile(FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists)
+        if (!IsEnabled || !fileSystemInfo.Exists())
         {
             return false;
         }
-        return FileHelper.IsFileMediaType(fileSystemInfo.Extension);
+        return FileHelper.IsFileMediaType(fileSystemInfo.Extension());
     }
 
-    public Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
     {
         var tags = new List<MetaTag<object>>();
         var mediaAudios = new List<MediaAudio<object>>();
         var images = new List<ImageInfo>();
         
-        if (fileSystemInfo.Exists)
+        if (fileSystemFileInfo.Exists())
         {
-            var fileAtl = new ATL.Track(fileSystemInfo.FullName);
+            var fileAtl = new ATL.Track(fileSystemFileInfo.FullName());
             if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
             {
                 var atlDictionary = fileAtl.ToDictionary();
@@ -174,7 +175,7 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
         {
             Data = new Common.Models.Track
             {
-                FileSystemInfo = fileSystemInfo,
+                File = fileSystemFileInfo,
                 Images = images,
                 Tags = tags,
                 MediaAudios = mediaAudios 

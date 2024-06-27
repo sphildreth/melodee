@@ -5,16 +5,17 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
-using Melodee.Plugins.Discovery;
+using Melodee.Plugins.MetaData.Track;
 using Serilog;
 
-namespace Melodee.Plugins.MetaData.Release;
+namespace Melodee.Plugins.MetaData.Directory;
 
 /// <summary>
 /// Processes Simple Verification Files (SFV) and gets files (tracks) and files CRC for release.
 /// </summary>
-public sealed class SimpleFileVerification(Configuration configuration) : ReleaseMetaDataBase(configuration), IReleasePlugin
+public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
+    private readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
     public override string Id => "6C253D42-F176-4A58-A895-C54BEB1F8A5C";
     
     public override string DisplayName => nameof(SimpleFileVerification);
@@ -23,65 +24,79 @@ public sealed class SimpleFileVerification(Configuration configuration) : Releas
 
     public override int SortOrder { get; } = 0;
   
-    public async Task<OperationResult<Common.Models.Release>> ProcessReleaseAsync(Common.Models.Release release, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var messages = new List<string>(release.Messages);
-        var sfv = release.FileInfosForExtension("sfv").ToArray();
-
-        if (!sfv.Any())
+        var sfvFiles = fileSystemDirectoryInfo.FileInfosForExtension("sfv").ToArray();
+        
+        if (sfvFiles.Length == 0)
         {
-            return new OperationResult<Common.Models.Release>("Skipping validation. No SFV file for Release.")
+            return new OperationResult<bool>("Skipping validation. No SFV files found.")
             {
-                Data = release
+                Data = false
             }; 
         }
-        if (sfv.Count() > 1)
+
+        var processedSfvFiles = 0;
+
+        var trackPlugin = _trackPlugins.First();
+        foreach (var sfvFile in sfvFiles)
         {
-            return new OperationResult<Common.Models.Release>
+            var models = await GetModelsFromSfvFile(sfvFile.FullName);
+
+            var tracks = new List<Common.Models.Track>();
+            await Parallel.ForEachAsync(models, cancellationToken, async (model, tt) =>
             {
-                Data = release,
-                Errors = new[]
+                var trackResult = await trackPlugin.ProcessFileAsync(model.FileSystemFileInfo, tt);
+                if (trackResult.IsSuccess)
                 {
-                    new Exception("More than 1 SFV file found in Release folder. Consider splitting out each Releases files into subfolders.")
+                    tracks.Add(trackResult.Data);
                 }
+            });
+
+            var firstTrack = tracks.OrderBy(x => x.SortOrder).First();
+            var newReleaseTags = new List<MetaTag<object?>>
+            {
+                new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1},
+                new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = firstTrack.Artist(), SortOrder = 2 },
+                new MetaTag<object?> { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 3 },
+                new MetaTag<object?> { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
+                new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackTotal, Value = firstTrack.TrackTotalNumber(), SortOrder = 101 }
             };
-        }
-
-        if (release.Tracks != null && !release.Tracks.Any())
-        {
-            messages.Add("Release has no tracks.");
-        }
-        else
-        {
-            // Parser lines from SFV into Models
-            var models = await GetModelsFromSfvFile(sfv.First().FullName);
-
-            if (models.Length != 0)
-            {
-                // Ensure that the release has a track for each line in the SFV
-                foreach (var model in models)
+            var genres = tracks
+                .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
+                .Where(x => x.Identifier == MetaTagIdentifier.Genre);
+            newReleaseTags.AddRange(genres
+                .GroupBy(x => x.Value)
+                .Select((genre, i) => new MetaTag<object?>
                 {
-                    var trackForModel = release.Tracks?.FirstOrDefault(x => x.FileSystemInfo == model.FileInfo);
-                    if (trackForModel == null)
-                    {
-                        messages.Add($"!! Missing Track For SFV [{model}]");
-                        release.Status = ReleaseStatus.Incomplete;
-                    }
+                    Identifier = MetaTagIdentifier.Genre,
+                    Value = genre.Key,
+                    SortOrder = 5 + i
+                }));
+            var sfvRelease = new Release
+            {
+                Directory = fileSystemDirectoryInfo,
+                Tags = newReleaseTags,
+                Tracks = tracks,
+                ViaPlugins = new string[1] { trackPlugin.DisplayName }
+            };
 
-                    if (!model.IsValid)
-                    {
-                        messages.Add($"!! Release has invalid tracks. SFV [{model}]");
-                    }
-                }
-                release.ViaPlugins = release.ViaPlugins.Append(nameof(SimpleFileVerification)).ToArray();
-                release.Status = messages.Count != 0 ? ReleaseStatus.NeedsAttention : release.Status;
+            if (sfvRelease.IsValid())
+            {
+                var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, $"release-{sfvRelease.Artist().ToFileNameFriendly()}_{sfvRelease.ReleaseTitle().ToFileNameFriendly()}.json");
+                var serialized = System.Text.Json.JsonSerializer.Serialize(sfvRelease);
+                await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                processedSfvFiles++;
+            }
+            else
+            {
+                Trace.WriteLine($"Did not serialize invalid release [{sfvRelease }].", "Warning");
             }
         }
 
-        return new OperationResult<Common.Models.Release>(messages)
+        return new OperationResult<bool>
         {
-            Type = messages.Count != 0 ? OperationResponseType.ValidationFailure : OperationResponseType.Ok,
-            Data = release
+            Data = processedSfvFiles > 0
         };
     }
     
@@ -103,6 +118,10 @@ public sealed class SimpleFileVerification(Configuration configuration) : Releas
                     {
                         result.Add(model);
                     }
+                }
+                else
+                {
+                    Trace.WriteLine($"Skipped SFV line [{line}]", "Information");
                 }
             }
         }
@@ -154,7 +173,7 @@ public sealed class SimpleFileVerification(Configuration configuration) : Releas
                 {
                     IsValid = IsCrCHashAccurate(Path.Combine(dirName ?? string.Empty, parts[0]), parts[1]),
                     CrcHash = parts[1],    
-                    FileInfo = new FileInfo(parts[0]),
+                    FileSystemFileInfo = new FileInfo(Path.Combine(dirName, parts[0])).ToFileSystemInfo(),
                     ReleaseArist = releaseArtist?.Replace("_", " ").CleanString(true),
                     TrackNumber = SafeParser.ToNumber<int>(trackNameAndTitleParts[0]),
                     TrackTitle = trackTitle.Replace("_", " ").RemoveFileExtension()!.CleanString() ?? string.Empty

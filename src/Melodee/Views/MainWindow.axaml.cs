@@ -36,7 +36,7 @@ public partial class MainWindow : Window
 
         allDirectoryInfos.AddRange(((sender as TreeView)!.DataContext as MainWindowViewModel)!.InboundDirectoryInfos.Where(x => !x.SubNodes.Any()));
 
-        var clickedDirectory = allDirectoryInfos.FirstOrDefault(x => x.DirectoryInfo.UniqueId == (long?)clickedDirectoryId);
+        var clickedDirectory = allDirectoryInfos.FirstOrDefault(x => x.FileSystemDirectoryInfo.UniqueId == (long?)clickedDirectoryId);
 
         if (clickedDirectory == null)
         {
@@ -47,10 +47,10 @@ public partial class MainWindow : Window
         var releasesDiscoverer = dc.ReleasesDiscoverer;
         dc.IsLoading = true;
         dc.SelectedRelease = null;        
-        dc.SelectedDirectoryInfo = clickedDirectory.DirectoryInfo;
-        using (Operation.Time("Discovering releases for [{File}]", clickedDirectory.DirectoryInfo))
+        dc.SelectedFileSystemDirectoryInfo = clickedDirectory.FileSystemDirectoryInfo;
+        using (Operation.Time("Discovering releases for [{File}]", clickedDirectory.FileSystemDirectoryInfo))
         {
-            var pagedResult = Task.Run(() => releasesDiscoverer.ReleasesGridsForDirectoryAsync(clickedDirectory.DirectoryInfo, new PagedRequest())).Result;
+            var pagedResult = Task.Run(() => releasesDiscoverer.ReleasesGridsForDirectoryAsync(clickedDirectory.FileSystemDirectoryInfo, new PagedRequest())).Result;
             dc.ReleaseInfos.Clear();
             dc.ReleaseInfos.AddRange(pagedResult.Data);
             dc.IsLoading = false;
@@ -83,7 +83,7 @@ public partial class MainWindow : Window
         dc.IsLoading = true;
         using (Operation.Time("Getting Release detail for [{File}]", clickedReleaseGrid.UniqueId))
         {
-            var detailResult = Task.Run(() => releasesDiscoverer.ReleaseByUniqueIdAsync(dc.SelectedDirectoryInfo, clickedReleaseGrid.UniqueId)).Result;
+            var detailResult = Task.Run(() => releasesDiscoverer.ReleaseByUniqueIdAsync(dc.SelectedFileSystemDirectoryInfo, clickedReleaseGrid.UniqueId)).Result;
             dc.SelectedRelease = new ReleaseDetail
             {
                 Artist = detailResult.Artist() ?? string.Empty,

@@ -2,7 +2,6 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Utility;
 using Serilog;
-using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
 namespace Melodee.Plugins.Scripting;
 
@@ -20,7 +19,7 @@ public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPl
 
     public bool StopProcessing { get; } = false;
     
-    public async Task<OperationResult<bool>> ProcessAsync(DirectoryInfo directoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> ProcessAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var result = false;
         string? scriptOutput = null;
@@ -40,7 +39,7 @@ public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPl
             }
             try
             {
-                var argument = $" -d \"{directoryInfo.Path}\" -r {(_configuration.PluginProcessOptions.DoDeleteOriginal ? "0" :"1")}";
+                var argument = $" -d \"{fileSystemDirectoryInfo.Path}\" -r {(_configuration.PluginProcessOptions.DoDeleteOriginal ? "0" :"1")}";
                 await $"{_configuration.Scripting.PreDiscoveryScript}{argument}".Bash();
                 result = true;
             }

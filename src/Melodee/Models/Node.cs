@@ -5,21 +5,21 @@ namespace Melodee.Models;
 
 public class Node
 {
-    public DirectoryInfo DirectoryInfo { get; }
+    public FileSystemDirectoryInfo FileSystemDirectoryInfo { get; }
 
     public ObservableCollection<Node> SubNodes { get; set; } = [];
     
     public string Title { get; }
   
-    public Node(DirectoryInfo directoryInfo, string title)
+    public Node(FileSystemDirectoryInfo fileSystemDirectoryInfo, string title)
     {
-        DirectoryInfo = directoryInfo;
+        FileSystemDirectoryInfo = fileSystemDirectoryInfo;
         Title = title;
     }
 
-    public Node(DirectoryInfo directoryInfo, string title, ObservableCollection<Node> subNodes)
+    public Node(FileSystemDirectoryInfo fileSystemDirectoryInfo, string title, ObservableCollection<Node> subNodes)
     {
-        DirectoryInfo = directoryInfo;
+        FileSystemDirectoryInfo = fileSystemDirectoryInfo;
         Title = title;
         SubNodes = subNodes;
     }

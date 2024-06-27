@@ -5,12 +5,11 @@ using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Grids;
 using Melodee.Common.Utility;
-using Melodee.Plugins.MetaData.Release;
+using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Serilog;
 using SerilogTimings;
-using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
-using SimpleFileVerification = Melodee.Plugins.MetaData.Release.SimpleFileVerification;
+using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Plugins.Discovery.Releases;
 
@@ -22,7 +21,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
  
     private readonly IEnumerable<ITrackPlugin> _enabledTrackPlugins;
 
-    private readonly IEnumerable<IReleasePlugin> _enabledReleasePlugins;
+    private readonly IEnumerable<IDirectoryPlugin> _enabledReleasePlugins;
     
     
     public string DisplayName => nameof(ReleasesDiscoverer);
@@ -42,41 +41,41 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         {
             new MetaTag(config)
         };
-        _enabledReleasePlugins = new IReleasePlugin[]
+        _enabledReleasePlugins = new IDirectoryPlugin[]
         {
             //  new CueSheet(),
             new M3UPlaylist(config),
-            new SimpleFileVerification(config)
+            new SimpleFileVerification(_enabledTrackPlugins, config)
         };
     }
     
     public async Task<Common.Models.Release> ReleaseByUniqueIdAsync(
-        DirectoryInfo directoryInfo,
+        FileSystemDirectoryInfo fileSystemDirectoryInfo,
         long uniqueId,
         CancellationToken cancellationToken = default)
     {
-        var result = (await AllReleasesForDirectoryAsync(directoryInfo, cancellationToken)).Data.FirstOrDefault(x => x.UniqueId == uniqueId);
+        var result = (await AllReleasesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data.FirstOrDefault(x => x.UniqueId == uniqueId);
         if (result == null)
         {
             Log.Error("Unable to find Release by id[{UniqueId}]", uniqueId);
             return new Release
             {
                 ViaPlugins = [],
-                DirectoryInfo = directoryInfo
+                Directory = fileSystemDirectoryInfo
             };
         }
         return result;
     }
 
     public async Task<PagedResult<Release>> ReleasesForDirectoryAsync(
-        DirectoryInfo directoryInfo,
+        FileSystemDirectoryInfo fileSystemDirectoryInfo,
         PagedRequest pagedRequest, 
         CancellationToken cancellationToken = default)
     {
         var releases = new List<Release>();
-        var dirInfo = new System.IO.DirectoryInfo(directoryInfo.Path);
+        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
         
-        var dataForDirectoryInfoResult = await AllReleasesForDirectoryAsync(directoryInfo, cancellationToken);
+        var dataForDirectoryInfoResult = await AllReleasesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
         if (dataForDirectoryInfoResult.IsSuccess)
         {
             releases.AddRange(dataForDirectoryInfoResult.Data);
@@ -84,10 +83,10 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         
         foreach (var childDir in dirInfo.EnumerateDirectories("*.*", SearchOption.AllDirectories))
         {
-            var dataForChildDirResult = await AllReleasesForDirectoryAsync(new DirectoryInfo
+            var dataForChildDirResult = await AllReleasesForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = childDir.FullName,
-                ShortName = childDir.Name
+                Name = childDir.Name
             }, cancellationToken);
 
             if (dataForChildDirResult.IsSuccess)
@@ -108,7 +107,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         var processedReleasesViaPlugins = new List<Release>();
         await Parallel.ForEachAsync(resultReleases, cancellationToken, async (release, ct) =>
         {
-            processedReleasesViaPlugins.Add(await FindImagesForRelease(await ProcessReleasePluginsOnRelease(release, ct), ct));
+            processedReleasesViaPlugins.Add(await FindImagesForRelease(release, ct));
         });
         
         return new PagedResult<Release>()
@@ -117,28 +116,29 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         };        
     }
 
-    private async Task<OperationResult<IEnumerable<Release>>> AllReleasesForDirectoryAsync(DirectoryInfo directoryInfo, CancellationToken cancellationToken = default)
+    private async Task<OperationResult<IEnumerable<Release>>> AllReleasesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var releases = new List<Release>();
         var messages = new List<string>();
         var viaPlugins = new List<string>();
         var releaseFiles = new List<ReleaseFile>();
         
-        var dirInfo = new System.IO.DirectoryInfo(directoryInfo.Path);
+        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
-            using (Operation.Time("AllReleasesForDirectoryAsync [{directoryInfo}]", directoryInfo.ShortName))
+            using (Operation.Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
             {
                 var tracks = new List<Track>();
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
                 {
+                    var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in _enabledTrackPlugins.OrderBy(x => x.SortOrder))
                     {
-                        if (plugin.DoesHandleFile(fileSystemInfo))
+                        if (plugin.DoesHandleFile(fsi))
                         {
                             using (Operation.Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                             {
-                                var pluginResult = await plugin.ProcessFileAsync(fileSystemInfo, cancellationToken);
+                                var pluginResult = await plugin.ProcessFileAsync(fsi, cancellationToken);
                                 if (pluginResult.IsSuccess)
                                 {
                                     tracks.Add(pluginResult.Data);
@@ -183,7 +183,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                                 }));
                             releases.Add(new Release
                             {
-                                DirectoryInfo = directoryInfo,
+                                Directory = fileSystemDirectoryInfo,
                                 Tags = newReleaseTags,
                                 Tracks = tracks,
                                 ViaPlugins = viaPlugins.Distinct().ToArray()
@@ -214,7 +214,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     private async Task<Release> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(release.DirectoryInfo.Path, SearchOption.TopDirectoryOnly);
+        var imageFiles = ImageHelper.ImageFilesInDirectory(release.Directory.Path, SearchOption.TopDirectoryOnly);
         foreach (var imageFile in imageFiles)
         {
             var fileInfo = new System.IO.FileInfo(imageFile);
@@ -272,32 +272,32 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         return release;
     }
 
-    private async Task<Release> ProcessReleasePluginsOnRelease(Release release, CancellationToken cancellationToken = default)
-    {
-        // Process the given release in each enabled Release plugin. 
-        //  A release plugin example is sfv which parses the Sfv and checks the files CRC and then marks the Release as complete if all sfv track files are found and valid.
-        
-        foreach (var plugin in _enabledReleasePlugins.OrderBy(x => x.SortOrder))
-        {
-            using (Operation.Time("ProcessReleasePluginsOnRelease [{Release}] Plugin [{Plugin}]", release.ToString(), plugin.DisplayName))
-            {
-                var pluginResult = await plugin.ProcessReleaseAsync(release, cancellationToken);
-                if (pluginResult.IsSuccess)
-                {
-                    release = pluginResult.Data;
-                }
-            }
-        }
-        return release;
-    }
+    // private async Task<Release> ProcessReleasePluginsOnRelease(Release release, CancellationToken cancellationToken = default)
+    // {
+    //     // Process the given release in each enabled Release plugin. 
+    //     //  A release plugin example is sfv which parses the Sfv and checks the files CRC and then marks the Release as complete if all sfv track files are found and valid.
+    //     
+    //     foreach (var plugin in _enabledReleasePlugins.OrderBy(x => x.SortOrder))
+    //     {
+    //         using (Operation.Time("ProcessReleasePluginsOnRelease [{Release}] Plugin [{Plugin}]", release.ToString(), plugin.DisplayName))
+    //         {
+    //             var pluginResult = await plugin.ProcessReleaseAsync(release, cancellationToken);
+    //             if (pluginResult.IsSuccess)
+    //             {
+    //                 release = pluginResult.Data;
+    //             }
+    //         }
+    //     }
+    //     return release;
+    // }
     
 
     public async Task<PagedResult<ReleaseGrid>> ReleasesGridsForDirectoryAsync(
-        DirectoryInfo directoryInfo, 
+        FileSystemDirectoryInfo fileSystemDirectoryInfo, 
         PagedRequest pagedRequest, 
         CancellationToken cancellationToken = default) {
 
-        var releasesForDirectoryInfo = await ReleasesForDirectoryAsync(directoryInfo, pagedRequest, cancellationToken);
+        var releasesForDirectoryInfo = await ReleasesForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
         
         return new PagedResult<ReleaseGrid>
         {

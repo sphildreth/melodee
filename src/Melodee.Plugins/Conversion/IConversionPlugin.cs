@@ -7,9 +7,9 @@ public interface IConversionPlugin
 {
     string DisplayName { get; }
     
-    bool DoesHandleFile(FileSystemInfo fileSystemInfo);
+    bool DoesHandleFile(FileSystemFileInfo fileSystemInfo);
     
     bool StopProcessing { get; }
     
-    Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default);
+    Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default);
 }

@@ -27,7 +27,7 @@ public class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<ReleaseGrid> ReleaseInfos { get; set; } = [];
     
-    public DirectoryInfo SelectedDirectoryInfo { get; set; }
+    public FileSystemDirectoryInfo SelectedFileSystemDirectoryInfo { get; set; }
     
     public WriteableBitmap ReleasePrimaryCoverImage { get; set; }
    
@@ -68,7 +68,7 @@ public class MainWindowViewModel : ViewModelBase
         var inboundDirectoryDirectoryInfo = dirData.First(x => x.ParentId == 0);
         foreach (var directory in dirData.Where(x => x.ParentId == inboundDirectoryDirectoryInfo.UniqueId && x.ShowInTree))
         {
-            var node = new Node(directory, directory.ShortName);
+            var node = new Node(directory, directory.Name);
             var childNodes = NodesForDirectoryInfo(dirData, directory).ToArray();
             if (childNodes.Any())
             {
@@ -79,16 +79,16 @@ public class MainWindowViewModel : ViewModelBase
         InboundDirectoryInfos = new ObservableCollection<Node>(result);      
     }
 
-    private IEnumerable<Node> NodesForDirectoryInfo(IEnumerable<DirectoryInfo> data, DirectoryInfo directoryInfo)
+    private IEnumerable<Node> NodesForDirectoryInfo(IEnumerable<FileSystemDirectoryInfo> data, FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
-        var directoryInfos = data as DirectoryInfo[] ?? data.ToArray();
+        var directoryInfos = data as FileSystemDirectoryInfo[] ?? data.ToArray();
         var result = directoryInfos
-            .Where(x => x.ParentId == directoryInfo.UniqueId && x.ShowInTree)
-            .Select(x => new Node(x, x.ShortName))
+            .Where(x => x.ParentId == fileSystemDirectoryInfo.UniqueId && x.ShowInTree)
+            .Select(x => new Node(x, x.Name))
             .ToArray();
         foreach (var node in result)
         {
-            var ccChildNodes = NodesForDirectoryInfo(directoryInfos, node.DirectoryInfo).ToArray();
+            var ccChildNodes = NodesForDirectoryInfo(directoryInfos, node.FileSystemDirectoryInfo).ToArray();
             if (ccChildNodes.Length != 0)
             {
                 node.SubNodes = new ObservableCollection<Node>(ccChildNodes);

@@ -1,10 +1,9 @@
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
-using Melodee.Plugins.Discovery;
 
-namespace Melodee.Plugins.MetaData.Release;
+namespace Melodee.Plugins.MetaData.Directory;
 
-public sealed class CueSheet(Configuration configuration) : ReleaseMetaDataBase(configuration), IReleasePlugin
+public sealed class CueSheet(Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
     public override string Id => "3CAB0527-B13F-4C29-97AD-5541229240DD";
     
@@ -28,7 +27,7 @@ public sealed class CueSheet(Configuration configuration) : ReleaseMetaDataBase(
     //     return string.Equals(ext.Replace(".", ""), "cue");
     // }
 
-    public Task<OperationResult<Common.Models.Release>> ProcessReleaseAsync(Common.Models.Release release, CancellationToken cancellationToken = default)
+    public Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
 

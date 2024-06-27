@@ -9,7 +9,6 @@ using Melodee.Plugins.Conversion.Media;
 using Melodee.Plugins.Discovery.Releases;
 using Melodee.Plugins.Scripting;
 using SerilogTimings;
-using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
 namespace Melodee.Plugins.Processor;
 
@@ -45,17 +44,17 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         };
     }
     
-    public async Task<OperationResult<bool>> ProcessDirectoryAsync(DirectoryInfo directoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         // Ensure directory to process exists
-        var dirInfo = new System.IO.DirectoryInfo(directoryInfo.Path);
+        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
             return new OperationResult<bool>
             {
                 Errors = new[]
                 {
-                    new Exception($"Directory [{directoryInfo}] not found.")
+                    new Exception($"Directory [{fileSystemDirectoryInfo}] not found.")
                 },
                 Data = false
             };
@@ -78,7 +77,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         // Run PreDiscovery script
         if (_preDiscoveryScript.IsEnabled)
         {
-            var preDiscoveryScriptResult = await _preDiscoveryScript.ProcessAsync(directoryInfo, cancellationToken);
+            var preDiscoveryScriptResult = await _preDiscoveryScript.ProcessAsync(fileSystemDirectoryInfo, cancellationToken);
             if (!preDiscoveryScriptResult.IsSuccess)
             {
                 return new OperationResult<bool>(preDiscoveryScriptResult.Messages)
@@ -94,13 +93,14 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         // Run Enabled Conversion scripts on each file in directory
         foreach (var fileSystemInfo in allFilesInDirectory)
         {
+            var fsi = fileSystemInfo.ToFileSystemInfo();
             foreach (var plugin in _enabledConversionPlugins)
             {
-                if (plugin.DoesHandleFile(fileSystemInfo))
+                if (plugin.DoesHandleFile(fsi))
                 {
                     using (Operation.Time("Conversion: File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                     {
-                        var pluginResult = await plugin.ProcessFileAsync(fileSystemInfo, cancellationToken);
+                        var pluginResult = await plugin.ProcessFileAsync(fsi, cancellationToken);
                         if (!pluginResult.IsSuccess)
                         {
                             return new OperationResult<bool>(pluginResult.Messages)
@@ -120,7 +120,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         }
 
         // Find releases in given directory
-        var allReleasesInFolder = await _releasesDiscoverer.ReleasesForDirectoryAsync(directoryInfo, new PagedRequest(), cancellationToken);
+        var allReleasesInFolder = await _releasesDiscoverer.ReleasesForDirectoryAsync(fileSystemDirectoryInfo, new PagedRequest(), cancellationToken);
         if (!allReleasesInFolder.IsSuccess)
         {
             return new OperationResult<bool>(allReleasesInFolder.Messages)
@@ -144,11 +144,11 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.TrackFileName(_configuration));
                 if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                 {
-                    File.Move(track.FileSystemInfo.FullName, newTrackFileName);
+                    File.Move(track.File.FullName(), newTrackFileName);
                 }
                 else
                 {
-                    File.Copy(track.FileSystemInfo.FullName, newTrackFileName);
+                    File.Copy(track.File.FullName(), newTrackFileName);
                 }
             }
             

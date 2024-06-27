@@ -1,4 +1,4 @@
-namespace Melodee.Plugins.MetaData.Release.Models;
+namespace Melodee.Plugins.MetaData.Directory.Models;
 
 [Serializable]
 public sealed record M3ULine

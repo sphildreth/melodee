@@ -3,6 +3,7 @@ using FFMpegCore;
 using FFMpegCore.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData;
@@ -24,20 +25,20 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
 
     public override int SortOrder { get; } = 0;
 
-    public override bool DoesHandleFile(FileSystemInfo fileSystemInfo)
+    public override bool DoesHandleFile(FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists)
+        if (!IsEnabled || !fileSystemInfo.Exists())
         {
             return false;
         }
-        return FileHelper.IsFileMediaType(fileSystemInfo.Extension);
+        return FileHelper.IsFileMediaType(fileSystemInfo.Extension());
     }
 
-    public async Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension))
+        if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension()))
         {
-            return new OperationResult<FileSystemInfo>
+            return new OperationResult<FileSystemFileInfo>
             {
                 Errors = new[]
                 {
@@ -47,15 +48,15 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
             };
         }
         
-        var fileInfo = new FileInfo(fileSystemInfo.FullName);
+        var fileInfo = new FileInfo(fileSystemInfo.FullName());
         if (fileInfo.Exists && Configuration.MediaConvertorOptions.ConversionEnabled)
         {
-            var fileAtl = new ATL.Track(fileSystemInfo.FullName);
+            var fileAtl = new ATL.Track(fileSystemInfo.FullName());
             if (ShouldMediaTrackBeConverted(fileAtl))
             {
                 using (Operation.Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
-                    var mediaInfo = await FFProbe.AnalyseAsync(fileSystemInfo.FullName, cancellationToken: cancellationToken);
+                    var mediaInfo = await FFProbe.AnalyseAsync(fileSystemInfo.FullName(), cancellationToken: cancellationToken);
 
                     var trackFileInfo = fileAtl.FileInfo();
                     var trackDirectory = trackFileInfo?.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Track");
@@ -86,9 +87,9 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
             }
         }
 
-        return new OperationResult<FileSystemInfo>
+        return new OperationResult<FileSystemFileInfo>
         {
-            Data = fileInfo
+            Data = fileInfo.ToFileSystemInfo()
         };
     }
     

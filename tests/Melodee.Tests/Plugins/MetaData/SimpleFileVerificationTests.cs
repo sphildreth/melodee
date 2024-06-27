@@ -1,7 +1,7 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.MetaData.Release.Models;
-using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
-using SimpleFileVerification = Melodee.Plugins.MetaData.Release.SimpleFileVerification;
+using Melodee.Plugins.MetaData.Directory.Models;
+using Melodee.Plugins.MetaData.Track;
+using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Tests.Plugins.MetaData;
 
@@ -10,25 +10,23 @@ public class SimpleFileVerificationTests
     [Fact]
     public async Task ValidateSfvFileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/test.sfv";
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.sfv";
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var sfv = new SimpleFileVerification(TestsBase.NewConfiguration);
-            var release = new Release
-            {
-                DirectoryInfo = new DirectoryInfo
+            var sfv = new SimpleFileVerification(
+                new []
                 {
-                    Path = @"/home/steven/incoming/melodee_test/tests/",
-                    ShortName = "tests"
-                },
-                ViaPlugins = []
-            };
-            var sfvResult = await sfv.ProcessReleaseAsync(release);
+                    new MetaTag(TestsBase.NewConfiguration)
+                }, TestsBase.NewConfiguration);
+            var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
+                Name = "00-k 2024"
+            });
             Assert.NotNull(sfvResult);
-            // As there are no tracks on the release there should be SFV missing messages and the result is of type validation failure.
-            Assert.False(sfvResult.IsSuccess);
-            Assert.NotNull(sfvResult.Data);
+            Assert.True(sfvResult.IsSuccess);
+
         }
     }
 
@@ -41,7 +39,12 @@ public class SimpleFileVerificationTests
         {
             IsValid = false,
             CrcHash = "7a84ce20",
-            FileInfo = new FileInfo("01-avatar-bound_to_the_wall.mp3"),
+            FileSystemFileInfo = new FileSystemFileInfo
+            {
+                Path = string.Empty,
+                Name = "1-avatar-bound_to_the_wall.mp3",
+                Size = 0
+            },
             ReleaseArist = "Avatar",
             TrackTitle = "Bound To The Wall",
             TrackNumber = 1
@@ -58,7 +61,12 @@ public class SimpleFileVerificationTests
         {
             IsValid = false,
             CrcHash = "aff033ca",
-            FileInfo = new FileInfo("01-pole_shift.mp3"),
+            FileSystemFileInfo = new FileSystemFileInfo
+            {
+                Path = string.Empty,
+                Name = "01-pole_shift.mp3",
+                Size = 0
+            },            
             TrackTitle = "Pole Shift",
             TrackNumber = 1
         };
@@ -74,7 +82,12 @@ public class SimpleFileVerificationTests
         {
             IsValid = false,
             CrcHash = "aff033ca",
-            FileInfo = new FileInfo("pole_shift.mp3"),
+            FileSystemFileInfo = new FileSystemFileInfo
+            {
+                Path = string.Empty,
+                Name = "01-pole_shift.mp3",
+                Size = 0
+            },
             TrackTitle = "Pole Shift",
             TrackNumber = 0
         };

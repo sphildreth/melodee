@@ -1,5 +1,5 @@
+using Melodee.Common.Models;
 using Melodee.Plugins.Processor;
-using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
 namespace Melodee.Tests.Plugins.Processors;
 
@@ -14,10 +14,10 @@ public class DirectoryProcessorTests
         {
             var config = TestsBase.NewConfiguration;
             var processor = new DirectoryProcessor(config);
-            var result = await processor.ProcessDirectoryAsync(new DirectoryInfo
+            var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
-                ShortName = dirInfo.Name
+                Name = dirInfo.Name
             });
             Assert.NotNull(result);
             Assert.True(result.IsSuccess);

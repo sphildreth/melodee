@@ -1,6 +1,6 @@
+using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Plugins;
-using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
 
 namespace Melodee.Tests.Plugins.Conversion;
 
@@ -15,10 +15,10 @@ public class PreDiscoveryScriptTests
             var config = TestsBase.NewConfiguration;
             config.PluginProcessOptions.DoDeleteOriginal = true;
             var convertor = new Melodee.Plugins.Scripting.PreDiscoveryScript(config);
-            var convertorResult = await convertor.ProcessAsync(new DirectoryInfo
+            var convertorResult = await convertor.ProcessAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
-                ShortName = dirInfo.Name
+                Name = dirInfo.Name
             });
             Assert.NotNull(convertorResult);
             Assert.False(convertorResult.IsSuccess);
@@ -39,10 +39,10 @@ public class PreDiscoveryScriptTests
             var config = TestsBase.NewConfiguration;
             config.PluginProcessOptions.DoDeleteOriginal = true;
             var scriptRunner = new Melodee.Plugins.Scripting.PreDiscoveryScript(config);
-            var convertorResult = await scriptRunner.ProcessAsync(new DirectoryInfo
+            var convertorResult = await scriptRunner.ProcessAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
-                ShortName = dirInfo.Name
+                Name = dirInfo.Name
             });
             Assert.NotNull(convertorResult);
             Assert.False(convertorResult.IsSuccess);

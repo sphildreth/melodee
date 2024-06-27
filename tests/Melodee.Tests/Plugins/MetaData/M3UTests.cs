@@ -1,8 +1,7 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.MetaData.Release;
-using Melodee.Plugins.MetaData.Release.Models;
-using DirectoryInfo = Melodee.Common.Models.DirectoryInfo;
-using SimpleFileVerification = Melodee.Plugins.MetaData.Release.SimpleFileVerification;
+using Melodee.Plugins.MetaData.Directory;
+using Melodee.Plugins.MetaData.Directory.Models;
+using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Tests.Plugins.MetaData;
 
@@ -16,16 +15,11 @@ public class M3UTests
         if (fileInfo.Exists)
         {
             var sfv = new M3UPlaylist(TestsBase.NewConfiguration);
-            var release = new Release
+            var m3UResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
-                DirectoryInfo = new DirectoryInfo
-                {
-                    Path = @"/home/steven/incoming/melodee_test/tests/",
-                    ShortName = "tests"
-                },
-                ViaPlugins = []
-            };
-            var m3UResult = await sfv.ProcessReleaseAsync(release);
+                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Name = "tests"
+            });
             Assert.NotNull(m3UResult);
             // As there are no tracks on the release there should be SFV missing messages and the result is of type validation failure.
             Assert.False(m3UResult.IsSuccess);

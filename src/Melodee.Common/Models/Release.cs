@@ -17,13 +17,13 @@ public sealed record Release
     /// </summary>
     public required IEnumerable<string> ViaPlugins { get; set; }    
     
-    public required DirectoryInfo DirectoryInfo { get; init; }
+    public required FileSystemDirectoryInfo Directory { get; init; }
 
     public IEnumerable<ImageInfo>? Images { get; set; }
 
     public IEnumerable<MetaTag<object?>>? Tags { get; init; }
 
-    public IEnumerable<Track>? Tracks { get; init; }
+    public IEnumerable<Track>? Tracks { get; set; }
 
     public IEnumerable<string> Messages { get; set; } = [];
 
@@ -103,7 +103,7 @@ public sealed record Release
 
         return new Release
         {
-            DirectoryInfo = DirectoryInfo,
+            Directory = Directory,
             Images = images,
             Tags = tags,
             Tracks = tracks,

@@ -1,9 +1,10 @@
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
 
-namespace Melodee.Plugins.Processor;
+namespace Melodee.Plugins.MetaData.Directory;
 
-public interface IProcessorPlugin : IPlugin
+public interface IDirectoryPlugin : IPlugin
 {
+    bool StopProcessing { get; }
+    
     Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default);
 }

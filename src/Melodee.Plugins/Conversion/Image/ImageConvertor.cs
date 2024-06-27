@@ -1,5 +1,6 @@
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData;
@@ -21,20 +22,20 @@ public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(c
 
     public override int SortOrder { get; } = 0;
 
-    public override bool DoesHandleFile(FileSystemInfo fileSystemInfo)
+    public override bool DoesHandleFile(FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists)
+        if (!IsEnabled || !fileSystemInfo.Exists())
         {
             return false;
         }
-        return FileHelper.IsFileImageType(fileSystemInfo.Extension);
+        return FileHelper.IsFileImageType(fileSystemInfo.Extension());
     }
 
-    public async Task<OperationResult<FileSystemInfo>> ProcessFileAsync(FileSystemInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        if (!FileHelper.IsFileImageType(fileSystemInfo.Extension))
+        if (!FileHelper.IsFileImageType(fileSystemInfo.Extension()))
         {
-            return new OperationResult<FileSystemInfo>
+            return new OperationResult<FileSystemFileInfo>
             {
                 Errors = new[]
                 {
@@ -44,7 +45,7 @@ public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(c
             };
         }
 
-        var fileInfo = new FileInfo(fileSystemInfo.FullName);
+        var fileInfo = new FileInfo(fileSystemInfo.FullName());
         if (fileInfo.Exists && !string.Equals("jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
         {
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
@@ -57,9 +58,9 @@ public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(c
             }
         }
 
-        return new OperationResult<FileSystemInfo>
+        return new OperationResult<FileSystemFileInfo>
         {
-            Data = fileInfo
+            Data = fileInfo.ToFileSystemInfo()
         };
     }
 
