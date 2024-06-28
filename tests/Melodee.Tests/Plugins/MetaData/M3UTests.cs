@@ -31,7 +31,7 @@ public class M3UTests
     }
     
     [Fact]
-    public void ValidateModelFullLineParsing()
+    public void ValidateModelFullLineParsing3()
     {
         // <trackNumber>-<releaseArtist>-<trackTitle>.mp3
         var input = "01-avatar-bound_to_the_wall.mp3";
@@ -42,15 +42,37 @@ public class M3UTests
             {
               Path  = string.Empty,
               Name = "01-avatar-bound_to_the_wall.mp3",
-              Size = 12345
+              Size = 0
             },
             ReleaseArist = "Avatar",
             TrackTitle = "Bound To The Wall",
             TrackNumber = 1
         };
-        var parsedModel = M3UPlaylist.ModelFromM3ULine(@"M:\_bad_or_missing_folder\file.sfv", input);
+        var parsedModel = M3UPlaylist.ModelFromM3ULine(string.Empty, input);
         Assert.Equal(shouldBe, parsedModel);
     }    
+
+    [Fact]
+    public void ValidateModelFullLineParsing4()
+    {
+        // <trackNumber>-<releaseArtist>-<trackTitle>-<crc>.mp3
+        var input = "01-kittie-vultures-9f80b183.mp3";
+        var shouldBe = new M3ULine()
+        {
+            IsValid = false,
+            FileSystemFileInfo = new FileSystemFileInfo
+            {
+                Path  = string.Empty,
+                Name = "01-kittie-vultures-9f80b183.mp3",
+                Size = 0
+            },
+            ReleaseArist = "Kittie",
+            TrackTitle = "Vultures",
+            TrackNumber = 1
+        };
+        var parsedModel = M3UPlaylist.ModelFromM3ULine(string.Empty, input);
+        Assert.Equal(shouldBe, parsedModel);
+    }      
 
     
 }

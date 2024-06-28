@@ -21,8 +21,8 @@ public class PreDiscoveryScriptTests
                 Name = dirInfo.Name
             });
             Assert.NotNull(convertorResult);
-            Assert.False(convertorResult.IsSuccess);
-            Assert.NotNull(convertorResult.Data);
+            Assert.True(convertorResult.IsSuccess);
+            Assert.True(convertorResult.Data);
         }
     }       
     
@@ -45,8 +45,8 @@ public class PreDiscoveryScriptTests
                 Name = dirInfo.Name
             });
             Assert.NotNull(convertorResult);
-            Assert.False(convertorResult.IsSuccess);
-            Assert.NotNull(convertorResult.Data);
+            Assert.True(convertorResult.IsSuccess);
+            Assert.True(convertorResult.Data);
             Assert.False(File.Exists(testNzbFile));
         }
     }        

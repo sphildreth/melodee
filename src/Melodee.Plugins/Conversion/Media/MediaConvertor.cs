@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using FFMpegCore;
 using FFMpegCore.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;

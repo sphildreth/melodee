@@ -41,14 +41,14 @@ public class SimpleFileVerificationTests
             FileSystemFileInfo = new FileSystemFileInfo
             {
                 Path = string.Empty,
-                Name = "1-avatar-bound_to_the_wall.mp3",
+                Name = "01-avatar-bound_to_the_wall.mp3",
                 Size = 0
             },
             ReleaseArist = "Avatar",
             TrackTitle = "Bound To The Wall",
             TrackNumber = 1
         };
-        var parsedModel = SimpleFileVerification.ModelFromSfvLine(@"M:\_bad_or_missing_folder\file.sfv", input);
+        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty, input);
         Assert.Equal(shouldBe, parsedModel);
     }
 
@@ -69,7 +69,7 @@ public class SimpleFileVerificationTests
             TrackTitle = "Pole Shift",
             TrackNumber = 1
         };
-        var parsedModel = SimpleFileVerification.ModelFromSfvLine(@"file.sfv",input);
+        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty,input);
         Assert.Equal(shouldBe, parsedModel);
     }    
     
@@ -84,7 +84,7 @@ public class SimpleFileVerificationTests
             FileSystemFileInfo = new FileSystemFileInfo
             {
                 Path = string.Empty,
-                Name = "01-pole_shift.mp3",
+                Name = "pole_shift.mp3",
                 Size = 0
             },
             TrackTitle = "Pole Shift",

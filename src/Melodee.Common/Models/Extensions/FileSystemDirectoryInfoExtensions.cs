@@ -1,6 +1,6 @@
 namespace Melodee.Common.Models.Extensions;
 
-public static class DirectoryInfoExtensions
+public static class FileSystemDirectoryInfoExtensions
 {
    
     public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)

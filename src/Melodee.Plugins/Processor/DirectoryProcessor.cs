@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using System.Runtime;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
@@ -148,6 +149,10 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 }
                 else
                 {
+                    if (File.Exists(newTrackFileName))
+                    {
+                        File.Delete(newTrackFileName);
+                    }
                     File.Copy(track.File.FullName(), newTrackFileName);
                 }
             }

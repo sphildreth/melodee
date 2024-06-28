@@ -1,4 +1,6 @@
-namespace Melodee.Common.Models.Extensions;
+using Melodee.Common.Models;
+
+namespace Melodee.Common.Extensions;
 
 public static class FileInfoExtensions
 {
@@ -6,6 +8,6 @@ public static class FileInfoExtensions
     {
         Path = fileInfo.DirectoryName ?? string.Empty,
         Name = fileInfo.Name,
-        Size = fileInfo.Length
+        Size = fileInfo.Exists ? fileInfo.Length : 0
     };
 }

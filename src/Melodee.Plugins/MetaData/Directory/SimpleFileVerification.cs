@@ -64,7 +64,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 }
             });
 
-            var firstTrack = tracks.OrderBy(x => x.SortOrder).First();
+            var firstTrack = tracks.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
             var newReleaseTags = new List<MetaTag<object?>>
             {
                 new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1},
@@ -75,15 +75,19 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             };
             var genres = tracks
                 .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                .Where(x => x.Identifier == MetaTagIdentifier.Genre);
-            newReleaseTags.AddRange(genres
-                .GroupBy(x => x.Value)
-                .Select((genre, i) => new MetaTag<object?>
-                {
-                    Identifier = MetaTagIdentifier.Genre,
-                    Value = genre.Key,
-                    SortOrder = 5 + i
-                }));
+                .Where(x => x.Identifier == MetaTagIdentifier.Genre)
+                .ToArray();
+            if (genres.Any())
+            {
+                newReleaseTags.AddRange(genres
+                    .GroupBy(x => x.Value)
+                    .Select((genre, i) => new MetaTag<object?>
+                    {
+                        Identifier = MetaTagIdentifier.Genre,
+                        Value = genre.Key,
+                        SortOrder = 5 + i
+                    }));
+            }
 
             var sfvRelease = new Release
             {
@@ -193,18 +197,30 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                     trackTitle = trackNameAndTitleParts.Length > 2 ? trackNameAndTitleParts[2] : trackNameAndTitleParts[1];
                 }
 
+                var fileSystemInfoFile = new FileSystemFileInfo
+                {
+                    Name = parts[0],
+                    Path = filePath,
+                    Size = 0
+                };
+                
                 string? dirName = null;
                 if (!string.IsNullOrWhiteSpace(filePath))
                 {
                     var fi = new FileInfo(filePath);
-                    dirName = fi.DirectoryName!;
+                    if (fi.Directory?.Exists ?? false)
+                    {
+                        dirName = fi.DirectoryName!;
+                    }
+
+                    fileSystemInfoFile = new FileInfo(Path.Combine(dirName ?? string.Empty, parts[0])).ToFileSystemInfo();
                 }
                 
                 return new Models.SfvLine
                 {
-                    IsValid = IsCrCHashAccurate(Path.Combine(dirName ?? string.Empty, parts[0]), parts[1]),
+                    IsValid = !string.IsNullOrWhiteSpace(filePath) && IsCrCHashAccurate(fileSystemInfoFile.FullName(), parts[1]),
                     CrcHash = parts[1],    
-                    FileSystemFileInfo = new FileInfo(Path.Combine(dirName ?? string.Empty, parts[0])).ToFileSystemInfo(),
+                    FileSystemFileInfo = fileSystemInfoFile,
                     ReleaseArist = releaseArtist?.Replace("_", " ").CleanString(true),
                     TrackNumber = SafeParser.ToNumber<int>(trackNameAndTitleParts[0]),
                     TrackTitle = trackTitle.Replace("_", " ").RemoveFileExtension()!.CleanString() ?? string.Empty

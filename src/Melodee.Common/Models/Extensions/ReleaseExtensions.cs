@@ -45,9 +45,13 @@ public static class ReleaseExtensions
         {
             return false;
         }
-        return release.Artist().Nullify() != null &&
-               release.ReleaseTitle().Nullify() != null &&
-               release.ReleaseYear() > DateTime.MinValue.Year && release.ReleaseYear() < DateTime.MaxValue.Year;
+
+        var artist = release.Artist().Nullify();
+        var releaseTitle = release.ReleaseTitle().Nullify();
+        var releaseYear = release.ReleaseYear();
+        return artist != null &&
+               releaseTitle != null &&
+               releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year;
     }
     
     public static string ToMelodeeJsonName(this Release release) => $"{(release.Artist() ?? throw new Exception("Artist not set on release.")).ToFileNameFriendly()}_{(release.ReleaseTitle() ?? throw new Exception("Title not set on release.")).ToFileNameFriendly()}.melodee.json";

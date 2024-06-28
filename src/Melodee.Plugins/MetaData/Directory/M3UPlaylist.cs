@@ -24,7 +24,6 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
 
     public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        // var messages = new List<string>(directoryInfo.Messages);
         var m3UFiles = fileSystemDirectoryInfo.FileInfosForExtension("m3u").ToArray();
         
         if (m3UFiles.Length == 0)
@@ -62,66 +61,70 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                 }
             });
 
-            var firstTrack = tracks.OrderBy(x => x.SortOrder).First();
-            var newReleaseTags = new List<MetaTag<object?>>
+            if (tracks.Count > 0)
             {
-                new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1 },
-                new() { Identifier = MetaTagIdentifier.Artist, Value = firstTrack.Artist(), SortOrder = 2 },
-                new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 3 },
-                new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
-                new() { Identifier = MetaTagIdentifier.TrackTotal, Value = firstTrack.TrackTotalNumber(), SortOrder = 101 }
-            };
-            var genres = tracks
-                .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                .Where(x => x.Identifier == MetaTagIdentifier.Genre);
-            newReleaseTags.AddRange(genres
-                .GroupBy(x => x.Value)
-                .Select((genre, i) => new MetaTag<object?>
+                var firstTrack = tracks.OrderBy(x => x.SortOrder).First();
+                var newReleaseTags = new List<MetaTag<object?>>
                 {
-                    Identifier = MetaTagIdentifier.Genre,
-                    Value = genre.Key,
-                    SortOrder = 5 + i
-                }));
-
-            var m3URelease = new Release
-            {
-                Directory = new FileSystemDirectoryInfo
-                {
-                    ParentId = parentDirectory?.UniqueId ?? 0,
-                    Path = fileSystemDirectoryInfo.Path,
-                    Name = fileSystemDirectoryInfo.Name,
-                    TotalItemsFound = tracks.Count,
-                    MusicFilesFound = tracks.Count,
-                    MusicMetaDataFilesFound = 1
-                },
-                Tags = newReleaseTags,
-                Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
-                ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
-            };
-            if (m3URelease.IsValid())
-            {
-                var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3URelease.ToMelodeeJsonName());
-                if (File.Exists(stagingReleaseDataName))
-                {
-                    var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
-                    if (existingRelease != null)
+                    new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1 },
+                    new() { Identifier = MetaTagIdentifier.Artist, Value = firstTrack.Artist(), SortOrder = 2 },
+                    new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 3 },
+                    new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
+                    new() { Identifier = MetaTagIdentifier.TrackTotal, Value = firstTrack.TrackTotalNumber(), SortOrder = 101 }
+                };
+                var genres = tracks
+                    .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
+                    .Where(x => x.Identifier == MetaTagIdentifier.Genre);
+                newReleaseTags.AddRange(genres
+                    .GroupBy(x => x.Value)
+                    .Select((genre, i) => new MetaTag<object?>
                     {
-                        m3URelease = m3URelease.Merge(existingRelease);
-                    }
-                }
-                var serialized = System.Text.Json.JsonSerializer.Serialize(m3URelease);                
-                await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
-                if (Configuration.PluginProcessOptions.DoDeleteOriginal)
-                {
-                    m3UFile.Delete();
-                    Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
-                }
+                        Identifier = MetaTagIdentifier.Genre,
+                        Value = genre.Key,
+                        SortOrder = 5 + i
+                    }));
 
-                processedM3ULines++;
-            }
-            else
-            {
-                Trace.WriteLine($"Did not serialize invalid release [{m3URelease}].", "Warning");
+                var m3URelease = new Release
+                {
+                    Directory = new FileSystemDirectoryInfo
+                    {
+                        ParentId = parentDirectory?.UniqueId ?? 0,
+                        Path = fileSystemDirectoryInfo.Path,
+                        Name = fileSystemDirectoryInfo.Name,
+                        TotalItemsFound = tracks.Count,
+                        MusicFilesFound = tracks.Count,
+                        MusicMetaDataFilesFound = 1
+                    },
+                    Tags = newReleaseTags,
+                    Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
+                    ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
+                };
+                if (m3URelease.IsValid())
+                {
+                    var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3URelease.ToMelodeeJsonName());
+                    if (File.Exists(stagingReleaseDataName))
+                    {
+                        var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                        if (existingRelease != null)
+                        {
+                            m3URelease = m3URelease.Merge(existingRelease);
+                        }
+                    }
+
+                    var serialized = System.Text.Json.JsonSerializer.Serialize(m3URelease);
+                    await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                    {
+                        m3UFile.Delete();
+                        Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
+                    }
+
+                    processedM3ULines++;
+                }
+                else
+                {
+                    Trace.WriteLine($"Did not serialize invalid release [{m3URelease}].", "Warning");
+                }
             }
         }
         return new OperationResult<bool>
@@ -165,22 +168,34 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
         try
         {
             var parts = lineFromFile.Split('-');
-            if (parts.Length == 3)
+            if (parts.Length >= 3)
             {
                 var releaseArtist = parts[1];
                 string trackTitle = parts[2];
+                
+                var fileSystemInfoFile = new FileSystemFileInfo
+                {
+                    Name = lineFromFile,
+                    Path = filePath,
+                    Size = 0
+                };
                 
                 string? dirName = null;
                 if (!string.IsNullOrWhiteSpace(filePath))
                 {
                     var fi = new FileInfo(filePath);
-                    dirName = fi.DirectoryName!;
+                    if (fi.Directory?.Exists ?? false)
+                    {
+                        dirName = fi.DirectoryName!;
+                    }
+
+                    fileSystemInfoFile = new FileInfo(Path.Combine(dirName ?? string.Empty, lineFromFile)).ToFileSystemInfo();
                 }
                 
                 return new Models.M3ULine
                 {
-                    IsValid = File.Exists(Path.Combine(dirName ?? string.Empty, lineFromFile)),
-                    FileSystemFileInfo = new FileInfo(Path.Combine(dirName ?? string.Empty, lineFromFile)).ToFileSystemInfo(),
+                    IsValid = !string.IsNullOrWhiteSpace(filePath) && fileSystemInfoFile.Exists(),
+                    FileSystemFileInfo = fileSystemInfoFile,
                     ReleaseArist = releaseArtist.Replace("_", " ").CleanString(true),
                     TrackNumber = SafeParser.ToNumber<int>(parts[0]),
                     TrackTitle = trackTitle.Replace("_", " ").RemoveFileExtension()!.CleanString() ?? string.Empty
