@@ -50,6 +50,8 @@ public static class ReleaseExtensions
                release.ReleaseYear() > DateTime.MinValue.Year && release.ReleaseYear() < DateTime.MaxValue.Year;
     }
     
+    public static string ToMelodeeJsonName(this Release release) => $"{(release.Artist() ?? throw new Exception("Artist not set on release.")).ToFileNameFriendly()}_{(release.ReleaseTitle() ?? throw new Exception("Title not set on release.")).ToFileNameFriendly()}.melodee.json";
+
     public static ReleaseArtistType ArtistType(this Release release)
     {
         var artist = release.Artist();
@@ -80,14 +82,23 @@ public static class ReleaseExtensions
     }
     
     
+    /// <summary>
+    /// Return the value set for the Artist Tag.
+    /// </summary>
     public static string? Artist(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Artist);
 
     public static long ArtistUniqueId(this Release release) => release.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(release.ArtistSort() ?? release.Artist() ?? Guid.NewGuid().ToString());
 
     public static string? ArtistSort(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.SortAlbumArtist);
     
+    /// <summary>
+    /// Return the value set for the Album Tag.
+    /// </summary>
     public static string? ReleaseTitle(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Album);
     
+    /// <summary>
+    /// Return the value set for the OrigReleaseYear ?? RecordingYear ?? RecordingDateOrYear
+    /// </summary>
     public static int? ReleaseYear(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ?? 
                                                             release.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                                                             release.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);

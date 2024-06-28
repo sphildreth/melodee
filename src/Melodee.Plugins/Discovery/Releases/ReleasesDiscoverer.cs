@@ -44,7 +44,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         _enabledReleasePlugins = new IDirectoryPlugin[]
         {
             //  new CueSheet(),
-            new M3UPlaylist(config),
+            new M3UPlaylist(_enabledTrackPlugins, config),
             new SimpleFileVerification(_enabledTrackPlugins, config)
         };
     }

@@ -1,3 +1,6 @@
+using Melodee.Common.Models;
+using Melodee.Common.Models.Extensions;
+
 namespace Melodee.Plugins.MetaData.Directory.Models;
 
 [Serializable]
@@ -5,7 +8,7 @@ public sealed record M3ULine
 {
     public bool IsValid { get; init; }
     
-    public required FileSystemInfo FileInfo { get; init; }
+    public required FileSystemFileInfo FileSystemFileInfo { get; init; }
     
     public int TrackNumber { get; init; }
     
@@ -37,7 +40,7 @@ public sealed record M3ULine
         }
 
         return IsValid == other.IsValid &&
-               string.Equals(FileInfo.FullName, other.FileInfo.FullName, StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(FileSystemFileInfo.FullName(), other.FileSystemFileInfo.FullName(), StringComparison.OrdinalIgnoreCase) &&
                TrackNumber == other.TrackNumber &&
                ReleaseArist == other.ReleaseArist &&
                TrackTitle == other.TrackTitle;
@@ -45,6 +48,6 @@ public sealed record M3ULine
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(IsValid, FileInfo, TrackNumber, ReleaseArist, TrackTitle);
+        return HashCode.Combine(IsValid, FileSystemFileInfo, TrackNumber, ReleaseArist, TrackTitle);
     }    
 }

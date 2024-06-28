@@ -1,6 +1,7 @@
 using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Directory.Models;
+using Melodee.Plugins.MetaData.Track;
 using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Tests.Plugins.MetaData;
@@ -10,20 +11,22 @@ public class M3UTests
     [Fact]
     public async Task ValidateM3UFileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/test.m3u";
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.m3u";
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var sfv = new M3UPlaylist(TestsBase.NewConfiguration);
-            var m3UResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            var m3U = new M3UPlaylist(new []
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
-                Name = "tests"
+                new MetaTag(TestsBase.NewConfiguration)
+            }, TestsBase.NewConfiguration);
+            var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
+                Name = "00-k 2024"
             });
             Assert.NotNull(m3UResult);
-            // As there are no tracks on the release there should be SFV missing messages and the result is of type validation failure.
-            Assert.False(m3UResult.IsSuccess);
-            Assert.NotNull(m3UResult.Data);
+            Assert.NotNull(m3UResult);
+            Assert.True(m3UResult.IsSuccess);
         }
     }
     
@@ -35,7 +38,12 @@ public class M3UTests
         var shouldBe = new M3ULine()
         {
             IsValid = false,
-            FileInfo = new FileInfo("01-avatar-bound_to_the_wall.mp3"),
+            FileSystemFileInfo = new FileSystemFileInfo
+            {
+              Path  = string.Empty,
+              Name = "01-avatar-bound_to_the_wall.mp3",
+              Size = 12345
+            },
             ReleaseArist = "Avatar",
             TrackTitle = "Bound To The Wall",
             TrackNumber = 1

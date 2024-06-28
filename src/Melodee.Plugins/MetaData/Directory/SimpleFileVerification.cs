@@ -97,12 +97,20 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                     MusicMetaDataFilesFound = 1
                 },
                 Tags = newReleaseTags,
-                Tracks = tracks,
-                ViaPlugins = new string[1] { trackPlugin.DisplayName }
+                Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
+                ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
             };
             if (sfvRelease.IsValid())
             {
-                var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, $"{sfvRelease.Artist().ToFileNameFriendly()}_{sfvRelease.ReleaseTitle().ToFileNameFriendly()}.melodee.json");
+                var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvRelease.ToMelodeeJsonName());
+                if (File.Exists(stagingReleaseDataName))
+                {
+                    var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                    if (existingRelease != null)
+                    {
+                        sfvRelease = sfvRelease.Merge(existingRelease);
+                    }
+                }                
                 var serialized = System.Text.Json.JsonSerializer.Serialize(sfvRelease);
                 await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
                 if (Configuration.PluginProcessOptions.DoDeleteOriginal)
@@ -196,7 +204,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 {
                     IsValid = IsCrCHashAccurate(Path.Combine(dirName ?? string.Empty, parts[0]), parts[1]),
                     CrcHash = parts[1],    
-                    FileSystemFileInfo = new FileInfo(Path.Combine(dirName, parts[0])).ToFileSystemInfo(),
+                    FileSystemFileInfo = new FileInfo(Path.Combine(dirName ?? string.Empty, parts[0])).ToFileSystemInfo(),
                     ReleaseArist = releaseArtist?.Replace("_", " ").CleanString(true),
                     TrackNumber = SafeParser.ToNumber<int>(trackNameAndTitleParts[0]),
                     TrackTitle = trackTitle.Replace("_", " ").RemoveFileExtension()!.CleanString() ?? string.Empty

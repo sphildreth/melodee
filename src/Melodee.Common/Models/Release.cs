@@ -10,7 +10,9 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record Release
 {
-    public long UniqueId => SafeParser.Hash($"{this.Artist()}{this.ReleaseYear()}{this.ReleaseTitle}");
+    private long? _uniqueId;
+
+    public long UniqueId => (_uniqueId ??= SafeParser.Hash($"{this.Artist()}{this.ReleaseYear()}{this.ReleaseTitle}"));
 
     /// <summary>
     /// What plugins were utilized in discovering this release.
@@ -47,67 +49,89 @@ public sealed record Release
     
     public int SortOrder { get; set; }
 
-    public Release Merge(Release pluginResultData)
+    public Release Merge(Release otherRelease)
     {
+        var files = new List<ReleaseFile>(Files);
         var images = new List<ImageInfo>(Images ?? []);
-        var tags = new List<MetaTag<object>>(Tags ?? []);
+        var tags = new List<MetaTag<object?>>(Tags ?? []);
         var tracks = new List<Track>(Tracks ?? []);
-        var viaPlugins = new List<string>(ViaPlugins ?? []);
+        var viaPlugins = new List<string>(ViaPlugins);
+        var messages = new List<string>(Messages);
 
-        if (UniqueId != pluginResultData.UniqueId)
+        if (UniqueId == otherRelease.UniqueId)
         {
-            if (pluginResultData.Images != null)
-            {
-                foreach (var image in pluginResultData.Images)
-                {
-                    if (!images.Contains(image))
-                    {
-                        images.Add(image);
-                    }
-                }
-            }
-
-            if (pluginResultData.Tags != null)
-            {
-                foreach (var tag in pluginResultData.Tags)
-                {
-                    if (!tags.Contains(tag))
-                    {
-                        tags.Add(tag);
-                    }
-                }
-            }
-
-            if (pluginResultData.Tracks != null)
-            {
-                foreach (var track in pluginResultData.Tracks)
-                {
-                    if (!tracks.Contains(track))
-                    {
-                        tracks.Add(track);
-                    }
-                }
-            }
-            
-            if (pluginResultData.ViaPlugins.Any())
-            {
-                foreach (var plugin in pluginResultData.ViaPlugins)
-                {
-                    if (!viaPlugins.Contains(plugin))
-                    {
-                        viaPlugins.Add(plugin);
-                    }
-                }
-            }            
+            return this;
         }
+
+        if (otherRelease.Images != null)
+        {
+            foreach (var image in otherRelease.Images)
+            {
+                if (!images.Contains(image))
+                {
+                    images.Add(image);
+                }
+            }
+        }
+
+        if (otherRelease.Tags != null)
+        {
+            foreach (var tag in otherRelease.Tags)
+            {
+                if (!tags.Contains(tag))
+                {
+                    tags.Add(tag);
+                }
+            }
+        }
+
+        if (otherRelease.Tracks != null)
+        {
+            foreach (var track in otherRelease.Tracks)
+            {
+                if (!tracks.Contains(track))
+                {
+                    tracks.Add(track);
+                }
+            }
+        }
+            
+        if (otherRelease.ViaPlugins.Any())
+        {
+            foreach (var plugin in otherRelease.ViaPlugins)
+            {
+                if (!viaPlugins.Contains(plugin))
+                {
+                    viaPlugins.Add(plugin);
+                }
+            }
+        }
+            
+        if (otherRelease.Files.Any())
+        {
+            foreach (var file in otherRelease.Files)
+            {
+                if (!files.Contains(file))
+                {
+                    files.Add(file);
+                }
+            }
+        }            
+
+        messages.AddRange(otherRelease.Messages);
 
         return new Release
         {
             Directory = Directory,
+            Files = files,
             Images = images,
+            Messages = messages.Distinct().ToArray(),
+            SortOrder = SortOrder,
+            Status = ReleaseStatus.NotSet,
             Tags = tags,
             Tracks = tracks,
             ViaPlugins = viaPlugins
         };
     }
+
 }

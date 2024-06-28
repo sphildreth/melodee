@@ -12,4 +12,6 @@ public static class DirectoryInfoExtensions
         }
         return dirInfo.GetFiles($"*.{extension}", SearchOption.AllDirectories).ToArray();
     }  
+    
+  
 }

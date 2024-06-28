@@ -1,11 +1,9 @@
-using ATL;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
-using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData.Track.Extensions;
 
 namespace Melodee.Plugins.MetaData.Track;
@@ -178,14 +176,15 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                 File = fileSystemFileInfo,
                 Images = images,
                 Tags = tags,
-                MediaAudios = mediaAudios 
+                MediaAudios = mediaAudios,
+                SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
             }
         });
     }
     
     private static bool IsAtlTrackForMp3(ATL.Track track)
     {
-        if(track?.AudioFormat?.ShortName == null)
+        if(track.AudioFormat?.ShortName == null)
         {
             return false;
         }
