@@ -11,7 +11,16 @@ public static class FileSystemDirectoryInfoExtensions
             return [];
         }
         return dirInfo.GetFiles($"*.{extension}", SearchOption.AllDirectories).ToArray();
-    }  
+    }
+
+    public static void DeleteAllFilesForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
+    {
+        var filesToDelete = fileSystemDirectoryInfo.FileInfosForExtension(extension);
+        foreach (var fileToDelete in filesToDelete)
+        {
+            fileToDelete.Delete();
+        }
+    }
     
   
 }

@@ -443,6 +443,11 @@ public enum MetaTagIdentifier
     /// <summary>
     /// Not a ID3 standard, a unique ID given to an artist to prevent exact named artists getting the same library folder.
     /// </summary>
-    UniqueArtistId
+    UniqueArtistId,
+    
+    /// <summary>
+    /// Used when parsing CUE Files.
+    /// </summary>
+    SubCodeFlags
     
 }

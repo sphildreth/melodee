@@ -74,7 +74,8 @@ namespace Melodee.Common.Extensions
             {
                 return null;
             }
-            return input;
+
+            return input.Trim();
         }
         
         public static string? ToTitleCase(this string input, bool doPutTheAtEnd = true)
@@ -318,7 +319,7 @@ namespace Melodee.Common.Extensions
             return str;
         }
 
-        public static bool DoStringsMatch(string? string1, string? string2)
+        public static bool DoStringsMatch(this string? string1, string? string2)
         {
             var a1 = string1.Nullify();
             var a2 = string2.Nullify();

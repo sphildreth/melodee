@@ -20,7 +20,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
 
     public override bool IsEnabled { get; set; } = false;
 
-    public override int SortOrder { get; } = 0;
+    public override int SortOrder { get; } = 2;
 
     public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
@@ -63,7 +63,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
 
             if (tracks.Count > 0)
             {
-                var firstTrack = tracks.OrderBy(x => x.SortOrder).First();
+                var firstTrack = tracks.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
                 var newReleaseTags = new List<MetaTag<object?>>
                 {
                     new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1 },
@@ -74,15 +74,19 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                 };
                 var genres = tracks
                     .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                    .Where(x => x.Identifier == MetaTagIdentifier.Genre);
-                newReleaseTags.AddRange(genres
-                    .GroupBy(x => x.Value)
-                    .Select((genre, i) => new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.Genre,
-                        Value = genre.Key,
-                        SortOrder = 5 + i
-                    }));
+                    .Where(x => x.Identifier == MetaTagIdentifier.Genre)
+                    .ToArray();
+                if (genres.Length != 0)
+                {
+                    newReleaseTags.AddRange(genres
+                        .GroupBy(x => x.Value)
+                        .Select((genre, i) => new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Genre,
+                            Value = genre.Key,
+                            SortOrder = 5 + i
+                        }));
+                }
 
                 var m3URelease = new Release
                 {

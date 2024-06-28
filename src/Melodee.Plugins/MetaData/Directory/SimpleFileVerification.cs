@@ -22,7 +22,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
     public override bool IsEnabled { get; set; } = true;
 
-    public override int SortOrder { get; } = 0;
+    public override int SortOrder { get; } = 1;
   
     public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
@@ -77,7 +77,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
                 .Where(x => x.Identifier == MetaTagIdentifier.Genre)
                 .ToArray();
-            if (genres.Any())
+            if (genres.Length != 0)
             {
                 newReleaseTags.AddRange(genres
                     .GroupBy(x => x.Value)

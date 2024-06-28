@@ -145,7 +145,7 @@ public static class TrackExtensions
         }         
         // If the total number of tracks is more than 99 or the track number itself is more than 99 then 3 pad else 2 pad
         var mediaNumber = track.MediaNumber();        
-        var trackName = totalTrackNumber > 99 || trackNumber > 99
+        var trackNumberValue = totalTrackNumber > 99 || trackNumber > 99
             ? trackNumber.ToString("D3")
             : trackNumber.ToString("D2");
         
@@ -154,16 +154,16 @@ public static class TrackExtensions
 
         // Get new name for file
         var fileNameFromTitle = trackTitle.ToTitleCase(false)?.ToFileNameFriendly();
-        if (fileNameFromTitle != null && fileNameFromTitle.StartsWith(trackName))
+        if (fileNameFromTitle != null && fileNameFromTitle.StartsWith(trackNumberValue))
         {
             fileNameFromTitle = fileNameFromTitle
-                .RemoveStartsWith($"{trackName} -")
-                .RemoveStartsWith($"{trackName} ")
-                .RemoveStartsWith($"{trackName}.")
-                .RemoveStartsWith($"{trackName}-")
+                .RemoveStartsWith($"{trackNumberValue} -")
+                .RemoveStartsWith($"{trackNumberValue} ")
+                .RemoveStartsWith($"{trackNumberValue}.")
+                .RemoveStartsWith($"{trackNumberValue}-")
                 .ToTitleCase(false);
         }
-        return $"{disc}{trackName} {fileNameFromTitle}.mp3";
+        return $"{disc}{trackNumberValue} {fileNameFromTitle}.mp3";
 
     }
 }

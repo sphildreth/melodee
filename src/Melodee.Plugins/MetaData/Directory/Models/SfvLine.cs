@@ -8,9 +8,9 @@ namespace Melodee.Plugins.MetaData.Directory.Models;
 /// </summary>
 public sealed record SfvLine
 {
-    public bool IsValid { get; init; }
-    
-    public required FileSystemFileInfo FileSystemFileInfo { get; init; }
+        public bool IsValid { get; init; }
+        
+        public required FileSystemFileInfo FileSystemFileInfo { get; init; }
     
     public int TrackNumber { get; init; }
     
