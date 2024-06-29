@@ -6,7 +6,7 @@ using Melodee.Common.Utility;
 
 namespace Melodee.Common.Extensions
 {
-    public static class StringExtensions
+    public static partial class StringExtensions
     {
         private static readonly string YearParseRegex = "(19|20)\\d{2}";
         
@@ -200,6 +200,11 @@ namespace Melodee.Common.Extensions
         {
             const int maxAnsiCode = 255;
             return input.Any(c => c > maxAnsiCode);
+        }
+
+        public static string? OnlyAlphaNumeric(this string? input)
+        {
+            return string.IsNullOrEmpty(input) ? null : OnlyAlphaNumericRegex().Replace(input, " ").Nullify();
         }
 
         public static string ToAlphanumericName(this string input, bool stripSpaces = true, bool stripCommas = true)
@@ -405,5 +410,8 @@ namespace Melodee.Common.Extensions
         {
             return input.Nullify() == null ? null : Path.GetFileNameWithoutExtension(input!);
         }
+
+        [GeneratedRegex("[^a-zA-Z0-9 -.:]")]
+        private static partial Regex OnlyAlphaNumericRegex();
     }
 }

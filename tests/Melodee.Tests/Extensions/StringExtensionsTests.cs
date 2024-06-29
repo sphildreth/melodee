@@ -1,4 +1,5 @@
-﻿using Melodee.Common.Extensions;
+﻿using System.Runtime.InteropServices;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Tests.Extensions
 {
@@ -137,6 +138,14 @@ namespace Melodee.Tests.Extensions
         {
             Assert.Equal(shouldBe, input.HasFeaturingFragments());
         }
+
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData(" ", null)]
+        [InlineData("Something With Bob", "Something With Bob")]
+        [InlineData("Something\ufffdWith Bob=", "Something With Bob")]
+        [InlineData("       \ufffd   \ufffd\ufffd\ufffd   Artist....: Holy Truth                          \ufffd\ufffd\ufffd", "Artist....: Holy Truth")]
+        public void StringOnlyAlphanumeric(string? input, string? shouldBe) => Assert.Equal(shouldBe, input.OnlyAlphaNumeric());
 
         [Theory]
         [InlineData("00-pixel_-_reality_strikes_back-2004-mycel.sfv", 2004)]

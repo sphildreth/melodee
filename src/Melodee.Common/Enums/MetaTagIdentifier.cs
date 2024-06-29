@@ -116,7 +116,7 @@ public enum MetaTagIdentifier
     AlbumArtist,
 
     /// <summary>
-    /// Publisher [TPB]
+    /// Publisher [TPB, TPUB, LABEL]
     /// </summary>
     Publisher,
     
@@ -351,6 +351,11 @@ public enum MetaTagIdentifier
     GeneralEnscapsulatedObject,
     
     /// <summary>
+    /// [TLE, TLEN]
+    /// </summary>
+    Length,
+    
+    /// <summary>
     /// [LNK, LINK]
     /// </summary>
     LinkedInformation,
@@ -449,5 +454,4 @@ public enum MetaTagIdentifier
     /// Used when parsing CUE Files.
     /// </summary>
     SubCodeFlags
-    
 }
