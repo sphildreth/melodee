@@ -16,12 +16,8 @@ public class NfoTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(
-                new []
-                {
-                    new MetaTag( TestsBase.NewConfiguration)
-                }, TestsBase.NewConfiguration);
-            var nfoParserResult = await nfo.ReleaseForNfoFileAsync(testFile);
+            var nfo = new Nfo(TestsBase.NewConfiguration);
+            var nfoParserResult = await nfo.ReleaseForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.True(nfoParserResult.IsValid());
         }

@@ -9,7 +9,6 @@ using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Serilog;
 using SerilogTimings;
-using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Plugins.Discovery.Releases;
 
@@ -32,7 +31,6 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     
     public int SortOrder => 0;
 
-
     public ReleasesDiscoverer(Configuration configuration)
     {
         var config = configuration;
@@ -43,7 +41,8 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         };
         _enabledReleasePlugins = new IDirectoryPlugin[]
         {
-            //  new CueSheet(),
+            new CueSheet(_enabledTrackPlugins, config),
+            new Nfo(config),
             new M3UPlaylist(_enabledTrackPlugins, config),
             new SimpleFileVerification(_enabledTrackPlugins, config)
         };
