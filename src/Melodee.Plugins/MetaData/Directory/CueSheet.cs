@@ -12,6 +12,7 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Directory.Models.Extensions;
 using Melodee.Plugins.MetaData.Track;
+using Microsoft.VisualBasic;
 using Serilog;
 
 namespace Melodee.Plugins.MetaData.Directory;
@@ -55,11 +56,10 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                 Name = dirInfo.Parent.Name
             };
         }
-
-        var trackPlugin = _trackPlugins.First();
+        
         foreach (var cueFile in cueFiles)
         {
-            ICatalogDataReader theReader = null;
+            ICatalogDataReader? theReader = null;
             try
             {
                 theReader = CatalogDataReaderFactory.GetInstance().GetCatalogDataReader(cueFile.FullName);
@@ -171,30 +171,16 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     
                     if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                     {
-                        // See if any M3U has one line and if that one line equals the CUE file, if so delete it.
-                        var m3uFiles = fileSystemDirectoryInfo.FileInfosForExtension("m3u").ToArray();
-                        foreach (var m3uFile in m3uFiles)
-                        {
-                            var readAllLines = await File.ReadAllLinesAsync(m3uFile.FullName, cancellationToken);
-                            if (readAllLines.Length == 1 & readAllLines[0].DoStringsMatch(cueFile.Name))
-                            {
-                                m3uFile.Delete();
-                            }
-                        }
-                        // See if any SFV has one line and if that one line equals the CUE file, if so delete it.
-                        var sfvFiles = fileSystemDirectoryInfo.FileInfosForExtension("sfv").ToArray();
-                        foreach (var sfvFile in sfvFiles)
-                        {
-                            var readAllLines = await File.ReadAllLinesAsync(sfvFile.FullName, cancellationToken);
-                            if (readAllLines.Length == 1 & readAllLines[0].DoStringsMatch(cueFile.Name))
-                            {
-                                sfvFile.Delete();
-                            }
-                        }                       
-                        // Delete any NFO files.
+                        fileSystemDirectoryInfo.DeleteAllFilesForExtension("sfv");
+                        fileSystemDirectoryInfo.DeleteAllFilesForExtension("m3u");
                         fileSystemDirectoryInfo.DeleteAllFilesForExtension("nfo");
-                        
                         File.Delete(cueFile.FullName);
+                        var cueFileMediaFile = new System.IO.FileInfo(Path.Combine(cueFile.DirectoryName, $"{cueFile.Name.Replace(cueFile.Extension, "")}.mp3"));
+                        if (cueFileMediaFile.Exists)
+                        {
+                            cueFileMediaFile.Delete();
+                        }
+
                     }
                     
                     var cueRelease = cueModel.ToRelease();
@@ -372,7 +358,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                             break;
                         
                         case CueSheetRemOptionsRegistry.Date:
-                            remIdentifier = MetaTagIdentifier.ReleaseDate;
+                            remIdentifier = MetaTagIdentifier.OrigReleaseYear;
                             break;
                         
                         case CueSheetRemOptionsRegistry.TotalDiscs:
@@ -383,22 +369,11 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                             remIdentifier = MetaTagIdentifier.DiscNumber;
                             break;                         
                     }
-                    if (tracks.Count == 0)
+                    releaseTags.Add(new MetaTag<object?>
                     {
-                        releaseTags.Add(new MetaTag<object?>
-                        {
-                            Identifier = remIdentifier,
-                            Value = v
-                        });
-                    }
-                    else
-                    {
-                        trackTags.Add(new MetaTag<object?>
-                        {
-                            Identifier = remIdentifier,
-                            Value = v
-                        });
-                    }
+                        Identifier = remIdentifier,
+                        Value = v
+                    });
                     break;    
                 
                 case CueSheetKeyRegistry.SongWriter:
@@ -421,11 +396,11 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     break;     
                 
                 case CueSheetKeyRegistry.Title:
-                    if (!releaseTags.Any(x => x.Identifier == MetaTagIdentifier.Title))
+                    if (!releaseTags.Any(x => x.Identifier == MetaTagIdentifier.Album))
                     {
                         releaseTags.Add(new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.Title,
+                            Identifier = MetaTagIdentifier.Album,
                             Value = kp.Value.Nullify()
                         });
                     }
@@ -452,7 +427,8 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                                 Name = $"{trackNumber} {(trackName as string)!.ToTitleCase(false)?.ToFileNameFriendly()}.mp3",
                                 Size = 0
                             },
-                            Tags = trackTags.ToArray()
+                            Tags = trackTags.ToArray(),
+                            SortOrder = trackNumber.Value
                         });
                         trackTags.Clear();
                     }
@@ -482,12 +458,56 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
             trackTags.Clear();
         }
 
-        var releaseDate = releaseTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.ReleaseDate)?.Value;
+        var releaseDate = SafeParser.ToNumber<int?>(releaseTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear)?.Value);
         if (releaseDate == null)
         {
             // Try to get the release date from the CUE filename
-            
-            // If any 
+            releaseDate = fileInfo.FullName.TryToGetYearFromString();
+            if (releaseDate == null)
+            {
+                var dirInfo = new System.IO.DirectoryInfo(fileInfo.DirectoryName);
+                var cueSheetDataFileDirectoryInfo = dirInfo.ToDirectorySystemInfo();
+                
+                releaseDate = dirInfo.Name.TryToGetYearFromString();
+                if (releaseDate == null)
+                {
+                    var m3uFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension("m3u");
+                    foreach (var m3uFile in m3uFiles)
+                    {
+                        releaseDate = m3uFile.Name.TryToGetYearFromString();
+                        if (releaseDate != null)
+                        {
+                            break;
+                        }
+                    }
+                }
+                if (releaseDate == null)
+                {
+                    var sfvFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension("sfv");
+                    foreach (var sfvFile in sfvFiles)
+                    {
+                        releaseDate = sfvFile.Name.TryToGetYearFromString();
+                        if (releaseDate != null)
+                        {
+                            break;
+                        }
+                    }
+                }
+                if (releaseDate == null)
+                {
+                    throw new Exception("Unable to determine Release Year for CueFile.");
+                }
+            }
+            var releaseTagForYear = releaseTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear);
+            if (releaseTagForYear != null)
+            {
+                releaseTags.Remove(releaseTagForYear);
+            }
+            releaseTags.Add(new MetaTag<object?>()
+            {
+                Identifier = MetaTagIdentifier.OrigReleaseYear,
+                Value = releaseDate
+            });            
         }
 
         return new Models.CueSheet

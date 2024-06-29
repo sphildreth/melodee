@@ -36,7 +36,7 @@ namespace Melodee.Tests.Extensions
         [InlineData(null, null)]
         [InlineData("", null)]
         [InlineData(" ", null)]
-        [InlineData("Bob ", "Bob ")]
+        [InlineData("Bob ", "Bob")]
         public void Nullify(string? input, string? shouldBe)
         {
             Assert.Equal(shouldBe, input?.Nullify());
@@ -136,6 +136,10 @@ namespace Melodee.Tests.Extensions
         public void StringHasFeaturingFragments(string? input, bool shouldBe)
         {
             Assert.Equal(shouldBe, input.HasFeaturingFragments());
-        }        
+        }
+
+        [Theory]
+        [InlineData("00-pixel_-_reality_strikes_back-2004-mycel.sfv", 2004)]
+        public void ValidateParsingYearFromFileName(string input, int? shouldBe) => Assert.Equal(shouldBe, input.TryToGetYearFromString());
     }
 }

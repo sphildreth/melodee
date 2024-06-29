@@ -18,7 +18,7 @@ public class CUETests
             var sfv = new CueSheet(
                 new []
                 {
-                    new MetaTag(TestsBase.NewConfiguration)
+                    new MetaTag( TestsBase.NewConfiguration)
                 }, TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
