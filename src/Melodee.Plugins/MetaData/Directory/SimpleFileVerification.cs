@@ -8,6 +8,7 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Track;
 using Serilog;
 
+
 namespace Melodee.Plugins.MetaData.Directory;
 
 /// <summary>
@@ -32,7 +33,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         {
             return new OperationResult<bool>("Skipping validation. No SFV files found.")
             {
-                Data = false
+                Data = true
             }; 
         }
 
@@ -91,6 +92,15 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
             var sfvRelease = new Release
             {
+                Files = new []
+                {
+                    new ReleaseFile
+                    {
+                        ReleaseFileType = ReleaseFileType.MetaData,
+                        ProcessedByPlugin = DisplayName,
+                        FileSystemFileInfo = sfvFile.ToFileSystemInfo()
+                    }
+                },
                 Directory = new FileSystemDirectoryInfo
                 {
                     ParentId = parentDirectory?.UniqueId ?? 0,
@@ -131,7 +141,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         }
         return new OperationResult<bool>
         {
-            Data = processedSfvFiles > 0
+            Data = true
         };
     }
     

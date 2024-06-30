@@ -11,5 +11,5 @@ public sealed record ReleaseFile
     
     public required string ProcessedByPlugin { get; init; }
     
-    public required FileSystemInfo FileSystemInfo { get; init; }
+    public required FileSystemFileInfo FileSystemFileInfo { get; init; }
 }

@@ -8,11 +8,25 @@ namespace Melodee.Plugins.MetaData.Directory.Models.Extensions;
 
 public static class CueSheetExtensions
 {
+    public static ReleaseFile ToReleaseFile(this CueSheet cueSheet)
+    {
+        return new ReleaseFile
+        {
+            FileSystemFileInfo = cueSheet.FileSystemFileInfo,
+            ReleaseFileType = ReleaseFileType.MetaData,
+            ProcessedByPlugin = nameof(Directory.CueSheet)
+        };
+    }
+    
     public static Release ToRelease(this CueSheet cueSheet)
     {
-        var fileInfo = new System.IO.FileInfo(cueSheet.FileInfo.FullName());
+        var fileInfo = new System.IO.FileInfo(cueSheet.FileSystemFileInfo.FullName());
         return new Release
         {
+            Files = new []
+            {
+                cueSheet.ToReleaseFile()
+            },
             ViaPlugins = new string[1]
             {
                 nameof(Directory.CueSheet)

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -29,7 +30,12 @@ public static class ReleaseExtensions
             {
                 return d;
             }
+
             var converter = TypeDescriptor.GetConverter(typeof(T?));
+            if (vv is JsonElement)
+            {
+                vv = vv.ToString() ?? string.Empty;
+            }
             return (T?)converter.ConvertFrom(vv);           
         }
         catch (Exception e)
@@ -38,7 +44,7 @@ public static class ReleaseExtensions
         }
         return d;
     }
-
+    
     public static bool IsValid(this Release release)
     {
         if (release.Tags?.Count() == 0)
@@ -141,6 +147,17 @@ public static class ReleaseExtensions
         {
             return false;
         }
+
+        if (release.Files.Any())
+        {
+            var fileSystemInfoJustName = Path.GetFileNameWithoutExtension(fileSystemInfo.FullName).ToAlphanumericName();
+            if (release.Files.Select(releaseFile => releaseFile.FileNameNoExtension().ToAlphanumericName())
+                .Any(releaseFileNameJustName => releaseFileNameJustName.DoStringsMatch(fileSystemInfoJustName)))
+            {
+                return true;
+            }
+        }
+        
         var normalizedName = fileSystemInfo.Name.ToAlphanumericName();
         if (string.IsNullOrEmpty(normalizedName))
         {

@@ -53,15 +53,10 @@ public sealed record Release
     {
         var files = new List<ReleaseFile>(Files);
         var images = new List<ImageInfo>(Images ?? []);
+        var messages = new List<string>(Messages);
         var tags = new List<MetaTag<object?>>(Tags ?? []);
         var tracks = new List<Track>(Tracks ?? []);
         var viaPlugins = new List<string>(ViaPlugins);
-        var messages = new List<string>(Messages);
-
-        if (UniqueId == otherRelease.UniqueId)
-        {
-            return this;
-        }
 
         if (otherRelease.Images != null)
         {
@@ -78,7 +73,7 @@ public sealed record Release
         {
             foreach (var tag in otherRelease.Tags)
             {
-                if (!tags.Contains(tag))
+                if (tags.FirstOrDefault(x => x.Identifier == tag.Identifier)?.Value?.ToString() != tag.Value?.ToString())
                 {
                     tags.Add(tag);
                 }
@@ -89,7 +84,7 @@ public sealed record Release
         {
             foreach (var track in otherRelease.Tracks)
             {
-                if (!tracks.Contains(track))
+                if (!tracks.Select(x => x.UniqueId).Contains(track.UniqueId))
                 {
                     tracks.Add(track);
                 }
@@ -123,14 +118,14 @@ public sealed record Release
         return new Release
         {
             Directory = Directory,
-            Files = files,
-            Images = images,
+            Tags = tags,
+            ViaPlugins = viaPlugins,
+            Files = files.ToArray(),
+            Images = images.ToArray(),
             Messages = messages.Distinct().ToArray(),
             SortOrder = SortOrder,
             Status = ReleaseStatus.NotSet,
-            Tags = tags,
-            Tracks = tracks,
-            ViaPlugins = viaPlugins
+            Tracks = tracks.ToArray()
         };
     }
 

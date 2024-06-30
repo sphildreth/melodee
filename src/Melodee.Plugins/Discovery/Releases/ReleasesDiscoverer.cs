@@ -18,7 +18,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 
     public const int MaximumDiscNumber = 500;    
  
-    private readonly IEnumerable<ITrackPlugin> _enabledTrackPlugins;
+    private readonly IEnumerable<ITrackPlugin> _trackPlugins;
 
     private readonly IEnumerable<IDirectoryPlugin> _enabledReleasePlugins;
     
@@ -35,16 +35,16 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     {
         var config = configuration;
         
-        _enabledTrackPlugins = new ITrackPlugin[]
+        _trackPlugins = new ITrackPlugin[]
         {
             new MetaTag(config)
         };
         _enabledReleasePlugins = new IDirectoryPlugin[]
         {
-            new CueSheet(_enabledTrackPlugins, config),
+            new CueSheet(_trackPlugins, config),
             new Nfo(config),
-            new M3UPlaylist(_enabledTrackPlugins, config),
-            new SimpleFileVerification(_enabledTrackPlugins, config)
+            new M3UPlaylist(_trackPlugins, config),
+            new SimpleFileVerification(_trackPlugins, config)
         };
     }
     
@@ -131,7 +131,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
                 {
                     var fsi = fileSystemInfo.ToFileSystemInfo();
-                    foreach (var plugin in _enabledTrackPlugins.OrderBy(x => x.SortOrder))
+                    foreach (var plugin in _trackPlugins.OrderBy(x => x.SortOrder))
                     {
                         if (plugin.DoesHandleFile(fsi))
                         {

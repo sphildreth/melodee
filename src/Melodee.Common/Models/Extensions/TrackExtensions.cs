@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -25,6 +26,10 @@ public static class TrackExtensions
             {
                 return d;
             }
+            if (vv is JsonElement)
+            {
+                vv = vv.ToString() ?? string.Empty;
+            }            
            var converter = TypeDescriptor.GetConverter(typeof(T?));
            return (T?)converter.ConvertFrom(vv);           
         }

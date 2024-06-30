@@ -7,7 +7,7 @@ public class TrackExtensionTests
     [Fact]
     public void ValidateTrackNewFileName()
     {
-        var release = ReleaseExtensionTests.NewRelease;
+        var release = ReleaseExtensionTests.NewRelease();
         var trackNewFileName = release.Tracks!.First().TrackFileName(TestsBase.NewConfiguration);
         Assert.NotNull(trackNewFileName);
         Assert.Equal(@"03 Flako El Dark Cowboy.mp3", trackNewFileName);

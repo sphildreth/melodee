@@ -31,7 +31,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
         {
             return new OperationResult<bool>("Skipping CUE. No CUE files found.")
             {
-                Data = false
+                Data = true
             };
         }
 
@@ -80,7 +80,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
         return new OperationResult<bool>
         {
-            Data = processedNfoFiles > 0
+            Data = true
         };
     }
 
@@ -270,6 +270,15 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
         return new Release
         {
+            Files = new []
+            {
+                new ReleaseFile
+                {
+                    ReleaseFileType = ReleaseFileType.MetaData,
+                    ProcessedByPlugin = DisplayName,
+                    FileSystemFileInfo = fileInfo.ToFileSystemInfo()
+                }
+            },            
             ViaPlugins = new[] { nameof(Nfo) },
             Directory = new FileSystemDirectoryInfo
             {

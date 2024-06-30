@@ -40,7 +40,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         {
             return new OperationResult<bool>("Skipping CUE. No CUE files found.")
             {
-                Data = false
+                Data = true
             };
         }
 
@@ -122,7 +122,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     {
                         var index = cueModel.TrackIndexes.First(x => x.TrackNumber == track.TrackNumber());
                         var untilIndex = cueModel.TrackIndexes.FirstOrDefault(x => x.TrackNumber == index.TrackNumber + 1);
-                        await FFMpegArguments.FromFileInput(cueModel.FileInfo.FullName())
+                        await FFMpegArguments.FromFileInput(cueModel.FileSystemFileInfo.FullName())
                             .OutputToFile(track.File.FullName(), true, options =>
                             {
                                 var seekTs = new TimeSpan(0, index.Minutes, index.Seconds);
@@ -211,10 +211,10 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                 }
             }
         }
-
+        StopProcessing = processedCueFiles > 0;
         return new OperationResult<bool>
         {
-            Data = processedCueFiles > 0
+            Data = true
         };
     }
 
@@ -512,7 +512,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
 
         return new Models.CueSheet
         {
-            FileInfo = cueSheetDataFile!,
+            FileSystemFileInfo = cueSheetDataFile!,
             Tracks = tracks,
             TrackIndexes = trackIndexes,
             Tags = releaseTags

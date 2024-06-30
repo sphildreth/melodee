@@ -11,5 +11,7 @@ public interface IConversionPlugin
     
     bool StopProcessing { get; }
     
+    int SortOrder { get; }
+    
     Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default);
 }

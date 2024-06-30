@@ -30,7 +30,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
         {
             return new OperationResult<bool>("Skipping validation. No M3U file for Release.")
             {
-                Data = false
+                Data = true
             }; 
         }
         var processedM3ULines = 0;
@@ -90,6 +90,15 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
 
                 var m3URelease = new Release
                 {
+                    Files = new []
+                    {
+                        new ReleaseFile
+                        {
+                            ReleaseFileType = ReleaseFileType.MetaData,
+                            ProcessedByPlugin = DisplayName,
+                            FileSystemFileInfo = m3UFile.ToFileSystemInfo()
+                        }
+                    },                    
                     Directory = new FileSystemDirectoryInfo
                     {
                         ParentId = parentDirectory?.UniqueId ?? 0,
@@ -133,7 +142,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
         }
         return new OperationResult<bool>
         {
-            Data = processedM3ULines > 0
+            Data = true
         };        
     }
     
