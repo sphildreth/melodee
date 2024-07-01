@@ -65,6 +65,14 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 }
             });
 
+            if (tracks.Count == 0)
+            {
+                return new OperationResult<bool>($"Unable to find tracks for directory [{ fileSystemDirectoryInfo }]")
+                {
+                    Data = true
+                };                 
+            }
+            
             var firstTrack = tracks.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
             var newReleaseTags = new List<MetaTag<object?>>
             {

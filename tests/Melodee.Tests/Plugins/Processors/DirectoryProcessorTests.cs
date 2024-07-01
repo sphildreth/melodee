@@ -9,7 +9,7 @@ public class DirectoryProcessorTests
     [Fact]
     public async Task ValidateDirectoryGetProcessed()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024";
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/2024-06-14";
         var dirInfo = new System.IO.DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
