@@ -116,8 +116,8 @@ public static class ReleaseExtensions
                                                                release.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ?? 
                                                                0;
 
-    public static int TrackCountValue(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal) ?? 0;
-
+    public static int TrackTotalValue(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal) ?? 0;
+    
     public static string? Genre(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
 
     public static bool TitleHasUnwantedText(this Release release)

@@ -60,17 +60,25 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                     tracks.Add(trackResult.Data);
                 }
             });
-
             if (tracks.Count > 0)
             {
                 var firstTrack = tracks.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
+                var trackTotal = firstTrack.TrackTotalNumber();
+                if (trackTotal < 1)
+                {
+                    if (models.Length == tracks.Count)
+                    {
+                        trackTotal = models.Length;
+                    }
+
+                }                
                 var newReleaseTags = new List<MetaTag<object?>>
                 {
                     new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1 },
                     new() { Identifier = MetaTagIdentifier.Artist, Value = firstTrack.Artist(), SortOrder = 2 },
                     new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 3 },
                     new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
-                    new() { Identifier = MetaTagIdentifier.TrackTotal, Value = firstTrack.TrackTotalNumber(), SortOrder = 101 }
+                    new() { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
                 };
                 var genres = tracks
                     .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())

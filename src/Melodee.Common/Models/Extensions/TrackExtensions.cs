@@ -131,7 +131,7 @@ public static class TrackExtensions
         return false;        
     }
 
-    public static string TrackFileName(this Track track, Configuration.Configuration configuration)
+    public static string TrackFileName(this Track track, Release release, Configuration.Configuration configuration)
     {
         var trackNumber = track.TrackNumber();
         if (trackNumber < 1)
@@ -146,7 +146,11 @@ public static class TrackExtensions
         var totalTrackNumber = track.TrackTotalNumber();
         if (totalTrackNumber < 1)
         {
-            throw new Exception($"Invalid total number of tracks for Track [{ track }]");
+            totalTrackNumber = release.TrackTotalValue();
+            if (totalTrackNumber < 1)
+            {
+                throw new Exception($"Invalid total number of tracks for Track [{track}]");
+            }
         }         
         // If the total number of tracks is more than 99 or the track number itself is more than 99 then 3 pad else 2 pad
         var mediaNumber = track.MediaNumber();        

@@ -1,6 +1,7 @@
 using Melodee.Common.Models;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
+using Serilog;
 
 namespace Melodee.Tests.Plugins.Processors;
 
@@ -9,6 +10,11 @@ public class DirectoryProcessorTests
     [Fact]
     public async Task ValidateDirectoryGetProcessed()
     {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.Console()
+            .CreateLogger();
+        
         var testFile = @"/home/steven/incoming/melodee_test/inbound/2024-06-14";
         var dirInfo = new System.IO.DirectoryInfo(testFile);
         if (dirInfo.Exists)

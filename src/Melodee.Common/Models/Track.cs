@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 
@@ -12,6 +13,7 @@ public sealed record Track
     
     public required FileSystemFileInfo File { get; init; }
     
+    [JsonIgnore]
     public IEnumerable<ImageInfo>? Images { get; init; }
     
     public IEnumerable<MetaTag<object?>>? Tags { get; init; }

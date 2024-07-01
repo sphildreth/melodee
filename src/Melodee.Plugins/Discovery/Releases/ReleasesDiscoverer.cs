@@ -305,7 +305,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 Artist = x.Artist(),
                 Title = x.ReleaseTitle(),
                 Year = x.ReleaseYear(),
-                TrackCount = x.TrackCountValue(),
+                TrackCount = x.TrackTotalValue(),
                 ReleaseStatus = ReleaseStatus.NotSet,
                 ViaPlugins = x.ViaPlugins,
                 UniqueId = x.UniqueId

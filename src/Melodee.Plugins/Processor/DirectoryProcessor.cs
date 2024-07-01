@@ -246,7 +246,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 {
                     foreach (var track in release.Tracks)
                     {
-                        var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.TrackFileName(_configuration));
+                        var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.TrackFileName(release, _configuration));
                         if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
                             File.Move(track.File.FullName(), newTrackFileName);
