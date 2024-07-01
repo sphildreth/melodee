@@ -1,5 +1,3 @@
-using System.Diagnostics.Contracts;
-using System.Runtime;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
@@ -8,7 +6,6 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.Conversion;
 using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.Conversion.Media;
-using Melodee.Plugins.Discovery.Releases;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Scripting;
@@ -27,37 +24,37 @@ public sealed class DirectoryProcessor : IProcessorPlugin
     private readonly IEnumerable<ITrackPlugin> _trackPlugins;
     private readonly IEnumerable<IConversionPlugin> _conversionPlugins;
     private readonly IEnumerable<IDirectoryPlugin> _directoryPlugins;
-    
+
     public string Id => "9BF95E5A-2EB5-4E28-820A-6F3B857356BD";
 
     public string DisplayName => nameof(DirectoryProcessor);
 
     public bool IsEnabled { get; set; } = true;
-    
+
     public int SortOrder { get; } = 0;
 
     public DirectoryProcessor(
-        IScriptPlugin preDiscoveryScript, 
-        IScriptPlugin postDiscoveryScript, 
+        IScriptPlugin preDiscoveryScript,
+        IScriptPlugin postDiscoveryScript,
         Configuration configuration)
     {
         _configuration = configuration;
-        
+
         _preDiscoveryScript = preDiscoveryScript;
         _postDiscoveryScript = postDiscoveryScript;
 
-        _trackPlugins = new ITrackPlugin[1]
+        _trackPlugins = new []
         {
             new MetaTag(_configuration)
         };
-        
-        _conversionPlugins = new IConversionPlugin[2]
+
+        _conversionPlugins = new IConversionPlugin[]
         {
             new ImageConvertor(_configuration),
             new MediaConvertor(_configuration)
         };
 
-        _directoryPlugins = new IDirectoryPlugin[4]
+        _directoryPlugins = new IDirectoryPlugin[]
         {
             new CueSheet(_trackPlugins, _configuration),
             new SimpleFileVerification(_trackPlugins, _configuration),
@@ -65,11 +62,11 @@ public sealed class DirectoryProcessor : IProcessorPlugin
             new Nfo(_configuration),
         };
     }
-    
+
     public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         // Ensure directory to process exists
-        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
             return new OperationResult<bool>
@@ -81,9 +78,9 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 Data = false
             };
         }
-        
+
         // Ensure that staging directory exists
-        var stagingInfo = new System.IO.DirectoryInfo(_configuration.StagingDirectory);
+        var stagingInfo = new DirectoryInfo(_configuration.StagingDirectory);
         if (!stagingInfo.Exists)
         {
             return new OperationResult<bool>
@@ -95,7 +92,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 Data = false
             };
         }
-        
+
         // Run PreDiscovery script
         if (_preDiscoveryScript.IsEnabled)
         {
@@ -111,7 +108,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         }
 
         var allFilesInDirectory = dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.AllDirectories).ToArray();
-        
+
         // Run Enabled Conversion scripts on each file in directory
         // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
         foreach (var fileSystemInfo in allFilesInDirectory)
@@ -134,6 +131,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                         }
                     }
                 }
+
                 if (plugin.StopProcessing)
                 {
                     break;
@@ -145,7 +143,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         // e.g. Build Release json file for M3U or NFO or SFV, etc.
         foreach (var plugin in _directoryPlugins.OrderBy(x => x.SortOrder))
         {
-            using (Operation.Time("MetaData:Directory: Plugin [{Plugin}]", fileSystemDirectoryInfo, plugin.DisplayName))
+            using (Operation.Time("MetaData:Directory: Plugin [{Plugin}]", plugin.DisplayName))
             {
                 var pluginResult = await plugin.ProcessDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
                 if (!pluginResult.IsSuccess)
@@ -157,12 +155,13 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                     };
                 }
             }
+
             if (plugin.StopProcessing)
             {
                 break;
             }
-        }        
-        
+        }
+
         // Check if any Release json files exist in given directory, if none then create from track files.
         var releaseJsonFiles = fileSystemDirectoryInfo.FileInfosForExtension("melodee.json");
         if (!releaseJsonFiles.Any())
@@ -176,6 +175,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                     Data = false
                 };
             }
+
             foreach (var releaseForDirectory in releasesForDirectory.Data)
             {
                 var serialized = System.Text.Json.JsonSerializer.Serialize(releaseForDirectory);
@@ -188,7 +188,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         releaseJsonFiles = fileSystemDirectoryInfo.FileInfosForExtension("melodee.json").ToArray();
         if (!releaseJsonFiles.Any())
         {
-            return new OperationResult<bool>($"No Releases found in given directory [{ fileSystemDirectoryInfo }]")
+            return new OperationResult<bool>($"No Releases found in given directory [{fileSystemDirectoryInfo}]")
             {
                 Data = false
             };
@@ -206,15 +206,15 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                     Data = false
                 };
             }
+
             release.Images = await FindImagesForRelease(release, cancellationToken);
             releasesToMove.Add(release);
         }
 
         // Create directory and move files for each found release in staging folder
-         foreach (var release in releasesToMove)
-         {
-            var fullReleaseDirectoryName = release.ReleaseDirectoryName(_configuration);
-            var releaseDirInfo = new System.IO.DirectoryInfo(Path.Combine(_configuration.StagingDirectory, fullReleaseDirectoryName));
+        foreach (var release in releasesToMove)
+        {
+            var releaseDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, $"{release.Artist()} - [{release.ReleaseYear()}] {release.ReleaseTitle()}".ToFileNameFriendly()));
             if (!releaseDirInfo.Exists)
             {
                 releaseDirInfo.Create();
@@ -224,13 +224,13 @@ public sealed class DirectoryProcessor : IProcessorPlugin
             {
                 foreach (var imageFile in release.Images.Where(x => x.Bytes != null && x.Bytes.Length != 0))
                 {
-                    var newImageFileName = Path.Combine(releaseDirInfo.FullName, $"{ imageFile.PictureIdentifier}.jpg");
+                    var newImageFileName = Path.Combine(releaseDirInfo.FullName, $"{imageFile.PictureIdentifier}.jpg");
                     await File.WriteAllBytesAsync(newImageFileName, imageFile.Bytes!, cancellationToken);
                     if (_configuration.PluginProcessOptions.DoDeleteOriginal && imageFile.FileInfo != null)
                     {
                         File.Delete(imageFile.FileInfo.FullName());
-                    }                    
-                }                
+                    }
+                }
             }
 
             if (release.Tracks != null)
@@ -248,11 +248,11 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                         {
                             File.Delete(newTrackFileName);
                         }
+
                         File.Copy(track.File.FullName(), newTrackFileName);
                     }
                 }
             }
-
         }
 
         // Run PostDiscovery script
@@ -267,8 +267,8 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                     Data = false
                 };
             }
-        }        
-        
+        }
+
         return new OperationResult<bool>
         {
             Data = true
@@ -281,7 +281,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         var imageFiles = ImageHelper.ImageFilesInDirectory(release.Directory.Path, SearchOption.TopDirectoryOnly);
         foreach (var imageFile in imageFiles)
         {
-            var fileInfo = new System.IO.FileInfo(imageFile);
+            var fileInfo = new FileInfo(imageFile);
             if (release.IsFileForRelease(fileInfo))
             {
                 if (ImageHelper.IsReleaseImage(fileInfo) ||
@@ -320,6 +320,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 }
             }
         }
+
         return imageInfos;
     }
 
@@ -328,9 +329,8 @@ public sealed class DirectoryProcessor : IProcessorPlugin
         var releases = new List<Release>();
         var messages = new List<string>();
         var viaPlugins = new List<string>();
-        var releaseFiles = new List<ReleaseFile>();
         
-        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
             using (Operation.Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
@@ -351,9 +351,11 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                                     tracks.Add(pluginResult.Data);
                                     viaPlugins.Add(plugin.DisplayName);
                                 }
+
                                 messages.AddRange(pluginResult.Messages);
                             }
                         }
+
                         if (plugin.StopProcessing)
                         {
                             break;
@@ -365,13 +367,14 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                         var foundRelease = releases.FirstOrDefault(x => x.UniqueId == track.ReleaseUniqueId);
                         if (foundRelease != null)
                         {
-                            foundRelease = foundRelease.MergeTracks(tracks);
+                            releases.Remove(foundRelease);
+                            releases.Add(foundRelease.MergeTracks(tracks));
                         }
                         else
                         {
                             var newReleaseTags = new List<MetaTag<object?>>
                             {
-                                new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1},
+                                new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1 },
                                 new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = track.Artist(), SortOrder = 2 },
                                 new MetaTag<object?> { Identifier = MetaTagIdentifier.DiscNumber, Value = track.MediaNumber(), SortOrder = 3 },
                                 new MetaTag<object?> { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = track.ReleaseYear(), SortOrder = 100 },
@@ -398,7 +401,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                         }
                     }
                 }
-                
+
                 // Now all tracks have been found renumber SortOrder 
                 Parallel.ForEach(releases, (release) =>
                 {
@@ -412,9 +415,10 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 });
             }
         }
+
         return new OperationResult<IEnumerable<Release>>(messages)
         {
             Data = releases
         };
-    }    
+    }
 }
