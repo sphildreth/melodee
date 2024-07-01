@@ -44,7 +44,20 @@ public sealed record Release
             }
         }
 
-        return this with { Tracks = tracks };
+        var releaseTags = Tags?.ToList();
+        var trackTotalTag = releaseTags?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackTotal);
+        if (trackTotalTag != null)
+        {
+            releaseTags!.Remove(trackTotalTag);
+            releaseTags.Add(new MetaTag<object?>()
+            {
+                Identifier = MetaTagIdentifier.TrackTotal,
+                Value = tracks.Count,
+                SortOrder = trackTotalTag.SortOrder,
+                StyleClass = trackTotalTag.StyleClass
+            });
+        }
+        return this with { Tracks = tracks.ToArray(), Tags = releaseTags!.ToArray() };
     }
     
     public int SortOrder { get; set; }

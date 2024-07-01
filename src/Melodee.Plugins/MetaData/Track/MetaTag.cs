@@ -178,6 +178,11 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                                     });
                                 }
                             }
+                            // Handle special needs Tags
+                            if (atlDictionary.TryGetValue("Track", out var trackNumberAndTotalTracks))
+                            {
+                                var t = 1;
+                            }
                         }
                     }
                 }

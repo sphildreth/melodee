@@ -146,11 +146,7 @@ public static class TrackExtensions
         var totalTrackNumber = track.TrackTotalNumber();
         if (totalTrackNumber < 1)
         {
-            totalTrackNumber = release.TrackTotalValue();
-            if (totalTrackNumber < 1)
-            {
-                throw new Exception($"Invalid total number of tracks for Track [{track}]");
-            }
+            throw new Exception($"Invalid total number of tracks for Track [{track}]");
         }         
         // If the total number of tracks is more than 99 or the track number itself is more than 99 then 3 pad else 2 pad
         var mediaNumber = track.MediaNumber();        

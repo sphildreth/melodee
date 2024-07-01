@@ -382,13 +382,18 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                         }
                         else
                         {
+                            var trackTotal = track.TrackTotalNumber();
+                            if (trackTotal < 1)
+                            {
+                                trackTotal = tracks.Count;
+                            }
                             var newReleaseTags = new List<MetaTag<object?>>
                             {
                                 new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1 },
                                 new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = track.Artist(), SortOrder = 2 },
                                 new MetaTag<object?> { Identifier = MetaTagIdentifier.DiscNumber, Value = track.MediaNumber(), SortOrder = 3 },
                                 new MetaTag<object?> { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = track.ReleaseYear(), SortOrder = 100 },
-                                new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackTotal, Value = track.TrackTotalNumber(), SortOrder = 101 }
+                                new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
                             };
                             var genres = tracks
                                 .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())

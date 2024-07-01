@@ -116,7 +116,20 @@ public static class ReleaseExtensions
                                                                release.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ?? 
                                                                0;
 
-    public static int TrackTotalValue(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal) ?? 0;
+    public static int TrackTotalValue(this Release release)
+    {
+        var trackTotalFromRelease = release.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal);
+        if (trackTotalFromRelease is > 0)
+        {
+            return trackTotalFromRelease.Value;
+        }
+        var trackTotalFromTracks = release.Tracks?.FirstOrDefault(x => x.TrackTotalNumber() > 0);
+        if (trackTotalFromTracks != null)
+        {
+            return trackTotalFromTracks.TrackTotalNumber();
+        }
+        return release.Tracks?.Count() ?? 0;
+    }
     
     public static string? Genre(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
 
