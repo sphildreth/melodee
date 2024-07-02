@@ -17,6 +17,26 @@ public static class FileSystemDirectoryInfoExtensions
         return dirInfo.GetFiles($"*.{extension}", SearchOption.AllDirectories).ToArray();
     }
 
+    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, SearchOption searchOption)
+    {
+        if (string.IsNullOrWhiteSpace(fileSystemDirectoryInfo.Path))
+        {
+            return [];
+        }
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+        if (!dirInfo.Exists)
+        {
+            return [];
+        }
+        var result = new List<FileSystemDirectoryInfo>();
+        result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption) where dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)) select dir.ToDirectorySystemInfo());
+        if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)))
+        {
+            result.Add(fileSystemDirectoryInfo);
+        }
+        return result;
+    }
+
     public static IEnumerable<System.IO.FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var result = new List<System.IO.FileInfo>();

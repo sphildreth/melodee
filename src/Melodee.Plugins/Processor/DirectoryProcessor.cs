@@ -108,16 +108,10 @@ public sealed class DirectoryProcessor : IProcessorPlugin
             }
         }
 
-        var directoriesToProcess = dirInfo.GetDirectories("*.*", SearchOption.AllDirectories).ToList();
-        if (directoriesToProcess.Count == 0)
+        var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(SearchOption.AllDirectories).ToList();
+        foreach (var directoryInfoToProcess in directoriesToProcess)
         {
-            directoriesToProcess.Add(dirInfo);
-        }
-
-        foreach (var dirInfoToProcess in directoriesToProcess)
-        {
-            var directoryInfoToProcess = dirInfoToProcess.ToDirectorySystemInfo();
-            var allFilesInDirectory = dirInfoToProcess.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly).ToArray();
+            var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
 
             // Run Enabled Conversion scripts on each file in directory
             // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
@@ -126,11 +120,11 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 var fsi = fileSystemInfo.ToFileSystemInfo();
                 foreach (var plugin in _conversionPlugins.OrderBy(x => x.SortOrder))
                 {
-                    if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
+                    if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
                     {
                         using (Operation.Time("Conversion: File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                         {
-                            var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
+                            var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
                             if (!pluginResult.IsSuccess)
                             {
                                 return new OperationResult<bool>(pluginResult.Messages)
@@ -250,10 +244,10 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                     {
                         File.Delete(newImageFileName);
                     }
-                    File.Copy(image.FileInfo!.FullName(fileSystemDirectoryInfo), newImageFileName);
+                    File.Copy(image.FileInfo!.FullName(directoryInfoToProcess), newImageFileName);
                     if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                     {
-                        File.Delete(image.FileInfo!.FullName(fileSystemDirectoryInfo));
+                        File.Delete(image.FileInfo!.FullName(directoryInfoToProcess));
                     }
                 });
 
@@ -264,7 +258,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                         var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.TrackFileName(release, _configuration));
                         if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
-                            File.Move(track.File.FullName(fileSystemDirectoryInfo), newTrackFileName);
+                            File.Move(track.File.FullName(directoryInfoToProcess), newTrackFileName);
                         }
                         else
                         {
@@ -273,7 +267,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                                 File.Delete(newTrackFileName);
                             }
 
-                            File.Copy(track.File.FullName(fileSystemDirectoryInfo), newTrackFileName);
+                            File.Copy(track.File.FullName(directoryInfoToProcess), newTrackFileName);
                         }
                     }
                 }
