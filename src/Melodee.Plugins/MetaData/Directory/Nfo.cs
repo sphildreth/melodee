@@ -280,7 +280,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 }
             },            
             ViaPlugins = new[] { nameof(Nfo) },
-            Directory = new FileSystemDirectoryInfo
+            OriginalDirectory = new FileSystemDirectoryInfo
             {
                 ParentId = parentDirectoryInfo?.UniqueId ?? 0,
                 Path = fileInfo.Directory?.FullName ?? string.Empty,

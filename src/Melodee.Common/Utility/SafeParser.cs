@@ -227,8 +227,8 @@ namespace Melodee.Common.Utility
             return buffer;
         }
 
-        public static long Hash(string input) => Hash(Encoding.UTF8.GetBytes(input));
-        
+        public static long Hash(params string?[] input) => Hash(Encoding.UTF8.GetBytes(string.Join(string.Empty, input)));
+
         public static long Hash(Byte[] dataToHash)
         {
             Int32 dataLength = dataToHash.Length;

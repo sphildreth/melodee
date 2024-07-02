@@ -60,7 +60,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             return new Release
             {
                 ViaPlugins = [],
-                Directory = fileSystemDirectoryInfo
+                OriginalDirectory = fileSystemDirectoryInfo
             };
         }
         return result;
@@ -187,7 +187,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                                 }));
                             releases.Add(new Release
                             {
-                                Directory = fileSystemDirectoryInfo,
+                                OriginalDirectory = fileSystemDirectoryInfo,
                                 Tags = newReleaseTags,
                                 Tracks = tracks,
                                 ViaPlugins = viaPlugins.Distinct().ToArray()

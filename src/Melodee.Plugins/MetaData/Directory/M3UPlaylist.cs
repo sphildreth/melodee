@@ -107,7 +107,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                             FileSystemFileInfo = m3UFile.ToFileSystemInfo()
                         }
                     },                    
-                    Directory = new FileSystemDirectoryInfo
+                    OriginalDirectory = new FileSystemDirectoryInfo
                     {
                         ParentId = parentDirectory?.UniqueId ?? 0,
                         Path = fileSystemDirectoryInfo.Path,

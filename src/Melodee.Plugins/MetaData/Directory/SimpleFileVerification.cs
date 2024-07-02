@@ -125,7 +125,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                             FileSystemFileInfo = sfvFile.ToFileSystemInfo()
                         }
                     },
-                    Directory = new FileSystemDirectoryInfo
+                    OriginalDirectory = new FileSystemDirectoryInfo
                     {
                         ParentId = parentDirectory?.UniqueId ?? 0,
                         Path = fileSystemDirectoryInfo.Path,

@@ -12,14 +12,17 @@ public sealed record Release
 {
     private long? _uniqueId;
 
-    public long UniqueId => (_uniqueId ??= SafeParser.Hash($"{this.Artist()}{this.ReleaseYear()}{this.ReleaseTitle}"));
+    public long UniqueId => (_uniqueId ??= SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle()));
 
     /// <summary>
     /// What plugins were utilized in discovering this release.
     /// </summary>
     public required IEnumerable<string> ViaPlugins { get; set; }    
     
-    public required FileSystemDirectoryInfo Directory { get; init; }
+    /// <summary>
+    /// This is the directory where the Release was created, it will not be the "Staging" or "Library" folder where there Release is moved to once processed.
+    /// </summary>
+    public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
 
     public IEnumerable<ImageInfo>? Images { get; set; }
 
@@ -130,7 +133,7 @@ public sealed record Release
 
         return new Release
         {
-            Directory = Directory,
+            OriginalDirectory = OriginalDirectory,
             Tags = tags,
             ViaPlugins = viaPlugins,
             Files = files.ToArray(),

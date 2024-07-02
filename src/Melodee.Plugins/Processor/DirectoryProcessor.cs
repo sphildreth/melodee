@@ -304,7 +304,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
     private static async Task<IEnumerable<ImageInfo>> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(release.Directory.Path, SearchOption.TopDirectoryOnly);
+        var imageFiles = ImageHelper.ImageFilesInDirectory(release.OriginalDirectory.Path, SearchOption.TopDirectoryOnly);
         foreach (var imageFile in imageFiles)
         {
             var fileInfo = new FileInfo(imageFile);
@@ -424,7 +424,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                                 }));
                             releases.Add(new Release
                             {
-                                Directory = fileSystemDirectoryInfo,
+                                OriginalDirectory = fileSystemDirectoryInfo,
                                 Tags = newReleaseTags,
                                 Tracks = tracks,
                                 ViaPlugins = viaPlugins.Distinct().ToArray()

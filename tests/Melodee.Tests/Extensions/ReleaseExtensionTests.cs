@@ -12,7 +12,7 @@ public class ReleaseExtensionTests
         return new Release
         {
         ViaPlugins = [],
-        Directory = new FileSystemDirectoryInfo
+        OriginalDirectory = new FileSystemDirectoryInfo
         {
             Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
             Name = "00-k 2024"

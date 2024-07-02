@@ -16,5 +16,18 @@ namespace Melodee.Tests.Utility
         {
             Assert.NotNull(SafeParser.ToDateTime(input));
         }
+
+        [Fact]
+        public void ValidateToHash()
+        {
+            Assert.True(SafeParser.Hash("Bob", "Marley") > 0);
+            
+            Assert.True(SafeParser.Hash("Bob", "Marley", "") > 0);
+            
+            Assert.True(SafeParser.Hash("Bob", "Marley", "", null) > 0);
+
+            string? nothing = null;
+            Assert.False(SafeParser.Hash(nothing) > 0);
+        }
     }
 }

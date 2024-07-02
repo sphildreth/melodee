@@ -34,7 +34,7 @@ public static class CueSheetExtensions
             Tags = cueSheet.Tags,
             Tracks = cueSheet.Tracks,
             Status = cueSheet.IsValid ? ReleaseStatus.Complete : ReleaseStatus.Incomplete,
-            Directory = new FileSystemDirectoryInfo
+            OriginalDirectory = new FileSystemDirectoryInfo
                 
             {
                 Path = fileInfo.Directory.FullName,

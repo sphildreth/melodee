@@ -139,7 +139,7 @@ public static class ReleaseExtensions
         return string.IsNullOrWhiteSpace(title) || UnwantedReleaseTitleTextRegex.IsMatch(title);
     }
     
-    public static System.IO.DirectoryInfo ToDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.Directory.Path);
+    public static System.IO.DirectoryInfo ToDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.OriginalDirectory.Path);
    
     public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this Release release, string extension)
     {
