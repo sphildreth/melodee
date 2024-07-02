@@ -166,6 +166,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 var trackTitle = l?.Substring(3, (l.Length - trackDuration.Length) - 4).Trim() ?? string.Empty;
                 tracks.Add(new Common.Models.Track
                 {
+                    CrcHash = CRC32.Calculate(fileInfo),
                     Tags = new[]
                     {
                         new MetaTag<object?>
@@ -186,7 +187,6 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                     },
                     File = new FileSystemFileInfo
                     {
-                        Path = fileInfo.Directory?.FullName ?? string.Empty,
                         Name = string.Empty,
                         Size = 0
                     },
@@ -286,6 +286,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 Path = fileInfo.Directory?.FullName ?? string.Empty,
                 Name = fileInfo.DirectoryName ?? string.Empty
             },
+            Images = tracks.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
             Tags = releaseTags,
             Tracks = tracks,
             Messages = messages,

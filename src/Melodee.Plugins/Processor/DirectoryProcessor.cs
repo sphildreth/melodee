@@ -1,4 +1,5 @@
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
@@ -125,11 +126,11 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                 var fsi = fileSystemInfo.ToFileSystemInfo();
                 foreach (var plugin in _conversionPlugins.OrderBy(x => x.SortOrder))
                 {
-                    if (plugin.DoesHandleFile(fsi))
+                    if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                     {
                         using (Operation.Time("Conversion: File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                         {
-                            var pluginResult = await plugin.ProcessFileAsync(fsi, cancellationToken);
+                            var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                             if (!pluginResult.IsSuccess)
                             {
                                 return new OperationResult<bool>(pluginResult.Messages)
@@ -204,7 +205,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
             }
 
             // For each Release json find all image files and add to Release to be moved below to staging folder.
-            var releasesToMove = new List<Release>();
+            var releaseAndJsonFile = new Dictionary<Release, string>();
             foreach (var releaseJsonFile in releaseJsonFiles)
             {
                 var release = System.Text.Json.JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
@@ -216,31 +217,45 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                     };
                 }
 
-                release.Images = await FindImagesForRelease(release, cancellationToken);
-                releasesToMove.Add(release);
+                var releaseImages = release.Images?.ToList() ?? [];
+                var foundReleaseImages = (await FindImagesForRelease(release, cancellationToken)).ToArray();
+                if (foundReleaseImages.Length != 0)
+                {
+                    foreach (var foundReleaseImage in foundReleaseImages)
+                    {
+                        if (!releaseImages.Any(x => x.IsCrcHashMatch(foundReleaseImage.CrcHash)))
+                        {
+                            releaseImages.Add(foundReleaseImage);
+                        }
+                    }
+                }
+                release.Images = releaseImages;
+                releaseAndJsonFile.Add(release, releaseJsonFile.FullName);
             }
 
             // Create directory and move files for each found release in staging folder
-            foreach (var release in releasesToMove)
+            foreach (var releaseKvp in releaseAndJsonFile)
             {
+                var release = releaseKvp.Key;
                 var releaseDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, $"{release.Artist()} - [{release.ReleaseYear()}] {release.ReleaseTitle()}".ToFileNameFriendly()));
                 if (!releaseDirInfo.Exists)
                 {
                     releaseDirInfo.Create();
                 }
 
-                if (release.Images != null)
+                release.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
                 {
-                    foreach (var imageFile in release.Images.Where(x => x.Bytes != null && x.Bytes.Length != 0))
+                    var newImageFileName = Path.Combine(releaseDirInfo.FullName, $"{ (index+1).ToStringPadLeft(2) }-{image.PictureIdentifier}.jpg");
+                    if (File.Exists(newImageFileName))
                     {
-                        var newImageFileName = Path.Combine(releaseDirInfo.FullName, $"{imageFile.PictureIdentifier}.jpg");
-                        await File.WriteAllBytesAsync(newImageFileName, imageFile.Bytes!, cancellationToken);
-                        if (_configuration.PluginProcessOptions.DoDeleteOriginal && imageFile.FileInfo != null)
-                        {
-                            File.Delete(imageFile.FileInfo.FullName());
-                        }
+                        File.Delete(newImageFileName);
                     }
-                }
+                    File.Copy(image.FileInfo!.FullName(fileSystemDirectoryInfo), newImageFileName);
+                    if (_configuration.PluginProcessOptions.DoDeleteOriginal)
+                    {
+                        File.Delete(image.FileInfo!.FullName(fileSystemDirectoryInfo));
+                    }
+                });
 
                 if (release.Tracks != null)
                 {
@@ -249,7 +264,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                         var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.TrackFileName(release, _configuration));
                         if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
-                            File.Move(track.File.FullName(), newTrackFileName);
+                            File.Move(track.File.FullName(fileSystemDirectoryInfo), newTrackFileName);
                         }
                         else
                         {
@@ -258,10 +273,11 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                                 File.Delete(newTrackFileName);
                             }
 
-                            File.Copy(track.File.FullName(), newTrackFileName);
+                            File.Copy(track.File.FullName(fileSystemDirectoryInfo), newTrackFileName);
                         }
                     }
                 }
+                File.Copy(releaseAndJsonFile[release],  Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName()));
             }
         }
 
@@ -320,9 +336,9 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                     var imageInfo = await SixLabors.ImageSharp.Image.LoadAsync(fileInfo.FullName, cancellationToken);
                     imageInfos.Add(new ImageInfo
                     {
+                        CrcHash = CRC32.Calculate(fileInfo),
                         FileInfo = fileInfo.ToFileSystemInfo(),
                         PictureIdentifier = pictureIdentifier,
-                        Bytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken),
                         Width = imageInfo.Width,
                         Height = imageInfo.Height,
                         SortOrder = 0
@@ -351,11 +367,11 @@ public sealed class DirectoryProcessor : IProcessorPlugin
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in _trackPlugins.OrderBy(x => x.SortOrder))
                     {
-                        if (plugin.DoesHandleFile(fsi))
+                        if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
                             using (Operation.Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                             {
-                                var pluginResult = await plugin.ProcessFileAsync(fsi, cancellationToken);
+                                var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                                 if (pluginResult.IsSuccess)
                                 {
                                     tracks.Add(pluginResult.Data);

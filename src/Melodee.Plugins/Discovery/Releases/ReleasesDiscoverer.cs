@@ -103,11 +103,11 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             .Skip(pagedRequest.SkipValue)
             .Take(pagedRequest.TakeValue);
      
-        var processedReleasesViaPlugins = new List<Release>();
-        await Parallel.ForEachAsync(resultReleases, cancellationToken, async (release, ct) =>
-        {
-            processedReleasesViaPlugins.Add(await FindImagesForRelease(release, ct));
-        });
+         var processedReleasesViaPlugins = new List<Release>();
+        // await Parallel.ForEachAsync(resultReleases, cancellationToken, async (release, ct) =>
+        // {
+        //     processedReleasesViaPlugins.Add(await FindImagesForRelease(release, ct));
+        // });
         
         return new PagedResult<Release>()
         {
@@ -133,11 +133,11 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in _trackPlugins.OrderBy(x => x.SortOrder))
                     {
-                        if (plugin.DoesHandleFile(fsi))
+                        if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
                             using (Operation.Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                             {
-                                var pluginResult = await plugin.ProcessFileAsync(fsi, cancellationToken);
+                                var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                                 if (pluginResult.IsSuccess)
                                 {
                                     tracks.Add(pluginResult.Data);
@@ -215,66 +215,66 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         };
     }
 
-    private async Task<Release> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
-    {
-        var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(release.Directory.Path, SearchOption.TopDirectoryOnly);
-        foreach (var imageFile in imageFiles)
-        {
-            var fileInfo = new System.IO.FileInfo(imageFile);
-            if (release.IsFileForRelease(fileInfo))
-            {
-                if (ImageHelper.IsReleaseImage(fileInfo) ||
-                    ImageHelper.IsArtistImage(fileInfo) ||
-                    ImageHelper.IsArtistSecondaryImage(fileInfo) ||
-                    ImageHelper.IsReleaseSecondaryImage(fileInfo))
-                {
-                    var pictureIdentifier = PictureIdentifier.NotSet;
-                    if (ImageHelper.IsReleaseImage(fileInfo))
-                    {
-                        pictureIdentifier = PictureIdentifier.Front;
-                    }
-                    else if (ImageHelper.IsReleaseSecondaryImage(fileInfo))
-                    {
-                        pictureIdentifier = PictureIdentifier.SecondaryFront;
-                    }
-                    else if (ImageHelper.IsArtistImage(fileInfo))
-                    {
-                        pictureIdentifier = PictureIdentifier.Band;
-                    }
-                    else if (ImageHelper.IsArtistSecondaryImage(fileInfo))
-                    {
-                        pictureIdentifier = PictureIdentifier.BandSecondary;
-                    }
-
-                    var imageInfo = await SixLabors.ImageSharp.Image.LoadAsync(fileInfo.FullName, cancellationToken);
-                    imageInfos.Add(new ImageInfo
-                    {
-                        PictureIdentifier = pictureIdentifier,
-                        Bytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken),
-                        Width = imageInfo.Width,
-                        Height = imageInfo.Height,
-                        SortOrder = 0
-                    });
-                }
-            }
-        }
-
-        if (imageInfos.Count == 0 && (release.Tracks ?? Array.Empty<Track>()).Any())
-        {
-            var allTrackImages = release.Tracks?
-                .Where(x => x.Images != null)?
-                .SelectMany(x => x.Images!)?
-                .ToArray() ?? [];
-            var firstTrackImageOfEachGroup = allTrackImages.GroupBy(x => x.PictureIdentifier).FirstOrDefault();
-            if (firstTrackImageOfEachGroup != null && firstTrackImageOfEachGroup.Any())
-            {
-                imageInfos.AddRange(firstTrackImageOfEachGroup);
-            }
-        }
-        release.Images = imageInfos;
-        return release;
-    }
+    // private async Task<Release> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
+    // {
+    //     var imageInfos = new List<ImageInfo>();
+    //     var imageFiles = ImageHelper.ImageFilesInDirectory(release.Directory.Path, SearchOption.TopDirectoryOnly);
+    //     foreach (var imageFile in imageFiles)
+    //     {
+    //         var fileInfo = new System.IO.FileInfo(imageFile);
+    //         if (release.IsFileForRelease(fileInfo))
+    //         {
+    //             if (ImageHelper.IsReleaseImage(fileInfo) ||
+    //                 ImageHelper.IsArtistImage(fileInfo) ||
+    //                 ImageHelper.IsArtistSecondaryImage(fileInfo) ||
+    //                 ImageHelper.IsReleaseSecondaryImage(fileInfo))
+    //             {
+    //                 var pictureIdentifier = PictureIdentifier.NotSet;
+    //                 if (ImageHelper.IsReleaseImage(fileInfo))
+    //                 {
+    //                     pictureIdentifier = PictureIdentifier.Front;
+    //                 }
+    //                 else if (ImageHelper.IsReleaseSecondaryImage(fileInfo))
+    //                 {
+    //                     pictureIdentifier = PictureIdentifier.SecondaryFront;
+    //                 }
+    //                 else if (ImageHelper.IsArtistImage(fileInfo))
+    //                 {
+    //                     pictureIdentifier = PictureIdentifier.Band;
+    //                 }
+    //                 else if (ImageHelper.IsArtistSecondaryImage(fileInfo))
+    //                 {
+    //                     pictureIdentifier = PictureIdentifier.BandSecondary;
+    //                 }
+    //
+    //                 var imageInfo = await SixLabors.ImageSharp.Image.LoadAsync(fileInfo.FullName, cancellationToken);
+    //                 imageInfos.Add(new ImageInfo
+    //                 {
+    //                     PictureIdentifier = pictureIdentifier,
+    //                     Bytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken),
+    //                     Width = imageInfo.Width,
+    //                     Height = imageInfo.Height,
+    //                     SortOrder = 0
+    //                 });
+    //             }
+    //         }
+    //     }
+    //
+    //     if (imageInfos.Count == 0 && (release.Tracks ?? Array.Empty<Track>()).Any())
+    //     {
+    //         var allTrackImages = release.Tracks?
+    //             .Where(x => x.Images != null)?
+    //             .SelectMany(x => x.Images!)?
+    //             .ToArray() ?? [];
+    //         var firstTrackImageOfEachGroup = allTrackImages.GroupBy(x => x.PictureIdentifier).FirstOrDefault();
+    //         if (firstTrackImageOfEachGroup != null && firstTrackImageOfEachGroup.Any())
+    //         {
+    //             imageInfos.AddRange(firstTrackImageOfEachGroup);
+    //         }
+    //     }
+    //     release.Images = imageInfos;
+    //     return release;
+    // }
 
     // private async Task<Release> ProcessReleasePluginsOnRelease(Release release, CancellationToken cancellationToken = default)
     // {

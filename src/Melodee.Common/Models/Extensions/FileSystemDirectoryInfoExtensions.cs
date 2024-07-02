@@ -1,12 +1,12 @@
 using Melodee.Common.Utility;
+using SearchOption = System.IO.SearchOption;
 
 namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemDirectoryInfoExtensions
 {
     public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo) => Path.Combine(fileSystemDirectoryInfo.Path, fileSystemDirectoryInfo.Name);
-    
-   
+
     public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
         var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
@@ -29,7 +29,7 @@ public static class FileSystemDirectoryInfoExtensions
             .Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension)));
         return result;
     }
-    
+
     public static void DeleteAllFilesForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
         var filesToDelete = fileSystemDirectoryInfo.FileInfosForExtension(extension);
@@ -38,6 +38,4 @@ public static class FileSystemDirectoryInfoExtensions
             fileToDelete.Delete();
         }
     }
-    
-  
 }

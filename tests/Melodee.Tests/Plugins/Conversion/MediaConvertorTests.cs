@@ -1,4 +1,5 @@
 using Melodee.Common.Extensions;
+using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Plugins;
@@ -14,12 +15,17 @@ public class MediaConvertorTests
         if (fileInfo.Exists)
         {
             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(TestsBase.NewConfiguration);
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo.ToFileSystemInfo());
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Name = "tests"
+            };
+            var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(convertorResult);
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new System.IO.FileInfo(convertorResult.Data.FullName());
+            var convertedFileInfo = new System.IO.FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
 
         }
@@ -42,7 +48,12 @@ public class MediaConvertorTests
                     LibraryDirectory = string.Empty
                 }
             );
-            var convertorResult = await convertor.ProcessFileAsync(fileInfo.ToFileSystemInfo());
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Name = "tests"
+            };            
+            var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(convertorResult);
             Assert.False(convertorResult.IsSuccess);
         }

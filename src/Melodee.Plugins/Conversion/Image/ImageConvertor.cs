@@ -23,18 +23,18 @@ public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(c
 
     public override int SortOrder { get; } = 0;
 
-    public override bool DoesHandleFile(FileSystemFileInfo fileSystemInfo)
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists())
+        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo))
         {
             return false;
         }
-        return FileHelper.IsFileImageType(fileSystemInfo.Extension());
+        return FileHelper.IsFileImageType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        if (!FileHelper.IsFileImageType(fileSystemInfo.Extension()))
+        if (!FileHelper.IsFileImageType(fileSystemInfo.Extension(directoryInfo)))
         {
             return new OperationResult<FileSystemFileInfo>
             {
@@ -46,7 +46,7 @@ public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(c
             };
         }
 
-        var fileInfo = new FileInfo(fileSystemInfo.FullName());
+        var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
         if (fileInfo.Exists && !string.Equals("jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
         {
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");

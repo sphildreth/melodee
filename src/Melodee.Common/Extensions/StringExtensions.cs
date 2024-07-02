@@ -2,7 +2,10 @@
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using Melodee.Common.Models;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
+using Microsoft.VisualBasic.FileIO;
 
 namespace Melodee.Common.Extensions
 {
@@ -409,6 +412,20 @@ namespace Melodee.Common.Extensions
         public static string? RemoveFileExtension(this string? input)
         {
             return input.Nullify() == null ? null : Path.GetFileNameWithoutExtension(input!);
+        }
+        
+        public static FileSystemDirectoryInfo ToDirectoryInfo(this string? input)
+        {
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                return (new DirectoryInfo(input).ToDirectorySystemInfo());
+            }
+
+            return new FileSystemDirectoryInfo
+            {
+                Path = string.Empty,
+                Name = string.Empty
+            };
         }
 
         [GeneratedRegex("[^a-zA-Z0-9 -.:]")]

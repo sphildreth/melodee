@@ -2,8 +2,8 @@ namespace Melodee.Common.Utility;
 
 public static class CRC32
 {
-    private static readonly uint[] crc32Table = new uint[256];
-    private const int BUFFER_SIZE = 8192;
+    private static readonly uint[] Crc32Table = new uint[256];
+    private const int BufferSize = 8192;
 
     static CRC32()
     {
@@ -24,7 +24,7 @@ public static class CRC32
                         dwCrc >>= 1;
                 }
 
-                crc32Table[i] = dwCrc;
+                Crc32Table[i] = dwCrc;
             }
         }
     }
@@ -37,9 +37,10 @@ public static class CRC32
     public static string Calculate(FileInfo file)
     {
         if (file == null)
-            throw new ArgumentNullException("file");
-
-        return string.Format("{0:X8}", CalculateInt32(file));
+        {
+            throw new ArgumentNullException(nameof(file));
+        }
+        return $"{CalculateInt32(file):X8}";
     }
 
     /// <summary>
@@ -50,9 +51,9 @@ public static class CRC32
     public static string Calculate(Stream stream)
     {
         if (stream == null)
-            throw new ArgumentNullException("stream");
+            throw new ArgumentNullException(nameof(stream));
 
-        return string.Format("{0:X8}", CalculateInt32(stream));
+        return $"{CalculateInt32(stream):X8}";
     }
 
     /// <summary>
@@ -63,9 +64,10 @@ public static class CRC32
     public static string Calculate(byte[] data)
     {
         if (data == null)
-            throw new ArgumentNullException("data");
-
-        return string.Format("{0:X8}", CalculateInt32(data));
+        {
+            throw new ArgumentNullException(nameof(data));
+        }
+        return $"{CalculateInt32(data):X8}";
     }
 
     /// <summary>
@@ -76,8 +78,9 @@ public static class CRC32
     public static uint CalculateInt32(FileInfo file)
     {
         if (file == null)
-            throw new ArgumentNullException("file");
-
+        {
+            throw new ArgumentNullException(nameof(file));
+        }
         using (FileStream fileStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             return CalculateInt32(fileStream);
@@ -92,24 +95,25 @@ public static class CRC32
     public static uint CalculateInt32(Stream stream)
     {
         if (stream == null)
-            throw new ArgumentNullException("stream");
-
+        {
+            throw new ArgumentNullException(nameof(stream));
+        }
         unchecked
         {
             stream.Position = 0;
             uint crc32Result = 0xFFFFFFFF;
-            byte[] buffer = new byte[BUFFER_SIZE];
+            byte[] buffer = new byte[BufferSize];
 
-            int count = stream.Read(buffer, 0, BUFFER_SIZE);
+            int count = stream.Read(buffer, 0, BufferSize);
             while (count > 0)
             {
                 for (int i = 0; i < count; i++)
                 {
-                    crc32Result = ((crc32Result) >> 8) ^ crc32Table[(buffer[i]) ^
+                    crc32Result = ((crc32Result) >> 8) ^ Crc32Table[(buffer[i]) ^
                                                                     ((crc32Result) & 0x000000FF)];
                 }
 
-                count = stream.Read(buffer, 0, BUFFER_SIZE);
+                count = stream.Read(buffer, 0, BufferSize);
             }
 
             return ~crc32Result;
@@ -124,8 +128,9 @@ public static class CRC32
     public static uint CalculateInt32(byte[] data)
     {
         if (data == null)
-            throw new ArgumentNullException("data");
-
+        {
+            throw new ArgumentNullException(nameof(data));
+        }
         using (MemoryStream memoryStream = new MemoryStream(data))
         {
             return CalculateInt32(memoryStream);

@@ -26,18 +26,18 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
 
     public override int SortOrder { get; } = 0;
 
-    public override bool DoesHandleFile(FileSystemFileInfo fileSystemInfo)
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists())
+        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo))
         {
             return false;
         }
-        return FileHelper.IsFileMediaType(fileSystemInfo.Extension());
+        return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension()))
+        if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo)))
         {
             return new OperationResult<FileSystemFileInfo>
             {
@@ -49,15 +49,15 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
             };
         }
         
-        var fileInfo = new FileInfo(fileSystemInfo.FullName());
+        var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
         if (fileInfo.Exists && Configuration.MediaConvertorOptions.ConversionEnabled)
         {
-            var fileAtl = new ATL.Track(fileSystemInfo.FullName());
+            var fileAtl = new ATL.Track(fileSystemInfo.FullName(directoryInfo));
             if (ShouldMediaTrackBeConverted(fileAtl))
             {
                 using (Operation.Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
-                    var mediaInfo = await FFProbe.AnalyseAsync(fileSystemInfo.FullName(), cancellationToken: cancellationToken);
+                    var mediaInfo = await FFProbe.AnalyseAsync(fileSystemInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
 
                     var trackFileInfo = fileAtl.FileInfo();
                     var trackDirectory = trackFileInfo?.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Track");

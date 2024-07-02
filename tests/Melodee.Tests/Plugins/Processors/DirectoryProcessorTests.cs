@@ -15,7 +15,7 @@ public class DirectoryProcessorTests
             .WriteTo.Console()
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/2024-06-14";
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21";
         var dirInfo = new System.IO.DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {

@@ -122,8 +122,8 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     {
                         var index = cueModel.TrackIndexes.First(x => x.TrackNumber == track.TrackNumber());
                         var untilIndex = cueModel.TrackIndexes.FirstOrDefault(x => x.TrackNumber == index.TrackNumber + 1);
-                        await FFMpegArguments.FromFileInput(cueModel.FileSystemFileInfo.FullName())
-                            .OutputToFile(track.File.FullName(), true, options =>
+                        await FFMpegArguments.FromFileInput(cueModel.FileSystemFileInfo.FullName(fileSystemDirectoryInfo))
+                            .OutputToFile(track.File.FullName(fileSystemDirectoryInfo), true, options =>
                             {
                                 var seekTs = new TimeSpan(0, index.Minutes, index.Seconds);
                                 options.Seek(seekTs);
@@ -140,7 +140,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                             }).ProcessAsynchronously(true);
 
                             var readerTrack = theReader.Tracks.FirstOrDefault(x => x.TrackNumber == track.TrackNumber()) ?? throw new Exception("Unable to find Track for file");
-                            var fileAtl = new ATL.Track(track.File.FullName())
+                            var fileAtl = new ATL.Track(track.File.FullName(fileSystemDirectoryInfo))
                             {
                                 Album = theReader.Title ?? cueModel.ReleaseTitle() ?? throw new Exception("Invalid Release Title"),
                                 AlbumArtist = releaseArtist,
@@ -164,7 +164,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                             }
                             if (!fileAtl.Save())
                             {
-                                throw new Exception($"Unable to update metadata for file [{track.File.FullName()}]");
+                                throw new Exception($"Unable to update metadata for file [{track.File.FullName(fileSystemDirectoryInfo)}]");
                             }                        
                         
                     });
@@ -183,7 +183,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
 
                     }
                     
-                    var cueRelease = cueModel.ToRelease();
+                    var cueRelease = cueModel.ToRelease(fileSystemDirectoryInfo);
                     if (cueRelease.IsValid())
                     {
                         var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueRelease.ToMelodeeJsonName());
@@ -421,9 +421,9 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     {
                         tracks.Add(new Common.Models.Track
                         {
+                            CrcHash = CRC32.Calculate(fileInfo),
                             File = new FileSystemFileInfo
                             {
-                                Path = fileInfo.DirectoryName!,
                                 Name = $"{trackNumber} {(trackName as string)!.ToTitleCase(false)?.ToFileNameFriendly()}.mp3",
                                 Size = 0
                             },
@@ -447,9 +447,9 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         {
             tracks.Add(new Common.Models.Track
             {
+                CrcHash = CRC32.Calculate(fileInfo),
                 File = new FileSystemFileInfo
                 {
-                    Path = fileInfo.DirectoryName!,
                     Name = $"{trackNumber} {(trackName as string)!.ToTitleCase(false)?.ToFileNameFriendly()}.mp3",
                     Size = 0
                 },

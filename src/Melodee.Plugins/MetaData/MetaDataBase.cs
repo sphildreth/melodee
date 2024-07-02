@@ -17,5 +17,5 @@ public abstract class MetaDataBase(Configuration configuration)
     
     public bool StopProcessing { get; internal set; }
     
-    public abstract bool DoesHandleFile(FileSystemFileInfo fileSystemInfo);
+    public abstract bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo);
 }

@@ -18,9 +18,9 @@ public static class CueSheetExtensions
         };
     }
     
-    public static Release ToRelease(this CueSheet cueSheet)
+    public static Release ToRelease(this CueSheet cueSheet, FileSystemDirectoryInfo directoryInfo)
     {
-        var fileInfo = new System.IO.FileInfo(cueSheet.FileSystemFileInfo.FullName());
+        var fileInfo = new System.IO.FileInfo(cueSheet.FileSystemFileInfo.FullName(directoryInfo));
         return new Release
         {
             Files = new []
@@ -35,6 +35,7 @@ public static class CueSheetExtensions
             Tracks = cueSheet.Tracks,
             Status = cueSheet.IsValid ? ReleaseStatus.Complete : ReleaseStatus.Incomplete,
             Directory = new FileSystemDirectoryInfo
+                
             {
                 Path = fileInfo.Directory.FullName,
                 Name = fileInfo.Directory.Name

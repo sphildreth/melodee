@@ -4,9 +4,9 @@ namespace Melodee.Plugins.MetaData.Track;
 
 public interface ITrackPlugin : IPlugin
 {
-    bool DoesHandleFile(FileSystemFileInfo fileSystemInfo);
+    bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo);
     
     bool StopProcessing { get; }
     
-    Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default);
+    Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default);
 }

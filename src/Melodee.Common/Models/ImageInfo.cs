@@ -12,8 +12,8 @@ public sealed record ImageInfo
     public FileSystemFileInfo? FileInfo { get; init; }
     
     public PictureIdentifier PictureIdentifier { get; init; }
-
-    public byte[]? Bytes  { get; init; }
+    
+    public required string CrcHash { get; init; }
     
     public int Width { get; init; }
 

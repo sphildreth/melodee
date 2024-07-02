@@ -54,7 +54,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
             var tracks = new List<Common.Models.Track>();
             await Parallel.ForEachAsync(models, cancellationToken, async (model, tt) =>
             {
-                var trackResult = await trackPlugin.ProcessFileAsync(model.FileSystemFileInfo, tt);
+                var trackResult = await trackPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
                 if (trackResult.IsSuccess)
                 {
                     tracks.Add(trackResult.Data);
@@ -116,6 +116,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                         MusicFilesFound = tracks.Count,
                         MusicMetaDataFilesFound = 1
                     },
+                    Images = tracks.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
                     Tags = newReleaseTags,
                     Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
                     ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
@@ -165,7 +166,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
         {
             foreach (var line in await File.ReadAllLinesAsync(filePath))
             {
-                var model = ModelFromM3ULine(filePath, line);
+                var model = ModelFromM3ULine( filePath, line);
                 if (model != null)
                 {
                     result.Add(model);
@@ -188,6 +189,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
         }
         try
         {
+            var directoryInfo = filePath.ToDirectoryInfo();
             var parts = lineFromFile.Split('-');
             if (parts.Length >= 3)
             {
@@ -197,7 +199,6 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                 var fileSystemInfoFile = new FileSystemFileInfo
                 {
                     Name = lineFromFile,
-                    Path = filePath,
                     Size = 0
                 };
                 
@@ -215,7 +216,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                 
                 return new Models.M3ULine
                 {
-                    IsValid = !string.IsNullOrWhiteSpace(filePath) && fileSystemInfoFile.Exists(),
+                    IsValid = !string.IsNullOrWhiteSpace(filePath) && fileSystemInfoFile.Exists(directoryInfo),
                     FileSystemFileInfo = fileSystemInfoFile,
                     ReleaseArist = releaseArtist.Replace("_", " ").CleanString(true),
                     TrackNumber = SafeParser.ToNumber<int>(parts[0]),

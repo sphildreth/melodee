@@ -75,7 +75,7 @@ public sealed record Release
         {
             foreach (var image in otherRelease.Images)
             {
-                if (!images.Contains(image))
+                if (!images.Any(x => x.IsCrcHashMatch(image.CrcHash)))
                 {
                     images.Add(image);
                 }

@@ -40,7 +40,6 @@ public class M3UTests
             IsValid = false,
             FileSystemFileInfo = new FileSystemFileInfo
             {
-              Path  = string.Empty,
               Name = "01-avatar-bound_to_the_wall.mp3",
               Size = 0
             },
@@ -62,7 +61,6 @@ public class M3UTests
             IsValid = false,
             FileSystemFileInfo = new FileSystemFileInfo
             {
-                Path  = string.Empty,
                 Name = "01-kittie-vultures-9f80b183.mp3",
                 Size = 0
             },

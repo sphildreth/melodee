@@ -43,7 +43,7 @@ public sealed record SfvLine
         }
 
         return IsValid == other.IsValid &&
-               string.Equals(FileSystemFileInfo.FullName(), other.FileSystemFileInfo.FullName(), StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(FileSystemFileInfo.Name, other.FileSystemFileInfo.Name, StringComparison.OrdinalIgnoreCase) &&
                CrcHash == other.CrcHash;
     }
 

@@ -56,12 +56,12 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             var trackPlugin = _trackPlugins.First();
             foreach (var sfvFile in sfvFiles)
             {
-                var models = await GetModelsFromSfvFile(sfvFile.FullName);
+                var models = await GetModelsFromSfvFile(fileSystemDirectoryInfo, sfvFile.FullName);
 
                 var tracks = new List<Common.Models.Track>();
                 await Parallel.ForEachAsync(models.Where(x => x.IsValid), cancellationToken, async (model, tt) =>
                 {
-                    var trackResult = await trackPlugin.ProcessFileAsync(model.FileSystemFileInfo, tt);
+                    var trackResult = await trackPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
                     if (trackResult.IsSuccess)
                     {
                         tracks.Add(trackResult.Data);
@@ -134,6 +134,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                         MusicFilesFound = tracks.Count,
                         MusicMetaDataFilesFound = 1
                     },
+                    Images = tracks.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
                     Tags = newReleaseTags,
                     Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
                     ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
@@ -173,7 +174,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         }
     }
 
-    private static async Task<Models.SfvLine[]> GetModelsFromSfvFile(string filePath)
+    private static async Task<Models.SfvLine[]> GetModelsFromSfvFile(FileSystemDirectoryInfo directoryInfo, string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
@@ -214,6 +215,8 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             return null;
         }
 
+        var directoryInfo = filePath.ToDirectoryInfo();
+
         try
         {
             // Sfv line is '<fileName> <CRC>'
@@ -223,7 +226,6 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             var fileSystemInfoFile = new FileSystemFileInfo
             {
                 Name = filename,
-                Path = filePath,
                 Size = 0
             };
             
@@ -240,7 +242,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             
             return new Models.SfvLine
             {
-                IsValid = !string.IsNullOrWhiteSpace(filePath) && IsCrCHashAccurate(fileSystemInfoFile.FullName(), crc),
+                IsValid = !string.IsNullOrWhiteSpace(filePath) && IsCrCHashAccurate(fileSystemInfoFile.FullName(directoryInfo), crc),
                 CrcHash = crc,
                 FileSystemFileInfo = fileSystemInfoFile,
             };

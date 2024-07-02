@@ -11,7 +11,10 @@
         public static void Each<T>(this IEnumerable<T> ie, Action<T, int> action)
         {
             var i = 0;
-            foreach (var e in ie) action(e, i++);
+            foreach (var e in ie)
+            {
+                action(e, i++);
+            }
         }     
         
         public static IEnumerable<T> SelectManyRecursive<T>(this IEnumerable<T>? source, Func<T, IEnumerable<T>> selector)

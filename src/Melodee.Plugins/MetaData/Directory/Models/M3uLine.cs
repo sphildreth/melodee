@@ -40,7 +40,7 @@ public sealed record M3ULine
         }
 
         return IsValid == other.IsValid &&
-               string.Equals(FileSystemFileInfo.FullName(), other.FileSystemFileInfo.FullName(), StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(FileSystemFileInfo.Name, other.FileSystemFileInfo.Name, StringComparison.OrdinalIgnoreCase) &&
                TrackNumber == other.TrackNumber &&
                ReleaseArist == other.ReleaseArist &&
                TrackTitle == other.TrackTitle;

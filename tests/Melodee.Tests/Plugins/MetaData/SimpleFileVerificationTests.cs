@@ -40,7 +40,6 @@ public class SimpleFileVerificationTests
             CrcHash = "7a84ce20",
             FileSystemFileInfo = new FileSystemFileInfo
             {
-                Path = string.Empty,
                 Name = "01-avatar-bound_to_the_wall.mp3",
                 Size = 0
             }
@@ -59,7 +58,6 @@ public class SimpleFileVerificationTests
             CrcHash = "aff033ca",
             FileSystemFileInfo = new FileSystemFileInfo
             {
-                Path = string.Empty,
                 Name = "01-pole_shift.mp3",
                 Size = 0
             }
@@ -78,7 +76,6 @@ public class SimpleFileVerificationTests
             CrcHash = "aff033ca",
             FileSystemFileInfo = new FileSystemFileInfo
             {
-                Path = string.Empty,
                 Name = "pole_shift.mp3",
                 Size = 0
             }

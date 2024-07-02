@@ -37,19 +37,19 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
 
     public override int SortOrder { get; } = 0;
 
-    public override bool DoesHandleFile(FileSystemFileInfo fileSystemInfo)
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists())
+        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo))
         {
             return false;
         }
 
-        return FileHelper.IsFileMediaType(fileSystemInfo.Extension());
+        return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
     {
-        using (Operation.Time("[{PluginName}] Processing [{FileSystemFileInfo}]", DisplayName, fileSystemFileInfo.FullName()))
+        using (Operation.Time("[{PluginName}] Processing [{FileSystemFileInfo}]", DisplayName, fileSystemFileInfo.FullName(directoryInfo)))
         {
             var tags = new List<MetaTag<object>>();
             var mediaAudios = new List<MediaAudio<object>>();
@@ -57,9 +57,9 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
 
             try
             {
-                if (fileSystemFileInfo.Exists())
+                if (fileSystemFileInfo.Exists(directoryInfo))
                 {
-                    var fileAtl = new ATL.Track(fileSystemFileInfo.FullName());
+                    var fileAtl = new ATL.Track(fileSystemFileInfo.FullName(directoryInfo));
                     if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
                     {
                         var atlDictionary = fileAtl.ToDictionary();
@@ -128,14 +128,22 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                             foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
                             {
                                 var imageInfo = SixLabors.ImageSharp.Image.Load(embeddedPicture.PictureData);
-                                images.Add(new ImageInfo
+                                var imageCrcHash = CRC32.Calculate(embeddedPicture.PictureData);
+                                if (!images.Any(x => x.IsCrcHashMatch(imageCrcHash)))
                                 {
-                                    PictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType),
-                                    Bytes = embeddedPicture.PictureData,
-                                    Width = imageInfo.Width,
-                                    Height = imageInfo.Height,
-                                    SortOrder = embeddedPicture.Position
-                                });
+                                    var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
+                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{Guid.NewGuid().ToString()}.jpg");
+                                    await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
+                                    images.Add(new ImageInfo
+                                    {
+                                        CrcHash = imageCrcHash,
+                                        PictureIdentifier = pictureIdentifier,
+                                        FileInfo = (new FileInfo(newImageFileName).ToFileSystemInfo()),
+                                        Width = imageInfo.Width,
+                                        Height = imageInfo.Height,
+                                        SortOrder = embeddedPicture.Position
+                                    });
+                                }
                             }
                         }
 
@@ -178,11 +186,6 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                                     });
                                 }
                             }
-                            // Handle special needs Tags
-                            if (atlDictionary.TryGetValue("Track", out var trackNumberAndTotalTracks))
-                            {
-                                var t = 1;
-                            }
                         }
                     }
                 }
@@ -191,17 +194,18 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
             {
                 Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
             }
-            return Task.FromResult(new OperationResult<Common.Models.Track>
+            return new OperationResult<Common.Models.Track>
             {
                 Data = new Common.Models.Track
                 {
+                    CrcHash = CRC32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
                     File = fileSystemFileInfo,
                     Images = images,
                     Tags = tags,
                     MediaAudios = mediaAudios,
                     SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
                 }
-            });            
+            };            
         }
     }
 

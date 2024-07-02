@@ -11,6 +11,8 @@ public sealed record Track
     
     public long UniqueId => SafeParser.Hash($"{ReleaseUniqueId}{this.TrackArtist()}{this.TrackYear()}{this.MediaNumber()}{this.TrackNumber()}{this.Title()}"); 
     
+    public required string CrcHash { get; init; }
+    
     public required FileSystemFileInfo File { get; init; }
     
     [JsonIgnore]
@@ -22,5 +24,5 @@ public sealed record Track
 
     public int SortOrder { get; set; }
     
-    public override string ToString() => $"ReleaseId [{ReleaseUniqueId}] TrackId [{UniqueId}] File Path [{File.Path}]";
+    public override string ToString() => $"ReleaseId [{ReleaseUniqueId}] TrackId [{UniqueId}] File [{File}]";
 }
