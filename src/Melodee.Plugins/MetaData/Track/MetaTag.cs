@@ -187,6 +187,7 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                                 }
                             }
                         }
+                        
                     }
                 }
             }
@@ -194,17 +195,26 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
             {
                 Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
             }
+
+            var track = new Common.Models.Track
+            {
+                CrcHash = CRC32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
+                File = fileSystemFileInfo,
+                Images = images,
+                Tags = tags,
+                MediaAudios = mediaAudios,
+                SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
+            };
+            
+            // Handle special Tags that usually need additional processing/inspection.
+            if (track.TitleHasUnwantedText())
+            {
+                // TODO
+            }
+            
             return new OperationResult<Common.Models.Track>
             {
-                Data = new Common.Models.Track
-                {
-                    CrcHash = CRC32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
-                    File = fileSystemFileInfo,
-                    Images = images,
-                    Tags = tags,
-                    MediaAudios = mediaAudios,
-                    SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
-                }
+                Data = track 
             };            
         }
     }
