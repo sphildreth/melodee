@@ -150,5 +150,17 @@ namespace Melodee.Tests.Extensions
         [Theory]
         [InlineData("00-pixel_-_reality_strikes_back-2004-mycel.sfv", 2004)]
         public void ValidateParsingYearFromFileName(string input, int? shouldBe) => Assert.Equal(shouldBe, input.TryToGetYearFromString());
+        
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData(" ", null)]
+        [InlineData("Bob Jones", "Bob Jones")]
+        [InlineData("Bob Jones; Artist Name", "Bob Jones/Artist Name")]
+        [InlineData(" Bob Jones;   Artist Name ", "Bob Jones/Artist Name")]
+        [InlineData("; Bob Jones;;Artist Name", "Bob Jones/Artist Name")]
+        public void ValidateToCleanedMultipleArtistsValue(string? input, string? shouldBe)
+        {
+            Assert.Equal(shouldBe, input.ToCleanedMultipleArtistsValue());
+        }        
     }
 }

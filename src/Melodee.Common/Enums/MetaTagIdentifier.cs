@@ -16,10 +16,17 @@ public enum MetaTagIdentifier
     /// Artist [TP1,TPE1]
     /// </summary>
     Artist,
+    
+    /// <summary>
+    /// Doesn't look like an official ID3 tag but often used for multiple value artists on a track.
+    /// </summary>
+    [MetaTagMultiValue(true)]
+    Artists,
 
     /// <summary>
     /// Composer [TCM, TCOM]
     /// </summary>
+    [MetaTagMultiValue(true)]
     Composer,
 
     /// <summary>
@@ -93,8 +100,9 @@ public enum MetaTagIdentifier
     /// <summary>
     /// Original artist [TOA, TOPE]
     /// </summary>
+    [MetaTagMultiValue(true)]
     OriginalArtist,
-
+    
     /// <summary>
     /// Original album [TOT,TOAL]
     /// </summary>
@@ -273,6 +281,7 @@ public enum MetaTagIdentifier
     /// <summary>
     /// Language [TLA, TLAN]
     /// </summary>
+    [MetaTagMultiValue(true)]
     Language,
 
     /// <summary>
@@ -293,6 +302,7 @@ public enum MetaTagIdentifier
     /// <summary>
     /// Lyricist [TXT, TEXT]
     /// </summary>
+    [MetaTagMultiValue(true)]
     Lyricist,
 
     /// <summary>
@@ -354,7 +364,7 @@ public enum MetaTagIdentifier
     /// [TLE, TLEN]
     /// </summary>
     Length,
-    
+  
     /// <summary>
     /// [LNK, LINK]
     /// </summary>
@@ -413,6 +423,7 @@ public enum MetaTagIdentifier
     /// <summary>
     /// [TOL, TOLY]
     /// </summary>
+    [MetaTagMultiValue(true)]
     OriginalLyricist,
     
     /// <summary>

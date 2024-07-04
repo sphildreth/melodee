@@ -12,11 +12,15 @@ public enum MediaAudioIdentifier
     
     IsVbr,
     
-    CodecFamily,
+    CodecLongName,
     
     Duration,
     
     DurationMs,
+    
+    Channels,
+    
+    ChannelLayout,
     
     ChannelsArrangementDescription,
     
@@ -24,5 +28,7 @@ public enum MediaAudioIdentifier
     
     AudioDataOffset,
     
-    AudioDataSize
+    AudioDataSize,
+    
+    FormatName,
 }

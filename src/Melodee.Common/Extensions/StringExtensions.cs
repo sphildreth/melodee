@@ -428,7 +428,25 @@ namespace Melodee.Common.Extensions
             };
         }
 
+        public static string? ToCleanedMultipleArtistsValue(this string? input)
+        {
+            if (input.Nullify() == null)
+            {
+                return null;
+            }
+
+            var result = ReplaceMultipleSpacesRegex().Replace(input!.Replace("«multiple values»", string.Empty).Trim().Replace(";;", ";").Replace("; ", "/").Replace(";", "/"), string.Empty);
+            if (result.StartsWith('/'))
+            {
+                return result[1..];
+            }
+            return result;
+        }
+
         [GeneratedRegex("[^a-zA-Z0-9 -.:]")]
         private static partial Regex OnlyAlphaNumericRegex();
+        
+        [GeneratedRegex(@"\s{2,}")]
+        private static partial Regex ReplaceMultipleSpacesRegex();
     }
 }

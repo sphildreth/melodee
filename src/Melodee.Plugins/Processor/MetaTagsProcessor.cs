@@ -22,9 +22,10 @@ public sealed class MetaTagsProcessor : IMetaTagsProcessorPlugin
     public MetaTagsProcessor(Configuration configuration)
     {
         _configuration = configuration;
-        _metaTagProcessors = new[]
+        _metaTagProcessors = new IMetaTagProcessor[]
         {
-            new TrackTitle(_configuration)
+            new TrackTitle(_configuration),
+            new Comment(_configuration),
         };
     }
     

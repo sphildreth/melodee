@@ -61,5 +61,33 @@ public class MetaTagTests
         }
     }
 
+    [Fact]
+    public async Task ValidateMultipleTrackArtistForMp3Async()
+    {
+        var testFile = @"/home/steven/incoming/melodee_test/tests/multipleTrackArtistsTest.mp3";
+        var fileInfo = new System.IO.FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Name = "tests"
+            };
+            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(tagResult);
+            Assert.True(tagResult.IsSuccess);
+            Assert.NotNull(tagResult.Data);
+
+            var track = tagResult.Data;
+            
+            Assert.NotNull(track.Tags);
+            Assert.NotNull(track.File);
+            var trackArtists = track.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OriginalArtist);
+            Assert.NotNull(trackArtists?.Value);
+
+        }
+    }
+
 
 }

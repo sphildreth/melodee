@@ -1,3 +1,4 @@
+using FFMpegCore;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -65,7 +66,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                     if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
                     {
                         var atlDictionary = fileAtl.ToDictionary();
-
+                       
                         var metaAudioIdentifierDictionary = MediaAudioIdentifier.NotSet.ToDictionary();
                         foreach (var metaTagIdentifier in metaAudioIdentifierDictionary)
                         {
@@ -87,6 +88,27 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                                 }
                             }
                         }
+                        
+                        var ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
+
+                        if (ffProbeMediaAnalysis.PrimaryAudioStream != null)
+                        {   
+                            mediaAudios.Add(new MediaAudio<object?>
+                            {
+                                Identifier = MediaAudioIdentifier.CodecLongName,
+                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.CodecLongName
+                            });
+                            mediaAudios.Add(new MediaAudio<object?>
+                            {
+                                Identifier = MediaAudioIdentifier.Channels,
+                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.Channels
+                            });
+                            mediaAudios.Add(new MediaAudio<object?>
+                            {
+                                Identifier = MediaAudioIdentifier.ChannelLayout,
+                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.ChannelLayout
+                            });     
+                        }                        
 
                         if (fileAtl.IsVBR)
                         {
@@ -148,7 +170,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                                 }
                             }
                         }
-
+                        
                         var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToDictionary();
                         foreach (var metaTagIdentifier in metaTagIdentifierDictionary)
                         {
@@ -189,7 +211,17 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                                 }
                             }
                         }
-                        
+
+                        var adData1 = fileAtl.AdditionalFields.ToDictionary();
+                        var adData2 = ffProbeMediaAnalysis.Format?.Tags?.ToDictionary() ?? new Dictionary<string, string>();
+                        var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge(new [] { adData1, adData2 }));
+                        foreach (var additionalTag in additionalTags)
+                        {
+                            if (tags.All(x => x.Identifier != additionalTag.Identifier))
+                            {
+                                tags.Add(additionalTag);
+                            }
+                        }
                     }
                 }
             }
@@ -227,6 +259,88 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
         }
     }
 
+    public IEnumerable<MetaTag<object?>> MetaTagsForTagDictionary(Dictionary<string, string> tagsDictionary)
+    {
+        var result = new List<MetaTag<object?>>();
+        if (tagsDictionary.Count == 0)
+        {
+            return result;
+        }
+
+        foreach (var kp in tagsDictionary.Where(x => x.Value != null))
+        {
+            var k = kp.Key.CleanString()?.Replace(" ", string.Empty).ToUpperInvariant();
+            switch (k)
+            {
+                case "ARTISTS":
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.Artists))
+                    {
+                        var artists = kp.Value.ToCleanedMultipleArtistsValue();
+                        if (artists != null)
+                        {
+                            result.Add(new MetaTag<object?>()
+                            {
+                                Identifier = MetaTagIdentifier.Artists,
+                                Value = artists
+                            });
+                        }
+                    }
+                    break;
+                
+                case "LENGTH":
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.Length))
+                    {
+                        result.Add(new MetaTag<object?>()
+                        {
+                            Identifier = MetaTagIdentifier.Length,
+                            Value = kp.Value!
+                        });
+                    }
+                    break;    
+                
+                case "DATE":
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseDate))
+                    {
+                        result.Add(new MetaTag<object?>()
+                        {
+                            Identifier = MetaTagIdentifier.OrigReleaseDate,
+                            Value = kp.Value!
+                        });
+                    }
+                    break;          
+                
+                case "TRACK":
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.TrackNumberTotal))
+                    {
+                        if (kp.Value.Contains('/'))
+                        {
+                            result.Add(new MetaTag<object?>()
+                            {
+                                Identifier = MetaTagIdentifier.TrackNumberTotal,
+                                Value = kp.Value!
+                            });
+                        }
+                    }
+                    break;                  
+                
+                case "WXXX":
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.UserDefinedUrlLink))
+                    {
+                        result.Add(new MetaTag<object?>()
+                        {
+                            Identifier = MetaTagIdentifier.UserDefinedUrlLink,
+                            Value = kp.Value!
+                        });
+                    }
+                    break;                  
+                
+            }
+        }
+
+        return result;
+    }
+    
+
     private static bool IsAtlTrackForMp3(ATL.Track track)
     {
         if (track.AudioFormat?.ShortName == null)
@@ -246,9 +360,4 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
 
         return track is { AudioFormat: { ID: > -1 }, Duration: > 0 };
     }
-
-
-    // // Fields allowed to have multiple values according to ID3v2.2-3 specs
-    // private static readonly ISet<string> multipleValuev23Fields = new HashSet<string> { "TP1", "TCM", "TXT", "TLA", "TOA", "TOL", "TCOM", "TEXT", "TOLY", "TOPE", "TPE1" };
-    //
 }
