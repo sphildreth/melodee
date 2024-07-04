@@ -17,7 +17,7 @@ namespace Melodee.Plugins.Processor;
 /// <summary>
 /// Take a given directory and process all the directories in it. 
 /// </summary>
-public sealed class DirectoryProcessor : IProcessorPlugin
+public sealed class DirectoryDirectoryProcessor : IDirectoryProcessorPlugin
 {
     private readonly Configuration _configuration;
     private readonly IScriptPlugin _preDiscoveryScript;
@@ -28,13 +28,13 @@ public sealed class DirectoryProcessor : IProcessorPlugin
 
     public string Id => "9BF95E5A-2EB5-4E28-820A-6F3B857356BD";
 
-    public string DisplayName => nameof(DirectoryProcessor);
+    public string DisplayName => nameof(DirectoryDirectoryProcessor);
 
     public bool IsEnabled { get; set; } = true;
 
     public int SortOrder { get; } = 0;
 
-    public DirectoryProcessor(
+    public DirectoryDirectoryProcessor(
         IScriptPlugin preDiscoveryScript,
         IScriptPlugin postDiscoveryScript,
         Configuration configuration)
@@ -46,7 +46,7 @@ public sealed class DirectoryProcessor : IProcessorPlugin
 
         _trackPlugins = new []
         {
-            new MetaTag(_configuration)
+            new MetaTag(new MetaTagsProcessor(_configuration), _configuration)
         };
 
         _conversionPlugins = new IConversionPlugin[]

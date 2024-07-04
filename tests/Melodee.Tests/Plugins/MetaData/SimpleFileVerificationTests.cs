@@ -1,6 +1,7 @@
 using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.Processor;
 using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Tests.Plugins.MetaData;
@@ -17,7 +18,7 @@ public class SimpleFileVerificationTests
             var sfv = new SimpleFileVerification(
                 new []
                 {
-                    new MetaTag(TestsBase.NewConfiguration)
+                    new MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
                 }, TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {

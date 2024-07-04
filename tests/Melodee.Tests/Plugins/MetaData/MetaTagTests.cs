@@ -1,6 +1,8 @@
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Plugins.Processor;
 
 
 namespace Melodee.Tests.Plugins.MetaData;
@@ -14,7 +16,7 @@ public class MetaTagTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(TestsBase.NewConfiguration);
+            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -43,7 +45,7 @@ public class MetaTagTests
                 Path = @"/home/steven/incoming/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(TestsBase.NewConfiguration);
+            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -57,5 +59,7 @@ public class MetaTagTests
             Assert.NotNull(track.Title()?.Nullify());
             Assert.False(track.TitleHasUnwantedText());
         }
-    }    
+    }
+
+
 }

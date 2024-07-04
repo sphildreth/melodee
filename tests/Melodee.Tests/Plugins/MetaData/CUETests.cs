@@ -2,6 +2,7 @@ using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.Processor;
 using CueSheet = Melodee.Plugins.MetaData.Directory.CueSheet;
 
 namespace Melodee.Tests.Plugins.MetaData;
@@ -18,7 +19,7 @@ public class CUETests
             var sfv = new CueSheet(
                 new []
                 {
-                    new MetaTag( TestsBase.NewConfiguration)
+                    new MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
                 }, TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {

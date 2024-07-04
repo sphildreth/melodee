@@ -2,6 +2,7 @@ using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.Processor;
 using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Tests.Plugins.MetaData;
@@ -17,7 +18,7 @@ public class M3UTests
         {
             var m3U = new M3UPlaylist(new []
             {
-                new MetaTag(TestsBase.NewConfiguration)
+                new MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
             }, TestsBase.NewConfiguration);
             var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {

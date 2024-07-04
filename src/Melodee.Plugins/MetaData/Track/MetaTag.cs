@@ -5,6 +5,7 @@ using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Track.Extensions;
+using Melodee.Plugins.Processor;
 using Serilog;
 using SerilogTimings;
 
@@ -27,8 +28,9 @@ Some reference sites:
 
 */
 
-public sealed class MetaTag(Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
+public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
 {
+    private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
 
     public override string DisplayName => nameof(MetaTag);
@@ -51,8 +53,8 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
     {
         using (Operation.Time("[{PluginName}] Processing [{FileSystemFileInfo}]", DisplayName, fileSystemFileInfo.FullName(directoryInfo)))
         {
-            var tags = new List<MetaTag<object>>();
-            var mediaAudios = new List<MediaAudio<object>>();
+            var tags = new List<MetaTag<object?>>();
+            var mediaAudios = new List<MediaAudio<object?>>();
             var images = new List<ImageInfo>();
 
             try
@@ -77,7 +79,7 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                                 if (v != null)
                                 {
                                     var identifier = SafeParser.ToEnum<MediaAudioIdentifier>(metaTagIdentifier.Key);
-                                    mediaAudios.Add(new MediaAudio<object>
+                                    mediaAudios.Add(new MediaAudio<object?>
                                     {
                                         Identifier = identifier,
                                         Value = v
@@ -88,7 +90,7 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
 
                         if (fileAtl.IsVBR)
                         {
-                            mediaAudios.Add(new MediaAudio<object>
+                            mediaAudios.Add(new MediaAudio<object?>
                             {
                                 Identifier = MediaAudioIdentifier.IsVbr,
                                 Value = true
@@ -97,12 +99,12 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
 
                         if (fileAtl.ChannelsArrangement != null)
                         {
-                            mediaAudios.Add(new MediaAudio<object>
+                            mediaAudios.Add(new MediaAudio<object?>
                             {
                                 Identifier = MediaAudioIdentifier.ChannelsArrangementDescription,
                                 Value = fileAtl.ChannelsArrangement.Description
                             });
-                            mediaAudios.Add(new MediaAudio<object>
+                            mediaAudios.Add(new MediaAudio<object?>
                             {
                                 Identifier = MediaAudioIdentifier.ChannelsArrangementNumberChannels,
                                 Value = fileAtl.ChannelsArrangement.NbChannels
@@ -111,12 +113,12 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
 
                         if (fileAtl.TechnicalInformation != null)
                         {
-                            mediaAudios.Add(new MediaAudio<object>
+                            mediaAudios.Add(new MediaAudio<object?>
                             {
                                 Identifier = MediaAudioIdentifier.AudioDataOffset,
                                 Value = fileAtl.TechnicalInformation.AudioDataOffset
                             });
-                            mediaAudios.Add(new MediaAudio<object>
+                            mediaAudios.Add(new MediaAudio<object?>
                             {
                                 Identifier = MediaAudioIdentifier.AudioDataSize,
                                 Value = fileAtl.TechnicalInformation.AudioDataSize
@@ -171,7 +173,7 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                                         var dt = SafeParser.ToDateTime(v);
                                         if (dt.HasValue)
                                         {
-                                            tags.Add(new MetaTag<object>
+                                            tags.Add(new MetaTag<object?>
                                             {
                                                 Identifier = MetaTagIdentifier.OrigReleaseYear,
                                                 Value = dt.Value.Year
@@ -179,7 +181,7 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                                         }
                                     }
 
-                                    tags.Add(new MetaTag<object>
+                                    tags.Add(new MetaTag<object?>
                                     {
                                         Identifier = identifier,
                                         Value = v
@@ -196,22 +198,28 @@ public sealed class MetaTag(Configuration configuration) : MetaDataBase(configur
                 Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
             }
 
+            var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(tags, cancellationToken);
+            if (!metaTagsProcessorResult.IsSuccess)
+            {
+                return new OperationResult<Common.Models.Track>(metaTagsProcessorResult.Messages)
+                {
+                    Errors = metaTagsProcessorResult.Errors,
+                    Data = new Common.Models.Track
+                    {
+                        CrcHash = string.Empty,
+                        File = fileSystemFileInfo
+                    }
+                };
+            }
             var track = new Common.Models.Track
             {
                 CrcHash = CRC32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
                 File = fileSystemFileInfo,
                 Images = images,
-                Tags = tags,
+                Tags = metaTagsProcessorResult.Data,
                 MediaAudios = mediaAudios,
                 SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
             };
-            
-            // Handle special Tags that usually need additional processing/inspection.
-            if (track.TitleHasUnwantedText())
-            {
-                // TODO
-            }
-            
             return new OperationResult<Common.Models.Track>
             {
                 Data = track 

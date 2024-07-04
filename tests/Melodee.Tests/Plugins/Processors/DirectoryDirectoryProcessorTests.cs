@@ -5,7 +5,7 @@ using Serilog;
 
 namespace Melodee.Tests.Plugins.Processors;
 
-public class DirectoryProcessorTests
+public class DirectoryDirectoryProcessorTests
 {
     [Fact]
     public async Task ValidateDirectoryGetProcessed()
@@ -20,7 +20,7 @@ public class DirectoryProcessorTests
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewConfiguration;
-            var processor = new DirectoryProcessor(
+            var processor = new DirectoryDirectoryProcessor(
                 new PreDiscoveryScript(config), 
                 new NullScript(config), 
                 config);

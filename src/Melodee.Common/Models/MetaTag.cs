@@ -13,6 +13,8 @@ public sealed record MetaTag<T>
     
     public required T Value { get; init; }
     
+    public T? OriginalValue { get; init; }
+    
     public int SortOrder { get; set; }
 
     public StyleClass StyleClass { get; set; } = StyleClass.Normal;

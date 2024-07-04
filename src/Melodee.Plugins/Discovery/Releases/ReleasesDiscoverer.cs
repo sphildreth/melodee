@@ -7,6 +7,7 @@ using Melodee.Common.Models.Grids;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.Processor;
 using Serilog;
 using SerilogTimings;
 
@@ -22,7 +23,6 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 
     private readonly IEnumerable<IDirectoryPlugin> _enabledReleasePlugins;
     
-    
     public string DisplayName => nameof(ReleasesDiscoverer);
 
     public string Id => "3528BA3F-4130-4913-9C9F-C7F0F8FF2B4D";
@@ -37,7 +37,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         
         _trackPlugins = new ITrackPlugin[]
         {
-            new MetaTag(config)
+            new MetaTag(new MetaTagsProcessor(config), config)
         };
         _enabledReleasePlugins = new IDirectoryPlugin[]
         {
