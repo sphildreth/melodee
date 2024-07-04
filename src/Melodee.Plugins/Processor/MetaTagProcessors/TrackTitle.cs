@@ -29,15 +29,22 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
         var updatedTagValue = false;
         var trackTitle = tagValue as string ?? string.Empty;
         string? featureArtist = null;
+        int? trackNumber = null;
         if (trackTitle?.Nullify() != null)
         {
+            trackNumber = trackTitle.TryToGetTrackNumberFromString();
+            if (trackNumber.HasValue)
+            {
+                trackTitle = trackTitle.RemoveTrackNumberFromString();
+            }
+            
             if (trackTitle.HasFeaturingFragments())
             {
                 var newTitle = trackTitle ?? string.Empty;
                 var matches = StringExtensions.HasFeatureFragmentsRegex.Match(trackTitle!);
                 newTitle = newTitle[..matches.Index].CleanString();
                 featureArtist = ReplaceTrackArtistSeperators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
-                featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'");
+                featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
                 trackTitle = newTitle;
                 updatedTagValue = true;
             }
@@ -52,6 +59,15 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
             }
         };
 
+        if (trackNumber.HasValue)
+        {
+            result.Add(new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.TrackNumber,
+                Value = trackNumber.Value
+            });
+        }
+        
         if (featureArtist?.Nullify() != null)
         {
             result.Add(new MetaTag<object?>
