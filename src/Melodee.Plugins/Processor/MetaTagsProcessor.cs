@@ -25,6 +25,7 @@ public sealed class MetaTagsProcessor : IMetaTagsProcessorPlugin
         _metaTagProcessors = new IMetaTagProcessor[]
         {
             new TrackTitle(_configuration),
+            new Album(_configuration),
             new Comment(_configuration),
         };
     }

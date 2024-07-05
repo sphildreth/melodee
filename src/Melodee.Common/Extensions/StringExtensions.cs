@@ -24,7 +24,7 @@ namespace Melodee.Common.Extensions
         private static readonly string RomanRegex = @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
         
         private static readonly string[] Conjunctions = { "Y", "E", "I" };
-        
+      
         private static readonly Dictionary<char, string> UnicodeAccents = new Dictionary<char, string>
         {
             {'À', "A"}, {'Á', "A"}, {'Â', "A"}, {'Ã', "A"}, {'Ä', "Ae"}, {'Å', "A"}, {'Æ', "Ae"},
@@ -447,6 +447,6 @@ namespace Melodee.Common.Extensions
         private static partial Regex OnlyAlphaNumericRegex();
         
         [GeneratedRegex(@"\s{2,}")]
-        private static partial Regex ReplaceMultipleSpacesRegex();
+        public static partial Regex ReplaceMultipleSpacesRegex();
     }
 }

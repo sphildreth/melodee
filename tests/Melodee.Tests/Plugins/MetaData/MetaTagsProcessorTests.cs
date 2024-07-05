@@ -88,4 +88,54 @@ public class MetaTagsProcessorTests
             }
         }
     }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("Eternal Sunshine (Slightly Deluxe)", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine (Deluxe)", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine (DELUXE)", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine [DELUXE]", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine (Enhanced Japanese Edition)", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine (Complete Edition)", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine (Expanded Edition)", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine (Disk 2)", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine [Disk 2])", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine (Japan Edition)", "Eternal Sunshine")]
+    [InlineData("Eternal Sunshine (40th anniversary edition)", "Eternal Sunshine")]
+    [InlineData("Exodus (1977 original release)", "Exodus")]
+    [InlineData("Eternally Gifted", "Eternally Gifted")]
+    [InlineData("Shift Scene", "Shift Scene")]
+    [InlineData("[1984] Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("4 [2011]", "4")]
+    [InlineData("1984", "1984")]
+    [InlineData("13", "13")]
+    [InlineData("Big Hits (High Tide and Green Grass)", "Big Hits (High Tide and Green Grass)")]
+    public async Task ValidateReleaseTitleUnwantedRemoved(string? originalAlbum, string? shouldBe)
+    {
+        var albumArtistShouldBe = "Da Artist";
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processorResult = await processor.ProcessMetaTagAsync(new[]
+        {
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = albumArtistShouldBe },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = originalAlbum }
+        });
+        Assert.NotNull(processorResult);
+        Assert.True(processorResult.IsSuccess);
+        var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
+        Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
+        var trackTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
+        Assert.NotNull(trackTag);
+        if (shouldBe != null)
+        {
+            Assert.NotNull(trackTag.Value);
+        }
+
+        if (trackTag.Value as string != originalAlbum)
+        {
+            Assert.NotNull(trackTag.OriginalValue);
+            Assert.Equal(originalAlbum, trackTag.OriginalValue);
+        }
+        Assert.Equal(shouldBe, trackTag.Value);
+    }    
+    
 }

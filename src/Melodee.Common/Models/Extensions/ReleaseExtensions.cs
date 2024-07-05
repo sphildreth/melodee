@@ -14,8 +14,6 @@ public static class ReleaseExtensions
 {
     private static readonly IEnumerable<string> FolderSpaceReplacements = new List<string> { ".", "~", "_", "=", "-" };
     
-    private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
     public static T? MetaTagValue<T>(this Release release, MetaTagIdentifier metaTagIdentifier)
     {
         var d = default(T?);
@@ -133,12 +131,7 @@ public static class ReleaseExtensions
     
     public static string? Genre(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
 
-    public static bool TitleHasUnwantedText(this Release release)
-    {
-        var title = release.ReleaseTitle();
-        return string.IsNullOrWhiteSpace(title) || UnwantedReleaseTitleTextRegex.IsMatch(title);
-    }
-    
+   
     public static System.IO.DirectoryInfo ToDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.OriginalDirectory.Path);
    
     public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this Release release, string extension)
