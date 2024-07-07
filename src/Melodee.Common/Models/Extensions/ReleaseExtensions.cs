@@ -88,12 +88,12 @@ public static class ReleaseExtensions
         }
         return ReleaseArtistType.ArtistOrBand;
     }
-    
-    
+
+
     /// <summary>
     /// Return the value set for the Artist Tag.
     /// </summary>
-    public static string? Artist(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Artist);
+    public static string? Artist(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist);
 
     public static long ArtistUniqueId(this Release release) => release.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(release.ArtistSort() ?? release.Artist() ?? Guid.NewGuid().ToString());
 

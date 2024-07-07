@@ -26,6 +26,7 @@ public sealed class MetaTagsProcessor : IMetaTagsProcessorPlugin
         {
             new TrackTitle(_configuration),
             new Album(_configuration),
+            new Artist(_configuration),
             new Comment(_configuration),
         };
     }
@@ -41,13 +42,16 @@ public sealed class MetaTagsProcessor : IMetaTagsProcessorPlugin
                 {
                     if (metaTagProcessor.DoesHandleMetaTagIdentifier(tag.Identifier))
                     {
-                        var metaTagProcessorResult = metaTagProcessor.ProcessMetaTag(tag, processedTags, cancellationToken);
+                        var metaTagProcessorResult = metaTagProcessor.ProcessMetaTag(tag, processedTags);
                         if (metaTagProcessorResult.IsSuccess)
                         {
                             foreach (var processorResultTag in metaTagProcessorResult.Data)
                             {
                                 processedTags.RemoveAll(x => x.Identifier == processorResultTag.Identifier);
-                                processedTags.Add(processorResultTag);
+                                if (processorResultTag.Value != null)
+                                {
+                                    processedTags.Add(processorResultTag);
+                                }
                             }
                         }
                         else

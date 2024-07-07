@@ -64,10 +64,9 @@ public static class TrackExtensions
         return d;
     }    
 
-    public static string? TrackArtist(this Track track) => track.MetaTagValue<string?>(MetaTagIdentifier.OriginalArtist);
+    public static string? TrackArtist(this Track track) => track.MetaTagValue<string?>(MetaTagIdentifier.Artist);
 
-    public static string? Artist(this Track track) => track.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist) ??
-                                                        track.MetaTagValue<string?>(MetaTagIdentifier.Artist);
+    public static string? ReleaseArtist(this Track track) => track.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist);
     
     public static string? ReleaseTitle(this Track track) => track.MetaTagValue<string?>(MetaTagIdentifier.Album);
     

@@ -7,5 +7,5 @@ public interface IMetaTagProcessor : IPlugin
 {
     bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier);
     
-    OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default);
+    OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags);
 }

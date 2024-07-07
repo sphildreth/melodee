@@ -21,7 +21,7 @@ public sealed class Comment(Configuration configuration) : MetaTagProcessorBase(
         return metaTagIdentifier == MetaTagIdentifier.Comment;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {

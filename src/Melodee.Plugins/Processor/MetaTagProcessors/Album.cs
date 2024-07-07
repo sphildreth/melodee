@@ -3,6 +3,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
+using Melodee.Common.Models.Extensions;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
@@ -22,7 +23,7 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
         return metaTagIdentifier == MetaTagIdentifier.Album;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         object? tagValue = metaTag.Value;
         if (tagValue == null)
@@ -64,6 +65,25 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
         {
             newReleaseTitle = YearInReleaseTitleRegex.Replace(newReleaseTitle, string.Empty).CleanString();
         }
+
+        var albumAtistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
+        if (albumAtistTag?.Value != null)
+        {
+            var artistValue = albumAtistTag.Value as string ?? string.Empty;
+            if (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false)
+            {
+                newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+            }
+        }
+        var artistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+        if (artistTag?.Value != null)
+        {
+            var artistValue = artistTag.Value as string ?? string.Empty;
+            if (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false)
+            {
+                newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+            }
+        }        
         var result = new List<MetaTag<object?>>
         {
             new MetaTag<object?>

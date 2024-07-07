@@ -5,7 +5,7 @@ using Serilog;
 
 namespace Melodee.Tests.Plugins.Processors;
 
-public class DirectoryDirectoryProcessorTests
+public class DirectoryProcessorTests
 {
     [Fact]
     public async Task ValidateDirectoryGetProcessed()
@@ -15,12 +15,12 @@ public class DirectoryDirectoryProcessorTests
             .WriteTo.Console()
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/21Albums";
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/Ariana Grande - Eternal Sunshine (Slightly Deluxe)";
         var dirInfo = new System.IO.DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewConfiguration;
-            var processor = new DirectoryDirectoryProcessor(
+            var processor = new DirectoryProcessor(
                 new PreDiscoveryScript(config), 
                 new NullScript(config), 
                 config);

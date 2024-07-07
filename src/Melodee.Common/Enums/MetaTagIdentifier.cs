@@ -13,7 +13,7 @@ public enum MetaTagIdentifier
     GeneralDescription,
     
     /// <summary>
-    /// Artist [TP1,TPE1]
+    /// Track Artist [TP1,TPE1] versus Album Artist
     /// </summary>
     Artist,
     

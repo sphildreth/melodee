@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Plugins.Processor;
 
@@ -61,7 +63,7 @@ public class MetaTagsProcessorTests
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
         var processorResult = await processor.ProcessMetaTagAsync(new[]
         {
-            new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = albumArtistShouldBe },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtistShouldBe },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalTrackTitle }
         });
         Assert.NotNull(processorResult);
@@ -119,7 +121,7 @@ public class MetaTagsProcessorTests
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
         var processorResult = await processor.ProcessMetaTagAsync(new[]
         {
-            new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = albumArtistShouldBe },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtistShouldBe },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = originalAlbum }
         });
         Assert.NotNull(processorResult);
@@ -127,18 +129,93 @@ public class MetaTagsProcessorTests
         var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
         Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
         var trackTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
-        Assert.NotNull(trackTag);
         if (shouldBe != null)
         {
+            Assert.NotNull(trackTag);
             Assert.NotNull(trackTag.Value);
-        }
 
-        if (trackTag.Value as string != originalAlbum)
-        {
-            Assert.NotNull(trackTag.OriginalValue);
-            Assert.Equal(originalAlbum, trackTag.OriginalValue);
+
+            if (trackTag.Value as string != originalAlbum)
+            {
+                Assert.NotNull(trackTag.OriginalValue);
+                Assert.Equal(originalAlbum, trackTag.OriginalValue);
+            }
+            Assert.Equal(shouldBe, trackTag.Value);
         }
-        Assert.Equal(shouldBe, trackTag.Value);
+        else
+        {
+            Assert.Null(trackTag);
+        }
     }    
     
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("Ariana Grande", null)]
+    [InlineData("Ariana Grande ft Nonna", "Nonna")]
+    [InlineData("Ariana Grande ft Mariah Carey", "Mariah Carey")]
+    public async Task ValidateAlbumArtistValue(string? originalArtist, string? shouldBe)
+    {
+        var albumArtistShouldBe = "Ariana Grande";
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processorResult = await processor.ProcessMetaTagAsync(new[]
+        {
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtistShouldBe },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = originalArtist }
+        });
+        Assert.NotNull(processorResult);
+        Assert.True(processorResult.IsSuccess);
+        var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
+        Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
+        var trackTitleArtistTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+        if (originalArtist.DoStringsMatch(albumArtistShouldBe))
+        {
+            Assert.Null(trackTitleArtistTag);
+        }
+        else
+        {
+            Assert.NotNull(trackTitleArtistTag);
+
+            if (shouldBe != null)
+            {
+                Assert.NotNull(trackTitleArtistTag.Value);
+                if (trackTitleArtistTag.Value as string != originalArtist)
+                {
+                    Assert.NotNull(trackTitleArtistTag.OriginalValue);
+                    Assert.Equal(originalArtist, trackTitleArtistTag.OriginalValue);
+                }                
+            }
+            else
+            {
+                Assert.Null(trackTitleArtistTag.Value);
+            }
+
+            Assert.Equal(shouldBe, trackTitleArtistTag.Value);
+        }
+    }
+
+
+    [Theory]
+    
+    [InlineData("Ariana Grande", "Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", "Ariana Grande Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", "Ariana Grande - Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", "Ariana Grande : Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", "Ariana Grande.Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
+    public async Task ValidateAlbumTitleDoesntContainArtist(string? albumArtist, string? albumTitle, string? shouldBe)
+    {
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processorResult = await processor.ProcessMetaTagAsync(new[]
+        {
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtist },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value =  albumTitle}
+        });
+        Assert.NotNull(processorResult);
+        Assert.True(processorResult.IsSuccess);
+        var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
+        Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
+        var albumTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
+        Assert.NotNull(albumTag);
+        Assert.Equal(shouldBe, albumTag.Value);
+    }
 }

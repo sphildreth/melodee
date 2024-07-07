@@ -83,7 +83,7 @@ public class MetaTagTests
             
             Assert.NotNull(track.Tags);
             Assert.NotNull(track.File);
-            var trackArtists = track.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OriginalArtist);
+            var trackArtists = track.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
             Assert.NotNull(trackArtists?.Value);
 
         }

@@ -17,6 +17,7 @@ public abstract class MetaTagProcessorBase(Configuration configuration) : IMetaT
     public abstract int SortOrder { get; }
 
     public abstract bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier);
-    public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag,IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default);
+    
+    public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags);
     
 }

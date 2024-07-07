@@ -23,7 +23,7 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
         return metaTagIdentifier == MetaTagIdentifier.Title;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         object? tagValue = metaTag.Value;
         var updatedTagValue = false;
@@ -75,17 +75,6 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
                 Identifier = MetaTagIdentifier.Artist,
                 Value = featureArtist
             });
-
-            var existingArtist = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
-            if (existingArtist?.Value != null)
-            {
-                result.Add(new MetaTag<object?>
-                {
-                    Identifier = MetaTagIdentifier.AlbumArtist,
-                    Value = existingArtist.Value,
-                    OriginalValue = existingArtist.Value == metaTag.Value ? metaTag.Value : null
-                });
-            }
         }
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
