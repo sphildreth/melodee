@@ -12,4 +12,6 @@ public sealed record PluginProcessOptions
     public int MaximumReleaseDirectoryNameLength { get; init; } = 200;
 
     public int MinimumValidReleaseYear { get; set; } = 1925;
+
+    public bool DoUseCurrentYearAsDefaultOrigReleaseYearValue = true;
 }

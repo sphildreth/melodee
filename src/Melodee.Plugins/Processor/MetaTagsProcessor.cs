@@ -28,13 +28,14 @@ public sealed class MetaTagsProcessor : IMetaTagsProcessorPlugin
             new Album(_configuration),
             new Artist(_configuration),
             new Comment(_configuration),
+            new OrigReleaseYear(_configuration),
         };
     }
     
-    public async Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
     {
         var processedTags = new List<MetaTag<object?>>(metaTags.ToList());
-        foreach (var metaTagProcessor in _metaTagProcessors)
+        foreach (var metaTagProcessor in _metaTagProcessors.OrderBy(x => x.SortOrder))
         {
             if (metaTagProcessor.IsEnabled)
             {
@@ -42,7 +43,7 @@ public sealed class MetaTagsProcessor : IMetaTagsProcessorPlugin
                 {
                     if (metaTagProcessor.DoesHandleMetaTagIdentifier(tag.Identifier))
                     {
-                        var metaTagProcessorResult = metaTagProcessor.ProcessMetaTag(tag, processedTags);
+                        var metaTagProcessorResult = metaTagProcessor.ProcessMetaTag(directoryInfo, fileSystemFileInfo, tag, processedTags);
                         if (metaTagProcessorResult.IsSuccess)
                         {
                             foreach (var processorResultTag in metaTagProcessorResult.Data)

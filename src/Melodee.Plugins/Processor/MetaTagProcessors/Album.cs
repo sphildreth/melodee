@@ -4,6 +4,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
+using Serilog;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
@@ -16,14 +17,14 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
 
     public override  string DisplayName => nameof(Album);
 
-    public override  int SortOrder { get; } = 0;
+    public override  int SortOrder { get; } = 10;
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
         return metaTagIdentifier == MetaTagIdentifier.Album;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         object? tagValue = metaTag.Value;
         if (tagValue == null)
@@ -42,47 +43,59 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
         var releaseTitle = tagValue as string ?? string.Empty;
         
         var newReleaseTitle = releaseTitle;
-        var matches = UnwantedReleaseTitleTextRegex.Match(releaseTitle);
-        if (matches.Length > 0)
+        try
         {
-            newReleaseTitle = newReleaseTitle[..matches.Index].CleanString();
-            var lastIndexOfOpenParenthesis = newReleaseTitle?.LastIndexOf('(') ?? 0;
-            var lastIndexOfCloseParenthesis = newReleaseTitle?.LastIndexOf(')') ?? 0;
-            if (newReleaseTitle != null && lastIndexOfOpenParenthesis > 0 && lastIndexOfCloseParenthesis < 0)
+            var matches = UnwantedReleaseTitleTextRegex.Match(releaseTitle);
+            if (matches.Length > 0)
             {
-                newReleaseTitle = newReleaseTitle.Substring(0, lastIndexOfOpenParenthesis - 1);
+                newReleaseTitle = newReleaseTitle[..matches.Index].CleanString();
+                var lastIndexOfOpenParenthesis = newReleaseTitle?.LastIndexOf('(') ?? 0;
+                var lastIndexOfCloseParenthesis = newReleaseTitle?.LastIndexOf(')') ?? 0;
+                if (newReleaseTitle != null && lastIndexOfOpenParenthesis > 0 && lastIndexOfCloseParenthesis < 0)
+                {
+                    newReleaseTitle = newReleaseTitle.Substring(0, lastIndexOfOpenParenthesis - 1);
+                }
+                var lastIndexOfOpenBracket = newReleaseTitle?.LastIndexOf('[') ?? 0;
+                var lastIndexOfCloseBracket = newReleaseTitle?.LastIndexOf(']') ?? 0;
+                if (newReleaseTitle != null && lastIndexOfOpenBracket > 0 && lastIndexOfCloseBracket < 0)
+                {
+                    newReleaseTitle = newReleaseTitle.Substring(0, lastIndexOfOpenBracket - 1);
+                }            
             }
-            var lastIndexOfOpenBracket = newReleaseTitle?.LastIndexOf('[') ?? 0;
-            var lastIndexOfCloseBracket = newReleaseTitle?.LastIndexOf(']') ?? 0;
-            if (newReleaseTitle != null && lastIndexOfOpenBracket > 0 && lastIndexOfCloseBracket < 0)
-            {
-                newReleaseTitle = newReleaseTitle.Substring(0, lastIndexOfOpenBracket - 1);
-            }            
-        }
 
-        var yearInTextMatches = YearInReleaseTitleRegex.Match(releaseTitle);
-        if (yearInTextMatches.Length > 0)
-        {
-            newReleaseTitle = YearInReleaseTitleRegex.Replace(newReleaseTitle, string.Empty).CleanString();
-        }
+            var yearInTextMatches = YearInReleaseTitleRegex.Match(releaseTitle);
+            if (yearInTextMatches.Length > 0)
+            {
+                newReleaseTitle = YearInReleaseTitleRegex.Replace(newReleaseTitle, string.Empty).CleanString();
+            }
 
-        var albumAtistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
-        if (albumAtistTag?.Value != null)
-        {
-            var artistValue = albumAtistTag.Value as string ?? string.Empty;
-            if (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false)
+            var albumArtistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
+            if (albumArtistTag?.Value != null)
             {
-                newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+                var artistValue = albumArtistTag.Value as string ?? string.Empty;
+                if (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false)
+                {
+                    newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+                }
             }
+            else
+            {
+                throw new Exception($"Unable to find Album Artist For [{DisplayName}]");
+            }
+            var artistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+            if (artistTag?.Value != null)
+            {
+                var artistValue = artistTag.Value as string ?? string.Empty;
+                if (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false)
+                {
+                    newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+                }
+            }        
         }
-        var artistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
-        if (artistTag?.Value != null)
+        catch (Exception e)
         {
-            var artistValue = artistTag.Value as string ?? string.Empty;
-            if (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false)
-            {
-                newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
-            }
+            Log.Error("[{PluginName}] attempting to process [{MetaTag}]", DisplayName, metaTag);
+            
         }        
         var result = new List<MetaTag<object?>>
         {

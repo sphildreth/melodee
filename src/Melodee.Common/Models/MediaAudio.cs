@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
 
 namespace Melodee.Common.Models;
@@ -9,6 +10,7 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record MediaAudio<T>
 {
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public required MediaAudioIdentifier Identifier { get; init; }
     
     public required T Value { get; init; }

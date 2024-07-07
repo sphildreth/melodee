@@ -15,7 +15,7 @@ public class DirectoryProcessorTests
             .WriteTo.Console()
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/Ariana Grande - Eternal Sunshine (Slightly Deluxe)";
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/Erasure - Cowboy (2024 Expanded Edition)";
         var dirInfo = new System.IO.DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {

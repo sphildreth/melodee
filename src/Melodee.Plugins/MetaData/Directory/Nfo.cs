@@ -25,11 +25,11 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
     public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var cueFiles = fileSystemDirectoryInfo.FileInfosForExtension("cue").ToArray();
+        var nfoFiles = fileSystemDirectoryInfo.FileInfosForExtension("nfo").ToArray();
 
-        if (cueFiles.Length == 0)
+        if (nfoFiles.Length == 0)
         {
-            return new OperationResult<bool>("Skipping CUE. No CUE files found.")
+            return new OperationResult<bool>("Skipping NFO. No NFO files found.")
             {
                 Data = true
             };
@@ -48,9 +48,9 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
             };
         }
 
-        foreach (var cueFile in cueFiles)
+        foreach (var nfoFile in nfoFiles)
         {
-            var nfoRelease = await ReleaseForNfoFileAsync(cueFile, parentDirectory, cancellationToken);
+            var nfoRelease = await ReleaseForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
 
             if (nfoRelease.IsValid())
             {
@@ -67,14 +67,19 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
                 if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                 {
-                    cueFile.Delete();
-                    Log.Information("Deleted SFV File [{FileName}]", cueFile.Name);
+                    nfoFile.Delete();
+                    Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
                 }
                 processedNfoFiles++;
             }
             else
             {
-                Trace.WriteLine($"Did not serialize invalid release [{nfoRelease}].", "Warning");
+                Trace.WriteLine($"Could not create release from NFO data [{nfoFile}].", "Warning");
+                if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                {
+                    nfoFile.Delete();
+                    Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
+                }                
             }
         }
 

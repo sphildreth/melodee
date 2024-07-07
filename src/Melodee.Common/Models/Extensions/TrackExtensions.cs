@@ -74,7 +74,7 @@ public static class TrackExtensions
                                                         track.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                                                         track.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);   
     
-    public static int? TrackYear(this Track track) => track.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseDate) ?? 
+    public static int? TrackYear(this Track track) => track.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ?? 
                                                           track.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                                                           track.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);    
     

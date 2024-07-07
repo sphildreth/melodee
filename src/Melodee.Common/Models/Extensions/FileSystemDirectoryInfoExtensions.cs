@@ -1,4 +1,5 @@
 using Melodee.Common.Utility;
+using Microsoft.VisualBasic.FileIO;
 using SearchOption = System.IO.SearchOption;
 
 namespace Melodee.Common.Models.Extensions;
@@ -15,6 +16,18 @@ public static class FileSystemDirectoryInfoExtensions
             return [];
         }
         return dirInfo.GetFiles($"*.{extension}", SearchOption.AllDirectories).ToArray();
+    }
+
+    public static FileSystemFileInfo? GetFileForCrcHash(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension, string crcHash)
+    {
+        foreach (var fileInfoForExtension in fileSystemDirectoryInfo.FileInfosForExtension(extension))
+        {
+            if (CRC32.Calculate(fileInfoForExtension) == crcHash)
+            {
+                return fileInfoForExtension.ToFileSystemInfo();
+            }
+        }
+        return null;
     }
 
     public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, SearchOption searchOption)

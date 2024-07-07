@@ -23,7 +23,7 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
         return metaTagIdentifier == MetaTagIdentifier.Title;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         object? tagValue = metaTag.Value;
         var updatedTagValue = false;
@@ -32,8 +32,8 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
         int? trackNumber = null;
         if (trackTitle?.Nullify() != null)
         {
-            trackNumber = trackTitle.TryToGetTrackNumberFromString();
-            if (trackNumber.HasValue)
+            trackNumber = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? trackTitle.TryToGetTrackNumberFromString();
+            if ((trackNumber ?? 0) > 0)
             {
                 trackTitle = trackTitle.RemoveTrackNumberFromString();
             }

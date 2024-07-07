@@ -16,22 +16,22 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
 
     public override  string DisplayName => nameof(Artist);
 
-    public override  int SortOrder { get; } = 0;
+    public override  int SortOrder { get; } = 1;
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
         return metaTagIdentifier is MetaTagIdentifier.Artist;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
-            Data = ProcessArtistTag(metaTag, metaTags)
+            Data = ProcessArtistTag(directoryInfo, fileSystemFileInfo, metaTag, metaTags)
         };
     }
 
-    private List<MetaTag<object?>> ProcessArtistTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
+    private List<MetaTag<object?>> ProcessArtistTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         object? tagValue = metaTag.Value;
         var updatedTagValue = false;

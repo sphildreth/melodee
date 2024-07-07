@@ -154,6 +154,13 @@ public static class ReleaseExtensions
             return false;
         }
 
+        // If there is only a single release json file in the directory with the image, its logical that image is for that release.
+        var releaseJsonFilesInDirectory = release.OriginalDirectory.FileInfosForExtension("melodee.json").Count();
+        if (releaseJsonFilesInDirectory == 1)
+        {
+            return true;
+        }
+        
         if (release.Files.Any())
         {
             var fileSystemInfoJustName = Path.GetFileNameWithoutExtension(fileSystemInfo.FullName).ToAlphanumericName();

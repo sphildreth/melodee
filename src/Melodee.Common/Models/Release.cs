@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
@@ -32,6 +33,7 @@ public sealed record Release
 
     public IEnumerable<string> Messages { get; set; } = [];
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public ReleaseStatus Status { get; set; } = ReleaseStatus.New;
 
     public IEnumerable<ReleaseFile> Files { get; set; } = [];

@@ -18,7 +18,15 @@ public class MetaTagsProcessorTests
     public async Task ValidateTrackTitleTrackNumberRemoved(string? originalTrackTitle, int trackNumber, string? shouldBe)
     {
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
-        var processorResult = await processor.ProcessMetaTagAsync(new[]
+        var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        }, new FileSystemFileInfo
+        {
+            Name = string.Empty,
+            Size = 0
+        }, new []
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackNumber, Value = trackNumber },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalTrackTitle }
@@ -57,11 +65,20 @@ public class MetaTagsProcessorTests
     [InlineData("Actin Bad Baby (feat. Brookie Salas)", "Actin Bad Baby")]
     [InlineData("Actin Bad Baby (with Stinky Feet and Smelly Feet)", "Actin Bad Baby")]
     [InlineData("Actin Bad Baby (ft. Bob; Stinky Feet;Smelly Feet)", "Actin Bad Baby")]
+    [InlineData("Rain (Stealing Sheep Remix)", "Rain (Stealing Sheep Remix)")]
     public async Task ValidateTrackTitleFeaturingRemoved(string? originalTrackTitle, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
-        var processorResult = await processor.ProcessMetaTagAsync(new[]
+        var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        }, new FileSystemFileInfo
+        {
+            Name = string.Empty,
+            Size = 0
+        }, new[]
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtistShouldBe },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalTrackTitle }
@@ -119,7 +136,15 @@ public class MetaTagsProcessorTests
     {
         var albumArtistShouldBe = "Da Artist";
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
-        var processorResult = await processor.ProcessMetaTagAsync(new[]
+        var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        }, new FileSystemFileInfo
+        {
+            Name = string.Empty,
+            Size = 0
+        }, new[]
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtistShouldBe },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = originalAlbum }
@@ -157,7 +182,15 @@ public class MetaTagsProcessorTests
     {
         var albumArtistShouldBe = "Ariana Grande";
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
-        var processorResult = await processor.ProcessMetaTagAsync(new[]
+        var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        }, new FileSystemFileInfo
+        {
+            Name = string.Empty,
+            Size = 0
+        }, new[]
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtistShouldBe },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = originalArtist }
@@ -205,7 +238,15 @@ public class MetaTagsProcessorTests
     public async Task ValidateAlbumTitleDoesntContainArtist(string? albumArtist, string? albumTitle, string? shouldBe)
     {
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
-        var processorResult = await processor.ProcessMetaTagAsync(new[]
+        var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        }, new FileSystemFileInfo
+        {
+            Name = string.Empty,
+            Size = 0
+        }, new[]
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtist },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value =  albumTitle}

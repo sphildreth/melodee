@@ -10,6 +10,7 @@ using Melodee.Plugins.Conversion.Media;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Scripting;
+using Serilog;
 using SerilogTimings;
 
 namespace Melodee.Plugins.Processor;
@@ -182,7 +183,15 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
                 foreach (var releaseForDirectory in releasesForDirectory.Data)
                 {
-                    var serialized = System.Text.Json.JsonSerializer.Serialize(releaseForDirectory);
+                    string serialized = string.Empty;
+                    try
+                    {
+                        serialized = System.Text.Json.JsonSerializer.Serialize(releaseForDirectory);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, "Error processing [{FileSystemDirectoryInfo}]", fileSystemDirectoryInfo);
+                    }
                     var releaseDataName = Path.Combine(directoryInfoToProcess.Path, releaseForDirectory.ToMelodeeJsonName());
                     await File.WriteAllTextAsync(releaseDataName, serialized, cancellationToken);
                 }
@@ -202,29 +211,37 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             var releaseAndJsonFile = new Dictionary<Release, string>();
             foreach (var releaseJsonFile in releaseJsonFiles)
             {
-                var release = System.Text.Json.JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
-                if (release == null || !release.IsValid())
+                try
                 {
-                    return new OperationResult<bool>($"Invalid Release json file [{releaseJsonFile.FullName}]")
+                    var release = System.Text.Json.JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
+                    if (release == null || !release.IsValid())
                     {
-                        Data = false
-                    };
-                }
-
-                var releaseImages = release.Images?.ToList() ?? [];
-                var foundReleaseImages = (await FindImagesForRelease(release, cancellationToken)).ToArray();
-                if (foundReleaseImages.Length != 0)
-                {
-                    foreach (var foundReleaseImage in foundReleaseImages)
-                    {
-                        if (!releaseImages.Any(x => x.IsCrcHashMatch(foundReleaseImage.CrcHash)))
+                        return new OperationResult<bool>($"Invalid Release json file [{releaseJsonFile.FullName}]")
                         {
-                            releaseImages.Add(foundReleaseImage);
+                            Data = false
+                        };
+                    }
+                    var releaseImages = release.Images?.ToList() ?? [];
+                    var foundReleaseImages = (await FindImagesForRelease(release, cancellationToken)).ToArray();
+                    if (foundReleaseImages.Length != 0)
+                    {
+                        foreach (var foundReleaseImage in foundReleaseImages)
+                        {
+                            if (!releaseImages.Any(x => x.IsCrcHashMatch(foundReleaseImage.CrcHash)))
+                            {
+                                releaseImages.Add(foundReleaseImage);
+                            }
                         }
                     }
+                    release.Images = releaseImages;
+                    releaseAndJsonFile.Add(release, releaseJsonFile.FullName);
+
                 }
-                release.Images = releaseImages;
-                releaseAndJsonFile.Add(release, releaseJsonFile.FullName);
+                catch (Exception e)
+                {
+                    Log.Error("Unable to load release json [{FullName}]", releaseJsonFile.FullName);
+                }
+
             }
 
             // Create directory and move files for each found release in staging folder
@@ -371,73 +388,60 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                     tracks.Add(pluginResult.Data);
                                     viaPlugins.Add(plugin.DisplayName);
                                 }
-
                                 messages.AddRange(pluginResult.Messages);
                             }
                         }
-
                         if (plugin.StopProcessing)
                         {
                             break;
                         }
                     }
-
-                    foreach (var track in tracks)
-                    {
-                        var foundRelease = releases.FirstOrDefault(x => x.UniqueId == track.ReleaseUniqueId);
-                        if (foundRelease != null)
-                        {
-                            releases.Remove(foundRelease);
-                            releases.Add(foundRelease.MergeTracks(tracks));
-                        }
-                        else
-                        {
-                            var trackTotal = track.TrackTotalNumber();
-                            if (trackTotal < 1)
-                            {
-                                trackTotal = tracks.Count;
-                            }
-                            var newReleaseTags = new List<MetaTag<object?>>
-                            {
-                                new() { Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1 },
-                                new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = track.ReleaseArtist(), SortOrder = 2 },
-                                new() { Identifier = MetaTagIdentifier.DiscNumber, Value = track.MediaNumber(), SortOrder = 4 },
-                                new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = track.ReleaseYear(), SortOrder = 100 },
-                                new() { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
-                            };
-                            var genres = tracks
-                                .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                                .Where(x => x.Identifier == MetaTagIdentifier.Genre);
-                            newReleaseTags.AddRange(genres
-                                .GroupBy(x => x.Value)
-                                .Select((genre, i) => new MetaTag<object?>
-                                {
-                                    Identifier = MetaTagIdentifier.Genre,
-                                    Value = genre.Key,
-                                    SortOrder = 5 + i
-                                }));
-                            releases.Add(new Release
-                            {
-                                OriginalDirectory = fileSystemDirectoryInfo,
-                                Tags = newReleaseTags,
-                                Tracks = tracks,
-                                ViaPlugins = viaPlugins.Distinct().ToArray()
-                            });
-                        }
-                    }
                 }
 
-                // Now all tracks have been found renumber SortOrder 
-                Parallel.ForEach(releases, (release) =>
+                foreach (var track in tracks)
                 {
-                    if (release.Tracks != null)
+                    var foundRelease = releases.FirstOrDefault(x => x.UniqueId == track.ReleaseUniqueId);
+                    if (foundRelease != null)
                     {
-                        foreach (var track in release.Tracks)
-                        {
-                            track.SortOrder = track.TrackNumber();
-                        }
+                        releases.Remove(foundRelease);
+                        releases.Add(foundRelease.MergeTracks(tracks));
                     }
-                });
+                    else
+                    {
+                        var trackTotal = track.TrackTotalNumber();
+                        if (trackTotal < 1)
+                        {
+                            trackTotal = tracks.Count;
+                        }
+                        var newReleaseTags = new List<MetaTag<object?>>
+                        {
+                            new() { Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1 },
+                            new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = track.ReleaseArtist(), SortOrder = 2 },
+                            new() { Identifier = MetaTagIdentifier.DiscNumber, Value = track.MediaNumber(), SortOrder = 4 },
+                            new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = track.ReleaseYear(), SortOrder = 100 },
+                            new() { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
+                        };
+                        var genres = tracks
+                            .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
+                            .Where(x => x.Identifier == MetaTagIdentifier.Genre);
+                        newReleaseTags.AddRange(genres
+                            .GroupBy(x => x.Value)
+                            .Select((genre, i) => new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Genre,
+                                Value = genre.Key,
+                                SortOrder = 5 + i
+                            }));
+                        releases.Add(new Release
+                        {
+                            Images = tracks.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
+                            OriginalDirectory = fileSystemDirectoryInfo,
+                            Tags = newReleaseTags,
+                            Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
+                            ViaPlugins = viaPlugins.Distinct().ToArray()
+                        });
+                    }
+                }
             }
         }
 

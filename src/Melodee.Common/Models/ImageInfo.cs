@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
 using Microsoft.VisualBasic;
 
@@ -11,6 +12,7 @@ public sealed record ImageInfo
     /// </summary>
     public FileSystemFileInfo? FileInfo { get; init; }
     
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public PictureIdentifier PictureIdentifier { get; init; }
     
     public required string CrcHash { get; init; }

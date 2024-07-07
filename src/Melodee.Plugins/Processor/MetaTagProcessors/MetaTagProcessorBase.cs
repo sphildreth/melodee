@@ -18,6 +18,6 @@ public abstract class MetaTagProcessorBase(Configuration configuration) : IMetaT
 
     public abstract bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier);
     
-    public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags);
+    public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags);
     
 }

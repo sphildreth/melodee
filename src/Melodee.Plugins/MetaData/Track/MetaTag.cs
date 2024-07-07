@@ -153,10 +153,10 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                             {
                                 var imageInfo = SixLabors.ImageSharp.Image.Load(embeddedPicture.PictureData);
                                 var imageCrcHash = CRC32.Calculate(embeddedPicture.PictureData);
-                                if (!images.Any(x => x.IsCrcHashMatch(imageCrcHash)))
+                                if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
                                 {
                                     var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
-                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{Guid.NewGuid().ToString()}.jpg");
+                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{embeddedPicture.PicType.ToString()}.jpg");
                                     await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
                                     images.Add(new ImageInfo
                                     {
@@ -190,6 +190,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                                 {
                                     var identifier = SafeParser.ToEnum<MetaTagIdentifier>(metaTagIdentifier.Key);
                                     if (metaTagIdentifier.Key == (int)MetaTagIdentifier.Date ||
+                                        metaTagIdentifier.Key == (int)MetaTagIdentifier.OrigReleaseDate ||
                                         metaTagIdentifier.Key == (int)MetaTagIdentifier.RecordingDate)
                                     {
                                         var dt = SafeParser.ToDateTime(v);
@@ -230,7 +231,16 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                 Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
             }
 
-            var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(tags, cancellationToken);
+            // Ensure that OrigReleaseYear exists and if not add with invalid date (will get set later by MetaTagProcessor.
+            if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseYear))
+            {
+                tags.Add(new MetaTag<object?>{
+                    Identifier = MetaTagIdentifier.OrigReleaseYear,
+                    Value = 0
+                });
+            }
+
+            var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
             if (!metaTagsProcessorResult.IsSuccess)
             {
                 return new OperationResult<Common.Models.Track>(metaTagsProcessorResult.Messages)
