@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
-using Microsoft.VisualBasic.FileIO;
 
 namespace Melodee.Common.Extensions
 {
@@ -23,7 +22,7 @@ namespace Melodee.Common.Extensions
        
         private static readonly string RomanRegex = @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
         
-        private static readonly string[] Conjunctions = { "Y", "E", "I" };
+        private static readonly string[] Conjunctions = ["Y", "E", "I"];
       
         private static readonly Dictionary<char, string> UnicodeAccents = new Dictionary<char, string>
         {
@@ -47,7 +46,8 @@ namespace Melodee.Common.Extensions
             {'ù', "u"}, {'ú', "u"}, {'û', "u"}, {'ü', "ue"},
             {'ý', "y"}, {'ÿ', "y"}
         };
-        
+
+        // ReSharper disable StringLiteralTypo        
         private static readonly Dictionary<string, string> MacExceptions = new Dictionary<string, string>
         {
             {@"\bMacEdo"     ,"Macedo"},
@@ -65,6 +65,7 @@ namespace Melodee.Common.Extensions
             {@"\bMacQuarie"  ,"Macquarie"},
             {@"\bMacEy "     ,"Macey "}
         };
+        // ReSharper enable StringLiteralTypo
         
         private static readonly Dictionary<string, string> NameCaseReplacements = new Dictionary<string, string>
         {
@@ -101,12 +102,13 @@ namespace Melodee.Common.Extensions
             return r.NameCase();
         }       
         
-        public static string NameCase(this string nameString, bool doFixConjuntion = false)
+        // ReSharper disable once MemberCanBePrivate.Global
+        public static string NameCase(this string nameString, bool doFixConjunction = false)
         {
             nameString = Capitalize(nameString);
             nameString = UpdateRoman(nameString);
             nameString = UpdateIrish(nameString);
-            if (doFixConjuntion)
+            if (doFixConjunction)
             {
                 nameString = FixConjunction(nameString);
             }
@@ -116,18 +118,18 @@ namespace Melodee.Common.Extensions
                 nameString = nameString.Replace(replacement, NameCaseReplacements[replacement], StringComparison.OrdinalIgnoreCase);
             }
             return nameString;
-        }        
-        
-        public static string FixConjunction(string nameString)
+        }
+
+        private static string FixConjunction(string nameString)
         {
             foreach (var conjunction in Conjunctions)
             {
                 nameString = Regex.Replace(nameString, @"\b" + conjunction + @"\b", x => x.ToString().ToLower());
             }
             return nameString;
-        }        
-        
-        public static string UpdateRoman(string nameString)
+        }
+
+        private static string UpdateRoman(string nameString)
         {
             MatchCollection matches = Regex.Matches(nameString, RomanRegex);
             if (matches.Count > 1)
@@ -141,9 +143,9 @@ namespace Melodee.Common.Extensions
                 }
             }
             return nameString;
-        }        
-        
-        public static string UpdateIrish(string nameString)
+        }
+
+        private static string UpdateIrish(string nameString)
         {
             if (Regex.IsMatch(nameString, @".*?\bMac[A-Za-z^aciozj]{2,}\b") || Regex.IsMatch(nameString, @".*?\bMc"))
             {
@@ -157,10 +159,10 @@ namespace Melodee.Common.Extensions
         /// </summary>
         /// <param name="nameString"></param>
         /// <returns></returns>
-        public static string UpdateMac(string nameString)
+        private static string UpdateMac(string nameString)
         {
             MatchCollection matches = Regex.Matches(nameString, @"\b(Ma?c)([A-Za-z]+)");
-            if (matches.Count == 1 && matches[0].Groups.Count == 3)
+            if (matches is [{ Groups.Count: 3 }])
             {
                 string replacement = matches[0].Groups[1].Value;
                 replacement += matches[0].Groups[2].Value.Substring(0, 1).ToUpper();
@@ -174,9 +176,9 @@ namespace Melodee.Common.Extensions
                 }
             }
             return nameString;
-        }        
-        
-        public static string Capitalize(string nameString)
+        }
+
+        private static string Capitalize(string nameString)
         {
             nameString = nameString.ToLower();
             nameString = Regex.Replace(nameString, @"\b\w", x => x.ToString().ToUpper());
@@ -237,9 +239,9 @@ namespace Melodee.Common.Extensions
             }
             input = input.Replace("$", "s");
             return Regex.Replace(PathSanitizer.SanitizeFilename(input, ' '), @"\s+", " ").Trim().TrimEnd('.');
-        }        
+        }
 
-        public static string ScrubHtml(this string value)
+        private static string ScrubHtml(this string value)
         {
             var step1 = Regex.Replace(value, @"<[^>]+>|&nbsp;", string.Empty).Trim();
             var step2 = Regex.Replace(step1, @"\s{2,}", " ");
@@ -253,24 +255,23 @@ namespace Melodee.Common.Extensions
                 return input;
             }
 
-            var index = input.IndexOf(remove);
+            var index = input.IndexOf(remove, StringComparison.OrdinalIgnoreCase);
             var result = input;
             while (index == 0)
             {
                 result = result.Remove(index, remove.Length).Trim();
-                index = result.IndexOf(remove);
+                index = result.IndexOf(remove, StringComparison.OrdinalIgnoreCase);
             }
 
             return result;
         }
-        
-        public static string RemoveDiacritics(this string s)
+
+        private static string RemoveDiacritics(this string s)
         {
             var normalizedString = s.Normalize(NormalizationForm.FormD);
             var stringBuilder = new StringBuilder();
-            for (var i = 0; i < normalizedString.Length; i++)
+            foreach (var c in normalizedString)
             {
-                var c = normalizedString[i];
                 if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
                 {
                     stringBuilder.Append(c);
@@ -280,14 +281,13 @@ namespace Melodee.Common.Extensions
             return stringBuilder.ToString();
         }
 
-        public static string RemoveUnicodeAccents(this string text)
+        private static string RemoveUnicodeAccents(this string text)
         {
             return text.Aggregate(
                 new StringBuilder(),
                 (sb, c) =>
                 {
-                    string r;
-                    if (UnicodeAccents.TryGetValue(c, out r))
+                    if (UnicodeAccents.TryGetValue(c, out var r))
                     {
                         return sb.Append(r);
                     }
@@ -296,28 +296,28 @@ namespace Melodee.Common.Extensions
                 }).ToString();
         }
 
-        public static string Translit(this string str)
+        private static string Translit(this string str)
         {
             string[] latUp =
-            {
+            [
                 "A", "B", "V", "G", "D", "E", "Yo", "Zh", "Z", "I", "Y", "K", "L", "M", "N", "O", "P", "R", "S", "T",
                 "U", "F", "Kh", "Ts", "Ch", "Sh", "Shch", "\"", "Y", "'", "E", "Yu", "Ya"
-            };
+            ];
             string[] latLow =
-            {
+            [
                 "a", "b", "v", "g", "d", "e", "yo", "zh", "z", "i", "y", "k", "l", "m", "n", "o", "p", "r", "s", "t",
                 "u", "f", "kh", "ts", "ch", "sh", "shch", "\"", "y", "'", "e", "yu", "ya"
-            };
+            ];
             string[] rusUp =
-            {
+            [
                 "А", "Б", "В", "Г", "Д", "Е", "Ё", "Ж", "З", "И", "Й", "К", "Л", "М", "Н", "О", "П", "Р", "С", "Т", "У",
                 "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы", "Ь", "Э", "Ю", "Я"
-            };
+            ];
             string[] rusLow =
-            {
+            [
                 "а", "б", "в", "г", "д", "е", "ё", "ж", "з", "и", "й", "к", "л", "м", "н", "о", "п", "р", "с", "т", "у",
                 "ф", "х", "ц", "ч", "ш", "щ", "ъ", "ы", "ь", "э", "ю", "я"
-            };
+            ];
             for (var i = 0; i <= 32; i++)
             {
                 str = str.Replace(rusUp[i], latUp[i]);
@@ -367,7 +367,7 @@ namespace Melodee.Common.Extensions
             }
             if(Regex.IsMatch(input, TrackNumberParseRegex))
             {
-                var v = new string(Regex.Match(input, TrackNumberParseRegex).Value.Where(c => char.IsDigit(c)).ToArray());
+                var v = new string(Regex.Match(input, TrackNumberParseRegex).Value.Where(char.IsDigit).ToArray());
                 return SafeParser.ToNumber<int?>(v);
             }
             return null;
@@ -379,11 +379,7 @@ namespace Melodee.Common.Extensions
             {
                 return null;
             }
-            if(Regex.IsMatch(input, TrackNumberParseRegex))
-            {
-                return Regex.Replace(input, TrackNumberParseRegex, string.Empty);
-            }
-            return null;
+            return Regex.IsMatch(input, TrackNumberParseRegex) ? Regex.Replace(input, TrackNumberParseRegex, string.Empty) : input;
         }
         
         public static bool IsVariousArtistValue(this string? input)
@@ -447,6 +443,6 @@ namespace Melodee.Common.Extensions
         private static partial Regex OnlyAlphaNumericRegex();
         
         [GeneratedRegex(@"\s{2,}")]
-        public static partial Regex ReplaceMultipleSpacesRegex();
+        private static partial Regex ReplaceMultipleSpacesRegex();
     }
 }

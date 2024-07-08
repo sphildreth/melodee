@@ -13,7 +13,7 @@ namespace Melodee.Common.Utility
         ///     Safely return a Boolean for a given Input.
         ///     <remarks>Has Additional String Operations</remarks>
         /// </summary>
-        public static bool ToBoolean(object input)
+        public static bool ToBoolean(object? input)
         {
             if(input == null)
             {
@@ -42,7 +42,7 @@ namespace Melodee.Common.Utility
             }
         }
 
-        public static DateTime? ToDateTime(object input)
+        public static DateTime? ToDateTime(object? input)
         {
             if (input == null) return default(DateTime?);
             try
@@ -60,11 +60,18 @@ namespace Melodee.Common.Utility
                     i = Regex.Replace(i, @"(\/+)", "/");
                     i = Regex.Replace(i, @"(-+)", "/");
                     i = i.Replace("\"", string.Empty);
-                    var parts = i.Contains("/") ? i.Split('/').ToList() : new List<string> { i };
+                    var parts = i.Contains('/') ? i.Split('/').ToList() : [i];
                     if (parts.Count == 2)
-                        if (parts[0] != null && parts[1] != null && parts[0] == parts[1])
-                            parts = new List<string> { parts[0], "01" };
-                    while (parts.Count < 3) parts.Insert(0, "01");
+                    {
+                        if (parts[0] == parts[1])
+                        {
+                            parts = [parts[0], "01"];
+                        }
+                    }
+                    while (parts.Count < 3)
+                    {
+                        parts.Insert(0, "01");
+                    }
                     var tsRaw = string.Empty;
                     foreach (var part in parts)
                     {
@@ -84,7 +91,7 @@ namespace Melodee.Common.Utility
                     // ignored
                 }
 
-                return dt != DateTime.MinValue ? (DateTime?)dt : null;
+                return dt != DateTime.MinValue ? dt : null;
             }
             catch
             {
@@ -92,16 +99,22 @@ namespace Melodee.Common.Utility
             }
         }
 
-        public static T ToEnum<T>(object input) where T : struct, IConvertible
+        public static T ToEnum<T>(object? input) where T : struct, IConvertible
         {
-            if (input == null) return default(T);
+            if (input == null)
+            {
+                return default(T);
+            }
             Enum.TryParse(input.ToString(), true, out T r);
             return r;
         }
 
-        public static Guid? ToGuid(object input)
+        public static Guid? ToGuid(object? input)
         {
-            if (input == null) return null;
+            if (input == null)
+            {
+                return null;
+            }
             var i = input.ToString();
             if (!string.IsNullOrEmpty(i) && i.Length > 0 && i[1] == ':') i = i.Substring(2, i.Length - 2);
             if (!Guid.TryParse(i, out var result)) return null;
@@ -111,9 +124,12 @@ namespace Melodee.Common.Utility
         /// <summary>
         ///     Safely Return a Number For Given Input
         /// </summary>
-        public static T ToNumber<T>(object input)
+        public static T? ToNumber<T>(object? input)
         {
-            if (input == null) return default(T);
+            if (input == null)
+            {
+                return default(T);
+            }
             try
             {
                 return ChangeType<T>(input);
@@ -124,7 +140,7 @@ namespace Melodee.Common.Utility
             }
         }
 
-        public static string ToString(object input, string defaultValue = null)
+        public static string ToString(object? input, string? defaultValue = null)
         {
             defaultValue = defaultValue ?? string.Empty;
             switch (input)
@@ -146,22 +162,22 @@ namespace Melodee.Common.Utility
             int parsed;
             if (input.Length == 4)
             {
-                if (int.TryParse(input, out parsed)) return parsed > 0 ? (int?)parsed : null;
+                if (int.TryParse(input, out parsed)) return parsed > 0 ? parsed : null;
             }
             else if (input.Length > 4)
             {
-                if (int.TryParse(input.Substring(0, 4), out parsed)) return parsed > 0 ? (int?)parsed : null;
+                if (int.TryParse(input.Substring(0, 4), out parsed)) return parsed > 0 ? parsed : null;
             }
 
             return null;
         }
 
-        private static T ChangeType<T>(object value)
+        private static T? ChangeType<T>(object? value)
         {
-            Type t = typeof(T);            
-            if (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(Nullable<>))
+            var t = typeof(T);            
+            if (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(Nullable<>) && value != null)
             {
-                return (T)Convert.ChangeType(value, t);
+                return (T)Convert.ChangeType(value!, t);
             }
             if (value == null)
             {
@@ -171,7 +187,7 @@ namespace Melodee.Common.Utility
             return t == null ? default(T) : (T)Convert.ChangeType(value, t);
         }
 
-        public static string ToToken(string input)
+        public static string? ToToken(string input)
         {
             if(input.Nullify() == null)
             {
@@ -179,7 +195,7 @@ namespace Melodee.Common.Utility
             }
             var hashids = new Hashids(Salt);
             var numbers = 0;
-            var bytes = System.Text.Encoding.ASCII.GetBytes(input);
+            var bytes = Encoding.ASCII.GetBytes(input);
             var looper = bytes.Length / 4;
             for (var i = 0; i < looper; i++)
             {
@@ -193,14 +209,13 @@ namespace Melodee.Common.Utility
             return hashids.Encode(numbers);
         }
 
-        public static string ToFileNameFriendly(this string input)
+        public static string? ToFileNameFriendly(this string input)
         {
             if (string.IsNullOrEmpty(input))
             {
                 return null;
             }
-
-            return Regex.Replace(PathSanitizer.SanitizeFilename(input, ' ') ?? string.Empty, @"\s+", " ").Trim();
+            return Regex.Replace(PathSanitizer.SanitizeFilename(input, ' '), @"\s+", " ").Trim();
         }
 
         public static byte[] ReadFile(string filePath)      
@@ -229,7 +244,8 @@ namespace Melodee.Common.Utility
 
         public static long Hash(params string?[] input) => Hash(Encoding.UTF8.GetBytes(string.Join(string.Empty, input)));
 
-        public static long Hash(Byte[] dataToHash)
+        // ReSharper disable once MemberCanBePrivate.Global
+        public static long Hash(byte[] dataToHash)
         {
             Int32 dataLength = dataToHash.Length;
             if (dataLength == 0)
@@ -265,8 +281,6 @@ namespace Melodee.Common.Utility
                 case 1: hash += dataToHash[currentIndex];
                     hash ^= hash << 10;
                     hash += hash >> 1;
-                    break;
-                default:
                     break;
             }
             hash ^= hash << 3;

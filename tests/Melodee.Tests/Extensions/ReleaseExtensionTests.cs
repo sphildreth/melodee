@@ -26,7 +26,7 @@ public class ReleaseExtensionTests
             },
             new MetaTag<object?>
             {
-                Identifier = MetaTagIdentifier.Artist,
+                Identifier = MetaTagIdentifier.AlbumArtist,
                 Value = "Holy Truth"
             },
             new MetaTag<object?>

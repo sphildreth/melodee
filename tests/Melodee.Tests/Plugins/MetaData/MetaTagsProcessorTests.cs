@@ -81,6 +81,7 @@ public class MetaTagsProcessorTests
         }, new[]
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtistShouldBe },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackNumber, Value = 27 },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalTrackTitle }
         });
         Assert.NotNull(processorResult);

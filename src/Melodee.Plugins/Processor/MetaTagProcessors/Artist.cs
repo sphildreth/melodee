@@ -25,14 +25,6 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
-        return new OperationResult<IEnumerable<MetaTag<object?>>>
-        {
-            Data = ProcessArtistTag(directoryInfo, fileSystemFileInfo, metaTag, metaTags)
-        };
-    }
-
-    private List<MetaTag<object?>> ProcessArtistTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
-    {
         object? tagValue = metaTag.Value;
         var updatedTagValue = false;
         var artist = tagValue as string ?? string.Empty;
@@ -89,7 +81,10 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                 });
             }            
         }
-        return result;
+        return new OperationResult<IEnumerable<MetaTag<object?>>>
+        {
+            Data = result
+        };
     }
     
     private static string? ReplaceArtistSeperators(string? trackArtist)

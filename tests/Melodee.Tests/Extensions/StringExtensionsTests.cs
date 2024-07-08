@@ -78,7 +78,7 @@ namespace Melodee.Tests.Extensions
         [Theory]
         [InlineData(null, null)]
         [InlineData("", null)]
-        [InlineData("Bob", null)]
+        [InlineData("Bob", "Bob")]
         [InlineData("01 Steve Winwood.mp3", "Steve Winwood.mp3")]
         [InlineData(" 01 Steve Winwood.mp3", "Steve Winwood.mp3")]
         [InlineData(" 01  - Steve Winwood.mp3", "Steve Winwood.mp3")]
