@@ -11,7 +11,20 @@ public sealed record PluginProcessOptions
     
     public int MaximumReleaseDirectoryNameLength { get; init; } = 200;
 
-    public int MinimumValidReleaseYear { get; set; } = 1925;
+    public int MinimumValidReleaseYear { get; init; } = 1925;
 
     public bool DoUseCurrentYearAsDefaultOrigReleaseYearValue = true;
+
+    public IEnumerable<string> ReleaseTitleRemovals { get; init; }  = new[]
+    {
+        "^",
+        "#"
+    };
+    
+    public IEnumerable<string> TrackTitleRemovals { get; init; } = new[]
+    {
+        ";",
+        "(Remaster)",
+        "Remaster"
+    };
 }

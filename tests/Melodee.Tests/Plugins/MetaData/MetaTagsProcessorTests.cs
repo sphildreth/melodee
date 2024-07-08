@@ -66,6 +66,7 @@ public class MetaTagsProcessorTests
     [InlineData("Actin Bad Baby (with Stinky Feet and Smelly Feet)", "Actin Bad Baby")]
     [InlineData("Actin Bad Baby (ft. Bob; Stinky Feet;Smelly Feet)", "Actin Bad Baby")]
     [InlineData("Rain (Stealing Sheep Remix)", "Rain (Stealing Sheep Remix)")]
+    [InlineData("In My Arms (Crumbling Down Extended Instrumental Remix;Remaster)", "In My Arms (Crumbling Down Extended Instrumental Remix)")]
     public async Task ValidateTrackTitleFeaturingRemoved(string? originalTrackTitle, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
@@ -128,6 +129,7 @@ public class MetaTagsProcessorTests
     [InlineData("Exodus (1977 original release)", "Exodus")]
     [InlineData("Eternally Gifted", "Eternally Gifted")]
     [InlineData("Shift Scene", "Shift Scene")]
+    [InlineData("Shift Scene ^##^", "Shift Scene")]
     [InlineData("[1984] Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("4 [2011]", "4")]
     [InlineData("1984", "1984")]

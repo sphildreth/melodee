@@ -25,7 +25,7 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
-        object? tagValue = metaTag.Value;
+        var tagValue = metaTag.Value as string;
         var updatedTagValue = false;
         var trackTitle = tagValue as string ?? string.Empty;
         string? featureArtist = null;
@@ -48,6 +48,13 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
                 trackTitle = newTitle;
                 updatedTagValue = true;
             }
+
+            if (trackTitle != null && Configuration.PluginProcessOptions.TrackTitleRemovals.Any())
+            {
+                trackTitle = Configuration.PluginProcessOptions.TrackTitleRemovals.Aggregate(trackTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
+                updatedTagValue = trackTitle != tagValue;
+            }
+
         }
         var result = new List<MetaTag<object?>>
         {

@@ -13,6 +13,8 @@ namespace Melodee.Tests.Extensions
         [InlineData("Bob", null, false)]
         [InlineData(null, "Bob", false)]
         [InlineData("Bob", "Steve", false)]
+        [InlineData("Steve #1", "Steve #2", false)]
+        [InlineData("Steve ^#BOOGER#^", "Steve", false)]
         public void DoStringMatch(string? string1, string? string2, bool shouldBe)
         {
             Assert.Equal(shouldBe, StringExtensions.DoStringsMatch(string1, string2));

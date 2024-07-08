@@ -91,19 +91,26 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
                     newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
                 }
             }        
+            
+            if (newReleaseTitle != null && Configuration.PluginProcessOptions.ReleaseTitleRemovals.Any())
+            {
+                newReleaseTitle = Configuration.PluginProcessOptions.ReleaseTitleRemovals.Aggregate(newReleaseTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
+            }            
         }
         catch (Exception e)
         {
             Log.Error("[{PluginName}] attempting to process [{MetaTag}]", DisplayName, metaTag);
             
-        }        
+        }
+
+        var wasTagValueModified = !string.Equals(newReleaseTitle, releaseTitle, StringComparison.OrdinalIgnoreCase);
         var result = new List<MetaTag<object?>>
         {
             new MetaTag<object?>
             {
                 Identifier = metaTag.Identifier,
                 Value = newReleaseTitle,
-                OriginalValue = !newReleaseTitle.DoStringsMatch(releaseTitle) ? metaTag.Value : null
+                OriginalValue = wasTagValueModified ? metaTag.Value : null
             }
         };
         return new OperationResult<IEnumerable<MetaTag<object?>>>
