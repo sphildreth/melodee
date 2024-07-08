@@ -8,7 +8,7 @@ using Melodee.Plugins.MetaData.Track;
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-/// Handle the track title and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
+/// Handle the track Artist and split away any featuring artists.
 /// </summary>
 public sealed partial class Artist(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
@@ -30,8 +30,28 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
         var artist = tagValue as string ?? string.Empty;
         string? featureArtist = null;
 
+        var result = new List<MetaTag<object?>>();
+        
         if (artist?.Nullify() != null)
         {
+            if (Configuration.PluginProcessOptions.ArtistNameReplacements.Any())
+            {
+                foreach (var kp in Configuration.PluginProcessOptions.ArtistNameReplacements)
+                {
+                    if (kp.Value.Any(kpv => string.Equals(artist, kpv)))
+                    {
+                        artist = kp.Key;
+                        tagValue = artist;
+                        result.Add(new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Artist,
+                            Value = artist,
+                            OriginalValue = metaTag.Value
+                        });                        
+                        break;
+                    }
+                }
+            }            
             if (artist.HasFeaturingFragments())
             {
                 var newArtist = artist ?? string.Empty;
@@ -44,7 +64,6 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
             }
         }
 
-        var result = new List<MetaTag<object?>>();
         if (metaTag.Identifier == MetaTagIdentifier.Artist)
         {
             if (artist.Nullify() != null)
@@ -81,6 +100,8 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                 });
             }            
         }
+        
+        
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

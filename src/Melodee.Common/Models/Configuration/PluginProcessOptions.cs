@@ -15,9 +15,22 @@ public sealed record PluginProcessOptions
 
     public bool DoUseCurrentYearAsDefaultOrigReleaseYearValue = true;
 
+    public IEnumerable<KeyValuePair<string, IEnumerable<string>>> ArtistNameReplacements = new[]
+    {
+        new KeyValuePair<string, IEnumerable<string>>("AC/DC", new[]
+        {
+            "AC; DC", "AC;DC", "AC/ DC", "AC DC"
+        }),
+        new KeyValuePair<string, IEnumerable<string>>("Love/Hate", new[]
+        {
+            "Love; Hate", "Love;Hate", "Love/ Hate", "Love Hate"
+        })        
+    };
+    
     public IEnumerable<string> ReleaseTitleRemovals { get; init; }  = new[]
     {
         "^",
+        "~",
         "#"
     };
     

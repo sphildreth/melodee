@@ -181,6 +181,8 @@ public class MetaTagsProcessorTests
     [InlineData("Ariana Grande", null)]
     [InlineData("Ariana Grande ft Nonna", "Nonna")]
     [InlineData("Ariana Grande ft Mariah Carey", "Mariah Carey")]
+    [InlineData("AC DC", "AC/DC")]
+    [InlineData("Love/Hate", "Love/Hate")]
     public async Task ValidateAlbumArtistValue(string? originalArtist, string? shouldBe)
     {
         var albumArtistShouldBe = "Ariana Grande";
