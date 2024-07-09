@@ -67,6 +67,7 @@ public class MetaTagsProcessorTests
     [InlineData("Actin Bad Baby (ft. Bob; Stinky Feet;Smelly Feet)", "Actin Bad Baby")]
     [InlineData("Rain (Stealing Sheep Remix)", "Rain (Stealing Sheep Remix)")]
     [InlineData("In My Arms (Crumbling Down Extended Instrumental Remix;Remaster)", "In My Arms (Crumbling Down Extended Instrumental Remix)")]
+    [InlineData("404", "404")]
     public async Task ValidateTrackTitleFeaturingRemoved(string? originalTrackTitle, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
@@ -135,6 +136,13 @@ public class MetaTagsProcessorTests
     [InlineData("1984", "1984")]
     [InlineData("13", "13")]
     [InlineData("Big Hits (High Tide and Green Grass)", "Big Hits (High Tide and Green Grass)")]
+    [InlineData("Billion Dollar Babies (50th Anniversary Deluxe Edition)", "Billion Dollar Babies")]
+    [InlineData("Billion Dollar Babies (Deluxe Edition)", "Billion Dollar Babies")]
+    [InlineData("Axis: Bold As Love (2010 Remaster)", "Axis: Bold As Love")]
+    [InlineData("Homework (25th Anniversary Edition) (1)", "Homework")]
+    [InlineData("Balearic Classics Vol. 1", "Balearic Classics Vol. 1")]
+    [InlineData("Live At Leeds (Deluxe Edition)", "Live At Leeds")]
+    [InlineData("The Dark Side Of The Moon (50th Anniversary) [2023 Remaster]", "The Dark Side Of The Moon")]    
     public async Task ValidateReleaseTitleUnwantedRemoved(string? originalAlbum, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";

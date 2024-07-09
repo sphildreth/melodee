@@ -13,9 +13,10 @@ public class DirectoryProcessorTests
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.Console()
+            .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/Erasure - Cowboy (2024 Expanded Edition)";
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/";
         var dirInfo = new System.IO.DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {

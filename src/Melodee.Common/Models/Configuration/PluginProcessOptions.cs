@@ -40,4 +40,6 @@ public sealed record PluginProcessOptions
         "(Remaster)",
         "Remaster"
     };
+
+    public bool DoContinueOnDirectoryProcessingErrors { get; init; } = true;
 }

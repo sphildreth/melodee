@@ -81,11 +81,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     }
                     else
                     {
-                        if (File.Exists(newCueFilename))
-                        {
-                            File.Delete(newCueFilename);
-                        }
-                        File.Copy(newCueFilename, cueFile.FullName);
+                        File.Copy(newCueFilename, cueFile.FullName, true);
                     }
                     try
                     {

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -45,7 +46,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         _preDiscoveryScript = preDiscoveryScript;
         _postDiscoveryScript = postDiscoveryScript;
 
-        _trackPlugins = new []
+        _trackPlugins = new[]
         {
             new MetaTag(new MetaTagsProcessor(_configuration), _configuration)
         };
@@ -69,6 +70,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
     {
         // Ensure directory to process exists
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var processingErrors = new List<Exception>();
         if (!dirInfo.Exists)
         {
             return new OperationResult<bool>
@@ -98,7 +100,19 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         // Run PreDiscovery script
         if (_preDiscoveryScript.IsEnabled)
         {
-            var preDiscoveryScriptResult = await _preDiscoveryScript.ProcessAsync(fileSystemDirectoryInfo, cancellationToken);
+            var preDiscoveryScriptResult = new OperationResult<bool>
+            {
+                Data = false
+            };
+            try
+            {
+                preDiscoveryScriptResult = await _preDiscoveryScript.ProcessAsync(fileSystemDirectoryInfo, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "PreDiscoveryScript [{$ScriptName}]", _preDiscoveryScript.DisplayName);
+                preDiscoveryScriptResult.AddError(e);
+            }
             if (!preDiscoveryScriptResult.IsSuccess)
             {
                 return new OperationResult<bool>(preDiscoveryScriptResult.Messages)
@@ -112,28 +126,54 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(SearchOption.AllDirectories).ToList();
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
-            var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
-
-            // Run Enabled Conversion scripts on each file in directory
-            // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
-            foreach (var fileSystemInfo in allFilesInDirectory)
+            try
             {
-                var fsi = fileSystemInfo.ToFileSystemInfo();
-                foreach (var plugin in _conversionPlugins.OrderBy(x => x.SortOrder))
+                var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
+
+                // Run Enabled Conversion scripts on each file in directory
+                // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
+                foreach (var fileSystemInfo in allFilesInDirectory)
                 {
-                    if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
+                    var fsi = fileSystemInfo.ToFileSystemInfo();
+                    foreach (var plugin in _conversionPlugins.OrderBy(x => x.SortOrder))
                     {
-                        using (Operation.Time("Conversion: File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
+                        if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
                         {
-                            var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
-                            if (!pluginResult.IsSuccess)
+                            using (Operation.Time("Conversion: File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                             {
-                                return new OperationResult<bool>(pluginResult.Messages)
+                                var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
+                                if (!pluginResult.IsSuccess)
                                 {
-                                    Errors = pluginResult.Errors,
-                                    Data = false
-                                };
+                                    return new OperationResult<bool>(pluginResult.Messages)
+                                    {
+                                        Errors = pluginResult.Errors,
+                                        Data = false
+                                    };
+                                }
                             }
+                        }
+
+                        if (plugin.StopProcessing)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                // Run all enabled IDirectoryPlugins to convert MetaData files into Release json files.
+                // e.g. Build Release json file for M3U or NFO or SFV, etc.
+                foreach (var plugin in _directoryPlugins.OrderBy(x => x.SortOrder))
+                {
+                    using (Operation.Time("MetaData:Directory: Plugin [{Plugin}]", plugin.DisplayName))
+                    {
+                        var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
+                        if (!pluginResult.IsSuccess)
+                        {
+                            return new OperationResult<bool>(pluginResult.Messages)
+                            {
+                                Errors = pluginResult.Errors,
+                                Data = false
+                            };
                         }
                     }
 
@@ -142,160 +182,155 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         break;
                     }
                 }
-            }
 
-            // Run all enabled IDirectoryPlugins to convert MetaData files into Release json files.
-            // e.g. Build Release json file for M3U or NFO or SFV, etc.
-            foreach (var plugin in _directoryPlugins.OrderBy(x => x.SortOrder))
-            {
-                using (Operation.Time("MetaData:Directory: Plugin [{Plugin}]", plugin.DisplayName))
+                // Check if any Release json files exist in given directory, if none then create from track files.
+                var releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension("melodee.json");
+                if (!releaseJsonFiles.Any())
                 {
-                    var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
-                    if (!pluginResult.IsSuccess)
+                    var releasesForDirectory = await AllReleasesForDirectoryAsync(directoryInfoToProcess, cancellationToken);
+                    if (!releasesForDirectory.IsSuccess)
                     {
-                        return new OperationResult<bool>(pluginResult.Messages)
+                        return new OperationResult<bool>(releasesForDirectory.Messages)
                         {
-                            Errors = pluginResult.Errors,
+                            Errors = releasesForDirectory.Errors,
                             Data = false
                         };
                     }
-                }
 
-                if (plugin.StopProcessing)
-                {
-                    break;
-                }
-            }
-
-            // Check if any Release json files exist in given directory, if none then create from track files.
-            var releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension("melodee.json");
-            if (!releaseJsonFiles.Any())
-            {
-                var releasesForDirectory = await AllReleasesForDirectoryAsync(directoryInfoToProcess, cancellationToken);
-                if (!releasesForDirectory.IsSuccess)
-                {
-                    return new OperationResult<bool>(releasesForDirectory.Messages)
+                    foreach (var releaseForDirectory in releasesForDirectory.Data)
                     {
-                        Errors = releasesForDirectory.Errors,
+                        string serialized = string.Empty;
+                        try
+                        {
+                            serialized = JsonSerializer.Serialize(releaseForDirectory);
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error(e, "Error processing [{FileSystemDirectoryInfo}]", fileSystemDirectoryInfo);
+                        }
+
+                        var releaseDataName = Path.Combine(directoryInfoToProcess.Path, releaseForDirectory.ToMelodeeJsonName());
+                        await File.WriteAllTextAsync(releaseDataName, serialized, cancellationToken);
+                    }
+                }
+
+                // Find all release json files in given directory, if none bail.
+                releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension("melodee.json").ToArray();
+                if (!releaseJsonFiles.Any())
+                {
+                    return new OperationResult<bool>($"No Releases found in given directory [{directoryInfoToProcess}]")
+                    {
                         Data = false
                     };
                 }
 
-                foreach (var releaseForDirectory in releasesForDirectory.Data)
+                // For each Release json find all image files and add to Release to be moved below to staging folder.
+                var releaseAndJsonFile = new Dictionary<Release, string>();
+                foreach (var releaseJsonFile in releaseJsonFiles)
                 {
-                    string serialized = string.Empty;
                     try
                     {
-                        serialized = System.Text.Json.JsonSerializer.Serialize(releaseForDirectory);
+                        var release = JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
+                        if (release == null || !release.IsValid())
+                        {
+                            return new OperationResult<bool>($"Invalid Release json file [{releaseJsonFile.FullName}]")
+                            {
+                                Data = false
+                            };
+                        }
+
+                        var releaseImages = release.Images?.ToList() ?? [];
+                        var foundReleaseImages = (await FindImagesForRelease(release, cancellationToken)).ToArray();
+                        if (foundReleaseImages.Length != 0)
+                        {
+                            foreach (var foundReleaseImage in foundReleaseImages)
+                            {
+                                if (!releaseImages.Any(x => x.IsCrcHashMatch(foundReleaseImage.CrcHash)))
+                                {
+                                    releaseImages.Add(foundReleaseImage);
+                                }
+                            }
+                        }
+
+                        release.Images = releaseImages;
+                        releaseAndJsonFile.Add(release, releaseJsonFile.FullName);
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, "Error processing [{FileSystemDirectoryInfo}]", fileSystemDirectoryInfo);
+                        Log.Error("Unable to load release json [{FullName}]", releaseJsonFile.FullName);
                     }
-                    var releaseDataName = Path.Combine(directoryInfoToProcess.Path, releaseForDirectory.ToMelodeeJsonName());
-                    await File.WriteAllTextAsync(releaseDataName, serialized, cancellationToken);
-                }
-            }
-
-            // Find all release json files in given directory, if none bail.
-            releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension("melodee.json").ToArray();
-            if (!releaseJsonFiles.Any())
-            {
-                return new OperationResult<bool>($"No Releases found in given directory [{directoryInfoToProcess}]")
-                {
-                    Data = false
-                };
-            }
-
-            // For each Release json find all image files and add to Release to be moved below to staging folder.
-            var releaseAndJsonFile = new Dictionary<Release, string>();
-            foreach (var releaseJsonFile in releaseJsonFiles)
-            {
-                try
-                {
-                    var release = System.Text.Json.JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
-                    if (release == null || !release.IsValid())
-                    {
-                        return new OperationResult<bool>($"Invalid Release json file [{releaseJsonFile.FullName}]")
-                        {
-                            Data = false
-                        };
-                    }
-                    var releaseImages = release.Images?.ToList() ?? [];
-                    var foundReleaseImages = (await FindImagesForRelease(release, cancellationToken)).ToArray();
-                    if (foundReleaseImages.Length != 0)
-                    {
-                        foreach (var foundReleaseImage in foundReleaseImages)
-                        {
-                            if (!releaseImages.Any(x => x.IsCrcHashMatch(foundReleaseImage.CrcHash)))
-                            {
-                                releaseImages.Add(foundReleaseImage);
-                            }
-                        }
-                    }
-                    release.Images = releaseImages;
-                    releaseAndJsonFile.Add(release, releaseJsonFile.FullName);
-
-                }
-                catch (Exception e)
-                {
-                    Log.Error("Unable to load release json [{FullName}]", releaseJsonFile.FullName);
                 }
 
-            }
-
-            // Create directory and move files for each found release in staging folder
-            foreach (var releaseKvp in releaseAndJsonFile)
-            {
-                var release = releaseKvp.Key;
-                var releaseDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, $"{release.Artist()} - [{release.ReleaseYear()}] {release.ReleaseTitle()}".ToFileNameFriendly()));
-                if (!releaseDirInfo.Exists)
+                // Create directory and move files for each found release in staging folder
+                foreach (var releaseKvp in releaseAndJsonFile)
                 {
-                    releaseDirInfo.Create();
-                }
-
-                release.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
-                {
-                    var newImageFileName = Path.Combine(releaseDirInfo.FullName, $"{ (index+1).ToStringPadLeft(2) }-{image.PictureIdentifier}.jpg");
-                    if (File.Exists(newImageFileName))
+                    var release = releaseKvp.Key;
+                    var releaseDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, $"{release.Artist()} - [{release.ReleaseYear()}] {release.ReleaseTitle()}".ToFileNameFriendly()));
+                    if (!releaseDirInfo.Exists)
                     {
-                        File.Delete(newImageFileName);
+                        releaseDirInfo.Create();
                     }
-                    File.Copy(image.FileInfo!.FullName(directoryInfoToProcess), newImageFileName);
-                    if (_configuration.PluginProcessOptions.DoDeleteOriginal)
-                    {
-                        File.Delete(image.FileInfo!.FullName(directoryInfoToProcess));
-                    }
-                });
 
-                if (release.Tracks != null)
-                {
-                    foreach (var track in release.Tracks)
+                    release.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
                     {
-                        var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.TrackFileName(release, _configuration));
+                        var newImageFileName = Path.Combine(releaseDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
+                        File.Copy(image.FileInfo!.FullName(directoryInfoToProcess), newImageFileName, true);
                         if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
-                            File.Move(track.File.FullName(directoryInfoToProcess), newTrackFileName);
+                            File.Delete(image.FileInfo!.FullName(directoryInfoToProcess));
                         }
-                        else
-                        {
-                            if (File.Exists(newTrackFileName))
-                            {
-                                File.Delete(newTrackFileName);
-                            }
+                    });
 
-                            File.Copy(track.File.FullName(directoryInfoToProcess), newTrackFileName);
+                    if (release.Tracks != null)
+                    {
+                        foreach (var track in release.Tracks)
+                        {
+                            var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.TrackFileName(release, _configuration));
+                            if (_configuration.PluginProcessOptions.DoDeleteOriginal)
+                            {
+                                File.Move(track.File.FullName(directoryInfoToProcess), newTrackFileName);
+                            }
+                            else
+                            {
+                                File.Copy(track.File.FullName(directoryInfoToProcess), newTrackFileName, true);
+                            }
                         }
                     }
+
+                    File.Copy(releaseAndJsonFile[release], Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName()), true);
                 }
-                File.Copy(releaseAndJsonFile[release],  Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName()));
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Processing Directory [{$DirectoryName}]", directoryInfoToProcess.ToString());
+                processingErrors.Add(e);
+                if (!_configuration.PluginProcessOptions.DoContinueOnDirectoryProcessingErrors)
+                {
+                    return new OperationResult<bool>()
+                    {
+                        Errors = processingErrors,
+                        Data = false
+                    };
+                }
             }
         }
 
         // Run PostDiscovery script
         if (_postDiscoveryScript.IsEnabled)
         {
-            var postDiscoveryScriptResult = await _postDiscoveryScript.ProcessAsync(fileSystemDirectoryInfo, cancellationToken);
+            var postDiscoveryScriptResult = new OperationResult<bool>
+            {
+                Data = false
+            };
+            try
+            {
+                postDiscoveryScriptResult = await _postDiscoveryScript.ProcessAsync(fileSystemDirectoryInfo, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "PostDiscoveryScript [{$ScriptName}]", _postDiscoveryScript.DisplayName);
+                postDiscoveryScriptResult.AddError(e);
+            }
             if (!postDiscoveryScriptResult.IsSuccess)
             {
                 return new OperationResult<bool>(postDiscoveryScriptResult.Messages)
@@ -308,6 +343,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
         return new OperationResult<bool>
         {
+            Errors = processingErrors.ToArray(),
             Data = true
         };
     }
@@ -366,7 +402,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         var releases = new List<Release>();
         var messages = new List<string>();
         var viaPlugins = new List<string>();
-        
+
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
@@ -388,9 +424,11 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                     tracks.Add(pluginResult.Data);
                                     viaPlugins.Add(plugin.DisplayName);
                                 }
+
                                 messages.AddRange(pluginResult.Messages);
                             }
                         }
+
                         if (plugin.StopProcessing)
                         {
                             break;
@@ -413,6 +451,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         {
                             trackTotal = tracks.Count;
                         }
+
                         var newReleaseTags = new List<MetaTag<object?>>
                         {
                             new() { Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1 },
