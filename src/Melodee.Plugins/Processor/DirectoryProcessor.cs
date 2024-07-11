@@ -68,9 +68,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
     public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
+        var processingErrors = new List<Exception>();
+        
         // Ensure directory to process exists
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-        var processingErrors = new List<Exception>();
         if (!dirInfo.Exists)
         {
             return new OperationResult<bool>
@@ -99,7 +100,8 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
         // Run PreDiscovery script
         if (_preDiscoveryScript.IsEnabled)
-        {
+        {        
+            Log.Debug("Executing PreDiscoveryScript [{script}] directories to process", _preDiscoveryScript.DisplayName);
             var preDiscoveryScriptResult = new OperationResult<bool>
             {
                 Data = false
@@ -124,6 +126,8 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         }
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(SearchOption.AllDirectories).ToList();
+        Log.Debug("Found [{count}] directories to process", directoriesToProcess.Count);
+        
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
             try

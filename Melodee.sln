@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Plugins", "src\Melo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Tests", "tests\Melodee.Tests\Melodee.Tests.csproj", "{6159077E-62D2-4E1E-9995-7FCCF4137772}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Cli", "Melodee.Cli\Melodee.Cli.csproj", "{D7D51D4D-AD0A-47EE-82ED-3537ECB85A28}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Cli", "src\Melodee.Cli\Melodee.Cli.csproj", "{D7D51D4D-AD0A-47EE-82ED-3537ECB85A28}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
