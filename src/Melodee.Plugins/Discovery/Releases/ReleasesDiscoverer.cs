@@ -9,6 +9,7 @@ using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
 using Serilog;
+using Serilog.Events;
 using SerilogTimings;
 
 namespace Melodee.Plugins.Discovery.Releases;
@@ -125,7 +126,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
-            using (Operation.Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
             {
                 var tracks = new List<Track>();
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
@@ -135,7 +136,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                     {
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
-                            using (Operation.Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
+                            using (Operation.At(LogEventLevel.Debug).Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                             {
                                 var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                                 if (pluginResult.IsSuccess)
@@ -283,7 +284,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     //     
     //     foreach (var plugin in _enabledReleasePlugins.OrderBy(x => x.SortOrder))
     //     {
-    //         using (Operation.Time("ProcessReleasePluginsOnRelease [{Release}] Plugin [{Plugin}]", release.ToString(), plugin.DisplayName))
+    //         using (Operation.At(LogEventLevel.Debug).Time("ProcessReleasePluginsOnRelease [{Release}] Plugin [{Plugin}]", release.ToString(), plugin.DisplayName))
     //         {
     //             var pluginResult = await plugin.ProcessReleaseAsync(release, cancellationToken);
     //             if (pluginResult.IsSuccess)

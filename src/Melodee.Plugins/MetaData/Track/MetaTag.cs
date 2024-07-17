@@ -8,6 +8,7 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Track.Extensions;
 using Melodee.Plugins.Processor;
 using Serilog;
+using Serilog.Events;
 using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Track;
@@ -52,7 +53,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
 
     public async Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
     {
-        using (Operation.Time("[{PluginName}] Processing [{FileSystemFileInfo}]", DisplayName, fileSystemFileInfo.FullName(directoryInfo)))
+        using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{FileSystemFileInfo}]", DisplayName, fileSystemFileInfo.FullName(directoryInfo)))
         {
             var tags = new List<MetaTag<object?>>();
             var mediaAudios = new List<MediaAudio<object?>>();

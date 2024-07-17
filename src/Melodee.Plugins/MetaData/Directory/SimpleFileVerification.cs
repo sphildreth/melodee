@@ -7,6 +7,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Track;
 using Serilog;
+using Serilog.Events;
 using SerilogTimings;
 
 
@@ -28,7 +29,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
     public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        using (Operation.Time("[{PluginName}] Processing [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.FullName()))
+        using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.FullName()))
         {
             var sfvFiles = fileSystemDirectoryInfo.FileInfosForExtension("sfv").ToArray();
 

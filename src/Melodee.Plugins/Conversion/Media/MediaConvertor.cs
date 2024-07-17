@@ -9,6 +9,7 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData;
 using Melodee.Plugins.MetaData.Track.Extensions;
+using Serilog.Events;
 using SerilogTimings;
 
 namespace Melodee.Plugins.Conversion.Media;
@@ -55,7 +56,7 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
             var fileAtl = new ATL.Track(fileSystemInfo.FullName(directoryInfo));
             if (ShouldMediaTrackBeConverted(fileAtl))
             {
-                using (Operation.Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
+                using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
                     var mediaInfo = await FFProbe.AnalyseAsync(fileSystemInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
 

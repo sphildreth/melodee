@@ -12,6 +12,7 @@ using Melodee.Common.Models.Grids;
 using Melodee.Models;
 using Melodee.ViewModels;
 using Serilog;
+using Serilog.Events;
 using SerilogTimings;
 
 namespace Melodee.Views;
@@ -48,7 +49,7 @@ public partial class MainWindow : Window
         dc.IsLoading = true;
         dc.SelectedRelease = null;        
         dc.SelectedFileSystemDirectoryInfo = clickedDirectory.FileSystemDirectoryInfo;
-        using (Operation.Time("Discovering releases for [{File}]", clickedDirectory.FileSystemDirectoryInfo))
+        using (Operation.At(LogEventLevel.Debug).Time("Discovering releases for [{File}]", clickedDirectory.FileSystemDirectoryInfo))
         {
             var pagedResult = Task.Run(() => releasesDiscoverer.ReleasesGridsForDirectoryAsync(clickedDirectory.FileSystemDirectoryInfo, new PagedRequest())).Result;
             dc.ReleaseInfos.Clear();
@@ -81,7 +82,7 @@ public partial class MainWindow : Window
 
         var releasesDiscoverer = dc.ReleasesDiscoverer;
         dc.IsLoading = true;
-        using (Operation.Time("Getting Release detail for [{File}]", clickedReleaseGrid.UniqueId))
+        using (Operation.At(LogEventLevel.Debug).Time("Getting Release detail for [{File}]", clickedReleaseGrid.UniqueId))
         {
             var detailResult = Task.Run(() => releasesDiscoverer.ReleaseByUniqueIdAsync(dc.SelectedFileSystemDirectoryInfo, clickedReleaseGrid.UniqueId)).Result;
             dc.SelectedRelease = new ReleaseDetail

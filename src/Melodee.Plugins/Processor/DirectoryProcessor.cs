@@ -12,6 +12,7 @@ using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Scripting;
 using Serilog;
+using Serilog.Events;
 using SerilogTimings;
 
 namespace Melodee.Plugins.Processor;
@@ -143,7 +144,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
                         {
-                            using (Operation.Time("Conversion: File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
+                            using (Operation.At(LogEventLevel.Debug).Time("Conversion: File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                             {
                                 var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
                                 if (!pluginResult.IsSuccess)
@@ -168,7 +169,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 // e.g. Build Release json file for M3U or NFO or SFV, etc.
                 foreach (var plugin in _directoryPlugins.OrderBy(x => x.SortOrder))
                 {
-                    using (Operation.Time("MetaData:Directory: Plugin [{Plugin}]", plugin.DisplayName))
+                    using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]", plugin.DisplayName))
                     {
                         var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
                         if (!pluginResult.IsSuccess)
@@ -410,7 +411,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
-            using (Operation.Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
             {
                 var tracks = new List<Track>();
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
@@ -420,7 +421,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
-                            using (Operation.Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
+                            using (Operation.At(LogEventLevel.Debug).Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                             {
                                 var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                                 if (pluginResult.IsSuccess)
