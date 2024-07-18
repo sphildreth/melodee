@@ -231,7 +231,7 @@ namespace Melodee.Common.Extensions
             return input;
         }
         
-        public static string? ToFolderNameFriendly(this string? input)
+        public static string? ToDirectoryNameFriendly(this string? input)
         {
             if (string.IsNullOrEmpty(input))
             {

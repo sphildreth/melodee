@@ -12,7 +12,7 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class ReleaseExtensions
 {
-    private static readonly IEnumerable<string> FolderSpaceReplacements = new List<string> { ".", "~", "_", "=", "-" };
+    private static readonly IEnumerable<string> DirectorySpaceReplacements = new List<string> { ".", "~", "_", "=", "-" };
     
     public static T? MetaTagValue<T>(this Release release, MetaTagIdentifier metaTagIdentifier)
     {
@@ -215,7 +215,7 @@ public static class ReleaseExtensions
             throw new Exception("Unable to determine Release title from Release.");
         }
         var releaseTitle = releaseTitleValue!;
-        var releasePathTitle = releaseTitle.ToAlphanumericName(false, false)?.ToFolderNameFriendly()?.ToTitleCase(false);
+        var releasePathTitle = releaseTitle.ToAlphanumericName(false, false)?.ToDirectoryNameFriendly()?.ToTitleCase(false);
         if (string.IsNullOrEmpty(releasePathTitle))
         {
             throw new Exception($"Unable to determine Release Path for Release [{ release }].");
@@ -241,12 +241,12 @@ public static class ReleaseExtensions
         {
             throw new Exception("Neither Artist or ArtistSort tag is set on Release.");
         }
-        var artistFolder = artistNameToUse!.ToAlphanumericName(false, false)?.ToFolderNameFriendly()?.ToTitleCase(false);
-        if (string.IsNullOrEmpty(artistFolder))
+        var artistDirectory = artistNameToUse!.ToAlphanumericName(false, false)?.ToDirectoryNameFriendly()?.ToTitleCase(false);
+        if (string.IsNullOrEmpty(artistDirectory))
         {
-            throw new Exception($"Unable to determine artist folder for releae ArtistNameToUse [{ artistNameToUse }].");
+            throw new Exception($"Unable to determine artist directory for release ArtistNameToUse [{ artistNameToUse }].");
         }
-        var afUpper = artistFolder.ToUpper();
+        var afUpper = artistDirectory.ToUpper();
         var fnSubPart1 = afUpper.ToUpper().ToCharArray().Take(1).First();
         if (!char.IsLetterOrDigit(fnSubPart1))
         {
@@ -269,10 +269,10 @@ public static class ReleaseExtensions
         var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
         var fnIdPart = $" [{ release.ArtistUniqueId() }]";
         var maxFnLength = (configuration.PluginProcessOptions.MaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length)) - 2;
-        if (artistFolder.Length > maxFnLength)
+        if (artistDirectory.Length > maxFnLength)
         {
-            artistFolder = artistFolder.Substring(0, maxFnLength);
+            artistDirectory = artistDirectory.Substring(0, maxFnLength);
         }
-        return Path.Combine(fnSubPart, $"{ artistFolder }{ fnIdPart }");
+        return Path.Combine(fnSubPart, $"{ artistDirectory }{ fnIdPart }");
     }
 }

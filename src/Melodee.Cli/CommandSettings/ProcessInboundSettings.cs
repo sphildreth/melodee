@@ -1,6 +1,7 @@
 using System.ComponentModel;
-using Spectre.Console;
+using System.ComponentModel.DataAnnotations;
 using Spectre.Console.Cli;
+using ValidationResult = Spectre.Console.ValidationResult;
 
 namespace Melodee.Cli.CommandSettings;
 
@@ -8,16 +9,23 @@ public class ProcessInboundSettings : Spectre.Console.Cli.CommandSettings
 {
     [Description("The inbound directory holding music files to process.")]
     [CommandArgument(0, "[INBOUND]")]
-    public string Inbound { get; set; }
+    [Required]
+    public string Inbound { get; set; } = string.Empty;
     
     [Description("The staging directory to place processed files into.")]
     [CommandArgument(0, "[STAGING]")]
-    public string Staging { get; set; }
+    [Required]
+    public string Staging { get; set; }= string.Empty;
     
     [Description("Copy or move files from inbound. If set then processed files are not deleted.")]
     [CommandOption("--copy")]
     [DefaultValue(true)]
     public bool CopyMode { get; init; }    
+    
+    [Description("Override any existing Melodee data files.")]
+    [CommandOption("--force")]
+    [DefaultValue(true)]
+    public bool ForceMode { get; init; }
     
     [Description("Script to run before Processing.")]
     [CommandArgument(0, "[PRESCRIPT]")]

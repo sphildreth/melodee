@@ -50,7 +50,8 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         {
             PluginProcessOptions = new PluginProcessOptions
             {
-                DoDeleteOriginal = !settings.CopyMode
+                DoDeleteOriginal = !settings.CopyMode,
+                DoOverrideExistingMelodeeDataFiles = settings.ForceMode
             },
             MediaConvertorOptions = new MediaConvertorOptions(),
             Scripting = new Scripting

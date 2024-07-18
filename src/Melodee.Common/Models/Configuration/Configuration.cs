@@ -4,12 +4,12 @@ namespace Melodee.Common.Models.Configuration;
 public sealed record Configuration
 {
     /// <summary>
-    /// Files in this folder are scanned and Release information is gathered.
+    /// Files in this directory are scanned and Release information is gathered.
     /// </summary>
     public required string InboundDirectory { get; init; }
     
     /// <summary>
-    /// When the user is happy with scan results the user can select Releases (and all associated files) to move to this directory in the proper folder structure.
+    /// When the user is happy with scan results the user can select Releases (and all associated files) to move to this directory in the proper directory structure.
     /// </summary>
     public required string StagingDirectory { get; init; }
     

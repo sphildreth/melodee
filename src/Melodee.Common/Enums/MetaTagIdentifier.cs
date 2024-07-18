@@ -457,7 +457,7 @@ public enum MetaTagIdentifier
     OfficialArtistPerformerWebpage,
     
     /// <summary>
-    /// Not a ID3 standard, a unique ID given to an artist to prevent exact named artists getting the same library folder.
+    /// Not a ID3 standard, a unique ID given to an artist to prevent exact named artists getting the same library directory.
     /// </summary>
     UniqueArtistId,
     

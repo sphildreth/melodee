@@ -7,6 +7,8 @@ using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Serilog;
+using Serilog.Events;
+using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Directory;
 
@@ -23,19 +25,19 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
     public override int SortOrder { get; } = 3;
 
-    public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var nfoFiles = fileSystemDirectoryInfo.FileInfosForExtension("nfo").ToArray();
 
         if (nfoFiles.Length == 0)
         {
-            return new OperationResult<bool>("Skipping NFO. No NFO files found.")
+            return new OperationResult<int>("Skipping NFO. No NFO files found.")
             {
-                Data = true
+                Data = -1
             };
         }
 
-        var processedNfoFiles = 0;
+        var processedFiles = 0;
 
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         FileSystemDirectoryInfo? parentDirectory = null;
@@ -50,42 +52,53 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
         foreach (var nfoFile in nfoFiles)
         {
-            var nfoRelease = await ReleaseForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
-
-            if (nfoRelease.IsValid())
+            using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]: Processing [{FileName}]", DisplayName, nfoFile.Name))
             {
-                var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoRelease.ToMelodeeJsonName());
-                if (File.Exists(stagingReleaseDataName))
+                var nfoRelease = await ReleaseForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
+
+                if (nfoRelease.IsValid())
                 {
-                    var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
-                    if (existingRelease != null)
+                    var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoRelease.ToMelodeeJsonName());
+                    if (File.Exists(stagingReleaseDataName))
                     {
-                        nfoRelease = nfoRelease.Merge(existingRelease);
+                        if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                        {
+                            File.Delete(stagingReleaseDataName);
+                        }
+                        else
+                        {
+                            var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                            if (existingRelease != null)
+                            {
+                                nfoRelease = nfoRelease.Merge(existingRelease);
+                            }
+                        }
+                    }
+
+                    var serialized = System.Text.Json.JsonSerializer.Serialize(nfoRelease);
+                    await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                    {
+                        nfoFile.Delete();
+                        Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
                     }
                 }
-                var serialized = System.Text.Json.JsonSerializer.Serialize(nfoRelease);
-                await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
-                if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                else
                 {
-                    nfoFile.Delete();
-                    Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
+                    Log.Warning("Could not create release from NFO data [{nfoFile}].", nfoFile.Name);
+                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                    {
+                        nfoFile.Delete();
+                        Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
+                    }
                 }
-                processedNfoFiles++;
-            }
-            else
-            {
-                Trace.WriteLine($"Could not create release from NFO data [{nfoFile}].", "Warning");
-                if (Configuration.PluginProcessOptions.DoDeleteOriginal)
-                {
-                    nfoFile.Delete();
-                    Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
-                }                
+                processedFiles++;
             }
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<int>
         {
-            Data = true
+            Data = processedFiles
         };
     }
 
@@ -100,7 +113,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
         {
             try
             {
-                var parts = l.Split(splitChar);
+                var parts = l.Replace("[:", string.Empty).Replace(":]", ":").Split(splitChar);
                 if (parts.Length > 1)
                 {
                     key = parts[0].ToAlphanumericName(false, false).ToTitleCase(false).Nullify() ?? string.Empty;
@@ -110,7 +123,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"Error attempting to parse [{line}] Error [{e}]", "Error");
+                Log.Warning($"Error attempting to parse [{line}] Error [{e}]", line, e);
             }
         }
 
@@ -129,7 +142,8 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
     }
 
     // ReSharper disable StringLiteralTypo
-    private static bool IsLineForReleaseDate(string line) => IsLineForMatches(new[] { "retaildate", "reldate" }, line);
+    private static bool IsLineForAlbumArtist(string line) => IsLineForMatches(new[] { "artist", "albumartist" }, line);
+    private static bool IsLineForReleaseDate(string line) => IsLineForMatches(new[] { "retaildate", "reldate", "ripdate" }, line);
 
     private static bool IsLineForReleaseTitle(string line) => IsLineForMatches(new[] { "title" }, line);
 
@@ -156,7 +170,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
         var metaTagsToParseFromFile = new List<MetaTagIdentifier>
         {
-            MetaTagIdentifier.Artist,
+            MetaTagIdentifier.AlbumArtist,
             MetaTagIdentifier.Encoder,
             MetaTagIdentifier.Genre
         };
@@ -210,6 +224,16 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                     releaseTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.Album,
+                        Value = kp.Value
+                    });
+                    continue;
+                }
+
+                if (IsLineForAlbumArtist(line))
+                {
+                    releaseTags.Add(new MetaTag<object?>
+                    {
+                        Identifier = MetaTagIdentifier.AlbumArtist,
                         Value = kp.Value
                     });
                     continue;

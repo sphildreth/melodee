@@ -5,6 +5,8 @@ public sealed record PluginProcessOptions
 {
     public bool DoDeleteOriginal { get; set; } = true;
     
+    public bool DoOverrideExistingMelodeeDataFiles { get; init; }
+    
     public bool DoLoadEmbeddedImages { get; set; } = true;
 
     public int MaximumArtistDirectoryNameLength { get; init; } = 200;

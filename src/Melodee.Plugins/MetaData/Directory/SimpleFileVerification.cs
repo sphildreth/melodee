@@ -27,7 +27,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
     public override int SortOrder { get; } = 1;
 
-    public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.FullName()))
         {
@@ -35,13 +35,13 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
             if (sfvFiles.Length == 0)
             {
-                return new OperationResult<bool>("Skipping validation. No SFV files found.")
+                return new OperationResult<int>("Skipping validation. No SFV files found.")
                 {
-                    Data = true
+                    Data = -1
                 };
             }
 
-            var processedSfvFiles = 0;
+            var processedFiles = 0;
 
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
             FileSystemDirectoryInfo? parentDirectory = null;
@@ -57,120 +57,131 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             var trackPlugin = _trackPlugins.First();
             foreach (var sfvFile in sfvFiles)
             {
-                var models = await GetModelsFromSfvFile(fileSystemDirectoryInfo, sfvFile.FullName);
-
-                var tracks = new List<Common.Models.Track>();
-                await Parallel.ForEachAsync(models.Where(x => x.IsValid), cancellationToken, async (model, tt) =>
+                using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]: Processing [{FileName}]", DisplayName, sfvFile.Name))
                 {
-                    var trackResult = await trackPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
-                    if (trackResult.IsSuccess)
+                    var models = await GetModelsFromSfvFile(fileSystemDirectoryInfo, sfvFile.FullName);
+
+                    var tracks = new List<Common.Models.Track>();
+                    await Parallel.ForEachAsync(models.Where(x => x.IsValid), cancellationToken, async (model, tt) =>
                     {
-                        tracks.Add(trackResult.Data);
+                        var trackResult = await trackPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
+                        if (trackResult.IsSuccess)
+                        {
+                            tracks.Add(trackResult.Data);
+                        }
+                        else
+                        {
+                            Log.Warning("Unable to get track details for Sfv Model [{SfvModel}]", model);
+                        }
+                    });
+
+                    if (tracks.Count == 0)
+                    {
+                        return new OperationResult<int>($"Unable to find tracks for directory [{fileSystemDirectoryInfo}]")
+                        {
+                            Data = -1
+                        };
+                    }
+
+                    var firstTrack = tracks.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
+                    var trackTotal = firstTrack.TrackTotalNumber();
+                    if (trackTotal < 1)
+                    {
+                        if (models.Length == tracks.Count)
+                        {
+                            trackTotal = models.Length;
+                        }
+
+                    }
+
+                    var newReleaseTags = new List<MetaTag<object?>>
+                    {
+                        new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1 },
+                        new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = firstTrack.ReleaseArtist(), SortOrder = 2 },
+                        new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 4 },
+                        new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
+                        new() { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
+                    };
+                    var genres = tracks
+                        .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
+                        .Where(x => x.Identifier == MetaTagIdentifier.Genre)
+                        .ToArray();
+                    if (genres.Length != 0)
+                    {
+                        newReleaseTags.AddRange(genres
+                            .GroupBy(x => x.Value)
+                            .Select((genre, i) => new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Genre,
+                                Value = genre.Key,
+                                SortOrder = 5 + i
+                            }));
+                    }
+
+                    var sfvRelease = new Release
+                    {
+                        Files = new[]
+                        {
+                            new ReleaseFile
+                            {
+                                ReleaseFileType = ReleaseFileType.MetaData,
+                                ProcessedByPlugin = DisplayName,
+                                FileSystemFileInfo = sfvFile.ToFileSystemInfo()
+                            }
+                        },
+                        OriginalDirectory = new FileSystemDirectoryInfo
+                        {
+                            ParentId = parentDirectory?.UniqueId ?? 0,
+                            Path = fileSystemDirectoryInfo.Path,
+                            Name = fileSystemDirectoryInfo.Name,
+                            TotalItemsFound = tracks.Count,
+                            MusicFilesFound = tracks.Count,
+                            MusicMetaDataFilesFound = 1
+                        },
+                        Images = tracks.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
+                        Tags = newReleaseTags,
+                        Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
+                        ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
+                    };
+                    if (sfvRelease.IsValid())
+                    {
+                        var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvRelease.ToMelodeeJsonName());
+                        if (File.Exists(stagingReleaseDataName))
+                        {
+                            if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                            {
+                                File.Delete(stagingReleaseDataName);
+                            }
+                            else
+                            {
+                                var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                                if (existingRelease != null)
+                                {
+                                    sfvRelease = sfvRelease.Merge(existingRelease);
+                                }
+                            }
+                        }
+
+                        var serialized = System.Text.Json.JsonSerializer.Serialize(sfvRelease);
+                        await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                        {
+                            sfvFile.Delete();
+                            Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
+                        }
+
+                        processedFiles++;
                     }
                     else
                     {
-                       Log.Warning("Unable to get track details for Sfv Model [{SfvModel}]", model);
-                    }                    
-                });
-
-                if (tracks.Count == 0)
-                {
-                    return new OperationResult<bool>($"Unable to find tracks for directory [{fileSystemDirectoryInfo}]")
-                    {
-                        Data = true
-                    };
-                }
-
-                var firstTrack = tracks.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
-                var trackTotal = firstTrack.TrackTotalNumber();
-                if (trackTotal < 1)
-                {
-                    if (models.Length == tracks.Count)
-                    {
-                        trackTotal = models.Length;
+                        Log.Warning($"Did not serialize invalid release [{sfvRelease}].", sfvRelease);
                     }
-
-                }
-                var newReleaseTags = new List<MetaTag<object?>>
-                {
-                    new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1 },
-                    new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = firstTrack.ReleaseArtist(), SortOrder = 2 },
-                    new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 4 },
-                    new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
-                    new() { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
-                };
-                var genres = tracks
-                    .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                    .Where(x => x.Identifier == MetaTagIdentifier.Genre)
-                    .ToArray();
-                if (genres.Length != 0)
-                {
-                    newReleaseTags.AddRange(genres
-                        .GroupBy(x => x.Value)
-                        .Select((genre, i) => new MetaTag<object?>
-                        {
-                            Identifier = MetaTagIdentifier.Genre,
-                            Value = genre.Key,
-                            SortOrder = 5 + i
-                        }));
-                }
-
-                var sfvRelease = new Release
-                {
-                    Files = new[]
-                    {
-                        new ReleaseFile
-                        {
-                            ReleaseFileType = ReleaseFileType.MetaData,
-                            ProcessedByPlugin = DisplayName,
-                            FileSystemFileInfo = sfvFile.ToFileSystemInfo()
-                        }
-                    },
-                    OriginalDirectory = new FileSystemDirectoryInfo
-                    {
-                        ParentId = parentDirectory?.UniqueId ?? 0,
-                        Path = fileSystemDirectoryInfo.Path,
-                        Name = fileSystemDirectoryInfo.Name,
-                        TotalItemsFound = tracks.Count,
-                        MusicFilesFound = tracks.Count,
-                        MusicMetaDataFilesFound = 1
-                    },
-                    Images = tracks.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
-                    Tags = newReleaseTags,
-                    Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
-                    ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
-                };
-                if (sfvRelease.IsValid())
-                {
-                    var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvRelease.ToMelodeeJsonName());
-                    if (File.Exists(stagingReleaseDataName))
-                    {
-                        var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
-                        if (existingRelease != null)
-                        {
-                            sfvRelease = sfvRelease.Merge(existingRelease);
-                        }
-                    }
-
-                    var serialized = System.Text.Json.JsonSerializer.Serialize(sfvRelease);
-                    await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
-                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
-                    {
-                        sfvFile.Delete();
-                        Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
-                    }
-
-                    processedSfvFiles++;
-                }
-                else
-                {
-                    Trace.WriteLine($"Did not serialize invalid release [{sfvRelease}].", "Warning");
                 }
             }
 
-            return new OperationResult<bool>
+            return new OperationResult<int>
             {
-                Data = true
+                Data = processedFiles
             };
         }
     }
@@ -197,7 +208,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 }
                 else
                 {
-                    Trace.WriteLine($"Skipped SFV line [{line}]", "Information");
+                    Log.Warning($"Skipped SFV line [{line}]", line);
                 }
             }
         }
@@ -270,7 +281,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             var calculated = CRC32.Calculate(fi);
             var doesMatch = string.Equals(calculated, crcHash, StringComparison.OrdinalIgnoreCase);
 
-            Trace.WriteLine($"IsCrCHashAccurate File [{filename}] DoesMatch [{doesMatch}] Expected [{crcHash}] Calculated [{calculated}]");
+             Trace.WriteLine($"IsCrCHashAccurate File [{filename}] DoesMatch [{doesMatch}] Expected [{crcHash}] Calculated [{calculated}]", "Information");
 
             return doesMatch;
         }

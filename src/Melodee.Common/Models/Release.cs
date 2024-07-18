@@ -21,7 +21,7 @@ public sealed record Release
     public required IEnumerable<string> ViaPlugins { get; set; }    
     
     /// <summary>
-    /// This is the directory where the Release was created, it will not be the "Staging" or "Library" folder where there Release is moved to once processed.
+    /// This is the directory where the Release was created, it will not be the "Staging" or "Library" directory where there Release is moved to once processed.
     /// </summary>
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
 

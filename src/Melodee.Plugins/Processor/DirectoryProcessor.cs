@@ -67,21 +67,25 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         };
     }
 
-    public async Task<OperationResult<bool>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var processingErrors = new List<Exception>();
+        var numberOfReleaseJsonFilesProcessed = 0;
+        var conversionPluginsProcessedFileCount = 0;
+        var directoryPluginProcessedFileCount = 0;
+        var numberOfReleaseFilesProcessed = 0;
         
         // Ensure directory to process exists
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
-            return new OperationResult<bool>
+            return new OperationResult<int>
             {
                 Errors = new[]
                 {
                     new Exception($"Directory [{fileSystemDirectoryInfo}] not found.")
                 },
-                Data = false
+                Data = 0
             };
         }
 
@@ -89,13 +93,13 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         var stagingInfo = new DirectoryInfo(_configuration.StagingDirectory);
         if (!stagingInfo.Exists)
         {
-            return new OperationResult<bool>
+            return new OperationResult<int>
             {
                 Errors = new[]
                 {
                     new Exception($"Staging Directory [{_configuration.StagingDirectory}] not found.")
                 },
-                Data = false
+                Data = 0
             };
         }
 
@@ -118,10 +122,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             }
             if (!preDiscoveryScriptResult.IsSuccess)
             {
-                return new OperationResult<bool>(preDiscoveryScriptResult.Messages)
+                return new OperationResult<int>(preDiscoveryScriptResult.Messages)
                 {
                     Errors = preDiscoveryScriptResult.Errors,
-                    Data = false
+                    Data = 0
                 };
             }
         }
@@ -149,12 +153,13 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
                                 if (!pluginResult.IsSuccess)
                                 {
-                                    return new OperationResult<bool>(pluginResult.Messages)
+                                    return new OperationResult<int>(pluginResult.Messages)
                                     {
                                         Errors = pluginResult.Errors,
-                                        Data = false
+                                        Data = 0
                                     };
                                 }
+                                conversionPluginsProcessedFileCount++;
                             }
                         }
 
@@ -174,12 +179,13 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
                         if (!pluginResult.IsSuccess)
                         {
-                            return new OperationResult<bool>(pluginResult.Messages)
+                            return new OperationResult<int>(pluginResult.Messages)
                             {
                                 Errors = pluginResult.Errors,
-                                Data = false
+                                Data = 0
                             };
                         }
+                        directoryPluginProcessedFileCount += pluginResult.Data;
                     }
 
                     if (plugin.StopProcessing)
@@ -195,27 +201,46 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     var releasesForDirectory = await AllReleasesForDirectoryAsync(directoryInfoToProcess, cancellationToken);
                     if (!releasesForDirectory.IsSuccess)
                     {
-                        return new OperationResult<bool>(releasesForDirectory.Messages)
+                        return new OperationResult<int>(releasesForDirectory.Messages)
                         {
                             Errors = releasesForDirectory.Errors,
-                            Data = false
+                            Data = 0
                         };
                     }
 
-                    foreach (var releaseForDirectory in releasesForDirectory.Data)
+                    numberOfReleaseFilesProcessed = releasesForDirectory.Data.Item2;
+
+                    foreach (var releaseForDirectory in releasesForDirectory.Data.Item1.ToArray())
                     {
+                        Release? mergedRelease = releaseForDirectory;
+                        
                         string serialized = string.Empty;
+                        var releaseDataName = Path.Combine(directoryInfoToProcess.Path, releaseForDirectory.ToMelodeeJsonName());
+                        if (File.Exists(releaseDataName))
+                        {
+                            if (_configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                            {
+                                File.Delete(releaseDataName);
+                            }
+                            else
+                            {
+                                var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(releaseDataName, cancellationToken));
+                                if (existingRelease != null)
+                                {
+                                    mergedRelease = mergedRelease.Merge(existingRelease);
+                                }
+                            }
+                        }
                         try
                         {
-                            serialized = JsonSerializer.Serialize(releaseForDirectory);
+                            serialized = JsonSerializer.Serialize(mergedRelease);
                         }
                         catch (Exception e)
                         {
                             Log.Error(e, "Error processing [{FileSystemDirectoryInfo}]", fileSystemDirectoryInfo);
-                        }
-
-                        var releaseDataName = Path.Combine(directoryInfoToProcess.Path, releaseForDirectory.ToMelodeeJsonName());
+                        }                        
                         await File.WriteAllTextAsync(releaseDataName, serialized, cancellationToken);
+                        numberOfReleaseJsonFilesProcessed++;
                     }
                 }
 
@@ -223,13 +248,13 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension("melodee.json").ToArray();
                 if (!releaseJsonFiles.Any())
                 {
-                    return new OperationResult<bool>($"No Releases found in given directory [{directoryInfoToProcess}]")
+                    return new OperationResult<int>($"No Releases found in given directory [{directoryInfoToProcess}]")
                     {
-                        Data = false
+                        Data = 0
                     };
                 }
 
-                // For each Release json find all image files and add to Release to be moved below to staging folder.
+                // For each Release json find all image files and add to Release to be moved below to staging directory.
                 var releaseAndJsonFile = new Dictionary<Release, string>();
                 foreach (var releaseJsonFile in releaseJsonFiles)
                 {
@@ -238,9 +263,9 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         var release = JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
                         if (release == null || !release.IsValid())
                         {
-                            return new OperationResult<bool>($"Invalid Release json file [{releaseJsonFile.FullName}]")
+                            return new OperationResult<int>($"Invalid Release json file [{releaseJsonFile.FullName}]")
                             {
-                                Data = false
+                                Data = 0
                             };
                         }
 
@@ -266,7 +291,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     }
                 }
 
-                // Create directory and move files for each found release in staging folder
+                // Create directory and move files for each found release in staging directory.
                 foreach (var releaseKvp in releaseAndJsonFile)
                 {
                     var release = releaseKvp.Key;
@@ -302,7 +327,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         }
                     }
 
-                    File.Copy(releaseAndJsonFile[release], Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName()), true);
+                    File.Copy(releaseAndJsonFile[release], Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName()), _configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles);
                 }
             }
             catch (Exception e)
@@ -311,10 +336,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 processingErrors.Add(e);
                 if (!_configuration.PluginProcessOptions.DoContinueOnDirectoryProcessingErrors)
                 {
-                    return new OperationResult<bool>()
+                    return new OperationResult<int>()
                     {
                         Errors = processingErrors,
-                        Data = false
+                        Data = 0
                     };
                 }
             }
@@ -338,18 +363,24 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             }
             if (!postDiscoveryScriptResult.IsSuccess)
             {
-                return new OperationResult<bool>(postDiscoveryScriptResult.Messages)
+                return new OperationResult<int>(postDiscoveryScriptResult.Messages)
                 {
                     Errors = postDiscoveryScriptResult.Errors,
-                    Data = false
+                    Data = 0
                 };
             }
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<int>(new []
+        {
+            $"Directory Plugin(s) process count [{ directoryPluginProcessedFileCount }]",
+            $"Conversion Plugin(s) process count [{ conversionPluginsProcessedFileCount }]",
+            $"Track Plugin(s) process count [{ numberOfReleaseFilesProcessed }]",
+            $"Release process count [{ numberOfReleaseJsonFilesProcessed }]"
+        })
         {
             Errors = processingErrors.ToArray(),
-            Data = true
+            Data = numberOfReleaseJsonFilesProcessed + conversionPluginsProcessedFileCount + directoryPluginProcessedFileCount + numberOfReleaseFilesProcessed
         };
     }
 
@@ -402,18 +433,18 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         return imageInfos;
     }
 
-    private async Task<OperationResult<IEnumerable<Release>>> AllReleasesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    private async Task<OperationResult<(IEnumerable<Release>, int)>> AllReleasesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var releases = new List<Release>();
         var messages = new List<string>();
         var viaPlugins = new List<string>();
-
+        var tracks = new List<Track>();
+        
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
             using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
             {
-                var tracks = new List<Track>();
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
                 {
                     var fsi = fileSystemInfo.ToFileSystemInfo();
@@ -489,9 +520,9 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             }
         }
 
-        return new OperationResult<IEnumerable<Release>>(messages)
+        return new OperationResult<(IEnumerable<Release>, int)>(messages)
         {
-            Data = releases
+            Data = (releases, tracks.Count)
         };
     }
 }

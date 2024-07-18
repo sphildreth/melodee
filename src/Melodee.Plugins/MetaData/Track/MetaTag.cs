@@ -89,27 +89,35 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                                 }
                             }
                         }
-                        
-                        var ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
 
-                        if (ffProbeMediaAnalysis.PrimaryAudioStream != null)
-                        {   
-                            mediaAudios.Add(new MediaAudio<object?>
-                            {
-                                Identifier = MediaAudioIdentifier.CodecLongName,
-                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.CodecLongName
-                            });
-                            mediaAudios.Add(new MediaAudio<object?>
-                            {
-                                Identifier = MediaAudioIdentifier.Channels,
-                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.Channels
-                            });
-                            mediaAudios.Add(new MediaAudio<object?>
-                            {
-                                Identifier = MediaAudioIdentifier.ChannelLayout,
-                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.ChannelLayout
-                            });     
-                        }                        
+                        IMediaAnalysis? ffProbeMediaAnalysis = null;
+                        try
+                        {
+                            ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
+
+                            if (ffProbeMediaAnalysis.PrimaryAudioStream != null)
+                            {   
+                                mediaAudios.Add(new MediaAudio<object?>
+                                {
+                                    Identifier = MediaAudioIdentifier.CodecLongName,
+                                    Value = ffProbeMediaAnalysis.PrimaryAudioStream.CodecLongName
+                                });
+                                mediaAudios.Add(new MediaAudio<object?>
+                                {
+                                    Identifier = MediaAudioIdentifier.Channels,
+                                    Value = ffProbeMediaAnalysis.PrimaryAudioStream.Channels
+                                });
+                                mediaAudios.Add(new MediaAudio<object?>
+                                {
+                                    Identifier = MediaAudioIdentifier.ChannelLayout,
+                                    Value = ffProbeMediaAnalysis.PrimaryAudioStream.ChannelLayout
+                                });     
+                            }              
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
+                        }
 
                         if (fileAtl.IsVBR)
                         {
@@ -215,7 +223,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                         }
 
                         var adData1 = fileAtl.AdditionalFields.ToDictionary();
-                        var adData2 = ffProbeMediaAnalysis.Format?.Tags?.ToDictionary() ?? new Dictionary<string, string>();
+                        var adData2 = ffProbeMediaAnalysis?.Format?.Tags?.ToDictionary() ?? new Dictionary<string, string>();
                         var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge(new [] { adData1, adData2 }));
                         foreach (var additionalTag in additionalTags)
                         {

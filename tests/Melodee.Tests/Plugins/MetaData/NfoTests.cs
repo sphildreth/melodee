@@ -22,5 +22,19 @@ public class NfoTests
             Assert.True(nfoParserResult.IsValid());
         }
     }
+    
+    [Fact]
+    public async Task ParseNfoFile01()
+    {
+        var testFile = @"/home/steven/incoming/melodee_test/tests/test_nfo01.nfo";
+        var fileInfo = new System.IO.FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var nfo = new Nfo(TestsBase.NewConfiguration);
+            var nfoParserResult = await nfo.ReleaseForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
+            Assert.NotNull(nfoParserResult);
+            Assert.True(nfoParserResult.IsValid());
+        }
+    }    
    
 }
