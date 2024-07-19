@@ -178,7 +178,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                     }
                 }
             }
-
+            StopProcessing = processedFiles > 0;
             return new OperationResult<int>
             {
                 Data = processedFiles

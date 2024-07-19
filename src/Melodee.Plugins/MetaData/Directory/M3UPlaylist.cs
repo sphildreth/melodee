@@ -162,6 +162,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                 }
             }
         }
+        StopProcessing = processedFiles > 0;
         return new OperationResult<int>
         {
             Data = processedFiles

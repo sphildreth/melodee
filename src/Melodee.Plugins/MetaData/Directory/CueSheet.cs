@@ -46,7 +46,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
             };
         }
 
-        var processedCueFiles = 0;
+        var processedFiles = 0;
 
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         FileSystemDirectoryInfo? parentDirectory = null;
@@ -215,7 +215,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                                 Log.Information("Deleted CUE File [{FileName}]", cueFile.Name);
                             }
 
-                            processedCueFiles++;
+                            processedFiles++;
                         }
                         else
                         {
@@ -225,10 +225,10 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                 }
             }
         }
-        StopProcessing = processedCueFiles > 0;
+        StopProcessing = processedFiles > 0;
         return new OperationResult<int>
         {
-            Data = processedCueFiles
+            Data = processedFiles
         };
     }
 
@@ -253,8 +253,8 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         var trackIndexes = new List<CueIndex>();
         var trackGaps = new List<CueIndex>();
 
-        int? trackNumber = null;
-        string? trackName = null;
+        int trackNumber;
+        string? trackTitle = null;
         
         FileSystemFileInfo? cueSheetDataFile = null; 
         
@@ -310,10 +310,10 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     break;     
                 
                 case CueSheetKeyRegistry.Index:
-                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int?;
-                    if (trackNumber.HasValue)
+                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    if (trackNumber > 0)
                     {
-                        trackIndexes.Add(ParseIndex(trackNumber.Value, lineFromFile));
+                        trackIndexes.Add(ParseIndex(trackNumber, lineFromFile));
                     }
                     break;  
                 
@@ -345,18 +345,18 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     break;                  
                 
                 case CueSheetKeyRegistry.PostGap:
-                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int?;
-                    if (trackNumber.HasValue)
+                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    if (trackNumber > 0)
                     {
-                        trackGaps.Add(ParseIndex(trackNumber.Value, lineFromFile));
+                        trackGaps.Add(ParseIndex(trackNumber, lineFromFile));
                     }
                     break;     
                 
                 case CueSheetKeyRegistry.PreGap:
-                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int?;
-                    if (trackNumber.HasValue)
+                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    if (trackNumber > 0)
                     {
-                        trackGaps.Add(ParseIndex(trackNumber.Value, lineFromFile));
+                        trackGaps.Add(ParseIndex(trackNumber, lineFromFile));
                     }
 
                     break; 
@@ -429,20 +429,21 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     break;
                 
                 case CueSheetKeyRegistry.Track:
-                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int?;
-                    trackName = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
-                    if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackName as string))
+                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    trackTitle = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
+                    if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle as string))
                     {
+                        var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;                        
                         tracks.Add(new Common.Models.Track
                         {
                             CrcHash = CRC32.Calculate(fileInfo),
                             File = new FileSystemFileInfo
                             {
-                                Name = $"{trackNumber} {(trackName as string)!.ToTitleCase(false)?.ToFileNameFriendly()}.mp3",
+                                Name = TrackExtensions.TrackFileName(trackNumber, trackTitle, mediaNumber),
                                 Size = 0
                             },
                             Tags = trackTags.ToArray(),
-                            SortOrder = trackNumber.Value
+                            SortOrder = trackNumber
                         });
                         trackTags.Clear();
                     }
@@ -455,16 +456,17 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
             }
         }
         
-        trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int?;
-        trackName = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
-        if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackName as string))
+        trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+        trackTitle = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
+        if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle as string))
         {
+            var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0; 
             tracks.Add(new Common.Models.Track
             {
                 CrcHash = CRC32.Calculate(fileInfo),
                 File = new FileSystemFileInfo
                 {
-                    Name = $"{trackNumber} {(trackName as string)!.ToTitleCase(false)?.ToFileNameFriendly()}.mp3",
+                    Name = TrackExtensions.TrackFileName(trackNumber, trackTitle, mediaNumber),
                     Size = 0
                 },
                 Tags = trackTags.ToArray()

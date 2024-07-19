@@ -283,6 +283,13 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         }
 
                         release.Images = releaseImages;
+                        if (release.Tracks != null)
+                        {
+                            foreach (var track in release.Tracks)
+                            {
+                                track.File.Name = track.ToTrackFileName();
+                            }
+                        }
                         releaseAndJsonFile.Add(release, releaseJsonFile.FullName);
                     }
                     catch (Exception e)
@@ -315,19 +322,21 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         foreach (var track in release.Tracks)
                         {
-                            var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.TrackFileName(release, _configuration));
+                            var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.File.Name);
                             if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                             {
-                                File.Move(track.File.FullName(directoryInfoToProcess), newTrackFileName);
+                                File.Move(track.File.FullOriginalName(directoryInfoToProcess), newTrackFileName);
                             }
                             else
                             {
-                                File.Copy(track.File.FullName(directoryInfoToProcess), newTrackFileName, true);
+                                File.Copy(track.File.FullOriginalName(directoryInfoToProcess), newTrackFileName, true);
                             }
                         }
                     }
 
-                    File.Copy(releaseAndJsonFile[release], Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName(true)), _configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles);
+                  var serialized = System.Text.Json.JsonSerializer.Serialize(release);
+                  await File.WriteAllTextAsync(Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized, cancellationToken);
+                  File.Delete(releaseKvp.Value);
                 }
             }
             catch (Exception e)

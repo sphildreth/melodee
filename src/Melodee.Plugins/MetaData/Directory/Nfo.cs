@@ -95,7 +95,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 processedFiles++;
             }
         }
-
+        StopProcessing = processedFiles > 0;
         return new OperationResult<int>
         {
             Data = processedFiles
@@ -296,7 +296,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 }
             }
         }
-
+        
         return new Release
         {
             Files = new []

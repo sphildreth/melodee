@@ -8,8 +8,8 @@ public class TrackExtensionTests
     public void ValidateTrackNewFileName()
     {
         var release = ReleaseExtensionTests.NewRelease();
-        var trackNewFileName = release.Tracks!.First().TrackFileName(release, TestsBase.NewConfiguration);
+        var trackNewFileName = release.Tracks!.First().ToTrackFileName();
         Assert.NotNull(trackNewFileName);
-        Assert.Equal(@"03 Flako El Dark Cowboy.mp3", trackNewFileName);
+        Assert.Equal(@"003 Flako El Dark Cowboy.mp3", trackNewFileName);
     }
 }

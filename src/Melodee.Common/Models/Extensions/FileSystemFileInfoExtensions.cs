@@ -4,6 +4,8 @@ public static class FileSystemFileInfoExtensions
 {
     
     public static string FullName(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo) => Path.Combine(directoryInfo.Path, fileSystemFileInfo.Name);
+    
+    public static string FullOriginalName(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo) => Path.Combine(directoryInfo.Path, fileSystemFileInfo.OriginalName ?? fileSystemFileInfo.Name);    
 
     public static bool Exists(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo) => File.Exists(fileSystemFileInfo.FullName(directoryInfo));
 

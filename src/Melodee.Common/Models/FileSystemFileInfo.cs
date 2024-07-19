@@ -7,8 +7,9 @@ public sealed record FileSystemFileInfo
 {
     public long UniqueId => SafeParser.Hash(Name, Size.ToString());
     
-    public required string Name { get; init; }
+    public required string Name { get; set; }
     
     public required long Size { get; init; }
-
+    
+    public string? OriginalName { get; init; }
 }

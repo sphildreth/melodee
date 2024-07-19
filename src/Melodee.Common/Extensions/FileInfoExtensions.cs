@@ -7,6 +7,7 @@ public static class FileInfoExtensions
     public static FileSystemFileInfo ToFileSystemInfo(this System.IO.FileInfo fileInfo) => new FileSystemFileInfo
     {
         Name = fileInfo.Name,
-        Size = fileInfo.Exists ? fileInfo.Length : 0
+        Size = fileInfo.Exists ? fileInfo.Length : 0,
+        OriginalName = fileInfo.Name
     };
 }

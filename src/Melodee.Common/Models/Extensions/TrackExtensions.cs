@@ -80,9 +80,9 @@ public static class TrackExtensions
     
     public static double? Duration(this Track track) => track.MediaAudioValue<double?>(MediaAudioIdentifier.DurationMs);  
 
-    public static string? DurationTime (this Track track) => track.Duration().HasValue ? new TimeInfo(SafeParser.ToNumber<decimal>(track.Duration().Value)).ToFullFormattedString() : "--:--";
+    public static string? DurationTime (this Track track) => track.Duration().HasValue ? new TimeInfo(SafeParser.ToNumber<decimal>(track.Duration()!.Value)).ToFullFormattedString() : "--:--";
 
-    public static string? DurationTimeShort (this Track track) => track.Duration().HasValue ? new TimeInfo(SafeParser.ToNumber<decimal>(track.Duration().Value)).ToShortFormattedString() : "--:--";
+    public static string? DurationTimeShort (this Track track) => track.Duration().HasValue ? new TimeInfo(SafeParser.ToNumber<decimal>(track.Duration()!.Value)).ToShortFormattedString() : "--:--";
     
     public static string? Title(this Track track) => track.MetaTagValue<string?>(MetaTagIdentifier.Title);
 
@@ -130,31 +130,21 @@ public static class TrackExtensions
         return false;        
     }
 
-    public static string TrackFileName(this Track track, Release release, Configuration.Configuration configuration)
+    public static string TrackFileName(int trackNumber, string? trackTitle, int mediaNumber)
     {
-        var trackNumber = track.TrackNumber();
         if (trackNumber < 1)
         {
-            throw new Exception($"Invalid track number for Track [{ track }]");
+            throw new Exception($"Invalid track number [{ trackNumber }]");
         }
-        var trackTitle = track.Title();
         if (string.IsNullOrWhiteSpace(trackTitle))
         {
-            throw new Exception($"Invalid track title for Track [{ track }]");
-        }        
-        var totalTrackNumber = release.TrackTotalValue();
-        if (totalTrackNumber < 1)
-        {
-            throw new Exception($"Invalid total number of tracks for Track [{track}]");
-        }         
-        // If the total number of tracks is more than 99 or the track number itself is more than 99 then 3 pad else 2 pad
-        var mediaNumber = track.MediaNumber();        
-        var trackNumberValue = totalTrackNumber > 99 || trackNumber > 99
-            ? trackNumber.ToString("D3")
-            : trackNumber.ToString("D2");
+            throw new Exception($"Invalid track title [{ trackTitle }]");
+        }
+        
+        var trackNumberValue = trackNumber.ToString("D3");
         
         // Put an "m" for media on the TPOS greater than 1 so the directory sorts proper
-        var disc = mediaNumber > 1 ? $"m{mediaNumber.ToString("D3")} " : string.Empty;
+        var disc = mediaNumber > 1 ? $"m{mediaNumber:D3} " : string.Empty;
 
         // Get new name for file
         var fileNameFromTitle = trackTitle.ToTitleCase(false)?.ToFileNameFriendly();
@@ -168,6 +158,8 @@ public static class TrackExtensions
                 .ToTitleCase(false);
         }
         return $"{disc}{trackNumberValue} {fileNameFromTitle}.mp3";
-
     }
+
+    public static string ToTrackFileName(this Track track)
+        => TrackFileName(track.TrackNumber(), track.Title(), track.MediaNumber());
 }
