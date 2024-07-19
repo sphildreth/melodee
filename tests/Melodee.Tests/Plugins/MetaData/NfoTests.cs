@@ -1,3 +1,4 @@
+using Mapster;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
@@ -34,6 +35,8 @@ public class NfoTests
             var nfoParserResult = await nfo.ReleaseForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.True(nfoParserResult.IsValid());
+            
+            Assert.DoesNotContain(nfoParserResult.Tracks, x => x.Title() != null && x.Title()!.Contains("..."));
         }
     }    
    

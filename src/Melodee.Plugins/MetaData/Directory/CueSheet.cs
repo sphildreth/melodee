@@ -61,7 +61,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         
         foreach (var cueFile in cueFiles)
         {
-            using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]: Processing [{FileName}]", DisplayName, cueFile.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}]: Processing [{FileName}]", DisplayName, cueFile.Name))
             {
                 ICatalogDataReader? theReader = null;
                 try

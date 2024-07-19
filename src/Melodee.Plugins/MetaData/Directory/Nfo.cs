@@ -52,7 +52,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
         foreach (var nfoFile in nfoFiles)
         {
-            using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]: Processing [{FileName}]", DisplayName, nfoFile.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}]: Processing [{FileName}]", DisplayName, nfoFile.Name))
             {
                 var nfoRelease = await ReleaseForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
 
@@ -85,7 +85,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 }
                 else
                 {
-                    Log.Warning("Could not create release from NFO data [{nfoFile}].", nfoFile.Name);
+                    Log.Warning("Could not create release from NFO data [{nfoFile}]. Artist [{Artist}] Release Title [{ReleaseTitle}] Release Year [{ReleaseYear}]", nfoFile.Name, nfoRelease.Artist(), nfoRelease.ReleaseTitle(), nfoRelease.ReleaseYear());
                     if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                     {
                         nfoFile.Delete();
@@ -117,7 +117,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 if (parts.Length > 1)
                 {
                     key = parts[0].ToAlphanumericName(false, false).ToTitleCase(false).Nullify() ?? string.Empty;
-                    result = parts[1].ToAlphanumericName(false, false).ToTitleCase(false).Nullify();
+                    result = ReplaceMultiplePeriodsRegex().Replace(parts[1].ToAlphanumericName(false, false)?.ToTitleCase(false)?.Nullify() ?? string.Empty, string.Empty);
                     rawValue = parts[1].Nullify();
                 }
             }
@@ -182,7 +182,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 var l = line.OnlyAlphaNumeric();
                 var trackNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
                 var trackDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
-                var trackTitle = l?.Substring(3, (l.Length - trackDuration.Length) - 4).Trim() ?? string.Empty;
+                var trackTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, (l.Length - trackDuration.Length) - 4) ?? string.Empty, string.Empty).Trim();
                 tracks.Add(new Common.Models.Track
                 {
                     CrcHash = CRC32.Calculate(fileInfo),
@@ -313,7 +313,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
             {
                 ParentId = parentDirectoryInfo?.UniqueId ?? 0,
                 Path = fileInfo.Directory?.FullName ?? string.Empty,
-                Name = fileInfo.DirectoryName ?? string.Empty
+                Name = fileInfo.Directory?.Name ?? string.Empty
             },
             Images = tracks.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
             Tags = releaseTags,
@@ -326,4 +326,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
     [GeneratedRegex(@"[0-9]+\.+(.*)[0-9]{2}\:[0-9]{2}")]
     private static partial Regex IsLineForTrackRegex();
+    
+    [GeneratedRegex(@"\.{2,}")]
+    private static partial Regex ReplaceMultiplePeriodsRegex();    
 }

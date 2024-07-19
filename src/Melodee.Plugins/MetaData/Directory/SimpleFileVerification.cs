@@ -57,7 +57,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             var trackPlugin = _trackPlugins.First();
             foreach (var sfvFile in sfvFiles)
             {
-                using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]: Processing [{FileName}]", DisplayName, sfvFile.Name))
+                using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}]: Processing [{FileName}]", DisplayName, sfvFile.Name))
                 {
                     var models = await GetModelsFromSfvFile(fileSystemDirectoryInfo, sfvFile.FullName);
 

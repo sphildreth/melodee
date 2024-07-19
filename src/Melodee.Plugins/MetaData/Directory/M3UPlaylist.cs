@@ -51,7 +51,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
         var trackPlugin = _trackPlugins.First();
         foreach (var m3UFile in m3UFiles)
         {
-            using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]: Processing [{FileName}]", DisplayName, m3UFile.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}]: Processing [{FileName}]", DisplayName, m3UFile.Name))
             {
                 var models = await GetModelsFromM3UFile(m3UFile.FullName);
 
