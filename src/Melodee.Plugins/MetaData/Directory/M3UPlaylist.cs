@@ -20,7 +20,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
     
     public override string DisplayName => nameof(M3UPlaylist);
 
-    public override bool IsEnabled { get; set; } = false;
+    public override bool IsEnabled { get; set; } = true;
 
     public override int SortOrder { get; } = 2;
 

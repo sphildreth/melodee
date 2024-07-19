@@ -144,7 +144,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 foreach (var fileSystemInfo in allFilesInDirectory)
                 {
                     var fsi = fileSystemInfo.ToFileSystemInfo();
-                    foreach (var plugin in _conversionPlugins.OrderBy(x => x.SortOrder))
+                    foreach (var plugin in _conversionPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
                     {
                         if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
                         {
@@ -172,7 +172,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
                 // Run all enabled IDirectoryPlugins to convert MetaData files into Release json files.
                 // e.g. Build Release json file for M3U or NFO or SFV, etc.
-                foreach (var plugin in _directoryPlugins.OrderBy(x => x.SortOrder))
+                foreach (var plugin in _directoryPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
                 {
                     using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]", plugin.DisplayName))
                     {
@@ -295,7 +295,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 foreach (var releaseKvp in releaseAndJsonFile)
                 {
                     var release = releaseKvp.Key;
-                    var releaseDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, $"{release.Artist()} - [{release.ReleaseYear()}] {release.ReleaseTitle()}".ToFileNameFriendly()));
+                    var releaseDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, release.ToDirectoryName()));
                     if (!releaseDirInfo.Exists)
                     {
                         releaseDirInfo.Create();
@@ -327,7 +327,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         }
                     }
 
-                    File.Copy(releaseAndJsonFile[release], Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName()), _configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles);
+                    File.Copy(releaseAndJsonFile[release], Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName(true)), _configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles);
                 }
             }
             catch (Exception e)

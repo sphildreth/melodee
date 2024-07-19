@@ -7,12 +7,12 @@ namespace Melodee.Common.Utility
         /// <summary>
         ///     The set of invalid filename characters, kept sorted for fast binary search
         /// </summary>
-        private static readonly char[] invalidFilenameChars;
+        private static readonly char[] InvalidFilenameChars;
 
         /// <summary>
         ///     The set of invalid path characters, kept sorted for fast binary search
         /// </summary>
-        private static readonly char[] invalidPathChars;
+        private static readonly char[] InvalidPathChars;
 
         static PathSanitizer()
         {
@@ -22,29 +22,29 @@ namespace Melodee.Common.Utility
 
             // Some Roadie instances run in Linux to Windows SMB clients via Samba this helps with Windows clients and invalid characters in Windows
             var badWindowsFileAndDirectoryCharacters = new List<char> { '\\', '"', '/', ':', '*', '$', '?', '\'', '<', '>', '|', '*' };
-            foreach (var badWindowsFilecharacter in badWindowsFileAndDirectoryCharacters)
+            foreach (var badWindowsFileCharacter in badWindowsFileAndDirectoryCharacters)
             {
-                if (!c.Contains(badWindowsFilecharacter))
+                if (!c.Contains(badWindowsFileCharacter))
                 {
-                    c.Add(badWindowsFilecharacter);
+                    c.Add(badWindowsFileCharacter);
                 }
             }
-            invalidFilenameChars = c.ToArray();
+            InvalidFilenameChars = c.ToArray();
 
             var f = new List<char>();
             f.AddRange(Path.GetInvalidPathChars());
-            foreach (var badWindowsFilecharacter in badWindowsFileAndDirectoryCharacters)
+            foreach (var badWindowsFileCharacter in badWindowsFileAndDirectoryCharacters)
             {
-                if (!f.Contains(badWindowsFilecharacter))
+                if (!f.Contains(badWindowsFileCharacter))
                 {
-                    f.Add(badWindowsFilecharacter);
+                    f.Add(badWindowsFileCharacter);
                 }
             }
-            invalidFilenameChars = c.ToArray();
-            invalidPathChars = f.ToArray();
+            InvalidFilenameChars = c.ToArray();
+            InvalidPathChars = f.ToArray();
 
-            Array.Sort(invalidFilenameChars);
-            Array.Sort(invalidPathChars);
+            Array.Sort(InvalidFilenameChars);
+            Array.Sort(InvalidPathChars);
         }
 
         /// <summary>
@@ -53,9 +53,9 @@ namespace Melodee.Common.Utility
         /// <param name="input">the string to clean</param>
         /// <param name="errorChar">the character which replaces bad characters</param>
         /// <returns></returns>
-        public static string SanitizeFilename(string input, char errorChar)
+        public static string? SanitizeFilename(string? input, char errorChar)
         {
-            return Sanitize(input, invalidFilenameChars, errorChar);
+            return Sanitize(input, InvalidFilenameChars, errorChar);
         }
 
         /// <summary>
@@ -64,9 +64,9 @@ namespace Melodee.Common.Utility
         /// <param name="input">the string to clean</param>
         /// <param name="errorChar">the character which replaces bad characters</param>
         /// <returns></returns>
-        public static string SanitizePath(string input, char errorChar)
+        public static string? SanitizePath(string? input, char errorChar)
         {
-            return Sanitize(input, invalidPathChars, errorChar);
+            return Sanitize(input, InvalidPathChars, errorChar);
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace Melodee.Common.Utility
         /// <param name="invalidChars"></param>
         /// <param name="errorChar"></param>
         /// <returns></returns>
-        private static string Sanitize(string input, char[] invalidChars, char errorChar)
+        private static string? Sanitize(string? input, char[] invalidChars, char errorChar)
         {
             // null always sanitizes to null
             if (input == null)
@@ -87,16 +87,9 @@ namespace Melodee.Common.Utility
             foreach (var characterToTest in input)
             {
                 // we binary search for the character in the invalid set. This should be lightning fast.
-                if (Array.BinarySearch(invalidChars, characterToTest) >= 0)
-                {
-                    // we found the character in the array of
-                    result.Append(errorChar);
-                }
-                else
-                {
-                    // the character was not found in invalid, so it is valid.
-                    result.Append(characterToTest);
-                }
+                // the character was not found in invalid, so it is valid.
+                // we found the character in the array of
+                result.Append(Array.BinarySearch(invalidChars, characterToTest) >= 0 ? errorChar : characterToTest);
             }
             // we're done.
             return result.ToString();

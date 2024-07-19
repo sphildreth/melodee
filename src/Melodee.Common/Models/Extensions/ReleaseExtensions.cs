@@ -57,11 +57,23 @@ public static class ReleaseExtensions
                releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year;
     }
 
-    public static string ToMelodeeJsonName(this Release release)
+    public static string ToMelodeeJsonName(this Release release, bool? isForReleaseDirectory = null)
     {
         var artist = release.Artist()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception("Artist not set on release.");
         var releaseTitle = release.ReleaseTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception("Title not set on release.");
-        return $"{artist}_{releaseTitle}.melodee.json";
+        var artistAndReleasePart = string.Empty;
+        if (!(isForReleaseDirectory ?? false))
+        {
+            artistAndReleasePart = $"{artist}_{releaseTitle}.";
+        }
+        return $"{artistAndReleasePart}melodee.json";
+    }
+
+    public static string ToDirectoryName(this Release release)
+    {
+        var artist = release.Artist()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception("Artist not set on release.");
+        var releaseTitle = release.ReleaseTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception("Title not set on release.");
+        return $"{artist} - [{release.ReleaseYear()}] {releaseTitle}".ToFileNameFriendly()?? throw new Exception("Unable to determine Release Directory name.");
     }
 
     public static ReleaseArtistType ArtistType(this Release release)
