@@ -131,7 +131,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         }
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(SearchOption.AllDirectories).ToList();
-        Log.Debug("Found [{count}] directories to process", directoriesToProcess.Count);
+        Log.Debug("Found [{count}] directory(s) to process", directoriesToProcess.Count);
         
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
@@ -148,7 +148,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
                         {
-                            using (Operation.At(LogEventLevel.Debug).Time("Conversion: File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
+                            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{File}] ", plugin.DisplayName, fileSystemInfo.Name))
                             {
                                 var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
                                 if (!pluginResult.IsSuccess)
@@ -174,19 +174,16 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 // e.g. Build Release json file for M3U or NFO or SFV, etc.
                 foreach (var plugin in _directoryPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
                 {
-                    using (Operation.At(LogEventLevel.Debug).Time("MetaData:Directory: Plugin [{Plugin}]", plugin.DisplayName))
+                    var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
+                    if (!pluginResult.IsSuccess)
                     {
-                        var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
-                        if (!pluginResult.IsSuccess)
+                        return new OperationResult<int>(pluginResult.Messages)
                         {
-                            return new OperationResult<int>(pluginResult.Messages)
-                            {
-                                Errors = pluginResult.Errors,
-                                Data = 0
-                            };
-                        }
-                        directoryPluginProcessedFileCount += pluginResult.Data;
+                            Errors = pluginResult.Errors,
+                            Data = 0
+                        };
                     }
+                    directoryPluginProcessedFileCount += pluginResult.Data;
 
                     if (plugin.StopProcessing)
                     {
@@ -294,6 +291,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     }
                     catch (Exception e)
                     {
+                        processingErrors.Add(e);
                         Log.Error(e, "Unable to load release json [{FullName}]", releaseJsonFile.FullName);
                     }
                 }

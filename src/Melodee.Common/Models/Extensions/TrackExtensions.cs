@@ -144,7 +144,17 @@ public static class TrackExtensions
         var trackNumberValue = trackNumber.ToString("D3");
         
         // Put an "m" for media on the TPOS greater than 1 so the directory sorts proper
-        var disc = mediaNumber > 1 ? $"m{mediaNumber:D3} " : string.Empty;
+        /*
+          Example when not part of a media set track 7
+          "007 Something.mpg"
+                    
+          Example media 1 track 14
+          "001-014 Something.mpg"
+          
+          Example media 2 track 5
+          "002-005 Something Else.mpg"
+        */
+        var disc = mediaNumber > 1 ? $"{mediaNumber:D3}-" : string.Empty;
 
         // Get new name for file
         var fileNameFromTitle = trackTitle.ToTitleCase(false)?.ToFileNameFriendly();

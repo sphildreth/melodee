@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
@@ -72,22 +73,30 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             throw new Exception($"Directory [{settings.Inbound}] does not exist.");
         }
 
-        Log.Debug("Processing directory [{Inbound}]", settings.Inbound);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        Log.Debug("\u250d Processing directory [{Inbound}]", settings.Inbound);
         
         var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
         {
             Path = dirInfo.FullName,
             Name = dirInfo.Name
         });
-        
-        AnsiConsole.Write(
-            new Panel(new JsonText(System.Text.Json.JsonSerializer.Serialize(result)))
-                .Header("Process Result")
-                .Collapse()
-                .RoundedBorder()
-                .BorderColor(Color.Yellow));
-        
-        return 1;
+
+        sw.Stop();
+        Log.Debug("\u2515 Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, sw.Elapsed);
+
+        if (settings.Verbose)
+        {
+            AnsiConsole.Write(
+                new Panel(new JsonText(System.Text.Json.JsonSerializer.Serialize(result)))
+                    .Header("Process Result")
+                    .Collapse()
+                    .RoundedBorder()
+                    .BorderColor(Color.Yellow));
+        }
+        // For console error codes, 0 is success.
+        return result.IsSuccess ? 0 : 1;
     }
 
     // private static string YesNo(bool value)

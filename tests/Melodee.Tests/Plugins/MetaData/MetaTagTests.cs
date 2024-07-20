@@ -85,6 +85,7 @@ public class MetaTagTests
             Assert.NotNull(track.File);
             Assert.Equal(fileInfo.FullName, track.File.FullName(dirInfo));
             Assert.NotNull(track.Title()?.Nullify());
+            Assert.NotEmpty(track.ToTrackFileName());
         }
     }    
 

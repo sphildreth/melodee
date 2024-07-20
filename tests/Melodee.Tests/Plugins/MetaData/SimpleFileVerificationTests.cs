@@ -31,6 +31,28 @@ public class SimpleFileVerificationTests
     }
 
     [Fact]
+    public async Task ValidateSfvFile2Async()
+    {
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/Swartz/00-edu_schwartz-with_me-(wthi110)-web-2024.sfv";
+        var fileInfo = new System.IO.FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var sfv = new SimpleFileVerification(
+                new []
+                {
+                    new MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
+                }, TestsBase.NewConfiguration);
+            var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/inbound/Swartz",
+                Name = "Swartz"
+            });
+            Assert.NotNull(sfvResult);
+            Assert.True(sfvResult.IsSuccess);
+        }
+    }    
+    
+    [Fact]
     public void ValidateModelFullLineParsing()
     {
         // <trackNumber>-<releaseArtist>-<trackTitle>.mp3 <crcHash>

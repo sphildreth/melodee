@@ -150,6 +150,8 @@ public enum MetaTagIdentifier
     
     /// <summary>
     /// Disc number. This should be set from parsed value from [TPA] or [TPOS]
+    /// The ‘Part of a set’ [TPOS] frame is a numeric string that describes which part of a set the audio came from. This frame is used if the source described in the “TALB” frame is divided into several mediums, e.g. a double CD.
+    /// If the audio is not part of a set the value is '0' (not '1' as '1' would indicate it's the first part of a set versus '0' which means it is not part of a set.)
     /// </summary>
     DiscNumber,    
 
@@ -167,11 +169,6 @@ public enum MetaTagIdentifier
     /// Chapters table of contents description [CTOC]
     /// </summary>
     ChaptersTocDescription,
-
-    /// <summary>
-    /// UnSynchronized lyrics [USLT]
-    /// </summary>
-    LyricsUnSynch,
 
     /// <summary>
     /// Product ID
@@ -445,6 +442,11 @@ public enum MetaTagIdentifier
     /// [ULT, USLT]
     /// </summary>
     UnsynchronisedLyrics,
+    
+    /// <summary>
+    /// [SYLT]
+    /// </summary>
+    SynchronisedLyrics,    
     
     /// <summary>
     /// [WAF, WOAF]

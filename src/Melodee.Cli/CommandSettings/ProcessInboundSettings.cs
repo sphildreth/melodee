@@ -32,6 +32,12 @@ public class ProcessInboundSettings : Spectre.Console.Cli.CommandSettings
     [DefaultValue(null)]
     public string? PreDiscoveryScript { get; set; }
     
+    [Description("Output verbose debug and timing results to console.")]
+    [CommandOption("--verbose")]
+    [DefaultValue(true)]
+    public bool Verbose { get; init; }    
+    
+    
     public override ValidationResult Validate()
     {
         if (string.IsNullOrEmpty(Inbound))

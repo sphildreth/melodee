@@ -52,7 +52,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
         foreach (var nfoFile in nfoFiles)
         {
-            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}]: Processing [{FileName}]", DisplayName, nfoFile.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
             {
                 var nfoRelease = await ReleaseForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
 
