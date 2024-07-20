@@ -131,8 +131,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         }
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(SearchOption.AllDirectories).ToList();
-        Log.Debug("Found [{count}] directory(s) to process", directoriesToProcess.Count);
-        
+        if (directoriesToProcess.Count > 1)
+        {
+            Log.Debug("Found [{count}] directories to process", directoriesToProcess.Count);
+        }
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
             try

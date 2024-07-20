@@ -53,7 +53,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
 
     public async Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
     {
-        using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{FileSystemFileInfo}]", DisplayName, fileSystemFileInfo.FullName(directoryInfo)))
+        using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{FileSystemFileInfo}]", DisplayName, fileSystemFileInfo.Name))
         {
             var tags = new List<MetaTag<object?>>();
             var mediaAudios = new List<MediaAudio<object?>>();
