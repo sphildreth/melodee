@@ -173,23 +173,22 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
 
                         });
 
-                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
-                        {
-                            fileSystemDirectoryInfo.DeleteAllFilesForExtension("sfv");
-                            fileSystemDirectoryInfo.DeleteAllFilesForExtension("m3u");
-                            fileSystemDirectoryInfo.DeleteAllFilesForExtension("nfo");
-                            File.Delete(cueFile.FullName);
-                            var cueFileMediaFile = new System.IO.FileInfo(Path.Combine(cueFile.DirectoryName, $"{cueFile.Name.Replace(cueFile.Extension, "")}.mp3"));
-                            if (cueFileMediaFile.Exists)
-                            {
-                                cueFileMediaFile.Delete();
-                            }
-
-                        }
-
                         var cueRelease = cueModel.ToRelease(fileSystemDirectoryInfo);
                         if (cueRelease.IsValid())
                         {
+                            if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                            {
+                                fileSystemDirectoryInfo.DeleteAllFilesForExtension("sfv");
+                                fileSystemDirectoryInfo.DeleteAllFilesForExtension("m3u");
+                                fileSystemDirectoryInfo.DeleteAllFilesForExtension("nfo");
+                                File.Delete(cueFile.FullName);
+                                var cueFileMediaFile = new System.IO.FileInfo(Path.Combine(cueFile.DirectoryName, $"{cueFile.Name.Replace(cueFile.Extension, "")}.mp3"));
+                                if (cueFileMediaFile.Exists)
+                                {
+                                    cueFileMediaFile.Delete();
+                                }
+                            }                            
+                            
                             var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueRelease.ToMelodeeJsonName());
                             if (File.Exists(stagingReleaseDataName))
                             {
@@ -326,11 +325,11 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     break;      
                 
                 case CueSheetKeyRegistry.Performer:
-                    if (!releaseTags.Any(x => x.Identifier == MetaTagIdentifier.Artist))
+                    if (releaseTags.All(x => x.Identifier != MetaTagIdentifier.Artist))
                     {
                         releaseTags.Add(new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.Artist,
+                            Identifier = MetaTagIdentifier.AlbumArtist,
                             Value = kp.Value
                         });
                     }
@@ -529,6 +528,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         return new Models.CueSheet
         {
             FileSystemFileInfo = cueSheetDataFile!,
+            FileSystemDirectoryInfo = new DirectoryInfo(filePath).ToDirectorySystemInfo(),
             Tracks = tracks,
             TrackIndexes = trackIndexes,
             Tags = releaseTags

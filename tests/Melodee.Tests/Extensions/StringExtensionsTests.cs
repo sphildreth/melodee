@@ -29,6 +29,7 @@ namespace Melodee.Tests.Extensions
         [InlineData("Bob And Nancy, wITH sTEVE", "Bob And Nancy, With Steve")]
         [InlineData(" Bob    And    Nancy", "Bob And Nancy")]
         [InlineData(" Bob    And    Nancy   ", "Bob And Nancy")]
+        [InlineData("With", "With")]
         public void CleanString(string input, string shouldBe)
         {
             Assert.Equal(shouldBe, input.CleanString());

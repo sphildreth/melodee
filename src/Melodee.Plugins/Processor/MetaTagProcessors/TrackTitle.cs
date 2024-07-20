@@ -59,11 +59,14 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
                 {
                     var newTitle = trackTitle ?? string.Empty;
                     var matches = StringExtensions.HasFeatureFragmentsRegex.Match(trackTitle!);
-                    newTitle = newTitle[..matches.Index].CleanString();
-                    featureArtist = ReplaceTrackArtistSeperators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
-                    featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
-                    trackTitle = newTitle;
-                    updatedTagValue = true;
+                    if (matches.Index > 0)
+                    {
+                        newTitle = newTitle[..matches.Index].CleanString();
+                        featureArtist = ReplaceTrackArtistSeperators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
+                        featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
+                        trackTitle = newTitle;
+                        updatedTagValue = true;
+                    }
                 }
             }
 

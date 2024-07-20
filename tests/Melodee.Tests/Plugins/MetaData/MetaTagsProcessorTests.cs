@@ -68,6 +68,7 @@ public class MetaTagsProcessorTests
     [InlineData("Rain (Stealing Sheep Remix)", "Rain (Stealing Sheep Remix)")]
     [InlineData("In My Arms (Crumbling Down Extended Instrumental Remix;Remaster)", "In My Arms (Crumbling Down Extended Instrumental Remix)")]
     [InlineData("404", "404")]
+    [InlineData("With", "With")]
     public async Task ValidateTrackTitleFeaturingRemoved(string? originalTrackTitle, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
@@ -142,7 +143,8 @@ public class MetaTagsProcessorTests
     [InlineData("Homework (25th Anniversary Edition) (1)", "Homework")]
     [InlineData("Balearic Classics Vol. 1", "Balearic Classics Vol. 1")]
     [InlineData("Live At Leeds (Deluxe Edition)", "Live At Leeds")]
-    [InlineData("The Dark Side Of The Moon (50th Anniversary) [2023 Remaster]", "The Dark Side Of The Moon")]    
+    [InlineData("The Dark Side Of The Moon (50th Anniversary) [2023 Remaster]", "The Dark Side Of The Moon")]
+    [InlineData("Me (Radio Edit)", "Me (Radio Edit)")]    
     public async Task ValidateReleaseTitleUnwantedRemoved(string? originalAlbum, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";

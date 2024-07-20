@@ -294,7 +294,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     }
                     catch (Exception e)
                     {
-                        Log.Error("Unable to load release json [{FullName}]", releaseJsonFile.FullName);
+                        Log.Error(e, "Unable to load release json [{FullName}]", releaseJsonFile.FullName);
                     }
                 }
 

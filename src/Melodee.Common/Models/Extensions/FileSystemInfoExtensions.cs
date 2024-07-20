@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Melodee.Common.Extensions;
+using Microsoft.VisualBasic.FileIO;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -7,7 +8,7 @@ public static class FileSystemInfoExtensions
 {
     public static FileSystemDirectoryInfo ToDirectorySystemInfo(this System.IO.FileSystemInfo fileInfo)
     {
-        var dir = new System.IO.DirectoryInfo(fileInfo.FullName);
+        var dir = (fileInfo as DirectoryInfo)?.Parent ?? new System.IO.DirectoryInfo(fileInfo.FullName);
         return new FileSystemDirectoryInfo
         {
             Path = dir.FullName,

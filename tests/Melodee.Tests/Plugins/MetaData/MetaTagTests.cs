@@ -60,6 +60,33 @@ public class MetaTagTests
             Assert.False(track.TitleHasUnwantedText());
         }
     }
+    
+    [Fact]
+    public async Task ValidateLoadingTagsForMp3Test4FileAsync()
+    {
+        var testFile = @"/home/steven/incoming/melodee_test/tests/test4.mp3";
+        var fileInfo = new System.IO.FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Name = "tests"
+            };
+            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(tagResult);
+            Assert.True(tagResult.IsSuccess);
+            Assert.NotNull(tagResult.Data);
+
+            var track = tagResult.Data;
+            
+            Assert.NotNull(track.Tags);
+            Assert.NotNull(track.File);
+            Assert.Equal(fileInfo.FullName, track.File.FullName(dirInfo));
+            Assert.NotNull(track.Title()?.Nullify());
+        }
+    }    
 
     [Fact]
     public async Task ValidateMultipleTrackArtistForMp3Async()
@@ -88,6 +115,8 @@ public class MetaTagTests
 
         }
     }
+    
+    
 
 
 }
