@@ -40,6 +40,10 @@ public static class CRC32
         {
             throw new ArgumentNullException(nameof(file));
         }
+        if (!file.Exists)
+        {
+            throw new ArgumentException($"File [{file.FullName}] not found.");
+        }
         return $"{CalculateInt32(file):X8}";
     }
 

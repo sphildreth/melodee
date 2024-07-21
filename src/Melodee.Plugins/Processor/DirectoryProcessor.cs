@@ -133,7 +133,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(SearchOption.AllDirectories).ToList();
         if (directoriesToProcess.Count > 1)
         {
-            Log.Debug("Found [{count}] directories to process", directoriesToProcess.Count);
+            Log.Debug("\u251c Found [{count}] directories to process", directoriesToProcess.Count);
         }
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
@@ -141,6 +141,8 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             {
                 var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
 
+                Log.Debug("\u251c Processing [{DirectoryName}] Number of files to process [{FileCount}]", directoryInfoToProcess.Name, allFilesInDirectory.Length);
+                
                 // Run Enabled Conversion scripts on each file in directory
                 // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
                 foreach (var fileSystemInfo in allFilesInDirectory)

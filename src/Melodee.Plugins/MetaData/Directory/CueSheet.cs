@@ -213,7 +213,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                                 cueFile.Delete();
                                 Log.Information("Deleted CUE File [{FileName}]", cueFile.Name);
                             }
-
+                            Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, cueRelease.ToMelodeeJsonName());
                             processedFiles++;
                         }
                         else
@@ -528,7 +528,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         return new Models.CueSheet
         {
             FileSystemFileInfo = cueSheetDataFile!,
-            FileSystemDirectoryInfo = new DirectoryInfo(filePath).ToDirectorySystemInfo(),
+            FileSystemDirectoryInfo = new DirectoryInfo(Path.GetDirectoryName(filePath)!).ToDirectorySystemInfo(),
             Tracks = tracks,
             TrackIndexes = trackIndexes,
             Tags = releaseTags

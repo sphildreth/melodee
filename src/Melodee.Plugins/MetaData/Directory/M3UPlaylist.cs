@@ -152,7 +152,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                             m3UFile.Delete();
                             Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
                         }
-
+                        Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, m3URelease.ToMelodeeJsonName());
                         processedFiles++;
                     }
                     else

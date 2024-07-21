@@ -92,6 +92,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                         Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
                     }
                 }
+                Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, nfoRelease.ToMelodeeJsonName());                
                 processedFiles++;
             }
         }

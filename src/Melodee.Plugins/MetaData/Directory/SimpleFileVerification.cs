@@ -165,7 +165,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                         sfvFile.Delete();
                         Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
                     }
-
+                    Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, sfvRelease.ToMelodeeJsonName());
                     processedFiles++;
                 }
                 else
