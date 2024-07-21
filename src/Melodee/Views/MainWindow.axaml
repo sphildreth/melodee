@@ -24,21 +24,10 @@
                 <MenuItem Header="Paste" />
             </MenuItem>
         </Menu>
-        <Grid DockPanel.Dock="Left" ColumnDefinitions="250,1,550,1, *">
-            <TreeView
-                IsEnabled="{ Binding !IsLoading}"
-                Tapped="NavigationTree_OnTapped"
-                ItemsSource="{Binding InboundDirectoryInfos}">
-                <TreeView.ItemTemplate>
-                    <TreeDataTemplate ItemsSource="{Binding SubNodes}">
-                        <TextBlock Tag="{Binding FileSystemDirectoryInfo.UniqueId}" Text="{Binding Title}" />
-                    </TreeDataTemplate>
-                </TreeView.ItemTemplate>
-            </TreeView>
-            <GridSplitter Grid.Column="1" Width="1" ResizeDirection="Columns" />
-            <DataGrid Grid.Column="2"
+        <Grid DockPanel.Dock="Left" ColumnDefinitions="800,1, *">
+            <DataGrid Grid.Column="0"
                       Margin="5"
-                      ItemsSource="{Binding ReleaseInfos}"
+                      ItemsSource="{Binding ReleaseGridInfos}"
                       AutoGenerateColumns="False"
                       CanUserResizeColumns="True"
                       CanUserSortColumns="True"
@@ -54,8 +43,8 @@
                     <DataGridTextColumn Header="Title" IsReadOnly="True" Binding="{Binding Title}" />
                 </DataGrid.Columns>
             </DataGrid>
-            <GridSplitter Grid.Column="3" Width="1" ResizeDirection="Columns" />
-            <DockPanel Grid.Column="4" IsVisible="{Binding ShowSelectedRelease}">
+            <GridSplitter Grid.Column="1" Width="1" ResizeDirection="Columns" />
+            <DockPanel Grid.Column="2" IsVisible="{Binding ShowSelectedRelease}">
                 <Grid DockPanel.Dock="Top" ColumnDefinitions="*, 220">
                     <DataGrid Grid.Column="0"
                         AutoGenerateColumns="False"

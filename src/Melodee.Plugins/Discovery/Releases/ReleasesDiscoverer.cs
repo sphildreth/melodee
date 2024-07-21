@@ -100,19 +100,12 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 }
             }
         }
-        var resultReleases = releases
-            .Skip(pagedRequest.SkipValue)
-            .Take(pagedRequest.TakeValue);
-     
-         var processedReleasesViaPlugins = new List<Release>();
-        // await Parallel.ForEachAsync(resultReleases, cancellationToken, async (release, ct) =>
-        // {
-        //     processedReleasesViaPlugins.Add(await FindImagesForRelease(release, ct));
-        // });
-        
         return new PagedResult<Release>()
         {
-            Data = processedReleasesViaPlugins
+            Data = releases
+                .OrderBy(x => x.SortValue)
+                .Skip(pagedRequest.SkipValue)
+                .Take(pagedRequest.TakeValue)
         };        
     }
 
@@ -120,94 +113,28 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     {
         var releases = new List<Release>();
         var messages = new List<string>();
-        var viaPlugins = new List<string>();
-        var releaseFiles = new List<ReleaseFile>();
         
         var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
             using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
             {
-                var tracks = new List<Track>();
-                foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
+                foreach (var jsonFile in dirInfo.EnumerateFiles(Release.JsonFileName, SearchOption.AllDirectories))
                 {
-                    var fsi = fileSystemInfo.ToFileSystemInfo();
-                    foreach (var plugin in _trackPlugins.OrderBy(x => x.SortOrder))
+                    if (cancellationToken.IsCancellationRequested)
                     {
-                        if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
-                        {
-                            using (Operation.At(LogEventLevel.Debug).Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
-                            {
-                                var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
-                                if (pluginResult.IsSuccess)
-                                {
-                                    tracks.Add(pluginResult.Data);
-                                    viaPlugins.Add(plugin.DisplayName);
-                                }
-                                messages.AddRange(pluginResult.Messages);
-                            }
-                        }
-                        if (plugin.StopProcessing)
-                        {
-                            break;
-                        }
+                        break;
                     }
-
-                    foreach (var track in tracks)
+                    try
                     {
-                        var foundRelease = releases.FirstOrDefault(x => x.UniqueId == track.ReleaseUniqueId);
-                        if (foundRelease != null)
-                        {
-                            foundRelease = foundRelease.MergeTracks(tracks);
-                        }
-                        else
-                        {
-                            var trackTotal = track.TrackTotalNumber();
-                            if (trackTotal < 1)
-                            {
-                                trackTotal = tracks.Count;
-                            }
-                            var newReleaseTags = new List<MetaTag<object?>>
-                            {
-                                new() { Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1},
-                                new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = track.ReleaseArtist(), SortOrder = 2 },
-                                new() { Identifier = MetaTagIdentifier.DiscNumber, Value = track.MediaNumber(), SortOrder = 4 },
-                                new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = track.ReleaseYear(), SortOrder = 100 },
-                                new() { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
-                            };
-                            var genres = tracks
-                                .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                                .Where(x => x.Identifier == MetaTagIdentifier.Genre);
-                            newReleaseTags.AddRange(genres
-                                .GroupBy(x => x.Value)
-                                .Select((genre, i) => new MetaTag<object?>
-                                {
-                                    Identifier = MetaTagIdentifier.Genre,
-                                    Value = genre.Key,
-                                    SortOrder = 5 + i
-                                }));
-                            releases.Add(new Release
-                            {
-                                OriginalDirectory = fileSystemDirectoryInfo,
-                                Tags = newReleaseTags,
-                                Tracks = tracks,
-                                ViaPlugins = viaPlugins.Distinct().ToArray()
-                            });
-                        }
+                        releases.Add(System.Text.Json.JsonSerializer.Deserialize<Release>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken))!);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning("Unable to load release json file [{FileName}]", dirInfo.FullName);
+                        messages.Add($"Unable to load release json file [{dirInfo.FullName}]");
                     }
                 }
-                
-                // Now all tracks have been found renumber SortOrder 
-                Parallel.ForEach(releases, (release) =>
-                {
-                    if (release.Tracks != null)
-                    {
-                        foreach (var track in release.Tracks)
-                        {
-                            track.SortOrder = track.TrackNumber();
-                        }
-                    }
-                });
             }
         }
         return new OperationResult<IEnumerable<Release>>(messages)
@@ -215,87 +142,6 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             Data = releases
         };
     }
-
-    // private async Task<Release> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
-    // {
-    //     var imageInfos = new List<ImageInfo>();
-    //     var imageFiles = ImageHelper.ImageFilesInDirectory(release.Directory.Path, SearchOption.TopDirectoryOnly);
-    //     foreach (var imageFile in imageFiles)
-    //     {
-    //         var fileInfo = new System.IO.FileInfo(imageFile);
-    //         if (release.IsFileForRelease(fileInfo))
-    //         {
-    //             if (ImageHelper.IsReleaseImage(fileInfo) ||
-    //                 ImageHelper.IsArtistImage(fileInfo) ||
-    //                 ImageHelper.IsArtistSecondaryImage(fileInfo) ||
-    //                 ImageHelper.IsReleaseSecondaryImage(fileInfo))
-    //             {
-    //                 var pictureIdentifier = PictureIdentifier.NotSet;
-    //                 if (ImageHelper.IsReleaseImage(fileInfo))
-    //                 {
-    //                     pictureIdentifier = PictureIdentifier.Front;
-    //                 }
-    //                 else if (ImageHelper.IsReleaseSecondaryImage(fileInfo))
-    //                 {
-    //                     pictureIdentifier = PictureIdentifier.SecondaryFront;
-    //                 }
-    //                 else if (ImageHelper.IsArtistImage(fileInfo))
-    //                 {
-    //                     pictureIdentifier = PictureIdentifier.Band;
-    //                 }
-    //                 else if (ImageHelper.IsArtistSecondaryImage(fileInfo))
-    //                 {
-    //                     pictureIdentifier = PictureIdentifier.BandSecondary;
-    //                 }
-    //
-    //                 var imageInfo = await SixLabors.ImageSharp.Image.LoadAsync(fileInfo.FullName, cancellationToken);
-    //                 imageInfos.Add(new ImageInfo
-    //                 {
-    //                     PictureIdentifier = pictureIdentifier,
-    //                     Bytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken),
-    //                     Width = imageInfo.Width,
-    //                     Height = imageInfo.Height,
-    //                     SortOrder = 0
-    //                 });
-    //             }
-    //         }
-    //     }
-    //
-    //     if (imageInfos.Count == 0 && (release.Tracks ?? Array.Empty<Track>()).Any())
-    //     {
-    //         var allTrackImages = release.Tracks?
-    //             .Where(x => x.Images != null)?
-    //             .SelectMany(x => x.Images!)?
-    //             .ToArray() ?? [];
-    //         var firstTrackImageOfEachGroup = allTrackImages.GroupBy(x => x.PictureIdentifier).FirstOrDefault();
-    //         if (firstTrackImageOfEachGroup != null && firstTrackImageOfEachGroup.Any())
-    //         {
-    //             imageInfos.AddRange(firstTrackImageOfEachGroup);
-    //         }
-    //     }
-    //     release.Images = imageInfos;
-    //     return release;
-    // }
-
-    // private async Task<Release> ProcessReleasePluginsOnRelease(Release release, CancellationToken cancellationToken = default)
-    // {
-    //     // Process the given release in each enabled Release plugin. 
-    //     //  A release plugin example is sfv which parses the Sfv and checks the files CRC and then marks the Release as complete if all sfv track files are found and valid.
-    //     
-    //     foreach (var plugin in _enabledReleasePlugins.OrderBy(x => x.SortOrder))
-    //     {
-    //         using (Operation.At(LogEventLevel.Debug).Time("ProcessReleasePluginsOnRelease [{Release}] Plugin [{Plugin}]", release.ToString(), plugin.DisplayName))
-    //         {
-    //             var pluginResult = await plugin.ProcessReleaseAsync(release, cancellationToken);
-    //             if (pluginResult.IsSuccess)
-    //             {
-    //                 release = pluginResult.Data;
-    //             }
-    //         }
-    //     }
-    //     return release;
-    // }
-    
 
     public async Task<PagedResult<ReleaseGrid>> ReleasesGridsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo, 

@@ -196,7 +196,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 }
 
                 // Check if any Release json files exist in given directory, if none then create from track files.
-                var releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension("melodee.json");
+                var releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension(Release.JsonFileName);
                 if (!releaseJsonFiles.Any())
                 {
                     var releasesForDirectory = await AllReleasesForDirectoryAsync(directoryInfoToProcess, cancellationToken);
@@ -246,7 +246,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 }
 
                 // Find all release json files in given directory, if none bail.
-                releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension("melodee.json").ToArray();
+                releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension(Release.JsonFileName).ToArray();
                 if (!releaseJsonFiles.Any())
                 {
                     return new OperationResult<int>($"No Releases found in given directory [{directoryInfoToProcess}]")

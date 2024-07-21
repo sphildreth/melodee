@@ -6,6 +6,10 @@
     "PreDiscoveryScript": "/home/steven/incoming/melodee_test/scripts/PreDiscovery.py",
     "PostDiscoveryScript": null
   },
+  "PluginProcessOptions": {
+    "DoDeleteOriginal": false,
+    "DoOverrideExistingMelodeeDataFiles": true
+  }, 
   "ProcessFileOptions": {
     "DoDeleteOriginal": false
   },

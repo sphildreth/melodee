@@ -66,7 +66,7 @@ public static class ReleaseExtensions
         {
             artistAndReleasePart = $"{artist}_{releaseTitle}.";
         }
-        return $"{artistAndReleasePart}melodee.json";
+        return $"{artistAndReleasePart}{Release.JsonFileName}";
     }
 
     public static string ToDirectoryName(this Release release)
@@ -171,7 +171,7 @@ public static class ReleaseExtensions
         }
 
         // If there is only a single release json file in the directory with the image, its logical that image is for that release.
-        var releaseJsonFilesInDirectory = release.OriginalDirectory.FileInfosForExtension("melodee.json").Count();
+        var releaseJsonFilesInDirectory = release.OriginalDirectory.FileInfosForExtension(Release.JsonFileName).Count();
         if (releaseJsonFilesInDirectory == 1)
         {
             return true;

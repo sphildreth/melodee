@@ -11,6 +11,8 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record Release
 {
+    public const string JsonFileName = "melodee.json";
+    
     private long? _uniqueId;
 
     public long UniqueId => (_uniqueId ??= SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle()));
@@ -66,6 +68,18 @@ public sealed record Release
     }
     
     public int SortOrder { get; set; }
+
+    public string SortValue
+    {
+        get
+        {
+            if (SortOrder > 0)
+            {
+                return SortOrder.ToString();
+            }
+            return this.ToDirectoryName();
+        }
+    }
 
     public Release Merge(Release otherRelease)
     {

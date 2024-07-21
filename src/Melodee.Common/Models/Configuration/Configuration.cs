@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Melodee.Common.Models.Extensions;
+
 namespace Melodee.Common.Models.Configuration;
 
 [Serializable]
@@ -12,6 +15,9 @@ public sealed record Configuration
     /// When the user is happy with scan results the user can select Releases (and all associated files) to move to this directory in the proper directory structure.
     /// </summary>
     public required string StagingDirectory { get; init; }
+
+    [JsonIgnore] 
+    public FileSystemDirectoryInfo StagingDirectoryInfo => new System.IO.DirectoryInfo(StagingDirectory).ToDirectorySystemInfo();
     
     /// <summary>
     /// This is the main storage library (holds all previously scanned/edited/approved Releases).
