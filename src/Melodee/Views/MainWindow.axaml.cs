@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Grids;
@@ -53,6 +54,7 @@ public partial class MainWindow : Window
             var detailResult = Task.Run(() => releasesDiscoverer.ReleaseByUniqueIdAsync(_configuration.StagingDirectoryInfo, clickedReleaseGrid.UniqueId)).Result;
             dc.SelectedRelease = new ReleaseDetail
             {
+                UniqueId = clickedReleaseGrid.UniqueId,
                 Artist = detailResult.Artist() ?? string.Empty,
                 Data = detailResult.Tags?.OrderBy(x => x.SortOrder)
                            .Select(x => new KeyPair

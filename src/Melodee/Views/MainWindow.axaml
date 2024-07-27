@@ -3,6 +3,7 @@
         xmlns:vm="using:Melodee.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:i="https://github.com/projektanker/icons.avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Melodee.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -15,23 +16,25 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open..." />
-                <Separator />
-                <MenuItem Header="_Exit" />
+                <MenuItem Header="_Exit"
+                          i:MenuItem.Icon="mdi-exit-to-app"/>
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="Copy" />
-                <MenuItem Header="Paste" />
+                <MenuItem Header="_Delete"
+                          Command="{Binding HandleDeleteSelectedItems}"
+                          i:MenuItem.Icon="mdi-trash-can"/>
             </MenuItem>
         </Menu>
         <Grid DockPanel.Dock="Left" ColumnDefinitions="800,1, *">
             <DataGrid Grid.Column="0"
+                      Name="StagingDirectoryReleasesGrid"
                       Margin="5"
                       ItemsSource="{Binding ReleaseGridInfos}"
                       AutoGenerateColumns="False"
                       CanUserResizeColumns="True"
                       CanUserSortColumns="True"
                       GridLinesVisibility="All"
+                      ContextMenu=""
                       BorderThickness="1"
                       Tapped="DataGrid_OnTapped"
                       BorderBrush="Gray">
@@ -42,6 +45,16 @@
                     <DataGridTextColumn Header="Artist" IsReadOnly="True" Binding="{Binding Artist}" />
                     <DataGridTextColumn Header="Title" IsReadOnly="True" Binding="{Binding Title}" />
                 </DataGrid.Columns>
+                <DataGrid.ContextFlyout>
+                    <MenuFlyout>
+                        <MenuItem Header="Delete" 
+                                  Command="{Binding HandleDeleteRelease}" 
+                                  i:MenuItem.Icon="mdi-trash-can" />
+                        <MenuItem Header="Explore" 
+                                  Command="{Binding HandleExploreRelease}"
+                                  i:MenuItem.Icon="mdi-open-in-new" />
+                    </MenuFlyout>
+                </DataGrid.ContextFlyout>                
             </DataGrid>
             <GridSplitter Grid.Column="1" Width="1" ResizeDirection="Columns" />
             <DockPanel Grid.Column="2" IsVisible="{Binding ShowSelectedRelease}">

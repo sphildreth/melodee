@@ -1,6 +1,8 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
 using System;
+using Projektanker.Icons.Avalonia;
+using Projektanker.Icons.Avalonia.MaterialDesign;
 using Serilog;
 using Serilog.Events;
 
@@ -28,6 +30,9 @@ sealed class Program
                 rollOnFileSizeLimit: true)            
             .CreateLogger();
   
+        IconProvider.Current
+            .Register<MaterialDesignIconProvider>();        
+        
         return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()

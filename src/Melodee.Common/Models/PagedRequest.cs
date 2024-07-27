@@ -5,11 +5,13 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record PagedRequest
 {
+    private const int DefaultPageSize = 100;
+    
     public const string OrderAscDirection = "ASC";
     public const string OrderDescDirection = "DESC";
     private int? _skipValue;    
     
-    public short? Take { get; set; } = 50;    
+    public short? Take { get; set; } = DefaultPageSize;    
     public string? Filter { get; init; }
     
     public short TakeValue
@@ -21,7 +23,7 @@ public sealed record PagedRequest
                 // Suppose to mean return all, this limits to something sane other than Int.MaxLimit
                 return 500;
             }
-            return Take ?? 50;
+            return Take ?? DefaultPageSize;
         }
     }
 

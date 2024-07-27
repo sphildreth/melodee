@@ -8,6 +8,7 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
+using Microsoft.VisualBasic;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -16,6 +17,8 @@ namespace Melodee.Plugins.Discovery.Releases;
 
 public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 {
+    private readonly IDictionary<FileSystemDirectoryInfo, IEnumerable<Release>> _releaseCache = new Dictionary<FileSystemDirectoryInfo, IEnumerable<Release>>();
+    
     public const short MinimumDiscNumber = 1;
 
     public const int MaximumDiscNumber = 500;    
@@ -113,33 +116,39 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     {
         var releases = new List<Release>();
         var messages = new List<string>();
-        
-        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
-        if (dirInfo.Exists)
+
+        if (!_releaseCache.ContainsKey(fileSystemDirectoryInfo))
         {
-            using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+            var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
+            if (dirInfo.Exists)
             {
-                foreach (var jsonFile in dirInfo.EnumerateFiles(Release.JsonFileName, SearchOption.AllDirectories))
+                using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
                 {
-                    if (cancellationToken.IsCancellationRequested)
+                    foreach (var jsonFile in dirInfo.EnumerateFiles(Release.JsonFileName, SearchOption.AllDirectories))
                     {
-                        break;
-                    }
-                    try
-                    {
-                        releases.Add(System.Text.Json.JsonSerializer.Deserialize<Release>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken))!);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Warning("Unable to load release json file [{FileName}]", dirInfo.FullName);
-                        messages.Add($"Unable to load release json file [{dirInfo.FullName}]");
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        try
+                        {
+                            releases.Add(System.Text.Json.JsonSerializer.Deserialize<Release>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken))!);
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Warning("Unable to load release json file [{FileName}]", dirInfo.FullName);
+                            messages.Add($"Unable to load release json file [{dirInfo.FullName}]");
+                        }
                     }
                 }
             }
+            _releaseCache.Add(fileSystemDirectoryInfo, releases);
         }
+        
         return new OperationResult<IEnumerable<Release>>(messages)
         {
-            Data = releases
+            Data = _releaseCache[fileSystemDirectoryInfo]
         };
     }
 

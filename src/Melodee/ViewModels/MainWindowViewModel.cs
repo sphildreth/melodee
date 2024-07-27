@@ -1,9 +1,16 @@
 ﻿using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using DynamicData;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Grids;
 using Melodee.Models;
 using Melodee.Plugins.Discovery.Releases;
@@ -17,9 +24,11 @@ public class MainWindowViewModel : ViewModelBase
 {
     public IReleasesDiscoverer ReleasesDiscoverer { get; }
     
+    public Configuration Configuration { get; }
+    
     public ObservableCollection<ReleaseGrid> ReleaseGridInfos { get; set; } = [];
     
-    public WriteableBitmap ReleasePrimaryCoverImage { get; set; }
+    public WriteableBitmap? ReleasePrimaryCoverImage { get; set; }
    
     private bool _showSelectedRelease;
 
@@ -42,10 +51,78 @@ public class MainWindowViewModel : ViewModelBase
     }
     
     public bool IsLoading { get; set; }
+
+    public bool HandleDeleteSelectedItems()
+    {
+        return false;
+    }     
     
+    public bool HandleDeleteRelease()
+    {
+        IsLoading = true;
+        using (Operation.At(LogEventLevel.Debug).Time("Deleting Release [{SelectedRelease}]", SelectedRelease.ToString()))
+        {
+            var detailResult = Task.Run(() => ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, SelectedRelease.UniqueId)).Result;
+            var deleted  = detailResult.Delete(Configuration.StagingDirectory);
+            if (!deleted)
+            {
+                return false;
+            }
+            ReleaseGridInfos.Remove(ReleaseGridInfos.First(x => x.UniqueId == SelectedRelease.UniqueId));
+            IsLoading = false;
+            return true;
+        }
+    }
+    
+    private WindowBase? GetTopLevel()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime)
+        {
+            return desktopLifetime.MainWindow;
+        }
+
+        return null;
+    }    
+    
+    public async Task<bool> HandleExploreRelease()
+    {
+        IsLoading = true;
+        var detailResult = Task.Run(() => ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, SelectedRelease.UniqueId)).Result;
+        var topLevel = GetTopLevel();
+        if (topLevel != null)
+        {
+            var launcher = TopLevel.GetTopLevel(topLevel)?.Launcher;
+            if (launcher != null)
+            {
+                IsLoading = false;
+                var releaseDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, detailResult.ToDirectoryName()));
+              //  var releaseJsonInfo = new FileInfo(Path.Combine(releaseDirInfo.FullName, Release.JsonFileName));
+              //  return await launcher.LaunchFileInfoAsync(releaseJsonInfo);
+                return await launcher.LaunchDirectoryInfoAsync(releaseDirInfo);
+            }
+        }
+        IsLoading = false;
+        return true;
+    }
+
+    public MainWindowViewModel()
+    {
+        Configuration = new Configuration
+        {
+            InboundDirectory = string.Empty,
+            StagingDirectory = string.Empty,
+            LibraryDirectory = string.Empty,
+            Scripting = new Scripting(),
+            MediaConvertorOptions = new MediaConvertorOptions(),
+            PluginProcessOptions = new PluginProcessOptions()
+        };
+        ReleasesDiscoverer = new ReleasesDiscoverer(Configuration);
+    }
+
     public MainWindowViewModel(Configuration configuration, IReleasesDiscoverer releasesDiscoverer)
     {
         ReleasesDiscoverer = releasesDiscoverer;
+        Configuration = configuration;
        
         IsLoading = true;
         SelectedRelease = null;

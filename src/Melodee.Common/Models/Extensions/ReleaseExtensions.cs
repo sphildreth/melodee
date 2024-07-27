@@ -13,6 +13,17 @@ namespace Melodee.Common.Models.Extensions;
 public static class ReleaseExtensions
 {
     private static readonly IEnumerable<string> DirectorySpaceReplacements = new List<string> { ".", "~", "_", "=", "-" };
+
+    public static bool Delete(this Release release, string directory)
+    {
+        var dirInfo = new DirectoryInfo(Path.Combine(directory, release.ToDirectoryName()));
+        if (dirInfo.Exists)
+        {
+            dirInfo.Delete(true);
+            return true;
+        }
+        return false;
+    }
     
     public static T? MetaTagValue<T>(this Release release, MetaTagIdentifier metaTagIdentifier)
     {
@@ -148,11 +159,11 @@ public static class ReleaseExtensions
     public static string? Genre(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
 
    
-    public static System.IO.DirectoryInfo ToDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.OriginalDirectory.Path);
+    public static System.IO.DirectoryInfo ToOriginalDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.OriginalDirectory.Path);
    
     public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this Release release, string extension)
     {
-        var dirInfo = release.ToDirectoryInfo();
+        var dirInfo = release.ToOriginalDirectoryInfo();
         if (!dirInfo.Exists)
         {
             return [];

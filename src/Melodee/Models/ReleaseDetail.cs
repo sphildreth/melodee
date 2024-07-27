@@ -18,5 +18,7 @@ public sealed record ReleaseDetail
     public required IEnumerable<KeyPair> Data { get; init; }
     
     public required IEnumerable<TrackDetail> Tracks { get; init; }
-    
+    public required long UniqueId { get; init; }
+
+    public override string ToString() => $"UniqueId [{UniqueId}] Artist [{Artist}] Year [{Year}] Title [{Title}]";
 }
