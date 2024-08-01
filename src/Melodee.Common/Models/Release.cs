@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
+using Microsoft.VisualBasic.FileIO;
 
 namespace Melodee.Common.Models;
 
@@ -26,6 +27,8 @@ public sealed record Release
     /// This is the directory where the Release was created, it will not be the "Staging" or "Library" directory where there Release is moved to once processed.
     /// </summary>
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
+    
+    public FileSystemDirectoryInfo? Directory { get; set; }
 
     public IEnumerable<ImageInfo>? Images { get; set; }
 

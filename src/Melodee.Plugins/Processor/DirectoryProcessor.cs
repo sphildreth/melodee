@@ -399,6 +399,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(release.OriginalDirectory.Path, SearchOption.TopDirectoryOnly);
+        var index = 0;
         foreach (var imageFile in imageFiles)
         {
             var fileInfo = new FileInfo(imageFile);
@@ -428,16 +429,23 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     }
 
                     var imageInfo = await SixLabors.ImageSharp.Image.LoadAsync(fileInfo.FullName, cancellationToken);
+                    var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
                     imageInfos.Add(new ImageInfo
                     {
                         CrcHash = CRC32.Calculate(fileInfo),
-                        FileInfo = fileInfo.ToFileSystemInfo(),
+                        FileInfo = new FileSystemFileInfo
+                        {
+                            Name = $"{(index + 1).ToStringPadLeft(2)}-{pictureIdentifier}.jpg",
+                            Size = fileInfoFileSystemInfo.Size,
+                            OriginalName = fileInfo.Name
+                        },
                         PictureIdentifier = pictureIdentifier,
                         Width = imageInfo.Width,
                         Height = imageInfo.Height,
                         SortOrder = 0
                     });
                 }
+                index++;
             }
         }
 

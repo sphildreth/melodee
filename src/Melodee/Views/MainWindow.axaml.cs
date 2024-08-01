@@ -1,9 +1,12 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
+using Melodee.Common.Enums;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Grids;
@@ -78,6 +81,14 @@ public partial class MainWindow : Window
                 Status = detailResult.Status,
                 Year = detailResult.ReleaseYear() ?? 0
             };
+            var frontImage = detailResult.Images?.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
+            if (frontImage != null && detailResult.Directory != null)
+            {
+                dc.ReleasePrimaryCoverImage = MainWindowViewModel.CreateBitmapFromPixelData(
+                    System.IO.File.ReadAllBytes(frontImage.FileInfo.FullName(detailResult.Directory)), frontImage.Width,
+                    frontImage.Height);
+            }
+            // TODO load not found release image
             dc.IsLoading = false;
         }
     }

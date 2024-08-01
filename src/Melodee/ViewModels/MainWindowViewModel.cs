@@ -1,11 +1,13 @@
 ﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using DynamicData;
 using Melodee.Common.Models;
@@ -134,4 +136,28 @@ public class MainWindowViewModel : ViewModelBase
             IsLoading = false;
         }
     }
+    
+    public static WriteableBitmap CreateBitmapFromPixelData( 
+        byte[] bgraPixelData, 
+        int pixelWidth, 
+        int pixelHeight) 
+    { 
+        // Standard may need to change on some devices 
+        Vector dpi = new Vector(96, 96); 
+  
+        var bitmap = new WriteableBitmap( 
+            new PixelSize(pixelWidth, pixelHeight), 
+            dpi, 
+            PixelFormat.Bgra8888, 
+            AlphaFormat.Premul); 
+  
+        using (var frameBuffer = bitmap.Lock()) 
+        { 
+            Marshal.Copy(bgraPixelData, 0, frameBuffer.Address, bgraPixelData.Length); 
+        } 
+  
+        return bitmap; 
+    } 
+
+    
 }

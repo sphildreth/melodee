@@ -133,7 +133,13 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 
                         try
                         {
-                            releases.Add(System.Text.Json.JsonSerializer.Deserialize<Release>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken))!);
+                            var r = System.Text.Json.JsonSerializer.Deserialize<Release>(
+                                await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
+                            if (r != null)
+                            {
+                                r.Directory = jsonFile.Directory?.ToDirectorySystemInfo();
+                                releases.Add(r);
+                            }
                         }
                         catch (Exception e)
                         {
