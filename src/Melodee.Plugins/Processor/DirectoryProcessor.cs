@@ -270,7 +270,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             };
                         }
 
-                        var releaseImages = release.Images?.ToList() ?? [];
+                        var releaseImages = new List<ImageInfo>();
                         var foundReleaseImages = (await FindImagesForRelease(release, cancellationToken)).ToArray();
                         if (foundReleaseImages.Length != 0)
                         {
@@ -283,7 +283,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             }
                         }
 
-                        release.Images = releaseImages;
+                        release.Images = releaseImages.ToArray();
                         if (release.Tracks != null)
                         {
                             foreach (var track in release.Tracks)

@@ -205,10 +205,11 @@ public static class ReleaseExtensions
         }
         try
         {
+            var releaseId = release.UniqueId.ToString();
             var normalizedArtistName = release.Artist()?.ToAlphanumericName() ?? string.Empty;
             var normalizedTitleName = release.ReleaseTitle()?.ToAlphanumericName() ?? string.Empty;
 
-            if (normalizedName.Contains(normalizedArtistName) && normalizedName.Contains(normalizedTitleName))
+            if (normalizedName.StartsWith(releaseId) || (normalizedName.Contains(normalizedArtistName) && normalizedName.Contains(normalizedTitleName)))
             {
                 return true;
             }
