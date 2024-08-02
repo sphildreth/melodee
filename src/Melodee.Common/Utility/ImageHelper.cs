@@ -9,6 +9,8 @@ namespace Melodee.Common.Utility
         { 
             return new string[7] { "*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp" }; 
         }
+      
+     
 
         public static string[] GetFiles(string path,
                                         string[] patterns = null,

@@ -10,6 +10,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Grids;
+using Melodee.Helpers;
 using Melodee.Models;
 using Melodee.ViewModels;
 using Serilog;
@@ -28,6 +29,8 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
+   
+    
     private void DataGrid_OnTapped(object? sender, TappedEventArgs e)
     {
         var textBlock = e.Source as TextBlock;
@@ -84,9 +87,7 @@ public partial class MainWindow : Window
             var frontImage = detailResult.Images?.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
             if (frontImage != null && detailResult.Directory != null)
             {
-                dc.ReleasePrimaryCoverImage = MainWindowViewModel.CreateBitmapFromPixelData(
-                    System.IO.File.ReadAllBytes(frontImage.FileInfo.FullName(detailResult.Directory)), frontImage.Width,
-                    frontImage.Height);
+                dc.ReleasePrimaryCoverImage = new Bitmap(new MemoryStream(File.ReadAllBytes(frontImage.FileInfo.FullName(detailResult.Directory))));
             }
             // TODO load not found release image
             dc.IsLoading = false;

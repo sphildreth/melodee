@@ -25,7 +25,7 @@
                           i:MenuItem.Icon="mdi-trash-can"/>
             </MenuItem>
         </Menu>
-        <Grid DockPanel.Dock="Left" ColumnDefinitions="800,1, *">
+        <Grid DockPanel.Dock="Left" ColumnDefinitions="400,1, *">
             <DataGrid Grid.Column="0"
                       Name="StagingDirectoryReleasesGrid"
                       Margin="5"
@@ -58,7 +58,7 @@
             </DataGrid>
             <GridSplitter Grid.Column="1" Width="1" ResizeDirection="Columns" />
             <DockPanel Grid.Column="2" IsVisible="{Binding ShowSelectedRelease}">
-                <Grid DockPanel.Dock="Top" ColumnDefinitions="*, 220">
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*, 220" RenderOptions.BitmapInterpolationMode="HighQuality">
                     <DataGrid Grid.Column="0"
                         AutoGenerateColumns="False"
                         BorderBrush="Gray"
@@ -76,8 +76,8 @@
                         </DataGrid.Columns>
                     </DataGrid>
                     <Image Grid.Column="1"
-                           Margin="20" 
-                           Height="200" 
+                           Margin="5,5,10,5"
+                           Height="200"
                            Width="200"
                            Source="{Binding ReleasePrimaryCoverImage}"  />
                 </Grid>

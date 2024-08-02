@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -14,6 +16,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Grids;
+using Melodee.Helpers;
 using Melodee.Models;
 using Melodee.Plugins.Discovery.Releases;
 using ReactiveUI;
@@ -29,9 +32,18 @@ public class MainWindowViewModel : ViewModelBase
     public Configuration Configuration { get; }
     
     public ObservableCollection<ReleaseGrid> ReleaseGridInfos { get; set; } = [];
+
+    private Bitmap? _releasePrimaryCoverImage;
     
-    public WriteableBitmap? ReleasePrimaryCoverImage { get; set; }
-   
+    public Bitmap? ReleasePrimaryCoverImage     {
+        get => _releasePrimaryCoverImage;
+        set
+        {
+            _releasePrimaryCoverImage = value;
+            this.RaisePropertyChanged(nameof(ReleasePrimaryCoverImage));
+        }
+    }
+
     private bool _showSelectedRelease;
 
     public bool ShowSelectedRelease
@@ -137,27 +149,19 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
     
-    public static WriteableBitmap CreateBitmapFromPixelData( 
-        byte[] bgraPixelData, 
-        int pixelWidth, 
-        int pixelHeight) 
-    { 
-        // Standard may need to change on some devices 
-        Vector dpi = new Vector(96, 96); 
-  
-        var bitmap = new WriteableBitmap( 
-            new PixelSize(pixelWidth, pixelHeight), 
-            dpi, 
-            PixelFormat.Bgra8888, 
-            AlphaFormat.Premul); 
-  
-        using (var frameBuffer = bitmap.Lock()) 
-        { 
-            Marshal.Copy(bgraPixelData, 0, frameBuffer.Address, bgraPixelData.Length); 
-        } 
-  
-        return bitmap; 
-    } 
-
+    // public static WriteableBitmap CreateBitmapFromPixelData( 
+    //     byte[] bgraPixelData, 
+    //     int pixelWidth, 
+    //     int pixelHeight) 
+    // { 
+    //     var bitmap = new WriteableBitmap( 
+    //         new PixelSize(pixelWidth, pixelHeight), 
+    //         new Vector(96, 96), 
+    //         PixelFormat.Bgra8888, 
+    //         AlphaFormat.Premul);
+    //     using var frameBuffer = bitmap.Lock();
+    //     Marshal.Copy(bgraPixelData, 0, frameBuffer.Address, bgraPixelData.Length);
+    //     return bitmap; 
+    // } 
     
 }
