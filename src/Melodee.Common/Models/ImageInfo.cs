@@ -22,4 +22,6 @@ public sealed record ImageInfo
     public int Height { get; init; }
     
     public int SortOrder  { get; init; }
+    
+    public bool WasEmbeddedInTrack { get; init; }
 }

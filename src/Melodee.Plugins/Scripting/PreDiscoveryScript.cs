@@ -40,7 +40,7 @@ public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPl
             try
             {
                 var argument = $" -d \"{fileSystemDirectoryInfo.Path}\" -r {(_configuration.PluginProcessOptions.DoDeleteOriginal ? "0" :"1")}";
-                await $"{_configuration.Scripting.PreDiscoveryScript}{argument}".Bash();
+                await $"bash {_configuration.Scripting.PreDiscoveryScript}{argument}".Bash();
                 result = true;
             }
             catch (Exception e)

@@ -1,3 +1,4 @@
+using System.Diagnostics.Tracing;
 using FFMpegCore;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -155,31 +156,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                                 Value = fileAtl.TechnicalInformation.AudioDataSize
                             });
                         }
-
-                        if (fileAtl.EmbeddedPictures.Any() && Configuration.PluginProcessOptions.DoLoadEmbeddedImages)
-                        {
-                            foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
-                            {
-                                var imageInfo = SixLabors.ImageSharp.Image.Load(embeddedPicture.PictureData);
-                                var imageCrcHash = CRC32.Calculate(embeddedPicture.PictureData);
-                                if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
-                                {
-                                    var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
-                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{embeddedPicture.PicType.ToString()}.jpg");
-                                    await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
-                                    images.Add(new ImageInfo
-                                    {
-                                        CrcHash = imageCrcHash,
-                                        PictureIdentifier = pictureIdentifier,
-                                        FileInfo = (new FileInfo(newImageFileName).ToFileSystemInfo()),
-                                        Width = imageInfo.Width,
-                                        Height = imageInfo.Height,
-                                        SortOrder = embeddedPicture.Position
-                                    });
-                                }
-                            }
-                        }
-                        
+                       
                         var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToDictionary();
                         foreach (var metaTagIdentifier in metaTagIdentifierDictionary)
                         {
@@ -221,7 +198,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                                 }
                             }
                         }
-
+                        
                         var adData1 = fileAtl.AdditionalFields.ToDictionary();
                         var adData2 = ffProbeMediaAnalysis?.Format?.Tags?.ToDictionary() ?? new Dictionary<string, string>();
                         var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge(new [] { adData1, adData2 }));
@@ -232,6 +209,40 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                                 tags.Add(additionalTag);
                             }
                         }
+                        
+                        if (fileAtl.EmbeddedPictures.Any() && Configuration.PluginProcessOptions.DoLoadEmbeddedImages)
+                        {
+                            var releaseId = SafeParser.Hash(
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString() ?? string.Empty,
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear)?.Value?.ToString() ?? 
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingYear)?.Value?.ToString() ?? 
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingDateOrYear)?.Value?.ToString() ?? string.Empty,
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value?.ToString() ?? string.Empty);
+                            var pictureIndex = 0;
+                            foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
+                            {
+                                var imageInfo = SixLabors.ImageSharp.Image.Load(embeddedPicture.PictureData);
+                                var imageCrcHash = CRC32.Calculate(embeddedPicture.PictureData);
+                                if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
+                                {
+                                    var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
+                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{releaseId}-{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
+                                    await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
+                                    images.Add(new ImageInfo
+                                    {
+                                        CrcHash = imageCrcHash,
+                                        PictureIdentifier = pictureIdentifier,
+                                        FileInfo = (new FileInfo(newImageFileName).ToFileSystemInfo()),
+                                        Width = imageInfo.Width,
+                                        Height = imageInfo.Height,
+                                        SortOrder = embeddedPicture.Position,
+                                        WasEmbeddedInTrack = true
+                                    });
+                                }
+
+                                pictureIndex++;
+                            }
+                        }                            
                     }
                 }
             }

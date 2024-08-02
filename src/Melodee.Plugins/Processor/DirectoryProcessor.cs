@@ -313,10 +313,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     release.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
                     {
                         var newImageFileName = Path.Combine(releaseDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
-                        File.Copy(image.FileInfo!.FullName(directoryInfoToProcess), newImageFileName, true);
+                        File.Copy(image.FileInfo!.FullOriginalName(directoryInfoToProcess), newImageFileName, true);
                         if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
-                            File.Delete(image.FileInfo!.FullName(directoryInfoToProcess));
+                            File.Delete(image.FileInfo!.FullOriginalName(directoryInfoToProcess));
                         }
                     });
 
