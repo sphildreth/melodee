@@ -1,4 +1,3 @@
-using System.Diagnostics.Tracing;
 using FFMpegCore;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -200,7 +199,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                         }
                         
                         var adData1 = fileAtl.AdditionalFields.ToDictionary();
-                        var adData2 = ffProbeMediaAnalysis?.Format?.Tags?.ToDictionary() ?? new Dictionary<string, string>();
+                        var adData2 = ffProbeMediaAnalysis?.Format.Tags?.ToDictionary() ?? new Dictionary<string, string>();
                         var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge(new [] { adData1, adData2 }));
                         foreach (var additionalTag in additionalTags)
                         {
@@ -251,7 +250,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                 Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
             }
 
-            // Ensure that OrigReleaseYear exists and if not add with invalid date (will get set later by MetaTagProcessor.
+            // Ensure that OrigReleaseYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
             if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseYear))
             {
                 tags.Add(new MetaTag<object?>{
@@ -289,7 +288,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
         }
     }
 
-    public IEnumerable<MetaTag<object?>> MetaTagsForTagDictionary(Dictionary<string, string> tagsDictionary)
+    private IEnumerable<MetaTag<object?>> MetaTagsForTagDictionary(Dictionary<string, string> tagsDictionary)
     {
         var result = new List<MetaTag<object?>>();
         if (tagsDictionary.Count == 0)
@@ -297,7 +296,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
             return result;
         }
 
-        foreach (var kp in tagsDictionary.Where(x => x.Value != null))
+        foreach (var kp in tagsDictionary)
         {
             var k = kp.Key.CleanString()?.Replace(" ", string.Empty).ToUpperInvariant();
             switch (k)
@@ -323,7 +322,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                         result.Add(new MetaTag<object?>()
                         {
                             Identifier = MetaTagIdentifier.Length,
-                            Value = kp.Value!
+                            Value = kp.Value
                         });
                     }
                     break;    
@@ -334,7 +333,7 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                         result.Add(new MetaTag<object?>()
                         {
                             Identifier = MetaTagIdentifier.OrigReleaseDate,
-                            Value = kp.Value!
+                            Value = kp.Value
                         });
                     }
                     break;          
@@ -347,19 +346,20 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                             result.Add(new MetaTag<object?>()
                             {
                                 Identifier = MetaTagIdentifier.TrackNumberTotal,
-                                Value = kp.Value!
+                                Value = kp.Value
                             });
                         }
                     }
                     break;                  
                 
+                // ReSharper disable once StringLiteralTypo
                 case "WXXX":
                     if (result.All(x => x.Identifier != MetaTagIdentifier.UserDefinedUrlLink))
                     {
                         result.Add(new MetaTag<object?>()
                         {
                             Identifier = MetaTagIdentifier.UserDefinedUrlLink,
-                            Value = kp.Value!
+                            Value = kp.Value
                         });
                     }
                     break;                  

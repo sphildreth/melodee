@@ -34,6 +34,7 @@ public class NfoTests
             var nfo = new Nfo(TestsBase.NewConfiguration);
             var nfoParserResult = await nfo.ReleaseForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
+            Assert.NotNull(nfoParserResult.Tracks);
             Assert.True(nfoParserResult.IsValid());
             
             Assert.DoesNotContain(nfoParserResult.Tracks, x => x.Title() != null && x.Title()!.Contains("..."));
