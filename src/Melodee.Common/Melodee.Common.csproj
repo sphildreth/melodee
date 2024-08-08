@@ -20,4 +20,8 @@
       <PackageReference Include="z440.atl.core" Version="5.25.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageVersion Update="z440.atl.core" Version="5.26.0" />
+    </ItemGroup>
+
 </Project>

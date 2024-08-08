@@ -1,8 +1,6 @@
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
-using Melodee.Plugins;
 
-namespace Melodee.Tests.Plugins.Conversion;
+namespace Melodee.Tests.Plugins.Scripting;
 
 public class PreDiscoveryScriptTests
 {

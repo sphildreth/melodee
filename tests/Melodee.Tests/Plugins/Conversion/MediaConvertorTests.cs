@@ -42,7 +42,7 @@ public class MediaConvertorTests
                 {
                     MediaConvertorOptions = new MediaConvertorOptions(),
                     PluginProcessOptions = new PluginProcessOptions(),
-                    Scripting = new Scripting(),
+                    Scripting = new Common.Models.Configuration.Scripting(),
                     InboundDirectory = @"/home/steven/incoming/melodee_test/tests",
                     StagingDirectory = string.Empty,
                     LibraryDirectory = string.Empty

@@ -1,41 +1,46 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-        <ApplicationManifest>app.manifest</ApplicationManifest>
-        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    </PropertyGroup>
+<Project Sdk="Uno.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0-desktop;net8.0</TargetFrameworks>
 
-    <ItemGroup>
-        <AvaloniaResource Include="Assets\**"/>
-    </ItemGroup>
+    <OutputType>Exe</OutputType>
+    <UnoSingleProject>true</UnoSingleProject>
 
-    <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.1.1" />
-        <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.1.1" />
-        <PackageReference Include="Avalonia.Desktop" Version="11.1.1" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.1" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.1" />
-        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.1" />
-        <PackageReference Include="Avalonia.ReactiveUI" Version="11.1.1" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-        <PackageReference Include="Projektanker.Icons.Avalonia.MaterialDesign" Version="9.4.0" />
-        <PackageReference Include="Serilog" Version="4.0.1" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-        <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-    </ItemGroup>
+    <!-- Display name -->
+    <ApplicationTitle>Melodee</ApplicationTitle>
+    <!-- App Identifier -->
+    <ApplicationId>com.companyname.Melodee</ApplicationId>
+    <!-- Versions -->
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <!-- Package Publisher -->
+    <ApplicationPublisher>Melodee</ApplicationPublisher>
+    <!-- Package Description -->
+    <Description>Melodee powered by Uno Platform.</Description>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
-      <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
-    </ItemGroup>
+    <!--
+      UnoFeatures let's you quickly add and manage implicit package references based on the features you want to use.
+      https://aka.platform.uno/singleproject-features
+    -->
+    <UnoFeatures>
+      CSharpMarkup;
+      Material;
+      Dsp;
+      Hosting;
+      Toolkit;
+      Logging;
+      LoggingSerilog;
+      MVUX;
+      Configuration;
+      Http;
+      Serialization;
+      Localization;
+      Navigation;
+    </UnoFeatures>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <None Update="configuration.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug' or '$(IsUiAutomationMappingEnabled)'=='True'">
+    <IsUiAutomationMappingEnabled>True</IsUiAutomationMappingEnabled>
+    <DefineConstants>$(DefineConstants);USE_UITESTS</DefineConstants>
+  </PropertyGroup>
+
 </Project>
