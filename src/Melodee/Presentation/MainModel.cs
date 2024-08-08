@@ -1,3 +1,4 @@
+using Melodee.Common.Models.Configuration;
 using Melodee.Models;
 
 namespace Melodee.Presentation;
@@ -8,13 +9,13 @@ public partial record MainModel
 
     public MainModel(
         IStringLocalizer localizer,
-        IOptions<AppConfig> appInfo,
+        IOptions<Configuration> configuration,
         INavigator navigator)
     {
         _navigator = navigator;
         Title = "Main";
         Title += $" - {localizer["ApplicationName"]}";
-        Title += $" - {appInfo?.Value?.Environment}";
+        Title += $" - {configuration?.Value?.Environment}";
     }
 
     public string? Title { get; }

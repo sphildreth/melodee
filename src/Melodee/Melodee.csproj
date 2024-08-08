@@ -43,4 +43,13 @@
     <DefineConstants>$(DefineConstants);USE_UITESTS</DefineConstants>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
+    <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Helpers\" />
+  </ItemGroup>
+
 </Project>
