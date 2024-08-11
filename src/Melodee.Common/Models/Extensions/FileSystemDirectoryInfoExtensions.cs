@@ -15,7 +15,11 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return [];
         }
-        return dirInfo.GetFiles($"*.{extension}", SearchOption.AllDirectories).ToArray();
+        return dirInfo.GetFiles($"*.{extension}", new EnumerationOptions
+        {
+            RecurseSubdirectories = true, 
+            MatchCasing = MatchCasing.CaseInsensitive
+        }).ToArray();
     }
 
     public static FileSystemFileInfo? GetFileForCrcHash(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension, string crcHash)

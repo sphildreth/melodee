@@ -17,6 +17,8 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// </summary>
 public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
+    public const string HandlesExtension = "NFO";
+    
     public override string Id => "35A33042-6E57-431C-AF94-F7F803F811C4";
 
     public override string DisplayName => nameof(Nfo);
@@ -24,10 +26,14 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
     public override bool IsEnabled { get; set; } = false;
 
     public override int SortOrder { get; } = 3;
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+    }
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var nfoFiles = fileSystemDirectoryInfo.FileInfosForExtension("nfo").ToArray();
+        var nfoFiles = fileSystemDirectoryInfo.FileInfosForExtension(HandlesExtension).ToArray();
 
         if (nfoFiles.Length == 0)
         {

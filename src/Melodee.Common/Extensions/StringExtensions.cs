@@ -414,6 +414,11 @@ namespace Melodee.Common.Extensions
         {
             if (!string.IsNullOrWhiteSpace(input))
             {
+                if (Path.HasExtension(input))
+                {
+                    var fileInfo = new FileInfo(input);
+                    return fileInfo.Directory.ToDirectorySystemInfo();
+                }
                 return (new DirectoryInfo(input).ToDirectorySystemInfo());
             }
 

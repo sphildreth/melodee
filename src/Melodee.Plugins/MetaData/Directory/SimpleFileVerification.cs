@@ -17,6 +17,8 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// </summary>
 public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
+    public const string HandlesExtension = "SFV";
+    
     private readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
     public override string Id => "6C253D42-F176-4A58-A895-C54BEB1F8A5C";
 
@@ -25,15 +27,21 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
     public override bool IsEnabled { get; set; } = true;
 
     public override int SortOrder { get; } = 1;
+    
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+    }      
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var sfvFiles = fileSystemDirectoryInfo.FileInfosForExtension("sfv").ToArray();
+        var sfvFiles = fileSystemDirectoryInfo.FileInfosForExtension(HandlesExtension).ToArray();
 
         if (sfvFiles.Length == 0)
         {
             return new OperationResult<int>("Skipping validation. No SFV files found.")
             {
+                Type = OperationResponseType.NotFound,
                 Data = -1
             };
         }
@@ -58,6 +66,8 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
             {
                 var models = await GetModelsFromSfvFile(fileSystemDirectoryInfo, sfvFile.FullName);
 
+                Log.Debug("\u2502 Found [{Tracks}] valid tracks for Sfv file", models.Count(x => x.IsValid));
+                
                 var tracks = new List<Common.Models.Track>();
                 await Parallel.ForEachAsync(models.Where(x => x.IsValid), cancellationToken, async (model, tt) =>
                 {
@@ -76,6 +86,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 {
                     return new OperationResult<int>($"Unable to find tracks for directory [{fileSystemDirectoryInfo}]")
                     {
+                        Type = OperationResponseType.ValidationFailure,
                         Data = -1
                     };
                 }
@@ -222,7 +233,6 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         {
             return null;
         }
-
         var directoryInfo = filePath.ToDirectoryInfo();
 
         try
@@ -248,10 +258,10 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
                 fileSystemInfoFile = new FileInfo(Path.Combine(dirName ?? string.Empty, filename)).ToFileSystemInfo();
             }
-
+            var isCrcHashAccurate = IsCrCHashAccurate(fileSystemInfoFile.FullName(directoryInfo), crc);
             return new Models.SfvLine
             {
-                IsValid = !string.IsNullOrWhiteSpace(filePath) && IsCrCHashAccurate(fileSystemInfoFile.FullName(directoryInfo), crc),
+                IsValid = !string.IsNullOrWhiteSpace(filePath) && isCrcHashAccurate,
                 CrcHash = crc,
                 FileSystemFileInfo = fileSystemInfoFile,
             };
@@ -270,18 +280,25 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         {
             return false;
         }
-
-        var fi = new FileInfo(filename);
-        if (fi.Exists)
+        try
         {
-            var calculated = CRC32.Calculate(fi);
-            var doesMatch = string.Equals(calculated, crcHash, StringComparison.OrdinalIgnoreCase);
+            var fi = new FileInfo(filename);
+            if (fi.Exists)
+            {
+                var calculated = CRC32.Calculate(fi);
+                var doesMatch = string.Equals(calculated, crcHash, StringComparison.OrdinalIgnoreCase);
 
-            Trace.WriteLine($"IsCrCHashAccurate File [{filename}] DoesMatch [{doesMatch}] Expected [{crcHash}] Calculated [{calculated}]", "Information");
+                Trace.WriteLine(
+                    $"IsCrCHashAccurate File [{filename}] DoesMatch [{doesMatch}] Expected [{crcHash}] Calculated [{calculated}]",
+                    "Information");
 
-            return doesMatch;
+                return doesMatch;
+            }
         }
-
+        catch (Exception e)
+        {
+            Trace.WriteLine(e);
+        }
         return false;
     }
 

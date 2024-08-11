@@ -24,7 +24,9 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// </summary>
 public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
-    private readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
+    public const string HandlesExtension = "CUE";
+    
+    public readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
 
     public override string Id => "3CAB0527-B13F-4C29-97AD-5541229240DD";
 
@@ -33,10 +35,15 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
     public override bool IsEnabled { get; set; } = false;
 
     public override int SortOrder { get; } = 0;
+    
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+    }  
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var cueFiles = fileSystemDirectoryInfo.FileInfosForExtension("cue").ToArray();
+        var cueFiles = fileSystemDirectoryInfo.FileInfosForExtension(HandlesExtension).ToArray();
 
         if (cueFiles.Length == 0)
         {
@@ -178,9 +185,9 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                         {
                             if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                             {
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension("sfv");
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension("m3u");
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension("nfo");
+                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
+                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
+                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.HandlesExtension);
                                 File.Delete(cueFile.FullName);
                                 var cueFileMediaFile = new System.IO.FileInfo(Path.Combine(cueFile.DirectoryName, $"{cueFile.Name.Replace(cueFile.Extension, "")}.mp3"));
                                 if (cueFileMediaFile.Exists)
@@ -486,7 +493,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                 releaseDate = dirInfo.Name.TryToGetYearFromString();
                 if (releaseDate == null)
                 {
-                    var m3uFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension("m3u");
+                    var m3uFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension(M3UPlaylist.HandlesExtension);
                     foreach (var m3uFile in m3uFiles)
                     {
                         releaseDate = m3uFile.Name.TryToGetYearFromString();
@@ -498,7 +505,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                 }
                 if (releaseDate == null)
                 {
-                    var sfvFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension("sfv");
+                    var sfvFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension(SimpleFileVerification.HandlesExtension);
                     foreach (var sfvFile in sfvFiles)
                     {
                         releaseDate = sfvFile.Name.TryToGetYearFromString();

@@ -15,7 +15,7 @@ public class ProcessInboundSettings : Spectre.Console.Cli.CommandSettings
     [Description("The staging directory to place processed files into.")]
     [CommandArgument(0, "[STAGING]")]
     [Required]
-    public string Staging { get; set; }= string.Empty;
+    public string Staging { get; set; } = string.Empty;
     
     [Description("Copy or move files from inbound. If set then processed files are not deleted.")]
     [CommandOption("--copy")]

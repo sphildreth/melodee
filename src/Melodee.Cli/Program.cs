@@ -17,6 +17,10 @@ public static class Program
             {
                 add.AddCommand<ProcessInboundCommand>("process");
             });
+            config.AddBranch<ParseSettings>("parser", add =>
+            {
+                add.AddCommand<ParseCommand>("parse");
+            });            
         });
         
         //:musical_note:

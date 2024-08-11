@@ -14,6 +14,8 @@ namespace Melodee.Plugins.MetaData.Directory;
 
 public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
+    public const string HandlesExtension = "M3U";
+    
     private readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
     
     public override string Id => "800EBFEF-4A9A-4DD8-8505-056D13535D45";
@@ -23,10 +25,15 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
     public override bool IsEnabled { get; set; } = true;
 
     public override int SortOrder { get; } = 2;
+    
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+    }    
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var m3UFiles = fileSystemDirectoryInfo.FileInfosForExtension("m3u").ToArray();
+        var m3UFiles = fileSystemDirectoryInfo.FileInfosForExtension(HandlesExtension).ToArray();
         
         if (m3UFiles.Length == 0)
         {
