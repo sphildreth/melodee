@@ -21,10 +21,10 @@ public partial record MainModel
 
     public IState<string> Name => State<string>.Value(this, () => string.Empty);
 
-    public async Task GoToSecond()
-    {
-        var name = await Name;
-        await _navigator.NavigateViewModelAsync<SecondModel>(this, data: new Entity(name!));
-    }
+    // public async Task GoToSecond()
+    // {
+    //     var name = await Name;
+    //     await _navigator.NavigateViewModelAsync<SecondModel>(this, data: new Entity(name!));
+    // }
 
 }

@@ -5,26 +5,62 @@
       xmlns:uen="using:Uno.Extensions.Navigation.UI"
       xmlns:utu="using:Uno.Toolkit.UI"
       xmlns:um="using:Uno.Material"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      xmlns:themes="clr-namespace:Uno.Themes;assembly=Uno.Themes.WinUI"
       NavigationCacheMode="Required"
       Background="{ThemeResource BackgroundBrush}">
-  <ScrollViewer>
-    <Grid utu:SafeArea.Insets="VisibleBounds">
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto" />
-        <RowDefinition />
-      </Grid.RowDefinitions>
-      <utu:NavigationBar Content="{Binding Title}" />
+  <StackPanel Orientation="Vertical"
+              HorizontalAlignment="Stretch">
 
-      <StackPanel Grid.Row="1"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Spacing="16">
-        <TextBox Text="{Binding Name, Mode=TwoWay}"
-            PlaceholderText="Enter your name:" />
-        <Button Content="Go to Second Page"
-            AutomationProperties.AutomationId="SecondPageButton"
-            Command="{Binding GoToSecond}" />
-      </StackPanel>
-    </Grid>
-  </ScrollViewer>
+    <StackPanel Orientation="Horizontal"
+                HorizontalAlignment="Stretch"
+                Spacing="8"
+                Padding="8,4"
+                BorderBrush="{ThemeResource AppBarBorderThemeBrush}"
+                BorderThickness="2"
+                CornerRadius="5">
+      <!-- Top level menu -->
+      <MenuBar>
+        <MenuBarItem Title="File">
+          <MenuFlyoutItem Text="New" />
+          <MenuFlyoutItem Text="Open" />
+          <MenuFlyoutItem Text="Save" />
+          <MenuFlyoutItem Text="Exit" />
+        </MenuBarItem>
+        <MenuBarItem Title="Edit">
+          <MenuFlyoutItem Text="Undo" />
+          <MenuFlyoutItem Text="Cut" />
+          <MenuFlyoutItem Text="Copy" />
+          <MenuFlyoutItem Text="Paste" />
+        </MenuBarItem>
+        <MenuBarItem Title="Options">
+          <MenuFlyoutItem Text="Some Option" />
+        </MenuBarItem>
+        <MenuBarItem Title="Tools">
+          <MenuFlyoutItem Text="Some Tool" />
+        </MenuBarItem>
+        <MenuBarItem Title="Help">
+          <MenuFlyoutItem Text="About" />
+        </MenuBarItem>
+      </MenuBar>
+      <!-- Loader Image -->
+      <muxc:ProgressRing IsActive="True"
+                         Style="{StaticResource MaterialProgressRingStyle}"
+                         HorizontalAlignment="Center" />
+      <!-- Search input -->
+      <TextBox PlaceholderText="Search"
+               Style="{StaticResource OutlinedTextBoxStyle}">
+        <themes:ControlExtensions.Icon>
+          <SymbolIcon Symbol="Find" />
+        </themes:ControlExtensions.Icon>
+      </TextBox>
+    </StackPanel>
+
+    <!-- Release card grid -->
+    <!-- Release detail view -->
+
+    <!-- Status bar     -->
+
+  </StackPanel>
+
 </Page>
