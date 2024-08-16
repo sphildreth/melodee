@@ -8,7 +8,7 @@
     <!-- Display name -->
     <ApplicationTitle>Melodee</ApplicationTitle>
     <!-- App Identifier -->
-    <ApplicationId>com.companyname.Melodee</ApplicationId>
+    <ApplicationId>com.companyname.melodee</ApplicationId>
     <!-- Versions -->
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
@@ -22,7 +22,6 @@
       https://aka.platform.uno/singleproject-features
     -->
     <UnoFeatures>
-      CSharpMarkup;
       Material;
       Dsp;
       Hosting;
@@ -45,11 +44,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
-    <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Helpers\" />
   </ItemGroup>
 
 </Project>

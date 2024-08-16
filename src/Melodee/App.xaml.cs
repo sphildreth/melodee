@@ -1,14 +1,5 @@
 using Melodee.Common.Models.Configuration;
-using Melodee.Models;
-using Melodee.Plugins.Discovery.Releases;
-using Melodee.Presentation;
-using Melodee.Styles;
 using Uno.Resizetizer;
-using MainModel = Melodee.Presentation.MainModel;
-using MainPage = Melodee.Presentation.MainPage;
-using SecondModel = Melodee.Presentation.SecondModel;
-using SecondPage = Melodee.Presentation.SecondPage;
-using Shell = Melodee.Presentation.Shell;
 
 namespace Melodee;
 
@@ -28,14 +19,6 @@ public partial class App : Application
 
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Load WinUI Resources
-        Resources.Build(r => r.Merged(new XamlControlsResources()));
-
-        // Load Uno.UI.Toolkit and Material Resources
-        Resources.Build(r => r.Merged(
-            new MaterialToolkitTheme(
-                new ColorPaletteOverride(),
-                new MaterialFontsOverride())));
         var builder = this.CreateBuilder(args)
             // Add navigation support for toolkit controls such as TabBar and NavigationView
             .UseToolkitNavigation()
@@ -44,25 +27,52 @@ public partial class App : Application
                 // Switch to Development environment when running in DEBUG
                 .UseEnvironment(Environments.Development)
 #endif
-                .UseLogging(
-                    configure: (context, logBuilder) =>
-                    {
-                        logBuilder.SetMinimumLevel(context.HostingEnvironment.IsDevelopment()
-                            ? LogLevel.Information
-                            : LogLevel.Warning).CoreLogLevel(LogLevel.Warning);
-                    }, enableUnoLogging: true)
+                .UseLogging(configure: (context, logBuilder) =>
+                {
+                    // Configure log levels for different categories of logging
+                    logBuilder
+                        .SetMinimumLevel(
+                            context.HostingEnvironment.IsDevelopment() ?
+                                LogLevel.Information :
+                                LogLevel.Warning)
+
+                        // Default filters for core Uno Platform namespaces
+                        .CoreLogLevel(LogLevel.Warning);
+
+                    // Uno Platform namespace filter groups
+                    // Uncomment individual methods to see more detailed logging
+                    //// Generic Xaml events
+                    //logBuilder.XamlLogLevel(LogLevel.Debug);
+                    //// Layout specific messages
+                    //logBuilder.XamlLayoutLogLevel(LogLevel.Debug);
+                    //// Storage messages
+                    //logBuilder.StorageLogLevel(LogLevel.Debug);
+                    //// Binding related messages
+                    //logBuilder.XamlBindingLogLevel(LogLevel.Debug);
+                    //// Binder memory references tracking
+                    //logBuilder.BinderMemoryReferenceLogLevel(LogLevel.Debug);
+                    //// DevServer and HotReload related
+                    //logBuilder.HotReloadCoreLogLevel(LogLevel.Information);
+                    //// Debug JS interop
+                    //logBuilder.WebAssemblyLogLevel(LogLevel.Debug);
+
+                }, enableUnoLogging: true)
                 .UseSerilog(consoleLoggingEnabled: true, fileLoggingEnabled: true)
-                .UseConfiguration(configure: configBuilder => configBuilder
-                    .EmbeddedSource<App>()
-                    .Section<Configuration>()
+                .UseConfiguration(configure: configBuilder =>
+                    configBuilder
+                        .EmbeddedSource<App>()
+                        .Section<Configuration>()
                 )
+                // Enable localization (see appsettings.json for supported languages)
                 .UseLocalization()
+                // Register Json serializers (ISerializer and ISerializer)
                 .UseSerialization((context, services) => services
                     .AddContentSerializer(context))
                 .UseHttp()
                 .ConfigureServices((context, services) =>
                 {
-                    services.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();
+                    // TODO: Register your services
+                    //services.AddSingleton<IMyService, MyService>();
                 })
                 .UseNavigation(ReactiveViewModelMappings.ViewModelMappings, RegisterRoutes)
             );
@@ -88,8 +98,8 @@ public partial class App : Application
             new RouteMap("", View: views.FindByViewModel<ShellModel>(),
                 Nested:
                 [
-                    new("Main", View: views.FindByViewModel<MainModel>(), IsDefault: true),
-                    new("Second", View: views.FindByViewModel<SecondModel>()),
+                    new ("Main", View: views.FindByViewModel<MainModel>(), IsDefault:true),
+                    new ("Second", View: views.FindByViewModel<SecondModel>()),
                 ]
             )
         );
