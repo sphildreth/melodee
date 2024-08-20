@@ -1,49 +1,36 @@
 <Project Sdk="Uno.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>net8.0-desktop;net8.0</TargetFrameworks>
+    <PropertyGroup>
+      <TargetFrameworks>net8.0-desktop;net8.0</TargetFrameworks>
 
-    <OutputType>Exe</OutputType>
-    <UnoSingleProject>true</UnoSingleProject>
+        <OutputType>Exe</OutputType>
+        <UnoSingleProject>true</UnoSingleProject>
 
-    <!-- Display name -->
-    <ApplicationTitle>Melodee</ApplicationTitle>
-    <!-- App Identifier -->
-    <ApplicationId>com.companyname.melodee</ApplicationId>
-    <!-- Versions -->
-    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-    <ApplicationVersion>1</ApplicationVersion>
-    <!-- Package Publisher -->
-    <ApplicationPublisher>Melodee</ApplicationPublisher>
-    <!-- Package Description -->
-    <Description>Melodee powered by Uno Platform.</Description>
+        <!-- Display name -->
+        <ApplicationTitle>Melodee</ApplicationTitle>
+        <!-- App Identifier -->
+        <ApplicationId>com.companyname.Melodee</ApplicationId>
+        <!-- Versions -->
+        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <ApplicationVersion>1</ApplicationVersion>
+        <!-- Package Publisher -->
+        <ApplicationPublisher>O=Melodee</ApplicationPublisher>
+        <!-- Package Description -->
+        <Description>Melodee powered by Uno Platform.</Description>
 
-    <!--
-      UnoFeatures let's you quickly add and manage implicit package references based on the features you want to use.
-      https://aka.platform.uno/singleproject-features
-    -->
-    <UnoFeatures>
-      Material;
-      Dsp;
-      Hosting;
-      Toolkit;
-      Logging;
-      LoggingSerilog;
-      MVUX;
-      Configuration;
-      Http;
-      Serialization;
-      Localization;
-      Navigation;
-    </UnoFeatures>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Debug' or '$(IsUiAutomationMappingEnabled)'=='True'">
-    <IsUiAutomationMappingEnabled>True</IsUiAutomationMappingEnabled>
-    <DefineConstants>$(DefineConstants);USE_UITESTS</DefineConstants>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
-  </ItemGroup>
+        <!--
+          UnoFeatures let's you quickly add and manage implicit package references based on the features you want to use.
+          https://aka.platform.uno/singleproject-features
+        -->
+        <UnoFeatures>
+            Material;
+            MVUX;
+            ThemeService;
+        </UnoFeatures>
+        <RootNamespace>Melodee</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
+      <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
+    </ItemGroup>
 
 </Project>

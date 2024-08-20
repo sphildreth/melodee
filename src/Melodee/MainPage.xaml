@@ -1,14 +1,10 @@
-﻿<Page x:Class="Melodee.Presentation.MainPage"
+﻿<Page x:Class="Melodee.MainPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:local="using:Melodee.Presentation"
-      xmlns:uen="using:Uno.Extensions.Navigation.UI"
-      xmlns:utu="using:Uno.Toolkit.UI"
-      xmlns:um="using:Uno.Material"
+      xmlns:local="using:Melodee"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       xmlns:themes="clr-namespace:Uno.Themes;assembly=Uno.Themes.WinUI"
-      NavigationCacheMode="Required"
-      Background="{ThemeResource BackgroundBrush}">
+      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
   <StackPanel Orientation="Vertical"
               HorizontalAlignment="Stretch">
 
@@ -62,5 +58,4 @@
     <!-- Status bar     -->
 
   </StackPanel>
-
 </Page>

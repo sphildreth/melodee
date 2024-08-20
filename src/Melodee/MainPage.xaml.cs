@@ -1,4 +1,4 @@
-﻿namespace Melodee.Presentation;
+namespace Melodee;
 
 public sealed partial class MainPage : Page
 {
