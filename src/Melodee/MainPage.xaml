@@ -3,6 +3,11 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       xmlns:viewModels="clr-namespace:Melodee.ViewModels"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=viewModels:MainModel, IsDesignTimeCreatable=True}"
+
       Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
       >
   <Grid
@@ -88,16 +93,13 @@
       <GridView.ItemTemplate>
         <DataTemplate>
           <!-- Background -->
-          <Grid Background="{Binding Converter={StaticResource HashCodeToRandomColorBrush}}"
-                Height="120"
+          <Grid Height="120"
                 Width="120"
                 CornerRadius="5"
                 Margin="5">
-            <Image Loaded="LoadReleaseImage"
-                   Stretch="Uniform" />
-            <TextBlock Style="{StaticResource HeadlineLarge}"
-                       Foreground="White"
-                       HorizontalAlignment="Center"
+            <!-- <Image Loaded="LoadReleaseImage" -->
+            <!--        Stretch="Uniform" /> -->
+            <TextBlock HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        Text="{Binding Title }" />
           </Grid>
