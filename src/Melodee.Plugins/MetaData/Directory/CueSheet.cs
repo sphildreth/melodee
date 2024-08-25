@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using ATL.CatalogDataReaders;
 using FFMpegCore;
@@ -12,7 +11,6 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Directory.Models.Extensions;
 using Melodee.Plugins.MetaData.Track;
-using Microsoft.VisualBasic;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -22,11 +20,11 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 /// If a CUE file is found then split out the MP3 into tracks. 
 /// </summary>
-public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
+public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
-    public const string HandlesExtension = "CUE";
+    private const string HandlesExtension = "CUE";
     
-    public readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
+    public readonly IEnumerable<ITrackPlugin> TrackPlugins = trackPlugins;
 
     public override string Id => "3CAB0527-B13F-4C29-97AD-5541229240DD";
 
@@ -54,18 +52,6 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         }
 
         var processedFiles = 0;
-
-        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-        FileSystemDirectoryInfo? parentDirectory = null;
-        if (dirInfo.Parent != null)
-        {
-            parentDirectory = new FileSystemDirectoryInfo
-            {
-                Path = dirInfo.Parent.FullName,
-                Name = dirInfo.Parent.Name
-            };
-        }
-        
         foreach (var cueFile in cueFiles)
         {
             using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, cueFile.Name))
@@ -124,7 +110,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                 if (theReader != null)
                 {
                     var cueModel = await ParseFileAsync(cueFile.FullName);
-                    if (cueModel.IsValid)
+                    if (cueModel is { IsValid: true })
                     {
                         var releaseArtist = theReader.Artist ?? cueModel.Artist() ?? throw new Exception("Invalid Artist");
                         await Parallel.ForEachAsync(cueModel.Tracks.OrderBy(x => x.SortOrder), cancellationToken, async (track, ct) =>
@@ -238,7 +224,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         };
     }
 
-    public static async Task<Models.CueSheet?> ParseFileAsync(string filePath)
+    private static async Task<Models.CueSheet?> ParseFileAsync(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
         {
@@ -260,7 +246,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         var trackGaps = new List<CueIndex>();
 
         int trackNumber;
-        string? trackTitle = null;
+        string? trackTitle;
         
         FileSystemFileInfo? cueSheetDataFile = null; 
         
@@ -288,15 +274,15 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                 case CueSheetKeyRegistry.File:
                     if (kp.Value?.Contains(" MP3") ?? false)
                     {
-                        cueSheetDataFile = (new System.IO.FileInfo(Path.Combine(fileInfo.DirectoryName, kp.Value!.Replace(" MP3", string.Empty)))).ToFileSystemInfo();
+                        cueSheetDataFile = (new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" MP3", string.Empty)))).ToFileSystemInfo();
                     }
                     if (kp.Value?.Contains(" WAVE") ?? false)
                     {
-                        cueSheetDataFile = (new System.IO.FileInfo(Path.Combine(fileInfo.DirectoryName, kp.Value!.Replace(" WAVE", string.Empty)))).ToFileSystemInfo();
+                        cueSheetDataFile = (new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" WAVE", string.Empty)))).ToFileSystemInfo();
                     }                    
                     if (kp.Value?.Contains(" BINARY") ?? false)
                     {
-                        cueSheetDataFile = (new System.IO.FileInfo(Path.Combine(fileInfo.DirectoryName, kp.Value!.Replace(" BINARY", string.Empty)))).ToFileSystemInfo();
+                        cueSheetDataFile = (new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" BINARY", string.Empty)))).ToFileSystemInfo();
                     }
                     break;        
                 
@@ -368,7 +354,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     break; 
 
                 case CueSheetKeyRegistry.Rem:
-                    var v = kp.Value?.Replace("REM", "")?.Nullify();
+                    var v = kp.Value?.Replace("REM", "").Nullify();
 
                     MetaTagIdentifier remIdentifier = MetaTagIdentifier.Comment;
                     switch (v)
@@ -416,7 +402,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     break;     
                 
                 case CueSheetKeyRegistry.Title:
-                    if (!releaseTags.Any(x => x.Identifier == MetaTagIdentifier.Album))
+                    if (releaseTags.All(x => x.Identifier != MetaTagIdentifier.Album))
                     {
                         releaseTags.Add(new MetaTag<object?>
                         {
@@ -437,7 +423,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                 case CueSheetKeyRegistry.Track:
                     trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     trackTitle = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
-                    if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle as string))
+                    if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle))
                     {
                         var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;                        
                         tracks.Add(new Common.Models.Track
@@ -456,7 +442,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
                     trackTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.TrackNumber,
-                        Value = SafeParser.ToNumber<int>(kp.Value.Replace(" AUDIO", string.Empty))
+                        Value = SafeParser.ToNumber<int>(kp.Value?.Replace(" AUDIO", string.Empty))
                     });                    
                     break;                 
             }
@@ -464,7 +450,7 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
         
         trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
         trackTitle = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
-        if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle as string))
+        if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle))
         {
             var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0; 
             tracks.Add(new Common.Models.Track
@@ -487,16 +473,16 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
             releaseDate = fileInfo.FullName.TryToGetYearFromString();
             if (releaseDate == null)
             {
-                var dirInfo = new System.IO.DirectoryInfo(fileInfo.DirectoryName);
+                var dirInfo = new DirectoryInfo(fileInfo.DirectoryName ?? string.Empty);
                 var cueSheetDataFileDirectoryInfo = dirInfo.ToDirectorySystemInfo();
                 
                 releaseDate = dirInfo.Name.TryToGetYearFromString();
                 if (releaseDate == null)
                 {
-                    var m3uFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension(M3UPlaylist.HandlesExtension);
-                    foreach (var m3uFile in m3uFiles)
+                    var m3UFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension(M3UPlaylist.HandlesExtension);
+                    foreach (var m3UFile in m3UFiles)
                     {
-                        releaseDate = m3uFile.Name.TryToGetYearFromString();
+                        releaseDate = m3UFile.Name.TryToGetYearFromString();
                         if (releaseDate != null)
                         {
                             break;
@@ -562,11 +548,5 @@ public sealed partial class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Con
             Seconds = SafeParser.ToNumber<int>(msfParts[1]),
             Frames = SafeParser.ToNumber<int>(msfParts[2]),
         };
-    }
-
-    private static int ParseTrackNumberFromTrack(string lineFromFile)
-    {
-        var parts = lineFromFile.Split(' ');
-        return SafeParser.ToNumber<int>(parts[1]);
     }
 }

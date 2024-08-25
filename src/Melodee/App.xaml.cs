@@ -1,9 +1,17 @@
+using System.Reflection;
+using Melodee.Plugins.Discovery.Releases;
+using Melodee.ViewModels;
+using Microsoft.Extensions.Hosting;
 using Uno.Resizetizer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Melodee;
 
 public partial class App : Application
 {
+    public IHost Host { get; set; }
+    
     /// <summary>
     /// Initializes the singleton application object. This is the first line of authored code
     /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -15,13 +23,30 @@ public partial class App : Application
 
     protected Window? MainWindow { get; private set; }
 
+   
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        MainWindow = new Window();
+        var appDir = new DirectoryInfo(Assembly.GetEntryAssembly()!.Location);
+        var configuration = System.Text.Json.JsonSerializer.Deserialize<Common.Models.Configuration.Configuration>(File.ReadAllText(Path.Combine(appDir.Parent!.FullName, "configuration.json"))) ?? new Common.Models.Configuration.Configuration();
+        
+        var appBuilder = this.CreateBuilder(args)
+            .Configure(host =>
+            {
+                host.ConfigureServices(services =>
+                {
+                    services.AddSingleton(configuration);
+                    services.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();
+                    services.AddTransient<MainModel>();
+                });
+            });
+        
+        Host = appBuilder.Build();
+        MainWindow = appBuilder.Window;
+
+        
 #if DEBUG
         MainWindow.EnableHotReload();
 #endif
-
 
         // Do not repeat app initialization when the Window already has content,
         // just ensure that the window is active

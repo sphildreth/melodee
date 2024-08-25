@@ -21,9 +21,12 @@
           UnoFeatures let's you quickly add and manage implicit package references based on the features you want to use.
           https://aka.platform.uno/singleproject-features
         -->
-        <UnoFeatures>
+        <UnoFeatures> 
+            Extensions;  
+            Hosting;
+            Navigation;  
             Material;
-            MVUX;
+            MVVM;
             ThemeService;
         </UnoFeatures>
         <RootNamespace>Melodee</RootNamespace>
@@ -31,6 +34,15 @@
     <ItemGroup>
       <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
       <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
+    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Mapster" Version="7.4.0" />
+  </ItemGroup>  
+    <ItemGroup>
+      <None Remove="configuration.json" />
+      <Content Include="configuration.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>
