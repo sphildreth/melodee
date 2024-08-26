@@ -1,13 +1,12 @@
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 
-namespace Melodee.Common.Models.Grids;
+namespace Melodee.Common.Models.Cards;
 
 [Serializable]
-public sealed record ReleaseGrid
+public sealed record ReleaseCard
 {
     public required long UniqueId { get; init; }
-    
-    public bool IsChecked { get; set; }
     
     /// <summary>
     /// What plugins were utilized in discovering this release.
@@ -23,4 +22,10 @@ public sealed record ReleaseGrid
     public int TrackCount { get; init; }
     
     public required ReleaseStatus ReleaseStatus { get; init; }
+    
+    public string? Duration { get; init; }
+    
+    public byte[]? ImageBytes { get; init; }
+    
+    public string InfoLine => $"{Year} | {TrackCount.ToStringPadLeft(3)} | {Duration}";
 }

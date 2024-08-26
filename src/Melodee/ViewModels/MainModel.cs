@@ -26,7 +26,7 @@ internal partial class MainModel(
     [ObservableProperty] 
     private string? _searchText;
 
-    public async Task LoadStagingReleases(int page = 1, short take = 10)
+    public async Task LoadStagingReleases(int page = 1, short take = 100)
     {
         ProgressRingVisibility = Visibility.Visible;
         var releasesForStagingFolder = await _releasesDiscoverer.ReleasesGridsForDirectoryAsync(

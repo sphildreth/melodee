@@ -85,7 +85,10 @@ namespace Melodee.Common.Utility
 
         public override string ToString()
         {
-            if (Days > 0) return $"{DaysFormatted}:{HoursFormatted}:{MinutesFormatted}:{SecondsFormatted}";
+            if (Days > 0)
+            {
+                return $"{DaysFormatted}:{HoursFormatted}:{MinutesFormatted}:{SecondsFormatted}";
+            }
             return $"{HoursFormatted}:{MinutesFormatted}:{SecondsFormatted}";
         }
     }

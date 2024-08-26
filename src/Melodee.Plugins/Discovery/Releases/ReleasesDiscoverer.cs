@@ -1,9 +1,9 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Cards;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Models.Grids;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
@@ -158,25 +158,26 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         };
     }
 
-    public async Task<PagedResult<ReleaseGrid>> ReleasesGridsForDirectoryAsync(
+    public async Task<PagedResult<ReleaseCard>> ReleasesGridsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo, 
         PagedRequest pagedRequest, 
         CancellationToken cancellationToken = default) {
-
         var releasesForDirectoryInfo = await ReleasesForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
-        
-        return new PagedResult<ReleaseGrid>
+        var data = releasesForDirectoryInfo.Data.Select(async x => new ReleaseCard
         {
-            Data = releasesForDirectoryInfo.Data.Select(x => new ReleaseGrid
-            {
-                Artist = x.Artist(),
-                Title = x.ReleaseTitle(),
-                Year = x.ReleaseYear(),
-                TrackCount = x.TrackTotalValue(),
-                ReleaseStatus = ReleaseStatus.NotSet,
-                ViaPlugins = x.ViaPlugins,
-                UniqueId = x.UniqueId
-            })
+            Artist = x.Artist(),
+            Duration = x.Duration(),
+            ImageBytes = await x.CoverImageBytesAsync(),
+            Title = x.ReleaseTitle(),
+            Year = x.ReleaseYear(),
+            TrackCount = x.TrackTotalValue(),
+            ReleaseStatus = ReleaseStatus.NotSet,
+            ViaPlugins = x.ViaPlugins,
+            UniqueId = x.UniqueId
+        });
+        return new PagedResult<ReleaseCard>
+        {
+            Data = await Task.WhenAll(data)
         };
     }
 }

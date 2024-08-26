@@ -1,4 +1,5 @@
 using Melodee.Common.Models;
+using Melodee.Common.Models.Cards;
 
 namespace Melodee.Plugins.Discovery.Releases;
 
@@ -31,7 +32,7 @@ public interface IReleasesDiscoverer : IPlugin
     /// <param name="pagedRequest">Pagination Request.</param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns>Paged Result of ReleaseGrid models found in directory</returns>
-    Task<PagedResult<Common.Models.Grids.ReleaseGrid>> ReleasesGridsForDirectoryAsync(
+    Task<PagedResult<ReleaseCard>> ReleasesGridsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo, 
         PagedRequest pagedRequest, 
         CancellationToken cancellationToken = default);

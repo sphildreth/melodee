@@ -303,4 +303,32 @@ public static class ReleaseExtensions
         }
         return Path.Combine(fnSubPart, $"{ artistDirectory }{ fnIdPart }");
     }
+
+    public static string Duration(this Release release)
+    {
+        var trackTotalDuration = release.Tracks?.Sum(x => x.Duration()) ?? 0;
+        return trackTotalDuration > 0 ? new TimeInfo(SafeParser.ToNumber<decimal>(trackTotalDuration)).ToFullFormattedString() : "--:--";
+    }
+
+    public static async Task<byte[]?> CoverImageBytesAsync(this Release release)
+    {
+        if (release.Images?.Any() == true)
+        {
+            var image = release.Images?.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
+            if (image != null)
+            {
+                var dir = new DirectoryInfo(release.Directory.Path);
+                if (!dir.Exists)
+                {
+                    Trace.WriteLine($"Unable to find Directory for Release [{release}]");
+                    return null;
+                }
+                if (image.FileInfo != null)
+                {
+                    return await File.ReadAllBytesAsync(image.FileInfo.FullName(dir.ToDirectorySystemInfo()));
+                }
+            }
+        }
+        return null;
+    }
 }

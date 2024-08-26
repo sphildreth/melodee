@@ -10,9 +10,9 @@ public sealed partial class MainPage : Page
     {
         this.InitializeComponent();
 
-        var mainModel = (Application.Current as App).Host.Services.GetRequiredService<MainModel>();
+        var mainModel = (Application.Current as App)?.Host.Services.GetRequiredService<MainModel>();
         DataContext = mainModel;
-        Task.Run(() => mainModel.LoadStagingReleases(1, 10));
+        Task.Run(() => mainModel!.LoadStagingReleases(1, 100));
     }
     
 
@@ -34,6 +34,6 @@ public sealed partial class MainPage : Page
         //     img.Source = bitmapImage;
         // }
         
-        //throw new NotImplementedException();
+        throw new NotImplementedException();
     }
 }
