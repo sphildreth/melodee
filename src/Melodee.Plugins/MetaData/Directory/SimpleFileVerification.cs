@@ -288,9 +288,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 var calculated = CRC32.Calculate(fi);
                 var doesMatch = string.Equals(calculated, crcHash, StringComparison.OrdinalIgnoreCase);
 
-                Trace.WriteLine(
-                    $"IsCrCHashAccurate File [{filename}] DoesMatch [{doesMatch}] Expected [{crcHash}] Calculated [{calculated}]",
-                    "Information");
+                Trace.WriteLine($"IsCrCHashAccurate File [{filename}] DoesMatch [{doesMatch}] Expected [{crcHash}] Calculated [{calculated}]", "Information");
 
                 return doesMatch;
             }

@@ -53,6 +53,29 @@ public class SimpleFileVerificationTests
     }    
     
     [Fact]
+    public async Task ValidateSfvFile3Async()
+    {
+        // A SFV which has CRCs that don't match should fail
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/00-va-the_sound_of_melodic_techno_vol._21-web-2024.sfv";
+        var fileInfo = new System.IO.FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var sfv = new SimpleFileVerification(
+                new []
+                {
+                    new MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
+                }, TestsBase.NewConfiguration);
+            var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21",
+                Name = "The Sound Of Melodic Techno Vol. 21/"
+            });
+            Assert.NotNull(sfvResult);
+            Assert.False(sfvResult.IsSuccess);
+        }
+    }        
+    
+    [Fact]
     public void ValidateModelFullLineParsing()
     {
         // <trackNumber>-<releaseArtist>-<trackTitle>.mp3 <crcHash>

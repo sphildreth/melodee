@@ -18,7 +18,8 @@ public sealed partial class MainPage : Page
 
     private void LoadReleaseImage(object sender, RoutedEventArgs e)
     {
-        
+        var stagingDirectoryPath = (DataContext as MainModel).Configuration.StagingDirectory;
+
         // var uri = new System.Uri("ms-appdata:///local/images/logo.png");
         // var file = await Windows.Storage.StorageFile.GetFileFromApplicationUriAsync(uri);
         //

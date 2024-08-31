@@ -98,7 +98,7 @@
                 CornerRadius="5"
                 Margin="5">
             <StackPanel>
-              <Image Loaded="LoadReleaseImage"
+              <Image Tag="{Binding Directory}" Loaded="LoadReleaseImage"
                      Stretch="Uniform" />
               <TextBlock HorizontalAlignment="Left"
                          Text="{Binding Artist }" />

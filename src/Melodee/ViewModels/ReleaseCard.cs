@@ -10,6 +10,9 @@ internal partial class ReleaseCard : ObservableObject
     [ObservableProperty] 
     private string _releaseId = string.Empty;
     
+    [ObservableProperty] 
+    private string _directory = string.Empty;
+    
     [ObservableProperty]
     private string _artist = string.Empty;
     

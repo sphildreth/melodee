@@ -15,7 +15,8 @@ internal partial class MainModel(
     : ObservableObject
 {
     private readonly IReleasesDiscoverer _releasesDiscoverer = releasesDiscoverer;
-    private readonly Configuration _configuration = configuration;
+    
+    public Configuration Configuration { get; } = configuration;
 
     [ObservableProperty]
     private Visibility _progressRingVisibility = Visibility.Collapsed;
@@ -30,7 +31,7 @@ internal partial class MainModel(
     {
         ProgressRingVisibility = Visibility.Visible;
         var releasesForStagingFolder = await _releasesDiscoverer.ReleasesGridsForDirectoryAsync(
-            _configuration.StagingDirectoryInfo, new PagedRequest
+            Configuration.StagingDirectoryInfo, new PagedRequest
             {
                 Page = page,
                 Take = take
