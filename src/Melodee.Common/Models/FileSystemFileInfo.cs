@@ -12,4 +12,6 @@ public sealed record FileSystemFileInfo
     public required long Size { get; init; }
     
     public string? OriginalName { get; init; }
+
+    public override string ToString() => $"UniqueId [{UniqueId}] Size [{Size}] Name [{Name}]";
 }

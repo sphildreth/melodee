@@ -37,8 +37,5 @@ public sealed record FileSystemDirectoryInfo
     /// </summary>
     public int? ImageFilesFound { get; init; }
 
-    public override string ToString()
-    {
-        return $"UniqueId [{ UniqueId }] Path [{Path}] ShortName [{Name}]";
-    }
+    public override string ToString() => $"UniqueId [{ UniqueId }] Path [{Path}] ShortName [{Name}]";
 }

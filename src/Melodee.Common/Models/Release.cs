@@ -84,6 +84,11 @@ public sealed record Release
         }
     }
 
+    public override string ToString()
+    {
+        return $"UniqueId [{UniqueId}] Status [{Status}] TrackCount [{Tracks?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+    }
+
     public Release Merge(Release otherRelease)
     {
         var files = new List<ReleaseFile>(Files);

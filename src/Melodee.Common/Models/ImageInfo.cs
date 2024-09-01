@@ -24,4 +24,7 @@ public sealed record ImageInfo
     public int SortOrder  { get; init; }
     
     public bool WasEmbeddedInTrack { get; init; }
+
+    public override string ToString() => $"CrcHash [{CrcHash}] [{PictureIdentifier}] Width [{Width}] Height: [{Height}] FileInfo [{FileInfo}]";
+
 }

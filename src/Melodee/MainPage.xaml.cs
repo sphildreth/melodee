@@ -12,7 +12,7 @@ public sealed partial class MainPage : Page
 
         var mainModel = (Application.Current as App)?.Host.Services.GetRequiredService<MainModel>();
         DataContext = mainModel;
-        Task.Run(() => mainModel!.LoadStagingReleases(1, 100));
+        Loaded += async(s,e) => await mainModel!.LoadStagingReleases(1, 100);
     }
     
 

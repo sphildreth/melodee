@@ -1,3 +1,5 @@
+using System.Net.Security;
+using System.Text.Json;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -86,6 +88,10 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         
         foreach (var childDir in dirInfo.EnumerateDirectories("*.*", SearchOption.AllDirectories))
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
             var dataForChildDirResult = await AllReleasesForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = childDir.FullName,
@@ -115,45 +121,53 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     private async Task<OperationResult<IEnumerable<Release>>> AllReleasesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var releases = new List<Release>();
+        var errors = new List<Exception>();
         var messages = new List<string>();
 
-        if (!_releaseCache.ContainsKey(fileSystemDirectoryInfo))
+        try
         {
-            var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
-            if (dirInfo.Exists)
+            if (!_releaseCache.ContainsKey(fileSystemDirectoryInfo))
             {
-                using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+                var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+                if (dirInfo.Exists)
                 {
-                    foreach (var jsonFile in dirInfo.EnumerateFiles(Release.JsonFileName, SearchOption.AllDirectories))
+                    using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
                     {
-                        if (cancellationToken.IsCancellationRequested)
+                        foreach (var jsonFile in dirInfo.EnumerateFiles(Release.JsonFileName, SearchOption.AllDirectories))
                         {
-                            break;
-                        }
-
-                        try
-                        {
-                            var r = System.Text.Json.JsonSerializer.Deserialize<Release>(
-                                await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
-                            if (r != null)
+                            if (cancellationToken.IsCancellationRequested)
                             {
-                                r.Directory = jsonFile.Directory?.ToDirectorySystemInfo();
-                                releases.Add(r);
+                                break;
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Warning("Unable to load release json file [{FileName}]", dirInfo.FullName);
-                            messages.Add($"Unable to load release json file [{dirInfo.FullName}]");
+                            try
+                            {
+                                var r = JsonSerializer.Deserialize<Release>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
+                                if (r != null)
+                                {
+                                    r.Directory = jsonFile.Directory?.ToDirectorySystemInfo();
+                                    releases.Add(r);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Warning("Unable to load release json file [{FileName}]", dirInfo.FullName);
+                                messages.Add($"Unable to load release json file [{dirInfo.FullName}]");
+                            }
                         }
                     }
                 }
+                _releaseCache.Add(fileSystemDirectoryInfo, releases);
             }
-            _releaseCache.Add(fileSystemDirectoryInfo, releases);
+        }
+        catch (Exception e)
+        {
+            Log.Warning("Unable to load releases for [{DirInfo}]", fileSystemDirectoryInfo.FullName);
+            errors.Add(e);
         }
         
         return new OperationResult<IEnumerable<Release>>(messages)
         {
+            Errors = errors,
             Data = _releaseCache[fileSystemDirectoryInfo]
         };
     }
@@ -175,9 +189,10 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             ViaPlugins = x.ViaPlugins,
             UniqueId = x.UniqueId
         });
+        var d = await Task.WhenAll(data);
         return new PagedResult<ReleaseCard>
         {
-            Data = await Task.WhenAll(data)
+            Data = d
         };
     }
 }
