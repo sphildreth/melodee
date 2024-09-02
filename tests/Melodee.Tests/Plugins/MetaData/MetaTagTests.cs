@@ -58,6 +58,7 @@ public class MetaTagTests
             Assert.Equal(fileInfo.FullName, track.File.FullName(dirInfo));
             Assert.NotNull(track.Title()?.Nullify());
             Assert.False(track.TitleHasUnwantedText());
+            Assert.True(track.Duration() > 0);
         }
     }
     

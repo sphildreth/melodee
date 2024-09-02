@@ -37,6 +37,7 @@
     </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mapster" Version="7.4.0" />
+    <PackageReference Include="Uno.CommunityToolkit.WinUI.UI.Controls.Layout" />
   </ItemGroup>
     <ItemGroup>
       <None Remove="configuration.json" />
@@ -44,6 +45,9 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
       <Content Update="Assets\Images\release.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Assets\Images\release.jpg">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

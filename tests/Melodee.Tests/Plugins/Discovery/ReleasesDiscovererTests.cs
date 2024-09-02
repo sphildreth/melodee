@@ -1,3 +1,4 @@
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Plugins.Discovery.Releases;
 
@@ -30,6 +31,7 @@ public class ReleasesDiscovererTests
     
             Assert.True(firstRelease.TrackCount > 1);
             Assert.True(firstRelease.Year > 0);
+            Assert.NotNull(firstRelease.Duration?.Nullify());
     
         }
     

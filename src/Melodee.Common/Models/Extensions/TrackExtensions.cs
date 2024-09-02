@@ -54,6 +54,11 @@ public static class TrackExtensions
             {
                 return d;
             }
+
+            if (vv is JsonElement)
+            {
+                vv = vv.ToString() ?? string.Empty;
+            }
             var converter = TypeDescriptor.GetConverter(typeof(T?));
             return (T?)converter.ConvertFrom(vv);           
         }

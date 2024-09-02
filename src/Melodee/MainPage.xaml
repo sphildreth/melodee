@@ -5,14 +5,14 @@
       xmlns:viewModels="using:Melodee.ViewModels"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:controls="clr-namespace:CommunityToolkit.WinUI.UI.Controls;assembly=CommunityToolkit.WinUI.UI.Controls.Layout"
       mc:Ignorable="d"
       d:DataContext="{d:DesignInstance Type=viewModels:MainModel, IsDesignTimeCreatable=True}"
-      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-      >
+      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
   <Grid
-      ColumnSpacing="10"
-      VerticalAlignment="Stretch">
+    ColumnSpacing="10"
+    VerticalAlignment="Stretch">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
@@ -21,7 +21,6 @@
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="*" />
       <ColumnDefinition Width="*" />
-      <ColumnDefinition Width="100" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
 
@@ -80,44 +79,114 @@
       Grid.Row="1"
       Grid.Column="0"
       Grid.ColumnSpan="2"
-      ItemsSource="{Binding Releases}"
-      HorizontalAlignment="Center">
-      <GridView.ItemContainerStyle>
-        <Style TargetType="GridViewItem">
-          <Setter Property="VerticalContentAlignment"
-                  Value="Stretch" />
-          <Setter Property="HorizontalContentAlignment"
-                  Value="Stretch" />
-        </Style>
-      </GridView.ItemContainerStyle>
+      ItemsSource="{Binding Releases }"
+      SelectionMode="Multiple"
+      ItemClick="ListViewBase_OnItemClick"
+      IsItemClickEnabled="True"
+      HorizontalAlignment="Center"
+      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
       <GridView.ItemTemplate>
         <DataTemplate x:DataType="viewModels:ReleaseCard">
-          <!-- Background -->
-          <Grid Height="160"
-                Width="120"
-                CornerRadius="5"
-                Margin="5">
-            <StackPanel>
-              <Image Tag="{x:Bind ImageBytes, Mode=OneWay}"
-                     Loaded="LoadReleaseImage"
-                     Height="100"
-                     Width="100"
-                     Stretch="Uniform" />
-              <TextBlock HorizontalAlignment="Left"
-                         Text="{x:Bind Artist, Mode=OneWay}" />
-              <TextBlock HorizontalAlignment="Left"
-                         Text="{x:Bind Title, Mode=OneWay}" />
-              <TextBlock HorizontalAlignment="Left"
-                         Text="{x:Bind InfoLine, Mode=OneWay}" />
-            </StackPanel>
-          </Grid>
+          <StackPanel Height="160"
+                      Width="160"
+                      CornerRadius="5"
+                      Margin="5">
+            <Image Tag="{x:Bind ImageBytes, Mode=OneWay}"
+                   Loaded="LoadReleaseImage"
+                   Height="100"
+                   Width="100"
+                   Stretch="Uniform" />
+            <TextBlock HorizontalAlignment="Left"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       TextWrapping="WrapWholeWords"
+                       TextTrimming="CharacterEllipsis"
+                       Text="{x:Bind Artist, Mode=OneWay}">
+              <ToolTipService.ToolTip>
+                <ToolTip Content="{x:Bind Artist, Mode=OneWay}"
+                         HorizontalOffset="5" VerticalOffset="5" />
+              </ToolTipService.ToolTip>
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Left"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       TextWrapping="WrapWholeWords"
+                       TextTrimming="CharacterEllipsis"
+                       Text="{x:Bind Title, Mode=OneWay}">
+              <ToolTipService.ToolTip>
+                <ToolTip Content="{x:Bind Title, Mode=OneWay}"
+                         HorizontalOffset="5" VerticalOffset="5" />
+              </ToolTipService.ToolTip>
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Left"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       Text="{x:Bind InfoLine, Mode=OneWay}" />
+          </StackPanel>
         </DataTemplate>
       </GridView.ItemTemplate>
     </GridView>
 
-    <!-- View slider -->
-
     <!-- Release detail view -->
+    <StackPanel
+      Grid.Row="1"
+      Grid.Column="2"
+      MinWidth="500">
+      <Grid
+        ColumnSpacing="10"
+        VerticalAlignment="Stretch">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <!-- Stack panel with top details -->
+        <StackPanel
+          Grid.Row="0"
+          Grid.Column="0"
+          >
+            <Image
+                   Loaded="ReleaseDetail_Artist_Image_OnLoaded"
+                   Height="100"
+                   Width="100"
+                   Stretch="Uniform" />
+            <TextBlock HorizontalAlignment="Left"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       TextWrapping="WrapWholeWords"
+                       TextTrimming="CharacterEllipsis"
+                       Text="Artist Name">
+              <ToolTipService.ToolTip>
+                <ToolTip Content="Artist Name"
+                         HorizontalOffset="5" VerticalOffset="5" />
+              </ToolTipService.ToolTip>
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Left"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       TextWrapping="WrapWholeWords"
+                       TextTrimming="CharacterEllipsis"
+                       Text="Release Year">
+              <ToolTipService.ToolTip>
+                <ToolTip Content="Release Year"
+                         HorizontalOffset="5" VerticalOffset="5" />
+              </ToolTipService.ToolTip>
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Left"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       TextWrapping="WrapWholeWords"
+                       TextTrimming="CharacterEllipsis"
+                       Text="Release Title">
+              <ToolTipService.ToolTip>
+                <ToolTip Content="Release Title"
+                         HorizontalOffset="5" VerticalOffset="5" />
+              </ToolTipService.ToolTip>
+            </TextBlock>
+        </StackPanel>
+        <!-- Tabbed view for medias -->
+        <!-- List View for track details -->
+      </Grid>
+    </StackPanel>
 
     <!-- Status bar     -->
 

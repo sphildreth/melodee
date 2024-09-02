@@ -27,6 +27,9 @@ internal partial class MainModel(
     [ObservableProperty] 
     private string? _searchText;
 
+    [ObservableProperty] 
+    private Release? _selectedRelease = null; 
+
     public async Task LoadStagingReleases(int page = 1, short take = 100)
     {
         ProgressRingVisibility = Visibility.Visible;
@@ -38,5 +41,10 @@ internal partial class MainModel(
             });
         Releases = releasesForStagingFolder.Data.AsQueryable().ProjectToType<ReleaseCard>().ToArray();
         ProgressRingVisibility = Visibility.Collapsed;
+    }
+
+    public void LoadReleaseDetail(ReleaseCard releaseCard)
+    {
+        throw new NotImplementedException();
     }
 }
