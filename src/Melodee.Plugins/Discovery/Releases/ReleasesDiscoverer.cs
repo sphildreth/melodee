@@ -181,6 +181,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         {
             Artist = x.Artist(),
             Duration = x.Duration(),
+            Directory = x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(),
             ImageBytes = await x.CoverImageBytesAsync(),
             Title = x.ReleaseTitle(),
             Year = x.ReleaseYear(),

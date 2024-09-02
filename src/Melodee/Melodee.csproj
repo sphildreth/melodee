@@ -21,10 +21,10 @@
           UnoFeatures let's you quickly add and manage implicit package references based on the features you want to use.
           https://aka.platform.uno/singleproject-features
         -->
-        <UnoFeatures> 
-            Extensions;  
+        <UnoFeatures>
+            Extensions;
             Hosting;
-            Navigation;  
+            Navigation;
             Material;
             MVVM;
             ThemeService;
@@ -37,12 +37,18 @@
     </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mapster" Version="7.4.0" />
-  </ItemGroup>  
+  </ItemGroup>
     <ItemGroup>
       <None Remove="configuration.json" />
       <Content Include="configuration.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Update="Assets\Images\release.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Assets\Images\" />
     </ItemGroup>
 
 </Project>

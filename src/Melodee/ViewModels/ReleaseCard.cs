@@ -8,7 +8,7 @@ internal partial class ReleaseCard : ObservableObject
     private byte[] _imageBytes = [];
 
     [ObservableProperty] 
-    private string _releaseId = string.Empty;
+    private string _uniqueId = string.Empty;
     
     [ObservableProperty] 
     private string _directory = string.Empty;

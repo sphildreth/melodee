@@ -27,5 +27,7 @@ public sealed record ReleaseCard
     
     public byte[]? ImageBytes { get; init; }
     
+    public required string Directory { get; init; }
+    
     public string InfoLine => $"{Year} | {TrackCount.ToStringPadLeft(3)} | {Duration}";
 }
