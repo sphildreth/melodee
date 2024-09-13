@@ -21,6 +21,8 @@ public sealed record Configuration
     [JsonIgnore] 
     public FileSystemDirectoryInfo StagingDirectoryInfo => new System.IO.DirectoryInfo(StagingDirectory).ToDirectorySystemInfo();
     
+    public int StagingDirectoryScanLimit { get; set; } = 250;
+    
     /// <summary>
     /// This is the main storage library (holds all previously scanned/edited/approved Releases).
     /// </summary>

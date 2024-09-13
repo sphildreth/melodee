@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee", "src\Melodee\Melodee.csproj", "{3A8BA507-1A4E-4EAD-9B0E-23EC13EE1C3C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Common", "src\Melodee.Common\Melodee.Common.csproj", "{BC61ADD3-674E-4E0C-B337-BC22DAECC108}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Plugins", "src\Melodee.Plugins\Melodee.Plugins.csproj", "{6505D684-47B2-4796-8E1A-86062FB2E90C}"
@@ -20,16 +18,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		global.json = global.json
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee", "src\Melodee\Melodee.csproj", "{00A6CD5D-3086-4DF2-A7E7-6F65267660F7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3A8BA507-1A4E-4EAD-9B0E-23EC13EE1C3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3A8BA507-1A4E-4EAD-9B0E-23EC13EE1C3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3A8BA507-1A4E-4EAD-9B0E-23EC13EE1C3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3A8BA507-1A4E-4EAD-9B0E-23EC13EE1C3C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BC61ADD3-674E-4E0C-B337-BC22DAECC108}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BC61ADD3-674E-4E0C-B337-BC22DAECC108}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC61ADD3-674E-4E0C-B337-BC22DAECC108}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -46,5 +42,9 @@ Global
 		{D7D51D4D-AD0A-47EE-82ED-3537ECB85A28}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7D51D4D-AD0A-47EE-82ED-3537ECB85A28}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7D51D4D-AD0A-47EE-82ED-3537ECB85A28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00A6CD5D-3086-4DF2-A7E7-6F65267660F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00A6CD5D-3086-4DF2-A7E7-6F65267660F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00A6CD5D-3086-4DF2-A7E7-6F65267660F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00A6CD5D-3086-4DF2-A7E7-6F65267660F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

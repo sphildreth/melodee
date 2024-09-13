@@ -1,58 +1,25 @@
-<Project Sdk="Uno.Sdk">
-    <PropertyGroup>
-      <TargetFrameworks>net8.0-desktop;net8.0</TargetFrameworks>
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
-        <OutputType>Exe</OutputType>
-        <UnoSingleProject>true</UnoSingleProject>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+	</PropertyGroup>
 
-        <!-- Display name -->
-        <ApplicationTitle>Melodee</ApplicationTitle>
-        <!-- App Identifier -->
-        <ApplicationId>com.companyname.Melodee</ApplicationId>
-        <!-- Versions -->
-        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-        <ApplicationVersion>1</ApplicationVersion>
-        <!-- Package Publisher -->
-        <ApplicationPublisher>O=Melodee</ApplicationPublisher>
-        <!-- Package Description -->
-        <Description>Melodee powered by Uno Platform.</Description>
+	<ItemGroup>
+		<Content Update="wwwroot\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 
-        <!--
-          UnoFeatures let's you quickly add and manage implicit package references based on the features you want to use.
-          https://aka.platform.uno/singleproject-features
-        -->
-        <UnoFeatures>
-            Extensions;
-            Hosting;
-            Navigation;
-            Material;
-            MVVM;
-            ThemeService;
-        </UnoFeatures>
-        <RootNamespace>Melodee</RootNamespace>
-    </PropertyGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
-      <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
-    </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Mapster" Version="7.4.0" />
-    <PackageReference Include="Uno.CommunityToolkit.WinUI.UI.Controls.Layout" />
-  </ItemGroup>
-    <ItemGroup>
-      <None Remove="configuration.json" />
-      <Content Include="configuration.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Assets\Images\release.png">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Assets\Images\release.jpg">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Assets\Images\" />
-    </ItemGroup>
+	<ItemGroup>
+	  <None Update="favicon.ico">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Photino.Blazor" />
+	</ItemGroup>
 
 </Project>
