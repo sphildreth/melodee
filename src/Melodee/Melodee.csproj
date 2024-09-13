@@ -22,7 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Blazor.Bootstrap" />
+	  <PackageReference Include="MudBlazor" Version="7.8.0" />
     <PackageReference Include="Mapster" Version="7.4.0" />
 	  <PackageReference Include="Photino.Blazor" />
 	  <PackageReference Include="Serilog.AspNetCore" />
@@ -31,6 +31,15 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
 	  <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageVersion Update="MudBlazor" Version="7.8.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <_ContentIncludedByDefault Remove="wwwroot\css\bootstrap\bootstrap.min.css" />
+	  <_ContentIncludedByDefault Remove="wwwroot\css\bootstrap\bootstrap.min.css.map" />
 	</ItemGroup>
 
 </Project>

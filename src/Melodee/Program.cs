@@ -6,8 +6,10 @@ using Melodee.Common.Models.Configuration;
 using Melodee.Plugins.Discovery.Releases;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor.Services;
 using Photino.Blazor;
 using Serilog;
+
 
 namespace Melodee
 {
@@ -18,7 +20,7 @@ namespace Melodee
         {
             var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
             
-            appBuilder.Services.AddBlazorBootstrap();
+            appBuilder.Services.AddMudServices();
             
             appBuilder.Services.AddLogging();
 

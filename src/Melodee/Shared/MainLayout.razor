@@ -1,83 +1,98 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="bb-page">
+<MudThemeProvider/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
 
-    <main>
+<main>
+    <MudLayout>
+        <MudAppBar>
+            <MudNavLink Href="/" Match="NavLinkMatch.All">Dashboard</MudNavLink>
+            <MudNavLink Href="/servers" Match="NavLinkMatch.Prefix">Servers</MudNavLink>
+            <MudNavGroup Title="Settings" Expanded="false">
+                <MudNavLink Href="/users" Match="NavLinkMatch.Prefix">Users</MudNavLink>
+                <MudNavLink Href="/security" Match="NavLinkMatch.Prefix">Security</MudNavLink>
+            </MudNavGroup>
+            <MudNavLink Href="/about" Match="NavLinkMatch.Prefix">About</MudNavLink>
+        </MudAppBar>
 
-        <nav class="navbar navbar-expand-lg bg-body-tertiary">
-            <div class="container-fluid">
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="#">Staging</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                File
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">New</a></li>
-                                <li><a class="dropdown-item" href="#">Open</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#">Exit</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Edit
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Undo</a></li>
-                                <li><a class="dropdown-item" href="#">Cut</a></li>
-                                <li><a class="dropdown-item" href="#">Copy</a></li>
-                                <li><a class="dropdown-item" href="#">Paste</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Options
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Some Options</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Tools
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Tool Something</a></li>
-                                <li><a class="dropdown-item" href="#">Another Tool</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#">Seperated tool here</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Help
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">About</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <form class="d-flex" role="search">
-                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                        <button class="btn btn-outline-success" type="submit">Search</button>
-                    </form>
-                </div>
-            </div>
-        </nav>
+        @* <nav class="navbar navbar-expand-lg bg-body-tertiary"> *@
+        @*     <div class="container-fluid"> *@
+        @*         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"> *@
+        @*             <span class="navbar-toggler-icon"></span> *@
+        @*         </button> *@
+        @*         <div class="collapse navbar-collapse" id="navbarSupportedContent"> *@
+        @*             <ul class="navbar-nav me-auto mb-2 mb-lg-0"> *@
+        @*                 <li class="nav-item"> *@
+        @*                     <a class="nav-link active" aria-current="page" href="#">Staging</a> *@
+        @*                 </li> *@
+        @*                 <li class="nav-item dropdown"> *@
+        @*                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> *@
+        @*                         File *@
+        @*                     </a> *@
+        @*                     <ul class="dropdown-menu"> *@
+        @*                         <li><a class="dropdown-item" href="#">New</a></li> *@
+        @*                         <li><a class="dropdown-item" href="#">Open</a></li> *@
+        @*                         <li><hr class="dropdown-divider"></li> *@
+        @*                         <li><a class="dropdown-item" href="#">Exit</a></li> *@
+        @*                     </ul> *@
+        @*                 </li> *@
+        @*                 <li class="nav-item dropdown"> *@
+        @*                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> *@
+        @*                         Edit *@
+        @*                     </a> *@
+        @*                     <ul class="dropdown-menu"> *@
+        @*                         <li><a class="dropdown-item" href="#">Undo</a></li> *@
+        @*                         <li><a class="dropdown-item" href="#">Cut</a></li> *@
+        @*                         <li><a class="dropdown-item" href="#">Copy</a></li> *@
+        @*                         <li><a class="dropdown-item" href="#">Paste</a></li> *@
+        @*                     </ul> *@
+        @*                 </li> *@
+        @*                 <li class="nav-item dropdown"> *@
+        @*                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> *@
+        @*                         Options *@
+        @*                     </a> *@
+        @*                     <ul class="dropdown-menu"> *@
+        @*                         <li><a class="dropdown-item" href="#">Some Options</a></li> *@
+        @*                     </ul> *@
+        @*                 </li> *@
+        @*                 <li class="nav-item dropdown"> *@
+        @*                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> *@
+        @*                         Tools *@
+        @*                     </a> *@
+        @*                     <ul class="dropdown-menu"> *@
+        @*                         <li><a class="dropdown-item" href="#">Tool Something</a></li> *@
+        @*                         <li><a class="dropdown-item" href="#">Another Tool</a></li> *@
+        @*                         <li><hr class="dropdown-divider"></li> *@
+        @*                         <li><a class="dropdown-item" href="#">Seperated tool here</a></li> *@
+        @*                     </ul> *@
+        @*                 </li> *@
+        @*                 <li class="nav-item dropdown"> *@
+        @*                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> *@
+        @*                         Help *@
+        @*                     </a> *@
+        @*                     <ul class="dropdown-menu"> *@
+        @*                         <li><a class="dropdown-item" href="#">About</a></li> *@
+        @*                     </ul> *@
+        @*                 </li> *@
+        @*             </ul> *@
+        @*             <form class="d-flex" role="search"> *@
+        @*                 <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"> *@
+        @*                 <button class="btn btn-outline-success" type="submit">Search</button> *@
+        @*             </form> *@
+        @*         </div> *@
+        @*     </div> *@
+        @* </nav> *@
 
-        <article class="content px-4">
-            <div class="py-2">@Body</div>
-        </article>
-    </main>
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="my-2 pt-2">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+</main>
 
-</div>
 
 @code {
 
