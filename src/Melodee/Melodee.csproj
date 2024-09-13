@@ -16,11 +16,21 @@
 	  <None Update="favicon.ico">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
+	  <None Update="configuration.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 	<ItemGroup>
 	  <PackageReference Include="Blazor.Bootstrap" />
+    <PackageReference Include="Mapster" Version="7.4.0" />
 	  <PackageReference Include="Photino.Blazor" />
+	  <PackageReference Include="Serilog.AspNetCore" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
+	  <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
 	</ItemGroup>
 
 </Project>

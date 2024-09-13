@@ -4,7 +4,7 @@ using Melodee.Common.Extensions;
 namespace Melodee.Common.Models.Cards;
 
 [Serializable]
-public sealed record ReleaseCard
+public record ReleaseCard
 {
     public required long UniqueId { get; init; }
     

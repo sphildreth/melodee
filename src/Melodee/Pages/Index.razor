@@ -1,7 +1,47 @@
 ﻿@page "/"
+@using Mapster
+@using Melodee.Common.Models
+@using Melodee.Common.Models.Cards
+@using Melodee.Common.Models.Configuration
+@using Melodee.Plugins.Discovery.Releases
+@using Release = Melodee.Models.Release
 
-<h1>Hello, world!</h1>
+@inject Configuration Configuration
+@inject IReleasesDiscoverer ReleasesDiscoverer
 
-Welcome to your new app.
+<div class="d-flex">
+    @foreach (var release in _releases)
+    {
+        <Card Style="min-width:15rem;">
+            <CardBody>
+                <CardTitle>@release.Title</CardTitle>
+                <CardText>Some quick example text to build on the card title and make up the bulk of the card's content.</CardText>
+                <Button Color="ButtonColor.Primary" To="#" Type="ButtonType.Link">Go somewhere</Button>
+            </CardBody>
+        </Card>
+    }
+</div>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+@code {
+
+    int _page = 1;
+    short _take = 100;
+    bool _scanning = false;
+    Release[] _releases = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _scanning = true;
+        var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
+            Configuration.StagingDirectoryInfo, new PagedRequest
+            {
+                Page = _page,
+                Take = _take
+            });
+        _releases = releasesForStagingFolder.Data.AsQueryable().ProjectToType<Release>().ToArray();
+        _scanning = false;
+
+    }
+
+}
+
