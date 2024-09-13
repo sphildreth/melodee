@@ -38,7 +38,7 @@ namespace Melodee
             // customize window
             app.MainWindow
                 .SetIconFile("favicon.ico")
-                .SetTitle("Photino Blazor Sample");
+                .SetTitle("Melodee");
 
             AppDomain.CurrentDomain.UnhandledException += (sender, error) =>
             {
