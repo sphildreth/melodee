@@ -3,17 +3,19 @@
 <div class="bb-page">
 
     <Sidebar @ref="sidebar"
+             Href="/"
              IconName="IconName.BootstrapFill"
-             Title="Blazor Bootstrap"
+             Title="Melodee"
              DataProvider="SidebarDataProvider" />
 
     <main>
         <div class="bb-top-row px-4 d-flex justify-content-end">
+            <Icon Name="IconName.List" role="button" @onclick="ToggleSidebar" />
             <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
         </div>
 
         <article class="content px-4">
-            <div class="py-2">@Body</div>
+            <div class="py-2">Page content goes here</div>
         </article>
     </main>
 
@@ -42,4 +44,6 @@
 
         return navItems;
     }
+
+    private void ToggleSidebar() => sidebar.ToggleSidebar();
 }
