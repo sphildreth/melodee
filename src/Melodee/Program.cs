@@ -12,9 +12,10 @@ namespace Melodee
         static void Main(string[] args)
         {
             var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
-
-            appBuilder.Services
-                .AddLogging();
+            
+            appBuilder.Services.AddBlazorBootstrap();
+            
+            appBuilder.Services.AddLogging();
 
             // register root component and selector
             appBuilder.RootComponents.Add<App>("app");

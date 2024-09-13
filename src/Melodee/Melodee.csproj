@@ -19,6 +19,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="Blazor.Bootstrap" />
 	  <PackageReference Include="Photino.Blazor" />
 	</ItemGroup>
 
