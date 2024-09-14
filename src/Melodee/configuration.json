@@ -2,6 +2,7 @@
   "AppConfig": {
     "Environment": "Production"
   },
+  "DefaultPageSize": 10,
   "InboundDirectory": "/home/steven/incoming/melodee_test/inbound",
   "LibraryDirectory": "/home/steven/incoming/melodee_test/library",
   "StagingDirectory": "/home/steven/incoming/melodee_test/staging",

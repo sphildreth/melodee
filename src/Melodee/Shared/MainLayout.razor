@@ -1,77 +1,107 @@
 ﻿@inherits LayoutComponentBase
 
-<main>
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            File
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">New</a></li>
-                            <li><a class="dropdown-item" href="#">Open</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Exit</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Edit
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Undo</a></li>
-                            <li><a class="dropdown-item" href="#">Cut</a></li>
-                            <li><a class="dropdown-item" href="#">Copy</a></li>
-                            <li><a class="dropdown-item" href="#">Paste</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Options
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Some Options</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Tools
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Tool Something</a></li>
-                            <li><a class="dropdown-item" href="#">Another Tool</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Seperated tool here</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Help
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">About</a></li>
-                        </ul>
-                    </li>
-                </ul>
-                <form class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-outline-success" type="submit">Search</button>
-                </form>
+<CascadingValue Value="this">
+
+    <main>
+        <nav class="navbar navbar-expand-lg navbar-light border mb-2">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                File
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">New</a></li>
+                                <li><a class="dropdown-item" href="#">Open</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#">Exit</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Edit
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Undo</a></li>
+                                <li><a class="dropdown-item" href="#">Cut</a></li>
+                                <li><a class="dropdown-item" href="#">Copy</a></li>
+                                <li><a class="dropdown-item" href="#">Paste</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Options
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Some Options</a></li>
+                            </ul>
+                            @* <div class="col-4"> *@
+                            @*     <select class="form-select form-select-sm" aria-label="Filtering options"> *@
+                            @*         <option selected>No Filter</option> *@
+                            @*         <option value="1">Duplicates</option> *@
+                            @*         <option value="2">Incomplete</option> *@
+                            @*         <option value="3">Less than 3 Tracks</option> *@
+                            @*         <option value="4">Need Attention</option> *@
+                            @*         <option value="5">Ready to Move</option> *@
+                            @*         <option value="6">Selected</option> *@
+                            @*         <option value="7">Under 12 Minutes</option> *@
+                            @*     </select> *@
+                            @* </div>                         *@
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Tools
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Tool Something</a></li>
+                                <li><a class="dropdown-item" href="#">Another Tool</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#">Seperated tool here</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Help
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">About</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <form class="d-flex" role="search">
+                        <input
+                            @onkeyup="KeyUpCallback"
+                            @bind:event="oninput"
+                            @bind="SearchText"
+                            class="form-control me-2"
+                            type="text"
+                            placeholder="Search"
+                            aria-label="Search">
+                    </form>
+                </div>
             </div>
+        </nav>
+
+        <div class="content px-4">
+            @Body
         </div>
-    </nav>
 
-    <div class="content px-4">
-        @Body
-    </div>
+    </main>
 
-</main>
-
+</CascadingValue>
 @code {
+
+    public string? SearchText { get; set; }
+
+    public event EventHandler? SearchChanged;
+
+    private void KeyUpCallback(KeyboardEventArgs obj)
+    {
+        SearchChanged?.Invoke(this, obj);
+    }
 
 }

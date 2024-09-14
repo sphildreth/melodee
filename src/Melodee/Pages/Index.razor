@@ -7,27 +7,30 @@
 @using Melodee.Common.Models.Configuration
 @using Melodee.Common.Models.Extensions
 @using Melodee.Plugins.Discovery.Releases
+@using Microsoft.AspNetCore.Mvc.RazorPages
 @using Release = Melodee.Models.Release
 
 @inject Configuration Configuration
 @inject IReleasesDiscoverer ReleasesDiscoverer
 
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-8">
+    <div class="row border-bottom border-secondary mb-2">
+        <div class="col-7">
             <nav aria-label="...">
                 <ul class="pagination pagination-sm">
-                    <li class="page-item active" aria-current="page">
-                        <span class="page-link">1</span>
+                    <li class="page-item @(_page == 1 ? "disabled" : string.Empty)"  @onclick="LastLastPage">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="@(_page == 0)">Previous</a>
                     </li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item"><span class="badge bg-primary py-2 nerd-text">@_page of @_totalPages</span></li>
+                    <li class="page-item @(_page == _totalPages ? "disabled" : string.Empty)" @onclick="LoadNextPage">
+                        <a class="page-link" href="#" aria-disabled="@(_page == _totalPages)">Next</a>
+                    </li>
                 </ul>
             </nav>
         </div>
-        <div class="col text-end" style="font-size: 10px; margin-top: 5px; font-family: 'Hack Nerd Font Mono',serif;">
-            Total: @_totalReleaseCount.ToStringPadLeft(6)
-            Selected: @_selectedReleaseIds.Count().ToStringPadLeft(3)
+        <div class="col text-end fs-6 nerd-text">
+            Total: <span class="badge bg-primary"> @_totalReleaseCount.ToStringPadLeft(6)</span>
+            Selected:  <span class="badge bg-primary">@_selectedReleaseIds.Count().ToStringPadLeft(3)</span>
         </div>
     </div>
     <div class="row">
@@ -50,7 +53,6 @@
                             {
                                 _selectedReleaseIds.Remove(release.UniqueId);
                             }
-
                             StateHasChanged();
                         }
                     }
@@ -72,7 +74,7 @@
             </div>
         </div>
         <div class="col">
-            @if (_selectedRelease == null)
+            @if (_scanning)
             {
                 <div class="d-flex justify-content-center">
                     <div class="spinner-border" role="status">
@@ -80,7 +82,7 @@
                     </div>
                 </div>
             }
-            else
+            else if(_selectedRelease != null)
             {
                 <p>Show Details for @_selectedRelease.Title</p>
             }
@@ -93,6 +95,9 @@
         $(document).on('click', ".release-card", function () {
             $(this).toggleClass("release-selected");
         });
+        $(document).on('keyup', "#mainSearchInput", function (e) {
+            alert('do search');
+        });
     });
 </script>
 
@@ -101,12 +106,15 @@
     byte[] _defaultReleaseCover = [];
     int _totalReleaseCount = 0;
     int _page = 1;
-    short _take = 100;
+    short _take = 10;
     int _totalPages = 1;
     bool _scanning = false;
     Release[] _releases = [];
     Release? _selectedRelease = null;
     List<long> _selectedReleaseIds = [];
+
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -118,12 +126,23 @@
             var appDir = new DirectoryInfo(Assembly.GetEntryAssembly()!.Location);
             _defaultReleaseCover = await File.ReadAllBytesAsync(Path.Combine(appDir.Parent.FullName, "wwwroot", "images", "release.jpg"));
         }
+        await RefreshReleasesAsync();
+
+        Layout.SearchChanged += (sender, args) =>
+        {
+            RefreshReleasesAsync((sender as MainLayout)?.SearchText).ConfigureAwait(true).GetAwaiter();
+        };
+    }
+
+    private async Task RefreshReleasesAsync(string? filter = null)
+    {
         _scanning = true;
         var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
             Configuration.StagingDirectoryInfo, new PagedRequest
             {
                 Page = _page,
-                Take = _take
+                Take = _take,
+                Filter = filter,
             });
         _releases = releasesForStagingFolder.Data.AsQueryable().ProjectToType<Release>().ToArray();
         _totalReleaseCount = releasesForStagingFolder.TotalCount;
@@ -133,6 +152,34 @@
             _selectedRelease = _releases.First();
         }
         _scanning = false;
+        StateHasChanged();
     }
+
+    private async Task LastLastPage()
+    {
+        _page -= 1;
+        if (_page > 0)
+        {
+            await RefreshReleasesAsync();
+        }
+        else
+        {
+            _page = 1;
+        }
+    }
+
+    private async Task LoadNextPage()
+    {
+        _page += 1;
+        if (_page <= _totalPages)
+        {
+            await RefreshReleasesAsync();
+        }
+        else
+        {
+            _page = _totalPages;
+        }
+    }
+
 }
 

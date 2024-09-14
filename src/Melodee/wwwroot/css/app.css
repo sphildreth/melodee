@@ -8,6 +8,10 @@
   height: calc(100vh - var(--totalHeight) );
 }
 
+.nerd-text {
+  font-family: 'Hack Nerd Font Mono', serif;
+}
+
 #blazor-error-ui {
   background: lightyellow;
   bottom: 0;

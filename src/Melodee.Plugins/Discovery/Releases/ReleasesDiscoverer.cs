@@ -109,6 +109,14 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 }
             }
         }
+        
+        if (!string.IsNullOrWhiteSpace(pagedRequest.Filter))
+        {
+            releases = releases.Where(x =>
+                (x.ReleaseTitle() != null && x.ReleaseTitle()!.Contains(pagedRequest.Filter, StringComparison.CurrentCultureIgnoreCase)) || 
+                (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Filter, StringComparison.CurrentCultureIgnoreCase)))?.ToList();            
+        }        
+        
         return new PagedResult<Release>()
         {
             TotalCount = releases.Count,
