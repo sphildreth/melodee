@@ -1,3 +1,4 @@
+using Mapster;
 using Melodee.Common.Models.Cards;
 
 namespace Melodee.Models;
@@ -10,5 +11,11 @@ public sealed record Release : ReleaseCard
     public string ImageBase64String(byte[] defaultImage)
     {
         return $"data:image/png;base64,{ Convert.ToBase64String(ImageBytes ?? defaultImage) }";
+    }
+
+    public ReleaseEditModel? ToEditModel()
+    {
+        var result = this.Adapt<ReleaseEditModel>();
+        return result;
     }
 }

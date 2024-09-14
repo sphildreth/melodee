@@ -36,7 +36,7 @@
   display: block;
   width: 160px;
   height: 200px;
-  border: 2px;
+  border: 2px solid white;
 }
 
 .release-card img {
@@ -47,9 +47,16 @@
   max-height: 100px;
 }
 
+.rainbow-text {
+  background-image: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .release-selected {
-  border-color: orange;
-  background-color: orange;
+  border: 2px solid transparent;
+  border-image: linear-gradient(to bottom right, #b827fc 0%, #2c90fc 25%, #b8fd33 50%, #fec837 75%, #fd1892 100%);
+  border-image-slice: 1;
 }
 
 .status-incomplete, .status-missing {

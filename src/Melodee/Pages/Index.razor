@@ -3,11 +3,9 @@
 @using Mapster
 @using Melodee.Common.Extensions
 @using Melodee.Common.Models
-@using Melodee.Common.Models.Cards
 @using Melodee.Common.Models.Configuration
-@using Melodee.Common.Models.Extensions
+@using Melodee.Models
 @using Melodee.Plugins.Discovery.Releases
-@using Microsoft.AspNetCore.Mvc.RazorPages
 @using Release = Melodee.Models.Release
 
 @inject Configuration Configuration
@@ -38,13 +36,11 @@
             <div class="overflow-auto" style="max-height: 800px;">
             @foreach (var release in _releases)
             {
-                <div @onclick="Callback"
-                     data-releaseid="@release.UniqueId"
-                     class="release-card card m-2 @($"release-{release.ReleaseStatus.ToString().ToLower()}"))">
+                <div @onclick="Callback">
                     @{
                         void Callback()
                         {
-                            _selectedRelease = release;
+                            _selectedRelease = release.ToEditModel();
                             if (!_selectedReleaseIds.Contains(release.UniqueId))
                             {
                                 _selectedReleaseIds.Add(release.UniqueId);
@@ -56,19 +52,11 @@
                             StateHasChanged();
                         }
                     }
-                    <img src="@release.ImageBase64String(_defaultReleaseCover)"
-                         class="card-img-top rounded mx-auto d-block" alt="@release.Title">
-                    <div class="card-body" style="margin:0; padding: 4px;">
-                        <h5 class="card-title"
-                            data-bs-toggle="tooltip" data-bs-placement="top" title="@release.Title"
-                            style="margin-bottom: 8px; padding-bottom: 0; font-size:16px; white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">@release.Title</h5>
-                        <h6 class="card-subtitle mb-2 text-muted"
-                            data-bs-placement="top" title="@release.Artist"
-                            style="font-size: 14px; white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">@release.Artist</h6>
-                        <p class="card-text">
-                            <span style="font-size: 12px;">@release.InfoLine</span>
-                        </p>
-                    </div>
+
+                    <ReleaseCard
+                        Release="release"
+                        IsSelected="release.UniqueId == _selectedRelease?.UniqueId"
+                        DefaultReleaseCover="_defaultReleaseCover" />
                 </div>
             }
             </div>
@@ -84,22 +72,32 @@
             }
             else if(_selectedRelease != null)
             {
-                <p>Show Details for @_selectedRelease.Title</p>
+                <form>
+                    <div class="mb-3">
+                        <label for="artist" class="form-label">Artist</label>
+                        <input type="text" @bind="_selectedRelease.Artist" class="form-control" id="artist">
+                    </div>
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" @bind="_selectedRelease.Title" class="form-control" id="title">
+                    </div>
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Year</label>
+                        <input type="text" @bind="_selectedRelease.Year" class="form-control" id="year">
+                    </div>
+                </form>
             }
         </div>
     </div>
 </div>
 
-<script type="text/javascript">
-    $(document).ready(function() {
-        $(document).on('click', ".release-card", function () {
-            $(this).toggleClass("release-selected");
-        });
-        $(document).on('keyup', "#mainSearchInput", function (e) {
-            alert('do search');
-        });
-    });
-</script>
+@* <script type="text/javascript"> *@
+@*     $(document).ready(function() { *@
+@*         $(document).on('click', ".release-card", function () { *@
+@*             $(this).toggleClass("release-selected"); *@
+@*         }); *@
+@*     }); *@
+@* </script> *@
 
 @code {
 
@@ -110,7 +108,7 @@
     int _totalPages = 1;
     bool _scanning = false;
     Release[] _releases = [];
-    Release? _selectedRelease = null;
+    ReleaseEditModel? _selectedRelease = null;
     List<long> _selectedReleaseIds = [];
 
     [CascadingParameter]
@@ -149,7 +147,7 @@
         _totalPages = releasesForStagingFolder.TotalPages;
         if (_releases.Length > 0)
         {
-            _selectedRelease = _releases.First();
+            _selectedRelease = _releases.First().ToEditModel();
         }
         _scanning = false;
         StateHasChanged();
@@ -179,6 +177,16 @@
         {
             _page = _totalPages;
         }
+    }
+
+    private void OnReleaseClick(Release release)
+    {
+
+    }
+
+    private void Callback()
+    {
+        throw new NotImplementedException();
     }
 
 }
