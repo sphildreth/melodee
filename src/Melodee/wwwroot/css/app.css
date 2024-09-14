@@ -1,4 +1,14 @@
-﻿#blazor-error-ui {
+﻿:root {
+  --headerHeight: 100px;
+  --footerHeight: 100px;
+  --totalHeight: calc( var(--headerHeight) + var(--footerHeight) );
+}
+
+#main {
+  height: calc(100vh - var(--totalHeight) );
+}
+
+#blazor-error-ui {
   background: lightyellow;
   bottom: 0;
   box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);

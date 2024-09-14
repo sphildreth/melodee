@@ -32,6 +32,7 @@
     </div>
     <div class="row">
         <div class="col-8">
+            <div class="overflow-auto" style="max-height: 800px;">
             @foreach (var release in _releases)
             {
                 <div @onclick="Callback"
@@ -49,6 +50,7 @@
                             {
                                 _selectedReleaseIds.Remove(release.UniqueId);
                             }
+
                             StateHasChanged();
                         }
                     }
@@ -67,6 +69,7 @@
                     </div>
                 </div>
             }
+            </div>
         </div>
         <div class="col">
             @if (_selectedRelease == null)
@@ -98,7 +101,7 @@
     byte[] _defaultReleaseCover = [];
     int _totalReleaseCount = 0;
     int _page = 1;
-    short _take = 13;
+    short _take = 100;
     int _totalPages = 1;
     bool _scanning = false;
     Release[] _releases = [];
@@ -107,6 +110,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _take = Configuration.DefaultPageSize;
+
         // ensure default release cover bytes are loaded
         if (_defaultReleaseCover.Length == 0)
         {

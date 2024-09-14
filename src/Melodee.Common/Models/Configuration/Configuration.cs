@@ -42,4 +42,9 @@ public sealed record Configuration
     /// Options for all plugins.
     /// </summary>
     public PluginProcessOptions PluginProcessOptions { get; init; }= null!;
+
+    /// <summary>
+    /// Default page size when view including pagination.
+    /// </summary>
+    public short DefaultPageSize { get; init; } = 100;
 }
