@@ -111,6 +111,8 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         }
         return new PagedResult<Release>()
         {
+            TotalCount = releases.Count,
+            TotalPages = (releases.Count + pagedRequest.TakeValue - 1) / pagedRequest.TakeValue,
             Data = releases
                 .OrderBy(x => x.SortValue)
                 .Skip(pagedRequest.SkipValue)
@@ -193,6 +195,8 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         var d = await Task.WhenAll(data);
         return new PagedResult<ReleaseCard>
         {
+            TotalCount = releasesForDirectoryInfo.TotalCount,
+            TotalPages = releasesForDirectoryInfo.TotalPages,
             Data = d
         };
     }

@@ -16,3 +16,55 @@
   right: 0.75rem;
   top: 0.5rem;
 }
+
+.release-card {
+  float: left;
+  display: block;
+  width: 160px;
+  height: 200px;
+  border: 2px;
+}
+
+.release-card img {
+  margin: 5px;
+  height: auto;
+  width: auto;
+  max-width: 100px;
+  max-height: 100px;
+}
+
+.release-selected {
+  border-color: orange;
+  background-color: orange;
+}
+
+.status-incomplete, .status-missing {
+  border: 2px solid yellow;
+}
+
+.status-error {
+  border: 2px solid red;
+}
+
+.status-needsattention {
+  border: 2px solid orange;
+}
+
+.truncate-text {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-status-needsattention {
+  color: red !important;
+}
+
+.release-invalid, .media-invalid, .track-invalid {
+  background-color: tomato !important;
+}
+
+.status-duplicate {
+  border: 3px solid orange;
+}

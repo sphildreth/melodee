@@ -1,36 +1,118 @@
 ﻿@page "/"
+@using System.Reflection
 @using Mapster
+@using Melodee.Common.Extensions
 @using Melodee.Common.Models
 @using Melodee.Common.Models.Cards
 @using Melodee.Common.Models.Configuration
+@using Melodee.Common.Models.Extensions
 @using Melodee.Plugins.Discovery.Releases
 @using Release = Melodee.Models.Release
 
 @inject Configuration Configuration
 @inject IReleasesDiscoverer ReleasesDiscoverer
 
-<div class="d-flex">
-    @foreach (var release in _releases)
-    {
-        <Card Style="min-width:15rem;">
-            <CardBody>
-                <CardTitle>@release.Title</CardTitle>
-                <CardText>Some quick example text to build on the card title and make up the bulk of the card's content.</CardText>
-                <Button Color="ButtonColor.Primary" To="#" Type="ButtonType.Link">Go somewhere</Button>
-            </CardBody>
-        </Card>
-    }
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-8">
+            <nav aria-label="...">
+                <ul class="pagination pagination-sm">
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">1</span>
+                    </li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="col text-end" style="font-size: 10px; margin-top: 5px; font-family: 'Hack Nerd Font Mono',serif;">
+            Total: @_totalReleaseCount.ToStringPadLeft(6)
+            Selected: @_selectedReleaseIds.Count().ToStringPadLeft(3)
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-8">
+            @foreach (var release in _releases)
+            {
+                <div @onclick="Callback"
+                     data-releaseid="@release.UniqueId"
+                     class="release-card card m-2 @($"release-{release.ReleaseStatus.ToString().ToLower()}"))">
+                    @{
+                        void Callback()
+                        {
+                            _selectedRelease = release;
+                            if (!_selectedReleaseIds.Contains(release.UniqueId))
+                            {
+                                _selectedReleaseIds.Add(release.UniqueId);
+                            }
+                            else
+                            {
+                                _selectedReleaseIds.Remove(release.UniqueId);
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    <img src="@release.ImageBase64String(_defaultReleaseCover)"
+                         class="card-img-top rounded mx-auto d-block" alt="@release.Title">
+                    <div class="card-body" style="margin:0; padding: 4px;">
+                        <h5 class="card-title"
+                            data-bs-toggle="tooltip" data-bs-placement="top" title="@release.Title"
+                            style="margin-bottom: 8px; padding-bottom: 0; font-size:16px; white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">@release.Title</h5>
+                        <h6 class="card-subtitle mb-2 text-muted"
+                            data-bs-placement="top" title="@release.Artist"
+                            style="font-size: 14px; white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">@release.Artist</h6>
+                        <p class="card-text">
+                            <span style="font-size: 12px;">@release.InfoLine</span>
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="col">
+            @if (_selectedRelease == null)
+            {
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p>Show Details for @_selectedRelease.Title</p>
+            }
+        </div>
+    </div>
 </div>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $(document).on('click', ".release-card", function () {
+            $(this).toggleClass("release-selected");
+        });
+    });
+</script>
 
 @code {
 
+    byte[] _defaultReleaseCover = [];
+    int _totalReleaseCount = 0;
     int _page = 1;
-    short _take = 100;
+    short _take = 13;
+    int _totalPages = 1;
     bool _scanning = false;
     Release[] _releases = [];
+    Release? _selectedRelease = null;
+    List<long> _selectedReleaseIds = [];
 
     protected override async Task OnInitializedAsync()
     {
+        // ensure default release cover bytes are loaded
+        if (_defaultReleaseCover.Length == 0)
+        {
+            var appDir = new DirectoryInfo(Assembly.GetEntryAssembly()!.Location);
+            _defaultReleaseCover = await File.ReadAllBytesAsync(Path.Combine(appDir.Parent.FullName, "wwwroot", "images", "release.jpg"));
+        }
         _scanning = true;
         var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
             Configuration.StagingDirectoryInfo, new PagedRequest
@@ -39,9 +121,13 @@
                 Take = _take
             });
         _releases = releasesForStagingFolder.Data.AsQueryable().ProjectToType<Release>().ToArray();
+        _totalReleaseCount = releasesForStagingFolder.TotalCount;
+        _totalPages = releasesForStagingFolder.TotalPages;
+        if (_releases.Length > 0)
+        {
+            _selectedRelease = _releases.First();
+        }
         _scanning = false;
-
     }
-
 }
 
