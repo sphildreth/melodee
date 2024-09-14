@@ -9,18 +9,18 @@
 @inject Configuration Configuration
 @inject IReleasesDiscoverer ReleasesDiscoverer
 
-@* <div class="d-flex"> *@
-@*     @foreach (var release in _releases) *@
-@*     { *@
-@*         <Card Style="min-width:15rem;"> *@
-@*             <CardBody> *@
-@*                 <CardTitle>@release.Title</CardTitle> *@
-@*                 <CardText>Some quick example text to build on the card title and make up the bulk of the card's content.</CardText> *@
-@*                 <Button Color="ButtonColor.Primary" To="#" Type="ButtonType.Link">Go somewhere</Button> *@
-@*             </CardBody> *@
-@*         </Card> *@
-@*     } *@
-@* </div> *@
+<div class="d-flex">
+    @foreach (var release in _releases)
+    {
+        <Card Style="min-width:15rem;">
+            <CardBody>
+                <CardTitle>@release.Title</CardTitle>
+                <CardText>Some quick example text to build on the card title and make up the bulk of the card's content.</CardText>
+                <Button Color="ButtonColor.Primary" To="#" Type="ButtonType.Link">Go somewhere</Button>
+            </CardBody>
+        </Card>
+    }
+</div>
 
 @code {
 
