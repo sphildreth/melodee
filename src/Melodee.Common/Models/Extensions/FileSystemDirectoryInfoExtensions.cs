@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Melodee.Common.Utility;
 using Microsoft.VisualBasic.FileIO;
 using SearchOption = System.IO.SearchOption;
@@ -6,6 +7,8 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemDirectoryInfoExtensions
 {
+    private static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|compilation(s*)|live|promo(s*)|demo)", RegexOptions.Compiled | RegexOptions.IgnoreCase);    
+    
     public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo) => Path.Combine(fileSystemDirectoryInfo.Path, fileSystemDirectoryInfo.Name);
 
     public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
@@ -75,4 +78,10 @@ public static class FileSystemDirectoryInfoExtensions
             fileToDelete.Delete();
         }
     }
+    
+    public static bool IsDirectoryNotStudioAlbums(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var dir = fileSystemDirectoryInfo.FullName();
+        return !string.IsNullOrWhiteSpace(dir) && !IsDirectoryNotStudioAlbumsRegex.IsMatch(dir);
+    }    
 }

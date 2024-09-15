@@ -11,6 +11,21 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class ReleaseExtensions
 {
+    public static bool HasTrackArtists(this Release release)
+    {
+        var tracks = (release.Tracks ?? []).ToArray();
+        if (tracks.Length == 0)
+        {
+            return false;
+        }
+        var trackArtists = tracks
+            .Select(x => x.TrackArtist())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .ToArray();
+        return trackArtists.Length > 0;
+    }
+    
     public static bool Delete(this Release release, string directory)
     {
         var dirInfo = new DirectoryInfo(Path.Combine(directory, release.ToDirectoryName()));

@@ -225,11 +225,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
                     foreach (var releaseForDirectory in releasesForDirectory.Data.Item1.ToArray())
                     {
-                        Release? mergedRelease = releaseForDirectory;
+                        var mergedRelease = releaseForDirectory;
 
-                        string serialized = string.Empty;
-                        var releaseDataName = Path.Combine(directoryInfoToProcess.Path,
-                            releaseForDirectory.ToMelodeeJsonName());
+                        var serialized = string.Empty;
+                        var releaseDataName = Path.Combine(directoryInfoToProcess.Path, releaseForDirectory.ToMelodeeJsonName());
                         if (File.Exists(releaseDataName))
                         {
                             if (_configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
@@ -238,9 +237,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             }
                             else
                             {
-                                var existingRelease =
-                                    JsonSerializer.Deserialize<Release?>(
-                                        await File.ReadAllTextAsync(releaseDataName, cancellationToken));
+                                var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(releaseDataName, cancellationToken));
                                 if (existingRelease != null)
                                 {
                                     mergedRelease = mergedRelease.Merge(existingRelease);

@@ -31,17 +31,22 @@ public sealed record Configuration
     /// <summary>
     /// Settings for scripting files.
     /// </summary>
-    public Scripting Scripting { get; init; } = null!;
+    public Scripting Scripting { get; init; } = new();
 
     /// <summary>
     /// Options for converting media plugins.
     /// </summary>
-    public MediaConvertorOptions MediaConvertorOptions { get; init; } = null!;
+    public MediaConvertorOptions MediaConvertorOptions { get; init; } = new();
 
     /// <summary>
     /// Options for all plugins.
     /// </summary>
-    public PluginProcessOptions PluginProcessOptions { get; init; }= null!;
+    public PluginProcessOptions PluginProcessOptions { get; init; }= new();
+
+    /// <summary>
+    /// Options for validations.
+    /// </summary>
+    public ValidationOptions ValidationOptions { get; init; } = new();
 
     /// <summary>
     /// Default page size when view including pagination.

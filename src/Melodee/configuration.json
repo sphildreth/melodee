@@ -22,5 +22,9 @@
     "ConvertBitrate": 384,
     "ConvertVbrLevel": 4,
     "ConvertSamplingRate": 48000
+  },
+  "ValidationOptions" : {
+    "MaximumMediaNumber" : 500,
+    "MaximumTrackNumber" : 1000
   }
 }
