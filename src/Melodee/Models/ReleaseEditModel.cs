@@ -15,4 +15,6 @@ public class ReleaseEditModel
     public int[] MediaNumbers => Tracks.GroupBy(x => x.MediaNumber).Select(x => x.Key).ToArray().Distinct().OrderBy(x => x).ToArray();
     
     public List<TrackEditModel> Tracks { get; set; } = [];
+    
+    public string? ReleaseStatus { get; set; }
 }
