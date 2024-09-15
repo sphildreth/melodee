@@ -1,29 +1,32 @@
 @using Melodee.Models
 
-<div data-releaseid="@Release.UniqueId"
-     class="release-card card m-2 @($"release-{Release.ReleaseStatus.ToString().ToLower()}")) @(IsSelected ? "release-selected" : string.Empty)">
-
-    <img src="@Release.ImageBase64String(DefaultReleaseCover)"
-         class="card-img-top rounded mx-auto d-block" alt="@Release.Title">
-    <div class="card-body" style="margin:0; padding: 4px;">
-        <h5 class="card-title"
-            data-bs-toggle="tooltip" data-bs-placement="top" title="@Release.Title"
-            style="margin-bottom: 8px; padding-bottom: 0; font-size:16px; white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">@Release.Title</h5>
-        <h6 class="card-subtitle mb-2 text-muted"
-            data-bs-placement="top" title="@Release.Artist"
-            style="font-size: 14px; white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">@Release.Artist</h6>
-        <p class="card-text">
-            <span style="font-size: 12px;">@Release.InfoLine</span>
-        </p>
+<div data-releaseid="@Release.UniqueId">
+    <div
+        class="release-card card m-2 @($"release-{Release.ReleaseStatus.ToString().ToLower()}")) @(IsCurrent ? "release-current" : string.Empty) @(IsSelected ? "release-selected" : string.Empty)">
+        <img src="@Release.ImageBase64String(DefaultReleaseCover)"
+             class="card-img-top rounded mx-auto d-block" alt="@Release.Title">
+        <div class="card-body" style="margin:0; padding: 4px;">
+            <h5 class="card-title"
+                data-bs-toggle="tooltip" data-bs-placement="top" title="@Release.Title"
+                style="margin-bottom: 8px; padding-bottom: 0; font-size:16px; white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">@Release.Title</h5>
+            <h6 class="card-subtitle mb-2 text-muted"
+                data-bs-placement="top" title="@Release.Artist"
+                style="font-size: 14px; white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">@Release.Artist</h6>
+            <p class="card-text">
+                <span style="font-size: 12px;">@Release.InfoLine</span>
+            </p>
+        </div>
     </div>
 </div>
-
 @code {
     [Parameter]
     public Release Release { get; set; } = null!;
 
     [Parameter]
     public bool IsSelected { get; set; }
+
+    [Parameter]
+    public bool IsCurrent { get; set; }
 
     [Parameter] public byte[] DefaultReleaseCover { get; set; } = [];
 

@@ -1,3 +1,5 @@
+using System.Runtime.Serialization.Json;
+
 namespace Melodee.Models;
 
 public class ReleaseEditModel
@@ -9,4 +11,8 @@ public class ReleaseEditModel
     public string? Year { get; set; }
     
     public string? Artist { get; set; }
+
+    public int[] MediaNumbers => Tracks.GroupBy(x => x.MediaNumber).Select(x => x.Key).ToArray().Distinct().OrderBy(x => x).ToArray();
+    
+    public List<TrackEditModel> Tracks { get; set; } = [];
 }

@@ -12,10 +12,4 @@ public sealed record Release : ReleaseCard
     {
         return $"data:image/png;base64,{ Convert.ToBase64String(ImageBytes ?? defaultImage) }";
     }
-
-    public ReleaseEditModel? ToEditModel()
-    {
-        var result = this.Adapt<ReleaseEditModel>();
-        return result;
-    }
 }

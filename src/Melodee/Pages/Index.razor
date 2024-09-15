@@ -4,6 +4,7 @@
 @using Melodee.Common.Extensions
 @using Melodee.Common.Models
 @using Melodee.Common.Models.Configuration
+@using Melodee.Common.Models.Extensions
 @using Melodee.Models
 @using Melodee.Plugins.Discovery.Releases
 @using Release = Melodee.Models.Release
@@ -38,9 +39,8 @@
             {
                 <div @onclick="Callback">
                     @{
-                        void Callback()
+                        async Task Callback()
                         {
-                            _selectedRelease = release.ToEditModel();
                             if (!_selectedReleaseIds.Contains(release.UniqueId))
                             {
                                 _selectedReleaseIds.Add(release.UniqueId);
@@ -49,20 +49,21 @@
                             {
                                 _selectedReleaseIds.Remove(release.UniqueId);
                             }
+                            await GetReleaseDetailAsync(release.UniqueId);
                             StateHasChanged();
                         }
                     }
-
                     <ReleaseCard
                         Release="release"
-                        IsSelected="release.UniqueId == _selectedRelease?.UniqueId"
+                        IsCurrent="release.UniqueId == _selectedRelease?.UniqueId"
+                        IsSelected="_selectedReleaseIds.Contains(release.UniqueId)"
                         DefaultReleaseCover="_defaultReleaseCover" />
                 </div>
             }
             </div>
         </div>
         <div class="col">
-            @if (_scanning)
+            @if (_loading)
             {
                 <div class="d-flex justify-content-center">
                     <div class="spinner-border" role="status">
@@ -73,17 +74,40 @@
             else if(_selectedRelease != null)
             {
                 <form>
-                    <div class="mb-3">
-                        <label for="artist" class="form-label">Artist</label>
-                        <input type="text" @bind="_selectedRelease.Artist" class="form-control" id="artist">
+                    <div class="border-bottom border-secondary mb-2">
+                        <div class="mb-3">
+                            <label for="artist" class="form-label">Artist</label>
+                            <input type="text" @bind="_selectedRelease.Artist" class="form-control" id="artist">
+                        </div>
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" @bind="_selectedRelease.Title" class="form-control" id="title">
+                        </div>
+                        <div class="mb-3">
+                            <label for="year" class="form-label">Year</label>
+                            <input type="text" @bind="_selectedRelease.Year" class="form-control" id="year">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Title</label>
-                        <input type="text" @bind="_selectedRelease.Title" class="form-control" id="title">
-                    </div>
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Year</label>
-                        <input type="text" @bind="_selectedRelease.Year" class="form-control" id="year">
+                    <div class="track-edit-container container overflow-auto" style="max-height: 500px;">
+                        @foreach (var media in _selectedRelease.MediaNumbers)
+                        {
+                            @foreach (var track in _selectedRelease.Tracks.Where(x => x.MediaNumber == media).OrderBy(x => x.Number))
+                            {
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <input type="number" @bind="track.MediaNumber" class="form-control" placeholder="Media" aria-label="Media">
+                                    </div>
+                                    <div class="col">
+                                        <input type="number" @bind="track.Number" class="form-control" placeholder="Number" aria-label="Number">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <input type="text" @bind="track.Title" class="form-control" placeholder="Title" aria-label="Title">
+                                    </div>
+                                </div>
+                            }
+                        }
                     </div>
                 </form>
             }
@@ -106,13 +130,33 @@
     int _page = 1;
     short _take = 10;
     int _totalPages = 1;
-    bool _scanning = false;
+    bool _loading = false;
     Release[] _releases = [];
     ReleaseEditModel? _selectedRelease = null;
     List<long> _selectedReleaseIds = [];
 
     [CascadingParameter]
     public MainLayout Layout { get; set; }
+
+    public async Task GetReleaseDetailAsync(long uniqueId)
+    {
+        _loading = true;
+
+        var detail = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, uniqueId);
+        _selectedRelease = new ReleaseEditModel
+        {
+            Artist = detail.Artist(),
+            Title = detail.ReleaseTitle(),
+            Year = detail.ReleaseYear()?.ToString() ?? string.Empty,
+            Tracks = detail.Tracks?.Select(x => new TrackEditModel
+            {
+                Number = x.TrackNumber(),
+                Title = x.Title() ?? string.Empty,
+                MediaNumber = x.MediaNumber()
+            }).ToList() ?? []
+        };
+        _loading = false;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,7 +178,7 @@
 
     private async Task RefreshReleasesAsync(string? filter = null)
     {
-        _scanning = true;
+        _loading = true;
         var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
             Configuration.StagingDirectoryInfo, new PagedRequest
             {
@@ -147,9 +191,9 @@
         _totalPages = releasesForStagingFolder.TotalPages;
         if (_releases.Length > 0)
         {
-            _selectedRelease = _releases.First().ToEditModel();
+            await GetReleaseDetailAsync(_releases.First().UniqueId);
         }
-        _scanning = false;
+        _loading = false;
         StateHasChanged();
     }
 
@@ -177,16 +221,6 @@
         {
             _page = _totalPages;
         }
-    }
-
-    private void OnReleaseClick(Release release)
-    {
-
-    }
-
-    private void Callback()
-    {
-        throw new NotImplementedException();
     }
 
 }
