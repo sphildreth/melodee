@@ -147,6 +147,13 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                     releases = releases.Where(x => x.Status == ReleaseStatus.Ok).ToList();
                     break;
                 
+                case ReleaseResultFilter.Selected:
+                    if (pagedRequest.SelectedReleaseIds.Length > 0)
+                    {
+                        releases = releases.Where(x => pagedRequest.SelectedReleaseIds.Contains(x.UniqueId)).ToList();
+                    }
+                    break;
+                
                 case ReleaseResultFilter.LessThanConfiguredDuration:
                     releases = releases.Where(x => x.TotalDuration() < _configuration.FilterLessThanConfiguredDuration).ToList();
                     break;

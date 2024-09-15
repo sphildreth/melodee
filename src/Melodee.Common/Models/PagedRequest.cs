@@ -17,6 +17,8 @@ public sealed record PagedRequest
     
     public ReleaseResultFilter? Filter { get; init; }
     
+    public long[] SelectedReleaseIds { get; init; } = Array.Empty<long>();
+    
     public short TakeValue
     {
         get

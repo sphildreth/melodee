@@ -185,7 +185,8 @@
 
         Layout.SearchChanged += (sender, args) =>
         {
-            RefreshReleasesAsync((sender as MainLayout)?.SearchText, (sender as MainLayout)?.Filter).ConfigureAwait(true).GetAwaiter();
+            var ml = sender as MainLayout;
+            RefreshReleasesAsync(ml?.SearchText, ml?.Filter).ConfigureAwait(true).GetAwaiter();
         };
     }
 
@@ -198,7 +199,8 @@
                 Page = _page,
                 Take = _take,
                 Search = search,
-                Filter = filter
+                Filter = filter,
+                SelectedReleaseIds = _selectedReleaseIds.ToArray()
             });
         _releases = releasesForStagingFolder.Data.AsQueryable().ProjectToType<Release>().ToArray();
         _totalReleaseCount = releasesForStagingFolder.TotalCount;
