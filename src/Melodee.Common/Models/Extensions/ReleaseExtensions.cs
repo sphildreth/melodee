@@ -338,6 +338,8 @@ public static class ReleaseExtensions
 
         return Path.Combine(fnSubPart, $"{artistDirectory}{fnIdPart}");
     }
+    
+    public static double TotalDuration(this Release release) => release.Tracks?.Sum(x => x.Duration()) ?? 0;
 
     public static string Duration(this Release release)
     {

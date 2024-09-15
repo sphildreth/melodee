@@ -19,6 +19,7 @@ namespace Melodee.Plugins.Discovery.Releases;
 
 public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 {
+    private readonly Configuration _configuration;
     private readonly IDictionary<FileSystemDirectoryInfo, IEnumerable<Release>> _releaseCache = new Dictionary<FileSystemDirectoryInfo, IEnumerable<Release>>();
     
     public const short MinimumDiscNumber = 1;
@@ -39,6 +40,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 
     public ReleasesDiscoverer(Configuration configuration)
     {
+        _configuration = configuration;
         var config = configuration;
         
         _trackPlugins = new ITrackPlugin[]
@@ -110,12 +112,46 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             }
         }
         
-        if (!string.IsNullOrWhiteSpace(pagedRequest.Filter))
+        if (!string.IsNullOrWhiteSpace(pagedRequest.Search))
         {
             releases = releases.Where(x =>
-                (x.ReleaseTitle() != null && x.ReleaseTitle()!.Contains(pagedRequest.Filter, StringComparison.CurrentCultureIgnoreCase)) || 
-                (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Filter, StringComparison.CurrentCultureIgnoreCase)))?.ToList();            
-        }        
+                (x.ReleaseTitle() != null && x.ReleaseTitle()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)) || 
+                (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)))?.ToList();            
+        }
+
+        if (pagedRequest.Filter != ReleaseResultFilter.All && releases != null && releases.Count != 0)
+        {
+            switch (pagedRequest.Filter)
+            {
+                case ReleaseResultFilter.Duplicates:
+                    var duplicates = releases
+                        .GroupBy(x => x.UniqueId)
+                        .Where(x => x.Count() > 1)
+                        .Select(x => x.Key);
+                    releases = releases.Where(x => duplicates.Contains(x.UniqueId)).ToList();
+                    break;
+                
+                case ReleaseResultFilter.Incomplete:
+                    releases = releases.Where(x => x.Status == ReleaseStatus.Incomplete).ToList();
+                    break;
+                
+                case ReleaseResultFilter.LessThanConfiguredTracks:
+                    releases = releases.Where(x => x.Tracks?.Count() < _configuration.FilterLessThanTrackCount || x.TrackTotalValue() < _configuration.FilterLessThanTrackCount).ToList();
+                    break;
+                
+                case ReleaseResultFilter.NeedsAttention:
+                    releases = releases.Where(x => x.Status == ReleaseStatus.NeedsAttention).ToList();
+                    break;
+
+                case ReleaseResultFilter.ReadyToMove:
+                    releases = releases.Where(x => x.Status == ReleaseStatus.Ok).ToList();
+                    break;
+                
+                case ReleaseResultFilter.LessThanConfiguredDuration:
+                    releases = releases.Where(x => x.TotalDuration() < _configuration.FilterLessThanConfiguredDuration).ToList();
+                    break;
+            }
+        }
         
         return new PagedResult<Release>()
         {

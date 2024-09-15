@@ -12,6 +12,7 @@ using Melodee.Plugins.Conversion.Media;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Scripting;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -26,6 +27,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
     private readonly Configuration _configuration;
     private readonly IScriptPlugin _preDiscoveryScript;
     private readonly IScriptPlugin _postDiscoveryScript;
+    private readonly IReleaseValidator _releaseValidator;
     private readonly IEnumerable<ITrackPlugin> _trackPlugins;
     private readonly IEnumerable<IConversionPlugin> _conversionPlugins;
     private readonly IEnumerable<IDirectoryPlugin> _directoryPlugins;
@@ -46,12 +48,14 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
     public DirectoryProcessor(
         IScriptPlugin preDiscoveryScript,
         IScriptPlugin postDiscoveryScript,
+        IReleaseValidator releaseValidator,
         Configuration configuration)
     {
         _configuration = configuration;
 
         _preDiscoveryScript = preDiscoveryScript;
         _postDiscoveryScript = postDiscoveryScript;
+        _releaseValidator = releaseValidator;
 
         _trackPlugins = new[]
         {
@@ -572,6 +576,11 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 }
             }
         }
+
+        Parallel.ForEach(releases, release =>
+        {
+            release.Status = _releaseValidator.ValidateRelease(release).Data;
+        });
 
         return new OperationResult<(IEnumerable<Release>, int)>(messages)
         {

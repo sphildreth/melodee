@@ -18,6 +18,12 @@ public sealed record Configuration
     /// </summary>
     public string StagingDirectory { get; init; } = null!;
 
+    public int FilterLessThanTrackCount { get; init; } = 3;
+    
+    public double FilterLessThanConfiguredDuration { get; init; } = 720000;
+    
+    public TimeSpan FilterLessThanConfiguredTime => TimeSpan.FromMilliseconds(FilterLessThanConfiguredDuration);
+
     [JsonIgnore] 
     public FileSystemDirectoryInfo StagingDirectoryInfo => new System.IO.DirectoryInfo(StagingDirectory).ToDirectorySystemInfo();
     

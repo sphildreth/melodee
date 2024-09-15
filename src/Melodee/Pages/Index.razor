@@ -185,11 +185,11 @@
 
         Layout.SearchChanged += (sender, args) =>
         {
-            RefreshReleasesAsync((sender as MainLayout)?.SearchText).ConfigureAwait(true).GetAwaiter();
+            RefreshReleasesAsync((sender as MainLayout)?.SearchText, (sender as MainLayout)?.Filter).ConfigureAwait(true).GetAwaiter();
         };
     }
 
-    private async Task RefreshReleasesAsync(string? filter = null)
+    private async Task RefreshReleasesAsync(string? search = null, ReleaseResultFilter? filter = null)
     {
         _loading = true;
         var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
@@ -197,7 +197,8 @@
             {
                 Page = _page,
                 Take = _take,
-                Filter = filter,
+                Search = search,
+                Filter = filter
             });
         _releases = releasesForStagingFolder.Data.AsQueryable().ProjectToType<Release>().ToArray();
         _totalReleaseCount = releasesForStagingFolder.TotalCount;

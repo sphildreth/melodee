@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+﻿@using Melodee.Common.Models.Configuration
+@inherits LayoutComponentBase
+
+@inject Configuration Configuration
 
 <CascadingValue Value="this">
 
@@ -34,23 +37,18 @@
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Options
+                                View
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Some Options</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.All))"><a class="dropdown-item" href="#">All</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Duplicates))"><a class="dropdown-item" href="#">Duplicates</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Incomplete))"><a class="dropdown-item" href="#">Incomplete</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.LessThanConfiguredTracks))"><a class="dropdown-item" href="#">Less than @Configuration.FilterLessThanTrackCount Tracks</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.NeedsAttention))"><a class="dropdown-item" href="#">Needs Attention</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.ReadyToMove))"><a class="dropdown-item" href="#">Ready to Move</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Selected))"><a class="dropdown-item" href="#">Selected</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.LessThanConfiguredDuration))"><a class="dropdown-item" href="#">Under @Configuration.FilterLessThanConfiguredTime.TotalMinutes Minutes</a></li>
                             </ul>
-                            @* <div class="col-4"> *@
-                            @*     <select class="form-select form-select-sm" aria-label="Filtering options"> *@
-                            @*         <option selected>No Filter</option> *@
-                            @*         <option value="1">Duplicates</option> *@
-                            @*         <option value="2">Incomplete</option> *@
-                            @*         <option value="3">Less than 3 Tracks</option> *@
-                            @*         <option value="4">Need Attention</option> *@
-                            @*         <option value="5">Ready to Move</option> *@
-                            @*         <option value="6">Selected</option> *@
-                            @*         <option value="7">Under 12 Minutes</option> *@
-                            @*     </select> *@
-                            @* </div>                         *@
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -97,11 +95,19 @@
 
     public string? SearchText { get; set; }
 
+    public ReleaseResultFilter? Filter { get; set; }
+
     public event EventHandler? SearchChanged;
 
     private void KeyUpCallback(KeyboardEventArgs obj)
     {
         SearchChanged?.Invoke(this, obj);
+    }
+
+    private void FilterReleases(ReleaseResultFilter i)
+    {
+        Filter = i;
+        SearchChanged?.Invoke(this, EventArgs.Empty);
     }
 
 }

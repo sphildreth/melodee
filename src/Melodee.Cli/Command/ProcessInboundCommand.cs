@@ -4,6 +4,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -65,7 +66,8 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         };
         var processor = new DirectoryProcessor(
             new NullScript(config),
-            new NullScript(config),
+            new NullScript(config),                 
+            new ReleaseValidator(config),
             config);
         var dirInfo = new System.IO.DirectoryInfo(settings.Inbound);
         if (!dirInfo.Exists)

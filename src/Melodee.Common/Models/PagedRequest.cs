@@ -1,4 +1,5 @@
 using System.Text;
+using Melodee.Common.Enums;
 
 namespace Melodee.Common.Models;
 
@@ -12,7 +13,9 @@ public sealed record PagedRequest
     private int? _skipValue;    
     
     public short? Take { get; set; } = DefaultPageSize;    
-    public string? Filter { get; init; }
+    public string? Search { get; init; }
+    
+    public ReleaseResultFilter? Filter { get; init; }
     
     public short TakeValue
     {

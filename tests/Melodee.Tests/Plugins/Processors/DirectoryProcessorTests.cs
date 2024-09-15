@@ -1,6 +1,7 @@
 using Melodee.Common.Models;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
+using Melodee.Plugins.Validation;
 using Serilog;
 
 namespace Melodee.Tests.Plugins.Processors;
@@ -24,6 +25,7 @@ public class DirectoryProcessorTests
             var processor = new DirectoryProcessor(
                 new PreDiscoveryScript(config), 
                 new NullScript(config), 
+                new ReleaseValidator(config), 
                 config);
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
