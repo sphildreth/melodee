@@ -36,4 +36,9 @@ public interface IReleasesDiscoverer : IPlugin
         FileSystemDirectoryInfo fileSystemDirectoryInfo, 
         PagedRequest pagedRequest, 
         CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Clear previously found Releases cache.
+    /// </summary>
+    void ClearCache();
 }

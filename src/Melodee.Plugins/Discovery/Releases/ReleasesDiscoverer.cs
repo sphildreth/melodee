@@ -34,6 +34,8 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
     
     public int SortOrder => 0;
 
+    public void ClearCache() => _releaseCache.Clear();
+    
     public ReleasesDiscoverer(Configuration configuration)
     {
         _configuration = configuration;
@@ -198,6 +200,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                                 if (r != null)
                                 {
                                     r.Directory = jsonFile.Directory?.ToDirectorySystemInfo();
+                                    r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
                                     releases.Add(r);
                                 }
                             }
@@ -233,6 +236,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         var data = releasesForDirectoryInfo.Data.Select(async x => new ReleaseCard
         {
             Artist = x.Artist(),
+            Created = x.Created,
             Duration = x.Duration(),
             Directory = x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(),
             ImageBytes = await x.CoverImageBytesAsync(),
@@ -248,7 +252,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         {
             TotalCount = releasesForDirectoryInfo.TotalCount,
             TotalPages = releasesForDirectoryInfo.TotalPages,
-            Data = d
+            Data = d.OrderByDescending(x => x.Created).ToArray()
         };
     }
 }

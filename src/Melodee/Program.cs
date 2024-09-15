@@ -24,8 +24,7 @@ namespace Melodee
             appBuilder.RootComponents.Add<App>("app");
 
             var appDir = new DirectoryInfo(Assembly.GetEntryAssembly()!.Location);
-            var configuration = System.Text.Json.JsonSerializer.Deserialize<Configuration>(File.ReadAllText(Path.Combine(appDir.Parent!.FullName, "configuration.json"))) ?? new Common.Models.Configuration.Configuration();
-            appBuilder.Services.AddSingleton(configuration);
+            appBuilder.Services.AddTransient(opt => System.Text.Json.JsonSerializer.Deserialize<Configuration>(File.ReadAllText(Path.Combine(appDir.Parent!.FullName, "configuration.json"))) ?? new Common.Models.Configuration.Configuration());
 
             appBuilder.Services.AddSerilog();
             
@@ -35,6 +34,8 @@ namespace Melodee
 
             app.MainWindow
                 .SetIconFile("favicon.ico")
+                .SetMinHeight(1024)
+                .SetMinWidth(768)
                 .SetTitle("Melodee");
 
             AppDomain.CurrentDomain.UnhandledException += (sender, error) =>

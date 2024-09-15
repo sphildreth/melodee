@@ -29,5 +29,7 @@ public record ReleaseCard
     
     public required string Directory { get; init; }
     
+    public required DateTimeOffset Created { get; init; }
+    
     public string InfoLine => $"{Year} | {TrackCount.ToStringPadLeft(3)} | {Duration}";
 }

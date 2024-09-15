@@ -1,4 +1,5 @@
 @page "/settings"
+@using System.Reflection
 @using Melodee.Common.Models.Configuration
 @inject Configuration Configuration
 
@@ -15,7 +16,7 @@
             </nav>
         </div>
         <div class="col align-self-end">
-            <button type="button" class="btn btn-primary">Save</button>
+            <button @onclick="SaveSettings" type="button" class="btn btn-primary">Save</button>
         </div>
     </div>
 
@@ -75,5 +76,11 @@
 
 @code {
     [CascadingParameter] public MainLayout Layout { get; set; }
+
+    private async Task SaveSettings()
+    {
+        var appDir = new DirectoryInfo(Assembly.GetEntryAssembly()!.Location);
+        await File.WriteAllTextAsync(Path.Combine(appDir.Parent!.FullName, "configuration.json"), System.Text.Json.JsonSerializer.Serialize(Configuration));
+    }
 
 }

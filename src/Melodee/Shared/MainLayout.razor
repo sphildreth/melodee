@@ -15,29 +15,18 @@
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                File
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">New</a></li>
-                                <li><a class="dropdown-item" href="#">Open</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/settings">Settings...</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#">Exit</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Edit
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Undo</a></li>
-                                <li><a class="dropdown-item" href="#">Cut</a></li>
-                                <li><a class="dropdown-item" href="#">Copy</a></li>
-                                <li><a class="dropdown-item" href="#">Paste</a></li>
+                                <li @onclick="DeleteSelected"><a class="dropdown-item" href="#">Delete Selected</a></li>
+                                <li @onclick="MoveSelectedToLibrary"><a class="dropdown-item" href="#">Move Selected to Library</a></li>
+                                <li @onclick="SetSelectedStatusReviewed"><a class="dropdown-item" href="#">Set Selected Status as Reviewed</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li @onclick="((e) => SelectReleases(true))"><a class="dropdown-item" href="#">Select All</a></li>
                                 <li @onclick="((e) => SelectReleases(false))"><a class="dropdown-item" href="#">Select None</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/settings">Settings...</a></li>
+
                             </ul>
                         </li>
                         <li class="nav-item dropdown">
@@ -61,6 +50,7 @@
                                 Tools
                             </a>
                             <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Delete all Images</a></li>
                                 <li><a class="dropdown-item" href="#">Promote Track Artist</a></li>
                                 <li><a class="dropdown-item" href="#">Renumber Tracks</a></li>
                                 <li><a class="dropdown-item" href="#">Remove Artist from Track Artists</a></li>
@@ -136,6 +126,12 @@
 
     public event EventHandler<bool>? SelectReleasesChanged;
 
+    public event EventHandler? MoveSelectedToLibraryChanged;
+
+    public event EventHandler? DeleteSelectedChanged;
+
+    public event EventHandler? SetSelectedStatusReviewedChanged;
+
     private void KeyUpCallback(KeyboardEventArgs obj)
     {
         SearchChanged?.Invoke(this, obj);
@@ -153,6 +149,21 @@
     {
         _showConfigurationModel = true;
         StateHasChanged();
+    }
+
+    private void MoveSelectedToLibrary()
+    {
+        MoveSelectedToLibraryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void DeleteSelected()
+    {
+        DeleteSelectedChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void SetSelectedStatusReviewed()
+    {
+        SetSelectedStatusReviewedChanged?.Invoke(this, EventArgs.Empty);
     }
 
 }
