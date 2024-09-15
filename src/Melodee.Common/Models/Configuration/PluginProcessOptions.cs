@@ -5,15 +5,15 @@ public sealed record PluginProcessOptions
 {
     public bool DoDeleteOriginal { get; set; } = true;
     
-    public bool DoOverrideExistingMelodeeDataFiles { get; init; }
+    public bool DoOverrideExistingMelodeeDataFiles { get; set; }
     
     public bool DoLoadEmbeddedImages { get; set; } = true;
 
-    public int MaximumArtistDirectoryNameLength { get; init; } = 200;
+    public int MaximumArtistDirectoryNameLength { get; set; } = 200;
     
-    public int MaximumReleaseDirectoryNameLength { get; init; } = 200;
+    public int MaximumReleaseDirectoryNameLength { get; set; } = 200;
 
-    public int MinimumValidReleaseYear { get; init; } = 1925;
+    public int MinimumValidReleaseYear { get; set; } = 1925;
 
     public bool DoUseCurrentYearAsDefaultOrigReleaseYearValue = true;
 
@@ -29,19 +29,19 @@ public sealed record PluginProcessOptions
         })        
     };
     
-    public IEnumerable<string> ReleaseTitleRemovals { get; init; }  = new[]
+    public IEnumerable<string> ReleaseTitleRemovals { get; set; }  = new[]
     {
         "^",
         "~",
         "#"
     };
     
-    public IEnumerable<string> TrackTitleRemovals { get; init; } = new[]
+    public IEnumerable<string> TrackTitleRemovals { get; set; } = new[]
     {
         ";",
         "(Remaster)",
         "Remaster"
     };
 
-    public bool DoContinueOnDirectoryProcessingErrors { get; init; } = true;
+    public bool DoContinueOnDirectoryProcessingErrors { get; set; } = true;
 }

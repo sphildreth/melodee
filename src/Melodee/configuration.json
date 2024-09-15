@@ -16,9 +16,6 @@
     "DoDeleteOriginal": false,
     "DoOverrideExistingMelodeeDataFiles": true
   },
-  "ProcessFileOptions": {
-    "DoDeleteOriginal": false
-  },
   "MediaConvertorOptions": {
     "ConversionEnabled": true,
     "ConvertBitrate": 384,

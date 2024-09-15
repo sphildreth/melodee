@@ -7,6 +7,7 @@ public enum ReleaseResultFilter
     Duplicates,
     Incomplete,
     LessThanConfiguredTracks,
+    New,
     NeedsAttention,
     ReadyToMove,
     Selected,

@@ -21,6 +21,8 @@
                                 <li><a class="dropdown-item" href="#">New</a></li>
                                 <li><a class="dropdown-item" href="#">Open</a></li>
                                 <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/settings">Settings...</a></li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#">Exit</a></li>
                             </ul>
                         </li>
@@ -33,6 +35,9 @@
                                 <li><a class="dropdown-item" href="#">Cut</a></li>
                                 <li><a class="dropdown-item" href="#">Copy</a></li>
                                 <li><a class="dropdown-item" href="#">Paste</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li @onclick="((e) => SelectReleases(true))"><a class="dropdown-item" href="#">Select All</a></li>
+                                <li @onclick="((e) => SelectReleases(false))"><a class="dropdown-item" href="#">Select None</a></li>
                             </ul>
                         </li>
                         <li class="nav-item dropdown">
@@ -40,14 +45,15 @@
                                 View
                             </a>
                             <ul class="dropdown-menu">
-                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.All))"><a class="dropdown-item" href="#">All</a></li>
-                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Duplicates))"><a class="dropdown-item" href="#">Duplicates</a></li>
-                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Incomplete))"><a class="dropdown-item" href="#">Incomplete</a></li>
-                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.LessThanConfiguredTracks))"><a class="dropdown-item" href="#">Less than @Configuration.FilterLessThanTrackCount Tracks</a></li>
-                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.NeedsAttention))"><a class="dropdown-item" href="#">Needs Attention</a></li>
-                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.ReadyToMove))"><a class="dropdown-item" href="#">Ready to Move</a></li>
-                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Selected))"><a class="dropdown-item" href="#">Selected</a></li>
-                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.LessThanConfiguredDuration))"><a class="dropdown-item" href="#">Under @Configuration.FilterLessThanConfiguredTime.TotalMinutes Minutes</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.All))"><a class="dropdown-item @(Filter == ReleaseResultFilter.All ? "active" : string.Empty)" href="#">All</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Duplicates))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Duplicates ? "active" : string.Empty)" href="#">Duplicates</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Incomplete))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Incomplete ? "active" : string.Empty)" href="#">Incomplete</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.LessThanConfiguredTracks))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredTracks ? "active" : string.Empty)" href="#">Less than @Configuration.FilterLessThanTrackCount Tracks</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.NeedsAttention))"><a class="dropdown-item @(Filter == ReleaseResultFilter.NeedsAttention ? "active" : string.Empty)" href="#">Needs Attention</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.New))"><a class="dropdown-item @(Filter == ReleaseResultFilter.New ? "active" : string.Empty)" href="#">New</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.ReadyToMove))"><a class="dropdown-item @(Filter == ReleaseResultFilter.ReadyToMove ? "active" : string.Empty)" href="#">Ready to Move</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Selected))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Selected ? "active" : string.Empty)" href="#">Selected</a></li>
+                                <li @onclick="((e) => FilterReleases(ReleaseResultFilter.LessThanConfiguredDuration))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredDuration ? "active" : string.Empty)" href="#">Under @Configuration.FilterLessThanConfiguredTime.TotalMinutes Minutes</a></li>
                             </ul>
                         </li>
                         <li class="nav-item dropdown">
@@ -55,10 +61,38 @@
                                 Tools
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Tool Something</a></li>
-                                <li><a class="dropdown-item" href="#">Another Tool</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#">Seperated tool here</a></li>
+                                <li><a class="dropdown-item" href="#">Promote Track Artist</a></li>
+                                <li><a class="dropdown-item" href="#">Renumber Tracks</a></li>
+                                <li><a class="dropdown-item" href="#">Remove Artist from Track Artists</a></li>
+                                <li><a class="dropdown-item" href="#">Remove provided text from Track Title</a></li>
+                                <li><a class="dropdown-item" href="#">Remove all Track Artists</a></li>
+                                <li><a class="dropdown-item" href="#">Replace all Track Artist separators</a></li>
+                                <li><a class="dropdown-item" href="#">Set Year to Current</a></li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        Trim Track Titles &raquo;
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-submenu">
+                                        <li>
+                                            <a class="dropdown-item" href="#">1</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">2</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">3</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">4</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">5</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">10</a>
+                                        </li>
+                                    </ul>
+                                </li>
                             </ul>
                         </li>
                         <li class="nav-item dropdown">
@@ -87,17 +121,20 @@
         <div class="content px-4">
             @Body
         </div>
-
     </main>
 
 </CascadingValue>
 @code {
 
+    bool _showConfigurationModel;
+
     public string? SearchText { get; set; }
 
-    public ReleaseResultFilter? Filter { get; set; }
+    public ReleaseResultFilter? Filter { get; set; } = ReleaseResultFilter.All;
 
     public event EventHandler? SearchChanged;
+
+    public event EventHandler<bool>? SelectReleasesChanged;
 
     private void KeyUpCallback(KeyboardEventArgs obj)
     {
@@ -108,6 +145,14 @@
     {
         Filter = i;
         SearchChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void SelectReleases(bool selectAll) => SelectReleasesChanged?.Invoke(this, selectAll);
+
+    private void ShowConfigurationModel()
+    {
+        _showConfigurationModel = true;
+        StateHasChanged();
     }
 
 }

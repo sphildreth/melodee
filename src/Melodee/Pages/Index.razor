@@ -1,7 +1,6 @@
 ﻿@page "/"
 @using System.Reflection
 @using Mapster
-@using Melodee.Common.Enums
 @using Melodee.Common.Extensions
 @using Melodee.Common.Models
 @using Melodee.Common.Models.Configuration
@@ -125,14 +124,6 @@
     </div>
 </div>
 
-@* <script type="text/javascript"> *@
-@*     $(document).ready(function() { *@
-@*         $(document).on('click', ".release-card", function () { *@
-@*             $(this).toggleClass("release-selected"); *@
-@*         }); *@
-@*     }); *@
-@* </script> *@
-
 @code {
 
     byte[] _defaultReleaseCover = [];
@@ -187,6 +178,18 @@
         {
             var ml = sender as MainLayout;
             RefreshReleasesAsync(ml?.SearchText, ml?.Filter).ConfigureAwait(true).GetAwaiter();
+        };
+
+        Layout.SelectReleasesChanged += (sender, selectAll) =>
+        {
+            if (selectAll)
+            {
+                _selectedReleaseIds = _releases.Select(x => x.UniqueId).ToList();
+            }
+            else
+            {
+                _selectedReleaseIds.Clear();
+            }
         };
     }
 

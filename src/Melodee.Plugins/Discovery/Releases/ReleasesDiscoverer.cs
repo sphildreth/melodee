@@ -21,11 +21,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 {
     private readonly Configuration _configuration;
     private readonly IDictionary<FileSystemDirectoryInfo, IEnumerable<Release>> _releaseCache = new Dictionary<FileSystemDirectoryInfo, IEnumerable<Release>>();
-    
-    public const short MinimumDiscNumber = 1;
 
-    public const int MaximumDiscNumber = 500;    
- 
     private readonly IEnumerable<ITrackPlugin> _trackPlugins;
 
     private readonly IEnumerable<IDirectoryPlugin> _enabledReleasePlugins;
@@ -142,6 +138,10 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 case ReleaseResultFilter.NeedsAttention:
                     releases = releases.Where(x => x.Status == ReleaseStatus.NeedsAttention).ToList();
                     break;
+                
+                case ReleaseResultFilter.New:
+                    releases = releases.Where(x => x.Status == ReleaseStatus.New).ToList();
+                    break;                
 
                 case ReleaseResultFilter.ReadyToMove:
                     releases = releases.Where(x => x.Status == ReleaseStatus.Ok).ToList();

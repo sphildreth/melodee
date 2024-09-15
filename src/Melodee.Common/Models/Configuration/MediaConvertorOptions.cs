@@ -3,11 +3,11 @@ namespace Melodee.Common.Models.Configuration;
 [Serializable]
 public sealed record MediaConvertorOptions
 {
-    public bool ConversionEnabled { get; init; } = true;
+    public bool ConversionEnabled { get; set; } = true;
     
-    public int ConvertBitrate { get; init; } = 384;
+    public int ConvertBitrate { get; set; } = 384;
 
-    public int ConvertVbrLevel { get; init; } = 4;
+    public int ConvertVbrLevel { get; set; } = 4;
     
-    public int ConvertSamplingRate { get; init; } = 48000;
+    public int ConvertSamplingRate { get; set; } = 48000;
 }

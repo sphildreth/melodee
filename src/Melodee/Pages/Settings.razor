@@ -1,0 +1,79 @@
+@page "/settings"
+@using Melodee.Common.Models.Configuration
+@inject Configuration Configuration
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-10">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/">Releases</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Settings</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col align-self-end">
+            <button type="button" class="btn btn-primary">Save</button>
+        </div>
+    </div>
+
+
+    <div class="settings-editor-container">
+        <div class="mb-3">
+            <label for="defaultPageSize" class="form-label">Default Page Size</label>
+            <input type="number" @bind="Configuration.DefaultPageSize" class="form-control" id="defaultPageSize">
+        </div>
+        <div class="mb-3">
+            <label for="filterLessThanTrackCount" class="form-label">Filter: Less Than Track Count</label>
+            <input type="number" @bind="Configuration.FilterLessThanTrackCount" class="form-control" id="filterLessThanTrackCount">
+        </div>
+        <div class="mb-3">
+            <label for="filterLessThanConfiguredDuration" class="form-label">Filter: Less Than Release Duration</label>
+            <input type="number" @bind="Configuration.FilterLessThanConfiguredDuration" class="form-control" id="filterLessThanConfiguredDuration">
+        </div>
+        <div class="mb-3">
+            <label for="inboundDirectory" class="form-label">Inbound Directory</label>
+            <input type="text" @bind="Configuration.InboundDirectory" class="form-control" id="inboundDirectory">
+        </div>
+        <div class="mb-3">
+            <label for="libraryDirectory" class="form-label">Library Directory</label>
+            <input type="text" @bind="Configuration.LibraryDirectory" class="form-control" id="libraryDirectory">
+        </div>
+        <div class="form-check mb-3">
+            <input type="checkbox" @bind="Configuration.PluginProcessOptions.DoDeleteOriginal" class="form-check-input" id="doDeleteOriginal">
+            <label for="doDeleteOriginal" class="form-label">Processing: Delete Original</label>
+        </div>
+        <div class="form-check mb-3">
+            <input type="checkbox" @bind="Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles" class="form-check-input" id="dOverrideExistingMelodeeDataFiles">
+            <label for="dOverrideExistingMelodeeDataFiles" class="form-label">Processing: Override Existing Melodee Data Files</label>
+        </div>
+        <div class="mb-3">
+            <label for="stagingDirectory" class="form-label">Staging Directory</label>
+            <input type="text" @bind="Configuration.StagingDirectory" class="form-control" id="stagingDirectory">
+        </div>
+        <div class="mb-3">
+            <label for="preDiscoveryScript" class="form-label">Scripting: Pre Discovery Script</label>
+            <input type="text" @bind="Configuration.Scripting.PreDiscoveryScript" class="form-control" id="preDiscoveryScript">
+        </div>
+        <div class="mb-3">
+            <label for="postDiscoveryScript" class="form-label">Scripting: Post Discovery Script</label>
+            <input type="text" @bind="Configuration.Scripting.PostDiscoveryScript" class="form-control" id="postDiscoveryScript">
+        </div>
+        <div class="mb-3">
+            <label for="maximumMediaNumber" class="form-label">Validation: Maximum Media Number</label>
+            <input type="number" @bind="Configuration.ValidationOptions.MaximumMediaNumber" class="form-control" id="maximumMediaNumber">
+        </div>
+        <div class="mb-3">
+            <label for="maximumTrackNumber" class="form-label">Validation: Maximum Track Number</label>
+            <input type="number" @bind="Configuration.ValidationOptions.MaximumTrackNumber" class="form-control" id="maximumTrackNumber">
+        </div>
+    </div>
+
+</div>
+
+@code {
+    [CascadingParameter] public MainLayout Layout { get; set; }
+
+}
