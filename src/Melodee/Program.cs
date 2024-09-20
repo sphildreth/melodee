@@ -1,10 +1,8 @@
-﻿using System;
-using System.Net.Http;
-using System.Reflection;
-using Melodee;
+﻿using System.Reflection;
 using Melodee.Common.Models.Configuration;
 using Melodee.Plugins.Discovery.Releases;
-using Microsoft.Extensions.Configuration;
+using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.Processor;
 using Microsoft.Extensions.DependencyInjection;
 using Photino.Blazor;
 using Serilog;
@@ -28,7 +26,9 @@ namespace Melodee
 
             appBuilder.Services.AddSerilog();
             
-            appBuilder.Services.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();            
+            appBuilder.Services.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();
+            appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
+            appBuilder.Services.AddSingleton<ITrackPlugin, MetaTag>();
             
             var app = appBuilder.Build();
 

@@ -13,28 +13,26 @@ namespace Melodee.Common.Models;
 public sealed record Release
 {
     public const string JsonFileName = "melodee.json";
-    
-    private long? _uniqueId;
 
-    public long UniqueId => (_uniqueId ??= SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle()));
+    public long UniqueId => SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
 
     public DateTimeOffset Created { get; set; }
-    
+
     /// <summary>
     /// What plugins were utilized in discovering this release.
     /// </summary>
-    public required IEnumerable<string> ViaPlugins { get; set; }    
-    
+    public required IEnumerable<string> ViaPlugins { get; set; }
+
     /// <summary>
     /// This is the directory where the Release was created, it will not be the "Staging" or "Library" directory where there Release is moved to once processed.
     /// </summary>
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
-    
+
     public FileSystemDirectoryInfo? Directory { get; set; }
 
     public IEnumerable<ImageInfo>? Images { get; set; }
 
-    public IEnumerable<MetaTag<object?>>? Tags { get; init; }
+    public IEnumerable<MetaTag<object?>>? Tags { get; set; }
 
     public IEnumerable<Track>? Tracks { get; set; }
 
@@ -69,9 +67,10 @@ public sealed record Release
                 StyleClass = trackTotalTag.StyleClass
             });
         }
+
         return this with { Tracks = tracks.ToArray(), Tags = releaseTags!.ToArray() };
     }
-    
+
     public int SortOrder { get; set; }
 
     public string SortValue
@@ -82,6 +81,7 @@ public sealed record Release
             {
                 return SortOrder.ToString();
             }
+
             return this.ToDirectoryName();
         }
     }
@@ -132,7 +132,7 @@ public sealed record Release
                 }
             }
         }
-            
+
         if (otherRelease.ViaPlugins.Any())
         {
             foreach (var plugin in otherRelease.ViaPlugins)
@@ -143,7 +143,7 @@ public sealed record Release
                 }
             }
         }
-            
+
         if (otherRelease.Files.Any())
         {
             foreach (var file in otherRelease.Files)
@@ -153,7 +153,7 @@ public sealed record Release
                     files.Add(file);
                 }
             }
-        }            
+        }
 
         messages.AddRange(otherRelease.Messages);
 
@@ -171,4 +171,65 @@ public sealed record Release
         };
     }
 
+    public void SetTagValue(MetaTagIdentifier identifier, object? value, bool? doSetTrackValue = true)
+    {
+        var tags = (Tags ?? []).ToList();
+        var existingTag = tags.FirstOrDefault(x => x.Identifier == identifier);
+        if (existingTag != null)
+        {
+            tags.Remove(existingTag);
+        }
+
+        if (value != null)
+        {
+            tags.Add(new MetaTag<object?>
+            {
+                Identifier = identifier,
+                OriginalValue = existingTag?.OriginalValue,
+                SortOrder = existingTag?.SortOrder ?? 0,
+                StyleClass = existingTag?.StyleClass ?? StyleClass.Normal,
+                Value = value
+            });
+        }
+
+        Tags = tags.ToArray();
+        if (doSetTrackValue ?? true)
+        {
+            foreach (var track in Tracks ?? [])
+            {
+                SetTrackTagValue(track.TrackId, identifier, value);
+            }
+        }
+    }
+
+    public void SetTrackTagValue(long trackId, MetaTagIdentifier identifier, object? value)
+    {
+        var tracks = (Tracks ?? []).ToList();
+        var track = tracks.FirstOrDefault(x => x.TrackId == trackId);
+        if (track != null)
+        {
+            var tags = (track.Tags ?? []).ToList();
+            var existingTag = tags.FirstOrDefault(x => x.Identifier == identifier);
+            if (existingTag != null)
+            {
+                tags.Remove(existingTag);
+            }
+
+            if (value != null)
+            {
+                tags.Add(new MetaTag<object?>
+                {
+                    Identifier = identifier,
+                    OriginalValue = existingTag?.OriginalValue,
+                    SortOrder = existingTag?.SortOrder ?? 0,
+                    StyleClass = existingTag?.StyleClass ?? StyleClass.Normal,
+                    Value = value
+                });
+            }
+
+            tracks.Remove(track);
+            tracks.Add(track with { Tags = tags.ToArray() });
+            Tracks = tracks.ToArray();
+        }
+    }
 }

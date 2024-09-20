@@ -9,6 +9,14 @@ public sealed record Track
 {
     public long ReleaseUniqueId => SafeParser.Hash(this.ReleaseArtist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
     
+    /// <summary>
+    /// Unique TrackId on Release
+    /// </summary>
+    public long TrackId => SafeParser.Hash(this.MediaNumber().ToString(), this.TrackNumber().ToString(), this.Title());    
+    
+    /// <summary>
+    /// Globally UnqiueId 
+    /// </summary>
     public long UniqueId => SafeParser.Hash(ReleaseUniqueId.ToString(), this.TrackArtist(), this.TrackYear().ToString(), this.MediaNumber().ToString(), this.TrackNumber().ToString(), this.Title()); 
     
     public required string CrcHash { get; init; }
