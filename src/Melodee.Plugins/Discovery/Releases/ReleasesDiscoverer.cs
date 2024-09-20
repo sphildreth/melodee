@@ -146,7 +146,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                     break;                
 
                 case ReleaseResultFilter.ReadyToMove:
-                    releases = releases.Where(x => x.Status == ReleaseStatus.Ok).ToList();
+                    releases = releases.Where(x => x.Status is ReleaseStatus.Ok or ReleaseStatus.Reviewed).ToList();
                     break;
                 
                 case ReleaseResultFilter.Selected:
@@ -243,7 +243,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             Title = x.ReleaseTitle(),
             Year = x.ReleaseYear(),
             TrackCount = x.TrackTotalValue(),
-            ReleaseStatus = ReleaseStatus.NotSet,
+            ReleaseStatus = x.Status,
             ViaPlugins = x.ViaPlugins,
             UniqueId = x.UniqueId
         });

@@ -1,3 +1,4 @@
+using ATL;
 using FFMpegCore;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -286,6 +287,52 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                 Data = track 
             };            
         }
+    }
+
+    public async Task<OperationResult<bool>> UpdateTrackAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Track track, CancellationToken cancellationToken = default)
+    {
+        var result = false;        
+        if (track.Tags?.Any() ?? false)
+        {
+            try
+            {
+                var fileAtl = new ATL.Track(track.File.FullName(directoryInfo))
+                {
+                    Album = track.ReleaseTitle(),
+                    AlbumArtist = track.ReleaseArtist(),
+                    Artist = track.TrackArtist(),
+                    DiscNumber = track.MediaNumber(),
+                    DiscTotal = track.MediaTotalNumber(),
+                    Genre = track.Genre(),
+                    OriginalReleaseDate = track.ReleaseDateValue(),
+                    TrackNumber = track.TrackNumber(),
+                    TrackTotal = track.TrackTotalNumber(),
+                    Year = track.ReleaseYear()
+                };
+                if (track.Images?.Any() ?? false)
+                {
+                    var coverImage = track.Images.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
+                    if (coverImage != null && (coverImage.FileInfo?.Exists(directoryInfo) ?? false))
+                    {
+                        fileAtl.EmbeddedPictures.Clear();
+                        fileAtl.EmbeddedPictures.Add(PictureInfo.fromBinaryData(
+                            await File.ReadAllBytesAsync(coverImage.FileInfo!.FullName(directoryInfo), cancellationToken),
+                            PictureInfo.PIC_TYPE.Front));
+                    }
+                }
+                await fileAtl.SaveAsync();
+                result = true;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
+            }
+            
+        }
+        return new OperationResult<bool>
+        {
+            Data = result
+        };
     }
 
     private IEnumerable<MetaTag<object?>> MetaTagsForTagDictionary(Dictionary<string, string> tagsDictionary)

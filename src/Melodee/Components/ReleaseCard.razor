@@ -2,9 +2,9 @@
 
 <div data-releaseid="@Release.UniqueId">
     <div
-        class="release-card card m-2 @($"release-{Release.ReleaseStatus.ToString().ToLower()}")) @(IsCurrent ? "release-current" : string.Empty) @(IsSelected ? "release-selected" : string.Empty)">
+        class="release-card card m-2 @ReleaseStatusClass() @(IsCurrent ? "release-current" : string.Empty) @(IsSelected ? "release-selected" : string.Empty)">
         <img src="@Release.ImageBase64String(DefaultReleaseCover)"
-             class="card-img-top rounded mx-auto d-block" alt="@Release.Title">
+             class="card-img-top rounded mx-auto d-block " alt="@Release.Title">
         <div class="card-body" style="margin:0; padding: 4px;">
             <h5 class="card-title"
                 data-bs-toggle="tooltip" data-bs-placement="top" title="@Release.Title"
@@ -29,5 +29,7 @@
     public bool IsCurrent { get; set; }
 
     [Parameter] public byte[] DefaultReleaseCover { get; set; } = [];
+
+    private string ReleaseStatusClass() => $"release-status-{Release.ReleaseStatus.ToString().ToLower()}";
 
 }

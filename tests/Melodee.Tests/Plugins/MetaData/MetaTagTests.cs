@@ -2,6 +2,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
 
 
@@ -32,6 +33,58 @@ public class MetaTagTests
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
         }
     }
+    
+    [Fact]
+    public async Task ValidateLoadingEditingAndSavingTagsForSimpleMp3FileAsync()
+    {
+        var testFile = @"/home/steven/incoming/melodee_test/tests/test.mp3";
+        var fileInfo = new System.IO.FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Name = "tests"
+            };
+            var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(tagResult);
+            Assert.True(tagResult.IsSuccess);
+            Assert.NotNull(tagResult.Data);
+            Assert.NotNull(tagResult.Data.Tags);
+            Assert.NotNull(tagResult.Data.File);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
+            Assert.NotNull(tagResult.Data.Title()?.Nullify());
+
+            var newAlbumValue = Guid.NewGuid().ToString();
+            var tags = tagResult.Data.Tags.ToList();
+            tags.Remove(tags.First(x => x.Identifier == MetaTagIdentifier.Album));
+            tags.Add(new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.Album,
+                Value = newAlbumValue.ToString()
+            });
+            var tagUpdateResult = await metaTag.UpdateTrackAsync(dirInfo, new Track
+            {
+                CrcHash = "12345678",
+                File = fileInfo.ToFileSystemInfo(),
+                Tags = tags
+            });
+            Assert.NotNull(tagUpdateResult);
+            Assert.True(tagUpdateResult.IsSuccess);
+            Assert.True(tagUpdateResult.Data);
+            
+            tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(tagResult);
+            Assert.True(tagResult.IsSuccess);
+            Assert.NotNull(tagResult.Data);
+            Assert.NotNull(tagResult.Data.Tags);
+            Assert.NotNull(tagResult.Data.File);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
+            Assert.NotNull(tagResult.Data.ReleaseTitle()?.Nullify());
+            Assert.Equal(newAlbumValue, tagResult.Data.ReleaseTitle());
+        }
+    }    
     
     [Fact]
     public async Task ValidateLoadingTagsForMp3FileAsync()

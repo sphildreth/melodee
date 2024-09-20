@@ -18,6 +18,9 @@ public sealed record MetaTag<T>
     public T? OriginalValue { get; init; }
     
     public int SortOrder { get; set; }
+    
+    [JsonIgnore]
+    public bool WasModified => OriginalValue != null;
 
     public StyleClass StyleClass { get; set; } = StyleClass.Normal;
 }

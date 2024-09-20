@@ -8,7 +8,7 @@
 
     <ItemGroup>
       <PackageReference Include="FFMpegCore" Version="5.1.0" />
-      <PackageReference Include="FluentValidation" Version="11.9.2" />
+      <PackageReference Include="FluentValidation" Version="11.10.0" />
       <PackageReference Include="Hashids.net" Version="1.7.0" />
       <PackageReference Include="K4os.Hash.xxHash" Version="1.0.8" />
       <PackageReference Include="Mapster" Version="7.4.0" />
@@ -23,6 +23,7 @@
     <ItemGroup>
       <PackageVersion Update="NodaTime" Version="3.1.12" />
       <PackageVersion Update="z440.atl.core" Version="6.4.0" />
+      <PackageVersion Update="FluentValidation" Version="11.10.0" />
     </ItemGroup>
 
 </Project>

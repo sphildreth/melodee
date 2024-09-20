@@ -354,8 +354,22 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 File.Copy(track.File.FullOriginalName(directoryInfoToProcess), newTrackFileName, true);
                             }
                         }
+                        if ((release.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
+                            (release.Tracks!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified))))
+                        {
+                            var releaseDirectorySystemInfo = releaseDirInfo.ToDirectorySystemInfo();
+                            // Set the value then change to NeedsAttention
+                            foreach (var trackPlugin in _trackPlugins)
+                            {
+                                await Parallel.ForEachAsync(release.Tracks!, cancellationToken, async (track, tt) =>                            
+                                {
+                                    await trackPlugin.UpdateTrackAsync(releaseDirectorySystemInfo, track, tt);
+                                });
+                            }
+                            release.Status = ReleaseStatus.NeedsAttention;
+                        }
                     }
-
+                    
                     release.Directory = releaseDirInfo.ToDirectorySystemInfo();
                     var serialized = System.Text.Json.JsonSerializer.Serialize(release, _jsonSerializerOptions);
                     await File.WriteAllTextAsync(Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized, cancellationToken);
