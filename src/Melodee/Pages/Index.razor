@@ -208,7 +208,7 @@
     </div>
 </div>
 
-<Modal @ref="_removeTextModal" Title="Remove provided text from Track Title" IsVerticallyCentered="true">
+<Modal @ref="_removeTextModal" Title="Remove provided text from Track Title" Size="ModalSize.Large" IsVerticallyCentered="true">
     <BodyTemplate>
         <div class="mb-2">
             <label for="artist" class="form-label">Text to replace</label>
@@ -225,8 +225,48 @@
     </FooterTemplate>
 </Modal>
 
+<Modal @ref="_releaseDetailsModel" Title="@_releaseDetail.ReleaseTitle()" IsVerticallyCentered="true">
+    <BodyTemplate>
+        <div class="release-detail-container">
+            <div class="release-detail border-bottom">
+                @foreach (var tag in _releaseDetail.Tags.OrderBy(x => x.SortOrder))
+                {
+                    <div class="row">
+                        <div class="col-6">
+                            <h5>@tag.Identifier</h5>
+                        </div>
+                        <div class="col-6">
+                            <p>@tag.Value</p>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="release-detail-tracks">
+                @foreach (var track in _releaseDetail.Tracks.OrderBy(x => x.SortOrder))
+                {
+                    @foreach (var tag in track.Tags.OrderBy(x => x.SortOrder))
+                    {
+                        <div class="row border-bottom">
+                            <div class="col-6">
+                                <h5>@tag.Identifier</h5>
+                            </div>
+                            <div class="col-6">
+                                <p>@tag.Value</p>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </BodyTemplate>
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary" @onclick="@(async () => await _releaseDetailsModel.HideAsync())">Close</Button>
+    </FooterTemplate>
+</Modal>
+
 @code {
     Modal _removeTextModal = default!;
+    Modal _releaseDetailsModel = default;
 
     string? _removeTextValueToReplace;
     string? _removeTextValueToReplaceWith;
@@ -241,6 +281,15 @@
     ReleaseEditModel? _selectedRelease;
     ValidationResult? _selectedReleaseValidationResult;
     long? _selectedTrackId;
+    Common.Models.Release _releaseDetail = new Common.Models.Release
+    {
+        ViaPlugins = [],
+        OriginalDirectory = new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        }
+    };
 
     List<long> _selectedReleaseIds = [];
     readonly string[] _releaseStatuses = Enum.GetValues(typeof(ReleaseStatus)).Cast<ReleaseStatus>().Select(x => x.ToString()).ToArray();
@@ -318,6 +367,10 @@
                     await SaveSelectedReleaseAsync();
                     break;
 
+                case MenuItem.ShowReleaseDetails:
+                    await ShowReleaseDetails();
+                    break;
+
                 case MenuItem.SelectAllReleases:
                     if (args.option as bool? ?? false)
                     {
@@ -367,6 +420,16 @@
                     break;
             }
         };
+    }
+
+    private async Task ShowReleaseDetails()
+    {
+        if (_selectedRelease == null)
+        {
+            return;
+        }
+        _releaseDetail = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, _selectedRelease.UniqueId);
+        await _releaseDetailsModel.ShowAsync();
     }
 
     private async Task OnRemoveTextHideModalClick()
@@ -804,6 +867,9 @@
         }
         switch (e.Key)
         {
+            case "F2":
+                await ShowReleaseDetails();
+                break;
             case "F5":
                 await RefreshReleasesAsync();
                 break;

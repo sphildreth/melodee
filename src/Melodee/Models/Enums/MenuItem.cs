@@ -10,6 +10,7 @@ public enum MenuItem
     RescanStaging,
     SelectAllReleases,
     SetSelectedStatusReviewed,
+    ShowReleaseDetails,
     Tool,
     ViewFilterClicked
 }

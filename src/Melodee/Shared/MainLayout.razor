@@ -4,128 +4,130 @@
 
 <CascadingValue Value="this">
 
-    <main @onkeyup="((e) => KeyPress?.Invoke(this, e))">
-        <nav class="navbar navbar-expand-lg navbar-light border mb-2">
-            <div class="container-fluid">
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Edit
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Save, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>ave</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanStaging, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F6</span> Rescan Staging</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">D</span>elete Selected</a></li>
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">M</span>ove Selected to Library</a></li>
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SetSelectedStatusReviewed, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>et Selected Status as Reviewed</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SelectAllReleases, true)))"><a class="dropdown-item" href="#">Select All</a></li>
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SelectAllReleases, false)))"><a class="dropdown-item" href="#">Select None</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/settings">Settings...</a></li>
+    <div class="bb-page">
+        <main @onkeyup="((e) => KeyPress?.Invoke(this, e))">
+            <nav class="navbar navbar-expand-lg navbar-light border mb-2">
+                <div class="container-fluid">
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Edit
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Save, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>ave</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanStaging, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F6</span> Rescan Staging</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">D</span>elete Selected</a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">M</span>ove Selected to Library</a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SetSelectedStatusReviewed, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>et Selected Status as Reviewed</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SelectAllReleases, true)))"><a class="dropdown-item" href="#">Select All</a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SelectAllReleases, false)))"><a class="dropdown-item" href="#">Select None</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="/settings">Settings...</a></li>
 
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                View
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F5</span> Refresh</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="#">
-                                        Filter &raquo;
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-submenu">
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.All)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.All ? "active" : string.Empty)" href="#">All</a></li>
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Duplicates)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Duplicates ? "active" : string.Empty)" href="#">Duplicates</a></li>
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Incomplete)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Incomplete ? "active" : string.Empty)" href="#">Incomplete</a></li>
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.LessThanConfiguredTracks)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredTracks ? "active" : string.Empty)" href="#">Less than @Configuration.FilterLessThanTrackCount Tracks</a></li>
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.NeedsAttention)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.NeedsAttention ? "active" : string.Empty)" href="#">Needs Attention</a></li>
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.New)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.New ? "active" : string.Empty)" href="#">New</a></li>
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.ReadyToMove)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.ReadyToMove ? "active" : string.Empty)" href="#">Ready to Move</a></li>
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Selected)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Selected ? "active" : string.Empty)" href="#">Selected</a></li>
-                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.LessThanConfiguredDuration)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredDuration ? "active" : string.Empty)" href="#">Under @Configuration.FilterLessThanConfiguredTime.TotalMinutes Minutes</a></li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Tools
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.DeleteAllImages)))" href="#">Delete all Images</a></li>
-                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.PromoteTrackArtist)))" href="#">Promote Track Artist</a></li>
-                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RenumberTracks)))" href="#">Renumber Tracks</a></li>
-                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveArtistFromTrackArtists)))" href="#">Remove Artist from Track Artists</a></li>
-                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveProvidedTextFromTrackTitle)))" href="#">Remove provided text from Track Title</a></li>
-                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveAllTrackArtists)))" href="#">Remove all Track Artists</a></li>
-                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.ReplaceAllTrackArtistSeparators)))" href="#">Replace all Track Artist separators</a></li>
-                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.SetYearToCurrent)))" href="#">Set Year to Current</a></li>
-                                <li>
-                                    <a class="dropdown-item" href="#">
-                                        Trim Track Titles &raquo;
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-submenu">
-                                        <li>
-                                            <a class="dropdown-item" href="#">1</a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#">2</a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#">3</a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#">4</a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#">5</a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#">10</a>
-                                        </li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Help
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">About</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <form class="d-flex" role="search">
-                        <input
-                            @onkeyup="(() => SearchChanged?.Invoke(this, (Filter, SearchText)))"
-                            @bind:event="oninput"
-                            @bind="SearchText"
-                            class="form-control me-2"
-                            type="text"
-                            placeholder="Search"
-                            aria-label="Search"
-                            autofocus>
-                    </form>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    View
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F5</span> Refresh</a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ShowReleaseDetails, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F2</span> Show Release Details</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            Filter &raquo;
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-submenu">
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.All)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.All ? "active" : string.Empty)" href="#">All</a></li>
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Duplicates)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Duplicates ? "active" : string.Empty)" href="#">Duplicates</a></li>
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Incomplete)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Incomplete ? "active" : string.Empty)" href="#">Incomplete</a></li>
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.LessThanConfiguredTracks)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredTracks ? "active" : string.Empty)" href="#">Less than @Configuration.FilterLessThanTrackCount Tracks</a></li>
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.NeedsAttention)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.NeedsAttention ? "active" : string.Empty)" href="#">Needs Attention</a></li>
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.New)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.New ? "active" : string.Empty)" href="#">New</a></li>
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.ReadyToMove)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.ReadyToMove ? "active" : string.Empty)" href="#">Ready to Move</a></li>
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Selected)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Selected ? "active" : string.Empty)" href="#">Selected</a></li>
+                                            <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.LessThanConfiguredDuration)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredDuration ? "active" : string.Empty)" href="#">Under @Configuration.FilterLessThanConfiguredTime.TotalMinutes Minutes</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Tools
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.DeleteAllImages)))" href="#">Delete all Images</a></li>
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.PromoteTrackArtist)))" href="#">Promote Track Artist</a></li>
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RenumberTracks)))" href="#">Renumber Tracks</a></li>
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveArtistFromTrackArtists)))" href="#">Remove Artist from Track Artists</a></li>
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveProvidedTextFromTrackTitle)))" href="#">Remove provided text from Track Title</a></li>
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveAllTrackArtists)))" href="#">Remove all Track Artists</a></li>
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.ReplaceAllTrackArtistSeparators)))" href="#">Replace all Track Artist separators</a></li>
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.SetYearToCurrent)))" href="#">Set Year to Current</a></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            Trim Track Titles &raquo;
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-submenu">
+                                            <li>
+                                                <a class="dropdown-item" href="#">1</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#">2</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#">3</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#">4</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#">5</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#">10</a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Help
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#">About</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <form class="d-flex" role="search">
+                            <input
+                                @onkeyup="(() => SearchChanged?.Invoke(this, (Filter, SearchText)))"
+                                @bind:event="oninput"
+                                @bind="SearchText"
+                                class="form-control me-2"
+                                type="text"
+                                placeholder="Search"
+                                aria-label="Search"
+                                autofocus>
+                        </form>
+                    </div>
                 </div>
+            </nav>
+
+            <div class="content px-4">
+                @Body
             </div>
-        </nav>
-
-        <div class="content px-4">
-            @Body
-        </div>
-    </main>
-
+        </main>
+    </div>
     <Toasts class="p-3" AutoHide="true" Delay="@Configuration.ToastAutoCloseTime" Placement="ToastsPlacement.TopRight" />
 
 </CascadingValue>
