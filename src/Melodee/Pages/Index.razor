@@ -1,9 +1,10 @@
 ﻿@page "/"
 
+@using System.Diagnostics
+@using System.Diagnostics.Contracts
 @using System.Reflection
 @using System.Text.Json
 @using System.Text.Json.Serialization
-@using K4os.Hash.xxHash
 @using Mapster
 @using Melodee.Common.Extensions
 @using Melodee.Common.Models
@@ -207,7 +208,28 @@
     </div>
 </div>
 
+<Modal @ref="_removeTextModal" Title="Remove provided text from Track Title" IsVerticallyCentered="true">
+    <BodyTemplate>
+        <div class="mb-2">
+            <label for="artist" class="form-label">Text to replace</label>
+            <input type="text" @bind:event="oninput" @bind="_removeTextValueToReplace" class="form-control" id="artist">
+        </div>
+        <div class="mb-2">
+            <label for="artist" class="form-label">Text to replace with</label>
+            <input type="text" @bind:event="oninput" @bind="_removeTextValueToReplaceWith" class="form-control" id="artist">
+        </div>
+    </BodyTemplate>
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary" @onclick="@(async () => await _removeTextModal.HideAsync())">Close</Button>
+        <Button Color="ButtonColor.Primary" @onclick="OnRemoveTextHideModalClick">Save changes</Button>
+    </FooterTemplate>
+</Modal>
+
 @code {
+    Modal _removeTextModal = default!;
+
+    string? _removeTextValueToReplace;
+    string? _removeTextValueToReplaceWith;
 
     byte[] _defaultReleaseCover = [];
     int _totalReleaseCount;
@@ -224,8 +246,6 @@
     readonly string[] _releaseStatuses = Enum.GetValues(typeof(ReleaseStatus)).Cast<ReleaseStatus>().Select(x => x.ToString()).ToArray();
 
     [CascadingParameter] public MainLayout Layout { get; set; } = null!;
-
-    public ElementReference ModalDiv { get; set; }
 
     private async Task GetReleaseDetailAsync(long uniqueId)
     {
@@ -333,7 +353,7 @@
                             await RemoveArtistFromTrackArtists();
                             break;
                         case ToolMenuItem.RemoveProvidedTextFromTrackTitle:
-                            await RemoveProvidedTextFromTrackTitle();
+                            await _removeTextModal.ShowAsync();
                             break;
                         case ToolMenuItem.RenumberTracks:
                             await RenumberTracks();
@@ -349,11 +369,36 @@
         };
     }
 
-    private async Task RemoveProvidedTextFromTrackTitle()
+    private async Task OnRemoveTextHideModalClick()
     {
-
+        await _removeTextModal.HideAsync();
+        if (_selectedRelease == null || _removeTextValueToReplace.Nullify() == null)
+        {
+            return;
+        }
+        _loading = true;
+        var modified = false;
+        var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, _selectedRelease.UniqueId);
+        var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+        foreach (var track in release.Tracks!)
+        {
+            var originalTitle = track.Title() ?? string.Empty;
+            var newTitle = track.Title()!.Replace(originalTitle, _removeTextValueToReplaceWith ?? string.Empty).Trim();
+            if (!string.Equals(originalTitle, newTitle, StringComparison.OrdinalIgnoreCase))
+            {
+                release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.Title, newTitle);
+                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
+                modified = true;
+            }
+        }
+        if (modified)
+        {
+            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
+            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
+            ReleasesDiscoverer.ClearCache();
+            await RefreshReleasesAsync();
+        }
     }
-
 
     private async Task PromoteTrackArtist()
     {
@@ -676,6 +721,7 @@
 
     private async Task RefreshReleasesAsync(string? search = null, ReleaseResultFilter? filter = null)
     {
+        var sw = Stopwatch.StartNew();
         _loading = true;
         StateHasChanged();
         var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
@@ -698,9 +744,16 @@
         {
             _selectedRelease = null;
         }
-
+        sw.Stop();
         _loading = false;
         StateHasChanged();
+        Layout.ToastService.Notify(new ToastMessage
+        {
+            IconName = IconName.Alarm,
+            Message = $"Refresh completed in [{ sw }]",
+            Title = "Refresh complete",
+            Type  = ToastType.Success
+        });
     }
 
     private async Task LastLastPage()

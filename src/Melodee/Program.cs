@@ -32,6 +32,8 @@ namespace Melodee
             appBuilder.Services.AddSingleton<ITrackPlugin, AtlMetaTag>();
             appBuilder.Services.AddSingleton<IReleaseValidator, ReleaseValidator>();
             
+            appBuilder.Services.AddBlazorBootstrap();
+            
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .Enrich.FromLogContext()

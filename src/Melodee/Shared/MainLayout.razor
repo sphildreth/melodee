@@ -2,8 +2,6 @@
 @using Melodee.Models.Enums
 @inherits LayoutComponentBase
 
-@inject Configuration Configuration
-
 <CascadingValue Value="this">
 
     <main @onkeyup="((e) => KeyPress?.Invoke(this, e))">
@@ -21,7 +19,7 @@
                             <ul class="dropdown-menu">
                                 <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Save, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>ave</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanStaging, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F5</span> Rescan Staging</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanStaging, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F6</span> Rescan Staging</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">D</span>elete Selected</a></li>
                                 <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">M</span>ove Selected to Library</a></li>
@@ -39,7 +37,7 @@
                                 View
                             </a>
                             <ul class="dropdown-menu">
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F6</span> Refresh</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F5</span> Refresh</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="#">
@@ -128,9 +126,15 @@
         </div>
     </main>
 
+    <Toasts class="p-3" AutoHide="true" Delay="@Configuration.ToastAutoCloseTime" Placement="ToastsPlacement.TopRight" />
+
 </CascadingValue>
 
 @code {
+
+    [Inject] public ToastService ToastService { get; set; } = default!;
+
+    [Inject] private Configuration Configuration { get; set; } = default!;
 
     private string? SearchText { get; set; }
 

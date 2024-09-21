@@ -63,4 +63,9 @@ public sealed record Configuration
     /// When true then move the Melodee.json data file when moving releases, otherwise delete.
     /// </summary>
     public bool MoveMelodeeJsonDataFileToLibrary { get; set; } = false;
+
+    /// <summary>
+    /// Amount of time to display a Toast then auto-close.
+    /// </summary>
+    public int ToastAutoCloseTime { get; set; } = 2000;
 }
