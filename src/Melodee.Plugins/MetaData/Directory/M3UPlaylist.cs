@@ -133,7 +133,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                         Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
                         ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
                     };
-                    if (m3URelease.IsValid())
+                    if (m3URelease.IsValid(Configuration))
                     {
                         var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3URelease.ToMelodeeJsonName());
                         if (File.Exists(stagingReleaseDataName))

@@ -88,7 +88,7 @@ public static class ReleaseExtensions
         return d;
     }
     
-    public static bool IsValid(this Release release)
+    public static bool IsValid(this Release release, Models.Configuration.Configuration configuration)
     {
         if (release.Tags?.Count() == 0)
         {
@@ -98,7 +98,7 @@ public static class ReleaseExtensions
         {
             return false;
         }
-        if (release.Tracks!.Any(x => !x.IsValid()))
+        if (release.Tracks!.Any(x => !x.IsValid(configuration)))
         {
             return false;
         }
@@ -108,7 +108,10 @@ public static class ReleaseExtensions
         return release.UniqueId > 0 &&
                artist != null &&
                releaseTitle != null &&
-               releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year;
+               release.Status is ReleaseStatus.Complete or ReleaseStatus.New or ReleaseStatus.Ok or ReleaseStatus.Reviewed && 
+               releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year && 
+               releaseYear > configuration.ValidationOptions.MinimumReleaseYear && 
+               releaseYear < configuration.ValidationOptions.MaximumReleaseYear;
     }
 
     public static string ToMelodeeJsonName(this Release release, bool? isForReleaseDirectory = null)

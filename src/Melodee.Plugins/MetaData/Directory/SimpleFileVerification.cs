@@ -150,7 +150,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                     Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
                     ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
                 };
-                if (sfvRelease.IsValid())
+                if (sfvRelease.IsValid(Configuration))
                 {
                     var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvRelease.ToMelodeeJsonName());
                     if (File.Exists(stagingReleaseDataName))

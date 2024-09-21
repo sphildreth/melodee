@@ -63,9 +63,13 @@
   background-color: #f2f2f2;
 }
 
-.release-invalid {
+.release-invalid, .track-invalid {
   background-color: #f44336 !important;
   color: white !important;
+}
+
+.track-invalid {
+  padding: 3px;
 }
 
 .release-status-incomplete, .release-status-needsattention, .status-missing {

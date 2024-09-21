@@ -51,7 +51,7 @@ public class MetaTagTests
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
-            Assert.False(tagResult.Data.IsValid());
+            Assert.False(tagResult.Data.IsValid(TestsBase.NewConfiguration));
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));

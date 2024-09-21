@@ -4,6 +4,8 @@ namespace Melodee.Models;
 
 public class TrackEditModel
 {
+    public required bool IsValid { get; init; }
+    
     public long TrackId => SafeParser.Hash(MediaNumber.ToString(), Number.ToString(), Title);
     
     public string? TrackArtist { get; set; }

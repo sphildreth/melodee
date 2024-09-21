@@ -62,7 +62,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
             {
                 var nfoRelease = await ReleaseForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
 
-                if (nfoRelease.IsValid())
+                if (nfoRelease.IsValid(Configuration))
                 {
                     var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoRelease.ToMelodeeJsonName());
                     if (File.Exists(stagingReleaseDataName))

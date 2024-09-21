@@ -167,7 +167,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         });
 
                         var cueRelease = cueModel.ToRelease(fileSystemDirectoryInfo);
-                        if (cueRelease.IsValid())
+                        if (cueRelease.IsValid(Configuration))
                         {
                             if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                             {

@@ -111,7 +111,7 @@ public static class TrackExtensions
     public static int MediaTotalNumber(this Track track) => track.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
                                                             track.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ?? 0;
  
-    public static bool IsValid(this Track track)
+    public static bool IsValid(this Track track, Models.Configuration.Configuration configuration)
     {
         if (track.Tags?.Count() == 0)
         {
@@ -125,9 +125,13 @@ public static class TrackExtensions
         {
             releaseUniqueId = track.ReleaseUniqueId;
         }
+        var trackNumber = track.TrackNumber();
+        var mediaNumber = track.MediaNumber();
         return track is { TrackId: > 0, UniqueId: > 0 } &&
                releaseUniqueId > 0 &&
-               track.TrackNumber() > 0 &&
+               trackNumber > 0 &&
+               trackNumber < configuration.ValidationOptions.MaximumTrackNumber &&
+               mediaNumber < configuration.ValidationOptions.MaximumMediaNumber &&
                track.Title().Nullify() != null;
     }
     

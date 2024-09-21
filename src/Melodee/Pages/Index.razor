@@ -160,22 +160,24 @@
                     {
                         @foreach (var track in _selectedRelease.Tracks.Where(x => x.MediaNumber == media).OrderBy(x => x.Number))
                         {
-                            <div class="row mb-2">
-                                <div class="col">
-                                    <input type="number" @bind:event="oninput" @bind="track.MediaNumber" class="form-control" placeholder="Media" aria-label="Media">
+                            <div class="@(track.IsValid ? "track-valid" : "track-invalid")">
+                                <div class="row mb-2 ">
+                                    <div class="col">
+                                        <input type="number" @bind:event="oninput" @bind="track.MediaNumber" class="form-control" placeholder="Media" aria-label="Media">
+                                    </div>
+                                    <div class="col">
+                                        <input type="number" @bind:event="oninput" @bind="track.Number" class="form-control" placeholder="Number" aria-label="Number">
+                                    </div>
                                 </div>
-                                <div class="col">
-                                    <input type="number" @bind:event="oninput" @bind="track.Number" class="form-control" placeholder="Number" aria-label="Number">
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <input type="text" @bind:event="oninput" @bind="track.TrackArtist" class="form-control" placeholder="Track Artist" aria-label="Track Artist">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <input type="text" @bind:event="oninput" @bind="track.TrackArtist" class="form-control" placeholder="Track Artist" aria-label="Track Artist">
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <input type="text" @bind:event="oninput" @bind="track.Title" class="form-control" placeholder="Title" aria-label="Title">
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <input type="text" @bind:event="oninput" @bind="track.Title" class="form-control" placeholder="Title" aria-label="Title">
+                                    </div>
                                 </div>
                             </div>
                         }
@@ -213,12 +215,13 @@
             CreatedFormattedDate = detail.Created.ToString("yyyyMMdd HH:m:s"),
             Genre = detail.Genre(),
             Title = detail.ReleaseTitle(),
-            IsValid = detail.IsValid(),
+            IsValid = detail.IsValid(Configuration),
             IsVariousArtistTypeRelease = detail.IsVariousArtistTypeRelease(),
             ReleaseStatus = detail.Status.ToString(),
             Year = detail.ReleaseYear()?.ToString() ?? string.Empty,
             Tracks = detail.Tracks?.Select(x => new TrackEditModel
             {
+                IsValid = x.IsValid(Configuration),
                 Number = x.TrackNumber(),
                 Title = x.Title() ?? string.Empty,
                 TrackArtist = x.TrackArtist(),

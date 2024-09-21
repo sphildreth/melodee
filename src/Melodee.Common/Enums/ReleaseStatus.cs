@@ -14,5 +14,7 @@ public enum ReleaseStatus
     
     Reviewed,
     
+    Invalid,
+    
     NeedsAttention
 }

@@ -133,7 +133,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                             .RoundedBorder()
                             .BorderColor(Color.Yellow));
                 }
-                isValid = nfoParserResult.IsValid();
+                isValid = nfoParserResult.IsValid(config);
             }
             catch (Exception e)
             {

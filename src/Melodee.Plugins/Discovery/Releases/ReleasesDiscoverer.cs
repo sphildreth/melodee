@@ -240,7 +240,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             Duration = x.Duration(),
             Directory = x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(),
             ImageBytes = await x.CoverImageBytesAsync(),
-            IsValid = x.IsValid(),
+            IsValid = x.IsValid(_configuration),
             Title = x.ReleaseTitle(),
             Year = x.ReleaseYear(),
             TrackCount = x.TrackTotalValue(),

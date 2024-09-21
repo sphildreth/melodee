@@ -23,11 +23,11 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
     public OperationResult<ReleaseStatus> ValidateRelease(Release? release)
     {
-        if (release == null || !release.IsValid())
+        if (release == null || !release.IsValid(_configuration))
         {
             return new OperationResult<ReleaseStatus>(["Release is invalid."])
             {
-                Data = ReleaseStatus.NeedsAttention
+                Data = ReleaseStatus.Invalid
             };
         }
 
@@ -45,7 +45,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             !IsReleaseYearValid(release)
         )
         {
-            returnStatus = ReleaseStatus.NeedsAttention;
+            returnStatus = ReleaseStatus.Invalid;
         }
 
         return new OperationResult<ReleaseStatus>(_validationMessages)
