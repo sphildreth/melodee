@@ -203,6 +203,8 @@ public sealed record Release
         }
     }
 
+    public void RemoveTrackTagValue(long trackId, MetaTagIdentifier identifier) => SetTrackTagValue(trackId, identifier, null);
+    
     public void SetTrackTagValue(long trackId, MetaTagIdentifier identifier, object? value)
     {
         var tracks = (Tracks ?? []).ToList();

@@ -1,15 +1,17 @@
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
+using Melodee.Plugins.Validation.Models;
 using Serilog;
 
 namespace Melodee.Plugins.Validation;
 
 public sealed class ReleaseValidator(Configuration configuration) : IReleaseValidator
 {
-    private List<string> _validationMessages = [];
+    private List<ValidationResultMessage> _validationMessages = [];
 
     private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -21,13 +23,16 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
     private readonly Configuration _configuration = configuration;
 
-    public OperationResult<ReleaseStatus> ValidateRelease(Release? release)
+    public OperationResult<ValidationResult> ValidateRelease(Release? release)
     {
-        if (release == null || !release.IsValid(_configuration))
+        if (release == null)
         {
-            return new OperationResult<ReleaseStatus>(["Release is invalid."])
+            return new OperationResult<ValidationResult>(["Release is invalid."])
             {
-                Data = ReleaseStatus.Invalid
+                Data = new ValidationResult
+                {
+                    ReleaseStatus = ReleaseStatus.Invalid
+                }
             };
         }
 
@@ -38,7 +43,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             !AreAllTrackNumbersValid(release) ||
             !AreTracksUniquedNumbered(release) ||
             !AreMediaNumbersValid(release) ||
-            !DoAllTracksHaveSameArtist(release) ||
+            !DoAllTracksHaveSameReleaseArtist(release) ||
             !AllTrackTitlesDoNotHaveUnwantedText(release) ||
             !AlbumArtistDoesNotHaveUnwantedText(release) ||
             !ReleaseTitleDoesNotHaveUnwantedText(release) ||
@@ -48,9 +53,13 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             returnStatus = ReleaseStatus.Invalid;
         }
 
-        return new OperationResult<ReleaseStatus>(_validationMessages)
+        return new OperationResult<ValidationResult>
         {
-            Data = returnStatus
+            Data = new ValidationResult
+            {
+                Messages = _validationMessages,
+                ReleaseStatus = returnStatus
+            }
         };
     }
 
@@ -66,7 +75,10 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         return trackNumbers.All(group => group.Count() == 1);
     }
 
-    private bool DoAllTracksHaveSameArtist(Release release)
+    /// <summary>
+    /// Check if all the tracks have the same Album Artist. This is an issue if not a VA type release.
+    /// </summary>
+    private bool DoAllTracksHaveSameReleaseArtist(Release release)
     {
         var result = true;
         var tracks = release.Tracks?.ToArray() ?? [];
@@ -74,12 +86,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         {
             result = false;
         }
-
-        if (!release.HasTrackArtists())
-        {
-            return true;
-        }
-        
+       
         var albumArtist = release.Artist();
         if (string.IsNullOrWhiteSpace(albumArtist))
         {
@@ -88,13 +95,19 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
         if (result)
         {
-            var tracksGroupedByArtist = tracks.GroupBy(x => x.TrackArtist()).ToArray();
-            result = string.Equals(tracksGroupedByArtist.First().Key, albumArtist) && tracksGroupedByArtist.Length == 1;
+            var tracksGroupedByArtist = tracks.GroupBy(x => x.ReleaseArtist()).ToArray();
+            result = tracksGroupedByArtist.First().Key.Nullify() == null ||
+                     (string.Equals(tracksGroupedByArtist.First().Key, albumArtist) && 
+                      tracksGroupedByArtist.Length == 1);
         }
 
-        if (!result)
+        if (!result && !release.IsVariousArtistTypeRelease())
         {
-            _validationMessages.Add($"'{release}' tracks do not all have the same artist.");
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' tracks do not all have the same album artist.",
+                Severity = ValidationResultMessageSeverity.MustFix
+            });
         }
 
         return result;
@@ -105,7 +118,11 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         var result = !StringHasFeaturingFragments(release?.Artist());
         if (!result)
         {
-            _validationMessages.Add($"'{release}' release artist has unwanted text.");
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' release artist has unwanted text.",
+                Severity = ValidationResultMessageSeverity.Undesired
+            });
         }
 
         return result;
@@ -116,7 +133,11 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         var result = !StringHasFeaturingFragments(release?.ReleaseTitle());
         if (!result)
         {
-            _validationMessages.Add($"'{release}' release title has unwanted text.");
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' release title has unwanted text.",
+                Severity = ValidationResultMessageSeverity.Undesired
+            });            
         }
 
         return result;
@@ -146,7 +167,11 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
         if (!result)
         {
-            _validationMessages.Add($"'{release}' release media numbers are invalid.");
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' release media numbers are invalid.",
+                Severity = ValidationResultMessageSeverity.MustFix
+            });             
         }
 
         return result;
@@ -172,7 +197,11 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
         if (!result)
         {
-            _validationMessages.Add($"'{release}' some tracks have unwanted text.");
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' some tracks have unwanted text.",
+                Severity = ValidationResultMessageSeverity.Undesired
+            });              
         }
 
         return result;
@@ -207,7 +236,11 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         result = Enumerable.Range(0, trackNumbers.Length).All(i => trackNumbers[i] == trackNumbers[0] + i);
         if (!result)
         {
-            _validationMessages.Add($"'{release}' release track numbers are invalid.");
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' release track numbers are invalid.",
+                Severity = ValidationResultMessageSeverity.MustFix
+            });             
         }
 
         return result;
@@ -219,7 +252,11 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         var result = year >= _configuration.ValidationOptions.MinimumReleaseYear && year <= _configuration.ValidationOptions.MaximumReleaseYear;
         if (!result)
         {
-            _validationMessages.Add($"'{release}' release year is invalid.");
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' release year is invalid.",
+                Severity = ValidationResultMessageSeverity.MustFix
+            });             
         }
 
         return result;

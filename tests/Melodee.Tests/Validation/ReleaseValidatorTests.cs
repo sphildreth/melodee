@@ -210,7 +210,7 @@ public class ReleaseValidatorTests
         var validator = new ReleaseValidator(TestsBase.NewConfiguration);
         var validationResult = validator.ValidateRelease(release);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(release.Status, validationResult.Data);
+        Assert.Equal(release.Status, validationResult.Data.ReleaseStatus);
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public class ReleaseValidatorTests
         var validator = new ReleaseValidator(TestsBase.NewConfiguration);
         var validationResult = validator.ValidateRelease(release);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(ReleaseStatus.NeedsAttention, validationResult.Data);
+        Assert.Equal(ReleaseStatus.Invalid, validationResult.Data.ReleaseStatus);
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public class ReleaseValidatorTests
         var validator = new ReleaseValidator(TestsBase.NewConfiguration);
         var validationResult = validator.ValidateRelease(release);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(ReleaseStatus.NeedsAttention, validationResult.Data);
+        Assert.Equal(ReleaseStatus.Invalid, validationResult.Data.ReleaseStatus);
     }
 
     [Fact]
@@ -282,6 +282,6 @@ public class ReleaseValidatorTests
         var validator = new ReleaseValidator(TestsBase.NewConfiguration);
         var validationResult = validator.ValidateRelease(release);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(ReleaseStatus.NeedsAttention, validationResult.Data);
+        Assert.Equal(ReleaseStatus.Invalid, validationResult.Data.ReleaseStatus);
     }
 }

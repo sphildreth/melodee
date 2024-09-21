@@ -1,8 +1,9 @@
 ﻿@page "/"
-@using System.Globalization
+
 @using System.Reflection
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@using K4os.Hash.xxHash
 @using Mapster
 @using Melodee.Common.Extensions
 @using Melodee.Common.Models
@@ -13,14 +14,17 @@
 @using Melodee.Models.Enums
 @using Melodee.Plugins.Discovery.Releases
 @using Melodee.Plugins.MetaData.Track
+@using Melodee.Plugins.Validation
+@using Melodee.Plugins.Validation.Models
 @using Serilog
 @using Release = Melodee.Models.Release
 
 @inject Configuration Configuration
 @inject IReleasesDiscoverer ReleasesDiscoverer
 @inject ITrackPlugin TrackPlugin
+@inject IReleaseValidator ReleaseValidator
 
-<div class="container-fluid" @onkeyup="ReleaseEditingKeyPress">
+<div class="container-fluid" >
     <div class="row border-bottom border-secondary mb-2">
         <div class="col-7">
             <nav aria-label="...">
@@ -43,7 +47,7 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-8">
+        <div class="col-8 col-lg-9">
             <div class="overflow-auto" style="max-height: 800px;">
                 @if (_loading)
                 {
@@ -75,7 +79,6 @@
                                     {
                                         _selectedReleaseIds.Remove(release.UniqueId);
                                     }
-
                                     await GetReleaseDetailAsync(release.UniqueId);
                                     StateHasChanged();
                                 }
@@ -90,7 +93,7 @@
                 }
             </div>
         </div>
-        <div class="col">
+        <div class="col-4 col-lg-3">
             @if (_loading)
             {
                 <div class="d-flex justify-content-center">
@@ -132,6 +135,22 @@
                         <span class="badge bg-info nerd-text">@_selectedRelease.CreatedFormattedDate</span>
                     </h6>
                 </div>
+
+                if (_selectedReleaseValidationResult is { IsValid: false })
+                {
+                    <div class="nerd-text overflow-auto" style="font-size:10px; max-height: 300px;">
+                        @if(_selectedReleaseValidationResult.Messages != null)
+                        {
+                            <ul class="validation-message-list">
+                                @foreach (var message in _selectedReleaseValidationResult.Messages.OrderBy(x => x.SortOrder))
+                                {
+                                    <li><span class="@message.Severity.ToString().ToLower()">[@message.Severity]</span> @message.Message</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+
                 <div class="border-bottom border-secondary mb-2">
                     <div class="mb-3">
                         <label for="releaseStatus" class="form-label">Status</label>
@@ -160,7 +179,7 @@
                     {
                         @foreach (var track in _selectedRelease.Tracks.Where(x => x.MediaNumber == media).OrderBy(x => x.Number))
                         {
-                            <div class="@(track.IsValid ? "track-valid" : "track-invalid")">
+                            <div @onmousedown="@(() => _selectedTrackId = track.TrackId)" class="@(track.IsValid ? "track-valid" : "track-invalid")">
                                 <div class="row mb-2 ">
                                     <div class="col">
                                         <input type="number" @bind:event="oninput" @bind="track.MediaNumber" class="form-control" placeholder="Media" aria-label="Media">
@@ -188,24 +207,53 @@
     </div>
 </div>
 
+
+<div class="modal @(_showModel ? string.Empty : "fade")" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="@(_showModel ? "false" : "true")">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+                <button type="button" class="btn-close" @onclick="((e) => _showModel = false)" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Da Body Goes here...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @code {
 
     byte[] _defaultReleaseCover = [];
     int _totalReleaseCount;
+    bool _showModel = false;
     int _page = 1;
     short _take = 10;
     int _totalPages = 1;
     bool _loading = true;
     List<Release> _releases = [];
     ReleaseEditModel? _selectedRelease;
+    ValidationResult? _selectedReleaseValidationResult;
+    long? _selectedTrackId;
+
     List<long> _selectedReleaseIds = [];
     readonly string[] _releaseStatuses = Enum.GetValues(typeof(ReleaseStatus)).Cast<ReleaseStatus>().Select(x => x.ToString()).ToArray();
 
     [CascadingParameter] public MainLayout Layout { get; set; } = null!;
 
+    public ElementReference ModalDiv { get; set; }
+
     private async Task GetReleaseDetailAsync(long uniqueId)
     {
         _loading = true;
+
+        _selectedReleaseValidationResult = null;
+        _selectedTrackId = null;
 
         var detail = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, uniqueId);
         _selectedRelease = new ReleaseEditModel
@@ -228,6 +276,7 @@
                 MediaNumber = x.MediaNumber()
             }).ToList() ?? []
         };
+        _selectedReleaseValidationResult = ReleaseValidator.ValidateRelease(detail).Data;
         _loading = false;
     }
 
@@ -244,11 +293,12 @@
 
         await RefreshReleasesAsync();
 
-        Layout.SearchChanged += (sender, args) =>
+        Layout.SearchChanged += async (sender, args) =>
         {
-            var ml = sender as MainLayout;
-            RefreshReleasesAsync(args.Item2, args.Item1).ConfigureAwait(true).GetAwaiter();
+            await RefreshReleasesAsync(args.Item2, args.Item1);
         };
+        Layout.KeyPress += async (sender, args) => await ReleaseEditingKeyPress(args);
+
         Layout.MenuItemClicked += async (sender, args) =>
         {
             switch (args.Item1)
@@ -295,23 +345,174 @@
                             await DeleteAllImages();
                             break;
                         case ToolMenuItem.PromoteTrackArtist:
+                            await PromoteTrackArtist();
                             break;
                         case ToolMenuItem.RemoveAllTrackArtists:
+                            await RemoveAllTrackArtists();
                             break;
                         case ToolMenuItem.RemoveArtistFromTrackArtists:
+                            await RemoveArtistFromTrackArtists();
                             break;
                         case ToolMenuItem.RemoveProvidedTextFromTrackTitle:
+                            await RemoveProvidedTextFromTrackTitle();
                             break;
                         case ToolMenuItem.RenumberTracks:
+                            await RenumberTracks();
                             break;
                         case ToolMenuItem.ReplaceAllTrackArtistSeparators:
                             break;
                         case ToolMenuItem.SetYearToCurrent:
+                            await SetYearToCurrent();
                             break;
                     }
                     break;
             }
         };
+    }
+
+    private async Task RemoveProvidedTextFromTrackTitle()
+    {
+        _showModel = true;
+        StateHasChanged();
+
+
+    }
+
+
+    private async Task PromoteTrackArtist()
+    {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
+        _loading = true;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            var artistToPromote = release.Tracks?.FirstOrDefault(x => x.TrackId == _selectedTrackId)?.TrackArtist();
+            if (artistToPromote.Nullify() != null)
+            {
+                release.SetTagValue(MetaTagIdentifier.AlbumArtist, artistToPromote);
+                var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+                foreach (var track in release.Tracks!)
+                {
+                    release.RemoveTrackTagValue(track.TrackId, MetaTagIdentifier.Artist);
+                    await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
+                }
+
+                var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
+                await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
+            }
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
+    }
+
+    private async Task SetYearToCurrent()
+    {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
+        _loading = true;
+        var year = DateTime.Now.Year;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            release.SetTagValue(MetaTagIdentifier.OrigReleaseYear, year);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+            foreach (var track in release.Tracks!)
+            {
+                release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.OrigReleaseYear, year);
+                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
+            }
+            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
+            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
+    }
+
+    private async Task RemoveAllTrackArtists()
+    {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
+        _loading = true;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+            foreach (var track in release.Tracks!)
+            {
+                release.RemoveTrackTagValue(track.TrackId, MetaTagIdentifier.AlbumArtist);
+                release.RemoveTrackTagValue(track.TrackId, MetaTagIdentifier.Artist);
+                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
+            }
+            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
+            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
+    }
+
+    private async Task RenumberTracks()
+    {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
+        _loading = true;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+            var numberOfMedias = release.MediaCountValue();
+            var mediaLooper = 0;
+            while (mediaLooper <= numberOfMedias)
+            {
+                var looper = mediaLooper;
+                foreach (var dd in release.Tracks?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i} ) ?? [])
+                {
+                    release.SetTrackTagValue(dd.x.TrackId, MetaTagIdentifier.TrackNumber, dd.i);
+                    await TrackPlugin.UpdateTrackAsync(release.Directory!, dd.x);
+                }
+                mediaLooper++;
+            }
+            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
+            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
+    }
+
+    private async Task RemoveArtistFromTrackArtists()
+    {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
+        _loading = true;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+            foreach (var track in release.Tracks!)
+            {
+                release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.AlbumArtist, null);
+                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
+            }
+            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
+            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
     }
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -454,6 +655,10 @@
         await RefreshReleasesAsync();
     }
 
+    private async Task RescanStagingFolder()
+    {
+    }
+
     private async Task SaveSelectedReleaseAsync()
     {
         _loading = true;
@@ -548,11 +753,11 @@
         }
     }
 
-    private async Task ReleaseEditingKeyPress(KeyboardEventArgs obj)
+    private async Task ReleaseEditingKeyPress(KeyboardEventArgs e)
     {
-        if (obj.CtrlKey)
+        if (e.CtrlKey)
         {
-            switch (obj.Key)
+            switch (e.Key)
             {
                 case "d":
                     await DeleteSelectedAsync();
@@ -568,15 +773,14 @@
                     break;
             }
         }
-
-        if (obj.AltKey)
+        switch (e.Key)
         {
-            switch (obj.Key)
-            {
-                case "r":
-                    await RefreshReleasesAsync();
-                    break;
-            }
+            case "F5":
+                await RefreshReleasesAsync();
+                break;
+            case "F6":
+                await RescanStagingFolder();
+                break;
         }
     }
 

@@ -1,9 +1,10 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
+using Melodee.Plugins.Validation.Models;
 
 namespace Melodee.Plugins.Validation;
 
 public interface IReleaseValidator
 {
-    OperationResult<ReleaseStatus> ValidateRelease(Release? release);
+    OperationResult<ValidationResult> ValidateRelease(Release? release);
 }

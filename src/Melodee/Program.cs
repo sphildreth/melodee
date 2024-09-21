@@ -3,6 +3,7 @@ using Melodee.Common.Models.Configuration;
 using Melodee.Plugins.Discovery.Releases;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Photino.Blazor;
 using Serilog;
@@ -29,6 +30,7 @@ namespace Melodee
             appBuilder.Services.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();
             appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
             appBuilder.Services.AddSingleton<ITrackPlugin, AtlMetaTag>();
+            appBuilder.Services.AddSingleton<IReleaseValidator, ReleaseValidator>();
             
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()

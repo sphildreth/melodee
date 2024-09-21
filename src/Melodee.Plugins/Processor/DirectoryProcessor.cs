@@ -601,7 +601,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
         Parallel.ForEach(releases, release =>
         {
-            release.Status = _releaseValidator.ValidateRelease(release).Data;
+            release.Status = _releaseValidator.ValidateRelease(release).Data.ReleaseStatus;
         });
 
         return new OperationResult<(IEnumerable<Release>, int)>(messages)

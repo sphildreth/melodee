@@ -7,6 +7,7 @@ public enum MenuItem
     MoveSelectedToLibrary,
     Refresh,
     Save,
+    RescanStaging,
     SelectAllReleases,
     SetSelectedStatusReviewed,
     Tool,

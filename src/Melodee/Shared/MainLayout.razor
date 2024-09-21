@@ -6,7 +6,7 @@
 
 <CascadingValue Value="this">
 
-    <main>
+    <main @onkeyup="((e) => KeyPress?.Invoke(this, e))">
         <nav class="navbar navbar-expand-lg navbar-light border mb-2">
             <div class="container-fluid">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,8 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Save, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>ave</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanStaging, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F5</span> Rescan Staging</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">D</span>elete Selected</a></li>
                                 <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">M</span>ove Selected to Library</a></li>
@@ -37,7 +39,7 @@
                                 View
                             </a>
                             <ul class="dropdown-menu">
-                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">R</span>efresh</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F6</span> Refresh</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="#">
@@ -114,7 +116,8 @@
                             class="form-control me-2"
                             type="text"
                             placeholder="Search"
-                            aria-label="Search">
+                            aria-label="Search"
+                            autofocus>
                     </form>
                 </div>
             </div>
@@ -136,5 +139,8 @@
     public event EventHandler<(ReleaseResultFilter, string?)>? SearchChanged;
 
     public event EventHandler<(MenuItem, object? option)>? MenuItemClicked;
+
+    public event EventHandler<KeyboardEventArgs>? KeyPress;
+
 
 }
