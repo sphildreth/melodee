@@ -207,31 +207,10 @@
     </div>
 </div>
 
-
-<div class="modal @(_showModel ? string.Empty : "fade")" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="@(_showModel ? "false" : "true")">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
-                <button type="button" class="btn-close" @onclick="((e) => _showModel = false)" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Da Body Goes here...
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 @code {
 
     byte[] _defaultReleaseCover = [];
     int _totalReleaseCount;
-    bool _showModel = false;
     int _page = 1;
     short _take = 10;
     int _totalPages = 1;
@@ -372,9 +351,6 @@
 
     private async Task RemoveProvidedTextFromTrackTitle()
     {
-        _showModel = true;
-        StateHasChanged();
-
 
     }
 
