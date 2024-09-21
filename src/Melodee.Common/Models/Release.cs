@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Microsoft.VisualBasic.FileIO;
@@ -13,7 +14,7 @@ namespace Melodee.Common.Models;
 public sealed record Release
 {
     public const string JsonFileName = "melodee.json";
-
+    
     public long UniqueId => SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
 
     public DateTimeOffset Created { get; set; }

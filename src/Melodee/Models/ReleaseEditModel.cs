@@ -2,6 +2,13 @@ namespace Melodee.Models;
 
 public class ReleaseEditModel
 {
+    public bool IsValid { get; init; }
+    
+    public bool IsVariousArtistTypeRelease { get; init; }
+    
+    public required string CreatedFormattedDate { get; init; }
+    
+    public string? Genre { get; init; }
     
     public long UniqueId { get; init; }
     

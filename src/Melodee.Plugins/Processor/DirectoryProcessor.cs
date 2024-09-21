@@ -59,7 +59,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
         _trackPlugins = new[]
         {
-            new MetaTag(new MetaTagsProcessor(_configuration), _configuration)
+            new AtlMetaTag(new MetaTagsProcessor(_configuration), _configuration)
         };
 
         _conversionPlugins = new IConversionPlugin[]
@@ -279,9 +279,8 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 {
                     try
                     {
-                        var release =
-                            JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
-                        if (release == null || !release.IsValid())
+                        var release = JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
+                        if (release == null)
                         {
                             return new OperationResult<int>($"Invalid Release json file [{releaseJsonFile.FullName}]")
                             {
@@ -305,6 +304,11 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         release.Images = releaseImages.ToArray();
                         if (release.Tracks != null)
                         {
+                            // Set TrackNumber to invalid range if TrackNumber is missing
+                            release.Tracks.Where(x => x.TrackNumber() < 1).Each((x, i) =>
+                            {
+                                release.SetTrackTagValue(x.TrackId, MetaTagIdentifier.TrackNumber, _configuration.ValidationOptions.MaximumTrackNumber + (i+1));
+                            });
                             foreach (var track in release.Tracks)
                             {
                                 track.File.Name = track.ToTrackFileName();
@@ -361,10 +365,14 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             // Set the value then change to NeedsAttention
                             foreach (var trackPlugin in _trackPlugins)
                             {
-                                await Parallel.ForEachAsync(release.Tracks!, cancellationToken, async (track, tt) =>                            
+                                foreach (var track in release.Tracks)
                                 {
-                                    await trackPlugin.UpdateTrackAsync(releaseDirectorySystemInfo, track, tt);
-                                });
+                                    if (cancellationToken.IsCancellationRequested)
+                                    {
+                                        break;
+                                    }
+                                    await trackPlugin.UpdateTrackAsync(releaseDirectorySystemInfo, track, cancellationToken);
+                                }
                             }
                             release.Status = ReleaseStatus.NeedsAttention;
                         }

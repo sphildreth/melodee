@@ -55,7 +55,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         var sfv = new SimpleFileVerification(
             new []
             {
-                new MetaTag(new MetaTagsProcessor(config), config)
+                new AtlMetaTag(new MetaTagsProcessor(config), config)
             }, config);
         if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
         {
@@ -86,7 +86,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         var m3u = new M3UPlaylist(
             new []
             {
-                new MetaTag(new MetaTagsProcessor(config), config)
+                new AtlMetaTag(new MetaTagsProcessor(config), config)
             }, config);
         if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
         {

@@ -6,6 +6,8 @@ namespace Melodee.Common.Models.Cards;
 [Serializable]
 public record ReleaseCard
 {
+    public bool IsValid { get; init; }
+
     public required long UniqueId { get; init; }
     
     /// <summary>

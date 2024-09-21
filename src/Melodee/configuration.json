@@ -2,11 +2,12 @@
   "AppConfig": {
     "Environment": "Production"
   },
+  "MoveMelodeeJsonDataFileToLibrary" : false,
   "DefaultPageSize": 10,
   "FilterLessThanTrackCount" : 3,
   "FilterLessThanConfiguredDuration": 720000,
   "InboundDirectory": "/home/steven/incoming/melodee_test/inbound",
-  "LibraryDirectory": "/home/steven/incoming/melodee_test/library",
+  "LibraryDirectory": "/home/steven/viking/music/inbound/",
   "StagingDirectory": "/home/steven/incoming/melodee_test/staging",
   "Scripting": {
     "PreDiscoveryScript": "/home/steven/incoming/melodee_test/scripts/PreDiscovery.py",

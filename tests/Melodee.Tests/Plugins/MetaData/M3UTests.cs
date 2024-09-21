@@ -18,7 +18,7 @@ public class M3UTests
         {
             var m3U = new M3UPlaylist(new []
             {
-                new MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
+                new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
             }, TestsBase.NewConfiguration);
             var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {

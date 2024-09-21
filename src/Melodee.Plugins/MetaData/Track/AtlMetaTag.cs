@@ -14,29 +14,16 @@ using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Track;
 
-/* Class Notes;
-
-ID3 Tags are tricky and vary across vendor and implementation. This attempts to normalize tags across these varying sources.
-
-Some reference sites:
- * https://github.com/Zeugma440/atldotnet/blob/main/ATL/AudioData/IO/ID3v2.cs
- * https://wiki.hydrogenaud.io/index.php?title=Tag_Mapping
- * https://exiftool.org/TagNames/ID3.html
- * https://mutagen-specs.readthedocs.io/en/latest/id3/id3v2.3.0.html
- * https://www.mediamonkey.com/sw/webhelp/frame/index.html?abouttrackproperties.htm
- * https://eyed3.readthedocs.io/en/latest/compliance.html
- * https://www.theoplayer.com/docs/theoplayer/v7/api-reference/web/interfaces/ID3UserDefinedUrlLink.html
-
- All v2.4 dates follow ISO 8601 formats.
-
-*/
-
-public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
+/// <summary>
+/// Implementation of Track Plugin using ATL Library
+/// <remarks>https://github.com/Zeugma440/atldotnet</remarks>
+/// </summary>
+public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
 
-    public override string DisplayName => nameof(MetaTag);
+    public override string DisplayName => nameof(AtlMetaTag);
 
     public override bool IsEnabled { get; set; } = true;
 
@@ -294,44 +281,47 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
         var result = false;        
         if (track.Tags?.Any() ?? false)
         {
-            try
+            var trackFileName = track.File.FullName(directoryInfo);
+            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Updating [{FileName}]", DisplayName, trackFileName))
             {
-                var fileAtl = new ATL.Track(track.File.FullName(directoryInfo))
+                try
                 {
-                    Album = track.ReleaseTitle(),
-                    AlbumArtist = track.ReleaseArtist(),
-                    Artist = track.TrackArtist(),
-                    DiscNumber = track.MediaNumber(),
-                    DiscTotal = track.MediaTotalNumber(),
-                    Genre = track.Genre(),
-                    OriginalReleaseDate = track.ReleaseDateValue(),
-                    TrackNumber = track.TrackNumber(),
-                    TrackTotal = track.TrackTotalNumber(),
-                    Year = track.ReleaseYear()
-                };
-                if (track.Images?.Any() ?? false)
-                {
-                    var coverImage = track.Images.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
-                    if (coverImage != null && (coverImage.FileInfo?.Exists(directoryInfo) ?? false))
+                    var fileAtl = new ATL.Track(trackFileName)
+                    {
+                        Album = track.ReleaseTitle(),
+                        AlbumArtist = track.ReleaseArtist(),
+                        Artist = track.TrackArtist(),
+                        DiscNumber = track.MediaNumber(),
+                        DiscTotal = track.MediaTotalNumber(),
+                        Genre = track.Genre(),
+                        OriginalReleaseDate = track.ReleaseDateValue(),
+                        TrackNumber = track.TrackNumber(),
+                        TrackTotal = track.TrackTotalNumber(),
+                        Year = track.ReleaseYear()
+                    };
+                    if (track.Images?.Any() ?? false)
+                    {
+                        var coverImage = track.Images.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
+                        if (coverImage != null && (coverImage.FileInfo?.Exists(directoryInfo) ?? false))
+                        {
+                            fileAtl.EmbeddedPictures.Clear();
+                            fileAtl.EmbeddedPictures.Add(PictureInfo.fromBinaryData(
+                                await File.ReadAllBytesAsync(coverImage.FileInfo!.FullName(directoryInfo), cancellationToken),
+                                PictureInfo.PIC_TYPE.Front));
+                        }
+                    }
+                    else
                     {
                         fileAtl.EmbeddedPictures.Clear();
-                        fileAtl.EmbeddedPictures.Add(PictureInfo.fromBinaryData(
-                            await File.ReadAllBytesAsync(coverImage.FileInfo!.FullName(directoryInfo), cancellationToken),
-                            PictureInfo.PIC_TYPE.Front));
                     }
+                    await fileAtl.SaveAsync();
+                    result = true;
                 }
-                else
+                catch (Exception e)
                 {
-                    fileAtl.EmbeddedPictures.Clear();
+                    Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
                 }
-                await fileAtl.SaveAsync();
-                result = true;
             }
-            catch (Exception e)
-            {
-                Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
-            }
-            
         }
         return new OperationResult<bool>
         {

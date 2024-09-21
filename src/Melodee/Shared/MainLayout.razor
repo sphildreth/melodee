@@ -19,14 +19,14 @@
                                 Edit
                             </a>
                             <ul class="dropdown-menu">
-                                <li @onclick="Save"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>ave</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Save, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>ave</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li @onclick="DeleteSelected"><a class="dropdown-item" href="#"><span class="text-decoration-underline">D</span>elete Selected</a></li>
-                                <li @onclick="MoveSelectedToLibrary"><a class="dropdown-item" href="#"><span class="text-decoration-underline">M</span>ove Selected to Library</a></li>
-                                <li @onclick="SetSelectedStatusReviewed"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>et Selected Status as Reviewed</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">D</span>elete Selected</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">M</span>ove Selected to Library</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SetSelectedStatusReviewed, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>et Selected Status as Reviewed</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li @onclick="((e) => SelectReleases(true))"><a class="dropdown-item" href="#">Select All</a></li>
-                                <li @onclick="((e) => SelectReleases(false))"><a class="dropdown-item" href="#">Select None</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SelectAllReleases, true)))"><a class="dropdown-item" href="#">Select All</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SelectAllReleases, false)))"><a class="dropdown-item" href="#">Select None</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="/settings">Settings...</a></li>
 
@@ -37,22 +37,22 @@
                                 View
                             </a>
                             <ul class="dropdown-menu">
-                                <li @onclick="Refresh"><a class="dropdown-item" href="#"><span class="text-decoration-underline">R</span>efresh</a></li>
+                                <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">R</span>efresh</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="#">
                                         Filter &raquo;
                                     </a>
                                     <ul class="dropdown-menu dropdown-submenu">
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.All))"><a class="dropdown-item @(Filter == ReleaseResultFilter.All ? "active" : string.Empty)" href="#">All</a></li>
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Duplicates))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Duplicates ? "active" : string.Empty)" href="#">Duplicates</a></li>
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Incomplete))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Incomplete ? "active" : string.Empty)" href="#">Incomplete</a></li>
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.LessThanConfiguredTracks))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredTracks ? "active" : string.Empty)" href="#">Less than @Configuration.FilterLessThanTrackCount Tracks</a></li>
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.NeedsAttention))"><a class="dropdown-item @(Filter == ReleaseResultFilter.NeedsAttention ? "active" : string.Empty)" href="#">Needs Attention</a></li>
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.New))"><a class="dropdown-item @(Filter == ReleaseResultFilter.New ? "active" : string.Empty)" href="#">New</a></li>
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.ReadyToMove))"><a class="dropdown-item @(Filter == ReleaseResultFilter.ReadyToMove ? "active" : string.Empty)" href="#">Ready to Move</a></li>
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.Selected))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Selected ? "active" : string.Empty)" href="#">Selected</a></li>
-                                        <li @onclick="((e) => FilterReleases(ReleaseResultFilter.LessThanConfiguredDuration))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredDuration ? "active" : string.Empty)" href="#">Under @Configuration.FilterLessThanConfiguredTime.TotalMinutes Minutes</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.All)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.All ? "active" : string.Empty)" href="#">All</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Duplicates)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Duplicates ? "active" : string.Empty)" href="#">Duplicates</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Incomplete)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Incomplete ? "active" : string.Empty)" href="#">Incomplete</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.LessThanConfiguredTracks)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredTracks ? "active" : string.Empty)" href="#">Less than @Configuration.FilterLessThanTrackCount Tracks</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.NeedsAttention)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.NeedsAttention ? "active" : string.Empty)" href="#">Needs Attention</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.New)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.New ? "active" : string.Empty)" href="#">New</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.ReadyToMove)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.ReadyToMove ? "active" : string.Empty)" href="#">Ready to Move</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.Selected)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.Selected ? "active" : string.Empty)" href="#">Selected</a></li>
+                                        <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ViewFilterClicked, ReleaseResultFilter.LessThanConfiguredDuration)))"><a class="dropdown-item @(Filter == ReleaseResultFilter.LessThanConfiguredDuration ? "active" : string.Empty)" href="#">Under @Configuration.FilterLessThanConfiguredTime.TotalMinutes Minutes</a></li>
                                     </ul>
                                 </li>
                             </ul>
@@ -62,14 +62,14 @@
                                 Tools
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.DeleteAllImages))" href="#">Delete all Images</a></li>
-                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.PromoteTrackArtist))" href="#">Promote Track Artist</a></li>
-                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.RenumberTracks))" href="#">Renumber Tracks</a></li>
-                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.RemoveArtistFromTrackArtists))" href="#">Remove Artist from Track Artists</a></li>
-                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.RemoveProvidedTextFromTrackTitle))" href="#">Remove provided text from Track Title</a></li>
-                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.RemoveAllTrackArtists))" href="#">Remove all Track Artists</a></li>
-                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.ReplaceAllTrackArtistSeparators))" href="#">Replace all Track Artist separators</a></li>
-                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.SetYearToCurrent))" href="#">Set Year to Current</a></li>
+                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.DeleteAllImages)))" href="#">Delete all Images</a></li>
+                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.PromoteTrackArtist)))" href="#">Promote Track Artist</a></li>
+                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RenumberTracks)))" href="#">Renumber Tracks</a></li>
+                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveArtistFromTrackArtists)))" href="#">Remove Artist from Track Artists</a></li>
+                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveProvidedTextFromTrackTitle)))" href="#">Remove provided text from Track Title</a></li>
+                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RemoveAllTrackArtists)))" href="#">Remove all Track Artists</a></li>
+                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.ReplaceAllTrackArtistSeparators)))" href="#">Replace all Track Artist separators</a></li>
+                                <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.SetYearToCurrent)))" href="#">Set Year to Current</a></li>
                                 <li>
                                     <a class="dropdown-item" href="#">
                                         Trim Track Titles &raquo;
@@ -108,7 +108,7 @@
                     </ul>
                     <form class="d-flex" role="search">
                         <input
-                            @onkeyup="KeyUpCallback"
+                            @onkeyup="(() => SearchChanged?.Invoke(this, (Filter, SearchText)))"
                             @bind:event="oninput"
                             @bind="SearchText"
                             class="form-control me-2"
@@ -126,76 +126,15 @@
     </main>
 
 </CascadingValue>
+
 @code {
 
-    bool _showConfigurationModel;
+    private string? SearchText { get; set; }
 
-    public string? SearchText { get; set; }
+    private ReleaseResultFilter Filter { get; set; } = ReleaseResultFilter.All;
 
-    public ReleaseResultFilter? Filter { get; set; } = ReleaseResultFilter.All;
+    public event EventHandler<(ReleaseResultFilter, string?)>? SearchChanged;
 
-    public event EventHandler? SearchChanged;
+    public event EventHandler<(MenuItem, object? option)>? MenuItemClicked;
 
-    public event EventHandler<bool>? SelectReleasesChanged;
-
-    public event EventHandler? MoveSelectedToLibraryChanged;
-
-    public event EventHandler? DeleteSelectedChanged;
-
-    public event EventHandler? SaveChanged;
-
-    public event EventHandler? SetSelectedStatusReviewedChanged;
-
-    public event EventHandler? RefreshChanged;
-
-    public event EventHandler<ToolMenuItem>? ToolSelectedChanged;
-
-    private void KeyUpCallback(KeyboardEventArgs obj)
-    {
-        SearchChanged?.Invoke(this, obj);
-    }
-
-    private void FilterReleases(ReleaseResultFilter i)
-    {
-        Filter = i;
-        SearchChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void SelectReleases(bool selectAll) => SelectReleasesChanged?.Invoke(this, selectAll);
-
-    private void ShowConfigurationModel()
-    {
-        _showConfigurationModel = true;
-        StateHasChanged();
-    }
-
-    private void MoveSelectedToLibrary()
-    {
-        MoveSelectedToLibraryChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void DeleteSelected()
-    {
-        DeleteSelectedChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void Save()
-    {
-        SaveChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void SetSelectedStatusReviewed()
-    {
-        SetSelectedStatusReviewedChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void Refresh()
-    {
-        RefreshChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void ToolSelected(ToolMenuItem tool)
-    {
-        ToolSelectedChanged?.Invoke(this, tool);
-    }
 }

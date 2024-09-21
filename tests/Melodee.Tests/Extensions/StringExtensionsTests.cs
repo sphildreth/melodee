@@ -121,7 +121,19 @@ namespace Melodee.Tests.Extensions
         public void ValidateIsSoundTrackArtists(string input, bool shouldBe)
         {
             Assert.Equal(shouldBe, input.IsSoundTrackAristValue());
-        }          
+        }     
+        
+        [Theory]
+        [InlineData("Bob Jones", false)]
+        [InlineData("Bob Cast", false)]
+        [InlineData("Track Bob", false)]
+        [InlineData("Sound Bob", false)]
+        [InlineData("Original Cast", true)]
+        [InlineData("Original Broadway Cast", true)]
+        public void ValidateIsCastRecordTrackArtists(string input, bool shouldBe)
+        {
+            Assert.Equal(shouldBe, input.IsCastRecording());
+        }        
         
         [Theory]
         [InlineData(null, false)]

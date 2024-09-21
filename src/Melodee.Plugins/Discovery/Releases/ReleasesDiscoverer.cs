@@ -43,7 +43,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         
         _trackPlugins = new ITrackPlugin[]
         {
-            new MetaTag(new MetaTagsProcessor(config), config)
+            new AtlMetaTag(new MetaTagsProcessor(config), config)
         };
         _enabledReleasePlugins = new IDirectoryPlugin[]
         {
@@ -240,6 +240,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             Duration = x.Duration(),
             Directory = x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(),
             ImageBytes = await x.CoverImageBytesAsync(),
+            IsValid = x.IsValid(),
             Title = x.ReleaseTitle(),
             Year = x.ReleaseYear(),
             TrackCount = x.TrackTotalValue(),

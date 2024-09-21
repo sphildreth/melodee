@@ -137,7 +137,7 @@ public class ReleaseValidatorTests
     private static Release TestRelease
         => new Release
         {
-            ViaPlugins = [nameof(MetaTag)],
+            ViaPlugins = [nameof(AtlMetaTag)],
             OriginalDirectory = new FileSystemDirectoryInfo
             {
                 Path = string.Empty,
@@ -173,6 +173,21 @@ public class ReleaseValidatorTests
                     },
                     Tags = new[]
                     {
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.AlbumArtist,
+                            Value = "Billy Joel"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Album,
+                            Value = "Cold Spring Harbor"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.RecordingYear,
+                            Value = "1971"
+                        },
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.TrackNumber,

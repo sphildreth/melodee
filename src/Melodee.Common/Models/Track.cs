@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 

@@ -1,5 +1,6 @@
 @page "/settings"
 @using System.Reflection
+@using System.Text.Json
 @using Melodee.Common.Models.Configuration
 @inject Configuration Configuration
 
@@ -80,7 +81,7 @@
     private async Task SaveSettings()
     {
         var appDir = new DirectoryInfo(Assembly.GetEntryAssembly()!.Location);
-        await File.WriteAllTextAsync(Path.Combine(appDir.Parent!.FullName, "configuration.json"), System.Text.Json.JsonSerializer.Serialize(Configuration));
+        await File.WriteAllTextAsync(Path.Combine(appDir.Parent!.FullName, "configuration.json"), JsonSerializer.Serialize(Configuration));
     }
 
 }

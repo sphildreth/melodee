@@ -11,6 +11,24 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class ReleaseExtensions
 {
+    public static bool IsVariousArtistTypeRelease(this Release release)
+    {
+        var tracks = (release.Tracks ?? []).ToArray();
+        if (tracks.Length == 0)
+        {
+            return false;
+        }
+        var genre = tracks.Select(x => x.Genre().Nullify()).Distinct().ToArray();
+        if (genre.Length > 0)
+        {
+            if (genre.Any(x => x.IsSoundTrackAristValue() || x.IsVariousArtistValue() || x.IsCastRecording()))
+            {
+                return true;
+            }
+        }
+        return release.Artist().IsVariousArtistValue() || release.Artist().IsSoundTrackAristValue() || release.Artist().IsCastRecording();
+    }
+    
     public static bool HasTrackArtists(this Release release)
     {
         var tracks = (release.Tracks ?? []).ToArray();
@@ -69,18 +87,26 @@ public static class ReleaseExtensions
 
         return d;
     }
-
+    
     public static bool IsValid(this Release release)
     {
         if (release.Tags?.Count() == 0)
         {
             return false;
         }
-
+        if (release.Tracks?.Count() == 0)
+        {
+            return false;
+        }
+        if (release.Tracks!.Any(x => !x.IsValid()))
+        {
+            return false;
+        }
         var artist = release.Artist().Nullify();
         var releaseTitle = release.ReleaseTitle().Nullify();
         var releaseYear = release.ReleaseYear();
-        return artist != null &&
+        return release.UniqueId > 0 &&
+               artist != null &&
                releaseTitle != null &&
                releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year;
     }

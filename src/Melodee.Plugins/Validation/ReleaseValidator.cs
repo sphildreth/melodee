@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using FluentValidation;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
@@ -37,6 +36,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         // Validations should return true if ok
         if (
             !AreAllTrackNumbersValid(release) ||
+            !AreTracksUniquedNumbered(release) ||
             !AreMediaNumbersValid(release) ||
             !DoAllTracksHaveSameArtist(release) ||
             !AllTrackTitlesDoNotHaveUnwantedText(release) ||
@@ -52,6 +52,18 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         {
             Data = returnStatus
         };
+    }
+
+    private bool AreTracksUniquedNumbered(Release release)
+    {
+        var result = true;
+        var tracks = release.Tracks?.ToArray() ?? [];
+        if (tracks.Length == 0)
+        {
+            result = false;
+        }
+        var trackNumbers = tracks.GroupBy(x => x.TrackNumber());
+        return trackNumbers.All(group => group.Count() == 1);
     }
 
     private bool DoAllTracksHaveSameArtist(Release release)

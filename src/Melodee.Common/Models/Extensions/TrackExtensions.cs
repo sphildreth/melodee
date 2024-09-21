@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics.Contracts;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
@@ -109,7 +110,27 @@ public static class TrackExtensions
     
     public static int MediaTotalNumber(this Track track) => track.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
                                                             track.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ?? 0;
+ 
+    public static bool IsValid(this Track track)
+    {
+        if (track.Tags?.Count() == 0)
+        {
+            return false;
+        }
 
+        // Only test for ReleaseUniqueId validity if the Release Title tag is present.
+        long releaseUniqueId = 1;
+        var releaseTitle = track.ReleaseTitle().Nullify();
+        if (!string.IsNullOrWhiteSpace(releaseTitle))
+        {
+            releaseUniqueId = track.ReleaseUniqueId;
+        }
+        return track is { TrackId: > 0, UniqueId: > 0 } &&
+               releaseUniqueId > 0 &&
+               track.TrackNumber() > 0 &&
+               track.Title().Nullify() != null;
+    }
+    
     public static bool TitleHasUnwantedText(this Track track)
     {
         var releaseTitle = track.ReleaseTitle() ?? string.Empty;

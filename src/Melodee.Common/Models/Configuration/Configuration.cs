@@ -58,4 +58,9 @@ public sealed record Configuration
     /// Default page size when view including pagination.
     /// </summary>
     public short DefaultPageSize { get; set; } = 100;
+
+    /// <summary>
+    /// When true then move the Melodee.json data file when moving releases, otherwise delete.
+    /// </summary>
+    public bool MoveMelodeeJsonDataFileToLibrary { get; set; } = false;
 }

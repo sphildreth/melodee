@@ -2,7 +2,7 @@
 
 <div data-releaseid="@Release.UniqueId">
     <div
-        class="release-card card m-2 @ReleaseStatusClass() @(IsCurrent ? "release-current" : string.Empty) @(IsSelected ? "release-selected" : string.Empty)">
+        class="release-card card m-2 @ReleaseStatusClass() @ReleaseIsValidClass() @ReleaseIsCurrentClass() @ReleaseIsSelectedClass">
         <img src="@Release.ImageBase64String(DefaultReleaseCover)"
              class="card-img-top rounded mx-auto d-block " alt="@Release.Title">
         <div class="card-body" style="margin:0; padding: 4px;">
@@ -26,6 +26,12 @@
     [Parameter] public bool IsCurrent { get; set; }
 
     [Parameter] public byte[] DefaultReleaseCover { get; set; } = [];
+
+    private string ReleaseIsSelectedClass => IsSelected ? "release-selected" : string.Empty;
+
+    private string ReleaseIsCurrentClass() => IsCurrent ? "release-current" : string.Empty;
+
+    private string ReleaseIsValidClass() => Release.IsValid ? "release-valid" : "release-invalid";
 
     private string ReleaseStatusClass() => $"release-status-{Release.ReleaseStatus.ToString().ToLower()}";
 

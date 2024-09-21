@@ -17,7 +17,7 @@ public class MetaTagTests
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var metaTag = new Melodee.Plugins.MetaData.Track.AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -35,13 +35,37 @@ public class MetaTagTests
     }
     
     [Fact]
+    public async Task ValidateLoadingTagsForBorkedMp3FileAsync()
+    {
+        var testFile = @"/home/steven/incoming/melodee_test/tests/borked.mp3";
+        var fileInfo = new System.IO.FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var metaTag = new Melodee.Plugins.MetaData.Track.IdSharpMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Name = "tests"
+            };
+            var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(tagResult);
+            Assert.True(tagResult.IsSuccess);
+            Assert.NotNull(tagResult.Data);
+            Assert.False(tagResult.Data.IsValid());
+            Assert.NotNull(tagResult.Data.Tags);
+            Assert.NotNull(tagResult.Data.File);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
+        }
+    }    
+    
+    [Fact]
     public async Task ValidateLoadingEditingAndSavingTagsForSimpleMp3FileAsync()
     {
         var testFile = @"/home/steven/incoming/melodee_test/tests/test.mp3";
         var fileInfo = new System.IO.FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var metaTag = new Melodee.Plugins.MetaData.Track.AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -98,7 +122,7 @@ public class MetaTagTests
                 Path = @"/home/steven/incoming/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var metaTag = new Melodee.Plugins.MetaData.Track.AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -127,7 +151,7 @@ public class MetaTagTests
                 Path = @"/home/steven/incoming/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var metaTag = new Melodee.Plugins.MetaData.Track.AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -155,7 +179,7 @@ public class MetaTagTests
                 Path = @"/home/steven/incoming/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new Melodee.Plugins.MetaData.Track.MetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var metaTag = new Melodee.Plugins.MetaData.Track.AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);

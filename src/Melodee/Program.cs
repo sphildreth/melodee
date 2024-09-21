@@ -28,7 +28,7 @@ namespace Melodee
             
             appBuilder.Services.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();
             appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
-            appBuilder.Services.AddSingleton<ITrackPlugin, MetaTag>();
+            appBuilder.Services.AddSingleton<ITrackPlugin, AtlMetaTag>();
             
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
