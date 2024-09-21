@@ -3,6 +3,7 @@
 @using System.Reflection
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@using System.Transactions
 @using Mapster
 @using Melodee.Common.Extensions
 @using Melodee.Common.Models
@@ -11,6 +12,7 @@
 @using Melodee.Models
 @using Melodee.Plugins.Discovery.Releases
 @using Melodee.Plugins.MetaData.Track
+@using Microsoft.AspNetCore.Identity.UI.Services
 @using Serilog
 @using Release = Melodee.Models.Release
 
@@ -18,7 +20,7 @@
 @inject IReleasesDiscoverer ReleasesDiscoverer
 @inject ITrackPlugin TrackPlugin
 
-<div class="container-fluid">
+<div class="container-fluid" @onkeyup="ReleaseEditingKeyPress">
     <div class="row border-bottom border-secondary mb-2">
         <div class="col-7">
             <nav aria-label="...">
@@ -86,7 +88,7 @@
                 }
             </div>
         </div>
-        <div class="col" @onkeyup="ReleaseEditingKeyPress">
+        <div class="col">
             @if (_loading)
             {
                 <div class="d-flex justify-content-center">
@@ -213,7 +215,6 @@
             var ml = sender as MainLayout;
             RefreshReleasesAsync(ml?.SearchText, ml?.Filter).ConfigureAwait(true).GetAwaiter();
         };
-
         Layout.SelectReleasesChanged += (sender, selectAll) =>
         {
             if (selectAll)
@@ -225,58 +226,25 @@
                 _selectedReleaseIds.Clear();
             }
         };
-
-        Layout.MoveSelectedToLibraryChanged += async (sender, args) =>
-        {
-            _loading = true;
-            foreach (var selectedReleaseId in _selectedReleaseIds)
-            {
-                var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-                var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-                var releaseLibraryDirInfo = new DirectoryInfo(Path.Combine(Configuration.LibraryDirectory, release.ToDirectoryName()));
-                Directory.Move(releaseStagingDirInfo.FullName, releaseLibraryDirInfo.FullName);
-            }
-            _selectedReleaseIds.Clear();
-            ReleasesDiscoverer.ClearCache();
-            await RefreshReleasesAsync();
-        };
-
         Layout.DeleteSelectedChanged += async (sender, args) =>
         {
-            _loading = true;
-            foreach (var selectedReleaseId in _selectedReleaseIds)
-            {
-                var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-                var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-                try
-                {
-                    Directory.Delete(releaseStagingDirInfo.FullName, true);
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Error deleting [{ReleaseId}]", selectedReleaseId);
-                }
-
-            }
-            _selectedReleaseIds.Clear();
-            ReleasesDiscoverer.ClearCache();
+            await DeleteSelectedAsync();
+        };
+        Layout.MoveSelectedToLibraryChanged += async (sender, args) =>
+        {
+            await MoveSelectedToLibraryAsync();
+        };
+        Layout.RefreshChanged += async (sender, args) =>
+        {
             await RefreshReleasesAsync();
         };
-
+        Layout.SaveChanged += async (sender, args) =>
+        {
+            await SaveSelectedReleaseAsync();
+        };
         Layout.SetSelectedStatusReviewedChanged += async (sender, args) =>
         {
-            _loading = true;
-            foreach (var selectedReleaseId in _selectedReleaseIds)
-            {
-                var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-                var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-                release.Status = ReleaseStatus.Reviewed;
-                var serialized = System.Text.Json.JsonSerializer.Serialize(release, _jsonSerializerOptions);
-                await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-            }
-            _selectedReleaseIds.Clear();
-            ReleasesDiscoverer.ClearCache();
-            await RefreshReleasesAsync();
+            await SetSelectedReleaseStatusToReviewed();
         };
     }
 
@@ -285,7 +253,64 @@
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private async Task SaveSelectedRelease()
+    private async Task SetSelectedReleaseStatusToReviewed()
+    {
+        _loading = true;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+            release.Status = ReleaseStatus.Reviewed;
+            var serialized = System.Text.Json.JsonSerializer.Serialize(release, _jsonSerializerOptions);
+            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
+    }
+
+    private async Task MoveSelectedToLibraryAsync()
+    {
+        _loading = true;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+            var releaseLibraryDirInfo = new DirectoryInfo(Path.Combine(Configuration.LibraryDirectory, release.ToDirectoryName()));
+            Directory.Move(releaseStagingDirInfo.FullName, releaseLibraryDirInfo.FullName);
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
+    }
+
+    private async Task DeleteSelectedAsync()
+    {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
+        _loading = true;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+            try
+            {
+                Directory.Delete(releaseStagingDirInfo.FullName, true);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error deleting [{ReleaseId}]", selectedReleaseId);
+            }
+
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
+    }
+
+    private async Task SaveSelectedReleaseAsync()
     {
         _loading = true;
         var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, _selectedRelease!.UniqueId);
@@ -303,7 +328,7 @@
             release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.TrackNumber, track.Number);
         }
         release.Status = ReleaseStatus.Reviewed;
-        var serialized = System.Text.Json.JsonSerializer.Serialize(release, _jsonSerializerOptions);
+        var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
         var newReleaseDirectoryName = release.ToDirectoryName();
         if (newReleaseDirectoryName != releaseDirectoryName)
         {
@@ -323,6 +348,10 @@
 
     private async Task RefreshReleasesAsync(string? search = null, ReleaseResultFilter? filter = null)
     {
+        if (_loading)
+        {
+            return;
+        }
         _loading = true;
         var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
             Configuration.StagingDirectoryInfo, new PagedRequest
@@ -376,9 +405,32 @@
 
     private async Task ReleaseEditingKeyPress(KeyboardEventArgs obj)
     {
-        if (obj.CtrlKey && obj.Key == "s")
+        if (obj.CtrlKey)
         {
-            await SaveSelectedRelease();
+            switch (obj.Key)
+            {
+                case "d":
+                    await DeleteSelectedAsync();
+                    break;
+                case "m":
+                    await MoveSelectedToLibraryAsync();
+                    break;
+                case "r":
+                    await SetSelectedReleaseStatusToReviewed();
+                    break;
+                case "s":
+                    await SaveSelectedReleaseAsync();
+                    break;
+            }
+        }
+        if (obj.AltKey)
+        {
+            switch (obj.Key)
+            {
+                case "r":
+                    await RefreshReleasesAsync();
+                    break;
+            }
         }
     }
 }

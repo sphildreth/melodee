@@ -30,6 +30,14 @@ namespace Melodee
             appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
             appBuilder.Services.AddSingleton<ITrackPlugin, MetaTag>();
             
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .Enrich.FromLogContext()
+                .WriteTo.File("Logs/log.txt",
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",                    
+                    rollingInterval: RollingInterval.Day)
+                .CreateLogger();            
+            
             var app = appBuilder.Build();
 
             app.MainWindow
