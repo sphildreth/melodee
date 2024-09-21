@@ -19,14 +19,11 @@
     </div>
 </div>
 @code {
-    [Parameter]
-    public Release Release { get; set; } = null!;
+    [Parameter] public Release Release { get; set; } = null!;
 
-    [Parameter]
-    public bool IsSelected { get; set; }
+    [Parameter] public bool IsSelected { get; set; }
 
-    [Parameter]
-    public bool IsCurrent { get; set; }
+    [Parameter] public bool IsCurrent { get; set; }
 
     [Parameter] public byte[] DefaultReleaseCover { get; set; } = [];
 

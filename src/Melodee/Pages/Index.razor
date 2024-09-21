@@ -9,7 +9,9 @@
 @using Melodee.Common.Models
 @using Melodee.Common.Models.Configuration
 @using Melodee.Common.Models.Extensions
+@using Melodee.Common.Utility
 @using Melodee.Models
+@using Melodee.Models.Enums
 @using Melodee.Plugins.Discovery.Releases
 @using Melodee.Plugins.MetaData.Track
 @using Microsoft.AspNetCore.Identity.UI.Services
@@ -246,6 +248,29 @@
         {
             await SetSelectedReleaseStatusToReviewed();
         };
+        Layout.ToolSelectedChanged += async (sender, args) =>
+        {
+            switch (args)
+            {
+                case ToolMenuItem.DeleteAllImages:
+                    await DeleteAllImages();
+                    break;
+                case ToolMenuItem.PromoteTrackArtist:
+                    break;
+                case ToolMenuItem.RemoveAllTrackArtists:
+                    break;
+                case ToolMenuItem.RemoveArtistFromTrackArtists:
+                    break;
+                case ToolMenuItem.RemoveProvidedTextFromTrackTitle:
+                    break;
+                case ToolMenuItem.RenumberTracks:
+                    break;
+                case ToolMenuItem.ReplaceAllTrackArtistSeparators:
+                    break;
+                case ToolMenuItem.SetYearToCurrent:
+                    break;
+            }
+        };
     }
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -253,8 +278,41 @@
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    private async Task DeleteAllImages()
+    {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
+        _loading = true;
+        foreach (var selectedReleaseId in _selectedReleaseIds)
+        {
+            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
+            release.Images = [];
+            var serialized = System.Text.Json.JsonSerializer.Serialize(release, _jsonSerializerOptions);
+            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
+            foreach (var imageFile in ImageHelper.ImageFilesInDirectory(releaseStagingDirInfo.FullName, SearchOption.AllDirectories))
+            {
+                File.Delete(imageFile);
+            }
+            foreach (var track in release.Tracks!)
+            {
+                track.Images = [];
+                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
+            }
+        }
+        _selectedReleaseIds.Clear();
+        ReleasesDiscoverer.ClearCache();
+        await RefreshReleasesAsync();
+    }
+
     private async Task SetSelectedReleaseStatusToReviewed()
     {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
         _loading = true;
         foreach (var selectedReleaseId in _selectedReleaseIds)
         {
@@ -271,6 +329,10 @@
 
     private async Task MoveSelectedToLibraryAsync()
     {
+        if (_selectedReleaseIds.Count == 0)
+        {
+            return;
+        }
         _loading = true;
         foreach (var selectedReleaseId in _selectedReleaseIds)
         {
@@ -348,11 +410,8 @@
 
     private async Task RefreshReleasesAsync(string? search = null, ReleaseResultFilter? filter = null)
     {
-        if (_loading)
-        {
-            return;
-        }
         _loading = true;
+        StateHasChanged();
         var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
             Configuration.StagingDirectoryInfo, new PagedRequest
             {

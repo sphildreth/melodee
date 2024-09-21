@@ -320,6 +320,10 @@ public sealed class MetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Co
                             PictureInfo.PIC_TYPE.Front));
                     }
                 }
+                else
+                {
+                    fileAtl.EmbeddedPictures.Clear();
+                }
                 await fileAtl.SaveAsync();
                 result = true;
             }

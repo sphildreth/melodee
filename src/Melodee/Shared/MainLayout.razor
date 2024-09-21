@@ -1,4 +1,5 @@
 ﻿@using Melodee.Common.Models.Configuration
+@using Melodee.Models.Enums
 @inherits LayoutComponentBase
 
 @inject Configuration Configuration
@@ -61,14 +62,14 @@
                                 Tools
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Delete all Images</a></li>
-                                <li><a class="dropdown-item" href="#">Promote Track Artist</a></li>
-                                <li><a class="dropdown-item" href="#">Renumber Tracks</a></li>
-                                <li><a class="dropdown-item" href="#">Remove Artist from Track Artists</a></li>
-                                <li><a class="dropdown-item" href="#">Remove provided text from Track Title</a></li>
-                                <li><a class="dropdown-item" href="#">Remove all Track Artists</a></li>
-                                <li><a class="dropdown-item" href="#">Replace all Track Artist separators</a></li>
-                                <li><a class="dropdown-item" href="#">Set Year to Current</a></li>
+                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.DeleteAllImages))" href="#">Delete all Images</a></li>
+                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.PromoteTrackArtist))" href="#">Promote Track Artist</a></li>
+                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.RenumberTracks))" href="#">Renumber Tracks</a></li>
+                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.RemoveArtistFromTrackArtists))" href="#">Remove Artist from Track Artists</a></li>
+                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.RemoveProvidedTextFromTrackTitle))" href="#">Remove provided text from Track Title</a></li>
+                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.RemoveAllTrackArtists))" href="#">Remove all Track Artists</a></li>
+                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.ReplaceAllTrackArtistSeparators))" href="#">Replace all Track Artist separators</a></li>
+                                <li><a class="dropdown-item" @onclick="((e) => ToolSelected(ToolMenuItem.SetYearToCurrent))" href="#">Set Year to Current</a></li>
                                 <li>
                                     <a class="dropdown-item" href="#">
                                         Trim Track Titles &raquo;
@@ -147,6 +148,8 @@
 
     public event EventHandler? RefreshChanged;
 
+    public event EventHandler<ToolMenuItem>? ToolSelectedChanged;
+
     private void KeyUpCallback(KeyboardEventArgs obj)
     {
         SearchChanged?.Invoke(this, obj);
@@ -189,5 +192,10 @@
     private void Refresh()
     {
         RefreshChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ToolSelected(ToolMenuItem tool)
+    {
+        ToolSelectedChanged?.Invoke(this, tool);
     }
 }

@@ -24,7 +24,7 @@ public sealed record Track
     public required FileSystemFileInfo File { get; init; }
     
     [JsonIgnore]
-    public IEnumerable<ImageInfo>? Images { get; init; }
+    public IEnumerable<ImageInfo>? Images { get; set; }
     
     public IEnumerable<MetaTag<object?>>? Tags { get; init; }
     

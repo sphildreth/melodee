@@ -351,7 +351,7 @@ public static class ReleaseExtensions
     {
         if (release.Images?.Any() == true)
         {
-            var image = release.Images?.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
+            var image = release.Images?.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
             if (image != null)
             {
                 var dir = new DirectoryInfo(release.Directory?.Path ?? string.Empty);
