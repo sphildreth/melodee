@@ -10,6 +10,7 @@
   "LibraryDirectory": "/home/steven/viking/music/inbound/",
   "StagingDirectory": "/home/steven/incoming/melodee_test/staging",
   "Scripting": {
+    "Disabled": true,
     "PreDiscoveryScript": "/home/steven/incoming/melodee_test/scripts/PreDiscovery.py",
     "PostDiscoveryScript": null
   },

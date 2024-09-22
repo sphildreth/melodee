@@ -103,7 +103,7 @@ public static class ReleaseExtensions
             return false;
         }
 
-        if (release.Tracks!.Any(x => !x.IsValid(configuration)))
+        if (release.Tracks?.Any(x => !x.IsValid(configuration)) ?? false)
         {
             return false;
         }

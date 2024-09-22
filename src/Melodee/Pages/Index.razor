@@ -3,6 +3,7 @@
 
 @using Toolbelt.Blazor.HotKeys2
 @using System.Diagnostics
+@using System.Globalization
 @using System.Reflection
 @using System.Text.Json
 @using System.Text.Json.Serialization
@@ -208,6 +209,26 @@
     </div>
 </div>
 
+<Modal @ref="_processingModal" title="Very busy..." Size="ModalSize.Large" IsVerticallyCentered="true" UseStaticBackdrop="true" CloseOnEscape="false">
+    <BodyTemplate>
+        <div class="mb-2">
+            Please wait until processing completes.
+            <Progress Class="mb-3">
+                <ProgressBar @ref="_processingProgressBar" Width="0" Label="0%" />
+            </Progress>
+        </div>
+        <ul class="overflow-auto nerd-text" style="min-height: 300px;font-size: 12px;">
+            @foreach (var message in _processingMessages)
+            {
+                <li>@message</li>
+            }
+        </ul>
+    </BodyTemplate>
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary" @onclick="CancelProcessing">Stop Processing</Button>
+    </FooterTemplate>
+</Modal>
+
 <Modal @ref="_removeTextModal" Title="Remove provided text from Track Title" IsVerticallyCentered="true">
     <BodyTemplate>
         <div class="mb-2">
@@ -225,7 +246,7 @@
     </FooterTemplate>
 </Modal>
 
-<Modal @ref="_releaseDetailsModel" Title="@_releaseDetail.ReleaseTitle()" Size="ModalSize.ExtraLarge" IsVerticallyCentered="true">
+<Modal @ref="_releaseDetailsModal" Title="@_releaseDetail.ReleaseTitle()" Size="ModalSize.ExtraLarge" IsVerticallyCentered="true">
     <BodyTemplate>
         <div class="release-detail-container overflow-auto nerd-text">
             <div class="release-detail border-bottom">
@@ -250,7 +271,7 @@
                         <h5>Created</h5>
                     </div>
                     <div class="col-7">
-                        <p class="overflow-auto">@_releaseDetail.Created.ToString(Configuration.DateTimeDisplayFormat)</p>
+                        <p class="overflow-auto">@_releaseDetail.Created.ToString(Configuration.DateTimeDisplayFormatShort)</p>
                     </div>
                 </div>
                 @foreach (var tag in (_releaseDetail.Tags ?? Array.Empty<MetaTag<object?>>()).OrderBy(x => x.SortOrder))
@@ -313,13 +334,15 @@
         </div>
     </BodyTemplate>
     <FooterTemplate>
-        <Button Color="ButtonColor.Secondary" @onclick="@(async () => await _releaseDetailsModel.HideAsync())">Close</Button>
+        <Button Color="ButtonColor.Secondary" @onclick="@(async () => await _releaseDetailsModal.HideAsync())">Close</Button>
     </FooterTemplate>
 </Modal>
 
 @code {
     Modal _removeTextModal = default!;
-    Modal _releaseDetailsModel = default!;
+    Modal _releaseDetailsModal = default!;
+    Modal _processingModal = default!;
+    readonly List<string> _processingMessages = [];
 
     string? _removeTextValueToReplace;
     string? _removeTextValueToReplaceWith;
@@ -330,7 +353,7 @@
     short _take = 10;
     int _totalPages = 1;
     bool _loading = true;
-    bool _isProcessing = false;
+    bool _isProcessing;
     List<Release> _releases = [];
     ReleaseEditModel? _selectedRelease;
     ValidationResult? _selectedReleaseValidationResult;
@@ -381,7 +404,7 @@
         {
             UniqueId = detail.UniqueId,
             Artist = detail.Artist(),
-            CreatedFormattedDate = detail.Created.ToString(Configuration.DateTimeDisplayFormat),
+            CreatedFormattedDate = detail.Created.ToString(Configuration.DateTimeDisplayFormatShort),
             Genre = detail.Genre(),
             Title = detail.ReleaseTitle(),
             IsValid = detail.IsValid(Configuration),
@@ -429,6 +452,10 @@
 
                 case MenuItem.Refresh:
                     await RefreshReleasesAsync();
+                    break;
+
+                case MenuItem.RescanInbound:
+                    await RescanInboundFolder();
                     break;
 
                 case MenuItem.Save:
@@ -500,7 +527,7 @@
         }
 
         _releaseDetail = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, _selectedRelease.UniqueId);
-        await _releaseDetailsModel.ShowAsync();
+        await _releaseDetailsModal.ShowAsync();
     }
 
     private async Task OnRemoveTextHideModalClick()
@@ -723,6 +750,8 @@
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    private ProgressBar _processingProgressBar = default!;
+
     private async Task DeleteAllImages()
     {
         if (_selectedReleaseIds.Count == 0)
@@ -861,24 +890,35 @@
         await RefreshReleasesAsync();
     }
 
-    private async Task RescanStagingFolder()
+    private async Task RescanInboundFolder()
     {
         if (_isProcessing)
         {
             return;
         }
+        await _processingModal.ShowAsync();
         _isProcessing = true;
+        Layout.IsProcessing = true;
         try
         {
-            var sw = Stopwatch.StartNew();
-            Layout.IsProcessing = true;
-            var releasesProcessed = 0;
-            DirectoryProcessorPlugin.OnReleaseDiscovered += (sender, release) =>
+            var directoriesToProcess = 0;
+            var directoriesProcessed = 0;
+            DirectoryProcessorPlugin.OnProcessingStart += (sender, i) => directoriesToProcess = i;
+            DirectoryProcessorPlugin.OnDirectoryProcessed += (sender, release) =>
             {
-                releasesProcessed++;
+                directoriesProcessed++;
+                var percentageComplete = Math.Round((double)(100 * directoriesProcessed) / directoriesToProcess);
+                _processingProgressBar.SetWidth(percentageComplete);
+                _processingProgressBar.SetLabel($"{percentageComplete.ToString(CultureInfo.InvariantCulture)}%");
+                StateHasChanged();
             };
-            var rescanResult = await DirectoryProcessorPlugin.ProcessDirectoryAsync(Configuration.StagingDirectoryInfo);
-            if (!rescanResult.IsSuccess)
+            DirectoryProcessorPlugin.OnProcessingEvent += (sender, s) =>
+            {
+                _processingMessages.Insert(0, $"{ DateTime.Now.ToString(Configuration.DateTimeDisplayActivityFormatLong)}:: {s}");
+            };
+            var sw = Stopwatch.StartNew();
+            var rescanResult = await DirectoryProcessorPlugin.ProcessDirectoryAsync(Configuration.InboundDirectoryInfo);
+            if (!rescanResult?.IsSuccess ?? false)
             {
                 Layout.ToastService.Notify(new ToastMessage
                 {
@@ -894,7 +934,7 @@
             Layout.ToastService.Notify(new ToastMessage
             {
                 IconName = IconName.Activity,
-                Message = $"Rescan completed in [{sw}]. Processed [{releasesProcessed}] releases.",
+                Message = $"Rescan completed in [{sw}]. Processed [{directoriesProcessed}] releases.",
                 Title = "Rescan complete",
                 Type = ToastType.Success
             });
@@ -902,7 +942,14 @@
         finally
         {
             _isProcessing = false;
+            Layout.IsProcessing = false;
         }
+    }
+
+    private async Task CancelProcessing()
+    {
+        DirectoryProcessorPlugin.StopProcessing();
+        await _processingModal.HideAsync();
     }
 
     private async Task SaveSelectedReleaseAsync()
@@ -1010,7 +1057,6 @@
         }
     }
 
-
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
@@ -1022,7 +1068,7 @@
                 .Add(ModCode.Ctrl, Code.S, SaveSelectedReleaseAsync, new() { Description = "Save selected Release." })
                 .Add(ModCode.None, Code.F2, ShowReleaseDetails, new() { Description = "Show Details of selected Release." })
                 .Add(ModCode.None, Code.F5, (() => RefreshReleasesAsync()), new() { Description = "Refresh view of Staging Directory." })
-                .Add(ModCode.None, Code.F6, RescanStagingFolder, new() { Description = "Rescan Staging Directory." });
+                .Add(ModCode.None, Code.F6, RescanInboundFolder, new() { Description = "Rescan Inbound Directory." });
         }
     }
 }

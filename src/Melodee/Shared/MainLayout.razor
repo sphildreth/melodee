@@ -1,4 +1,5 @@
-﻿@using Melodee.Common.Models.Configuration
+﻿@using Melodee.Common.Extensions
+@using Melodee.Common.Models.Configuration
 @using Melodee.Models.Enums
 @inherits LayoutComponentBase
 
@@ -20,7 +21,7 @@
                                 <ul class="dropdown-menu clearfix">
                                     <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Save, null)))"><a class="dropdown-item" href="#">Save<span class="float-end hotkey">Ctrl+S</span></a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanStaging, null)))"><a class="dropdown-item" href="#">Rescan Staging<span class="float-end hotkey">F6</span></a></li>
+                                    <li class="@(IsProcessing ? "disabled" : string.Empty)" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanInbound, null)))"><a class="dropdown-item" href="#">Rescan Inbound<span class="float-end hotkey">F6</span></a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#">Delete Selected<span class="float-end hotkey">Ctrl+D</span></a></li>
                                     <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#">Move Selected to Library<span class="float-end hotkey">Ctrl+M</span></a></li>
@@ -64,6 +65,8 @@
                                     Tools
                                 </a>
                                 <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.DoMagic)))" href="#"><Icon Name="IconName.Magic" /> Do Magic on all releases</a></li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.DeleteAllImages)))" href="#">Delete all Images</a></li>
                                     <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.PromoteTrackArtist)))" href="#">Promote Track Artist</a></li>
                                     <li><a class="dropdown-item" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Tool, ToolMenuItem.RenumberTracks)))" href="#">Renumber Tracks</a></li>
@@ -150,5 +153,7 @@
     public event EventHandler<(MenuItem, object? option)>? MenuItemClicked;
 
     public bool IsProcessing { get; set; }
+
+
 
 }

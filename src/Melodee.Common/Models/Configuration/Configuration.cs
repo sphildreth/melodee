@@ -12,12 +12,16 @@ public sealed record Configuration
     ///     Files in this directory are scanned and Release information is gathered.
     /// </summary>
     public string InboundDirectory { get; set; } = null!;
+    
+    [JsonIgnore] public FileSystemDirectoryInfo InboundDirectoryInfo => new DirectoryInfo(InboundDirectory).ToDirectorySystemInfo();    
 
     /// <summary>
     ///     When the user is happy with scan results the user can select Releases (and all associated files) to move to this
     ///     directory in the proper directory structure.
     /// </summary>
     public string StagingDirectory { get; set; } = null!;
+    
+    [JsonIgnore] public FileSystemDirectoryInfo StagingDirectoryInfo => new DirectoryInfo(StagingDirectory).ToDirectorySystemInfo();    
 
     public int FilterLessThanTrackCount { get; set; } = 3;
 
@@ -25,14 +29,14 @@ public sealed record Configuration
 
     public TimeSpan FilterLessThanConfiguredTime => TimeSpan.FromMilliseconds(FilterLessThanConfiguredDuration);
 
-    [JsonIgnore] public FileSystemDirectoryInfo StagingDirectoryInfo => new DirectoryInfo(StagingDirectory).ToDirectorySystemInfo();
-
     public int StagingDirectoryScanLimit { get; set; } = 250;
 
     /// <summary>
     ///     This is the main storage library (holds all previously scanned/edited/approved Releases).
     /// </summary>
     public string LibraryDirectory { get; set; } = null!;
+    
+    [JsonIgnore] public FileSystemDirectoryInfo LibraryDirectoryInfo => new DirectoryInfo(LibraryDirectory).ToDirectorySystemInfo();
 
     /// <summary>
     ///     Settings for scripting files.
@@ -70,7 +74,12 @@ public sealed record Configuration
     public int ToastAutoCloseTime { get; set; } = 2000;
 
     /// <summary>
-    ///     Format to use when displaying full dates.
+    ///     Short Format to use when displaying full dates.
     /// </summary>
-    public string DateTimeDisplayFormat { get; set; } = "yyyyMMdd HH:m:s";
+    public string DateTimeDisplayFormatShort { get; set; } = "yyyyMMdd HH:mm";
+    
+    /// <summary>
+    ///     LongFormat to use when displaying full dates.
+    /// </summary>
+    public string DateTimeDisplayActivityFormatLong { get; set; } = "HH:mm:ss.fff";
 }

@@ -33,7 +33,8 @@ class Program
         appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
         appBuilder.Services.AddSingleton<ITrackPlugin, AtlMetaTag>();
         appBuilder.Services.AddSingleton<IReleaseValidator, ReleaseValidator>();
-        appBuilder.Services.AddSingleton<IDirectoryProcessorPlugin, DirectoryProcessor>(opt =>
+        
+        appBuilder.Services.AddTransient<IDirectoryProcessorPlugin, DirectoryProcessor>(opt =>
         {
             var configuration = opt.GetRequiredService<Configuration>();
             IScriptPlugin preScript = new NullScript(configuration);
