@@ -217,7 +217,7 @@
                 <ProgressBar @ref="_processingProgressBar" Width="0" Label="0%" />
             </Progress>
         </div>
-        <ul class="overflow-auto nerd-text" style="min-height: 300px;font-size: 12px;">
+        <ul class="overflow-auto nerd-text" style="height: 500px;font-size: 12px;">
             @foreach (var message in _processingMessages)
             {
                 <li>@message</li>
@@ -943,6 +943,7 @@
         {
             _isProcessing = false;
             Layout.IsProcessing = false;
+            await _processingModal.HideAsync();
         }
     }
 
@@ -997,38 +998,43 @@
         _loading = true;
         Layout.IsProcessing = true;
         StateHasChanged();
-        var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
-            Configuration.StagingDirectoryInfo, new PagedRequest
+        try
+        {
+            var releasesForStagingFolder = await ReleasesDiscoverer.ReleasesGridsForDirectoryAsync(
+                Configuration.StagingDirectoryInfo, new PagedRequest
+                {
+                    Page = _page,
+                    Take = _take,
+                    Search = search,
+                    Filter = filter,
+                    SelectedReleaseIds = _selectedReleaseIds.ToArray()
+                });
+            _releases = releasesForStagingFolder.Data.AsQueryable().ProjectToType<Release>().ToList();
+            _totalReleaseCount = releasesForStagingFolder.TotalCount;
+            _totalPages = releasesForStagingFolder.TotalPages;
+            if (_releases.Count > 0)
             {
-                Page = _page,
-                Take = _take,
-                Search = search,
-                Filter = filter,
-                SelectedReleaseIds = _selectedReleaseIds.ToArray()
+                await GetReleaseDetailAsync(_releases.First().UniqueId);
+            }
+            else
+            {
+                _selectedRelease = null;
+            }
+            sw.Stop();
+            Layout.ToastService.Notify(new ToastMessage
+            {
+                IconName = IconName.Activity,
+                Message = $"Refresh completed in [{sw}]",
+                Title = "Refresh complete",
+                Type = ToastType.Success
             });
-        _releases = releasesForStagingFolder.Data.AsQueryable().ProjectToType<Release>().ToList();
-        _totalReleaseCount = releasesForStagingFolder.TotalCount;
-        _totalPages = releasesForStagingFolder.TotalPages;
-        if (_releases.Count > 0)
-        {
-            await GetReleaseDetailAsync(_releases.First().UniqueId);
         }
-        else
+        finally
         {
-            _selectedRelease = null;
+            _loading = false;
+            StateHasChanged();
+            Layout.IsProcessing = false;
         }
-
-        sw.Stop();
-        _loading = false;
-        StateHasChanged();
-        Layout.ToastService.Notify(new ToastMessage
-        {
-            IconName = IconName.Activity,
-            Message = $"Refresh completed in [{sw}]",
-            Title = "Refresh complete",
-            Type = ToastType.Success
-        });
-        Layout.IsProcessing = false;
     }
 
     private async Task LastLastPage()
