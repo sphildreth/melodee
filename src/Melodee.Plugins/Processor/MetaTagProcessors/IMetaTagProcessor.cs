@@ -6,6 +6,6 @@ namespace Melodee.Plugins.Processor.MetaTagProcessors;
 public interface IMetaTagProcessor : IPlugin
 {
     bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier);
-    
+
     OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags);
 }

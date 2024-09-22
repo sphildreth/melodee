@@ -2,8 +2,8 @@ namespace Melodee.Common.Utility;
 
 public static class CRC32
 {
-    private static readonly uint[] Crc32Table = new uint[256];
     private const int BufferSize = 8192;
+    private static readonly uint[] Crc32Table = new uint[256];
 
     static CRC32()
     {
@@ -15,13 +15,17 @@ public static class CRC32
 
             for (uint i = 0; i < 256; i++)
             {
-                uint dwCrc = i;
+                var dwCrc = i;
                 for (uint j = 8; j > 0; j--)
                 {
                     if ((dwCrc & 1) == 1)
+                    {
                         dwCrc = (dwCrc >> 1) ^ dwPolynomial;
+                    }
                     else
+                    {
                         dwCrc >>= 1;
+                    }
                 }
 
                 Crc32Table[i] = dwCrc;
@@ -30,7 +34,7 @@ public static class CRC32
     }
 
     /// <summary>
-    /// Returns the CRC32 Checksum of a specified file as a string.
+    ///     Returns the CRC32 Checksum of a specified file as a string.
     /// </summary>
     /// <param name="file">The file.</param>
     /// <returns>CRC32 Checksum as a string.</returns>
@@ -40,28 +44,32 @@ public static class CRC32
         {
             throw new ArgumentNullException(nameof(file));
         }
+
         if (!file.Exists)
         {
             throw new ArgumentException($"File [{file.FullName}] not found.");
         }
+
         return $"{CalculateInt32(file):X8}";
     }
 
     /// <summary>
-    /// Returns the CRC32 Checksum of an input stream as a string.
+    ///     Returns the CRC32 Checksum of an input stream as a string.
     /// </summary>
     /// <param name="stream">Input stream.</param>
     /// <returns>CRC32 Checksum as a string.</returns>
     public static string Calculate(Stream stream)
     {
         if (stream == null)
+        {
             throw new ArgumentNullException(nameof(stream));
+        }
 
         return $"{CalculateInt32(stream):X8}";
     }
 
     /// <summary>
-    /// Returns the CRC32 Checksum of a byte array as a string.
+    ///     Returns the CRC32 Checksum of a byte array as a string.
     /// </summary>
     /// <param name="data">The byte array.</param>
     /// <returns>CRC32 Checksum as a string.</returns>
@@ -71,11 +79,12 @@ public static class CRC32
         {
             throw new ArgumentNullException(nameof(data));
         }
+
         return $"{CalculateInt32(data):X8}";
     }
 
     /// <summary>
-    /// Returns the CRC32 Checksum of a specified file as a four byte signed integer (Int32).
+    ///     Returns the CRC32 Checksum of a specified file as a four byte signed integer (Int32).
     /// </summary>
     /// <param name="file">The file.</param>
     /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
@@ -85,14 +94,15 @@ public static class CRC32
         {
             throw new ArgumentNullException(nameof(file));
         }
-        using (FileStream fileStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
+
+        using (var fileStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             return CalculateInt32(fileStream);
         }
     }
 
     /// <summary>
-    /// Returns the CRC32 Checksum of an input stream as a four byte signed integer (Int32).
+    ///     Returns the CRC32 Checksum of an input stream as a four byte signed integer (Int32).
     /// </summary>
     /// <param name="stream">The stream.</param>
     /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
@@ -102,19 +112,20 @@ public static class CRC32
         {
             throw new ArgumentNullException(nameof(stream));
         }
+
         unchecked
         {
             stream.Position = 0;
-            uint crc32Result = 0xFFFFFFFF;
-            byte[] buffer = new byte[BufferSize];
+            var crc32Result = 0xFFFFFFFF;
+            var buffer = new byte[BufferSize];
 
-            int count = stream.Read(buffer, 0, BufferSize);
+            var count = stream.Read(buffer, 0, BufferSize);
             while (count > 0)
             {
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
-                    crc32Result = ((crc32Result) >> 8) ^ Crc32Table[(buffer[i]) ^
-                                                                    ((crc32Result) & 0x000000FF)];
+                    crc32Result = (crc32Result >> 8) ^ Crc32Table[buffer[i] ^
+                                                                  (crc32Result & 0x000000FF)];
                 }
 
                 count = stream.Read(buffer, 0, BufferSize);
@@ -125,7 +136,7 @@ public static class CRC32
     }
 
     /// <summary>
-    /// Returns the CRC32 Checksum of a byte array as a four byte signed integer (Int32).
+    ///     Returns the CRC32 Checksum of a byte array as a four byte signed integer (Int32).
     /// </summary>
     /// <param name="data">The byte array.</param>
     /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
@@ -135,7 +146,8 @@ public static class CRC32
         {
             throw new ArgumentNullException(nameof(data));
         }
-        using (MemoryStream memoryStream = new MemoryStream(data))
+
+        using (var memoryStream = new MemoryStream(data))
         {
             return CalculateInt32(memoryStream);
         }

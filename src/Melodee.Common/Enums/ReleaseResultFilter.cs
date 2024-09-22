@@ -11,5 +11,5 @@ public enum ReleaseResultFilter
     NeedsAttention,
     ReadyToMove,
     Selected,
-    LessThanConfiguredDuration,
+    LessThanConfiguredDuration
 }

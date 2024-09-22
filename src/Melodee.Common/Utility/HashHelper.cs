@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using K4os.Hash.xxHash;
 
 namespace Melodee.Common.Utility;
 
@@ -11,10 +12,14 @@ public static class HashHelper
         {
             return null;
         }
+
         return CreateMd5(Encoding.UTF8.GetBytes(input));
     }
 
-    public static string? CreateMd5(FileInfo file) => CreateMd5(File.ReadAllBytes(file.FullName));
+    public static string? CreateMd5(FileInfo file)
+    {
+        return CreateMd5(File.ReadAllBytes(file.FullName));
+    }
 
     private static string? CreateMd5(byte[]? bytes)
     {
@@ -22,18 +27,20 @@ public static class HashHelper
         {
             return null;
         }
+
         using (var md5 = MD5.Create())
         {
-            byte[] data = md5.ComputeHash(bytes);
+            var data = md5.ComputeHash(bytes);
 
             // Create a new StringBuilder to collect the bytes and create a string.
-            StringBuilder sBuilder = new StringBuilder();
+            var sBuilder = new StringBuilder();
 
             // Loop through each byte of the hashed data and format each one as a hexadecimal string.
             foreach (var t in data)
             {
                 sBuilder.Append(t.ToString("x2"));
             }
+
             // Return the hexadecimal string.
             return sBuilder.ToString();
         }
@@ -41,6 +48,6 @@ public static class HashHelper
 
     public static uint GetHash(string file)
     {
-        return K4os.Hash.xxHash.XXH32.DigestOf(File.ReadAllBytes(file));
+        return XXH32.DigestOf(File.ReadAllBytes(file));
     }
 }

@@ -1,10 +1,9 @@
 using Melodee.Common.Models;
-using Melodee.Common.Models.Extensions;
 
 namespace Melodee.Plugins.MetaData.Directory.Models;
 
 /// <summary>
-/// Represents data found in a Sfv file line
+///     Represents data found in a Sfv file line
 /// </summary>
 public sealed record SfvLine
 {
@@ -14,11 +13,6 @@ public sealed record SfvLine
 
 
     public required string CrcHash { get; init; }
-
-    public override string ToString()
-    {
-        return $"IsValid [{IsValid}] FileSystemFileInfo [{FileSystemFileInfo}]";
-    }
 
     public bool Equals(SfvLine? other)
     {
@@ -45,6 +39,11 @@ public sealed record SfvLine
         return IsValid == other.IsValid &&
                string.Equals(FileSystemFileInfo.Name, other.FileSystemFileInfo.Name, StringComparison.OrdinalIgnoreCase) &&
                CrcHash == other.CrcHash;
+    }
+
+    public override string ToString()
+    {
+        return $"IsValid [{IsValid}] FileSystemFileInfo [{FileSystemFileInfo}]";
     }
 
     public override int GetHashCode()

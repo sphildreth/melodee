@@ -1,9 +1,7 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
-using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData;
 using SixLabors.ImageSharp;
 using Configuration = Melodee.Common.Models.Configuration.Configuration;
@@ -29,6 +27,7 @@ public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(c
         {
             return false;
         }
+
         return FileHelper.IsFileImageType(fileSystemInfo.Extension(directoryInfo));
     }
 

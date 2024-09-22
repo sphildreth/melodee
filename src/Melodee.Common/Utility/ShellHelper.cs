@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Serilog;
 
 namespace Melodee.Common.Utility;
 
@@ -44,7 +43,7 @@ public static class ShellHelper
         }
         catch (Exception e)
         {
-            Trace.WriteLine($"Command Line [{ cmd }] Failed Error [{e }", "Error");
+            Trace.WriteLine($"Command Line [{cmd}] Failed Error [{e}", "Error");
             source.SetException(e);
         }
 

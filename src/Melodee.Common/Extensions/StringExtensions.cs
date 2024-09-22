@@ -11,68 +11,66 @@ namespace Melodee.Common.Extensions;
 public static partial class StringExtensions
 {
     private static readonly string YearParseRegex = "(19|20)\\d{2}";
-        
+
     private static readonly string TrackNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
 
     private static readonly string VariousArtistParseRegex = @"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))";
 
     private static readonly string SoundTrackArtistParseRegex = @"(sound\s*track[s]*)";
-        
-    private static readonly string CastRecordingTrackArtistParseRegex = @"(original broadway cast|original cast*)";
-        
-    public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-       
-    private static readonly string RomanRegex = @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
-        
-    private static readonly string[] Conjunctions = ["Y", "E", "I"];
-      
-    private static readonly Dictionary<char, string> UnicodeAccents = new Dictionary<char, string>
-    {
-        {'À', "A"}, {'Á', "A"}, {'Â', "A"}, {'Ã', "A"}, {'Ä', "Ae"}, {'Å', "A"}, {'Æ', "Ae"},
-        {'Ç', "C"},
-        {'È', "E"}, {'É', "E"}, {'Ê', "E"}, {'Ë', "E"},
-        {'Ì', "I"}, {'Í', "I"}, {'Î', "I"}, {'Ï', "I"},
-        {'Ð', "Dh"}, {'Þ', "Th"},
-        {'Ñ', "N"},
-        {'Ò', "O"}, {'Ó', "O"}, {'Ô', "O"}, {'Õ', "O"}, {'Ö', "Oe"}, {'Ø', "Oe"},
-        {'Ù', "U"}, {'Ú', "U"}, {'Û', "U"}, {'Ü', "Ue"},
-        {'Ý', "Y"},
-        {'ß', "ss"},
-        {'à', "a"}, {'á', "a"}, {'â', "a"}, {'ã', "a"}, {'ä', "ae"}, {'å', "a"}, {'æ', "ae"},
-        {'ç', "c"},
-        {'è', "e"}, {'é', "e"}, {'ê', "e"}, {'ë', "e"},
-        {'ì', "i"}, {'í', "i"}, {'î', "i"}, {'ï', "i"},
-        {'ð', "dh"}, {'þ', "th"},
-        {'ñ', "n"},
-        {'ò', "o"}, {'ó', "o"}, {'ô', "o"}, {'õ', "o"}, {'ö', "oe"}, {'ø', "oe"},
-        {'ù', "u"}, {'ú', "u"}, {'û', "u"}, {'ü', "ue"},
-        {'ý', "y"}, {'ÿ', "y"}
-    };
 
-    // ReSharper disable StringLiteralTypo        
-    private static readonly Dictionary<string, string> MacExceptions = new Dictionary<string, string>
+    private static readonly string CastRecordingTrackArtistParseRegex = @"(original broadway cast|original cast*)";
+
+    public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly string RomanRegex = @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
+
+    private static readonly string[] Conjunctions = ["Y", "E", "I"];
+
+    private static readonly Dictionary<char, string> UnicodeAccents = new()
     {
-        {@"\bMacEdo"     ,"Macedo"},
-        {@"\bMacEvicius" ,"Macevicius"},
-        {@"\bMacHado"    ,"Machado"},
-        {@"\bMacHar"     ,"Machar"},
-        {@"\bMacHin"     ,"Machin"},
-        {@"\bMacHlin"    ,"Machlin"},
-        {@"\bMacIas"     ,"Macias"},
-        {@"\bMacIulis"   ,"Maciulis"},
-        {@"\bMacKie"     ,"Mackie"},
-        {@"\bMacKle"     ,"Mackle"},
-        {@"\bMacKlin"    ,"Macklin"},
-        {@"\bMacKmin"    ,"Mackmin"},
-        {@"\bMacQuarie"  ,"Macquarie"},
-        {@"\bMacEy "     ,"Macey "}
+        { 'À', "A" }, { 'Á', "A" }, { 'Â', "A" }, { 'Ã', "A" }, { 'Ä', "Ae" }, { 'Å', "A" }, { 'Æ', "Ae" },
+        { 'Ç', "C" },
+        { 'È', "E" }, { 'É', "E" }, { 'Ê', "E" }, { 'Ë', "E" },
+        { 'Ì', "I" }, { 'Í', "I" }, { 'Î', "I" }, { 'Ï', "I" },
+        { 'Ð', "Dh" }, { 'Þ', "Th" },
+        { 'Ñ', "N" },
+        { 'Ò', "O" }, { 'Ó', "O" }, { 'Ô', "O" }, { 'Õ', "O" }, { 'Ö', "Oe" }, { 'Ø', "Oe" },
+        { 'Ù', "U" }, { 'Ú', "U" }, { 'Û', "U" }, { 'Ü', "Ue" },
+        { 'Ý', "Y" },
+        { 'ß', "ss" },
+        { 'à', "a" }, { 'á', "a" }, { 'â', "a" }, { 'ã', "a" }, { 'ä', "ae" }, { 'å', "a" }, { 'æ', "ae" },
+        { 'ç', "c" },
+        { 'è', "e" }, { 'é', "e" }, { 'ê', "e" }, { 'ë', "e" },
+        { 'ì', "i" }, { 'í', "i" }, { 'î', "i" }, { 'ï', "i" },
+        { 'ð', "dh" }, { 'þ', "th" },
+        { 'ñ', "n" },
+        { 'ò', "o" }, { 'ó', "o" }, { 'ô', "o" }, { 'õ', "o" }, { 'ö', "oe" }, { 'ø', "oe" },
+        { 'ù', "u" }, { 'ú', "u" }, { 'û', "u" }, { 'ü', "ue" },
+        { 'ý', "y" }, { 'ÿ', "y" }
+    }; // ReSharper disable StringLiteralTypo        
+    private static readonly Dictionary<string, string> MacExceptions = new()
+    {
+        { @"\bMacEdo", "Macedo" },
+        { @"\bMacEvicius", "Macevicius" },
+        { @"\bMacHado", "Machado" },
+        { @"\bMacHar", "Machar" },
+        { @"\bMacHin", "Machin" },
+        { @"\bMacHlin", "Machlin" },
+        { @"\bMacIas", "Macias" },
+        { @"\bMacIulis", "Maciulis" },
+        { @"\bMacKie", "Mackie" },
+        { @"\bMacKle", "Mackle" },
+        { @"\bMacKlin", "Macklin" },
+        { @"\bMacKmin", "Mackmin" },
+        { @"\bMacQuarie", "Macquarie" },
+        { @"\bMacEy ", "Macey " }
     };
     // ReSharper enable StringLiteralTypo
-        
-    private static readonly Dictionary<string, string> NameCaseReplacements = new Dictionary<string, string>
+
+    private static readonly Dictionary<string, string> NameCaseReplacements = new()
     {
         { "o'reilly", "O'Reilly" }
-    };        
+    };
 
     public static string? Nullify(this string? input)
     {
@@ -83,13 +81,14 @@ public static partial class StringExtensions
 
         return input.Trim();
     }
-        
+
     public static string? ToTitleCase(this string input, bool doPutTheAtEnd = true)
     {
         if (string.IsNullOrEmpty(input))
         {
             return null;
         }
+
         input = input.Replace("’", "'");
         var textInfo = new CultureInfo("en-US", false).TextInfo;
         var r = textInfo.ToTitleCase(input.Trim().ToLower());
@@ -98,12 +97,13 @@ public static partial class StringExtensions
         {
             if (r.StartsWith("The "))
             {
-                r = $"{(r.Replace("The ", string.Empty))}, The";
+                r = $"{r.Replace("The ", string.Empty)}, The";
             }
         }
+
         return r.NameCase();
-    }       
-        
+    }
+
     // ReSharper disable once MemberCanBePrivate.Global
     public static string NameCase(this string nameString, bool doFixConjunction = false)
     {
@@ -114,11 +114,13 @@ public static partial class StringExtensions
         {
             nameString = FixConjunction(nameString);
         }
+
         nameString = Regex.Replace(nameString, @"('[A-Z])", m => m.ToString().ToLower(), RegexOptions.IgnoreCase);
         foreach (var replacement in NameCaseReplacements.Keys)
         {
             nameString = nameString.Replace(replacement, NameCaseReplacements[replacement], StringComparison.OrdinalIgnoreCase);
         }
+
         return nameString;
     }
 
@@ -128,12 +130,13 @@ public static partial class StringExtensions
         {
             nameString = Regex.Replace(nameString, @"\b" + conjunction + @"\b", x => x.ToString().ToLower());
         }
+
         return nameString;
     }
 
     private static string UpdateRoman(string nameString)
     {
-        MatchCollection matches = Regex.Matches(nameString, RomanRegex);
+        var matches = Regex.Matches(nameString, RomanRegex);
         if (matches.Count > 1)
         {
             foreach (Match match in matches)
@@ -144,6 +147,7 @@ public static partial class StringExtensions
                 }
             }
         }
+
         return nameString;
     }
 
@@ -153,20 +157,21 @@ public static partial class StringExtensions
         {
             nameString = UpdateMac(nameString);
         }
+
         return nameString;
-    }        
-        
+    }
+
     /// <summary>
-    /// Updates irish Mac & Mc.
+    ///     Updates irish Mac & Mc.
     /// </summary>
     /// <param name="nameString"></param>
     /// <returns></returns>
     private static string UpdateMac(string nameString)
     {
-        MatchCollection matches = Regex.Matches(nameString, @"\b(Ma?c)([A-Za-z]+)");
+        var matches = Regex.Matches(nameString, @"\b(Ma?c)([A-Za-z]+)");
         if (matches is [{ Groups.Count: 3 }])
         {
-            string replacement = matches[0].Groups[1].Value;
+            var replacement = matches[0].Groups[1].Value;
             replacement += matches[0].Groups[2].Value.Substring(0, 1).ToUpper();
             replacement += matches[0].Groups[2].Value.Substring(1);
             nameString = nameString.Replace(matches[0].Groups[0].Value, replacement);
@@ -177,6 +182,7 @@ public static partial class StringExtensions
                 nameString = Regex.Replace(nameString, exception, MacExceptions[exception]);
             }
         }
+
         return nameString;
     }
 
@@ -186,7 +192,7 @@ public static partial class StringExtensions
         nameString = Regex.Replace(nameString, @"\b\w", x => x.ToString().ToUpper());
         nameString = Regex.Replace(nameString, @"'\w\b", x => x.ToString().ToLower()); // Lowercase 's
         return nameString;
-    }        
+    }
 
     public static string? CleanString(this string input, bool? doPutTheAtEnd = false)
     {
@@ -194,12 +200,14 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         var result = input;
         result = result.Trim().ToTitleCase(doPutTheAtEnd ?? false);
         if (string.IsNullOrEmpty(result))
         {
             return input;
-        }           
+        }
+
         return Regex.Replace(result.Replace("’", "'"), @"\s+", " ").Trim();
     }
 
@@ -220,6 +228,7 @@ public static partial class StringExtensions
         {
             return input;
         }
+
         input = input.ToLower()
             .Replace("$", "s")
             .Replace("%", "per");
@@ -232,13 +241,14 @@ public static partial class StringExtensions
         input = Regex.Replace(input, $"[^A-Za-z0-9{(!stripSpaces ? @"\s" : string.Empty)}{(!stripCommas ? "," : string.Empty)}]+", string.Empty);
         return input;
     }
-        
+
     public static string? ToDirectoryNameFriendly(this string? input)
     {
         if (string.IsNullOrEmpty(input))
         {
             return null;
         }
+
         input = input.Replace("$", "s");
         return Regex.Replace(PathSanitizer.SanitizeFilename(input, ' ') ?? string.Empty, @"\s+", " ").Trim().TrimEnd('.');
     }
@@ -337,14 +347,17 @@ public static partial class StringExtensions
         {
             return true;
         }
+
         if (a1 == null && a2 != null)
         {
             return false;
         }
+
         if (a1 != null && a2 == null)
         {
             return false;
         }
+
         return string.Equals(a1?.ToAlphanumericName(), a2?.ToAlphanumericName());
     }
 
@@ -354,46 +367,53 @@ public static partial class StringExtensions
         {
             return null;
         }
-        if(Regex.IsMatch(input, YearParseRegex, RegexOptions.RightToLeft))
+
+        if (Regex.IsMatch(input, YearParseRegex, RegexOptions.RightToLeft))
         {
             return SafeParser.ToNumber<int?>(Regex.Match(input, YearParseRegex, RegexOptions.RightToLeft).Value);
         }
+
         return null;
     }
-        
+
     public static int? TryToGetTrackNumberFromString(this string input)
     {
         if (input.Nullify() == null)
         {
             return null;
         }
-        if(Regex.IsMatch(input, TrackNumberParseRegex))
+
+        if (Regex.IsMatch(input, TrackNumberParseRegex))
         {
             var v = new string(Regex.Match(input, TrackNumberParseRegex).Value.Where(char.IsDigit).ToArray());
             return SafeParser.ToNumber<int?>(v);
         }
+
         return null;
-    }        
-        
+    }
+
     public static string? RemoveTrackNumberFromString(this string input)
     {
         if (input.Nullify() == null)
         {
             return null;
         }
+
         return Regex.IsMatch(input, TrackNumberParseRegex) ? Regex.Replace(input, TrackNumberParseRegex, string.Empty) : input;
     }
-        
+
     public static bool IsVariousArtistValue(this string? input)
     {
         if (input.Nullify() == null)
         {
             return false;
         }
+
         if (string.Equals(input, "va", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
+
         return Regex.IsMatch(input!, VariousArtistParseRegex, RegexOptions.IgnoreCase);
     }
 
@@ -401,7 +421,7 @@ public static partial class StringExtensions
     {
         return input.Nullify() != null && Regex.IsMatch(input!, CastRecordingTrackArtistParseRegex, RegexOptions.IgnoreCase);
     }
-        
+
     public static bool IsSoundTrackAristValue(this string? input)
     {
         return input.Nullify() != null && Regex.IsMatch(input!, SoundTrackArtistParseRegex, RegexOptions.IgnoreCase);
@@ -416,7 +436,7 @@ public static partial class StringExtensions
     {
         return input.Nullify() == null ? null : Path.GetFileNameWithoutExtension(input!);
     }
-        
+
     public static FileSystemDirectoryInfo ToDirectoryInfo(this string? input)
     {
         if (!string.IsNullOrWhiteSpace(input))
@@ -426,7 +446,8 @@ public static partial class StringExtensions
                 var fileInfo = new FileInfo(input);
                 return fileInfo.Directory?.ToDirectorySystemInfo() ?? FileSystemDirectoryInfo.Blank();
             }
-            return (new DirectoryInfo(input).ToDirectorySystemInfo());
+
+            return new DirectoryInfo(input).ToDirectorySystemInfo();
         }
 
         return new FileSystemDirectoryInfo
@@ -448,12 +469,13 @@ public static partial class StringExtensions
         {
             return result[1..];
         }
+
         return result;
     }
 
     [GeneratedRegex("[^a-zA-Z0-9 -.:]")]
     private static partial Regex OnlyAlphaNumericRegex();
-        
+
     [GeneratedRegex(@"\s{2,}")]
     private static partial Regex ReplaceMultipleSpacesRegex();
 }

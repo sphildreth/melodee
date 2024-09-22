@@ -1,12 +1,11 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Melodee.Cli.CommandSettings;
-using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
-using Melodee.Plugins.Scripting;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -40,7 +39,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             StagingDirectory = string.Empty,
             LibraryDirectory = string.Empty
         };
-        
+
         var fileInfo = new FileInfo(settings.Filename);
         if (!fileInfo.Exists)
         {
@@ -51,14 +50,14 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         {
             throw new Exception($"Parse Directory [{settings.Filename}] does not exist.");
         }
-        
+
         var sw = Stopwatch.StartNew();
         Log.Debug("\u250d Parsing File [{NfoFilename}]", settings.Filename);
 
-        bool isValid = false;
-        
+        var isValid = false;
+
         var sfv = new SimpleFileVerification(
-            new []
+            new[]
             {
                 new AtlMetaTag(new MetaTagsProcessor(config), config)
             }, config);
@@ -74,22 +73,23 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 if (settings.Verbose)
                 {
                     AnsiConsole.Write(
-                        new Panel(new JsonText(System.Text.Json.JsonSerializer.Serialize(svfResult)))
+                        new Panel(new JsonText(JsonSerializer.Serialize(svfResult)))
                             .Header("Parse Result")
                             .Collapse()
                             .RoundedBorder()
                             .BorderColor(Color.Yellow));
                 }
+
                 isValid = svfResult.IsSuccess;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
             }
-        }        
-        
+        }
+
         var m3u = new M3UPlaylist(
-            new []
+            new[]
             {
                 new AtlMetaTag(new MetaTagsProcessor(config), config)
             }, config);
@@ -105,20 +105,21 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 if (settings.Verbose)
                 {
                     AnsiConsole.Write(
-                        new Panel(new JsonText(System.Text.Json.JsonSerializer.Serialize(svfResult)))
+                        new Panel(new JsonText(JsonSerializer.Serialize(svfResult)))
                             .Header("Parse Result")
                             .Collapse()
                             .RoundedBorder()
                             .BorderColor(Color.Yellow));
                 }
+
                 isValid = svfResult.IsSuccess;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
             }
-        }          
-        
+        }
+
         var nfo = new Nfo(config);
         if (nfo.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
         {
@@ -132,12 +133,13 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 if (settings.Verbose)
                 {
                     AnsiConsole.Write(
-                        new Panel(new JsonText(System.Text.Json.JsonSerializer.Serialize(nfoParserResult)))
+                        new Panel(new JsonText(JsonSerializer.Serialize(nfoParserResult)))
                             .Header("Parse Result")
                             .Collapse()
                             .RoundedBorder()
                             .BorderColor(Color.Yellow));
                 }
+
                 isValid = nfoParserResult.IsValid(config);
             }
             catch (Exception e)

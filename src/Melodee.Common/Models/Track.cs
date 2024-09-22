@@ -9,31 +9,33 @@ namespace Melodee.Common.Models;
 public sealed record Track
 {
     public long ReleaseUniqueId => SafeParser.Hash(this.ReleaseArtist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
-    
+
     /// <summary>
-    /// Unique TrackId on Release
+    ///     Unique TrackId on Release
     /// </summary>
-    public long TrackId => SafeParser.Hash(this.MediaNumber().ToString(), this.TrackNumber().ToString(), this.Title());    
-    
+    public long TrackId => SafeParser.Hash(this.MediaNumber().ToString(), this.TrackNumber().ToString(), this.Title());
+
     /// <summary>
-    /// Globally UnqiueId 
+    ///     Globally UnqiueId
     /// </summary>
-    public long UniqueId => SafeParser.Hash(ReleaseUniqueId.ToString(), this.TrackArtist(), this.TrackYear().ToString(), this.MediaNumber().ToString(), this.TrackNumber().ToString(), this.Title()); 
-    
+    public long UniqueId => SafeParser.Hash(ReleaseUniqueId.ToString(), this.TrackArtist(), this.TrackYear().ToString(), this.MediaNumber().ToString(), this.TrackNumber().ToString(), this.Title());
+
     public required string CrcHash { get; init; }
-    
+
     public required FileSystemFileInfo File { get; init; }
-    
-    [JsonIgnore]
-    public IEnumerable<ImageInfo>? Images { get; set; }
-    
+
+    [JsonIgnore] public IEnumerable<ImageInfo>? Images { get; set; }
+
     public IEnumerable<MetaTag<object?>>? Tags { get; init; }
-    
+
     public IEnumerable<MediaAudio<object?>>? MediaAudios { get; init; }
 
     public int SortOrder { get; set; }
 
-    public string DisplaySummary => $"{this.MediaNumber().ToStringPadLeft(2)}/{this.MediaTotalNumber().ToStringPadLeft(2)} : {this.TrackNumber().ToStringPadLeft(3)}/{this.TrackTotalNumber().ToStringPadLeft(3)} : { this.Title() }";
-    
-    public override string ToString() => $"ReleaseId [{ReleaseUniqueId}] TrackId [{UniqueId}] File [{File}]";
+    public string DisplaySummary => $"{this.MediaNumber().ToStringPadLeft(2)}/{this.MediaTotalNumber().ToStringPadLeft(2)} : {this.TrackNumber().ToStringPadLeft(3)}/{this.TrackTotalNumber().ToStringPadLeft(3)} : {this.Title()}";
+
+    public override string ToString()
+    {
+        return $"ReleaseId [{ReleaseUniqueId}] TrackId [{UniqueId}] File [{File}]";
+    }
 }

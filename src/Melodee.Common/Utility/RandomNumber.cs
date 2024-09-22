@@ -2,7 +2,7 @@ namespace Melodee.Common.Utility;
 
 public sealed class RandomNumber : IRandomNumber
 {
-    private static readonly Random Global = new Random();
+    private static readonly Random Global = new();
     [ThreadStatic] private static Random? _local;
 
     public int Next(int max)
@@ -11,12 +11,20 @@ public sealed class RandomNumber : IRandomNumber
         if (localBuffer == null)
         {
             int seed;
-            lock (Global) seed = Global.Next();
+            lock (Global)
+            {
+                seed = Global.Next();
+            }
+
             localBuffer = new Random(seed);
             _local = localBuffer;
         }
+
         return localBuffer.Next(max);
     }
 
-    public int Next() => Next(int.MaxValue);
+    public int Next()
+    {
+        return Next(int.MaxValue);
+    }
 }

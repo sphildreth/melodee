@@ -1,8 +1,10 @@
 # MetaTag Notes
 
-ID3 Tags are tricky and vary across vendor and implementation. This attempts to normalize tags across these varying sources.
+ID3 Tags are tricky and vary across vendor and implementation. This attempts to normalize tags across these varying
+sources.
 
 Some reference sites:
+
 * https://github.com/Zeugma440/atldotnet/blob/main/ATL/AudioData/IO/ID3v2.cs
 * https://wiki.hydrogenaud.io/index.php?title=Tag_Mapping
 * https://exiftool.org/TagNames/ID3.html

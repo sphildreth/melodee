@@ -1,16 +1,12 @@
-using System.Net.Security;
 using System.Text.Json;
 using Melodee.Common.Enums;
-using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Cards;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
-using Microsoft.VisualBasic;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -20,27 +16,17 @@ namespace Melodee.Plugins.Discovery.Releases;
 public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 {
     private readonly Configuration _configuration;
+
+    private readonly IEnumerable<IDirectoryPlugin> _enabledReleasePlugins;
     private readonly IDictionary<FileSystemDirectoryInfo, IEnumerable<Release>> _releaseCache = new Dictionary<FileSystemDirectoryInfo, IEnumerable<Release>>();
 
     private readonly IEnumerable<ITrackPlugin> _trackPlugins;
 
-    private readonly IEnumerable<IDirectoryPlugin> _enabledReleasePlugins;
-    
-    public string DisplayName => nameof(ReleasesDiscoverer);
-
-    public string Id => "3528BA3F-4130-4913-9C9F-C7F0F8FF2B4D";
-
-    public bool IsEnabled { get; set; } = true;
-    
-    public int SortOrder => 0;
-
-    public void ClearCache() => _releaseCache.Clear();
-    
     public ReleasesDiscoverer(Configuration configuration)
     {
         _configuration = configuration;
         var config = configuration;
-        
+
         _trackPlugins = new ITrackPlugin[]
         {
             new AtlMetaTag(new MetaTagsProcessor(config), config)
@@ -53,7 +39,20 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             new SimpleFileVerification(_trackPlugins, config)
         };
     }
-    
+
+    public string DisplayName => nameof(ReleasesDiscoverer);
+
+    public string Id => "3528BA3F-4130-4913-9C9F-C7F0F8FF2B4D";
+
+    public bool IsEnabled { get; set; } = true;
+
+    public int SortOrder => 0;
+
+    public void ClearCache()
+    {
+        _releaseCache.Clear();
+    }
+
     public async Task<Release> ReleaseByUniqueIdAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         long uniqueId,
@@ -69,29 +68,31 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 OriginalDirectory = fileSystemDirectoryInfo
             };
         }
+
         return result;
     }
 
     public async Task<PagedResult<Release>> ReleasesForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
-        PagedRequest pagedRequest, 
+        PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
         var releases = new List<Release>();
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-        
+
         var dataForDirectoryInfoResult = await AllReleasesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
         if (dataForDirectoryInfoResult.IsSuccess)
         {
             releases.AddRange(dataForDirectoryInfoResult.Data);
         }
-        
+
         foreach (var childDir in dirInfo.EnumerateDirectories("*.*", SearchOption.AllDirectories))
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
+
             var dataForChildDirResult = await AllReleasesForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = childDir.FullName,
@@ -109,12 +110,12 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 }
             }
         }
-        
+
         if (!string.IsNullOrWhiteSpace(pagedRequest.Search))
         {
             releases = releases.Where(x =>
-                (x.ReleaseTitle() != null && x.ReleaseTitle()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)) || 
-                (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)))?.ToList();            
+                (x.ReleaseTitle() != null && x.ReleaseTitle()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)) ||
+                (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)))?.ToList();
         }
 
         if (pagedRequest.Filter != ReleaseResultFilter.All && releases != null && releases.Count != 0)
@@ -128,34 +129,35 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                         .Select(x => x.Key);
                     releases = releases.Where(x => duplicates.Contains(x.UniqueId)).ToList();
                     break;
-                
+
                 case ReleaseResultFilter.Incomplete:
                     releases = releases.Where(x => x.Status == ReleaseStatus.Incomplete).ToList();
                     break;
-                
+
                 case ReleaseResultFilter.LessThanConfiguredTracks:
                     releases = releases.Where(x => x.Tracks?.Count() < _configuration.FilterLessThanTrackCount || x.TrackTotalValue() < _configuration.FilterLessThanTrackCount).ToList();
                     break;
-                
+
                 case ReleaseResultFilter.NeedsAttention:
                     releases = releases.Where(x => x.Status == ReleaseStatus.NeedsAttention).ToList();
                     break;
-                
+
                 case ReleaseResultFilter.New:
                     releases = releases.Where(x => x.Status == ReleaseStatus.New).ToList();
-                    break;                
+                    break;
 
                 case ReleaseResultFilter.ReadyToMove:
                     releases = releases.Where(x => x.Status is ReleaseStatus.Ok or ReleaseStatus.Reviewed).ToList();
                     break;
-                
+
                 case ReleaseResultFilter.Selected:
                     if (pagedRequest.SelectedReleaseIds.Length > 0)
                     {
                         releases = releases.Where(x => pagedRequest.SelectedReleaseIds.Contains(x.UniqueId)).ToList();
                     }
+
                     break;
-                
+
                 case ReleaseResultFilter.LessThanConfiguredDuration:
                     releases = releases.Where(x => x.TotalDuration() < _configuration.FilterLessThanConfiguredDuration).ToList();
                     break;
@@ -163,7 +165,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         }
 
         var releasesCount = releases?.Count ?? 0;
-        return new PagedResult<Release>()
+        return new PagedResult<Release>
         {
             TotalCount = releasesCount,
             TotalPages = (releasesCount + pagedRequest.TakeValue - 1) / pagedRequest.TakeValue,
@@ -171,7 +173,37 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 .OrderBy(x => x.SortValue)
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.TakeValue)
-        };        
+        };
+    }
+
+    public async Task<PagedResult<ReleaseCard>> ReleasesGridsForDirectoryAsync(
+        FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
+    {
+        var releasesForDirectoryInfo = await ReleasesForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
+        var data = releasesForDirectoryInfo.Data.Select(async x => new ReleaseCard
+        {
+            Artist = x.Artist(),
+            Created = x.Created,
+            Duration = x.Duration(),
+            Directory = x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(),
+            ImageBytes = await x.CoverImageBytesAsync(),
+            IsValid = x.IsValid(_configuration),
+            Title = x.ReleaseTitle(),
+            Year = x.ReleaseYear(),
+            TrackCount = x.TrackTotalValue(),
+            ReleaseStatus = x.Status,
+            ViaPlugins = x.ViaPlugins,
+            UniqueId = x.UniqueId
+        });
+        var d = await Task.WhenAll(data);
+        return new PagedResult<ReleaseCard>
+        {
+            TotalCount = releasesForDirectoryInfo.TotalCount,
+            TotalPages = releasesForDirectoryInfo.TotalPages,
+            Data = d.OrderByDescending(x => x.Created).ToArray()
+        };
     }
 
     private async Task<OperationResult<IEnumerable<Release>>> AllReleasesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
@@ -195,6 +227,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                             {
                                 break;
                             }
+
                             try
                             {
                                 var r = JsonSerializer.Deserialize<Release>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
@@ -213,6 +246,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                         }
                     }
                 }
+
                 _releaseCache.Add(fileSystemDirectoryInfo, releases);
             }
         }
@@ -221,40 +255,11 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
             Log.Warning("Unable to load releases for [{DirInfo}]", fileSystemDirectoryInfo.FullName);
             errors.Add(e);
         }
-        
+
         return new OperationResult<IEnumerable<Release>>(messages)
         {
             Errors = errors,
             Data = _releaseCache[fileSystemDirectoryInfo]
-        };
-    }
-
-    public async Task<PagedResult<ReleaseCard>> ReleasesGridsForDirectoryAsync(
-        FileSystemDirectoryInfo fileSystemDirectoryInfo, 
-        PagedRequest pagedRequest, 
-        CancellationToken cancellationToken = default) {
-        var releasesForDirectoryInfo = await ReleasesForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
-        var data = releasesForDirectoryInfo.Data.Select(async x => new ReleaseCard
-        {
-            Artist = x.Artist(),
-            Created = x.Created,
-            Duration = x.Duration(),
-            Directory = x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(),
-            ImageBytes = await x.CoverImageBytesAsync(),
-            IsValid = x.IsValid(_configuration),
-            Title = x.ReleaseTitle(),
-            Year = x.ReleaseYear(),
-            TrackCount = x.TrackTotalValue(),
-            ReleaseStatus = x.Status,
-            ViaPlugins = x.ViaPlugins,
-            UniqueId = x.UniqueId
-        });
-        var d = await Task.WhenAll(data);
-        return new PagedResult<ReleaseCard>
-        {
-            TotalCount = releasesForDirectoryInfo.TotalCount,
-            TotalPages = releasesForDirectoryInfo.TotalPages,
-            Data = d.OrderByDescending(x => x.Created).ToArray()
         };
     }
 }

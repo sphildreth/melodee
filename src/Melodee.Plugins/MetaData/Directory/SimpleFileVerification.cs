@@ -1,10 +1,12 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
+using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Track;
 using Serilog;
 using Serilog.Events;
@@ -13,12 +15,12 @@ using SerilogTimings;
 namespace Melodee.Plugins.MetaData.Directory;
 
 /// <summary>
-/// Processes Simple Verification Files (SFV) and gets files (tracks) and files CRC for release.
+///     Processes Simple Verification Files (SFV) and gets files (tracks) and files CRC for release.
 /// </summary>
 public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "SFV";
-    
+
     private readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
     public override string Id => "6C253D42-F176-4A58-A895-C54BEB1F8A5C";
 
@@ -27,11 +29,6 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
     public override bool IsEnabled { get; set; } = true;
 
     public override int SortOrder { get; } = 1;
-    
-    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
-    {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
-    }      
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
@@ -67,7 +64,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                 var models = await GetModelsFromSfvFile(fileSystemDirectoryInfo, sfvFile.FullName);
 
                 Log.Debug("\u2502 Found [{Tracks}] valid tracks for Sfv file", models.Count(x => x.IsValid));
-                
+
                 var tracks = new List<Common.Models.Track>();
                 await Parallel.ForEachAsync(models.Where(x => x.IsValid), cancellationToken, async (model, tt) =>
                 {
@@ -161,7 +158,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                         }
                         else
                         {
-                            var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                            var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
                             if (existingRelease != null)
                             {
                                 sfvRelease = sfvRelease.Merge(existingRelease);
@@ -169,13 +166,14 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                         }
                     }
 
-                    var serialized = System.Text.Json.JsonSerializer.Serialize(sfvRelease);
+                    var serialized = JsonSerializer.Serialize(sfvRelease);
                     await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
                     if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                     {
                         sfvFile.Delete();
                         Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
                     }
+
                     Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, sfvRelease.ToMelodeeJsonName());
                     processedFiles++;
                 }
@@ -193,14 +191,19 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         };
     }
 
-    private static async Task<Models.SfvLine[]> GetModelsFromSfvFile(FileSystemDirectoryInfo directoryInfo, string filePath)
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+    }
+
+    private static async Task<SfvLine[]> GetModelsFromSfvFile(FileSystemDirectoryInfo directoryInfo, string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
             return [];
         }
 
-        var result = new List<Models.SfvLine>();
+        var result = new List<SfvLine>();
         try
         {
             foreach (var line in await File.ReadAllLinesAsync(filePath))
@@ -227,12 +230,13 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         return result.ToArray();
     }
 
-    public static Models.SfvLine? ModelFromSfvLine(string filePath, string? lineFromFile)
+    public static SfvLine? ModelFromSfvLine(string filePath, string? lineFromFile)
     {
         if (string.IsNullOrWhiteSpace(lineFromFile))
         {
             return null;
         }
+
         var directoryInfo = filePath.ToDirectoryInfo();
 
         try
@@ -258,12 +262,13 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
                 fileSystemInfoFile = new FileInfo(Path.Combine(dirName ?? string.Empty, filename)).ToFileSystemInfo();
             }
+
             var isCrcHashAccurate = IsCrCHashAccurate(fileSystemInfoFile.FullName(directoryInfo), crc);
-            return new Models.SfvLine
+            return new SfvLine
             {
                 IsValid = !string.IsNullOrWhiteSpace(filePath) && isCrcHashAccurate,
                 CrcHash = crc,
-                FileSystemFileInfo = fileSystemInfoFile,
+                FileSystemFileInfo = fileSystemInfoFile
             };
         }
         catch (Exception e)
@@ -280,6 +285,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         {
             return false;
         }
+
         try
         {
             var fi = new FileInfo(filename);
@@ -297,6 +303,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
         {
             Trace.WriteLine(e);
         }
+
         return false;
     }
 

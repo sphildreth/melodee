@@ -11,8 +11,6 @@ namespace Melodee.Plugins.Validation;
 
 public sealed class ReleaseValidator(Configuration configuration) : IReleaseValidator
 {
-    private readonly List<ValidationResultMessage> _validationMessages = [];
-
     private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static readonly Regex UnwantedTrackTitleTextRegex = new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -22,6 +20,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
     private static readonly Regex ImageNameIsProofRegex = new(@"(proof)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
     private readonly Configuration _configuration = configuration;
+    private readonly List<ValidationResultMessage> _validationMessages = [];
 
     public OperationResult<ValidationResult> ValidateRelease(Release? release)
     {
@@ -48,7 +47,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             !AlbumArtistDoesNotHaveUnwantedText(release) ||
             !ReleaseTitleDoesNotHaveUnwantedText(release) ||
             !IsReleaseYearValid(release)
-        )
+           )
         {
             returnStatus = ReleaseStatus.Invalid;
         }
@@ -70,12 +69,13 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         {
             return false;
         }
+
         var trackNumbers = tracks.GroupBy(x => x.TrackNumber());
         return trackNumbers.All(group => group.Count() == 1);
     }
 
     /// <summary>
-    /// Check if all the tracks have the same Album Artist. This is an issue if not a VA type release.
+    ///     Check if all the tracks have the same Album Artist. This is an issue if not a VA type release.
     /// </summary>
     private bool DoAllTracksHaveSameReleaseArtist(Release release)
     {
@@ -85,7 +85,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         {
             result = false;
         }
-       
+
         var albumArtist = release.Artist();
         if (string.IsNullOrWhiteSpace(albumArtist))
         {
@@ -96,7 +96,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         {
             var tracksGroupedByArtist = tracks.GroupBy(x => x.ReleaseArtist()).ToArray();
             result = tracksGroupedByArtist.First().Key.Nullify() == null ||
-                     (string.Equals(tracksGroupedByArtist.First().Key, albumArtist) && 
+                     (string.Equals(tracksGroupedByArtist.First().Key, albumArtist) &&
                       tracksGroupedByArtist.Length == 1);
         }
 
@@ -136,7 +136,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             {
                 Message = $"'{release}' release title has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
-            });            
+            });
         }
 
         return result;
@@ -169,7 +169,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             {
                 Message = $"'{release}' release media numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.MustFix
-            });             
+            });
         }
 
         return result;
@@ -199,7 +199,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             {
                 Message = $"'{release}' some tracks have unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
-            });              
+            });
         }
 
         return result;
@@ -237,8 +237,9 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             {
                 Message = $"'{release}' release track numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.MustFix
-            });             
+            });
         }
+
         return result;
     }
 
@@ -252,7 +253,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
             {
                 Message = $"'{release}' release year is invalid.",
                 Severity = ValidationResultMessageSeverity.MustFix
-            });             
+            });
         }
 
         return result;

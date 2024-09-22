@@ -9,14 +9,6 @@ namespace Melodee.Plugins.Processor;
 public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 {
     private readonly IEnumerable<IMetaTagProcessor> _metaTagProcessors;
-    
-    public string Id => "EBFFDB54-F24E-42F3-B98F-6C65500249FE";
-
-    public string DisplayName => nameof(MetaTagsProcessor);
-
-    public bool IsEnabled { get; set; } = true;
-
-    public int SortOrder { get; } = 0;
 
     public MetaTagsProcessor(Configuration configuration)
     {
@@ -27,10 +19,18 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
             new Album(configuration1),
             new Artist(configuration1),
             new Comment(configuration1),
-            new OrigReleaseYear(configuration1),
+            new OrigReleaseYear(configuration1)
         };
     }
-    
+
+    public string Id => "EBFFDB54-F24E-42F3-B98F-6C65500249FE";
+
+    public string DisplayName => nameof(MetaTagsProcessor);
+
+    public bool IsEnabled { get; set; } = true;
+
+    public int SortOrder { get; } = 0;
+
     public Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
     {
         var processedTags = new List<MetaTag<object?>>(metaTags.ToList());
@@ -56,24 +56,25 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
                         }
                         else
                         {
-                            processedTags.RemoveAll(x => x.Identifier == tag.Identifier);                            
+                            processedTags.RemoveAll(x => x.Identifier == tag.Identifier);
                         }
                     }
                 }
             }
         }
+
         return Task.FromResult(new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = processedTags.ToArray()
         });
     }
-    
-    
+
+
     public static string? ReplaceTrackArtistSeparators(string? trackArtist)
     {
         return trackArtist.Nullify() == null ? null : ReplaceTrackArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
     }
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    private static partial Regex ReplaceTrackArtistSeparatorsRegex();    
+    private static partial Regex ReplaceTrackArtistSeparatorsRegex();
 }

@@ -1,24 +1,21 @@
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Utility;
-using Melodee.Plugins.MetaData.Track;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-/// Handle the track title and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
+///     Handle the track title and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
 /// </summary>
 public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
     public override string Id => "79BBF338-6B2F-4166-9F28-97D21C83D2BF";
 
-    public override  string DisplayName => nameof(TrackTitle);
+    public override string DisplayName => nameof(TrackTitle);
 
-    public override  int SortOrder { get; } = 0;
+    public override int SortOrder { get; } = 0;
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
@@ -32,14 +29,15 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
         {
             return false;
         }
+
         return true;
     }
-    
+
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value as string;
         var updatedTagValue = false;
-        var trackTitle = tagValue as string ?? string.Empty;
+        var trackTitle = tagValue ?? string.Empty;
         string? featureArtist = null;
         int? trackNumber = null;
         if (trackTitle?.Nullify() != null)
@@ -78,11 +76,11 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
                     updatedTagValue = trackTitle != tagValue;
                 }
             }
-
         }
+
         var result = new List<MetaTag<object?>>
         {
-            new MetaTag<object?>
+            new()
             {
                 Identifier = metaTag.Identifier,
                 Value = trackTitle,
@@ -98,7 +96,7 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
                 Value = trackNumber.Value
             });
         }
-        
+
         if (featureArtist?.Nullify() != null)
         {
             result.Add(new MetaTag<object?>
@@ -107,6 +105,7 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
                 Value = featureArtist
             });
         }
+
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

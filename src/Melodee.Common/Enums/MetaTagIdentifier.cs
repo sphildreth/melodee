@@ -3,67 +3,60 @@ using System.ComponentModel;
 namespace Melodee.Common.Enums;
 
 /// <summary>
-/// Meta Tag Identifier based on ID3 v2.4 
+///     Meta Tag Identifier based on ID3 v2.4
 /// </summary>
 public enum MetaTagIdentifier
 {
     NotSet = 0,
-  
+
     /// <summary>
-    /// General description
+    ///     General description
     /// </summary>
-    [Description("[TT1]")]
-    GeneralDescription,
-    
+    [Description("[TT1]")] GeneralDescription,
+
     /// <summary>
-    /// Track Artist [TP1,TPE1] versus Album Artist
+    ///     Track Artist [TP1,TPE1] versus Album Artist
     /// </summary>
-    [Description("[TP1,TPE1]")]
-    Artist,
-    
+    [Description("[TP1,TPE1]")] Artist,
+
     /// <summary>
-    /// Doesn't look like an official ID3 tag but often used for multiple value artists on a track.
+    ///     Doesn't look like an official ID3 tag but often used for multiple value artists on a track.
     /// </summary>
-    [Description("[TT1]")]
-    [MetaTagMultiValue(true)]
+    [Description("[TT1]")] [MetaTagMultiValue(true)]
     Artists,
 
     /// <summary>
-    /// Composer [TCM, TCOM]
+    ///     Composer [TCM, TCOM]
     /// </summary>
-    [Description("[TCM, TCOM]")]
-    [MetaTagMultiValue(true)]
+    [Description("[TCM, TCOM]")] [MetaTagMultiValue(true)]
     Composer,
 
     /// <summary>
-    /// Comment [COM, COMM]
+    ///     Comment [COM, COMM]
     /// </summary>
-    [Description("[COM, COMM]")]
-    Comment,
+    [Description("[COM, COMM]")] Comment,
 
     /// <summary>
-    /// Genre [TCO, TCON]
+    ///     Genre [TCO, TCON]
     /// </summary>
-    [Description("[TCO, TCON]")]    
-    Genre,
+    [Description("[TCO, TCON]")] Genre,
 
     /// <summary>
-    /// The ‘Album/Movie/Show title’ frame is intended for the title of the recording(/source of sound) which the audio in the file is taken from. [TALB]
+    ///     The ‘Album/Movie/Show title’ frame is intended for the title of the recording(/source of sound) which the audio in
+    ///     the file is taken from. [TALB]
     /// </summary>
-    [Description("[TALB]")]
-    Album,
-    
+    [Description("[TALB]")] Album,
+
     /// <summary>
-    /// The ‘Title/Songname/Content description’ frame is the actual name of the piece [TT2, TIT2]
+    ///     The ‘Title/Songname/Content description’ frame is the actual name of the piece [TT2, TIT2]
     /// </summary>
-    [Description("[TT2, TIT2]")]
-    Title,
-    
+    [Description("[TT2, TIT2]")] Title,
+
     /// <summary>
-    /// The ‘Subtitle/Description refinement’ frame is used for information directly related to the contents title  [TT3, TIT3]
+    ///     The ‘Subtitle/Description refinement’ frame is used for information directly related to the contents title  [TT3,
+    ///     TIT3]
     /// </summary>
-    [Description("[TT3, TIT]")]    
-    SubTitle,
+    [Description("[TT3, TIT]")] SubTitle,
 
     /*
      * Recording date <== de facto standard behind the "date" field on most taggers
@@ -71,214 +64,183 @@ public enum MetaTagIdentifier
      * ID3v2.3 : TYER (year), TDAT (day & month - DDMM), TIME (hour & minute - HHMM)
      * NB : Some loose implementations actually use TDRC inside ID3v2.3 headers
      * ID3v2.4 : TDRC (timestamp)
-     */    
-    
-    /// <summary>
-    /// Recording year (when target format only supports year) [TYE,TYER]
-    /// </summary>
-    [Description("[TYE,TYER]")]
-    RecordingYear,
-    
-    /// <summary>
-    /// Recording date (when target format supports date) [TRD, TRDA]
-    /// </summary>
-    [Description("[TRD, TRD]")]
-    RecordingDate,
+     */
 
     /// <summary>
-    /// Alternate to RECORDING_YEAR and RECORDING_DATE where the field may contain both
+    ///     Recording year (when target format only supports year) [TYE,TYER]
     /// </summary>
-    [Description("[RecordingDateOrYear]")]
-    RecordingDateOrYear,
+    [Description("[TYE,TYER]")] RecordingYear,
 
     /// <summary>
-    /// Recording day and month [TDA, TDAT]
+    ///     Recording date (when target format supports date) [TRD, TRDA]
     /// </summary>
-    [Description("[TDA, TDAT]")]
-    RecordingDayMonth,
+    [Description("[TRD, TRD]")] RecordingDate,
 
     /// <summary>
-    /// Recoding time [TIM, TIME]
+    ///     Alternate to RECORDING_YEAR and RECORDING_DATE where the field may contain both
     /// </summary>
-    [Description("[TIM, TIME]")]
-    RecordingTime,
+    [Description("[RecordingDateOrYear]")] RecordingDateOrYear,
 
     /// <summary>
-    /// Track number. This should be set from parsed value from [TRK] or [TRCK]
+    ///     Recording day and month [TDA, TDAT]
     /// </summary>
-    [Description("[TRK, TRCK]")]
-    TrackNumber,
+    [Description("[TDA, TDAT]")] RecordingDayMonth,
 
     /// <summary>
-    /// Popularity (rating) [POP, POPM]
+    ///     Recoding time [TIM, TIME]
     /// </summary>
-    [Description("[POP, POPM]")]
-    Rating,
+    [Description("[TIM, TIME]")] RecordingTime,
 
     /// <summary>
-    /// Original artist [TOA, TOPE]
+    ///     Track number. This should be set from parsed value from [TRK] or [TRCK]
     /// </summary>
-    [MetaTagMultiValue(true)]
-    [Description("[TOA, TOPE]")]
+    [Description("[TRK, TRCK]")] TrackNumber,
+
+    /// <summary>
+    ///     Popularity (rating) [POP, POPM]
+    /// </summary>
+    [Description("[POP, POPM]")] Rating,
+
+    /// <summary>
+    ///     Original artist [TOA, TOPE]
+    /// </summary>
+    [MetaTagMultiValue(true)] [Description("[TOA, TOPE]")]
     OriginalArtist,
-    
-    /// <summary>
-    /// Original album [TOT,TOAL]
-    /// </summary>
-    [Description("[TOT,TOAL]")]     
-    OriginalAlbum,
 
     /// <summary>
-    /// Copyright [TCR, TCOP]
+    ///     Original album [TOT,TOAL]
     /// </summary>
-    [Description("[TCR, TCOP]")]
-    Copyright,
-    
-    /// <summary>
-    /// [WCP, WCOP]
-    /// </summary>
-    [Description("[WCP, WCOP]")]
-    CopyrightUrl,
+    [Description("[TOT,TOAL]")] OriginalAlbum,
 
     /// <summary>
-    /// The ‘Band/Orchestra/Accompaniment’ frame is used for additional information about the performers in the recording. [TP2, TPE2]
+    ///     Copyright [TCR, TCOP]
     /// </summary>
-    [Description("[TP2, TPE2]")]
-    AlbumArtist,
+    [Description("[TCR, TCOP]")] Copyright,
 
     /// <summary>
-    /// Publisher [TPB, TPUB, LABEL]
+    ///     [WCP, WCOP]
     /// </summary>
-    [Description("[TPB, TPUB, LABEL]")]
-    Publisher,
-    
-    /// <summary>
-    /// [WPB, WPUB]
-    /// </summary>
-    [Description("[WPB, WPUB]")]
-    PublisherUrl,
+    [Description("[WCP, WCOP]")] CopyrightUrl,
 
     /// <summary>
-    /// Conductor [TP3,TPE3]
+    ///     The ‘Band/Orchestra/Accompaniment’ frame is used for additional information about the performers in the recording.
+    ///     [TP2, TPE2]
     /// </summary>
-    [Description("[TP3,TPE3]")]
-    Conductor,
+    [Description("[TP2, TPE2]")] AlbumArtist,
 
     /// <summary>
-    /// Total number of tracks [TRK]
+    ///     Publisher [TPB, TPUB, LABEL]
     /// </summary>
-    [Description("[TRK]")]
-    TrackTotal,
+    [Description("[TPB, TPUB, LABEL]")] Publisher,
 
     /// <summary>
-    /// Alternate to TRACK_NUMBER and TRACK_TOTAL where both are in the same field [TRCK] ('1/8')
+    ///     [WPB, WPUB]
     /// </summary>
-    [Description("[TRCK]")]
-    TrackNumberTotal,
-    
-    /// <summary>
-    /// Disc number. This should be set from parsed value from [TPA] or [TPOS]
-    /// The ‘Part of a set’ [TPOS] frame is a numeric string that describes which part of a set the audio came from. This frame is used if the source described in the “TALB” frame is divided into several mediums, e.g. a double CD.
-    /// If the audio is not part of a set the value is '0' (not '1' as '1' would indicate it's the first part of a set versus '0' which means it is not part of a set.)
-    /// </summary>
-    [Description("[TPOS]")]
-    DiscNumber,    
+    [Description("[WPB, WPUB]")] PublisherUrl,
 
     /// <summary>
-    /// Total number of discs [TPA]
+    ///     Conductor [TP3,TPE3]
     /// </summary>
-    [Description("[TPA]")]
-    DiscTotal,
+    [Description("[TP3,TPE3]")] Conductor,
 
     /// <summary>
-    /// Alternate to DiscNumber and DiscTotal where both are in the same field [TPOS] ('1/8')
+    ///     Total number of tracks [TRK]
     /// </summary>
-    [Description("[TPOS]")]
-    DiscNumberTotal,
+    [Description("[TRK]")] TrackTotal,
 
     /// <summary>
-    /// Chapters table of contents description [CTOC]
+    ///     Alternate to TRACK_NUMBER and TRACK_TOTAL where both are in the same field [TRCK] ('1/8')
     /// </summary>
-    [Description("[CTOC]")]
-    ChaptersTocDescription,
+    [Description("[TRCK]")] TrackNumberTotal,
 
     /// <summary>
-    /// Product ID
+    ///     Disc number. This should be set from parsed value from [TPA] or [TPOS]
+    ///     The ‘Part of a set’ [TPOS] frame is a numeric string that describes which part of a set the audio came from. This
+    ///     frame is used if the source described in the “TALB” frame is divided into several mediums, e.g. a double CD.
+    ///     If the audio is not part of a set the value is '0' (not '1' as '1' would indicate it's the first part of a set
+    ///     versus '0' which means it is not part of a set.)
     /// </summary>
-    [Description("[ProductId]")]
-    ProductId,
+    [Description("[TPOS]")] DiscNumber,
 
     /// <summary>
-    /// Album sort order [TSOA]
+    ///     Total number of discs [TPA]
     /// </summary>
-    [Description("[TSOA]")]
-    SortAlbum,
+    [Description("[TPA]")] DiscTotal,
 
     /// <summary>
-    /// Album artist sort order [TS02]
+    ///     Alternate to DiscNumber and DiscTotal where both are in the same field [TPOS] ('1/8')
     /// </summary>
-    [Description("[TS02]")]
-    SortAlbumArtist,
+    [Description("[TPOS]")] DiscNumberTotal,
 
     /// <summary>
-    /// Artist sort order [TSOP]
+    ///     Chapters table of contents description [CTOC]
     /// </summary>
-    [Description("[TSOP]")]
-    SortArtist,
+    [Description("[CTOC]")] ChaptersTocDescription,
 
     /// <summary>
-    /// Title sort order [TSOT]
+    ///     Product ID
     /// </summary>
-    [Description("[TSOT]")]
-    SortTitle,
+    [Description("[ProductId]")] ProductId,
 
     /// <summary>
-    /// Content group description [TIT1]
+    ///     Album sort order [TSOA]
     /// </summary>
-    [Description("[TIT1]")]
-    Group,
+    [Description("[TSOA]")] SortAlbum,
 
     /// <summary>
-    /// MovementName [MVNM]
+    ///     Album artist sort order [TS02]
     /// </summary>
-    [Description("[MVNM]")]
-    MovementName,
+    [Description("[TS02]")] SortAlbumArtist,
 
     /// <summary>
-    /// MovementNumber [MVIN]
+    ///     Artist sort order [TSOP]
     /// </summary>
-    [Description("[MVIN]")]
-    MovementNumber,
-    
-    /// <summary>
-    /// Total parsed number of Movements, no official tag.
-    /// </summary>
-    [Description("[MovementTotal]")]
-    MovementTotal,
-    
-    /// <summary>
-    /// Alternate to MovementNumber and MovementTotal where both are in the same field [MVIN] ('1/5')
-    /// </summary>
-    [Description("[MVIN]")]
-    MovementNumberTotal,
+    [Description("[TSOP]")] SortArtist,
 
     /// <summary>
-    /// Long description [TDES]
+    ///     Title sort order [TSOT]
     /// </summary>
-    [Description("[TDES]")]
-    LongDescription,
+    [Description("[TSOT]")] SortTitle,
 
     /// <summary>
-    /// Beats per minute [TBP, TBPM]
+    ///     Content group description [TIT1]
     /// </summary>
-    [Description("[TBP, TBPM]")]
-    Bpm,
+    [Description("[TIT1]")] Group,
 
     /// <summary>
-    /// Person or organization that encoded the file [TEN, TENC]
+    ///     MovementName [MVNM]
     /// </summary>
-    [Description("[TEN, TENC]")]
-    EncodedBy,
+    [Description("[MVNM]")] MovementName,
+
+    /// <summary>
+    ///     MovementNumber [MVIN]
+    /// </summary>
+    [Description("[MVIN]")] MovementNumber,
+
+    /// <summary>
+    ///     Total parsed number of Movements, no official tag.
+    /// </summary>
+    [Description("[MovementTotal]")] MovementTotal,
+
+    /// <summary>
+    ///     Alternate to MovementNumber and MovementTotal where both are in the same field [MVIN] ('1/5')
+    /// </summary>
+    [Description("[MVIN]")] MovementNumberTotal,
+
+    /// <summary>
+    ///     Long description [TDES]
+    /// </summary>
+    [Description("[TDES]")] LongDescription,
+
+    /// <summary>
+    ///     Beats per minute [TBP, TBPM]
+    /// </summary>
+    [Description("[TBP, TBPM]")] Bpm,
+
+    /// <summary>
+    ///     Person or organization that encoded the file [TEN, TENC]
+    /// </summary>
+    [Description("[TEN, TENC]")] EncodedBy,
 
 
     /*
@@ -286,273 +248,233 @@ public enum MetaTagIdentifier
      *  ID3v2.2 : TOR (year only)
      *  ID3v2.3 : TORY (year only)
      *  ID3v2.4 : TDOR (timestamp according to spec)
-    */
-    
+     */
+
     /// <summary>
-    /// Original release year (when target format only supports year) [TORY,TOR]
+    ///     Original release year (when target format only supports year) [TORY,TOR]
     /// </summary>
-    [Description("[TOR, TORY, TDOR]")]
-    OrigReleaseYear,
-    
+    [Description("[TOR, TORY, TDOR]")] OrigReleaseYear,
+
     /// <summary>
-    /// The ‘Date’ frame is a numeric string in the DDMM format containing the date for the recording. This field is always four characters long. [TDA, TDAT]
+    ///     The ‘Date’ frame is a numeric string in the DDMM format containing the date for the recording. This field is always
+    ///     four characters long. [TDA, TDAT]
     /// </summary>
-    [Description("[TDA, TDAT]")]
-    Date, 
-    
+    [Description("[TDA, TDAT]")] Date,
+
     /*
      * Release date
      * ID3v2.2 : no standard
      * ID3v2.3 : no standard
      * ID3v2.4 : TDRL (timestamp according to spec; actual content may vary)
-    */
-    
-    /// <summary>
-    /// Original release date (when target format supports date) [TDOR]
-    /// </summary>
-    [Description("[TDOR]")]
-    OrigReleaseDate,
-    
-    /// <summary>
-    /// Release date. [TDRL]
-    /// </summary>
-    [Description("[TDRL]")]
-    ReleaseDate,
+     */
 
     /// <summary>
-    /// Software that encoded the file, with relevant settings if any [TSS, TSSE]
+    ///     Original release date (when target format supports date) [TDOR]
     /// </summary>
-    [Description("[TSS, TSSE]")]
-    Encoder,
+    [Description("[TDOR]")] OrigReleaseDate,
 
     /// <summary>
-    /// Language [TLA, TLAN]
+    ///     Release date. [TDRL]
     /// </summary>
-    [MetaTagMultiValue(true)]
-    [Description("[TLA, TLAN]")]
+    [Description("[TDRL]")] ReleaseDate,
+
+    /// <summary>
+    ///     Software that encoded the file, with relevant settings if any [TSS, TSSE]
+    /// </summary>
+    [Description("[TSS, TSSE]")] Encoder,
+
+    /// <summary>
+    ///     Language [TLA, TLAN]
+    /// </summary>
+    [MetaTagMultiValue(true)] [Description("[TLA, TLAN]")]
     Language,
 
     /// <summary>
-    /// International Standard Recording Code [TRC, TSRC]
+    ///     International Standard Recording Code [TRC, TSRC]
     /// </summary>
-    [Description("[TRC, TSR]")]     
-    Isrc,
+    [Description("[TRC, TSR]")] Isrc,
 
     /// <summary>
-    /// Catalog number [CATALOGNUMBER]
+    ///     Catalog number [CATALOGNUMBER]
     /// </summary>
-    [Description("[CATALOGNUMBER]")]
-    CatalogNumber,
+    [Description("[CATALOGNUMBER]")] CatalogNumber,
 
     /// <summary>
-    /// Audio source URL [WAS, WOAS]
+    ///     Audio source URL [WAS, WOAS]
     /// </summary>
-    [Description("[WAS, WOAS]")]
-    AudioSourceUrl,
+    [Description("[WAS, WOAS]")] AudioSourceUrl,
 
     /// <summary>
-    /// Lyricist [TXT, TEXT]
+    ///     Lyricist [TXT, TEXT]
     /// </summary>
-    [MetaTagMultiValue(true)]
-    [Description("[TXT, TEXT]")]
+    [MetaTagMultiValue(true)] [Description("[TXT, TEXT]")]
     Lyricist,
 
     /// <summary>
-    /// Mapping between functions (e.g. "producer") and names. Every odd field is a function and every even is a name or a comma delimited list of names. [IPL, IPLS, TIPL]
+    ///     Mapping between functions (e.g. "producer") and names. Every odd field is a function and every even is a name or a
+    ///     comma delimited list of names. [IPL, IPLS, TIPL]
     /// </summary>
-    [Description("[IPL, IPLS, TIPL]")]    
-    InvolvedPeople,
-    
+    [Description("[IPL, IPLS, TIPL]")] InvolvedPeople,
+
     /// <summary>
-    /// Represents a user defined URL link ID3 frame. [WXX, WXXX]
+    ///     Represents a user defined URL link ID3 frame. [WXX, WXXX]
     /// </summary>
-    [Description("[XX, WXX]")]
-    UserDefinedUrlLink,
-    
+    [Description("[XX, WXX]")] UserDefinedUrlLink,
+
     /// <summary>
-    /// [WPAY]
+    ///     [WPAY]
     /// </summary>
-    [Description("[WPAY]")]
-    PaymentUrl,
-    
+    [Description("[WPAY]")] PaymentUrl,
+
     /// <summary>
-    /// [WCM, WCOM]
+    ///     [WCM, WCOM]
     /// </summary>
-    [Description("[WCM, WCOM]")]
-    CommercialUrl,
-    
+    [Description("[WCM, WCOM]")] CommercialUrl,
+
     /// <summary>
-    /// [USER]
+    ///     [USER]
     /// </summary>
-    [Description("[USER]")]
-    TermsOfUse,
-    
+    [Description("[USER]")] TermsOfUse,
+
     /// <summary>
-    /// [CNT, PCNT]
+    ///     [CNT, PCNT]
     /// </summary>
-    [Description("[CNT, PCNT]")]
-    PlayCounter,
-    
+    [Description("[CNT, PCNT]")] PlayCounter,
+
     /// <summary>
-    /// [CRA, AENC]
+    ///     [CRA, AENC]
     /// </summary>
-    [Description("[CRA, AENC]")]
-    AudioEncryption,
-    
+    [Description("[CRA, AENC]")] AudioEncryption,
+
     /// <summary>
-    /// [BUF, RBUF]
+    ///     [BUF, RBUF]
     /// </summary>
-    [Description("[BUF, RBUF]")]
-    RecommendedBufferSize,
-    
+    [Description("[BUF, RBUF]")] RecommendedBufferSize,
+
     /// <summary>
-    /// [ETC, ETCO]
+    ///     [ETC, ETCO]
     /// </summary>
-    [Description("[ETC, ETCO]")]
-    EventTimingCodes,
-    
+    [Description("[ETC, ETCO]")] EventTimingCodes,
+
     /// <summary>
-    /// [EQU, EQU2]
+    ///     [EQU, EQU2]
     /// </summary>
-    [Description("[EQU, EQU2]")]
-    Equalisation,
-    
+    [Description("[EQU, EQU2]")] Equalisation,
+
     /// <summary>
-    /// [GEO, GEOB]
+    ///     [GEO, GEOB]
     /// </summary>
-    [Description("[GEO, GEOB]")]
-    GeneralEnscapsulatedObject,
-    
+    [Description("[GEO, GEOB]")] GeneralEnscapsulatedObject,
+
     /// <summary>
-    /// [TLE, TLEN]
+    ///     [TLE, TLEN]
     /// </summary>
-    [Description("[TLE, TLEN]")]
-    Length,
-  
+    [Description("[TLE, TLEN]")] Length,
+
     /// <summary>
-    /// [LNK, LINK]
+    ///     [LNK, LINK]
     /// </summary>
-    [Description("[LNK, LINK]")]
-    LinkedInformation,
-    
+    [Description("[LNK, LINK]")] LinkedInformation,
+
     /// <summary>
-    /// [MCI, MCDI]
+    ///     [MCI, MCDI]
     /// </summary>
-    [Description("[MCI, MCDI]")]
-    MusicCdIdentifier,
-    
+    [Description("[MCI, MCDI]")] MusicCdIdentifier,
+
     /// <summary>
-    /// [MLL, MLLT]
+    ///     [MLL, MLLT]
     /// </summary>
-    [Description("[MLL, MLLT]")]
-    MpegLocationLookupTable,
-    
+    [Description("[MLL, MLLT]")] MpegLocationLookupTable,
+
     /// <summary>
-    /// [REV, RVRB]
+    ///     [REV, RVRB]
     /// </summary>
-    [Description("[REV, RVRB]")]
-    Reverb,
-    
+    [Description("[REV, RVRB]")] Reverb,
+
     /// <summary>
-    /// [RVA, RVA2]
+    ///     [RVA, RVA2]
     /// </summary>
-    [Description("[RVA, RVA2]")]
-    RelativeVolumeAdjustment,
-    
+    [Description("[RVA, RVA2]")] RelativeVolumeAdjustment,
+
     /// <summary>
-    /// [STC, SYTC]
+    ///     [STC, SYTC]
     /// </summary>
-    [Description("[STC, SYTC]")]
-    SynchronizedTempoCodes,
-    
+    [Description("[STC, SYTC]")] SynchronizedTempoCodes,
+
     /// <summary>
-    /// [TDY, TDLY]
+    ///     [TDY, TDLY]
     /// </summary>
-    [Description("[TDY, TDLY]")]
-    PlaylistDelay,
-    
+    [Description("[TDY, TDLY]")] PlaylistDelay,
+
     /// <summary>
-    /// [TFT, TFLT]
+    ///     [TFT, TFLT]
     /// </summary>
-    [Description("[TFT, TFLT]")]
-    FileType,
-    
+    [Description("[TFT, TFLT]")] FileType,
+
     /// <summary>
-    /// [TKE, TKEY]
+    ///     [TKE, TKEY]
     /// </summary>
-    [Description("[TKE, TKEY]")]
-    InitialKey,
-    
+    [Description("[TKE, TKEY]")] InitialKey,
+
     /// <summary>
-    /// [TMT, TMED]
+    ///     [TMT, TMED]
     /// </summary>
-    [Description("[TMT, TMED]")]
-    MediaType,
-    
+    [Description("[TMT, TMED]")] MediaType,
+
     /// <summary>
-    /// [TOF, TOFN]
+    ///     [TOF, TOFN]
     /// </summary>
-    [Description("[TOF, TOFN]")]
-    OriginalFilename,
-    
+    [Description("[TOF, TOFN]")] OriginalFilename,
+
     /// <summary>
-    /// [TOL, TOLY]
+    ///     [TOL, TOLY]
     /// </summary>
-    [MetaTagMultiValue(true)]
-    [Description("[TOL, TOLY]")]
+    [MetaTagMultiValue(true)] [Description("[TOL, TOLY]")]
     OriginalLyricist,
-    
+
     /// <summary>
-    /// [TP4, TPE4]
+    ///     [TP4, TPE4]
     /// </summary>
-    [Description("[TP4, TPE4]")]
-    InterpretedRemixedOrOtherwiseModifiedBy,
- 
+    [Description("[TP4, TPE4]")] InterpretedRemixedOrOtherwiseModifiedBy,
+
     /// <summary>
-    /// [TXX, TXXX]
+    ///     [TXX, TXXX]
     /// </summary>
-    [Description("[TXX, TXXX]")]
-    UserDefinedTextInformation,
- 
+    [Description("[TXX, TXXX]")] UserDefinedTextInformation,
+
     /// <summary>
-    /// [UFI, UFID]
+    ///     [UFI, UFID]
     /// </summary>
-    [Description("[UFI, UFID]")]
-    UniqueFileIdentifier,
-    
+    [Description("[UFI, UFID]")] UniqueFileIdentifier,
+
     /// <summary>
-    /// [ULT, USLT]
+    ///     [ULT, USLT]
     /// </summary>
-    [Description("[ULT, USLT]")]
-    UnsynchronisedLyrics,
-    
+    [Description("[ULT, USLT]")] UnsynchronisedLyrics,
+
     /// <summary>
-    /// [SYLT]
+    ///     [SYLT]
     /// </summary>
-    [Description("[SYLT]")]
-    SynchronisedLyrics,    
-    
+    [Description("[SYLT]")] SynchronisedLyrics,
+
     /// <summary>
-    /// [WAF, WOAF]
+    ///     [WAF, WOAF]
     /// </summary>
-    [Description("[WAF, WOAF]")]
-    OfficialAudioFileWebpage,
-    
+    [Description("[WAF, WOAF]")] OfficialAudioFileWebpage,
+
     /// <summary>
-    /// [WAR, WOAR]
+    ///     [WAR, WOAR]
     /// </summary>
-    [Description("[WAR, WOAR]")]
-    OfficialArtistPerformerWebpage,
-    
+    [Description("[WAR, WOAR]")] OfficialArtistPerformerWebpage,
+
     /// <summary>
-    /// Not a ID3 standard, a unique ID given to an artist to prevent exact named artists getting the same library directory.
+    ///     Not a ID3 standard, a unique ID given to an artist to prevent exact named artists getting the same library
+    ///     directory.
     /// </summary>
-    [Description("[UniqueArtistId]")]
-    UniqueArtistId,
-    
+    [Description("[UniqueArtistId]")] UniqueArtistId,
+
     /// <summary>
-    /// Used when parsing CUE Files.
+    ///     Used when parsing CUE Files.
     /// </summary>
-    [Description("[SubCodeFlags]")]
-    SubCodeFlags
+    [Description("[SubCodeFlags]")] SubCodeFlags
 }

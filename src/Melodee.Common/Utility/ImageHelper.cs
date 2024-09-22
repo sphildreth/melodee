@@ -6,8 +6,8 @@ namespace Melodee.Common.Utility;
 public static class ImageHelper
 {
     private static string[] ImageExtensions()
-    { 
-        return new string[7] { "*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp" }; 
+    {
+        return new string[7] { "*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp" };
     }
 
     private static string[] GetFiles(string path,
@@ -18,20 +18,23 @@ public static class ImageHelper
         {
             return new string[0];
         }
+
         if (patterns == null || patterns.Length == 0)
         {
             return Directory.GetFiles(path, "*", options);
         }
+
         if (patterns.Length == 1)
         {
             return Directory.GetFiles(path, patterns[0], options);
         }
+
         return patterns.SelectMany(pattern => Directory.GetFiles(path, pattern, options)).Distinct().ToArray();
     }
 
     public static string[] ImageFilesInDirectory(string directory, SearchOption searchOption)
-    { 
-        return GetFiles(directory, ImageExtensions(), searchOption); 
+    {
+        return GetFiles(directory, ImageExtensions(), searchOption);
     }
 
     public static bool IsArtistImage(FileInfo? fileInfo)
@@ -93,11 +96,13 @@ public static class ImageHelper
         {
             return result;
         }
+
         var imageFilesInDirectory = ImageFilesInDirectory(directory.FullName, directorySearchOptions);
         if (imageFilesInDirectory.Any() != true)
         {
             return result;
         }
+
         foreach (var imageFile in imageFilesInDirectory)
         {
             var image = new FileInfo(imageFile);
@@ -108,6 +113,7 @@ public static class ImageHelper
                     {
                         result.Add(image);
                     }
+
                     break;
 
                 case PictureIdentifier.ArtistSecondary:
@@ -115,6 +121,7 @@ public static class ImageHelper
                     {
                         result.Add(image);
                     }
+
                     break;
 
                 case PictureIdentifier.Front:
@@ -122,14 +129,16 @@ public static class ImageHelper
                     {
                         result.Add(image);
                     }
+
                     if (IsReleaseSecondaryImage(image))
                     {
                         result.Add(image);
                     }
-                    break; 
+
+                    break;
             }
         }
+
         return result.OrderBy(x => x.Name);
     }
-
 }

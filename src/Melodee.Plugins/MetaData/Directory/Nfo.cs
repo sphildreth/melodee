@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -13,12 +13,12 @@ using SerilogTimings;
 namespace Melodee.Plugins.MetaData.Directory;
 
 /// <summary>
-/// Processes NFO and gets tags and tracks for release.
+///     Processes NFO and gets tags and tracks for release.
 /// </summary>
 public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
-    
+
     public override string Id => "35A33042-6E57-431C-AF94-F7F803F811C4";
 
     public override string DisplayName => nameof(Nfo);
@@ -26,10 +26,6 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
     public override bool IsEnabled { get; set; } = false;
 
     public override int SortOrder { get; } = 3;
-    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
-    {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
-    }
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
@@ -73,7 +69,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                         }
                         else
                         {
-                            var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                            var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
                             if (existingRelease != null)
                             {
                                 nfoRelease = nfoRelease.Merge(existingRelease);
@@ -81,7 +77,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                         }
                     }
 
-                    var serialized = System.Text.Json.JsonSerializer.Serialize(nfoRelease);
+                    var serialized = JsonSerializer.Serialize(nfoRelease);
                     await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
                     if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                     {
@@ -98,10 +94,12 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                         Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
                     }
                 }
-                Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, nfoRelease.ToMelodeeJsonName());                
+
+                Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, nfoRelease.ToMelodeeJsonName());
                 processedFiles++;
             }
         }
+
         StopProcessing = processedFiles > 0;
         return new OperationResult<int>
         {
@@ -109,9 +107,14 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
         };
     }
 
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+    }
+
     private static (KeyValuePair<string, object?>, string?) ParseLine(string line, char splitChar)
     {
-        string key = string.Empty;
+        var key = string.Empty;
         object? result = null;
         string? rawValue = null;
 
@@ -146,22 +149,39 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
         }
 
         return false;
+    } // ReSharper disable StringLiteralTypo
+    private static bool IsLineForAlbumArtist(string line)
+    {
+        return IsLineForMatches(new[] { "artist", "albumartist" }, line);
     }
 
-    // ReSharper disable StringLiteralTypo
-    private static bool IsLineForAlbumArtist(string line) => IsLineForMatches(new[] { "artist", "albumartist" }, line);
-    private static bool IsLineForReleaseDate(string line) => IsLineForMatches(new[] { "retaildate", "reldate", "ripdate" }, line);
+    private static bool IsLineForReleaseDate(string line)
+    {
+        return IsLineForMatches(new[] { "retaildate", "reldate", "ripdate" }, line);
+    }
 
-    private static bool IsLineForReleaseTitle(string line) => IsLineForMatches(new[] { "title" }, line);
+    private static bool IsLineForReleaseTitle(string line)
+    {
+        return IsLineForMatches(new[] { "title" }, line);
+    }
 
-    private static bool IsLineForTrackTotal(string line) => IsLineForMatches(new[] { "tracks" }, line);
+    private static bool IsLineForTrackTotal(string line)
+    {
+        return IsLineForMatches(new[] { "tracks" }, line);
+    }
 
-    private static bool IsLineForLength(string line) => IsLineForMatches(new[] { "length", "runtime" }, line);
+    private static bool IsLineForLength(string line)
+    {
+        return IsLineForMatches(new[] { "length", "runtime" }, line);
+    }
 
-    private static bool IsLineForPublisher(string line) => IsLineForMatches(new[] { "label", "publisher" }, line);
+    private static bool IsLineForPublisher(string line)
+    {
+        return IsLineForMatches(new[] { "label", "publisher" }, line);
+    }
 
     // ReSharper enable StringLiteralTypo
-    
+
     private static bool IsLineForTrack(string line)
     {
         var l = line.ToAlphanumericName().Nullify();
@@ -170,7 +190,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
     public async Task<Release> ReleaseForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        char splitChar = ':';
+        var splitChar = ':';
         var releaseTags = new List<MetaTag<object?>>();
         var tracks = new List<Common.Models.Track>();
         var messages = new List<string>();
@@ -189,7 +209,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 var l = line.OnlyAlphaNumeric();
                 var trackNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
                 var trackDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
-                var trackTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, (l.Length - trackDuration.Length) - 4) ?? string.Empty, string.Empty).Trim();
+                var trackTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - trackDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
                 tracks.Add(new Common.Models.Track
                 {
                     CrcHash = CRC32.Calculate(fileInfo),
@@ -303,10 +323,10 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 }
             }
         }
-        
+
         var result = new Release
         {
-            Files = new []
+            Files = new[]
             {
                 new ReleaseFile
                 {
@@ -314,7 +334,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                     ProcessedByPlugin = DisplayName,
                     FileSystemFileInfo = fileInfo.ToFileSystemInfo()
                 }
-            },            
+            },
             ViaPlugins = new[] { nameof(Nfo) },
             OriginalDirectory = new FileSystemDirectoryInfo
             {
@@ -335,7 +355,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
     [GeneratedRegex(@"[0-9]+\.+(.*)[0-9]{2}\:[0-9]{2}")]
     private static partial Regex IsLineForTrackRegex();
-    
+
     [GeneratedRegex(@"\.{2,}")]
-    private static partial Regex ReplaceMultiplePeriodsRegex();    
+    private static partial Regex ReplaceMultiplePeriodsRegex();
 }

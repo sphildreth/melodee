@@ -1,15 +1,17 @@
 using System.Text.RegularExpressions;
 using Melodee.Common.Utility;
-using Microsoft.VisualBasic.FileIO;
 using SearchOption = System.IO.SearchOption;
 
 namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemDirectoryInfoExtensions
 {
-    private static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|compilation(s*)|live|promo(s*)|demo)", RegexOptions.Compiled | RegexOptions.IgnoreCase);    
-    
-    public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo) => Path.Combine(fileSystemDirectoryInfo.Path, fileSystemDirectoryInfo.Name);
+    private static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|compilation(s*)|live|promo(s*)|demo)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        return Path.Combine(fileSystemDirectoryInfo.Path, fileSystemDirectoryInfo.Name);
+    }
 
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
@@ -18,9 +20,10 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return [];
         }
+
         return dirInfo.GetFiles($"*.{extension}", new EnumerationOptions
         {
-            RecurseSubdirectories = true, 
+            RecurseSubdirectories = true,
             MatchCasing = MatchCasing.CaseInsensitive
         }).ToArray();
     }
@@ -34,6 +37,7 @@ public static class FileSystemDirectoryInfoExtensions
                 return fileInfoForExtension.ToFileSystemInfo();
             }
         }
+
         return null;
     }
 
@@ -43,17 +47,20 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return [];
         }
+
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
             return [];
         }
+
         var result = new List<FileSystemDirectoryInfo>();
         result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption) where dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)) select dir.ToDirectorySystemInfo());
         if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)))
         {
             result.Add(fileSystemDirectoryInfo);
         }
+
         return result;
     }
 
@@ -65,6 +72,7 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return result;
         }
+
         result.AddRange(dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
             .Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension)));
         return result;
@@ -78,10 +86,10 @@ public static class FileSystemDirectoryInfoExtensions
             fileToDelete.Delete();
         }
     }
-    
+
     public static bool IsDirectoryNotStudioAlbums(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var dir = fileSystemDirectoryInfo.FullName();
         return !string.IsNullOrWhiteSpace(dir) && !IsDirectoryNotStudioAlbumsRegex.IsMatch(dir);
-    }    
+    }
 }

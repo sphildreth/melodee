@@ -8,9 +8,10 @@ public static class IEnumerableExtensions
         {
             throw new ArgumentNullException("source");
         }
+
         return string.Join(join, source.Select(s => s?.ToString()).ToArray());
     }
-        
+
     public static void Each<T>(this IEnumerable<T> ie, Action<T, int> action)
     {
         var i = 0;
@@ -18,8 +19,8 @@ public static class IEnumerableExtensions
         {
             action(e, i++);
         }
-    }     
-        
+    }
+
     public static IEnumerable<T> SelectManyRecursive<T>(this IEnumerable<T>? source, Func<T, IEnumerable<T>> selector)
     {
         var result = source?.SelectMany(selector) ?? [];
@@ -27,6 +28,7 @@ public static class IEnumerableExtensions
         {
             return result;
         }
+
         return (result ?? Array.Empty<T>()).Concat(result.SelectManyRecursive(selector));
-    }        
+    }
 }

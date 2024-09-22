@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
@@ -66,7 +67,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         };
         var processor = new DirectoryProcessor(
             new NullScript(config),
-            new NullScript(config),                 
+            new NullScript(config),
             new ReleaseValidator(config),
             config);
         var dirInfo = new DirectoryInfo(settings.Inbound);
@@ -78,7 +79,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         var sw = Stopwatch.StartNew();
 
         Log.Debug("\u250d Processing directory [{Inbound}]", settings.Inbound);
-        
+
         var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
         {
             Path = dirInfo.FullName,
@@ -91,12 +92,13 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         if (settings.Verbose)
         {
             AnsiConsole.Write(
-                new Panel(new JsonText(System.Text.Json.JsonSerializer.Serialize(result)))
+                new Panel(new JsonText(JsonSerializer.Serialize(result)))
                     .Header("Process Result")
                     .Collapse()
                     .RoundedBorder()
                     .BorderColor(Color.Yellow));
         }
+
         // For console error codes, 0 is success.
         return result.IsSuccess ? 0 : 1;
     }

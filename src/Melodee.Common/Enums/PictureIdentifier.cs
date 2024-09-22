@@ -3,124 +3,124 @@ namespace Melodee.Common.Enums;
 public enum PictureIdentifier
 {
     NotSet = 0,
-    
+
     /// <summary>
-    /// Unsupported (i.e. none of the supported values in the enum)
+    ///     Unsupported (i.e. none of the supported values in the enum)
     /// </summary>
     Unsupported,
 
     /// <summary>
-    /// Generic
+    ///     Generic
     /// </summary>
     Generic,
 
     /// <summary>
-    /// Front cover
+    ///     Front cover
     /// </summary>
     Front,
-    
+
     /// <summary>
-    /// Front cover, but not the primary like Cover01, Cover02
+    ///     Front cover, but not the primary like Cover01, Cover02
     /// </summary>
     SecondaryFront,
 
     /// <summary>
-    /// Back cover
+    ///     Back cover
     /// </summary>
     Back,
 
     /// <summary>
-    /// Media (e.g. label side of CD)
+    ///     Media (e.g. label side of CD)
     /// </summary>
     Cd,
 
     /// <summary>
-    /// File icon
+    ///     File icon
     /// </summary>
     Icon,
 
     /// <summary>
-    /// Leaflet
+    ///     Leaflet
     /// </summary>
     Leaflet,
 
     /// <summary>
-    /// Lead artist/lead performer/soloist
+    ///     Lead artist/lead performer/soloist
     /// </summary>
     LeadArtist,
 
     /// <summary>
-    /// Artist/performer
+    ///     Artist/performer
     /// </summary>
     Artist,
-    
+
     /// <summary>
-    /// Artist/performer, but not the primary like Artist01, Artist02
+    ///     Artist/performer, but not the primary like Artist01, Artist02
     /// </summary>
     ArtistSecondary,
 
     /// <summary>
-    /// Conductor
+    ///     Conductor
     /// </summary>
     Conductor,
 
     /// <summary>
-    /// Band/Orchestra
+    ///     Band/Orchestra
     /// </summary>
     Band,
-    
+
     /// <summary>
-    /// Band/Orchestra, not the primary image but like Band01, Band02
+    ///     Band/Orchestra, not the primary image but like Band01, Band02
     /// </summary>
     BandSecondary,
 
     /// <summary>
-    /// Composer
+    ///     Composer
     /// </summary>
     Composer,
 
     /// <summary>
-    /// Lyricist/text writer
+    ///     Lyricist/text writer
     /// </summary>
     Lyricist,
 
     /// <summary>
-    /// Recording location
+    ///     Recording location
     /// </summary>
     RecordingLocation,
 
     /// <summary>
-    /// During recording
+    ///     During recording
     /// </summary>
     DuringRecording,
 
     /// <summary>
-    /// During performance
+    ///     During performance
     /// </summary>
     DuringPerformance,
 
     /// <summary>
-    /// Band/artist logotype
+    ///     Band/artist logotype
     /// </summary>
     BandLogo,
 
     /// <summary>
-    /// Publisher/Studio logotype
+    ///     Publisher/Studio logotype
     /// </summary>
     PublisherLogo,
-    
+
     /// <summary>
-    /// Label logotype
+    ///     Label logotype
     /// </summary>
     LabelLogo,
-    
+
     /// <summary>
-    /// Track image (usually in a compilation or a single)
+    ///     Track image (usually in a compilation or a single)
     /// </summary>
     Track,
-    
+
     /// <summary>
-    /// Track image, but not the primary like Track01_01, Track01_02
+    ///     Track image, but not the primary like Track01_01, Track01_02
     /// </summary>
     TrackSecondary
 }

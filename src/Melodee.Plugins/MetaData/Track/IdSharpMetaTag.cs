@@ -16,7 +16,7 @@ namespace Melodee.Plugins.MetaData.Track;
 public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
-    
+
     public override string Id => "0AE16462-6924-496B-AC5E-C9CD70EA078D";
 
     public override string DisplayName => nameof(IdSharpMetaTag);
@@ -24,6 +24,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
     public override bool IsEnabled { get; set; } = true;
 
     public override int SortOrder { get; } = 0;
+
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
         if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo))
@@ -54,28 +55,28 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                         {
                             Identifier = MetaTagIdentifier.Album,
                             Value = id3v1.Album
-                        });                        
+                        });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
                             Value = id3v1.Artist
-                        });                         
+                        });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
                             Value = id3v1.Title.ToTitleCase(false)
-                        });                        
+                        });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.TrackNumber,
                             Value = SafeParser.ToNumber<short?>(id3v1.TrackNumber)
-                        });                          
-                         var date = SafeParser.ToDateTime(id3v1.Year);
+                        });
+                        var date = SafeParser.ToDateTime(id3v1.Year);
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.OrigReleaseYear,
                             Value = date?.Year
-                        });                        
+                        });
                     }
 
                     if (ID3v2Tag.DoesTagExist(fullname))
@@ -85,28 +86,28 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                         {
                             Identifier = MetaTagIdentifier.Album,
                             Value = id3v2.Album
-                        });                        
+                        });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
                             Value = id3v2.Artist
-                        });                         
+                        });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
                             Value = id3v2.Title.ToTitleCase(false)
-                        });                        
+                        });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.TrackNumber,
                             Value = SafeParser.ToNumber<short?>(id3v2.TrackNumber)
-                        });                          
+                        });
                         var date = SafeParser.ToDateTime(id3v2.Year);
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.OrigReleaseYear,
                             Value = date?.Year
-                        });                         
+                        });
                     }
                 }
             }
@@ -118,7 +119,8 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
             // Ensure that OrigReleaseYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
             if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseYear))
             {
-                tags.Add(new MetaTag<object?>{
+                tags.Add(new MetaTag<object?>
+                {
                     Identifier = MetaTagIdentifier.OrigReleaseYear,
                     Value = 0
                 });
@@ -137,6 +139,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                     }
                 };
             }
+
             var track = new Common.Models.Track
             {
                 CrcHash = CRC32.Calculate(new FileInfo(fileSystemInfo.FullName(directoryInfo))),
@@ -148,8 +151,8 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
             };
             return new OperationResult<Common.Models.Track>
             {
-                Data = track 
-            };            
+                Data = track
+            };
         }
     }
 

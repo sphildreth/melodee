@@ -12,47 +12,6 @@ public record OperationResult<T> where T : notnull
 
     private List<string> _messages = [];
 
-    [XmlIgnore] public Dictionary<string, object> AdditionalClientData { get; set; } = new Dictionary<string, object>();
-
-    [JsonIgnore]
-    [XmlIgnore]
-    public Dictionary<string, object> AdditionalData { get; set; } = new Dictionary<string, object>();
-
-    /// <summary>
-    ///     Client friendly exceptions
-    /// </summary>
-    [JsonPropertyName("errors")]
-    public IEnumerable<MelodeeException> AppExceptions
-    {
-        get
-        {
-            if (Errors.Any() != true)
-            {
-                return [];
-            }
-
-            return Errors.Select(x => new MelodeeException(x.Message));
-        }
-    }
-
-    public required T Data { get; set; }
-
-    /// <summary>
-    ///     Server side visible exceptions
-    /// </summary>
-    [JsonIgnore]
-    public IEnumerable<Exception> Errors { get; set; } = [];
-
-    public bool IsSuccess => Type == OperationResponseType.Ok && 
-                             !Errors.Any() && 
-                             !Data.IsNullOrDefault();
-
-    public OperationResponseType Type { get; set; } = OperationResponseType.Ok;
-
-    public IEnumerable<string> Messages => _messages;
-
-    public long OperationTime { get; set; }
-
     public OperationResult()
     {
     }
@@ -98,6 +57,45 @@ public record OperationResult<T> where T : notnull
         AddMessage(message);
         AddError(error);
     }
+
+    [XmlIgnore] public Dictionary<string, object> AdditionalClientData { get; set; } = new();
+
+    [JsonIgnore] [XmlIgnore] public Dictionary<string, object> AdditionalData { get; set; } = new();
+
+    /// <summary>
+    ///     Client friendly exceptions
+    /// </summary>
+    [JsonPropertyName("errors")]
+    public IEnumerable<MelodeeException> AppExceptions
+    {
+        get
+        {
+            if (Errors.Any() != true)
+            {
+                return [];
+            }
+
+            return Errors.Select(x => new MelodeeException(x.Message));
+        }
+    }
+
+    public required T Data { get; set; }
+
+    /// <summary>
+    ///     Server side visible exceptions
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<Exception> Errors { get; set; } = [];
+
+    public bool IsSuccess => Type == OperationResponseType.Ok &&
+                             !Errors.Any() &&
+                             !Data.IsNullOrDefault();
+
+    public OperationResponseType Type { get; set; } = OperationResponseType.Ok;
+
+    public IEnumerable<string> Messages => _messages;
+
+    public long OperationTime { get; set; }
 
     public void AddError(Exception? exception)
     {

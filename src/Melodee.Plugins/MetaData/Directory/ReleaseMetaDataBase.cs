@@ -1,4 +1,3 @@
-using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 
 namespace Melodee.Plugins.MetaData.Directory;

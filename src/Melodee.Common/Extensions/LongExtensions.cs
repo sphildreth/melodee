@@ -8,26 +8,31 @@ public static class LongExtensions
         {
             return $"{size} B";
         }
+
         var ds = size / 1024.0;
         if (ds < 900)
         {
             return $"{ds:F2} KB";
         }
+
         ds /= 1024.0;
         if (ds < 900)
         {
             return $"{ds:F2} MB";
         }
+
         ds /= 1024.0;
         if (ds < 900)
         {
             return $"{ds:F3} GB";
         }
+
         ds /= 1024.0;
         if (ds < 900)
         {
             return $"{ds:F3} TB";
         }
+
         ds /= 1024.0;
         return $"{ds:F4} PB";
     }

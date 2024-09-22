@@ -7,15 +7,15 @@ using Melodee.Common.Models.Configuration;
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-/// Handle the track Artist and split away any featuring artists.
+///     Handle the track Artist and split away any featuring artists.
 /// </summary>
 public sealed partial class Artist(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
     public override string Id => "29D61BF9-D283-4DB6-B7EB-16F6BCA76998";
 
-    public override  string DisplayName => nameof(Artist);
+    public override string DisplayName => nameof(Artist);
 
-    public override  int SortOrder { get; } = 1;
+    public override int SortOrder { get; } = 1;
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
@@ -24,12 +24,12 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
-        object? tagValue = metaTag.Value;
+        var tagValue = metaTag.Value;
         var artist = tagValue as string ?? string.Empty;
         string? featureArtist = null;
 
         var result = new List<MetaTag<object?>>();
-        
+
         if (artist.Nullify() != null)
         {
             if (Configuration.PluginProcessOptions.ArtistNameReplacements.Any())
@@ -45,11 +45,12 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                             Identifier = MetaTagIdentifier.Artist,
                             Value = artist,
                             OriginalValue = metaTag.Value
-                        });                        
+                        });
                         break;
                     }
                 }
-            }            
+            }
+
             if (artist.HasFeaturingFragments())
             {
                 var newArtist = artist;
@@ -76,6 +77,7 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                         OriginalValue = metaTag.Value
                     });
                 }
+
                 if (albumArtistTag == null)
                 {
                     result.Add(new MetaTag<object?>
@@ -83,7 +85,7 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                         Identifier = MetaTagIdentifier.AlbumArtist,
                         Value = artist,
                         OriginalValue = metaTag.Value
-                    });                    
+                    });
                 }
             }
 
@@ -95,16 +97,16 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                     Value = featureArtist,
                     OriginalValue = metaTag.Value
                 });
-            }            
+            }
         }
-        
-        
+
+
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result
         };
     }
-    
+
     private static string? ReplaceArtistSeparators(string? trackArtist)
     {
         return trackArtist.Nullify() == null ? null : ReplaceArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();

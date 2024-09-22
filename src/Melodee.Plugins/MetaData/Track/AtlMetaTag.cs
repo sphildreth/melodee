@@ -3,7 +3,6 @@ using FFMpegCore;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Track.Extensions;
@@ -11,12 +10,15 @@ using Melodee.Plugins.Processor;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using SixLabors.ImageSharp;
+using Configuration = Melodee.Common.Models.Configuration.Configuration;
+using ImageInfo = Melodee.Common.Models.ImageInfo;
 
 namespace Melodee.Plugins.MetaData.Track;
 
 /// <summary>
-/// Implementation of Track Plugin using ATL Library
-/// <remarks>https://github.com/Zeugma440/atldotnet</remarks>
+///     Implementation of Track Plugin using ATL Library
+///     <remarks>https://github.com/Zeugma440/atldotnet</remarks>
 /// </summary>
 public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
 {
@@ -55,7 +57,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
                     {
                         var atlDictionary = fileAtl.ToDictionary();
-                       
+
                         var metaAudioIdentifierDictionary = MediaAudioIdentifier.NotSet.ToDictionary();
                         foreach (var metaTagIdentifier in metaAudioIdentifierDictionary)
                         {
@@ -84,7 +86,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                             ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
 
                             if (ffProbeMediaAnalysis.PrimaryAudioStream != null)
-                            {   
+                            {
                                 mediaAudios.Add(new MediaAudio<object?>
                                 {
                                     Identifier = MediaAudioIdentifier.CodecLongName,
@@ -99,8 +101,8 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                 {
                                     Identifier = MediaAudioIdentifier.ChannelLayout,
                                     Value = ffProbeMediaAnalysis.PrimaryAudioStream.ChannelLayout
-                                });     
-                            }              
+                                });
+                            }
                         }
                         catch (Exception e)
                         {
@@ -143,7 +145,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                 Value = fileAtl.TechnicalInformation.AudioDataSize
                             });
                         }
-                       
+
                         var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToDictionary();
                         foreach (var metaTagIdentifier in metaTagIdentifierDictionary)
                         {
@@ -185,10 +187,10 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                 }
                             }
                         }
-                        
+
                         var adData1 = fileAtl.AdditionalFields.ToDictionary();
                         var adData2 = ffProbeMediaAnalysis?.Format.Tags?.ToDictionary() ?? new Dictionary<string, string>();
-                        var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge(new [] { adData1, adData2 }));
+                        var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge(new[] { adData1, adData2 }));
                         foreach (var additionalTag in additionalTags)
                         {
                             if (tags.All(x => x.Identifier != additionalTag.Identifier))
@@ -196,19 +198,19 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                 tags.Add(additionalTag);
                             }
                         }
-                        
+
                         if (fileAtl.EmbeddedPictures.Any() && Configuration.PluginProcessOptions.DoLoadEmbeddedImages)
                         {
                             var releaseId = SafeParser.Hash(
                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString() ?? string.Empty,
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear)?.Value?.ToString() ?? 
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingYear)?.Value?.ToString() ?? 
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear)?.Value?.ToString() ??
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingYear)?.Value?.ToString() ??
                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingDateOrYear)?.Value?.ToString() ?? string.Empty,
                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value?.ToString() ?? string.Empty);
                             var pictureIndex = 0;
                             foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
                             {
-                                var imageInfo = SixLabors.ImageSharp.Image.Load(embeddedPicture.PictureData);
+                                var imageInfo = Image.Load(embeddedPicture.PictureData);
                                 var imageCrcHash = CRC32.Calculate(embeddedPicture.PictureData);
                                 if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
                                 {
@@ -219,7 +221,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                     {
                                         CrcHash = imageCrcHash,
                                         PictureIdentifier = pictureIdentifier,
-                                        FileInfo = (new FileInfo(newImageFileName).ToFileSystemInfo()),
+                                        FileInfo = new FileInfo(newImageFileName).ToFileSystemInfo(),
                                         Width = imageInfo.Width,
                                         Height = imageInfo.Height,
                                         SortOrder = embeddedPicture.Position,
@@ -229,7 +231,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
 
                                 pictureIndex++;
                             }
-                        }                            
+                        }
                     }
                 }
             }
@@ -241,7 +243,8 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             // Ensure that OrigReleaseYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
             if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseYear))
             {
-                tags.Add(new MetaTag<object?>{
+                tags.Add(new MetaTag<object?>
+                {
                     Identifier = MetaTagIdentifier.OrigReleaseYear,
                     Value = 0
                 });
@@ -260,6 +263,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     }
                 };
             }
+
             var track = new Common.Models.Track
             {
                 CrcHash = CRC32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
@@ -271,14 +275,14 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             };
             return new OperationResult<Common.Models.Track>
             {
-                Data = track 
-            };            
+                Data = track
+            };
         }
     }
 
     public async Task<OperationResult<bool>> UpdateTrackAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Track track, CancellationToken cancellationToken = default)
     {
-        var result = false;        
+        var result = false;
         if (track.Tags?.Any() ?? false)
         {
             var trackFileName = track.File.FullName(directoryInfo);
@@ -314,6 +318,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     {
                         fileAtl.EmbeddedPictures.Clear();
                     }
+
                     await fileAtl.SaveAsync();
                     result = true;
                 }
@@ -323,6 +328,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 }
             }
         }
+
         return new OperationResult<bool>
         {
             Data = result
@@ -348,69 +354,73 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                         var artists = kp.Value.ToCleanedMultipleArtistsValue();
                         if (artists != null)
                         {
-                            result.Add(new MetaTag<object?>()
+                            result.Add(new MetaTag<object?>
                             {
                                 Identifier = MetaTagIdentifier.Artists,
                                 Value = artists
                             });
                         }
                     }
+
                     break;
-                
+
                 case "LENGTH":
                     if (result.All(x => x.Identifier != MetaTagIdentifier.Length))
                     {
-                        result.Add(new MetaTag<object?>()
+                        result.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Length,
                             Value = kp.Value
                         });
                     }
-                    break;    
-                
+
+                    break;
+
                 case "DATE":
                     if (result.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseDate))
                     {
-                        result.Add(new MetaTag<object?>()
+                        result.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.OrigReleaseDate,
                             Value = kp.Value
                         });
                     }
-                    break;          
-                
+
+                    break;
+
                 case "TRACK":
                     if (result.All(x => x.Identifier != MetaTagIdentifier.TrackNumberTotal))
                     {
                         if (kp.Value.Contains('/'))
                         {
-                            result.Add(new MetaTag<object?>()
+                            result.Add(new MetaTag<object?>
                             {
                                 Identifier = MetaTagIdentifier.TrackNumberTotal,
                                 Value = kp.Value
                             });
                         }
                     }
-                    break;                  
-                
+
+                    break;
+
                 // ReSharper disable once StringLiteralTypo
                 case "WXXX":
                     if (result.All(x => x.Identifier != MetaTagIdentifier.UserDefinedUrlLink))
                     {
-                        result.Add(new MetaTag<object?>()
+                        result.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.UserDefinedUrlLink,
                             Value = kp.Value
                         });
                     }
-                    break;                  
-                
+
+                    break;
             }
         }
 
         return result;
     }
-    
+
 
     private static bool IsAtlTrackForMp3(ATL.Track track)
     {

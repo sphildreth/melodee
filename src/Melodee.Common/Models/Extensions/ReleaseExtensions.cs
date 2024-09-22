@@ -18,6 +18,7 @@ public static class ReleaseExtensions
         {
             return false;
         }
+
         var genre = tracks.Select(x => x.Genre().Nullify()).Distinct().ToArray();
         if (genre.Length > 0)
         {
@@ -26,9 +27,10 @@ public static class ReleaseExtensions
                 return true;
             }
         }
+
         return release.Artist().IsVariousArtistValue() || release.Artist().IsSoundTrackAristValue() || release.Artist().IsCastRecording();
     }
-    
+
     public static bool HasTrackArtists(this Release release)
     {
         var tracks = (release.Tracks ?? []).ToArray();
@@ -36,6 +38,7 @@ public static class ReleaseExtensions
         {
             return false;
         }
+
         var trackArtists = tracks
             .Select(x => x.TrackArtist())
             .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -43,7 +46,7 @@ public static class ReleaseExtensions
             .ToArray();
         return trackArtists.Length > 0;
     }
-    
+
     public static bool Delete(this Release release, string directory)
     {
         var dirInfo = new DirectoryInfo(Path.Combine(directory, release.ToDirectoryName()));
@@ -87,30 +90,33 @@ public static class ReleaseExtensions
 
         return d;
     }
-    
-    public static bool IsValid(this Release release, Models.Configuration.Configuration configuration)
+
+    public static bool IsValid(this Release release, Configuration.Configuration configuration)
     {
         if (release.Tags?.Count() == 0)
         {
             return false;
         }
+
         if (release.Tracks?.Count() == 0)
         {
             return false;
         }
+
         if (release.Tracks!.Any(x => !x.IsValid(configuration)))
         {
             return false;
         }
+
         var artist = release.Artist().Nullify();
         var releaseTitle = release.ReleaseTitle().Nullify();
         var releaseYear = release.ReleaseYear();
         return release.UniqueId > 0 &&
                artist != null &&
                releaseTitle != null &&
-               release.Status is ReleaseStatus.Complete or ReleaseStatus.New or ReleaseStatus.Ok or ReleaseStatus.Reviewed && 
-               releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year && 
-               releaseYear > configuration.ValidationOptions.MinimumReleaseYear && 
+               release.Status is ReleaseStatus.Complete or ReleaseStatus.New or ReleaseStatus.Ok or ReleaseStatus.Reviewed &&
+               releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year &&
+               releaseYear > configuration.ValidationOptions.MinimumReleaseYear &&
                releaseYear < configuration.ValidationOptions.MaximumReleaseYear;
     }
 
@@ -169,29 +175,47 @@ public static class ReleaseExtensions
     }
 
     /// <summary>
-    /// Return the value set for the Artist Tag.
+    ///     Return the value set for the Artist Tag.
     /// </summary>
-    public static string? Artist(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist);
+    public static string? Artist(this Release release)
+    {
+        return release.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist);
+    }
 
-    public static long ArtistUniqueId(this Release release) => release.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(release.ArtistSort() ?? release.Artist() ?? Guid.NewGuid().ToString());
+    public static long ArtistUniqueId(this Release release)
+    {
+        return release.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(release.ArtistSort() ?? release.Artist() ?? Guid.NewGuid().ToString());
+    }
 
-    public static string? ArtistSort(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.SortAlbumArtist);
+    public static string? ArtistSort(this Release release)
+    {
+        return release.MetaTagValue<string?>(MetaTagIdentifier.SortAlbumArtist);
+    }
 
     /// <summary>
-    /// Return the value set for the Album Tag.
+    ///     Return the value set for the Album Tag.
     /// </summary>
-    public static string? ReleaseTitle(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Album);
+    public static string? ReleaseTitle(this Release release)
+    {
+        return release.MetaTagValue<string?>(MetaTagIdentifier.Album);
+    }
 
     /// <summary>
-    /// Return the value set for the OrigReleaseYear ?? RecordingYear ?? RecordingDateOrYear
+    ///     Return the value set for the OrigReleaseYear ?? RecordingYear ?? RecordingDateOrYear
     /// </summary>
-    public static int? ReleaseYear(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ??
-                                                            release.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
-                                                            release.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
+    public static int? ReleaseYear(this Release release)
+    {
+        return release.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ??
+               release.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
+               release.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
+    }
 
-    public static int MediaCountValue(this Release release) => release.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ??
-                                                               release.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
-                                                               0;
+    public static int MediaCountValue(this Release release)
+    {
+        return release.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ??
+               release.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
+               0;
+    }
 
     public static int TrackTotalValue(this Release release)
     {
@@ -210,9 +234,15 @@ public static class ReleaseExtensions
         return release.Tracks?.Count() ?? 0;
     }
 
-    public static string? Genre(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
+    public static string? Genre(this Release release)
+    {
+        return release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
+    }
 
-    public static DirectoryInfo ToOriginalDirectoryInfo(this Release release) => new DirectoryInfo(release.OriginalDirectory.Path);
+    public static DirectoryInfo ToOriginalDirectoryInfo(this Release release)
+    {
+        return new DirectoryInfo(release.OriginalDirectory.Path);
+    }
 
     public static IEnumerable<FileInfo> FileInfosForExtension(this Release release, string extension)
     {
@@ -226,7 +256,7 @@ public static class ReleaseExtensions
     }
 
     /// <summary>
-    /// Is the given File related to this release.
+    ///     Is the given File related to this release.
     /// </summary>
     public static bool IsFileForRelease(this Release release, FileSystemInfo fileSystemInfo)
     {
@@ -273,7 +303,7 @@ public static class ReleaseExtensions
             {
                 foreach (var track in release.Tracks)
                 {
-                    var normalizedTrackArtist = track.TrackArtist()?.ToAlphanumericName() ?? String.Empty;
+                    var normalizedTrackArtist = track.TrackArtist()?.ToAlphanumericName() ?? string.Empty;
                     var normalizedTrackName = track.Title()?.ToAlphanumericName() ?? string.Empty;
                     if ((normalizedName.Contains(normalizedArtistName) || normalizedName.Contains(normalizedTrackArtist)) &&
                         normalizedName.Contains(normalizedTrackName))
@@ -359,7 +389,7 @@ public static class ReleaseExtensions
 
         var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
         var fnIdPart = $" [{release.ArtistUniqueId()}]";
-        var maxFnLength = (configuration.PluginProcessOptions.MaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length)) - 2;
+        var maxFnLength = configuration.PluginProcessOptions.MaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length) - 2;
         if (artistDirectory.Length > maxFnLength)
         {
             artistDirectory = artistDirectory.Substring(0, maxFnLength);
@@ -367,8 +397,11 @@ public static class ReleaseExtensions
 
         return Path.Combine(fnSubPart, $"{artistDirectory}{fnIdPart}");
     }
-    
-    public static double TotalDuration(this Release release) => release.Tracks?.Sum(x => x.Duration()) ?? 0;
+
+    public static double TotalDuration(this Release release)
+    {
+        return release.Tracks?.Sum(x => x.Duration()) ?? 0;
+    }
 
     public static string Duration(this Release release)
     {
@@ -389,6 +422,7 @@ public static class ReleaseExtensions
                     Trace.WriteLine($"Unable to find Directory for Release [{release}]");
                     return null;
                 }
+
                 var dirDirectoryInfo = dir.ToDirectorySystemInfo();
                 if (image.FileInfo != null && image.FileInfo.Exists(dirDirectoryInfo))
                 {
@@ -397,12 +431,11 @@ public static class ReleaseExtensions
                         return await File.ReadAllBytesAsync(image.FileInfo.FullName(dirDirectoryInfo));
                     }
                 }
-                else
-                {
-                    Trace.WriteLine($"Unable to find Image File [{image}] for Release [{release}]");
-                }
+
+                Trace.WriteLine($"Unable to find Image File [{image}] for Release [{release}]");
             }
         }
+
         return null;
     }
 }

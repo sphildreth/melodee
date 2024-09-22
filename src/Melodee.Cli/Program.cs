@@ -1,6 +1,5 @@
 ﻿using Melodee.Cli.Command;
 using Melodee.Cli.CommandSettings;
-using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Melodee.Cli;
@@ -13,22 +12,16 @@ public static class Program
 
         app.Configure(config =>
         {
-            config.AddBranch<ProcessInboundSettings>("processor", add =>
-            {
-                add.AddCommand<ProcessInboundCommand>("process");
-            });
-            config.AddBranch<ParseSettings>("parser", add =>
-            {
-                add.AddCommand<ParseCommand>("parse");
-            });            
+            config.AddBranch<ProcessInboundSettings>("processor", add => { add.AddCommand<ProcessInboundCommand>("process"); });
+            config.AddBranch<ParseSettings>("parser", add => { add.AddCommand<ParseCommand>("parse"); });
         });
-        
+
         //:musical_note:
         //:musical_notes:
         //AnsiConsole.MarkupLine(":fire: :alien_monster: :sparkles:");
-       // AnsiConsole.Markup("[white on blue]Melodee Command Line Interface[/]");
-      //  AnsiConsole.MarkupLine("");
-        
+        // AnsiConsole.Markup("[white on blue]Melodee Command Line Interface[/]");
+        //  AnsiConsole.MarkupLine("");
+
         return app.Run(args);
     }
 }

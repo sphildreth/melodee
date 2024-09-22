@@ -1,6 +1,4 @@
-using System.Runtime.CompilerServices;
 using Melodee.Common.Extensions;
-using Microsoft.VisualBasic.FileIO;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -14,8 +12,8 @@ public static class FileSystemInfoExtensions
             Path = dir.FullName,
             Name = dir.Name
         };
-    }    
-    
+    }
+
     public static FileSystemFileInfo ToFileSystemInfo(this FileSystemInfo fileInfo)
     {
         var fi = new FileInfo(fileInfo.FullName);

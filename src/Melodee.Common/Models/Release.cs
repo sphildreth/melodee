@@ -1,31 +1,30 @@
 using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
-using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
-using Microsoft.VisualBasic.FileIO;
 
 namespace Melodee.Common.Models;
 
 /// <summary>
-/// This is a representation of a Release (a published collection of Tracks) including all known MetaData.
+///     This is a representation of a Release (a published collection of Tracks) including all known MetaData.
 /// </summary>
 [Serializable]
 public sealed record Release
 {
     public const string JsonFileName = "melodee.json";
-    
+
     public long UniqueId => SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
 
     public DateTimeOffset Created { get; set; }
 
     /// <summary>
-    /// What plugins were utilized in discovering this release.
+    ///     What plugins were utilized in discovering this release.
     /// </summary>
     public required IEnumerable<string> ViaPlugins { get; set; }
 
     /// <summary>
-    /// This is the directory where the Release was created, it will not be the "Staging" or "Library" directory where there Release is moved to once processed.
+    ///     This is the directory where the Release was created, it will not be the "Staging" or "Library" directory where
+    ///     there Release is moved to once processed.
     /// </summary>
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
 
@@ -44,6 +43,21 @@ public sealed record Release
 
     public IEnumerable<ReleaseFile> Files { get; set; } = [];
 
+    public int SortOrder { get; set; }
+
+    public string SortValue
+    {
+        get
+        {
+            if (SortOrder > 0)
+            {
+                return SortOrder.ToString();
+            }
+
+            return this.ToDirectoryName();
+        }
+    }
+
     public Release MergeTracks(IEnumerable<Track> pluginResultData)
     {
         var tracks = new List<Track>(Tracks ?? []);
@@ -60,7 +74,7 @@ public sealed record Release
         if (trackTotalTag != null)
         {
             releaseTags!.Remove(trackTotalTag);
-            releaseTags.Add(new MetaTag<object?>()
+            releaseTags.Add(new MetaTag<object?>
             {
                 Identifier = MetaTagIdentifier.TrackTotal,
                 Value = tracks.Count,
@@ -70,21 +84,6 @@ public sealed record Release
         }
 
         return this with { Tracks = tracks.ToArray(), Tags = releaseTags!.ToArray() };
-    }
-
-    public int SortOrder { get; set; }
-
-    public string SortValue
-    {
-        get
-        {
-            if (SortOrder > 0)
-            {
-                return SortOrder.ToString();
-            }
-
-            return this.ToDirectoryName();
-        }
     }
 
     public override string ToString()
@@ -203,8 +202,11 @@ public sealed record Release
         }
     }
 
-    public void RemoveTrackTagValue(long trackId, MetaTagIdentifier identifier) => SetTrackTagValue(trackId, identifier, null);
-    
+    public void RemoveTrackTagValue(long trackId, MetaTagIdentifier identifier)
+    {
+        SetTrackTagValue(trackId, identifier, null);
+    }
+
     public void SetTrackTagValue(long trackId, MetaTagIdentifier identifier, object? value)
     {
         var tracks = (Tracks ?? []).ToList();

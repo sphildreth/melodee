@@ -1,4 +1,3 @@
-using System.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -10,15 +9,15 @@ using Serilog;
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-/// Ensures OrigReleaseYear is set, if not tries to find it from directory title, if not sets to default.
+///     Ensures OrigReleaseYear is set, if not tries to find it from directory title, if not sets to default.
 /// </summary>
 public sealed class OrigReleaseYear(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
     public override string Id => "652676F9-3BCA-48D2-8473-C7CAE28E0020";
 
-    public override  string DisplayName => nameof(OrigReleaseYear);
+    public override string DisplayName => nameof(OrigReleaseYear);
 
-    public override  int SortOrder { get; } = 0;
+    public override int SortOrder { get; } = 0;
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
@@ -27,8 +26,8 @@ public sealed class OrigReleaseYear(Configuration configuration) : MetaTagProces
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
-        object? tagValue = metaTag.Value;
-        int yearValue = SafeParser.ToNumber<int>(tagValue ?? string.Empty);
+        var tagValue = metaTag.Value;
+        var yearValue = SafeParser.ToNumber<int>(tagValue ?? string.Empty);
         if (yearValue < Configuration.PluginProcessOptions.MinimumValidReleaseYear)
         {
             yearValue = directoryInfo.FullName().TryToGetYearFromString() ?? fileSystemFileInfo.FullName(directoryInfo).TryToGetYearFromString() ?? 0;
@@ -38,18 +37,17 @@ public sealed class OrigReleaseYear(Configuration configuration) : MetaTagProces
                 Log.Debug("Used current year for OrigReleaseYear.");
             }
         }
-        
+
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
-            Data = new []
+            Data = new[]
             {
                 new MetaTag<object?>
                 {
-                    Identifier = MetaTagIdentifier.OrigReleaseYear, 
+                    Identifier = MetaTagIdentifier.OrigReleaseYear,
                     Value = yearValue
                 }
             }
         };
     }
-
 }

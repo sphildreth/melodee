@@ -5,12 +5,12 @@ using Serilog;
 
 namespace Melodee.Plugins.Scripting;
 
-public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPlugin
+public sealed class PreDiscoveryScript(Configuration configuration) : IScriptPlugin
 {
     private readonly Configuration _configuration = configuration;
-    
+
     public string Id => "837CE3BD-F854-4B8D-A64A-978649AAB08A";
-    
+
     public string DisplayName => nameof(PreDiscoveryScript);
 
     public bool IsEnabled { get; set; } = true;
@@ -18,7 +18,7 @@ public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPl
     public int SortOrder { get; } = 0;
 
     public bool StopProcessing { get; } = false;
-    
+
     public async Task<OperationResult<bool>> ProcessAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var result = false;
@@ -37,9 +37,10 @@ public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPl
                     Data = false
                 };
             }
+
             try
             {
-                var argument = $" -d \"{fileSystemDirectoryInfo.Path}\" -r {(_configuration.PluginProcessOptions.DoDeleteOriginal ? "0" :"1")}";
+                var argument = $" -d \"{fileSystemDirectoryInfo.Path}\" -r {(_configuration.PluginProcessOptions.DoDeleteOriginal ? "0" : "1")}";
                 await $"bash {_configuration.Scripting.PreDiscoveryScript}{argument}".Bash();
                 result = true;
             }
@@ -54,7 +55,7 @@ public sealed class PreDiscoveryScript(Configuration configuration)  : IScriptPl
         {
             AdditionalData = new Dictionary<string, object>
             {
-                {"output", scriptOutput ?? string.Empty}
+                { "output", scriptOutput ?? string.Empty }
             },
             Data = result
         };

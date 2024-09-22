@@ -17,13 +17,13 @@ public static class CueSheetExtensions
             ProcessedByPlugin = nameof(Directory.CueSheet)
         };
     }
-    
+
     public static Release ToRelease(this CueSheet cueSheet, FileSystemDirectoryInfo directoryInfo)
     {
         var fileInfo = new FileInfo(cueSheet.FileSystemFileInfo.FullName(directoryInfo));
         return new Release
         {
-            Files = new []
+            Files = new[]
             {
                 cueSheet.ToReleaseFile()
             },
@@ -50,36 +50,57 @@ public static class CueSheetExtensions
         {
             return d;
         }
+
         try
         {
-            object? vv = cueSheet.Tags.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
+            var vv = cueSheet.Tags.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
             if (vv == null)
             {
                 return d;
             }
+
             var converter = TypeDescriptor.GetConverter(typeof(T?));
-            return (T?)converter.ConvertFrom(vv);           
+            return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)
         {
             Log.Debug(e, "CueSheet [{CueSheet}]", cueSheet);
         }
+
         return d;
     }
-    
-    public static string? Artist(this CueSheet cueSheet) => cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Artist);    
-    
-    public static string? ReleaseTitle(this CueSheet cueSheet) => cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Album);
-    
-    public static int TrackTotalNumber(this CueSheet cueSheet) => cueSheet.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal) ?? 0;
 
-    public static int MediaNumber(this CueSheet cueSheet) => cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscNumber) ?? 0;    
-    
-    public static int MediaCountValue(this CueSheet cueSheet) => cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ?? 
-                                                                 cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ?? 
-                                                                 0;    
-    
-    public static int? ReleaseYear(this CueSheet cueSheet) => cueSheet.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ?? 
-                                                              cueSheet.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
-                                                              cueSheet.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);    
+    public static string? Artist(this CueSheet cueSheet)
+    {
+        return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Artist);
+    }
+
+    public static string? ReleaseTitle(this CueSheet cueSheet)
+    {
+        return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Album);
+    }
+
+    public static int TrackTotalNumber(this CueSheet cueSheet)
+    {
+        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal) ?? 0;
+    }
+
+    public static int MediaNumber(this CueSheet cueSheet)
+    {
+        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscNumber) ?? 0;
+    }
+
+    public static int MediaCountValue(this CueSheet cueSheet)
+    {
+        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ??
+               cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
+               0;
+    }
+
+    public static int? ReleaseYear(this CueSheet cueSheet)
+    {
+        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ??
+               cueSheet.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
+               cueSheet.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
+    }
 }

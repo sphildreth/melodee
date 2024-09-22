@@ -1,10 +1,11 @@
-using System.Diagnostics;
+using System.Text.Json;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
+using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Track;
 using Serilog;
 using Serilog.Events;
@@ -15,33 +16,29 @@ namespace Melodee.Plugins.MetaData.Directory;
 public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "M3U";
-    
+
     private readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
-    
+
     public override string Id => "800EBFEF-4A9A-4DD8-8505-056D13535D45";
-    
+
     public override string DisplayName => nameof(M3UPlaylist);
 
     public override bool IsEnabled { get; set; } = true;
 
     public override int SortOrder { get; } = 2;
-    
-    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
-    {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
-    }    
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var m3UFiles = fileSystemDirectoryInfo.FileInfosForExtension(HandlesExtension).ToArray();
-        
+
         if (m3UFiles.Length == 0)
         {
             return new OperationResult<int>("Skipping validation. No M3U file for Release.")
             {
                 Data = -1
-            }; 
+            };
         }
+
         var processedFiles = 0;
 
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
@@ -53,8 +50,8 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                 Path = dirInfo.Parent.FullName,
                 Name = dirInfo.Parent.Name
             };
-        }        
-        
+        }
+
         var trackPlugin = _trackPlugins.First();
         foreach (var m3UFile in m3UFiles)
         {
@@ -81,7 +78,6 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                         {
                             trackTotal = models.Length;
                         }
-
                     }
 
                     var newReleaseTags = new List<MetaTag<object?>>
@@ -144,7 +140,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                             }
                             else
                             {
-                                var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                                var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
                                 if (existingRelease != null)
                                 {
                                     m3URelease = m3URelease.Merge(existingRelease);
@@ -152,13 +148,14 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                             }
                         }
 
-                        var serialized = System.Text.Json.JsonSerializer.Serialize(m3URelease);
+                        var serialized = JsonSerializer.Serialize(m3URelease);
                         await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
                         if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
                             m3UFile.Delete();
                             Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
                         }
+
                         Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, m3URelease.ToMelodeeJsonName());
                         processedFiles++;
                     }
@@ -169,25 +166,32 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                 }
             }
         }
+
         StopProcessing = processedFiles > 0;
         return new OperationResult<int>
         {
             Data = processedFiles
-        };        
+        };
     }
-    
-    private static async Task<Models.M3ULine[]> GetModelsFromM3UFile(string filePath)
+
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+    }
+
+    private static async Task<M3ULine[]> GetModelsFromM3UFile(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
             return [];
         }
-        var result = new List<Models.M3ULine>();
+
+        var result = new List<M3ULine>();
         try
         {
             foreach (var line in await File.ReadAllLinesAsync(filePath))
             {
-                var model = ModelFromM3ULine( filePath, line);
+                var model = ModelFromM3ULine(filePath, line);
                 if (model != null)
                 {
                     result.Add(model);
@@ -202,12 +206,13 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
         return result.ToArray();
     }
 
-    public static Models.M3ULine? ModelFromM3ULine(string filePath, string? lineFromFile)
+    public static M3ULine? ModelFromM3ULine(string filePath, string? lineFromFile)
     {
         if (string.IsNullOrWhiteSpace(lineFromFile))
         {
             return null;
         }
+
         try
         {
             var directoryInfo = filePath.ToDirectoryInfo();
@@ -215,14 +220,14 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
             if (parts.Length >= 3)
             {
                 var releaseArtist = parts[1];
-                string trackTitle = parts[2];
-                
+                var trackTitle = parts[2];
+
                 var fileSystemInfoFile = new FileSystemFileInfo
                 {
                     Name = lineFromFile,
                     Size = 0
                 };
-                
+
                 string? dirName = null;
                 if (!string.IsNullOrWhiteSpace(filePath))
                 {
@@ -234,8 +239,8 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
 
                     fileSystemInfoFile = new FileInfo(Path.Combine(dirName ?? string.Empty, lineFromFile)).ToFileSystemInfo();
                 }
-                
-                return new Models.M3ULine
+
+                return new M3ULine
                 {
                     IsValid = !string.IsNullOrWhiteSpace(filePath) && fileSystemInfoFile.Exists(directoryInfo),
                     FileSystemFileInfo = fileSystemInfoFile,
@@ -247,9 +252,9 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
         }
         catch (Exception e)
         {
-            Log.Error(e, "lineFromFile [{LineFromFile}]", lineFromFile );
+            Log.Error(e, "lineFromFile [{LineFromFile}]", lineFromFile);
         }
+
         return null;
     }
-    
 }

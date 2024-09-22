@@ -7,18 +7,18 @@ namespace Melodee.Common.Models;
 public sealed record PagedRequest
 {
     private const int DefaultPageSize = 100;
-    
+
     public const string OrderAscDirection = "ASC";
     public const string OrderDescDirection = "DESC";
-    private int? _skipValue;    
-    
-    public short? Take { get; set; } = DefaultPageSize;    
+    private int? _skipValue;
+
+    public short? Take { get; set; } = DefaultPageSize;
     public string? Search { get; init; }
-    
+
     public ReleaseResultFilter? Filter { get; init; }
-    
+
     public long[] SelectedReleaseIds { get; init; } = Array.Empty<long>();
-    
+
     public short TakeValue
     {
         get
@@ -28,6 +28,7 @@ public sealed record PagedRequest
                 // Suppose to mean return all, this limits to something sane other than Int.MaxLimit
                 return 500;
             }
+
             return Take ?? DefaultPageSize;
         }
     }
@@ -35,10 +36,10 @@ public sealed record PagedRequest
     public string? Order { get; init; }
     public int? Page { get; init; } = 1;
 
-    public int PageValue => Page ?? 1;    
-    
+    public int PageValue => Page ?? 1;
+
     public string? Sort { get; set; }
-    
+
     public int SkipValue
     {
         get
@@ -58,8 +59,8 @@ public sealed record PagedRequest
             return _skipValue.Value;
         }
         set => _skipValue = value;
-    }    
-    
+    }
+
     /// <summary>
     ///     Sort first with the given (if any) parameter then apply default sorting. Example is "rating" supplied then sort by
     ///     sortName
@@ -76,10 +77,15 @@ public sealed record PagedRequest
         {
             foreach (var kp in orderBy)
             {
-                if (result.Length > 0) result.Append(",");
+                if (result.Length > 0)
+                {
+                    result.Append(",");
+                }
+
                 result.AppendFormat("{0} {1}", kp.Key, kp.Value);
             }
         }
+
         return result.ToString();
-    }    
+    }
 }

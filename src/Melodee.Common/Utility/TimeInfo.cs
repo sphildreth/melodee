@@ -2,61 +2,6 @@ namespace Melodee.Common.Utility;
 
 public sealed class TimeInfo
 {
-    public decimal Days { get; set; }
-
-    public string DaysFormatted
-    {
-        get
-        {
-            if (Days > -1) return Days.ToString("000");
-            return "--";
-        }
-    }
-
-    public decimal Hours { get; set; }
-
-    public string HoursFormatted
-    {
-        get
-        {
-            if (Hours > -1) return Hours.ToString("00");
-            return "--";
-        }
-    }
-
-    public decimal Minutes { get; set; }
-
-    public string MinutesFormatted
-    {
-        get
-        {
-            if (Minutes > -1) return Minutes.ToString("00");
-            return "--";
-        }
-    }
-
-    public decimal Seconds { get; set; }
-
-    public string SecondsFormatted
-    {
-        get
-        {
-            if (Seconds > -1) return Seconds.ToString("00");
-            return "--";
-        }
-    }
-
-    public decimal? Years { get; set; }
-
-    public string? YearsFormatted
-    {
-        get
-        {
-            if (Years.HasValue && Years.Value > 0) return Years.Value.ToString("0");
-            return null;
-        }
-    }
-
     public TimeInfo(decimal milliseconds)
     {
         var secondsTotal = milliseconds / 1000;
@@ -70,6 +15,81 @@ public sealed class TimeInfo
         Hours = hoursTotal - daysTotal * 24;
         Days = daysTotal - yearsTotal * 365;
         Years = Math.Floor(daysTotal / 365);
+    }
+
+    public decimal Days { get; set; }
+
+    public string DaysFormatted
+    {
+        get
+        {
+            if (Days > -1)
+            {
+                return Days.ToString("000");
+            }
+
+            return "--";
+        }
+    }
+
+    public decimal Hours { get; set; }
+
+    public string HoursFormatted
+    {
+        get
+        {
+            if (Hours > -1)
+            {
+                return Hours.ToString("00");
+            }
+
+            return "--";
+        }
+    }
+
+    public decimal Minutes { get; set; }
+
+    public string MinutesFormatted
+    {
+        get
+        {
+            if (Minutes > -1)
+            {
+                return Minutes.ToString("00");
+            }
+
+            return "--";
+        }
+    }
+
+    public decimal Seconds { get; set; }
+
+    public string SecondsFormatted
+    {
+        get
+        {
+            if (Seconds > -1)
+            {
+                return Seconds.ToString("00");
+            }
+
+            return "--";
+        }
+    }
+
+    public decimal? Years { get; set; }
+
+    public string? YearsFormatted
+    {
+        get
+        {
+            if (Years.HasValue && Years.Value > 0)
+            {
+                return Years.Value.ToString("0");
+            }
+
+            return null;
+        }
     }
 
     public string ToFullFormattedString()
@@ -89,6 +109,7 @@ public sealed class TimeInfo
         {
             return $"{DaysFormatted}:{HoursFormatted}:{MinutesFormatted}:{SecondsFormatted}";
         }
+
         return $"{HoursFormatted}:{MinutesFormatted}:{SecondsFormatted}";
     }
 }

@@ -10,11 +10,12 @@ using Melodee.Plugins.MetaData;
 using Melodee.Plugins.MetaData.Track.Extensions;
 using Serilog.Events;
 using SerilogTimings;
+using Track = ATL.Track;
 
 namespace Melodee.Plugins.Conversion.Media;
 
 /// <summary>
-/// This converts all Media files into MP3 files. 
+///     This converts all Media files into MP3 files.
 /// </summary>
 public sealed partial class MediaConvertor(Configuration configuration) : MetaDataBase(configuration), IConversionPlugin
 {
@@ -32,6 +33,7 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
         {
             return false;
         }
+
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
@@ -48,11 +50,11 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
                 Data = fileSystemInfo
             };
         }
-        
+
         var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
         if (fileInfo.Exists && Configuration.MediaConvertorOptions.ConversionEnabled)
         {
-            var fileAtl = new ATL.Track(fileSystemInfo.FullName(directoryInfo));
+            var fileAtl = new Track(fileSystemInfo.FullName(directoryInfo));
             if (ShouldMediaTrackBeConverted(fileAtl))
             {
                 using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
@@ -69,7 +71,7 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
                             options.WithVariableBitrate(Configuration.MediaConvertorOptions.ConvertVbrLevel);
                             options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                         }).ProcessAsynchronously();
-                    var newAtl = new ATL.Track(newFileName);
+                    var newAtl = new Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))
                     {
                         fileInfo = new FileInfo(newFileName);
@@ -91,24 +93,27 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
             Data = fileInfo.ToFileSystemInfo()
         };
     }
-    
-    private static bool ShouldMediaTrackBeConverted(ATL.Track track)
+
+    private static bool ShouldMediaTrackBeConverted(Track track)
     {
-        if(track.AudioFormat == null || (track.AudioFormat?.MimeList?.Contains("image") ?? false))
+        if (track.AudioFormat == null || (track.AudioFormat?.MimeList?.Contains("image") ?? false))
         {
             return false;
         }
+
         var shortName = track.AudioFormat?.ShortName ?? string.Empty;
-          
-        if(MpegRegex().IsMatch(shortName))
+
+        if (MpegRegex().IsMatch(shortName))
         {
             var ext = track.FileInfo().Extension;
-            if(ext.ToLower().EndsWith("m4a")) // M4A is an audio file using the MP4 encoding
+            if (ext.ToLower().EndsWith("m4a")) // M4A is an audio file using the MP4 encoding
             {
                 return true;
-            }                
+            }
+
             return false;
-        }            
+        }
+
         return true;
     }
 

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using ATL.CatalogDataReaders;
 using FFMpegCore;
 using FFMpegCore.Enums;
@@ -18,12 +19,12 @@ using SerilogTimings;
 namespace Melodee.Plugins.MetaData.Directory;
 
 /// <summary>
-/// If a CUE file is found then split out the MP3 into tracks. 
+///     If a CUE file is found then split out the MP3 into tracks.
 /// </summary>
 public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
     private const string HandlesExtension = "CUE";
-    
+
     public readonly IEnumerable<ITrackPlugin> TrackPlugins = trackPlugins;
 
     public override string Id => "3CAB0527-B13F-4C29-97AD-5541229240DD";
@@ -33,11 +34,6 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
     public override bool IsEnabled { get; set; } = false;
 
     public override int SortOrder { get; } = 0;
-    
-    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
-    {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
-    }  
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
@@ -133,7 +129,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                                     options.WithAudioSamplingRate(Configuration.MediaConvertorOptions.ConvertSamplingRate);
                                     options.WithVariableBitrate(Configuration.MediaConvertorOptions.ConvertVbrLevel);
                                     options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
-                                }).ProcessAsynchronously(true);
+                                }).ProcessAsynchronously();
 
                             var readerTrack = theReader.Tracks.FirstOrDefault(x => x.TrackNumber == track.TrackNumber()) ?? throw new Exception("Unable to find Track for file");
                             var fileAtl = new ATL.Track(track.File.FullName(fileSystemDirectoryInfo))
@@ -163,7 +159,6 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                             {
                                 throw new Exception($"Unable to update metadata for file [{track.File.FullName(fileSystemDirectoryInfo)}]");
                             }
-
                         });
 
                         var cueRelease = cueModel.ToRelease(fileSystemDirectoryInfo);
@@ -180,8 +175,8 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                                 {
                                     cueFileMediaFile.Delete();
                                 }
-                            }                            
-                            
+                            }
+
                             var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueRelease.ToMelodeeJsonName());
                             if (File.Exists(stagingReleaseDataName))
                             {
@@ -191,7 +186,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                                 }
                                 else
                                 {
-                                    var existingRelease = System.Text.Json.JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                                    var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
                                     if (existingRelease != null)
                                     {
                                         cueRelease = cueRelease.Merge(existingRelease);
@@ -199,13 +194,14 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                                 }
                             }
 
-                            var serialized = System.Text.Json.JsonSerializer.Serialize(cueRelease);
+                            var serialized = JsonSerializer.Serialize(cueRelease);
                             await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
                             if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                             {
                                 cueFile.Delete();
                                 Log.Information("Deleted CUE File [{FileName}]", cueFile.Name);
                             }
+
                             Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, cueRelease.ToMelodeeJsonName());
                             processedFiles++;
                         }
@@ -217,11 +213,17 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                 }
             }
         }
+
         StopProcessing = processedFiles > 0;
         return new OperationResult<int>
         {
             Data = processedFiles
         };
+    }
+
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
     }
 
     private static async Task<Models.CueSheet?> ParseFileAsync(string filePath)
@@ -247,9 +249,9 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
 
         int trackNumber;
         string? trackTitle;
-        
-        FileSystemFileInfo? cueSheetDataFile = null; 
-        
+
+        FileSystemFileInfo? cueSheetDataFile = null;
+
         foreach (var lineFromFile in allLinesFromFile)
         {
             var kp = SplitKeyAndValueForLine(lineFromFile);
@@ -262,61 +264,65 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         Value = kp.Value
                     });
                     break;
-                
+
                 case CueSheetKeyRegistry.CdTextFile:
                     releaseTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.MusicCdIdentifier,
                         Value = kp.Value
                     });
-                    break;       
-                
+                    break;
+
                 case CueSheetKeyRegistry.File:
                     if (kp.Value?.Contains(" MP3") ?? false)
                     {
-                        cueSheetDataFile = (new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" MP3", string.Empty)))).ToFileSystemInfo();
+                        cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" MP3", string.Empty))).ToFileSystemInfo();
                     }
+
                     if (kp.Value?.Contains(" WAVE") ?? false)
                     {
-                        cueSheetDataFile = (new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" WAVE", string.Empty)))).ToFileSystemInfo();
-                    }                    
+                        cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" WAVE", string.Empty))).ToFileSystemInfo();
+                    }
+
                     if (kp.Value?.Contains(" BINARY") ?? false)
                     {
-                        cueSheetDataFile = (new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" BINARY", string.Empty)))).ToFileSystemInfo();
+                        cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" BINARY", string.Empty))).ToFileSystemInfo();
                     }
-                    break;        
-                
+
+                    break;
+
                 case CueSheetKeyRegistry.Flags:
-                    
+
                     // Only 4 Flags allowed by spec : 
                     // DCP – Digital copy permitted
                     // 4CH – Four channel audio
                     // PRE – Pre-emphasis enabled (audio tracks only)
                     // SCMS – Serial copy management system (not supported by all recorders)                    
-                    
+
                     trackTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.SubCodeFlags,
                         Value = kp.Value
                     });
-                    break;     
-                
+                    break;
+
                 case CueSheetKeyRegistry.Index:
                     trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     if (trackNumber > 0)
                     {
                         trackIndexes.Add(ParseIndex(trackNumber, lineFromFile));
                     }
-                    break;  
-                
+
+                    break;
+
                 case CueSheetKeyRegistry.Isrc:
                     trackTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.Isrc,
                         Value = kp.Value
                     });
-                    break;      
-                
+                    break;
+
                 case CueSheetKeyRegistry.Performer:
                     if (releaseTags.All(x => x.Identifier != MetaTagIdentifier.Artist))
                     {
@@ -334,16 +340,18 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                             Value = kp.Value
                         });
                     }
-                    break;                  
-                
+
+                    break;
+
                 case CueSheetKeyRegistry.PostGap:
                     trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     if (trackNumber > 0)
                     {
                         trackGaps.Add(ParseIndex(trackNumber, lineFromFile));
                     }
-                    break;     
-                
+
+                    break;
+
                 case CueSheetKeyRegistry.PreGap:
                     trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     if (trackNumber > 0)
@@ -351,37 +359,38 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         trackGaps.Add(ParseIndex(trackNumber, lineFromFile));
                     }
 
-                    break; 
+                    break;
 
                 case CueSheetKeyRegistry.Rem:
                     var v = kp.Value?.Replace("REM", "").Nullify();
 
-                    MetaTagIdentifier remIdentifier = MetaTagIdentifier.Comment;
+                    var remIdentifier = MetaTagIdentifier.Comment;
                     switch (v)
                     {
                         case CueSheetRemOptionsRegistry.Genre:
                             remIdentifier = MetaTagIdentifier.Genre;
                             break;
-                        
+
                         case CueSheetRemOptionsRegistry.Date:
                             remIdentifier = MetaTagIdentifier.OrigReleaseYear;
                             break;
-                        
+
                         case CueSheetRemOptionsRegistry.TotalDiscs:
                             remIdentifier = MetaTagIdentifier.DiscNumberTotal;
-                            break;  
-                        
+                            break;
+
                         case CueSheetRemOptionsRegistry.DiskNumber:
                             remIdentifier = MetaTagIdentifier.DiscNumber;
-                            break;                         
+                            break;
                     }
+
                     releaseTags.Add(new MetaTag<object?>
                     {
                         Identifier = remIdentifier,
                         Value = v
                     });
-                    break;    
-                
+                    break;
+
                 case CueSheetKeyRegistry.SongWriter:
                     if (tracks.Count == 0)
                     {
@@ -399,8 +408,9 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                             Value = kp.Value
                         });
                     }
-                    break;     
-                
+
+                    break;
+
                 case CueSheetKeyRegistry.Title:
                     if (releaseTags.All(x => x.Identifier != MetaTagIdentifier.Album))
                     {
@@ -418,14 +428,15 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                             Value = kp.Value.Nullify()
                         });
                     }
+
                     break;
-                
+
                 case CueSheetKeyRegistry.Track:
                     trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     trackTitle = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
                     if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle))
                     {
-                        var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;                        
+                        var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;
                         tracks.Add(new Common.Models.Track
                         {
                             CrcHash = CRC32.Calculate(fileInfo),
@@ -439,20 +450,21 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         });
                         trackTags.Clear();
                     }
+
                     trackTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.TrackNumber,
                         Value = SafeParser.ToNumber<int>(kp.Value?.Replace(" AUDIO", string.Empty))
-                    });                    
-                    break;                 
+                    });
+                    break;
             }
         }
-        
+
         trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
         trackTitle = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
         if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle))
         {
-            var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0; 
+            var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;
             tracks.Add(new Common.Models.Track
             {
                 CrcHash = CRC32.Calculate(fileInfo),
@@ -475,7 +487,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
             {
                 var dirInfo = new DirectoryInfo(fileInfo.DirectoryName ?? string.Empty);
                 var cueSheetDataFileDirectoryInfo = dirInfo.ToDirectorySystemInfo();
-                
+
                 releaseDate = dirInfo.Name.TryToGetYearFromString();
                 if (releaseDate == null)
                 {
@@ -489,6 +501,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         }
                     }
                 }
+
                 if (releaseDate == null)
                 {
                     var sfvFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension(SimpleFileVerification.HandlesExtension);
@@ -501,21 +514,24 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         }
                     }
                 }
+
                 if (releaseDate == null)
                 {
                     throw new Exception("Unable to determine Release Year for CueFile.");
                 }
             }
+
             var releaseTagForYear = releaseTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear);
             if (releaseTagForYear != null)
             {
                 releaseTags.Remove(releaseTagForYear);
             }
-            releaseTags.Add(new MetaTag<object?>()
+
+            releaseTags.Add(new MetaTag<object?>
             {
                 Identifier = MetaTagIdentifier.OrigReleaseYear,
                 Value = releaseDate
-            });            
+            });
         }
 
         return new Models.CueSheet
@@ -546,7 +562,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
             IndexNumber = SafeParser.ToNumber<int>(parts[1]),
             Minutes = SafeParser.ToNumber<int>(msfParts[0]),
             Seconds = SafeParser.ToNumber<int>(msfParts[1]),
-            Frames = SafeParser.ToNumber<int>(msfParts[2]),
+            Frames = SafeParser.ToNumber<int>(msfParts[2])
         };
     }
 }

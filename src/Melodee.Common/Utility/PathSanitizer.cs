@@ -29,6 +29,7 @@ public static class PathSanitizer
                 c.Add(badWindowsFileCharacter);
             }
         }
+
         InvalidFilenameChars = c.ToArray();
 
         var f = new List<char>();
@@ -40,6 +41,7 @@ public static class PathSanitizer
                 f.Add(badWindowsFileCharacter);
             }
         }
+
         InvalidFilenameChars = c.ToArray();
         InvalidPathChars = f.ToArray();
 
@@ -83,6 +85,7 @@ public static class PathSanitizer
         {
             return null;
         }
+
         var result = new StringBuilder();
         foreach (var characterToTest in input)
         {
@@ -91,6 +94,7 @@ public static class PathSanitizer
             // we found the character in the array of
             result.Append(Array.BinarySearch(invalidChars, characterToTest) >= 0 ? errorChar : characterToTest);
         }
+
         // we're done.
         return result.ToString();
     }

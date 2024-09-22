@@ -36,15 +36,24 @@ public static class FileHelper
         "webp"
     ];
 
-    public static bool IsFileMediaType(string? extension) => !string.IsNullOrEmpty(extension) &&
-                                                             MediaFileTypeExtensions.Contains(extension.Replace(".", ""), StringComparer.OrdinalIgnoreCase);
+    public static bool IsFileMediaType(string? extension)
+    {
+        return !string.IsNullOrEmpty(extension) &&
+               MediaFileTypeExtensions.Contains(extension.Replace(".", ""), StringComparer.OrdinalIgnoreCase);
+    }
 
-    public static bool IsFileImageType(string? extension) => !string.IsNullOrEmpty(extension) &&
-                                                             ImageFileTypeExtensions.Contains(extension.Replace(".", ""), StringComparer.OrdinalIgnoreCase);
+    public static bool IsFileImageType(string? extension)
+    {
+        return !string.IsNullOrEmpty(extension) &&
+               ImageFileTypeExtensions.Contains(extension.Replace(".", ""), StringComparer.OrdinalIgnoreCase);
+    }
 
-    public static bool IsFileMediaMetaDataType(string? extension) => !string.IsNullOrEmpty(extension) &&
-                                                                     MediaMetaDataFileTypeExtensions.Contains(extension.Replace(".", ""),
-                                                                         StringComparer.OrdinalIgnoreCase);
+    public static bool IsFileMediaMetaDataType(string? extension)
+    {
+        return !string.IsNullOrEmpty(extension) &&
+               MediaMetaDataFileTypeExtensions.Contains(extension.Replace(".", ""),
+                   StringComparer.OrdinalIgnoreCase);
+    }
 
     public static int GetNumberOfTotalFilesForDirectory(DirectoryInfo directoryInfo)
     {

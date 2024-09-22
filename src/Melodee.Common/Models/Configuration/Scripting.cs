@@ -4,6 +4,6 @@ namespace Melodee.Common.Models.Configuration;
 public sealed record Scripting
 {
     public string? PreDiscoveryScript { get; set; }
-    
+
     public string? PostDiscoveryScript { get; set; }
 }
