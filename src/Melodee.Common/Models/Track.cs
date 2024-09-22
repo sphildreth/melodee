@@ -32,6 +32,8 @@ public sealed record Track
     public IEnumerable<MediaAudio<object?>>? MediaAudios { get; init; }
 
     public int SortOrder { get; set; }
+
+    public string DisplaySummary => $"{this.MediaNumber().ToStringPadLeft(2)}/{this.MediaTotalNumber().ToStringPadLeft(2)} : {this.TrackNumber().ToStringPadLeft(3)}/{this.TrackTotalNumber().ToStringPadLeft(3)} : { this.Title() }";
     
     public override string ToString() => $"ReleaseId [{ReleaseUniqueId}] TrackId [{UniqueId}] File [{File}]";
 }

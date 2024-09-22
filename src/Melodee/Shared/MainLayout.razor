@@ -5,7 +5,7 @@
 <CascadingValue Value="this">
 
     <div class="bb-page">
-        <main @onkeyup="((e) => KeyPress?.Invoke(this, e))">
+        <main>
             <nav class="navbar navbar-expand-lg navbar-light border mb-2">
                 <div class="container-fluid">
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -17,14 +17,14 @@
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     Edit
                                 </a>
-                                <ul class="dropdown-menu">
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Save, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>ave</a></li>
+                                <ul class="dropdown-menu clearfix">
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Save, null)))"><a class="dropdown-item" href="#">Save<span class="float-end hotkey">Ctrl+S</span></a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanStaging, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F6</span> Rescan Staging</a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanStaging, null)))"><a class="dropdown-item" href="#">Rescan Staging<span class="float-end hotkey">F6</span></a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">D</span>elete Selected</a></li>
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">M</span>ove Selected to Library</a></li>
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SetSelectedStatusReviewed, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">S</span>et Selected Status as Reviewed</a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#">Delete Selected<span class="float-end hotkey">Ctrl+D</span></a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#">Move Selected to Library<span class="float-end hotkey">Ctrl+M</span></a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SetSelectedStatusReviewed, null)))"><a class="dropdown-item" href="#">Set Selected Status as Reviewed<span class="float-end hotkey">Ctrl+S</span></a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SelectAllReleases, true)))"><a class="dropdown-item" href="#">Select All</a></li>
                                     <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SelectAllReleases, false)))"><a class="dropdown-item" href="#">Select None</a></li>
@@ -37,9 +37,9 @@
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     View
                                 </a>
-                                <ul class="dropdown-menu">
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F5</span> Refresh</a></li>
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ShowReleaseDetails, null)))"><a class="dropdown-item" href="#"><span class="text-decoration-underline">F2</span> Show Release Details</a></li>
+                                <ul class="dropdown-menu clearfix">
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.Refresh, null)))"><a class="dropdown-item" href="#">Refresh<span class="float-end hotkey">F5</span></a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.ShowReleaseDetails, null)))"><a class="dropdown-item" href="#">Show Release Details<span class="float-end hotkey">F2</span></a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="#">
@@ -145,8 +145,5 @@
     public event EventHandler<(ReleaseResultFilter, string?)>? SearchChanged;
 
     public event EventHandler<(MenuItem, object? option)>? MenuItemClicked;
-
-    public event EventHandler<KeyboardEventArgs>? KeyPress;
-
 
 }

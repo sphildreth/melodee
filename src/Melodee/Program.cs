@@ -7,6 +7,7 @@ using Melodee.Plugins.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Photino.Blazor;
 using Serilog;
+using Toolbelt.Blazor.Extensions.DependencyInjection;
 
 
 namespace Melodee
@@ -33,6 +34,8 @@ namespace Melodee
             appBuilder.Services.AddSingleton<IReleaseValidator, ReleaseValidator>();
             
             appBuilder.Services.AddBlazorBootstrap();
+            
+            appBuilder.Services.AddHotKeys2();
             
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()

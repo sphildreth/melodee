@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models;
 
@@ -12,6 +13,8 @@ public sealed record MetaTag<T>
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public required MetaTagIdentifier Identifier { get; init; }
+
+    public string IdentifierDescription => $"{Identifier.ToString()} {Identifier.GetEnumDescriptionValue()}";
     
     public required T Value { get; init; }
     

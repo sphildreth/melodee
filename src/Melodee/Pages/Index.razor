@@ -1,4 +1,7 @@
 ﻿@page "/"
+@implements IAsyncDisposable
+@using Toolbelt.Blazor.HotKeys2
+@inject HotKeys HotKeys
 
 @using System.Diagnostics
 @using System.Diagnostics.Contracts
@@ -25,7 +28,7 @@
 @inject ITrackPlugin TrackPlugin
 @inject IReleaseValidator ReleaseValidator
 
-<div class="container-fluid" >
+<div class="container-fluid">
     <div class="row border-bottom border-secondary mb-2">
         <div class="col-7">
             <nav aria-label="...">
@@ -80,6 +83,7 @@
                                     {
                                         _selectedReleaseIds.Remove(release.UniqueId);
                                     }
+
                                     await GetReleaseDetailAsync(release.UniqueId);
                                     StateHasChanged();
                                 }
@@ -140,12 +144,14 @@
                 if (_selectedReleaseValidationResult is { IsValid: false })
                 {
                     <div class="nerd-text overflow-auto" style="font-size:10px; max-height: 300px;">
-                        @if(_selectedReleaseValidationResult.Messages != null)
+                        @if (_selectedReleaseValidationResult.Messages != null)
                         {
                             <ul class="validation-message-list">
                                 @foreach (var message in _selectedReleaseValidationResult.Messages.OrderBy(x => x.SortOrder))
                                 {
-                                    <li><span class="@message.Severity.ToString().ToLower()">[@message.Severity]</span> @message.Message</li>
+                                    <li>
+                                        <span class="@message.Severity.ToString().ToLower()">[@message.Severity]</span> @message.Message
+                                    </li>
                                 }
                             </ul>
                         }
@@ -208,7 +214,7 @@
     </div>
 </div>
 
-<Modal @ref="_removeTextModal" Title="Remove provided text from Track Title" Size="ModalSize.Large" IsVerticallyCentered="true">
+<Modal @ref="_removeTextModal" Title="Remove provided text from Track Title" IsVerticallyCentered="true">
     <BodyTemplate>
         <div class="mb-2">
             <label for="artist" class="form-label">Text to replace</label>
@@ -225,17 +231,41 @@
     </FooterTemplate>
 </Modal>
 
-<Modal @ref="_releaseDetailsModel" Title="@_releaseDetail.ReleaseTitle()" IsVerticallyCentered="true">
+<Modal @ref="_releaseDetailsModel" Title="@_releaseDetail.ReleaseTitle()" Size="ModalSize.ExtraLarge" IsVerticallyCentered="true">
     <BodyTemplate>
-        <div class="release-detail-container">
+        <div class="release-detail-container overflow-auto nerd-text">
             <div class="release-detail border-bottom">
+                <div class="row">
+                    <div class="col-5">
+                        <h5>Status</h5>
+                    </div>
+                    <div class="col-7">
+                        <p class="overflow-auto">@_releaseDetail.Status.ToString()</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-5">
+                        <h5>Path</h5>
+                    </div>
+                    <div class="col-7">
+                        <p class="overflow-auto">@_releaseDetail.Directory.FullName()</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-5">
+                        <h5>Created</h5>
+                    </div>
+                    <div class="col-7">
+                        <p class="overflow-auto">@_releaseDetail.Created.ToString(Configuration.DateTimeDisplayFormat)</p>
+                    </div>
+                </div>
                 @foreach (var tag in _releaseDetail.Tags.OrderBy(x => x.SortOrder))
                 {
                     <div class="row">
-                        <div class="col-6">
-                            <h5>@tag.Identifier</h5>
+                        <div class="col-5">
+                            <h5>@tag.IdentifierDescription</h5>
                         </div>
-                        <div class="col-6">
+                        <div class="col-7">
                             <p>@tag.Value</p>
                         </div>
                     </div>
@@ -244,17 +274,46 @@
             <div class="release-detail-tracks">
                 @foreach (var track in _releaseDetail.Tracks.OrderBy(x => x.SortOrder))
                 {
-                    @foreach (var tag in track.Tags.OrderBy(x => x.SortOrder))
-                    {
-                        <div class="row border-bottom">
-                            <div class="col-6">
-                                <h5>@tag.Identifier</h5>
+                    <div class="release-detail-track-container border-bottom mb-1">
+                        <div class="row">
+                            <div class="col-5">
+                                <h5>Info</h5>
                             </div>
-                            <div class="col-6">
-                                <p>@tag.Value</p>
+                            <div class="col-7">
+                                <p class="overflow-auto">@track.DisplaySummary</p>
                             </div>
                         </div>
-                    }
+                        <div class="row">
+                            <div class="col-5">
+                                <h5>Filename</h5>
+                            </div>
+                            <div class="col-7">
+                                <p class="overflow-auto">@track.File.FullName(_releaseDetail.Directory)</p>
+                            </div>
+                        </div>
+                        @foreach (var tag in track.Tags.OrderBy(x => x.SortOrder))
+                        {
+                            <div class="row">
+                                <div class="col-5">
+                                    <h5>@tag.IdentifierDescription</h5>
+                                </div>
+                                <div class="col-7">
+                                    <p>@tag.Value</p>
+                                </div>
+                            </div>
+                        }
+                        @foreach (var tag in track.MediaAudios.OrderBy(x => x.SortOrder))
+                        {
+                            <div class="row">
+                                <div class="col-5">
+                                    <h5>@tag.Identifier.ToString()</h5>
+                                </div>
+                                <div class="col-7">
+                                    <p>@tag.Value</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 }
             </div>
         </div>
@@ -281,6 +340,7 @@
     ReleaseEditModel? _selectedRelease;
     ValidationResult? _selectedReleaseValidationResult;
     long? _selectedTrackId;
+
     Common.Models.Release _releaseDetail = new Common.Models.Release
     {
         ViaPlugins = [],
@@ -291,10 +351,20 @@
         }
     };
 
+    private HotKeysContext? _hotKeysContext;
+
     List<long> _selectedReleaseIds = [];
     readonly string[] _releaseStatuses = Enum.GetValues(typeof(ReleaseStatus)).Cast<ReleaseStatus>().Select(x => x.ToString()).ToArray();
 
     [CascadingParameter] public MainLayout Layout { get; set; } = null!;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hotKeysContext != null)
+        {
+            await _hotKeysContext.DisposeAsync();
+        }
+    }
 
     private async Task GetReleaseDetailAsync(long uniqueId)
     {
@@ -308,7 +378,7 @@
         {
             UniqueId = detail.UniqueId,
             Artist = detail.Artist(),
-            CreatedFormattedDate = detail.Created.ToString("yyyyMMdd HH:m:s"),
+            CreatedFormattedDate = detail.Created.ToString(Configuration.DateTimeDisplayFormat),
             Genre = detail.Genre(),
             Title = detail.ReleaseTitle(),
             IsValid = detail.IsValid(Configuration),
@@ -341,12 +411,7 @@
 
         await RefreshReleasesAsync();
 
-        Layout.SearchChanged += async (sender, args) =>
-        {
-            await RefreshReleasesAsync(args.Item2, args.Item1);
-        };
-        Layout.KeyPress += async (sender, args) => await ReleaseEditingKeyPress(args);
-
+        Layout.SearchChanged += async (sender, args) => { await RefreshReleasesAsync(args.Item2, args.Item1); };
         Layout.MenuItemClicked += async (sender, args) =>
         {
             switch (args.Item1)
@@ -380,6 +445,7 @@
                     {
                         _selectedReleaseIds.Clear();
                     }
+
                     break;
 
                 case MenuItem.SetSelectedStatusReviewed:
@@ -417,6 +483,7 @@
                             await SetYearToCurrent();
                             break;
                     }
+
                     break;
             }
         };
@@ -428,6 +495,7 @@
         {
             return;
         }
+
         _releaseDetail = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, _selectedRelease.UniqueId);
         await _releaseDetailsModel.ShowAsync();
     }
@@ -439,6 +507,7 @@
         {
             return;
         }
+
         _loading = true;
         var modified = false;
         var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, _selectedRelease.UniqueId);
@@ -454,6 +523,7 @@
                 modified = true;
             }
         }
+
         if (modified)
         {
             var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
@@ -469,6 +539,7 @@
         {
             return;
         }
+
         _loading = true;
         foreach (var selectedReleaseId in _selectedReleaseIds)
         {
@@ -488,6 +559,7 @@
                 await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
             }
         }
+
         _selectedReleaseIds.Clear();
         ReleasesDiscoverer.ClearCache();
         await RefreshReleasesAsync();
@@ -499,6 +571,7 @@
         {
             return;
         }
+
         _loading = true;
         var year = DateTime.Now.Year;
         foreach (var selectedReleaseId in _selectedReleaseIds)
@@ -511,9 +584,11 @@
                 release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.OrigReleaseYear, year);
                 await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
             }
+
             var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
             await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
         }
+
         _selectedReleaseIds.Clear();
         ReleasesDiscoverer.ClearCache();
         await RefreshReleasesAsync();
@@ -525,6 +600,7 @@
         {
             return;
         }
+
         _loading = true;
         foreach (var selectedReleaseId in _selectedReleaseIds)
         {
@@ -536,9 +612,11 @@
                 release.RemoveTrackTagValue(track.TrackId, MetaTagIdentifier.Artist);
                 await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
             }
+
             var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
             await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
         }
+
         _selectedReleaseIds.Clear();
         ReleasesDiscoverer.ClearCache();
         await RefreshReleasesAsync();
@@ -550,6 +628,7 @@
         {
             return;
         }
+
         _loading = true;
         foreach (var selectedReleaseId in _selectedReleaseIds)
         {
@@ -560,16 +639,19 @@
             while (mediaLooper <= numberOfMedias)
             {
                 var looper = mediaLooper;
-                foreach (var dd in release.Tracks?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i} ) ?? [])
+                foreach (var dd in release.Tracks?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i }) ?? [])
                 {
                     release.SetTrackTagValue(dd.x.TrackId, MetaTagIdentifier.TrackNumber, dd.i);
                     await TrackPlugin.UpdateTrackAsync(release.Directory!, dd.x);
                 }
+
                 mediaLooper++;
             }
+
             var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
             await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
         }
+
         _selectedReleaseIds.Clear();
         ReleasesDiscoverer.ClearCache();
         await RefreshReleasesAsync();
@@ -581,6 +663,7 @@
         {
             return;
         }
+
         _loading = true;
         foreach (var selectedReleaseId in _selectedReleaseIds)
         {
@@ -591,9 +674,11 @@
                 release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.AlbumArtist, null);
                 await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
             }
+
             var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
             await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
         }
+
         _selectedReleaseIds.Clear();
         ReleasesDiscoverer.ClearCache();
         await RefreshReleasesAsync();
@@ -673,8 +758,9 @@
                 var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
                 var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
                 var releaseLibraryDirInfo = new DirectoryInfo(Path.Combine(Configuration.LibraryDirectory, release.ToDirectoryName()));
-               MoveDirectory(releaseStagingDirInfo.FullName, releaseLibraryDirInfo.FullName, Configuration.MoveMelodeeJsonDataFileToLibrary ? null : Common.Models.Release.JsonFileName);
+                MoveDirectory(releaseStagingDirInfo.FullName, releaseLibraryDirInfo.FullName, Configuration.MoveMelodeeJsonDataFileToLibrary ? null : Common.Models.Release.JsonFileName);
             }
+
             _selectedReleaseIds.Clear();
             ReleasesDiscoverer.ClearCache();
             await RefreshReleasesAsync();
@@ -687,7 +773,6 @@
         {
             _loading = false;
         }
-
     }
 
     private static void MoveDirectory(string toMove, string destination, string? dontMoveFileName)
@@ -696,6 +781,7 @@
         {
             Directory.CreateDirectory(destination);
         }
+
         var files = Directory.GetFiles(toMove);
         var directories = Directory.GetDirectories(toMove);
         foreach (var file in files)
@@ -705,10 +791,12 @@
                 File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
             }
         }
-        foreach(var d in directories)
+
+        foreach (var d in directories)
         {
             MoveDirectory(Path.Combine(toMove, Path.GetFileName(d)), Path.Combine(destination, Path.GetFileName(d)), dontMoveFileName);
         }
+
         Directory.Delete(toMove, true);
     }
 
@@ -741,6 +829,7 @@
 
     private async Task RescanStagingFolder()
     {
+        throw new NotImplementedException();
     }
 
     private async Task SaveSelectedReleaseAsync()
@@ -807,15 +896,16 @@
         {
             _selectedRelease = null;
         }
+
         sw.Stop();
         _loading = false;
         StateHasChanged();
         Layout.ToastService.Notify(new ToastMessage
         {
             IconName = IconName.Alarm,
-            Message = $"Refresh completed in [{ sw }]",
+            Message = $"Refresh completed in [{sw}]",
             Title = "Refresh complete",
-            Type  = ToastType.Success
+            Type = ToastType.Success
         });
     }
 
@@ -845,38 +935,19 @@
         }
     }
 
-    private async Task ReleaseEditingKeyPress(KeyboardEventArgs e)
+
+    protected override void OnAfterRender(bool firstRender)
     {
-        if (e.CtrlKey)
+        if (firstRender)
         {
-            switch (e.Key)
-            {
-                case "d":
-                    await DeleteSelectedAsync();
-                    break;
-                case "m":
-                    await MoveSelectedToLibraryAsync();
-                    break;
-                case "r":
-                    await SetSelectedReleaseStatusToReviewed();
-                    break;
-                case "s":
-                    await SaveSelectedReleaseAsync();
-                    break;
-            }
-        }
-        switch (e.Key)
-        {
-            case "F2":
-                await ShowReleaseDetails();
-                break;
-            case "F5":
-                await RefreshReleasesAsync();
-                break;
-            case "F6":
-                await RescanStagingFolder();
-                break;
+            _hotKeysContext = this.HotKeys.CreateContext()
+                .Add(ModCode.Ctrl, Code.D, DeleteSelectedAsync, new() { Description = "Delete selected Release(s)." })
+                .Add(ModCode.Ctrl, Code.M, MoveSelectedToLibraryAsync, new() { Description = "Move selected Release(s) to Library Directory." })
+                .Add(ModCode.Ctrl, Code.R, SetSelectedReleaseStatusToReviewed, new() { Description = "Set selected Release(s) status as Reviewed." })
+                .Add(ModCode.Ctrl, Code.S, SaveSelectedReleaseAsync, new() { Description = "Save selected Release." })
+                .Add(ModCode.None, Code.F2, ShowReleaseDetails, new() { Description = "Show Details of selected Release." })
+                .Add(ModCode.None, Code.F5, (() => RefreshReleasesAsync(null, null)), new() { Description = "Refresh view of Staging Directory." })
+                .Add(ModCode.None, Code.F6, RescanStagingFolder, new() { Description = "Rescan Staging Directory." });
         }
     }
-
 }

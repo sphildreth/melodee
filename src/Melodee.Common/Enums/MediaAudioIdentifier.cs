@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace Melodee.Common.Enums;
 
 public enum MediaAudioIdentifier

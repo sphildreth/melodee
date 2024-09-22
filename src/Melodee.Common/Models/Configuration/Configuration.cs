@@ -68,4 +68,9 @@ public sealed record Configuration
     /// Amount of time to display a Toast then auto-close.
     /// </summary>
     public int ToastAutoCloseTime { get; set; } = 2000;
+
+    /// <summary>
+    /// Format to use when displaying full dates.
+    /// </summary>
+    public string DateTimeDisplayFormat { get; set; } = "yyyyMMdd HH:m:s";
 }

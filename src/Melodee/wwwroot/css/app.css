@@ -92,7 +92,28 @@
   border: 2px solid tomato;
 }
 
+.release-detail-container, .release-detail-container h5 {
+  font-size: 12px;
+}
 
+.release-detail-container .row:hover {
+  border: 1px solid grey;
+}
+
+
+.release-detail-tracks>.release-detail-track-container:nth-child(odd){
+  background-color: #f2f2f2;
+}
+
+ul.dropdown-menu {
+  min-width: 375px;
+}
+
+.dropdown .hotkey {
+  opacity: .75;
+  cursor: pointer;
+  font-style: italic;
+}
 
 .truncate-text {
   max-width: 100%;

@@ -26,6 +26,7 @@
     <PackageReference Include="Mapster" Version="7.4.0" />
 	  <PackageReference Include="Photino.Blazor" />
 	  <PackageReference Include="Serilog.AspNetCore" />
+	  <PackageReference Include="Toolbelt.Blazor.HotKeys2" />
 	</ItemGroup>
 
 	<ItemGroup>
