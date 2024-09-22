@@ -114,7 +114,7 @@ public static class ReleaseExtensions
                artist != null &&
                releaseTitle != null &&
                release.Status is ReleaseStatus.Complete or ReleaseStatus.New or ReleaseStatus.Ok or ReleaseStatus.Reviewed &&
-               release.HasValidReleaseYear(configuration); ;
+               release.HasValidReleaseYear(configuration); 
     }
 
     public static string ToMelodeeJsonName(this Release release, bool? isForReleaseDirectory = null)
@@ -217,9 +217,24 @@ public static class ReleaseExtensions
 
     public static int MediaCountValue(this Release release)
     {
-        return release.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ??
-               release.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
-               0;
+        var discTotal = release.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal);
+        if (discTotal == null)
+        {
+            var discTotalToParse = release.MetaTagValue<string?>(MetaTagIdentifier.DiscNumberTotal);
+            if (discTotalToParse != null)
+            {
+                var discTotalParts = discTotalToParse.Split('/');
+                if (discTotalParts.Length > 1)
+                {
+                    discTotal = SafeParser.ToNumber<int?>(discTotalParts[1]);
+                }
+                else
+                {
+                    discTotal = SafeParser.ToNumber<int?>(discTotalToParse);
+                }
+            }
+        }
+        return discTotal ?? 0;
     }
 
     public static int TrackTotalValue(this Release release)
@@ -229,7 +244,19 @@ public static class ReleaseExtensions
         {
             return trackTotalFromRelease.Value;
         }
-
+        var trackTotalFromTrackNumberTotal = release.MetaTagValue<string>(MetaTagIdentifier.TrackNumberTotal);
+        if (trackTotalFromTrackNumberTotal != null)
+        {
+            var total = trackTotalFromTrackNumberTotal.Split('/');
+            if (total.Length > 1)
+            {
+                return SafeParser.ToNumber<int?>(total[1]) ?? 0;
+            }
+            else
+            {
+                return SafeParser.ToNumber<int?>(trackTotalFromTrackNumberTotal) ?? 0;
+            }
+        }
         var trackTotalFromTracks = release.Tracks?.FirstOrDefault(x => x.TrackTotalNumber() > 0);
         if (trackTotalFromTracks != null)
         {

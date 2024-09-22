@@ -6,6 +6,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -60,7 +61,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             new[]
             {
                 new AtlMetaTag(new MetaTagsProcessor(config), config)
-            }, config);
+            }, new ReleaseValidator(config), config);
         if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
         {
             try
@@ -92,7 +93,8 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             new[]
             {
                 new AtlMetaTag(new MetaTagsProcessor(config), config)
-            }, config);
+            }, new ReleaseValidator(config)
+            , config);
         if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
         {
             try

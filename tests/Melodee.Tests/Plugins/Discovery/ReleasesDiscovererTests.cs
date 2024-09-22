@@ -1,6 +1,7 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Plugins.Discovery.Releases;
+using Melodee.Plugins.Validation;
 
 namespace Melodee.Tests.Plugins.Discovery;
 
@@ -13,7 +14,7 @@ public class ReleasesDiscovererTests
         var dir = new DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
-            var rd = new ReleasesDiscoverer(TestsBase.NewConfiguration);
+            var rd = new ReleasesDiscoverer(new ReleaseValidator(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var releasesForDirectoryAsync = await rd.ReleasesGridsForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/staging",

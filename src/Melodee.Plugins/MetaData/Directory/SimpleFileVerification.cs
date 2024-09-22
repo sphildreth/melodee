@@ -8,6 +8,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -17,11 +18,12 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     Processes Simple Verification Files (SFV) and gets files (tracks) and files CRC for release.
 /// </summary>
-public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
+public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugins, IReleaseValidator releaseValidator, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "SFV";
 
     private readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
+    private readonly IReleaseValidator _releaseValidator = releaseValidator;
     public override string Id => "6C253D42-F176-4A58-A895-C54BEB1F8A5C";
 
     public override string DisplayName => nameof(SimpleFileVerification);
@@ -147,6 +149,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                     Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
                     ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
                 };
+                sfvRelease.Status = _releaseValidator.ValidateRelease(sfvRelease)?.Data?.ReleaseStatus ?? ReleaseStatus.Invalid;
                 if (sfvRelease.IsValid(Configuration))
                 {
                     var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvRelease.ToMelodeeJsonName());

@@ -2,6 +2,7 @@ using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Validation;
 using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Tests.Plugins.MetaData;
@@ -19,7 +20,8 @@ public class SimpleFileVerificationTests
                 new []
                 {
                     new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
-                }, TestsBase.NewConfiguration);
+                }, new ReleaseValidator(TestsBase.NewConfiguration),
+                   TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
@@ -41,14 +43,15 @@ public class SimpleFileVerificationTests
                 new []
                 {
                     new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
-                }, TestsBase.NewConfiguration);
+                }, new ReleaseValidator(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/inbound/Swartz",
                 Name = "Swartz"
             });
             Assert.NotNull(sfvResult);
-            Assert.True(sfvResult.IsSuccess);
+            // Is false as some of the tracks in the SFV has unwanted text.
+            Assert.False(sfvResult.IsSuccess);
         }
     }    
     
@@ -64,7 +67,8 @@ public class SimpleFileVerificationTests
                 new []
                 {
                     new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
-                }, TestsBase.NewConfiguration);
+                }, new ReleaseValidator(TestsBase.NewConfiguration),
+                   TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21",

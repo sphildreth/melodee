@@ -38,18 +38,20 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         var returnStatus = release.Status;
 
         // Validations should return true if ok
-        if (!release.IsValid(_configuration) ||
-            !AreAllTrackNumbersValid(release) ||
-            !AreTracksUniquelyNumbered(release) ||
-            !AreMediaNumbersValid(release) ||
-            !DoAllTracksHaveSameReleaseArtist(release) ||
-            !AllTrackTitlesDoNotHaveUnwantedText(release) ||
-            !AlbumArtistDoesNotHaveUnwantedText(release) ||
-            !ReleaseTitleDoesNotHaveUnwantedText(release) ||
-            !IsReleaseYearValid(release)
+        if (IsValid(release) &&
+            AreAllTrackNumbersValid(release) &&
+            AreTracksUniquelyNumbered(release) &&
+            AreMediaNumbersValid(release) &&
+            DoAllTracksHaveSameReleaseArtist(release) &&
+            AllTrackTitlesDoNotHaveUnwantedText(release) &&
+            AlbumArtistDoesNotHaveUnwantedText(release) &&
+            ReleaseTitleDoesNotHaveUnwantedText(release) &&
+            IsReleaseYearValid(release) &&
+            DoMediaTotalMatchMediaNumbers(release) &&
+            DoesTrackTotalMatchTrackCount(release)
            )
         {
-            returnStatus = ReleaseStatus.Invalid;
+            returnStatus = ReleaseStatus.Ok;
         }
 
         return new OperationResult<ValidationResult>
@@ -62,6 +64,96 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         };
     }
 
+    private bool DoesTrackTotalMatchTrackCount(Release release)
+    {
+        var result = true;
+        var tracks = release.Tracks?.ToArray() ?? [];
+        if (tracks.Length == 0)
+        {
+            result = false;
+        }
+        var trackCount = tracks.Length;
+        var trackTotal = release.TrackTotalValue();
+        result = trackCount == trackTotal;
+        if (!result)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' release track total value does not match track count.",
+                Severity = ValidationResultMessageSeverity.MustFix
+            });
+        }
+        return result; 
+    }
+
+    private bool DoMediaTotalMatchMediaNumbers(Release release)
+    {
+        var result = true;
+        var tracks = release.Tracks?.ToArray() ?? [];
+        if (tracks.Length == 0)
+        {
+            result = false;
+        }
+        var mediaNumbers = tracks.Select(x => x.MediaNumber()).Distinct().ToArray();
+        var releaseMediaTotal = release.MediaCountValue();
+        result = mediaNumbers.All(mediaNumber => mediaNumber <= releaseMediaTotal);
+        if (!result)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' release media total does not match track medias.",
+                Severity = ValidationResultMessageSeverity.MustFix
+            });
+        }
+        return result;        
+    }
+
+    private bool IsValid(Release release)
+    {
+        var result = true;
+        if (!release.IsValid(_configuration))
+        {
+            if (release.UniqueId < 0)
+            {
+                _validationMessages.Add(new ValidationResultMessage
+                {
+                    Message = $"Release has invalid Unique ID: {release.UniqueId}",
+                    Severity = ValidationResultMessageSeverity.MustFix
+                });
+                result = false;
+            }
+            if (release.Artist().Nullify() == null)
+            {
+                _validationMessages.Add(new ValidationResultMessage
+                {
+                    Message = $"Release has invalid Artist [{release.Artist()}]",
+                    Severity = ValidationResultMessageSeverity.MustFix
+                });
+                result = false;
+            }
+            if (release.ReleaseTitle().Nullify() == null)
+            {
+                _validationMessages.Add(new ValidationResultMessage
+                {
+                    Message = $"Release has invalid Release Title: {release.ReleaseTitle()}",
+                    Severity = ValidationResultMessageSeverity.MustFix
+                });
+                result = false;
+            }
+
+            if (!release.HasValidReleaseYear(_configuration))
+            {
+                _validationMessages.Add(new ValidationResultMessage
+                {
+                    Message = $"Release has invalid Release Year: {release.ReleaseYear()}",
+                    Severity = ValidationResultMessageSeverity.MustFix
+                });
+                result = false;
+            }
+        }
+        return result;
+    }
+    
     private bool AreTracksUniquelyNumbered(Release release)
     {
         var tracks = release.Tracks?.ToArray() ?? [];
@@ -71,7 +163,17 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         }
 
         var trackNumbers = tracks.GroupBy(x => x.TrackNumber());
-        return trackNumbers.All(group => group.Count() == 1);
+        var result =  trackNumbers.All(group => group.Count() == 1);
+        if (!result)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"'{release}' release has tracks with invalid track number.",
+                Severity = ValidationResultMessageSeverity.MustFix
+            });
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -144,25 +246,24 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
 
     private bool AreMediaNumbersValid(Release release)
     {
+        var result = true;
         var tracks = release.Tracks?.ToArray() ?? [];
         if (tracks.Length == 0)
         {
-            return false;
+            result = false;
         }
 
         var mediaNumbers = tracks.Select(x => x.MediaNumber()).Distinct().ToArray();
-        if (mediaNumbers.Length == 0 || mediaNumbers.All(x => x == 0))
+        if (mediaNumbers.Length != 0 && mediaNumbers.All(x => x > 0))
         {
-            // Aren't any, which is ok means all are on first media (Default Media Number 1)
-            return true;
+            if (mediaNumbers.Any(x => x > _configuration.ValidationOptions.MaximumMediaNumber) || 
+                mediaNumbers.Any(x => x < _configuration.ValidationOptions.MinimumMediaNumber))
+            {
+                result = false;
+            }
+            result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
         }
 
-        if (mediaNumbers.Any(x => x > _configuration.ValidationOptions.MaximumMediaNumber) || mediaNumbers.Any(x => x < _configuration.ValidationOptions.MinimumMediaNumber))
-        {
-            return false;
-        }
-
-        var result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -208,29 +309,29 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
 
     private bool AreAllTrackNumbersValid(Release release)
     {
+        var result = true;
         var tracks = release.Tracks?.ToArray() ?? [];
         if (tracks.Length == 0)
         {
-            return false;
+            result = false;
         }
 
         var trackNumbers = tracks.Select(x => x.TrackNumber()).Distinct().ToArray();
         if (trackNumbers.Length == 0)
         {
-            return false;
+            result = false;
         }
 
         if (trackNumbers.Contains(0))
         {
-            return false;
+            result = false;
         }
 
         if (trackNumbers.Any(x => x > _configuration.ValidationOptions.MaximumTrackNumber))
         {
-            return false;
+            result = false;
         }
-
-        var result = Enumerable.Range(0, trackNumbers.Length).All(i => trackNumbers[i] == trackNumbers[0] + i);
+        result = result && Enumerable.Range(0, trackNumbers.Length).All(i => trackNumbers[i] == trackNumbers[0] + i);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -239,7 +340,6 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
                 Severity = ValidationResultMessageSeverity.MustFix
             });
         }
-
         return result;
     }
 

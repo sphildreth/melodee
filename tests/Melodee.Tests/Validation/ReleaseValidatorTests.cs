@@ -143,6 +143,7 @@ public class ReleaseValidatorTests
                 Path = string.Empty,
                 Name = string.Empty
             },
+            Status = ReleaseStatus.Ok,
             Tags = new[]
             {
                 new MetaTag<object?>

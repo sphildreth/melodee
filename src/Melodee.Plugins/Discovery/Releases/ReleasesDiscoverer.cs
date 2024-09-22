@@ -7,6 +7,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -15,6 +16,7 @@ namespace Melodee.Plugins.Discovery.Releases;
 
 public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 {
+    private readonly IReleaseValidator _releaseValidator;
     private readonly Configuration _configuration;
 
     private readonly IEnumerable<IDirectoryPlugin> _enabledReleasePlugins;
@@ -22,8 +24,9 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
 
     private readonly IEnumerable<ITrackPlugin> _trackPlugins;
 
-    public ReleasesDiscoverer(Configuration configuration)
+    public ReleasesDiscoverer(IReleaseValidator releaseValidator,Configuration configuration)
     {
+        _releaseValidator = releaseValidator;
         _configuration = configuration;
         var config = configuration;
 
@@ -35,8 +38,8 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         {
             new CueSheet(_trackPlugins, config),
             new Nfo(config),
-            new M3UPlaylist(_trackPlugins, config),
-            new SimpleFileVerification(_trackPlugins, config)
+            new M3UPlaylist(_trackPlugins, _releaseValidator, config),
+            new SimpleFileVerification(_trackPlugins, _releaseValidator, config)
         };
     }
 

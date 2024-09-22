@@ -7,17 +7,16 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Directory;
 
-public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
+public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, IReleaseValidator releaseValidator, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "M3U";
-
-    private readonly IEnumerable<ITrackPlugin> _trackPlugins = trackPlugins;
 
     public override string Id => "800EBFEF-4A9A-4DD8-8505-056D13535D45";
 
@@ -52,7 +51,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
             };
         }
 
-        var trackPlugin = _trackPlugins.First();
+        var trackPlugin = trackPlugins.First();
         foreach (var m3UFile in m3UFiles)
         {
             using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, m3UFile.Name))
@@ -129,6 +128,7 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, Configur
                         Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
                         ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
                     };
+                    m3URelease.Status = releaseValidator.ValidateRelease(m3URelease)?.Data.ReleaseStatus ?? ReleaseStatus.Invalid;
                     if (m3URelease.IsValid(Configuration))
                     {
                         var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3URelease.ToMelodeeJsonName());

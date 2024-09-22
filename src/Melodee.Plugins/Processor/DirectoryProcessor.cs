@@ -68,8 +68,8 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         _directoryPlugins = new IDirectoryPlugin[]
         {
             new CueSheet(_trackPlugins, _configuration),
-            new SimpleFileVerification(_trackPlugins, _configuration),
-            new M3UPlaylist(_trackPlugins, _configuration),
+            new SimpleFileVerification(_trackPlugins, releaseValidator, _configuration),
+            new M3UPlaylist(_trackPlugins, releaseValidator, _configuration),
             new Nfo(_configuration)
         };
     }
@@ -684,6 +684,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             {
                                 Identifier = MetaTagIdentifier.DiscNumber, Value = track.MediaNumber(), SortOrder = 4
                             },
+                            new()
+                            {
+                                Identifier = MetaTagIdentifier.DiscTotal, Value = track.MediaNumber(), SortOrder = 4
+                            },                            
                             new()
                             {
                                 Identifier = MetaTagIdentifier.OrigReleaseYear, Value = track.ReleaseYear(),

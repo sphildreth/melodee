@@ -86,7 +86,7 @@ public class MetaTagTests
             tags.Add(new MetaTag<object?>
             {
                 Identifier = MetaTagIdentifier.Album,
-                Value = newAlbumValue.ToString()
+                Value = newAlbumValue
             });
             var tagUpdateResult = await metaTag.UpdateTrackAsync(dirInfo, new Track
             {

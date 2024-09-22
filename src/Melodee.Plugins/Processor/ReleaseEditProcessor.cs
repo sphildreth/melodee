@@ -414,7 +414,7 @@ public sealed class ReleaseEditProcessor(
                 while (mediaLooper <= numberOfMedias)
                 {
                     var looper = mediaLooper;
-                    foreach (var dd in release.Tracks?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i }) ?? [])
+                    foreach (var dd in release.Tracks?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i = i + 1 }) ?? [])
                     {
                         release.SetTrackTagValue(dd.x.TrackId, MetaTagIdentifier.TrackNumber, dd.i);
                         await editTrackPlugin.UpdateTrackAsync(release.Directory!, dd.x, cancellationToken);
@@ -422,7 +422,8 @@ public sealed class ReleaseEditProcessor(
 
                     mediaLooper++;
                 }
-                await SaveRelease(release, cancellationToken); 
+                await SaveRelease(release, cancellationToken);
+                result = true;
             }
         }
         catch (Exception ex)

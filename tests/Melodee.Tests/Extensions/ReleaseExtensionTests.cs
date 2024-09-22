@@ -11,75 +11,79 @@ public class ReleaseExtensionTests
     {
         return new Release
         {
-        ViaPlugins = [],
-        OriginalDirectory = new FileSystemDirectoryInfo
-        {
-            Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
-            Name = "00-k 2024"
-        },
-        Tags = new[]
-        {
-            new MetaTag<object?>
+            ViaPlugins = [],
+            OriginalDirectory = new FileSystemDirectoryInfo
             {
-                Identifier = MetaTagIdentifier.UniqueArtistId,
-                Value = 12345L
+                Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
+                Name = "00-k 2024"
             },
-            new MetaTag<object?>
+            Tags = new[]
             {
-                Identifier = MetaTagIdentifier.AlbumArtist,
-                Value = "Holy Truth"
-            },
-            new MetaTag<object?>
-            {
-                Identifier = MetaTagIdentifier.OrigReleaseYear,
-                Value = 2024
-            },
-            new MetaTag<object?>
-            {
-                Identifier = MetaTagIdentifier.Album,
-                Value = "Fire Proof"
-            }
-
-        },
-        Tracks = new[]
-        {
-            new Track
-            {
-                CrcHash = CRC32.Calculate(new FileInfo(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3")),
-                File = new FileSystemFileInfo
+                new MetaTag<object?>
                 {
-                    Name = "03-holy_truth-flako_el_dark_cowboy.mp3\"",
-                    Size = 12343
+                    Identifier = MetaTagIdentifier.UniqueArtistId,
+                    Value = 12345L
                 },
-                Tags = new[]
+                new MetaTag<object?>
                 {
-                    new MetaTag<object?>
+                    Identifier = MetaTagIdentifier.AlbumArtist,
+                    Value = "Holy Truth"
+                },
+                new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.OrigReleaseYear,
+                    Value = 2024
+                },
+                new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.DiscNumberTotal,
+                    Value = "1/2"
+                },
+                new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.Album,
+                    Value = "Fire Proof"
+                }
+            },
+            Tracks = new[]
+            {
+                new Track
+                {
+                    CrcHash = CRC32.Calculate(new FileInfo(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3")),
+                    File = new FileSystemFileInfo
                     {
-                        Identifier = MetaTagIdentifier.Artist,
-                        Value = "Holy Truth"
+                        Name = "03-holy_truth-flako_el_dark_cowboy.mp3\"",
+                        Size = 12343
                     },
-                    new MetaTag<object?>
+                    Tags = new[]
                     {
-                        Identifier = MetaTagIdentifier.TrackNumber,
-                        Value = 3
-                    },
-                    new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.TrackTotal,
-                        Value = 3
-                    },
-                    new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.Title,
-                        Value = "Flako El Dark Cowboy"
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Artist,
+                            Value = "Holy Truth"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.TrackNumber,
+                            Value = 3
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.TrackTotal,
+                            Value = 1
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Title,
+                            Value = "Flako El Dark Cowboy"
+                        }
                     }
                 }
             }
-        }
-    };
-}
+        };
+    }
 
-[Theory]
+    [Theory]
     [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.sfv", true)]
     [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3", true)]
     [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/00--fire_proof-(dzb707)-web-2024.sfv", false)]
@@ -101,7 +105,7 @@ public class ReleaseExtensionTests
         Assert.Equal(12345L, NewRelease().ArtistUniqueId());
         Assert.Equal(@"H/HO/Holy Truth [12345]", artistDirectoryName);
     }
-    
+
     [Fact]
     public void ValidateReleaseDirectoryName()
     {
@@ -109,5 +113,18 @@ public class ReleaseExtensionTests
         Assert.NotNull(artistDirectoryName);
         Assert.Equal(12345L, NewRelease().ArtistUniqueId());
         Assert.Equal(@"H/HO/Holy Truth [12345]/[2024] Fire Proof", artistDirectoryName);
-    }    
+    }
+
+    [Fact]
+    public void ValidateDiscTotalValue()
+    {
+        Assert.Equal(2, NewRelease().MediaCountValue());
+    }
+    
+    [Fact]
+    public void ValidateTrackTotalValueUsingTrackTotal()
+    {
+        Assert.Equal(1, NewRelease().TrackTotalValue());
+    } 
+   
 }
