@@ -914,7 +914,7 @@
             };
             DirectoryProcessorPlugin.OnProcessingEvent += (sender, s) =>
             {
-                _processingMessages.Insert(0, $"{ DateTime.Now.ToString(Configuration.DateTimeDisplayActivityFormatLong)}:: {s}");
+                _processingMessages.Insert(0, $"{ DateTime.Now.ToString(Configuration.DateTimeDisplayActivityFormat)}:: {s}");
             };
             var sw = Stopwatch.StartNew();
             var rescanResult = await DirectoryProcessorPlugin.ProcessDirectoryAsync(Configuration.InboundDirectoryInfo);

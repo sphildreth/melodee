@@ -79,7 +79,7 @@ public sealed record Configuration
     public string DateTimeDisplayFormatShort { get; set; } = "yyyyMMdd HH:mm";
     
     /// <summary>
-    ///     LongFormat to use when displaying full dates.
+    ///     Format to use when displaying activity related dates (e.g. processing messages)
     /// </summary>
-    public string DateTimeDisplayActivityFormatLong { get; set; } = "HH:mm:ss.fff";
+    public string DateTimeDisplayActivityFormat { get; set; } = "HH:mm:ss.fff";
 }
