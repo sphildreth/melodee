@@ -12,7 +12,7 @@ namespace Melodee.Plugins.Processor.MetaTagProcessors;
 /// <summary>
 /// Handle the track title and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
 /// </summary>
-public sealed partial class TrackTitle(Configuration configuration) : MetaTagProcessorBase(configuration)
+public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
     public override string Id => "79BBF338-6B2F-4166-9F28-97D21C83D2BF";
 
@@ -62,7 +62,7 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
                     if (matches.Index > 0)
                     {
                         newTitle = newTitle[..matches.Index].CleanString();
-                        featureArtist = ReplaceTrackArtistSeperators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
+                        featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeperators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
                         featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
                         trackTitle = newTitle;
                         updatedTagValue = true;
@@ -112,12 +112,4 @@ public sealed partial class TrackTitle(Configuration configuration) : MetaTagPro
             Data = result
         };
     }
-    
-    private static string? ReplaceTrackArtistSeperators(string? trackArtist)
-    {
-        return trackArtist.Nullify() == null ? null : ReplaceTrackArtistSeperatorsRegex().Replace(trackArtist!, "/").Trim();
-    }
-
-    [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    private static partial Regex ReplaceTrackArtistSeperatorsRegex();
 }

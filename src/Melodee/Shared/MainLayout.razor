@@ -108,6 +108,9 @@
                                 </ul>
                             </li>
                         </ul>
+                        <div class="progress-container d-flex text-end">
+                            <Spinner Class="me-3" Type="SpinnerType.Dots" Color="SpinnerColor.Primary" Visible="@IsProcessing" />
+                        </div>
                         <form class="d-flex" role="search">
                             <input
                                 @onkeyup="(() => SearchChanged?.Invoke(this, (Filter, SearchText)))"
@@ -128,7 +131,7 @@
             </div>
         </main>
     </div>
-    <Toasts class="p-3" AutoHide="true" Delay="@Configuration.ToastAutoCloseTime" Placement="ToastsPlacement.TopRight" />
+    <Toasts class="p-3" AutoHide="true" Delay="@Configuration.ToastAutoCloseTime" Placement="ToastsPlacement.BottomCenter" />
 
 </CascadingValue>
 
@@ -145,5 +148,7 @@
     public event EventHandler<(ReleaseResultFilter, string?)>? SearchChanged;
 
     public event EventHandler<(MenuItem, object? option)>? MenuItemClicked;
+
+    public bool IsProcessing { get; set; }
 
 }

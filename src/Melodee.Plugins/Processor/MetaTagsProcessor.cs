@@ -1,12 +1,12 @@
+using System.Text.RegularExpressions;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
-using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor.MetaTagProcessors;
 
 namespace Melodee.Plugins.Processor;
 
-public sealed class MetaTagsProcessor : IMetaTagsProcessorPlugin
+public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 {
     private readonly Configuration _configuration;
     private IEnumerable<IMetaTagProcessor> _metaTagProcessors;
@@ -68,4 +68,13 @@ public sealed class MetaTagsProcessor : IMetaTagsProcessorPlugin
             Data = processedTags.ToArray()
         };
     }
+    
+    
+    public static string? ReplaceTrackArtistSeperators(string? trackArtist)
+    {
+        return trackArtist.Nullify() == null ? null : ReplaceTrackArtistSeperatorsRegex().Replace(trackArtist!, "/").Trim();
+    }
+
+    [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
+    private static partial Regex ReplaceTrackArtistSeperatorsRegex();    
 }

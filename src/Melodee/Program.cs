@@ -3,6 +3,7 @@ using Melodee.Common.Models.Configuration;
 using Melodee.Plugins.Discovery.Releases;
 using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Photino.Blazor;
@@ -32,6 +33,24 @@ namespace Melodee
             appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
             appBuilder.Services.AddSingleton<ITrackPlugin, AtlMetaTag>();
             appBuilder.Services.AddSingleton<IReleaseValidator, ReleaseValidator>();
+            appBuilder.Services.AddSingleton<IDirectoryProcessorPlugin, DirectoryProcessor>(opt =>
+            {
+                var configuration = opt.GetRequiredService<Configuration>();
+                IScriptPlugin preScript = new NullScript(configuration);
+                if (configuration.Scripting.PreDiscoveryScript != null)
+                {
+                    preScript = new PreDiscoveryScript(configuration);
+                }
+                IScriptPlugin postScript = new NullScript(configuration);
+                if (configuration.Scripting.PostDiscoveryScript != null)
+                {
+                    postScript = new PostDiscoveryScript(configuration);
+                }                
+                return new DirectoryProcessor(preScript, postScript, opt.GetRequiredService<IReleaseValidator>(), configuration)
+                {
+                    IsEnabled = false
+                };  
+            });
             
             appBuilder.Services.AddBlazorBootstrap();
             

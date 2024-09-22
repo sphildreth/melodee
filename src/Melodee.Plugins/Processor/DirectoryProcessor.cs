@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Conversion;
@@ -16,34 +15,30 @@ using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using SixLabors.ImageSharp;
+using Configuration = Melodee.Common.Models.Configuration.Configuration;
+using ImageInfo = Melodee.Common.Models.ImageInfo;
 
 namespace Melodee.Plugins.Processor;
 
 /// <summary>
-/// Take a given directory and process all the directories in it. 
+///     Take a given directory and process all the directories in it.
 /// </summary>
 public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 {
     private readonly Configuration _configuration;
-    private readonly IScriptPlugin _preDiscoveryScript;
-    private readonly IScriptPlugin _postDiscoveryScript;
-    private readonly IReleaseValidator _releaseValidator;
-    private readonly IEnumerable<ITrackPlugin> _trackPlugins;
     private readonly IEnumerable<IConversionPlugin> _conversionPlugins;
     private readonly IEnumerable<IDirectoryPlugin> _directoryPlugins;
-    
+
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public string Id => "9BF95E5A-2EB5-4E28-820A-6F3B857356BD";
-
-    public string DisplayName => nameof(DirectoryProcessor);
-
-    public bool IsEnabled { get; set; } = true;
-
-    public int SortOrder { get; } = 0;
+    private readonly IScriptPlugin _postDiscoveryScript;
+    private readonly IScriptPlugin _preDiscoveryScript;
+    private readonly IReleaseValidator _releaseValidator;
+    private readonly IEnumerable<ITrackPlugin> _trackPlugins;
 
     public DirectoryProcessor(
         IScriptPlugin preDiscoveryScript,
@@ -73,12 +68,19 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             new CueSheet(_trackPlugins, _configuration),
             new SimpleFileVerification(_trackPlugins, _configuration),
             new M3UPlaylist(_trackPlugins, _configuration),
-            new Nfo(_configuration),
+            new Nfo(_configuration)
         };
     }
 
-    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
-        CancellationToken cancellationToken = default)
+    public string Id => "9BF95E5A-2EB5-4E28-820A-6F3B857356BD";
+
+    public string DisplayName => nameof(DirectoryProcessor);
+
+    public bool IsEnabled { get; set; } = true;
+
+    public int SortOrder { get; } = 0;
+
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var processingErrors = new List<Exception>();
         var numberOfReleaseJsonFilesProcessed = 0;
@@ -200,6 +202,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         {
                             break;
                         }
+
                         continue;
                     }
 
@@ -305,10 +308,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         if (release.Tracks != null)
                         {
                             // Set TrackNumber to invalid range if TrackNumber is missing
-                            release.Tracks.Where(x => x.TrackNumber() < 1).Each((x, i) =>
-                            {
-                                release.SetTrackTagValue(x.TrackId, MetaTagIdentifier.TrackNumber, _configuration.ValidationOptions.MaximumTrackNumber + (i+1));
-                            });
+                            release.Tracks.Where(x => x.TrackNumber() < 1).Each((x, i) => { release.SetTrackTagValue(x.TrackId, MetaTagIdentifier.TrackNumber, _configuration.ValidationOptions.MaximumTrackNumber + i + 1); });
                             foreach (var track in release.Tracks)
                             {
                                 track.File.Name = track.ToTrackFileName();
@@ -358,8 +358,9 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 File.Copy(track.File.FullOriginalName(directoryInfoToProcess), newTrackFileName, true);
                             }
                         }
+
                         if ((release.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
-                            (release.Tracks!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified))))
+                            release.Tracks!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
                         {
                             var releaseDirectorySystemInfo = releaseDirInfo.ToDirectorySystemInfo();
                             // Set the value then change to NeedsAttention
@@ -371,17 +372,20 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                     {
                                         break;
                                     }
+
                                     await trackPlugin.UpdateTrackAsync(releaseDirectorySystemInfo, track, cancellationToken);
                                 }
                             }
+
                             release.Status = ReleaseStatus.NeedsAttention;
                         }
                     }
-                    
+
                     release.Directory = releaseDirInfo.ToDirectorySystemInfo();
-                    var serialized = System.Text.Json.JsonSerializer.Serialize(release, _jsonSerializerOptions);
+                    var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
                     await File.WriteAllTextAsync(Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized, cancellationToken);
                     File.Delete(releaseKvp.Value);
+                    OnReleaseDiscovered?.Invoke(this, release);
                 }
             }
             catch (Exception e)
@@ -390,7 +394,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 processingErrors.Add(e);
                 if (!_configuration.PluginProcessOptions.DoContinueOnDirectoryProcessingErrors)
                 {
-                    return new OperationResult<int>()
+                    return new OperationResult<int>
                     {
                         Errors = processingErrors,
                         Data = 0
@@ -440,8 +444,9 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         };
     }
 
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForRelease(Release release,
-        CancellationToken cancellationToken = default)
+    public event EventHandler<Release>? OnReleaseDiscovered;
+
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(release.OriginalDirectory.Path, SearchOption.TopDirectoryOnly);
@@ -474,7 +479,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         pictureIdentifier = PictureIdentifier.BandSecondary;
                     }
 
-                    var imageInfo = await SixLabors.ImageSharp.Image.LoadAsync(fileInfo.FullName, cancellationToken);
+                    var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
                     var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
                     imageInfos.Add(new ImageInfo
                     {
@@ -599,10 +604,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             }
         }
 
-        Parallel.ForEach(releases, release =>
-        {
-            release.Status = _releaseValidator.ValidateRelease(release).Data.ReleaseStatus;
-        });
+        Parallel.ForEach(releases, release => { release.Status = _releaseValidator.ValidateRelease(release).Data.ReleaseStatus; });
 
         return new OperationResult<(IEnumerable<Release>, int)>(messages)
         {

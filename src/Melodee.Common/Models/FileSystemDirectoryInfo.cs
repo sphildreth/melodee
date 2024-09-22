@@ -38,4 +38,13 @@ public sealed record FileSystemDirectoryInfo
     public int? ImageFilesFound { get; init; }
 
     public override string ToString() => $"UniqueId [{ UniqueId }] Path [{Path}] ShortName [{Name}]";
+
+    public static FileSystemDirectoryInfo Blank()
+    {
+        return new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        };
+    }
 }
