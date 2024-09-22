@@ -7,17 +7,19 @@ public static class EnumExtensions
 {
     public static string GetEnumDescriptionValue<T>(this T @enum) where T : struct
     {
-        if(!typeof(T).IsEnum)
+        if (!typeof(T).IsEnum)
+        {
             throw new InvalidOperationException();
-
-        return typeof(T).GetField(@enum.ToString()).GetCustomAttribute<DescriptionAttribute>(false).Description;
+        }
+        var name = @enum.ToString() ?? string.Empty;
+        return typeof(T).GetField(name)!.GetCustomAttribute<DescriptionAttribute>(false)?.Description ?? name;
     }
     
-    public static TAttribute GetAttribute<TAttribute>(this Enum value) where TAttribute : Attribute
+    public static TAttribute? GetAttribute<TAttribute>(this Enum value) where TAttribute : Attribute
     {
         var enumType = value.GetType();
-        var name = Enum.GetName(enumType, value);
-        return enumType.GetField(name).GetCustomAttributes(false).OfType<TAttribute>().SingleOrDefault();
+        var name = Enum.GetName(enumType, value) ?? string.Empty;
+        return enumType.GetField(name)!.GetCustomAttributes(false).OfType<TAttribute>().SingleOrDefault();
     }    
     
     public static Dictionary<int, string> ToDictionary(this Enum enumValue)

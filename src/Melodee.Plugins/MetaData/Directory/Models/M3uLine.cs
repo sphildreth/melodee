@@ -34,7 +34,7 @@ public sealed record M3ULine
         {
             return false;
         }
-        if (this.GetType() != other.GetType())
+        if (GetType() != other.GetType())
         {
             return false;
         }

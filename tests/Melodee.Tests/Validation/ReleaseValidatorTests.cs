@@ -217,7 +217,7 @@ public class ReleaseValidatorTests
     public void ValidateReleaseWithMissingArtist()
     {
         var testRelease = TestRelease;
-        var releaseTags = testRelease.Tags.ToList();
+        var releaseTags = (testRelease.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
         releaseTags.Remove(new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.AlbumArtist,
@@ -241,7 +241,7 @@ public class ReleaseValidatorTests
     public void ValidateReleaseWithInvalidYear()
     {
         var testRelease = TestRelease;
-        var releaseTags = testRelease.Tags.ToList();
+        var releaseTags = (testRelease.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
         releaseTags.Remove(new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.RecordingYear,
@@ -265,7 +265,7 @@ public class ReleaseValidatorTests
     public void ValidateReleaseWithMissingTitle()
     {
         var testRelease = TestRelease;
-        var releaseTags = testRelease.Tags.ToList();
+        var releaseTags = (testRelease.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
         releaseTags.Remove(new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Album,

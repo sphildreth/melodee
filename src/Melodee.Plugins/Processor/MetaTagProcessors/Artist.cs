@@ -3,7 +3,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
-using Melodee.Plugins.MetaData.Track;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
@@ -26,13 +25,12 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         object? tagValue = metaTag.Value;
-        var updatedTagValue = false;
         var artist = tagValue as string ?? string.Empty;
         string? featureArtist = null;
 
         var result = new List<MetaTag<object?>>();
         
-        if (artist?.Nullify() != null)
+        if (artist.Nullify() != null)
         {
             if (Configuration.PluginProcessOptions.ArtistNameReplacements.Any())
             {
@@ -54,13 +52,12 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
             }            
             if (artist.HasFeaturingFragments())
             {
-                var newArtist = artist ?? string.Empty;
-                var matches = StringExtensions.HasFeatureFragmentsRegex.Match(artist!);
+                var newArtist = artist;
+                var matches = StringExtensions.HasFeatureFragmentsRegex.Match(artist);
                 newArtist = newArtist[..matches.Index].CleanString();
-                featureArtist = ReplaceArtistSeperators(StringExtensions.HasFeatureFragmentsRegex.Replace(artist!.Substring(matches.Index), string.Empty).CleanString());
+                featureArtist = ReplaceArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(artist.Substring(matches.Index), string.Empty).CleanString());
                 featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
                 artist = newArtist;
-                updatedTagValue = true;
             }
         }
 
@@ -108,11 +105,11 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
         };
     }
     
-    private static string? ReplaceArtistSeperators(string? trackArtist)
+    private static string? ReplaceArtistSeparators(string? trackArtist)
     {
-        return trackArtist.Nullify() == null ? null : ReplaceArtistSeperatorsRegex().Replace(trackArtist!, "/").Trim();
+        return trackArtist.Nullify() == null ? null : ReplaceArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
     }
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    private static partial Regex ReplaceArtistSeperatorsRegex();
+    private static partial Regex ReplaceArtistSeparatorsRegex();
 }

@@ -69,13 +69,13 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             new NullScript(config),                 
             new ReleaseValidator(config),
             config);
-        var dirInfo = new System.IO.DirectoryInfo(settings.Inbound);
+        var dirInfo = new DirectoryInfo(settings.Inbound);
         if (!dirInfo.Exists)
         {
             throw new Exception($"Directory [{settings.Inbound}] does not exist.");
         }
 
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var sw = Stopwatch.StartNew();
 
         Log.Debug("\u250d Processing directory [{Inbound}]", settings.Inbound);
         

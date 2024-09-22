@@ -11,9 +11,9 @@ public static class FileSystemDirectoryInfoExtensions
     
     public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo) => Path.Combine(fileSystemDirectoryInfo.Path, fileSystemDirectoryInfo.Name);
 
-    public static IEnumerable<System.IO.FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
+    public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
-        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
             return [];
@@ -57,10 +57,10 @@ public static class FileSystemDirectoryInfoExtensions
         return result;
     }
 
-    public static IEnumerable<System.IO.FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    public static IEnumerable<FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
-        var result = new List<System.IO.FileInfo>();
-        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var result = new List<FileInfo>();
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
             return result;

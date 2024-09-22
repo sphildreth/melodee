@@ -8,8 +8,7 @@ namespace Melodee.Plugins.Processor;
 
 public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 {
-    private readonly Configuration _configuration;
-    private IEnumerable<IMetaTagProcessor> _metaTagProcessors;
+    private readonly IEnumerable<IMetaTagProcessor> _metaTagProcessors;
     
     public string Id => "EBFFDB54-F24E-42F3-B98F-6C65500249FE";
 
@@ -21,18 +20,18 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 
     public MetaTagsProcessor(Configuration configuration)
     {
-        _configuration = configuration;
+        var configuration1 = configuration;
         _metaTagProcessors = new IMetaTagProcessor[]
         {
-            new TrackTitle(_configuration),
-            new Album(_configuration),
-            new Artist(_configuration),
-            new Comment(_configuration),
-            new OrigReleaseYear(_configuration),
+            new TrackTitle(configuration1),
+            new Album(configuration1),
+            new Artist(configuration1),
+            new Comment(configuration1),
+            new OrigReleaseYear(configuration1),
         };
     }
     
-    public async Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
+    public Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
     {
         var processedTags = new List<MetaTag<object?>>(metaTags.ToList());
         foreach (var metaTagProcessor in _metaTagProcessors.OrderBy(x => x.SortOrder))
@@ -63,18 +62,18 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
                 }
             }
         }
-        return new OperationResult<IEnumerable<MetaTag<object?>>>
+        return Task.FromResult(new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = processedTags.ToArray()
-        };
+        });
     }
     
     
-    public static string? ReplaceTrackArtistSeperators(string? trackArtist)
+    public static string? ReplaceTrackArtistSeparators(string? trackArtist)
     {
-        return trackArtist.Nullify() == null ? null : ReplaceTrackArtistSeperatorsRegex().Replace(trackArtist!, "/").Trim();
+        return trackArtist.Nullify() == null ? null : ReplaceTrackArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
     }
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    private static partial Regex ReplaceTrackArtistSeperatorsRegex();    
+    private static partial Regex ReplaceTrackArtistSeparatorsRegex();    
 }

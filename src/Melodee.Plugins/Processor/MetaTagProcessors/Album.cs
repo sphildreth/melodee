@@ -66,7 +66,7 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
             var yearInTextMatches = YearInReleaseTitleRegex.Match(releaseTitle);
             if (yearInTextMatches.Length > 0)
             {
-                newReleaseTitle = YearInReleaseTitleRegex.Replace(newReleaseTitle, string.Empty).CleanString();
+                newReleaseTitle = YearInReleaseTitleRegex.Replace(newReleaseTitle ?? string.Empty, string.Empty).CleanString();
             }
 
             var albumArtistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
@@ -99,7 +99,7 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
         }
         catch (Exception e)
         {
-            Log.Error("[{PluginName}] attempting to process [{MetaTag}]", DisplayName, metaTag);
+            Log.Error(e, "[{PluginName}] attempting to process [{MetaTag}]", DisplayName, metaTag);
             
         }
 

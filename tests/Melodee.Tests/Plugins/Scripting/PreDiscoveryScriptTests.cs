@@ -7,7 +7,7 @@ public class PreDiscoveryScriptTests
     [Fact] public async Task ValidatePreDiscoveryScripTestsDisabled()
     {
         var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024";
-        var dirInfo = new System.IO.DirectoryInfo(testFile);
+        var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewConfiguration;
@@ -28,7 +28,7 @@ public class PreDiscoveryScriptTests
     {
         var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024";
         var testScriptFile = @"/home/steven/incoming/melodee_test/scripts/PreDiscoveryWrapper.sh";
-        var dirInfo = new System.IO.DirectoryInfo(testFile);
+        var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists && File.Exists(testScriptFile))
         {
             var testNzbFile = Path.Combine(dirInfo.FullName, $"{Guid.NewGuid()}.nzb");

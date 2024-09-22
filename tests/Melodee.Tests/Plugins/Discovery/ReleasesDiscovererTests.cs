@@ -10,7 +10,7 @@ public class ReleasesDiscovererTests
     public async Task ValidReleaseGridResults()
     {
         var testDirectory = @"/home/steven/incoming/melodee_test/staging";
-        var dir = new System.IO.DirectoryInfo(testDirectory);
+        var dir = new DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
             var rd = new ReleasesDiscoverer(TestsBase.NewConfiguration);

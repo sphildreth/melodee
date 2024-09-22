@@ -6,9 +6,9 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemInfoExtensions
 {
-    public static FileSystemDirectoryInfo ToDirectorySystemInfo(this System.IO.FileSystemInfo fileInfo)
+    public static FileSystemDirectoryInfo ToDirectorySystemInfo(this FileSystemInfo fileInfo)
     {
-        var dir = new System.IO.DirectoryInfo(fileInfo.FullName);
+        var dir = new DirectoryInfo(fileInfo.FullName);
         return new FileSystemDirectoryInfo
         {
             Path = dir.FullName,
@@ -16,9 +16,9 @@ public static class FileSystemInfoExtensions
         };
     }    
     
-    public static FileSystemFileInfo ToFileSystemInfo(this System.IO.FileSystemInfo fileInfo)
+    public static FileSystemFileInfo ToFileSystemInfo(this FileSystemInfo fileInfo)
     {
-        var fi = new System.IO.FileInfo(fileInfo.FullName);
+        var fi = new FileInfo(fileInfo.FullName);
         return FileInfoExtensions.ToFileSystemInfo(fi);
     }
 }

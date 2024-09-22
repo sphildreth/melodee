@@ -13,7 +13,7 @@ public class M3UTests
     public async Task ValidateM3UFileAsync()
     {
         var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.m3u";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var m3U = new M3UPlaylist(new []

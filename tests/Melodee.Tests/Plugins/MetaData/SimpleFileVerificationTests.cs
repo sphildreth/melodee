@@ -12,7 +12,7 @@ public class SimpleFileVerificationTests
     public async Task ValidateSfvFileAsync()
     {
         var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.sfv";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var sfv = new SimpleFileVerification(
@@ -34,7 +34,7 @@ public class SimpleFileVerificationTests
     public async Task ValidateSfvFile2Async()
     {
         var testFile = @"/home/steven/incoming/melodee_test/inbound/Swartz/00-edu_schwartz-with_me-(wthi110)-web-2024.sfv";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var sfv = new SimpleFileVerification(
@@ -57,7 +57,7 @@ public class SimpleFileVerificationTests
     {
         // A SFV which has CRCs that don't match should fail
         var testFile = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/00-va-the_sound_of_melodic_techno_vol._21-web-2024.sfv";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var sfv = new SimpleFileVerification(

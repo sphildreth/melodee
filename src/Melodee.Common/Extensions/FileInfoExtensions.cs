@@ -4,7 +4,7 @@ namespace Melodee.Common.Extensions;
 
 public static class FileInfoExtensions
 {
-    public static FileSystemFileInfo ToFileSystemInfo(this System.IO.FileInfo fileInfo) => new FileSystemFileInfo
+    public static FileSystemFileInfo ToFileSystemInfo(this FileInfo fileInfo) => new FileSystemFileInfo
     {
         Name = fileInfo.Name,
         Size = fileInfo.Exists ? fileInfo.Length : 0,

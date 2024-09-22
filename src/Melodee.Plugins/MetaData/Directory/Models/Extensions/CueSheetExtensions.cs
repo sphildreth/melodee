@@ -8,7 +8,7 @@ namespace Melodee.Plugins.MetaData.Directory.Models.Extensions;
 
 public static class CueSheetExtensions
 {
-    public static ReleaseFile ToReleaseFile(this CueSheet cueSheet)
+    private static ReleaseFile ToReleaseFile(this CueSheet cueSheet)
     {
         return new ReleaseFile
         {
@@ -20,7 +20,7 @@ public static class CueSheetExtensions
     
     public static Release ToRelease(this CueSheet cueSheet, FileSystemDirectoryInfo directoryInfo)
     {
-        var fileInfo = new System.IO.FileInfo(cueSheet.FileSystemFileInfo.FullName(directoryInfo));
+        var fileInfo = new FileInfo(cueSheet.FileSystemFileInfo.FullName(directoryInfo));
         return new Release
         {
             Files = new []
@@ -35,16 +35,15 @@ public static class CueSheetExtensions
             Tracks = cueSheet.Tracks,
             Status = cueSheet.IsValid ? ReleaseStatus.Complete : ReleaseStatus.Incomplete,
             OriginalDirectory = new FileSystemDirectoryInfo
-                
             {
-                Path = fileInfo.Directory.FullName,
-                Name = fileInfo.Directory.Name
+                Path = fileInfo.Directory!.FullName,
+                Name = fileInfo.Directory!.Name
             },
             Images = null
         };
     }
-    
-    public static T? MetaTagValue<T>(this CueSheet cueSheet, MetaTagIdentifier metaTagIdentifier)
+
+    private static T? MetaTagValue<T>(this CueSheet cueSheet, MetaTagIdentifier metaTagIdentifier)
     {
         var d = default(T?);
         if (!cueSheet.Tags.Any())
@@ -53,7 +52,7 @@ public static class CueSheetExtensions
         }
         try
         {
-            var vv = cueSheet.Tags?.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
+            object? vv = cueSheet.Tags.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
             if (vv == null)
             {
                 return d;

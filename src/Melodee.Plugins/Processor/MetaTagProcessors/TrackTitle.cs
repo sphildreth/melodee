@@ -62,7 +62,7 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
                     if (matches.Index > 0)
                     {
                         newTitle = newTitle[..matches.Index].CleanString();
-                        featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeperators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
+                        featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
                         featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
                         trackTitle = newTitle;
                         updatedTagValue = true;

@@ -37,7 +37,7 @@ public sealed record SfvLine
             return false;
         }
 
-        if (this.GetType() != other.GetType())
+        if (GetType() != other.GetType())
         {
             return false;
         }

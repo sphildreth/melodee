@@ -1,8 +1,7 @@
-namespace Melodee.Common.Utility
+namespace Melodee.Common.Utility;
+
+public interface IRandomNumber
 {
-    public interface IRandomNumber
-    {
-        int Next(int max);
-        int Next();
-    }
+    int Next(int max);
+    int Next();
 }

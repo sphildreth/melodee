@@ -304,7 +304,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
             }
         }
         
-        return new Release
+        var result = new Release
         {
             Files = new []
             {
@@ -329,6 +329,8 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
             Status = ReleaseStatus.NotSet,
             SortOrder = 0
         };
+        result.Status = result.IsValid(Configuration) ? ReleaseStatus.Invalid : ReleaseStatus.Ok;
+        return result;
     }
 
     [GeneratedRegex(@"[0-9]+\.+(.*)[0-9]{2}\:[0-9]{2}")]

@@ -6,7 +6,6 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
-using Melodee.Plugins.Discovery;
 using Melodee.Plugins.MetaData;
 using Melodee.Plugins.MetaData.Track.Extensions;
 using Serilog.Events;
@@ -58,10 +57,8 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
             {
                 using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
-                    var mediaInfo = await FFProbe.AnalyseAsync(fileSystemInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
-
                     var trackFileInfo = fileAtl.FileInfo();
-                    var trackDirectory = trackFileInfo?.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Track");
+                    var trackDirectory = trackFileInfo.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Track");
                     var newFileName = Path.Combine(trackDirectory, $"{Path.GetFileNameWithoutExtension(trackFileInfo.Name)}.mp3");
 
                     await FFMpegArguments.FromFileInput(trackFileInfo)
@@ -71,7 +68,7 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
                             options.WithAudioSamplingRate(Configuration.MediaConvertorOptions.ConvertSamplingRate);
                             options.WithVariableBitrate(Configuration.MediaConvertorOptions.ConvertVbrLevel);
                             options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
-                        }).ProcessAsynchronously(true);
+                        }).ProcessAsynchronously();
                     var newAtl = new ATL.Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))
                     {
@@ -97,15 +94,15 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
     
     private static bool ShouldMediaTrackBeConverted(ATL.Track track)
     {
-        if(track?.AudioFormat == null || (track?.AudioFormat?.MimeList?.Contains("image") ?? false))
+        if(track.AudioFormat == null || (track.AudioFormat?.MimeList?.Contains("image") ?? false))
         {
             return false;
         }
-        var shortName = track?.AudioFormat?.ShortName ?? string.Empty;
+        var shortName = track.AudioFormat?.ShortName ?? string.Empty;
           
         if(MpegRegex().IsMatch(shortName))
         {
-            var ext = track?.FileInfo().Extension;
+            var ext = track.FileInfo().Extension;
             if(ext.ToLower().EndsWith("m4a")) // M4A is an audio file using the MP4 encoding
             {
                 return true;

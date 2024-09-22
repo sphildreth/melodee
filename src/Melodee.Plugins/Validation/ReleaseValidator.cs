@@ -11,7 +11,7 @@ namespace Melodee.Plugins.Validation;
 
 public sealed class ReleaseValidator(Configuration configuration) : IReleaseValidator
 {
-    private List<ValidationResultMessage> _validationMessages = [];
+    private readonly List<ValidationResultMessage> _validationMessages = [];
 
     private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -39,9 +39,9 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         var returnStatus = release.Status;
 
         // Validations should return true if ok
-        if (
+        if (!release.IsValid(_configuration) ||
             !AreAllTrackNumbersValid(release) ||
-            !AreTracksUniquedNumbered(release) ||
+            !AreTracksUniquelyNumbered(release) ||
             !AreMediaNumbersValid(release) ||
             !DoAllTracksHaveSameReleaseArtist(release) ||
             !AllTrackTitlesDoNotHaveUnwantedText(release) ||
@@ -63,13 +63,12 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         };
     }
 
-    private bool AreTracksUniquedNumbered(Release release)
+    private bool AreTracksUniquelyNumbered(Release release)
     {
-        var result = true;
         var tracks = release.Tracks?.ToArray() ?? [];
         if (tracks.Length == 0)
         {
-            result = false;
+            return false;
         }
         var trackNumbers = tracks.GroupBy(x => x.TrackNumber());
         return trackNumbers.All(group => group.Count() == 1);
@@ -115,7 +114,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
     private bool AlbumArtistDoesNotHaveUnwantedText(Release release)
     {
-        var result = !StringHasFeaturingFragments(release?.Artist());
+        var result = !StringHasFeaturingFragments(release.Artist());
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -130,7 +129,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
     private bool ReleaseTitleDoesNotHaveUnwantedText(Release release)
     {
-        var result = !StringHasFeaturingFragments(release?.ReleaseTitle());
+        var result = !StringHasFeaturingFragments(release.ReleaseTitle());
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -145,11 +144,10 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
     private bool AreMediaNumbersValid(Release release)
     {
-        var result = true;
         var tracks = release.Tracks?.ToArray() ?? [];
         if (tracks.Length == 0)
         {
-            result = false;
+            return false;
         }
 
         var mediaNumbers = tracks.Select(x => x.MediaNumber()).Distinct().ToArray();
@@ -161,10 +159,10 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
         if (mediaNumbers.Any(x => x > _configuration.ValidationOptions.MaximumMediaNumber) || mediaNumbers.Any(x => x < _configuration.ValidationOptions.MinimumMediaNumber))
         {
-            result = false;
+            return false;
         }
 
-        result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
+        var result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -210,30 +208,29 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
     private bool AreAllTrackNumbersValid(Release release)
     {
-        var result = true;
         var tracks = release.Tracks?.ToArray() ?? [];
         if (tracks.Length == 0)
         {
-            result = false;
+            return false;
         }
 
         var trackNumbers = tracks.Select(x => x.TrackNumber()).Distinct().ToArray();
         if (trackNumbers.Length == 0)
         {
-            result = false;
+            return false;
         }
 
         if (trackNumbers.Contains(0))
         {
-            result = false;
+            return false;
         }
 
         if (trackNumbers.Any(x => x > _configuration.ValidationOptions.MaximumTrackNumber))
         {
-            result = false;
+            return false;
         }
 
-        result = Enumerable.Range(0, trackNumbers.Length).All(i => trackNumbers[i] == trackNumbers[0] + i);
+        var result = Enumerable.Range(0, trackNumbers.Length).All(i => trackNumbers[i] == trackNumbers[0] + i);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -242,7 +239,6 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
                 Severity = ValidationResultMessageSeverity.MustFix
             });             
         }
-
         return result;
     }
 
@@ -303,7 +299,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
                     return true;
                 }
 
-                return Regex.IsMatch(trackTitle, $@"^({Regex.Escape(releaseTitle)}\s*.*\s*)?([0-9]*{trackNumber}\s)");
+                return Regex.IsMatch(trackTitle, $@"^({Regex.Escape(releaseTitle ?? string.Empty)}\s*.*\s*)?([0-9]*{trackNumber}\s)");
             }
         }
         catch (Exception ex)

@@ -13,7 +13,7 @@ public class CUETests
     public async Task ValidateSfvFileAsync()
     {
         var testFile = @"/home/steven/incoming/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL/01-pixel_-_reality_strikes_back-mycel.cue";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var sfv = new CueSheet(

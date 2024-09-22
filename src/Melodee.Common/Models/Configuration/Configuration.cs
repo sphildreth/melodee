@@ -25,7 +25,7 @@ public sealed record Configuration
     public TimeSpan FilterLessThanConfiguredTime => TimeSpan.FromMilliseconds(FilterLessThanConfiguredDuration);
 
     [JsonIgnore] 
-    public FileSystemDirectoryInfo StagingDirectoryInfo => new System.IO.DirectoryInfo(StagingDirectory).ToDirectorySystemInfo();
+    public FileSystemDirectoryInfo StagingDirectoryInfo => new DirectoryInfo(StagingDirectory).ToDirectorySystemInfo();
     
     public int StagingDirectoryScanLimit { get; set; } = 250;
     

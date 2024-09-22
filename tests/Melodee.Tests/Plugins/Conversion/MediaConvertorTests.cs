@@ -11,7 +11,7 @@ public class MediaConvertorTests
     [Fact] public async Task ValidateConvertingFlacToMp3Async()
     {
         var testFile = @"/home/steven/incoming/melodee_test/tests/testflac.flac";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(TestsBase.NewConfiguration);
@@ -25,7 +25,7 @@ public class MediaConvertorTests
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new System.IO.FileInfo(convertorResult.Data.FullName(dirInfo));
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
 
         }
@@ -35,7 +35,7 @@ public class MediaConvertorTests
     public async Task ValidateConvertingNonMediaFailsAsync()
     {
         var testFile = @"/home/steven/incoming/melodee_test/tests/testbmp.bmp";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new Configuration

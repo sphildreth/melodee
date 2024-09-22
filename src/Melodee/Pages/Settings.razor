@@ -76,7 +76,7 @@
 </div>
 
 @code {
-    [CascadingParameter] public MainLayout Layout { get; set; }
+    [CascadingParameter] public MainLayout Layout { get; set; } = null!;
 
     private async Task SaveSettings()
     {

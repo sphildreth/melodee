@@ -11,74 +11,73 @@ using Serilog;
 using Toolbelt.Blazor.Extensions.DependencyInjection;
 
 
-namespace Melodee
+namespace Melodee;
+
+class Program
 {
-    class Program
+    [STAThread]
+    static void Main(string[] args)
     {
-        [STAThread]
-        static void Main(string[] args)
+        var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
+            
+        appBuilder.Services.AddLogging();
+
+        appBuilder.RootComponents.Add<App>("app");
+
+        var appDir = new DirectoryInfo(Assembly.GetEntryAssembly()!.Location);
+        appBuilder.Services.AddTransient(opt => System.Text.Json.JsonSerializer.Deserialize<Configuration>(File.ReadAllText(Path.Combine(appDir.Parent!.FullName, "configuration.json"))) ?? new Configuration());
+
+        appBuilder.Services.AddSerilog();
+            
+        appBuilder.Services.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();
+        appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
+        appBuilder.Services.AddSingleton<ITrackPlugin, AtlMetaTag>();
+        appBuilder.Services.AddSingleton<IReleaseValidator, ReleaseValidator>();
+        appBuilder.Services.AddSingleton<IDirectoryProcessorPlugin, DirectoryProcessor>(opt =>
         {
-            var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
-            
-            appBuilder.Services.AddLogging();
-
-            appBuilder.RootComponents.Add<App>("app");
-
-            var appDir = new DirectoryInfo(Assembly.GetEntryAssembly()!.Location);
-            appBuilder.Services.AddTransient(opt => System.Text.Json.JsonSerializer.Deserialize<Configuration>(File.ReadAllText(Path.Combine(appDir.Parent!.FullName, "configuration.json"))) ?? new Common.Models.Configuration.Configuration());
-
-            appBuilder.Services.AddSerilog();
-            
-            appBuilder.Services.AddSingleton<IReleasesDiscoverer, ReleasesDiscoverer>();
-            appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
-            appBuilder.Services.AddSingleton<ITrackPlugin, AtlMetaTag>();
-            appBuilder.Services.AddSingleton<IReleaseValidator, ReleaseValidator>();
-            appBuilder.Services.AddSingleton<IDirectoryProcessorPlugin, DirectoryProcessor>(opt =>
+            var configuration = opt.GetRequiredService<Configuration>();
+            IScriptPlugin preScript = new NullScript(configuration);
+            if (configuration.Scripting.PreDiscoveryScript != null)
             {
-                var configuration = opt.GetRequiredService<Configuration>();
-                IScriptPlugin preScript = new NullScript(configuration);
-                if (configuration.Scripting.PreDiscoveryScript != null)
-                {
-                    preScript = new PreDiscoveryScript(configuration);
-                }
-                IScriptPlugin postScript = new NullScript(configuration);
-                if (configuration.Scripting.PostDiscoveryScript != null)
-                {
-                    postScript = new PostDiscoveryScript(configuration);
-                }                
-                return new DirectoryProcessor(preScript, postScript, opt.GetRequiredService<IReleaseValidator>(), configuration)
-                {
-                    IsEnabled = false
-                };  
-            });
-            
-            appBuilder.Services.AddBlazorBootstrap();
-            
-            appBuilder.Services.AddHotKeys2();
-            
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Verbose()
-                .Enrich.FromLogContext()
-                .WriteTo.File("Logs/log.txt",
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",                    
-                    rollingInterval: RollingInterval.Day)
-                .CreateLogger();            
-            
-            var app = appBuilder.Build();
-
-            app.MainWindow
-                .SetIconFile("favicon.ico")
-                .SetMinHeight(1024)
-                .SetMinWidth(768)
-                .SetTitle("Melodee");
-
-            AppDomain.CurrentDomain.UnhandledException += (sender, error) =>
+                preScript = new PreDiscoveryScript(configuration);
+            }
+            IScriptPlugin postScript = new NullScript(configuration);
+            if (configuration.Scripting.PostDiscoveryScript != null)
             {
-                app.MainWindow.ShowMessage("Fatal exception", error.ExceptionObject.ToString());
-            };
+                postScript = new PostDiscoveryScript(configuration);
+            }                
+            return new DirectoryProcessor(preScript, postScript, opt.GetRequiredService<IReleaseValidator>(), configuration)
+            {
+                IsEnabled = false
+            };  
+        });
+            
+        appBuilder.Services.AddBlazorBootstrap();
+            
+        appBuilder.Services.AddHotKeys2();
+            
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .Enrich.FromLogContext()
+            .WriteTo.File("Logs/log.txt",
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",                    
+                rollingInterval: RollingInterval.Day)
+            .CreateLogger();            
+            
+        var app = appBuilder.Build();
 
-            app.Run();
+        app.MainWindow
+            .SetIconFile("favicon.ico")
+            .SetMinHeight(1024)
+            .SetMinWidth(768)
+            .SetTitle("Melodee");
 
-        }
+        AppDomain.CurrentDomain.UnhandledException += (sender, error) =>
+        {
+            app.MainWindow.ShowMessage("Fatal exception", error.ExceptionObject.ToString());
+        };
+
+        app.Run();
+
     }
 }

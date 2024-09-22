@@ -212,7 +212,7 @@ public static class ReleaseExtensions
 
     public static string? Genre(this Release release) => release.MetaTagValue<string?>(MetaTagIdentifier.Genre);
 
-    public static DirectoryInfo ToOriginalDirectoryInfo(this Release release) => new System.IO.DirectoryInfo(release.OriginalDirectory.Path);
+    public static DirectoryInfo ToOriginalDirectoryInfo(this Release release) => new DirectoryInfo(release.OriginalDirectory.Path);
 
     public static IEnumerable<FileInfo> FileInfosForExtension(this Release release, string extension)
     {

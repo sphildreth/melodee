@@ -54,7 +54,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         };
     }
     
-    public async Task<Common.Models.Release> ReleaseByUniqueIdAsync(
+    public async Task<Release> ReleaseByUniqueIdAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         long uniqueId,
         CancellationToken cancellationToken = default)
@@ -78,7 +78,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         CancellationToken cancellationToken = default)
     {
         var releases = new List<Release>();
-        var dirInfo = new System.IO.DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         
         var dataForDirectoryInfoResult = await AllReleasesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
         if (dataForDirectoryInfoResult.IsSuccess)
@@ -161,12 +161,13 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                     break;
             }
         }
-        
+
+        var releasesCount = releases?.Count ?? 0;
         return new PagedResult<Release>()
         {
-            TotalCount = releases.Count,
-            TotalPages = (releases.Count + pagedRequest.TakeValue - 1) / pagedRequest.TakeValue,
-            Data = releases
+            TotalCount = releasesCount,
+            TotalPages = (releasesCount + pagedRequest.TakeValue - 1) / pagedRequest.TakeValue,
+            Data = (releases ?? [])
                 .OrderBy(x => x.SortValue)
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.TakeValue)
@@ -206,7 +207,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                             }
                             catch (Exception e)
                             {
-                                Log.Warning("Unable to load release json file [{FileName}]", dirInfo.FullName);
+                                Log.Warning(e, "Unable to load release json file [{FileName}]", dirInfo.FullName);
                                 messages.Add($"Unable to load release json file [{dirInfo.FullName}]");
                             }
                         }

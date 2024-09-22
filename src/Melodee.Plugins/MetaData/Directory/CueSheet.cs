@@ -66,7 +66,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     var throwError = true;
                     if (ex.Message.Contains("encoding name"))
                     {
-                        var wind1252 = CodePagesEncodingProvider.Instance.GetEncoding(1252);
+                        var wind1252 = CodePagesEncodingProvider.Instance.GetEncoding(1252) ?? Encoding.UTF8;
                         var wind1252Bytes = SafeParser.ReadFile(cueFile.FullName);
                         var utf8Bytes = Encoding.Convert(wind1252, Encoding.UTF8, wind1252Bytes);
                         var newCueFilename = Path.ChangeExtension(cueFile.FullName, "temp");
@@ -175,7 +175,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                                 fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
                                 fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.HandlesExtension);
                                 File.Delete(cueFile.FullName);
-                                var cueFileMediaFile = new System.IO.FileInfo(Path.Combine(cueFile.DirectoryName, $"{cueFile.Name.Replace(cueFile.Extension, "")}.mp3"));
+                                var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, $"{cueFile.Name.Replace(cueFile.Extension, "")}.mp3"));
                                 if (cueFileMediaFile.Exists)
                                 {
                                     cueFileMediaFile.Delete();

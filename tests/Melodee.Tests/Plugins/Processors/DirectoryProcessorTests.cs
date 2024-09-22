@@ -18,7 +18,7 @@ public class DirectoryProcessorTests
             .CreateLogger();
         
         var testFile = @"/home/steven/incoming/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL/";
-        var dirInfo = new System.IO.DirectoryInfo(testFile);
+        var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewConfiguration;

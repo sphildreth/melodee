@@ -14,7 +14,7 @@ public class NfoTests
     public async Task ParseNfoFile()
     {
         var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.nfo";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var nfo = new Nfo(TestsBase.NewConfiguration);
@@ -28,7 +28,7 @@ public class NfoTests
     public async Task ParseNfoFile01()
     {
         var testFile = @"/home/steven/incoming/melodee_test/tests/test_nfo01.nfo";
-        var fileInfo = new System.IO.FileInfo(testFile);
+        var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var nfo = new Nfo(TestsBase.NewConfiguration);

@@ -41,13 +41,18 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             LibraryDirectory = string.Empty
         };
         
-        var fileInfo = new System.IO.FileInfo(settings.Filename);
+        var fileInfo = new FileInfo(settings.Filename);
         if (!fileInfo.Exists)
         {
             throw new Exception($"Parse File [{settings.Filename}] does not exist.");
         }
+
+        if (fileInfo.Directory == null)
+        {
+            throw new Exception($"Parse Directory [{settings.Filename}] does not exist.");
+        }
         
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var sw = Stopwatch.StartNew();
         Log.Debug("\u250d Parsing File [{NfoFilename}]", settings.Filename);
 
         bool isValid = false;
