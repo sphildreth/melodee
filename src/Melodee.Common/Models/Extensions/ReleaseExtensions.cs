@@ -110,14 +110,11 @@ public static class ReleaseExtensions
 
         var artist = release.Artist().Nullify();
         var releaseTitle = release.ReleaseTitle().Nullify();
-        var releaseYear = release.ReleaseYear();
         return release.UniqueId > 0 &&
                artist != null &&
                releaseTitle != null &&
                release.Status is ReleaseStatus.Complete or ReleaseStatus.New or ReleaseStatus.Ok or ReleaseStatus.Reviewed &&
-               releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year &&
-               releaseYear > configuration.ValidationOptions.MinimumReleaseYear &&
-               releaseYear < configuration.ValidationOptions.MaximumReleaseYear;
+               release.HasValidReleaseYear(configuration); ;
     }
 
     public static string ToMelodeeJsonName(this Release release, bool? isForReleaseDirectory = null)
@@ -208,6 +205,14 @@ public static class ReleaseExtensions
         return release.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ??
                release.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                release.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
+    }
+
+    public static bool HasValidReleaseYear(this Release release, Configuration.Configuration configuration)
+    {
+        var releaseYear = release.ReleaseYear() ?? 0;
+        return releaseYear > DateTime.MinValue.Year && releaseYear < DateTime.MaxValue.Year &&
+               releaseYear >= configuration.ValidationOptions.MinimumReleaseYear && 
+               releaseYear <= configuration.ValidationOptions.MaximumReleaseYear;
     }
 
     public static int MediaCountValue(this Release release)

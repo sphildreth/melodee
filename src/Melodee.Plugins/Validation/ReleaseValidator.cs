@@ -9,13 +9,13 @@ using Serilog;
 
 namespace Melodee.Plugins.Validation;
 
-public sealed class ReleaseValidator(Configuration configuration) : IReleaseValidator
+public sealed partial class ReleaseValidator(Configuration configuration) : IReleaseValidator
 {
     private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static readonly Regex UnwantedTrackTitleTextRegex = new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static readonly Regex ImageNameIsProofRegex = new(@"(proof)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
@@ -245,8 +245,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
     private bool IsReleaseYearValid(Release release)
     {
-        var year = release.ReleaseYear() ?? 0;
-        var result = year >= _configuration.ValidationOptions.MinimumReleaseYear && year <= _configuration.ValidationOptions.MaximumReleaseYear;
+        var result = release.HasValidReleaseYear(_configuration);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -254,8 +253,8 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
                 Message = $"'{release}' release year is invalid.",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
+            
         }
-
         return result;
     }
 
@@ -269,10 +268,28 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
         return !string.IsNullOrWhiteSpace(imageName) && ImageNameIsProofRegex.IsMatch(imageName);
     }
 
+    public static string? ReplaceTrackArtistSeparators(string? trackArtist)
+    {
+        if (trackArtist.Nullify() == null)
+        {
+            return null;
+        }
+        return ReplaceTrackArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
+    }    
+    
     public static bool ReleaseTitleHasUnwantedText(string? releaseTitle)
     {
         return string.IsNullOrWhiteSpace(releaseTitle) || UnwantedReleaseTitleTextRegex.IsMatch(releaseTitle);
     }
+
+    public static string? RemoveUnwantedTextFromReleaseTitle(string? title)
+    {
+        if (title.Nullify() == null)
+        {
+            return null;
+        }
+        return UnwantedReleaseTitleTextRegex.Replace(title!, string.Empty).Trim();
+    }    
 
     public static bool TrackHasUnwantedText(string? releaseTitle, string? trackTitle, int? trackNumber)
     {
@@ -310,4 +327,7 @@ public sealed class ReleaseValidator(Configuration configuration) : IReleaseVali
 
         return false;
     }
+
+    [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
+    private static partial Regex ReplaceTrackArtistSeparatorsRegex();
 }

@@ -8,8 +8,40 @@ namespace Melodee.Tests.Plugins.Processors;
 
 public class DirectoryProcessorTests
 {
+    // 
+
     [Fact]
-    public async Task ValidateDirectoryGetProcessed()
+    public async Task ValidateDirectoryGetProcessedIsSuccess()
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.Console()
+            .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+        
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/";
+        var dirInfo = new DirectoryInfo(testFile);
+        if (dirInfo.Exists)
+        {
+            var config = TestsBase.NewConfiguration;
+            var processor = new DirectoryProcessor(
+                new PreDiscoveryScript(config), 
+                new NullScript(config), 
+                new ReleaseValidator(config), 
+                config);
+            var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            {
+                Path = dirInfo.FullName,
+                Name = dirInfo.Name
+            });
+            Assert.NotNull(result);
+            Assert.True(result.IsSuccess);
+
+        }
+    }    
+    
+    [Fact]
+    public async Task ValidateDirectoryGetProcessedIsNotSuccess()
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
@@ -33,7 +65,7 @@ public class DirectoryProcessorTests
                 Name = dirInfo.Name
             });
             Assert.NotNull(result);
-            Assert.True(result.IsSuccess);
+            Assert.False(result.IsSuccess);
 
         }
     }

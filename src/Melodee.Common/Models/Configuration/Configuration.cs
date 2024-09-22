@@ -57,6 +57,11 @@ public sealed record Configuration
     ///     Options for validations.
     /// </summary>
     public ValidationOptions ValidationOptions { get; set; } = new();
+    
+    /// <summary>
+    ///     Options for doing magic. 
+    /// </summary>
+    public MagicOptions MagicOptions { get; set; } = new();
 
     /// <summary>
     ///     Default page size when view including pagination.

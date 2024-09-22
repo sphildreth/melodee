@@ -16,6 +16,8 @@ public sealed record Release
     public long UniqueId => SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
 
     public DateTimeOffset Created { get; set; }
+    
+    public DateTimeOffset? Modified { get; set; }
 
     /// <summary>
     ///     What plugins were utilized in discovering this release.

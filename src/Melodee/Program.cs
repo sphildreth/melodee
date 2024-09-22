@@ -33,6 +33,7 @@ class Program
         appBuilder.Services.AddSingleton<IMetaTagsProcessorPlugin, MetaTagsProcessor>();
         appBuilder.Services.AddSingleton<ITrackPlugin, AtlMetaTag>();
         appBuilder.Services.AddSingleton<IReleaseValidator, ReleaseValidator>();
+        appBuilder.Services.AddSingleton<IReleaseEditProcessor, ReleaseEditProcessor>();
         
         appBuilder.Services.AddTransient<IDirectoryProcessorPlugin, DirectoryProcessor>(opt =>
         {

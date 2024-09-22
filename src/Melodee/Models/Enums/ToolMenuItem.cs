@@ -7,6 +7,7 @@ public enum ToolMenuItem
     DoMagic,
     PromoteTrackArtist,
     RemoveAllTrackArtists,
+    RemoveFeaturingArtistsFromTracksArtist,
     RemoveArtistFromTrackArtists,
     RemoveProvidedTextFromTrackTitle,
     RenumberTracks,

@@ -132,7 +132,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             }
             catch (Exception e)
             {
-                LogAndRaiseEvent(LogEventLevel.Error,"PreDiscoveryScript [{0}]", e, _preDiscoveryScript.DisplayName);
+                LogAndRaiseEvent(LogEventLevel.Error, "PreDiscoveryScript [{0}]", e, _preDiscoveryScript.DisplayName);
                 preDiscoveryScriptResult.AddError(e);
             }
 
@@ -161,6 +161,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 {
                     break;
                 }
+
                 var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
 
                 LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Processing [{0}] Number of files to process [{1}]", null, directoryInfoToProcess.Name, allFilesInDirectory.Length);
@@ -173,6 +174,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         break;
                     }
+
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in _conversionPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
                     {
@@ -180,6 +182,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         {
                             break;
                         }
+
                         if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{File}] ", plugin.DisplayName, fileSystemInfo.Name))
@@ -213,6 +216,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         break;
                     }
+
                     var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
                     if (!pluginResult.IsSuccess && pluginResult.Type != OperationResponseType.NotFound)
                     {
@@ -255,6 +259,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         {
                             break;
                         }
+
                         var mergedRelease = releaseForDirectory;
 
                         var serialized = string.Empty;
@@ -307,6 +312,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         break;
                     }
+
                     try
                     {
                         var release = JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
@@ -328,6 +334,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 {
                                     break;
                                 }
+
                                 if (!releaseImages.Any(x => x.IsCrcHashMatch(foundReleaseImage.CrcHash)))
                                 {
                                     releaseImages.Add(foundReleaseImage);
@@ -346,6 +353,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 {
                                     break;
                                 }
+
                                 track.File.Name = track.ToTrackFileName();
                             }
                         }
@@ -366,6 +374,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         break;
                     }
+
                     var release = releaseKvp.Key;
                     var releaseDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, release.ToDirectoryName()));
                     if (!releaseDirInfo.Exists)
@@ -391,6 +400,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             {
                                 break;
                             }
+
                             var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.File.Name);
                             if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                             {
@@ -443,6 +453,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     };
                 }
             }
+
             OnDirectoryProcessed?.Invoke(this, directoryInfoToProcess);
         }
 
@@ -474,7 +485,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         }
 
         LogAndRaiseEvent(LogEventLevel.Information, "Processing Complete!");
-        
+
         return new OperationResult<int>(new[]
         {
             $"Directory Plugin(s) process count [{directoryPluginProcessedFileCount}]",
@@ -487,6 +498,26 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             Data = numberOfReleaseJsonFilesProcessed + conversionPluginsProcessedFileCount +
                    directoryPluginProcessedFileCount + numberOfReleaseFilesProcessed
         };
+    }
+
+    /// <summary>
+    ///     This is raised when a Log event happens to return activity to caller.
+    /// </summary>
+    public event EventHandler<string>? OnProcessingEvent;
+
+    /// <summary>
+    ///     This is raised when the number of directories to process is known.
+    /// </summary>
+    public event EventHandler<int>? OnProcessingStart;
+
+    /// <summary>
+    ///     This is raised when a new Release is processed put into the Staging directory.
+    /// </summary>
+    public event EventHandler<FileSystemDirectoryInfo>? OnDirectoryProcessed;
+
+    public void StopProcessing()
+    {
+        _stopProcessingTriggered = true;
     }
 
     private void LogAndRaiseEvent(LogEventLevel logLevel, string messageTemplate, Exception? exception = null, params object[] args)
@@ -504,29 +535,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 Console.WriteLine(e);
             }
         }
+
         OnProcessingEvent?.Invoke(this, exception?.Message ?? eventMessage);
     }
-    
-    /// <summary>
-    /// This is raised when a Log event happens to return activity to caller.
-    /// </summary>
-    public event EventHandler<string>? OnProcessingEvent;
-    
-    /// <summary>
-    /// This is raised when the number of directories to process is known.
-    /// </summary>
-    public event EventHandler<int>? OnProcessingStart;
-    
-    /// <summary>
-    /// This is raised when a new Release is processed put into the Staging directory.
-    /// </summary>
-    public event EventHandler<FileSystemDirectoryInfo>? OnDirectoryProcessed;
 
-    public void StopProcessing()
-    {
-        _stopProcessingTriggered = true;
-    }
-    
     private static async Task<IEnumerable<ImageInfo>> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
@@ -538,6 +550,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             {
                 break;
             }
+
             var fileInfo = new FileInfo(imageFile);
             if (release.IsFileForRelease(fileInfo))
             {
@@ -607,6 +620,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         break;
                     }
+
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in _trackPlugins.OrderBy(x => x.SortOrder))
                     {
@@ -614,6 +628,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         {
                             break;
                         }
+
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("File [{File}] Plugin [{Plugin}]",
@@ -643,6 +658,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     {
                         break;
                     }
+
                     var foundRelease = releases.FirstOrDefault(x => x.UniqueId == track.ReleaseUniqueId);
                     if (foundRelease != null)
                     {

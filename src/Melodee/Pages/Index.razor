@@ -12,7 +12,6 @@
 @using Melodee.Common.Models
 @using Melodee.Common.Models.Configuration
 @using Melodee.Common.Models.Extensions
-@using Melodee.Common.Utility
 @using Melodee.Models
 @using Melodee.Models.Enums
 @using Melodee.Plugins.Discovery.Releases
@@ -20,7 +19,6 @@
 @using Melodee.Plugins.Processor
 @using Melodee.Plugins.Validation
 @using Melodee.Plugins.Validation.Models
-@using Serilog
 @using Release = Melodee.Models.Release
 
 <div class="container-fluid">
@@ -382,6 +380,7 @@
     [Inject] private ITrackPlugin TrackPlugin { get; set; } = default!;
     [Inject] private IReleaseValidator ReleaseValidator { get; set; } = default!;
     [Inject] private IDirectoryProcessorPlugin DirectoryProcessorPlugin { get; set; } = default!;
+    [Inject] private IReleaseEditProcessor ReleaseEditProcessor { get; set; } = default!;
 
 
     public async ValueTask DisposeAsync()
@@ -440,14 +439,22 @@
         Layout.SearchChanged += async (sender, args) => { await RefreshReleasesAsync(args.Item2, args.Item1); };
         Layout.MenuItemClicked += async (sender, args) =>
         {
+            if (_selectedRelease == null)
+            {
+                return;
+            }
             switch (args.Item1)
             {
                 case MenuItem.DeleteSelected:
-                    await DeleteSelectedAsync();
+                    await ReleaseEditProcessor.DeleteReleasesInStagingAsync(_selectedReleaseIds.ToArray());
+                    _selectedReleaseIds.Clear();
+                    await RefreshReleasesAsync();
                     break;
 
                 case MenuItem.MoveSelectedToLibrary:
-                    await MoveSelectedToLibraryAsync();
+                    await ReleaseEditProcessor.MoveReleasesToLibraryAsync(_selectedReleaseIds.ToArray());
+                    _selectedReleaseIds.Clear();
+                    await RefreshReleasesAsync();
                     break;
 
                 case MenuItem.Refresh:
@@ -478,7 +485,9 @@
                     break;
 
                 case MenuItem.SetSelectedStatusReviewed:
-                    await SetSelectedReleaseStatusToReviewed();
+                    await ReleaseEditProcessor.SetReleasesStatusToReviewed(_selectedReleaseIds.ToArray());
+                    _selectedReleaseIds.Clear();
+                    await RefreshReleasesAsync();
                     break;
 
                 case MenuItem.ViewFilterClicked:
@@ -488,29 +497,44 @@
                 case MenuItem.Tool:
                     switch (args.option as ToolMenuItem? ?? ToolMenuItem.NotSet)
                     {
+                        case ToolMenuItem.DoMagic:
+                            await ReleaseEditProcessor.DoMagic(_selectedRelease.UniqueId);
+                            await RefreshReleasesAsync();
+                            break;
                         case ToolMenuItem.DeleteAllImages:
-                            await DeleteAllImages();
+                            await ReleaseEditProcessor.DeleteAllImagesForReleases(_selectedReleaseIds.ToArray());
+                            await RefreshReleasesAsync();
                             break;
                         case ToolMenuItem.PromoteTrackArtist:
-                            await PromoteTrackArtist();
+                            await ReleaseEditProcessor.PromoteTrackArtist(_selectedReleaseIds.First(), _selectedTrackId!.Value);
+                            await RefreshReleasesAsync();
                             break;
                         case ToolMenuItem.RemoveAllTrackArtists:
-                            await RemoveAllTrackArtists();
+                            await ReleaseEditProcessor.RemoveAllTrackArtists(_selectedReleaseIds.ToArray());
+                            await RefreshReleasesAsync();
                             break;
                         case ToolMenuItem.RemoveArtistFromTrackArtists:
-                            await RemoveArtistFromTrackArtists();
+                            await ReleaseEditProcessor.RemoveArtistFromTrackArtists(_selectedReleaseIds.ToArray());
+                            await RefreshReleasesAsync();
+                            break;
+                        case ToolMenuItem.RemoveFeaturingArtistsFromTracksArtist:
+                            await ReleaseEditProcessor.RemoveFeaturingArtistsFromTracksArtist(_selectedReleaseIds.First());
+                            await RefreshReleasesAsync();
                             break;
                         case ToolMenuItem.RemoveProvidedTextFromTrackTitle:
                             await _removeTextModal.ShowAsync();
                             break;
                         case ToolMenuItem.RenumberTracks:
-                            await RenumberTracks();
+                            await ReleaseEditProcessor.RenumberTracks(_selectedReleaseIds.ToArray());
+                            await RefreshReleasesAsync();
                             break;
                         case ToolMenuItem.ReplaceAllTrackArtistSeparators:
-                            await ReplaceAllTrackArtistSeparators();
+                            await ReleaseEditProcessor.ReplaceAllTrackArtistSeparators(_selectedReleaseIds.ToArray());
+                            await RefreshReleasesAsync();
                             break;
                         case ToolMenuItem.SetYearToCurrent:
-                            await SetYearToCurrent();
+                            await ReleaseEditProcessor.SetYearToCurrent(_selectedReleaseIds.ToArray());
+                            await RefreshReleasesAsync();
                             break;
                     }
 
@@ -518,7 +542,6 @@
             }
         };
     }
-
     private async Task ShowReleaseDetails()
     {
         if (_selectedRelease == null)
@@ -532,363 +555,17 @@
 
     private async Task OnRemoveTextHideModalClick()
     {
-        await _removeTextModal.HideAsync();
-        if (_selectedRelease == null || _removeTextValueToReplace.Nullify() == null)
-        {
-            return;
-        }
-
-        _loading = true;
-        var modified = false;
-        var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, _selectedRelease.UniqueId);
-        var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-        foreach (var track in release.Tracks!)
-        {
-            var originalTitle = track.Title() ?? string.Empty;
-            var newTitle = track.Title()!.Replace(originalTitle, _removeTextValueToReplaceWith ?? string.Empty).Trim();
-            if (!string.Equals(originalTitle, newTitle, StringComparison.OrdinalIgnoreCase))
-            {
-                release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.Title, newTitle);
-                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
-                modified = true;
-            }
-        }
-
-        if (modified)
-        {
-            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-            ReleasesDiscoverer.ClearCache();
-            await RefreshReleasesAsync();
-        }
-    }
-
-    private async Task PromoteTrackArtist()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            var artistToPromote = release.Tracks?.FirstOrDefault(x => x.TrackId == _selectedTrackId)?.TrackArtist();
-            if (artistToPromote.Nullify() != null)
-            {
-                release.SetTagValue(MetaTagIdentifier.AlbumArtist, artistToPromote);
-                var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-                foreach (var track in release.Tracks!)
-                {
-                    release.RemoveTrackTagValue(track.TrackId, MetaTagIdentifier.Artist);
-                    await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
-                }
-
-                var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-                await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-            }
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
+         await _removeTextModal.HideAsync();
+         if (_selectedRelease == null || _removeTextValueToReplace.Nullify() == null)
+         {
+             return;
+         }
+        await ReleaseEditProcessor.ReplaceGivenTextFromTrackTitles(_selectedRelease.UniqueId, _removeTextValueToReplace!, _removeTextValueToReplaceWith);
         await RefreshReleasesAsync();
     }
-
-    private async Task SetYearToCurrent()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        var year = DateTime.Now.Year;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            release.SetTagValue(MetaTagIdentifier.OrigReleaseYear, year);
-            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-            foreach (var track in release.Tracks!)
-            {
-                release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.OrigReleaseYear, year);
-                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
-            }
-
-            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
-        await RefreshReleasesAsync();
-    }
-
-    private async Task RemoveAllTrackArtists()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-            foreach (var track in release.Tracks!)
-            {
-                release.RemoveTrackTagValue(track.TrackId, MetaTagIdentifier.AlbumArtist);
-                release.RemoveTrackTagValue(track.TrackId, MetaTagIdentifier.Artist);
-                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
-            }
-
-            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
-        await RefreshReleasesAsync();
-    }
-
-    private async Task ReplaceAllTrackArtistSeparators()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-            foreach (var track in release.Tracks!.Where(x => x.TrackArtist().Nullify() != null))
-            {
-                var oldTrackArtist = track.TrackArtist();
-                var newTrackArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(oldTrackArtist);
-                if (!string.Equals(oldTrackArtist, newTrackArtist, StringComparison.OrdinalIgnoreCase))
-                {
-                    release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.AlbumArtist, null);
-                    await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
-                }
-            }
-            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
-        await RefreshReleasesAsync();
-    }
-
-    private async Task RenumberTracks()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-            var numberOfMedias = release.MediaCountValue();
-            var mediaLooper = 0;
-            while (mediaLooper <= numberOfMedias)
-            {
-                var looper = mediaLooper;
-                foreach (var dd in release.Tracks?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i }) ?? [])
-                {
-                    release.SetTrackTagValue(dd.x.TrackId, MetaTagIdentifier.TrackNumber, dd.i);
-                    await TrackPlugin.UpdateTrackAsync(release.Directory!, dd.x);
-                }
-
-                mediaLooper++;
-            }
-
-            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
-        await RefreshReleasesAsync();
-    }
-
-    private async Task RemoveArtistFromTrackArtists()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-            foreach (var track in release.Tracks!)
-            {
-                release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.AlbumArtist, null);
-                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
-            }
-
-            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
-        await RefreshReleasesAsync();
-    }
-
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
 
     private ProgressBar _processingProgressBar = default!;
 
-    private async Task DeleteAllImages()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-            release.Images = [];
-            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-            foreach (var imageFile in ImageHelper.ImageFilesInDirectory(releaseStagingDirInfo.FullName, SearchOption.AllDirectories))
-            {
-                File.Delete(imageFile);
-            }
-
-            foreach (var track in release.Tracks!)
-            {
-                track.Images = [];
-                await TrackPlugin.UpdateTrackAsync(release.Directory!, track);
-            }
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
-        await RefreshReleasesAsync();
-    }
-
-    private async Task SetSelectedReleaseStatusToReviewed()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-            release.Status = ReleaseStatus.Reviewed;
-            var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized);
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
-        await RefreshReleasesAsync();
-    }
-
-    private async Task MoveSelectedToLibraryAsync()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        try
-        {
-            _loading = true;
-            foreach (var selectedReleaseId in _selectedReleaseIds)
-            {
-                var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-                var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-                var releaseLibraryDirInfo = new DirectoryInfo(Path.Combine(Configuration.LibraryDirectory, release.ToDirectoryName()));
-                MoveDirectory(releaseStagingDirInfo.FullName, releaseLibraryDirInfo.FullName, Configuration.MoveMelodeeJsonDataFileToLibrary ? null : Common.Models.Release.JsonFileName);
-            }
-
-            _selectedReleaseIds.Clear();
-            ReleasesDiscoverer.ClearCache();
-            await RefreshReleasesAsync();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Moving Selected Releases To Library");
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
-
-    private static void MoveDirectory(string toMove, string destination, string? dontMoveFileName)
-    {
-        if (!Directory.Exists(destination))
-        {
-            Directory.CreateDirectory(destination);
-        }
-
-        var files = Directory.GetFiles(toMove);
-        var directories = Directory.GetDirectories(toMove);
-        foreach (var file in files)
-        {
-            if (!string.Equals(Path.GetFileName(file), dontMoveFileName, StringComparison.OrdinalIgnoreCase))
-            {
-                File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
-            }
-        }
-
-        foreach (var d in directories)
-        {
-            MoveDirectory(Path.Combine(toMove, Path.GetFileName(d)), Path.Combine(destination, Path.GetFileName(d)), dontMoveFileName);
-        }
-
-        Directory.Delete(toMove, true);
-    }
-
-    private async Task DeleteSelectedAsync()
-    {
-        if (_selectedReleaseIds.Count == 0)
-        {
-            return;
-        }
-
-        _loading = true;
-        foreach (var selectedReleaseId in _selectedReleaseIds)
-        {
-            var release = await ReleasesDiscoverer.ReleaseByUniqueIdAsync(Configuration.StagingDirectoryInfo, selectedReleaseId);
-            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(Configuration.StagingDirectory, release.ToDirectoryName()));
-            try
-            {
-                Directory.Delete(releaseStagingDirInfo.FullName, true);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error deleting [{ReleaseId}]", selectedReleaseId);
-            }
-        }
-
-        _selectedReleaseIds.Clear();
-        ReleasesDiscoverer.ClearCache();
-        await RefreshReleasesAsync();
-    }
 
     private async Task RescanInboundFolder()
     {
@@ -953,6 +630,11 @@
         await _processingModal.HideAsync();
     }
 
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     private async Task SaveSelectedReleaseAsync()
     {
         _loading = true;
@@ -997,6 +679,7 @@
         var sw = Stopwatch.StartNew();
         _loading = true;
         Layout.IsProcessing = true;
+        _selectedReleaseIds.Clear();
         StateHasChanged();
         try
         {
@@ -1068,9 +751,9 @@
         if (firstRender)
         {
             _hotKeysContext = HotKeys.CreateContext()
-                .Add(ModCode.Ctrl, Code.D, DeleteSelectedAsync, new() { Description = "Delete selected Release(s)." })
-                .Add(ModCode.Ctrl, Code.M, MoveSelectedToLibraryAsync, new() { Description = "Move selected Release(s) to Library Directory." })
-                .Add(ModCode.Ctrl, Code.R, SetSelectedReleaseStatusToReviewed, new() { Description = "Set selected Release(s) status as Reviewed." })
+                .Add(ModCode.Ctrl, Code.D, (() => ReleaseEditProcessor.DeleteReleasesInStagingAsync(_selectedReleaseIds.ToArray())), new() { Description = "Delete selected Release(s)." })
+                .Add(ModCode.Ctrl, Code.M, (() => ReleaseEditProcessor.MoveReleasesToLibraryAsync(_selectedReleaseIds.ToArray())), new() { Description = "Move selected Release(s) to Library Directory." })
+                .Add(ModCode.Ctrl, Code.R, (() => ReleaseEditProcessor.SetReleasesStatusToReviewed(_selectedReleaseIds.ToArray())), new() { Description = "Set selected Release(s) status as Reviewed." })
                 .Add(ModCode.Ctrl, Code.S, SaveSelectedReleaseAsync, new() { Description = "Save selected Release." })
                 .Add(ModCode.None, Code.F2, ShowReleaseDetails, new() { Description = "Show Details of selected Release." })
                 .Add(ModCode.None, Code.F5, (() => RefreshReleasesAsync()), new() { Description = "Refresh view of Staging Directory." })
