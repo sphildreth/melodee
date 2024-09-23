@@ -87,6 +87,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
+        var processingMessages = new List<string>();
         var processingErrors = new List<Exception>();
         var numberOfReleaseJsonFilesProcessed = 0;
         var conversionPluginsProcessedFileCount = 0;
@@ -438,14 +439,22 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     release.Directory = releaseDirInfo.ToDirectorySystemInfo();
                     release.Status = _releaseValidator.ValidateRelease(release).Data.ReleaseStatus;                    
                     var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-                    await File.WriteAllTextAsync(Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized, cancellationToken);
-                    File.Delete(releaseKvp.Value);
-                    if (_configuration.MagicOptions.IsMagicEnabled)
+                    var jsonName = release.ToMelodeeJsonName(true);
+                    if (jsonName != null)
                     {
-                        using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync :: DoMagic [{DirectoryInfo}]", releaseDirInfo.Name))
+                        await File.WriteAllTextAsync(Path.Combine(releaseDirInfo.FullName, jsonName), serialized, cancellationToken);
+                        File.Delete(releaseKvp.Value);
+                        if (_configuration.MagicOptions.IsMagicEnabled)
                         {
-                            await _releaseEditProcessor.DoMagic(release.UniqueId, cancellationToken);
+                            using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync :: DoMagic [{DirectoryInfo}]", releaseDirInfo.Name))
+                            {
+                                await _releaseEditProcessor.DoMagic(release.UniqueId, cancellationToken);
+                            }
                         }
+                    }
+                    else
+                    {
+                        processingMessages.Add($"Unable to determine JsonName for Release [{release}]");
                     }
                 }
             }
@@ -495,13 +504,12 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
         LogAndRaiseEvent(LogEventLevel.Information, "Processing Complete!");
 
-        return new OperationResult<int>(new[]
-        {
-            $"Directory Plugin(s) process count [{directoryPluginProcessedFileCount}]",
-            $"Conversion Plugin(s) process count [{conversionPluginsProcessedFileCount}]",
-            $"Track Plugin(s) process count [{numberOfReleaseFilesProcessed}]",
-            $"Release process count [{numberOfReleaseJsonFilesProcessed}]"
-        })
+        processingMessages.Add($"Directory Plugin(s) process count [{directoryPluginProcessedFileCount}]");
+        processingMessages.Add($"Conversion Plugin(s) process count [{conversionPluginsProcessedFileCount}]");
+        processingMessages.Add($"Track Plugin(s) process count [{numberOfReleaseFilesProcessed}]");
+        processingMessages.Add($"Release process count [{numberOfReleaseJsonFilesProcessed}]");
+            
+        return new OperationResult<int>(processingMessages)
         {
             Errors = processingErrors.ToArray(),
             Data = numberOfReleaseJsonFilesProcessed + conversionPluginsProcessedFileCount +
@@ -545,7 +553,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             }
         }
 
-        OnProcessingEvent?.Invoke(this, exception?.Message ?? eventMessage);
+        OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
     }
 
     private static async Task<IEnumerable<ImageInfo>> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)

@@ -70,11 +70,19 @@ public sealed class ReleaseEditProcessor(
         return validationResult;
     }
 
-    private Task SaveRelease(Release release, CancellationToken cancellationToken = default)
+    private async Task SaveRelease(Release release, CancellationToken cancellationToken = default)
     {
         var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-        var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(configuration.StagingDirectory, release.ToDirectoryName()));            
-        return File.WriteAllTextAsync(Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized, cancellationToken);
+        var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(configuration.StagingDirectory, release.ToDirectoryName()));
+        var jsonName = Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true));
+        try
+        {
+            await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[{Release}] JsonName [{JsonName}]", release.ToString(), jsonName);
+        }
     }
 
     public async Task<OperationResult<bool>> RemoveUnwantedTextFromReleaseTitle(long releaseId, CancellationToken cancellationToken = default)

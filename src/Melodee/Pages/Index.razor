@@ -207,7 +207,7 @@
     </div>
 </div>
 
-<Modal @ref="_processingModal" title="Very busy..." Size="ModalSize.Large" IsVerticallyCentered="true" UseStaticBackdrop="true" CloseOnEscape="false">
+<Modal @ref="_processingModal" title="Very busy..." Size="ModalSize.ExtraLarge" IsVerticallyCentered="true" UseStaticBackdrop="true" CloseOnEscape="false">
     <BodyTemplate>
         <div class="mb-2">
             Please wait until processing completes.
@@ -602,27 +602,34 @@
                 _processingMessages.Insert(0, $"{ DateTime.Now.ToString(Configuration.DateTimeDisplayActivityFormat)}:: {s}");
             };
             var sw = Stopwatch.StartNew();
-            var rescanResult = await DirectoryProcessorPlugin.ProcessDirectoryAsync(Configuration.InboundDirectoryInfo);
-            if (!rescanResult?.IsSuccess ?? false)
+            try
             {
+                var rescanResult = await DirectoryProcessorPlugin.ProcessDirectoryAsync(Configuration.InboundDirectoryInfo);
+                if (!rescanResult?.IsSuccess ?? false)
+                {
+                    Layout.ToastService.Notify(new ToastMessage
+                    {
+                        IconName = IconName.HeartBreak,
+                        Message = $"An error has occured in rescanning. Check logs for details.",
+                        Title = "Oh noes!",
+                        Type = ToastType.Danger
+                    });
+                }
+                ReleasesDiscoverer.ClearCache();
+                sw.Stop();
+                await RefreshReleasesAsync();
                 Layout.ToastService.Notify(new ToastMessage
                 {
-                    IconName = IconName.HeartBreak,
-                    Message = $"An error has occured in rescanning. Check logs for details.",
-                    Title = "Oh noes!",
-                    Type = ToastType.Danger
+                    IconName = IconName.Activity,
+                    Message = $"Rescan completed in [{sw}]. Processed [{directoriesProcessed}] releases.",
+                    Title = "Rescan complete",
+                    Type = ToastType.Success
                 });
             }
-            ReleasesDiscoverer.ClearCache();
-            sw.Stop();
-            await RefreshReleasesAsync();
-            Layout.ToastService.Notify(new ToastMessage
+            catch (Exception e)
             {
-                IconName = IconName.Activity,
-                Message = $"Rescan completed in [{sw}]. Processed [{directoriesProcessed}] releases.",
-                Title = "Rescan complete",
-                Type = ToastType.Success
-            });
+                _processingMessages.Add(e.Message);
+            }
         }
         finally
         {
@@ -688,6 +695,8 @@
         _loading = true;
         Layout.IsProcessing = true;
         _selectedReleaseIds.Clear();
+        _releases.Clear();
+        _selectedRelease = null;
         StateHasChanged();
         try
         {
