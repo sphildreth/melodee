@@ -3,6 +3,8 @@ using System.Text.Json;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
+using Melodee.Plugins.Discovery.Releases;
+using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
@@ -65,10 +67,15 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             StagingDirectory = settings.Staging,
             LibraryDirectory = string.Empty
         };
+        var validator = new ReleaseValidator(config);
         var processor = new DirectoryProcessor(
             new NullScript(config),
             new NullScript(config),
-            new ReleaseValidator(config),
+            validator,
+            new ReleaseEditProcessor(config, 
+                new ReleasesDiscoverer(validator, config), 
+                new AtlMetaTag(new MetaTagsProcessor(config), config),
+                validator),            
             config);
         var dirInfo = new DirectoryInfo(settings.Inbound);
         if (!dirInfo.Exists)

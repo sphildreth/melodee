@@ -21,7 +21,14 @@ public sealed record PluginProcessOptions
     public bool DoOverrideExistingMelodeeDataFiles { get; set; }
 
     public bool DoLoadEmbeddedImages { get; set; } = true;
+    
+    /// <summary>
+    /// If set then limit the processing, otherwise process all found.
+    /// </summary>
+    public int? MaximumProcessingCount { get; set; }
 
+    public int MaximumProcessingCountValue => MaximumProcessingCount ?? int.MaxValue; 
+    
     public int MaximumArtistDirectoryNameLength { get; set; } = 200;
 
     public int MaximumReleaseDirectoryNameLength { get; set; } = 200;

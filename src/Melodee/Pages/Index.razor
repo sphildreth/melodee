@@ -258,6 +258,14 @@
                 </div>
                 <div class="row">
                     <div class="col-5">
+                        <h5>Release Info</h5>
+                    </div>
+                    <div class="col-7">
+                        <p class="overflow-auto">@_releaseDetail.DisplaySummary</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-5">
                         <h5>Path</h5>
                     </div>
                     <div class="col-7">
@@ -290,7 +298,7 @@
                     <div class="release-detail-track-container border-bottom mb-1">
                         <div class="row">
                             <div class="col-5">
-                                <h5>Info</h5>
+                                <h5>Track Info</h5>
                             </div>
                             <div class="col-7">
                                 <p class="overflow-auto">@track.DisplaySummary</p>
@@ -439,7 +447,7 @@
         Layout.SearchChanged += async (sender, args) => { await RefreshReleasesAsync(args.Item2, args.Item1); };
         Layout.MenuItemClicked += async (sender, args) =>
         {
-            if (_selectedRelease == null)
+            if (_releases.Count > 0 &&  _selectedRelease == null)
             {
                 return;
             }

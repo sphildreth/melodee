@@ -34,6 +34,7 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
                 }
             };
         }
+        _validationMessages.Clear();
 
         var returnStatus = release.Status;
 
@@ -101,7 +102,7 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release media total does not match track medias.",
+                Message = $"'{release}' release media total [{releaseMediaTotal}] does not match track medias [{mediaNumbers}].",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
         }

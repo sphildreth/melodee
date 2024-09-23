@@ -204,6 +204,7 @@ public class ReleaseValidatorTests
             }
         };
 
+   
     [Fact]
     public void ValidateReleaseWithNoInvalidValidations()
     {

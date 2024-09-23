@@ -48,7 +48,7 @@ class Program
             {
                 postScript = new PostDiscoveryScript(configuration);
             }                
-            return new DirectoryProcessor(preScript, postScript, opt.GetRequiredService<IReleaseValidator>(), configuration)
+            return new DirectoryProcessor(preScript, postScript, opt.GetRequiredService<IReleaseValidator>(), opt.GetRequiredService<IReleaseEditProcessor>(), configuration)
             {
                 IsEnabled = false
             };  

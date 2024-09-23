@@ -1,4 +1,6 @@
 using Melodee.Common.Models;
+using Melodee.Plugins.Discovery.Releases;
+using Melodee.Plugins.MetaData.Track;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
@@ -24,10 +26,15 @@ public class DirectoryProcessorTests
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewConfiguration;
+            var validator = new ReleaseValidator(config);
             var processor = new DirectoryProcessor(
                 new PreDiscoveryScript(config), 
                 new NullScript(config), 
-                new ReleaseValidator(config), 
+                validator, 
+                new ReleaseEditProcessor(config, 
+                    new ReleasesDiscoverer(validator, config), 
+                    new AtlMetaTag(new MetaTagsProcessor(config), config),
+                    validator),
                 config);
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
@@ -54,11 +61,15 @@ public class DirectoryProcessorTests
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewConfiguration;
+            var validator = new ReleaseValidator(config);
             var processor = new DirectoryProcessor(
-                new PreDiscoveryScript(config), 
-                new NullScript(config), 
-                new ReleaseValidator(config), 
-                config);
+                new PreDiscoveryScript(config),
+                new NullScript(config),
+                validator,
+                new ReleaseEditProcessor(config,
+                    new ReleasesDiscoverer(validator, config),
+                    new AtlMetaTag(new MetaTagsProcessor(config), config),
+                    validator), config);  
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,

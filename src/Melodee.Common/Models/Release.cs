@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 
@@ -59,6 +60,8 @@ public sealed record Release
             return this.ToDirectoryName();
         }
     }
+
+    public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.TrackTotalValue().ToStringPadLeft(3)} : {this.ReleaseTitle()}";
 
     public Release MergeTracks(IEnumerable<Track> pluginResultData)
     {

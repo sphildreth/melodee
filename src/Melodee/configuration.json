@@ -16,6 +16,7 @@
   },
   "PluginProcessOptions": {
     "DoDeleteOriginal": false,
+    "MaximumProcessingCount": 3,
     "DoOverrideExistingMelodeeDataFiles": true
   },
   "MediaConvertorOptions": {

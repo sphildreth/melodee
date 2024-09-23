@@ -39,6 +39,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
     private readonly IScriptPlugin _postDiscoveryScript;
     private readonly IScriptPlugin _preDiscoveryScript;
     private readonly IReleaseValidator _releaseValidator;
+    private readonly IReleaseEditProcessor _releaseEditProcessor;
     private readonly IEnumerable<ITrackPlugin> _trackPlugins;
     private bool _stopProcessingTriggered;
 
@@ -46,6 +47,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         IScriptPlugin preDiscoveryScript,
         IScriptPlugin postDiscoveryScript,
         IReleaseValidator releaseValidator,
+        IReleaseEditProcessor releaseEditProcessor,
         Configuration configuration)
     {
         _configuration = configuration;
@@ -53,6 +55,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         _preDiscoveryScript = preDiscoveryScript;
         _postDiscoveryScript = postDiscoveryScript;
         _releaseValidator = releaseValidator;
+        _releaseEditProcessor = releaseEditProcessor;
 
         _trackPlugins = new[]
         {
@@ -153,7 +156,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Found [{0}] directories to process", null, directoriesToProcess.Count);
         }
 
-        foreach (var directoryInfoToProcess in directoriesToProcess)
+        foreach (var directoryInfoToProcess in directoriesToProcess.Take(_configuration.PluginProcessOptions.MaximumProcessingCountValue))
         {
             try
             {
@@ -357,7 +360,6 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 track.File.Name = track.ToTrackFileName();
                             }
                         }
-
                         releaseAndJsonFile.Add(release, releaseJsonFile.FullName);
                     }
                     catch (Exception e)
@@ -433,11 +435,18 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             release.Status = ReleaseStatus.NeedsAttention;
                         }
                     }
-
                     release.Directory = releaseDirInfo.ToDirectorySystemInfo();
+                    release.Status = _releaseValidator.ValidateRelease(release).Data.ReleaseStatus;                    
                     var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
                     await File.WriteAllTextAsync(Path.Combine(releaseDirInfo.FullName, release.ToMelodeeJsonName(true)), serialized, cancellationToken);
                     File.Delete(releaseKvp.Value);
+                    if (_configuration.MagicOptions.IsMagicEnabled)
+                    {
+                        using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync :: DoMagic [{DirectoryInfo}]", releaseDirInfo.Name))
+                        {
+                            await _releaseEditProcessor.DoMagic(release.UniqueId, cancellationToken);
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -716,13 +725,15 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = viaPlugins.Distinct().ToArray()
                         });
+                        if (releases.Count > _configuration.PluginProcessOptions.MaximumProcessingCountValue)
+                        {
+                            _stopProcessingTriggered = true;
+                            break;
+                        }
                     }
                 }
             }
         }
-
-        Parallel.ForEach(releases, release => { release.Status = _releaseValidator.ValidateRelease(release).Data.ReleaseStatus; });
-
         return new OperationResult<(IEnumerable<Release>, int)>(messages)
         {
             Data = (releases, tracks.Count)
