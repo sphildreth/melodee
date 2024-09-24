@@ -50,4 +50,9 @@ public sealed record PluginProcessOptions
     };
 
     public bool DoContinueOnDirectoryProcessingErrors { get; set; } = true;
+    
+    /// <summary>
+    /// When true then move Release Melodee json files to the Staging directory.
+    /// </summary>
+    public bool DoMoveToStagingDirectory { get; set; }= true;
 }

@@ -1,3 +1,4 @@
+using FluentValidation;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Track;
@@ -129,6 +130,7 @@ public class ReleaseValidatorTests
     [InlineData("proof image.jpg", true)]
     [InlineData("00-master_blaster-we_love_italo_disco-cd-flac-2003-proof.jpg", true)]
     [InlineData("cover.jpg", false)]
+    [InlineData("00-big_ed_the_assassin-edward_lee_knight_1971-2001-2001-proof-cr_int", true)]
     public void IsImageProofType(string? text, bool shouldBe)
     {
         Assert.Equal(shouldBe, ReleaseValidator.IsImageAProofType(text));

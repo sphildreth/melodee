@@ -8,6 +8,7 @@ namespace Melodee.Common.Models;
 [Serializable]
 public sealed record Track
 {
+    //public long UniqueId => SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
     public long ReleaseUniqueId => SafeParser.Hash(this.ReleaseArtist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
 
     /// <summary>

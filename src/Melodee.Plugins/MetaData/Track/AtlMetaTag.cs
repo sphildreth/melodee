@@ -249,6 +249,16 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     Value = 0
                 });
             }
+            
+            // Ensure that album artist is set
+            if (tags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
+            {
+                tags.Add(new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.AlbumArtist,
+                    Value = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist)?.Value?.ToString()
+                });
+            }
 
             var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
             if (!metaTagsProcessorResult.IsSuccess)

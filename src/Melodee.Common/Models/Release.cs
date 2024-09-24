@@ -16,7 +16,7 @@ public sealed record Release
 
     public long UniqueId => SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
 
-    public DateTimeOffset Created { get; set; }
+    public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
     
     public DateTimeOffset? Modified { get; set; }
 
@@ -60,7 +60,9 @@ public sealed record Release
             return this.ToDirectoryName();
         }
     }
-
+    
+    public string UniqueIdSummary => $"{this.Artist()} : {this.ReleaseYear()} : {this.ReleaseTitle()}";
+    
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.TrackTotalValue().ToStringPadLeft(3)} : {this.ReleaseTitle()}";
 
     public Release MergeTracks(IEnumerable<Track> pluginResultData)
