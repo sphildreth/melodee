@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -189,6 +190,8 @@ public class MetaTagTests
             
             Assert.NotNull(track.Tags);
             Assert.NotNull(track.File);
+            var releaseArtist = track.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
+            Assert.NotNull(releaseArtist?.Value);
             var trackArtists = track.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
             Assert.NotNull(trackArtists?.Value);
 

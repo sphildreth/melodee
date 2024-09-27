@@ -1,5 +1,6 @@
 using ATL;
 using FFMpegCore;
+using Mapster;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -193,10 +194,13 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                         var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge(new[] { adData1, adData2 }));
                         foreach (var additionalTag in additionalTags)
                         {
-                            if (tags.All(x => x.Identifier != additionalTag.Identifier))
+                            // Additional tag values override any in place
+                            var existing = tags.FirstOrDefault(x => x.Identifier == additionalTag.Identifier);
+                            if (existing != null)
                             {
-                                tags.Add(additionalTag);
+                                tags.Remove(existing);
                             }
+                            tags.Add(additionalTag);
                         }
 
                         if (fileAtl.EmbeddedPictures.Any() && Configuration.PluginProcessOptions.DoLoadEmbeddedImages)
@@ -253,11 +257,16 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             // Ensure that album artist is set
             if (tags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
             {
-                tags.Add(new MetaTag<object?>
+                var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+                if (artistTag != null)
                 {
-                    Identifier = MetaTagIdentifier.AlbumArtist,
-                    Value = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist)?.Value?.ToString()
-                });
+                    tags.Remove(artistTag);
+                    tags.Add(new MetaTag<object?>
+                    {
+                        Identifier = MetaTagIdentifier.AlbumArtist,
+                        Value = artistTag
+                    });
+                }
             }
 
             var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
@@ -359,7 +368,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             switch (k)
             {
                 case "ARTISTS":
-                    if (result.All(x => x.Identifier != MetaTagIdentifier.Artists))
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.Artist))
                     {
                         var artists = kp.Value.ToCleanedMultipleArtistsValue();
                         if (artists != null)
@@ -371,7 +380,6 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                             });
                         }
                     }
-
                     break;
 
                 case "LENGTH":

@@ -149,6 +149,7 @@ public class StringExtensionsTests
     [InlineData("Something Featuring Bob", true)]
     [InlineData("Something (with Bob)", true)]
     [InlineData("Minds Without Fear with Vishal-Shekhar", true)]
+    [InlineData("Ariana Grande ft Nonna", true)]
     public void StringHasFeaturingFragments(string? input, bool shouldBe)
     {
         Assert.Equal(shouldBe, input.HasFeaturingFragments());

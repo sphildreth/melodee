@@ -15,7 +15,7 @@ public enum MetaTagIdentifier
     [Description("[TT1]")] GeneralDescription,
 
     /// <summary>
-    ///     Track Artist [TP1,TPE1] versus Album Artist
+    ///     The 'Lead performer(s)/Soloist(s)' tag. Track Artist [TP1,TPE1] versus Album Artist
     /// </summary>
     [Description("[TP1,TPE1]")] Artist,
 

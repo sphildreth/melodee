@@ -4,7 +4,6 @@ using System.Text.Json;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
-using Serilog;
 using SerilogTimings;
 
 namespace Melodee.Common.Models.Extensions;
@@ -85,7 +84,7 @@ public static class ReleaseExtensions
         }
         catch (Exception e)
         {
-            Log.Error(e, "Release [{Release}", release);
+            Trace.WriteLine($"Release [{release}] Exception [{e}]");
         }
 
         return d;

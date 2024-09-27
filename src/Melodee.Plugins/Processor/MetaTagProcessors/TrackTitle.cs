@@ -15,7 +15,7 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
 
     public override string DisplayName => nameof(TrackTitle);
 
-    public override int SortOrder { get; } = 0;
+    public override int SortOrder { get; } = 2; // Should run after Artist
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
@@ -38,13 +38,15 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
         var tagValue = metaTag.Value as string;
         var updatedTagValue = false;
         var trackTitle = tagValue ?? string.Empty;
-        string? featureArtist = null;
+        var result = new List<MetaTag<object?>>();
+        
         int? trackNumber = null;
+        var metaTagsValue = metaTags?.ToArray() ?? [];
         if (trackTitle?.Nullify() != null)
         {
             if (ContinueProcessing(trackTitle))
             {
-                trackNumber = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? trackTitle.TryToGetTrackNumberFromString();
+                trackNumber = metaTagsValue.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? trackTitle.TryToGetTrackNumberFromString();
                 if ((trackNumber ?? 0) > 0)
                 {
                     trackTitle = trackTitle.RemoveTrackNumberFromString();
@@ -55,14 +57,23 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
             {
                 if (trackTitle.HasFeaturingFragments())
                 {
-                    var newTitle = trackTitle ?? string.Empty;
                     var matches = StringExtensions.HasFeatureFragmentsRegex.Match(trackTitle!);
-                    if (matches.Index > 0)
+                    var featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
+                    featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
+
+                    if (featureArtist.Nullify() != null)
                     {
-                        newTitle = newTitle[..matches.Index].CleanString();
-                        featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
-                        featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
-                        trackTitle = newTitle;
+                        result.Add(new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Artist,
+                            Value = featureArtist
+                        });                        
+                    }
+                    
+                    var newTrackTitle = TrackTitleWithoutFeaturingArtist(trackTitle);
+                    if (!trackTitle.DoStringsMatch(newTrackTitle))
+                    {
+                        trackTitle = newTrackTitle;
                         updatedTagValue = true;
                     }
                 }
@@ -76,17 +87,24 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
                     updatedTagValue = trackTitle != tagValue;
                 }
             }
-        }
-
-        var result = new List<MetaTag<object?>>
-        {
-            new()
+            
+            if (trackTitle.HasFeaturingFragments())
             {
-                Identifier = metaTag.Identifier,
-                Value = trackTitle,
-                OriginalValue = updatedTagValue ? metaTag.Value : null
-            }
-        };
+                trackTitle = TrackArtistFromReleaseArtistViaFeaturing(trackTitle);
+            }            
+        }
+       
+        if (trackTitle.Nullify() != null)
+        {
+            result.Add(
+                new()
+                {
+                    Identifier = metaTag.Identifier,
+                    Value = trackTitle,
+                    OriginalValue = updatedTagValue ? metaTag.Value : null
+                }
+            );
+        }
 
         if (trackNumber.HasValue)
         {
@@ -94,15 +112,6 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
             {
                 Identifier = MetaTagIdentifier.TrackNumber,
                 Value = trackNumber.Value
-            });
-        }
-
-        if (featureArtist?.Nullify() != null)
-        {
-            result.Add(new MetaTag<object?>
-            {
-                Identifier = MetaTagIdentifier.Artist,
-                Value = featureArtist
             });
         }
 

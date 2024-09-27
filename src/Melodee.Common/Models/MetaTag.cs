@@ -20,9 +20,18 @@ public sealed record MetaTag<T>
 
     public T? OriginalValue { get; init; }
 
+    [JsonIgnore] public IEnumerable<string>? ProcessedBy { get; private set; }
+
     public int SortOrder { get; set; }
 
     [JsonIgnore] public bool WasModified => OriginalValue != null;
 
     public StyleClass StyleClass { get; set; } = StyleClass.Normal;
+
+    public void AddProcessedBy(params string[] processedBy)
+    {
+        var newProcessedBy = (ProcessedBy ?? []).ToList();
+        newProcessedBy.AddRange(processedBy);
+        ProcessedBy = newProcessedBy.ToArray();
+    }
 }

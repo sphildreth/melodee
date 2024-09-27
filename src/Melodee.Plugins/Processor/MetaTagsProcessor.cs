@@ -15,11 +15,12 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
         var configuration1 = configuration;
         _metaTagProcessors = new IMetaTagProcessor[]
         {
-            new TrackTitle(configuration1),
             new Album(configuration1),
             new Artist(configuration1),
             new Comment(configuration1),
-            new OrigReleaseYear(configuration1)
+            new OrigReleaseYear(configuration1),
+            new ReleaseArtist(configuration1),            
+            new TrackTitle(configuration1),
         };
     }
 
@@ -50,6 +51,7 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
                                 processedTags.RemoveAll(x => x.Identifier == processorResultTag.Identifier);
                                 if (processorResultTag.Value != null)
                                 {
+                                    processorResultTag.AddProcessedBy(metaTagProcessor.DisplayName);
                                     processedTags.Add(processorResultTag);
                                 }
                             }

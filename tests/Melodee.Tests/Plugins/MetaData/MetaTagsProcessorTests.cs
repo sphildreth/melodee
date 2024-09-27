@@ -93,9 +93,10 @@ public class MetaTagsProcessorTests
         Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
         var trackTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title);
         Assert.NotNull(trackTag);
-        Assert.NotNull(trackTag.Value);
+
         if (shouldBe != null)
         {
+            Assert.NotNull(trackTag.Value);
             if (trackTag.Value as string != originalTrackTitle)
             {
                 Assert.NotNull(trackTag.OriginalValue);
@@ -109,6 +110,10 @@ public class MetaTagsProcessorTests
                 Assert.NotNull(albumArtist.Value);
                 Assert.Equal(albumArtistShouldBe, albumArtist.Value);
             }
+        }
+        else
+        {
+            Assert.Null(trackTag.Value);
         }
     }
 

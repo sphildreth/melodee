@@ -25,8 +25,8 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
+        string? trackArtist = null;
         var artist = tagValue as string ?? string.Empty;
-        string? featureArtist = null;
 
         var result = new List<MetaTag<object?>>();
 
@@ -39,79 +39,96 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                     if (kp.Value.Any(kpv => string.Equals(artist, kpv)))
                     {
                         artist = kp.Key;
-                        tagValue = artist;
-                        result.Add(new MetaTag<object?>
-                        {
-                            Identifier = MetaTagIdentifier.Artist,
-                            Value = artist,
-                            OriginalValue = metaTag.Value
-                        });
                         break;
                     }
                 }
             }
-
-            if (artist.HasFeaturingFragments())
+            var metaTagsValue = metaTags?.ToArray() ?? [];
+            
+            // See if the artist has featuring artists
+            if (artist.Nullify() != null && artist.HasFeaturingFragments())
             {
-                var newArtist = artist;
-                var matches = StringExtensions.HasFeatureFragmentsRegex.Match(artist);
-                newArtist = newArtist[..matches.Index].CleanString();
-                featureArtist = ReplaceArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(artist.Substring(matches.Index), string.Empty).CleanString());
-                featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
-                artist = newArtist;
-            }
-        }
-
-        if (metaTag.Identifier == MetaTagIdentifier.Artist)
-        {
-            if (artist.Nullify() != null)
-            {
-                // If the value for the "Artist" (track artist) matches the "AlbumArtist" (release artist) then nullify the "Artist" value.
-                var albumArtistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
-                if (tagValue?.ToString().DoStringsMatch(albumArtistTag?.Value?.ToString()) ?? false)
+                // Get the track artist from the artist and modify the artist
+                result.Add(new MetaTag<object?>
                 {
-                    result.Add(new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.Artist,
-                        Value = null,
-                        OriginalValue = metaTag.Value
-                    });
-                }
+                    Identifier = MetaTagIdentifier.Artist,
+                    Value = TrackArtistFromReleaseArtistViaFeaturing(artist),
+                    OriginalValue = artist
+                });
+                // if (metaTagsValue?.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist) ?? false)
+                // {
+                //     result.Add(new MetaTag<object?>
+                //     {
+                //         Identifier = MetaTagIdentifier.AlbumArtist,
+                //         Value = ReleaseArtistFromReleaseArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty),
+                //         OriginalValue = artist
+                //     });
+                // }
+            }
+            
+            // See if the Title has featuring artists
+            var title = (metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value) as string;
+            if (title.Nullify() != null && title.HasFeaturingFragments())
+            {
+                // Get the track artist from the title and modify the title
+                result.Add(new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.Title,
+                    Value = TrackTitleWithoutFeaturingArtist(title),
+                    OriginalValue = title
+                });
+                // Add the track artist from title 
+                trackArtist = TrackArtistFromTitleViaFeaturing(title!);
+                result.Add(new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.Artist,
+                    Value = artist.FeaturingFragmentsCount() > 1 ? artist : trackArtist
+                });
 
-                if (albumArtistTag == null)
+                // Ensure the ReleaseArtist is set
+                if (metaTagsValue?.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist) ?? false)
                 {
                     result.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.AlbumArtist,
                         Value = artist,
                         OriginalValue = metaTag.Value
-                    });
+                    });  
                 }
             }
-
-            if (featureArtist?.Nullify() != null)
+            
+            if (artist != null && result.All(x => x.Identifier != MetaTagIdentifier.Artist))
             {
                 result.Add(new MetaTag<object?>
                 {
                     Identifier = MetaTagIdentifier.Artist,
-                    Value = featureArtist,
+                    Value = artist,
                     OriginalValue = metaTag.Value
                 });
             }
+            
+            // If the value for the "Artist" (track artist) matches the "AlbumArtist" (release artist) then nullify the "Artist" value.
+            var albumArtist = (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist) ?? metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist))?.Value as string;
+            trackArtist = (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist) ?? metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist))?.Value as string;            
+            if (trackArtist.Nullify() != null && trackArtist!.DoStringsMatch(albumArtist))
+            {
+                result.Add(new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.Artist,
+                    Value = null,
+                    OriginalValue = metaTag.Value
+                });
+            }
+            
+            
         }
-
-
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result
         };
     }
-
-    private static string? ReplaceArtistSeparators(string? trackArtist)
-    {
-        return trackArtist.Nullify() == null ? null : ReplaceArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
-    }
+   
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    private static partial Regex ReplaceArtistSeparatorsRegex();
+    internal static partial Regex ReplaceArtistSeparatorsRegex();
 }

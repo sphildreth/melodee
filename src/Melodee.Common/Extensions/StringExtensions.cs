@@ -431,6 +431,15 @@ public static partial class StringExtensions
     {
         return input.Nullify() != null && HasFeatureFragmentsRegex.IsMatch(input!);
     }
+    
+    public static int FeaturingFragmentsCount(this string? input)
+    {
+        if (input.Nullify() == null)
+        {
+            return 0;
+        }
+        return HasFeatureFragmentsRegex.Matches(input!).Count;
+    }    
 
     public static string? RemoveFileExtension(this string? input)
     {
