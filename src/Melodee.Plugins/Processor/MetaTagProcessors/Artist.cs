@@ -55,15 +55,15 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                     Value = TrackArtistFromReleaseArtistViaFeaturing(artist),
                     OriginalValue = artist
                 });
-                // if (metaTagsValue?.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist) ?? false)
-                // {
-                //     result.Add(new MetaTag<object?>
-                //     {
-                //         Identifier = MetaTagIdentifier.AlbumArtist,
-                //         Value = ReleaseArtistFromReleaseArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty),
-                //         OriginalValue = artist
-                //     });
-                // }
+                if (metaTagsValue?.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist) ?? false)
+                {
+                    result.Add(new MetaTag<object?>
+                    {
+                        Identifier = MetaTagIdentifier.AlbumArtist,
+                        Value = ReleaseArtistFromReleaseArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty),
+                        OriginalValue = artist
+                    });
+                }
             }
             
             // See if the Title has featuring artists
