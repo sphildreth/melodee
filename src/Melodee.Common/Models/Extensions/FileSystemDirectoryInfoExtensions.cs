@@ -25,7 +25,7 @@ public static class FileSystemDirectoryInfoExtensions
         {
             RecurseSubdirectories = true,
             MatchCasing = MatchCasing.CaseInsensitive
-        }).ToArray();
+        }).OrderBy(x => x.Name).ToArray();
     }
 
     public static FileSystemFileInfo? GetFileForCrcHash(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension, string crcHash)

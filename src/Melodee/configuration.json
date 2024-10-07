@@ -16,6 +16,7 @@
   },
   "PluginProcessOptions": {
     "DoDeleteOriginal": false,
+    "DoRenameConverted": true,
     "DoOverrideExistingMelodeeDataFiles": true
   },
   "MediaConvertorOptions": {

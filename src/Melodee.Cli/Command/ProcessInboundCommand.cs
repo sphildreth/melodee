@@ -85,7 +85,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
 
         var sw = Stopwatch.StartNew();
 
-        Log.Debug("\u250d Processing directory [{Inbound}]", settings.Inbound);
+        Log.Debug("\ud83d\udcc1 Processing directory [{Inbound}]", settings.Inbound);
 
         var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
         {
@@ -94,7 +94,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         });
 
         sw.Stop();
-        Log.Debug("\u2515 Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, sw.Elapsed);
+        Log.Debug("ℹ️ Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, sw.Elapsed);
 
         if (settings.Verbose)
         {

@@ -53,7 +53,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         }
 
         var sw = Stopwatch.StartNew();
-        Log.Debug("\u250d Parsing File [{NfoFilename}]", settings.Filename);
+        Log.Debug("\ud83d\udcdc Parsing File [{NfoFilename}]", settings.Filename);
 
         var isValid = false;
 
@@ -69,7 +69,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 var svfResult = await sfv.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
 
                 sw.Stop();
-                Log.Debug("\u2515 Processed SFV File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+                Log.Debug("ℹ️  Processed SFV File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
 
                 if (settings.Verbose)
                 {
@@ -102,7 +102,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 var svfResult = await m3u.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
 
                 sw.Stop();
-                Log.Debug("\u2515 Processed M3U File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+                Log.Debug("ℹ️ Processed M3U File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
 
                 if (settings.Verbose)
                 {
@@ -130,7 +130,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 var nfoParserResult = await nfo.ReleaseForNfoFileAsync(fileInfo, fileInfo.Directory.ToDirectorySystemInfo());
 
                 sw.Stop();
-                Log.Debug("\u2515 Processed Nfo File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+                Log.Debug("ℹ️ Processed Nfo File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
 
                 if (settings.Verbose)
                 {

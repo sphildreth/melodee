@@ -12,19 +12,20 @@
     <PackageReference Include="Hashids.net" Version="1.7.0"/>
     <PackageReference Include="K4os.Hash.xxHash" Version="1.0.8"/>
     <PackageReference Include="Mapster" Version="7.4.0"/>
-    <PackageReference Include="NodaTime" Version="3.1.11"/>
-    <PackageReference Include="Serilog" Version="4.0.1"/>
+    <PackageReference Include="NodaTime" Version="3.1.12"/>
+    <PackageReference Include="Serilog" Version="4.0.2"/>
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0"/>
     <PackageReference Include="SerilogTimings" Version="3.1.0"/>
     <PackageReference Include="SmartFormat" />
-    <PackageReference Include="z440.atl.core" Version="6.2.0"/>
+    <PackageReference Include="z440.atl.core" Version="6.5.0"/>
   </ItemGroup>
 
   <ItemGroup>
     <PackageVersion Update="NodaTime" Version="3.1.12"/>
-    <PackageVersion Update="z440.atl.core" Version="6.4.0"/>
+    <PackageVersion Update="z440.atl.core" Version="6.5.0" />
     <PackageVersion Update="FluentValidation" Version="11.10.0"/>
+    <PackageVersion Update="Serilog" Version="4.0.2" />
   </ItemGroup>
 
 </Project>

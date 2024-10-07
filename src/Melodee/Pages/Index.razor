@@ -506,8 +506,11 @@
                     switch (args.option as ToolMenuItem? ?? ToolMenuItem.NotSet)
                     {
                         case ToolMenuItem.DoMagic:
-                            await ReleaseEditProcessor.DoMagic(_selectedRelease.UniqueId);
-                            await RefreshReleasesAsync();
+                            if (_selectedRelease != null)
+                            {
+                                await ReleaseEditProcessor.DoMagic(_selectedRelease.UniqueId);
+                                await RefreshReleasesAsync();
+                            }
                             break;
                         case ToolMenuItem.DeleteAllImages:
                             await ReleaseEditProcessor.DeleteAllImagesForReleases(_selectedReleaseIds.ToArray());

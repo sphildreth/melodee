@@ -15,7 +15,7 @@
     <PackageVersion Include="NUnit" Version="4.1.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageVersion Include="Photino.Blazor" Version="3.1.9" />
+    <PackageVersion Include="Photino.Blazor" Version="3.1.10" />
     <PackageVersion Include="Serilog.AspNetCore" Version="8.0.2" />
     <PackageVersion Include="SmartFormat" Version="3.5.0" />
     <PackageVersion Include="Toolbelt.Blazor.HotKeys2" Version="5.1.0" />

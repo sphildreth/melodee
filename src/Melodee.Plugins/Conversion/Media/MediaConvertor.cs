@@ -8,6 +8,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData;
 using Melodee.Plugins.MetaData.Track.Extensions;
+using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 using Track = ATL.Track;
@@ -78,6 +79,13 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
                         if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
                             trackFileInfo.Delete();
+                            Log.Debug($"\u26a0\ufe0f Deleted converted file [{trackFileInfo.FullName}]");
+                        }
+                        else if (Configuration.PluginProcessOptions.DoRenameConverted)
+                        {
+                            var movedFileName = Path.Combine(trackFileInfo.DirectoryName!, $"{trackFileInfo.Name}.{ Configuration.PluginProcessOptions.ConvertedExtension }");
+                            trackFileInfo.MoveTo(movedFileName);
+                            Log.Debug($"\ud83d\ude9b Renamed converted file [{trackFileInfo.Name}] => [{ Path.GetFileName(movedFileName)}]");
                         }
                     }
                     else

@@ -458,7 +458,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             File.Delete(releaseKvp.Value);
                             if (_configuration.MagicOptions.IsMagicEnabled)
                             {
-                                using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync :: DoMagic [{DirectoryInfo}]", releaseDirInfo.Name))
+                                using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", releaseDirInfo.Name))
                                 {
                                     await _releaseEditProcessor.DoMagic(release.UniqueId, cancellationToken);
                                 }

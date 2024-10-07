@@ -78,7 +78,7 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
             if (albumArtistTag?.Value != null)
             {
                 var artistValue = albumArtistTag.Value as string ?? string.Empty;
-                if (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false)
+                if (!string.IsNullOrWhiteSpace(artistValue) && (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
                     newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
                 }
