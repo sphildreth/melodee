@@ -23,7 +23,7 @@
                                     <li><hr class="dropdown-divider"></li>
                                     <li class="@(IsProcessing ? "disabled" : string.Empty)" @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.RescanInbound, null)))"><a class="dropdown-item" href="#">Rescan Inbound<span class="float-end hotkey">F6</span></a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#">Delete Selected<span class="float-end hotkey">Ctrl+D</span></a></li>
+                                    <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.DeleteSelected, null)))"><a class="dropdown-item" href="#">Delete Selected<span class="float-end hotkey">DEL</span></a></li>
                                     <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.MoveSelectedToLibrary, null)))"><a class="dropdown-item" href="#">Move Selected to Library<span class="float-end hotkey">Ctrl+M</span></a></li>
                                     <li @onclick="(() => MenuItemClicked?.Invoke(this, (MenuItem.SetSelectedStatusReviewed, null)))"><a class="dropdown-item" href="#">Set Selected Status as Reviewed<span class="float-end hotkey">Ctrl+S</span></a></li>
                                     <li><hr class="dropdown-divider"></li>

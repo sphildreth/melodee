@@ -768,7 +768,7 @@
         if (firstRender)
         {
             _hotKeysContext = HotKeys.CreateContext()
-                .Add(ModCode.Ctrl, Code.D, (() => ReleaseEditProcessor.DeleteReleasesInStagingAsync(_selectedReleaseIds.ToArray())), new() { Description = "Delete selected Release(s)." })
+                .Add(ModCode.None, Code.Delete, (() => ReleaseEditProcessor.DeleteReleasesInStagingAsync(_selectedReleaseIds.ToArray())), new() { Description = "Delete selected Release(s)." })
                 .Add(ModCode.Ctrl, Code.M, (() => ReleaseEditProcessor.MoveReleasesToLibraryAsync(_selectedReleaseIds.ToArray())), new() { Description = "Move selected Release(s) to Library Directory." })
                 .Add(ModCode.Ctrl, Code.R, (() => ReleaseEditProcessor.SetReleasesStatusToReviewed(_selectedReleaseIds.ToArray())), new() { Description = "Set selected Release(s) status as Reviewed." })
                 .Add(ModCode.Ctrl, Code.S, SaveSelectedReleaseAsync, new() { Description = "Save selected Release." })
