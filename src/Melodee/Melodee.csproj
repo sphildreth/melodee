@@ -23,7 +23,7 @@
 
 	<ItemGroup>
     <PackageReference Include="Blazor.Bootstrap" />
-    <PackageReference Include="Mapster" Version="7.4.0" />
+    <PackageReference Include="Mapster" />
 	  <PackageReference Include="Photino.Blazor" />
 	  <PackageReference Include="Serilog.AspNetCore" />
 	  <PackageReference Include="Toolbelt.Blazor.HotKeys2" />
