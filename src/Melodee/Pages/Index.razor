@@ -456,12 +456,14 @@
                 case MenuItem.DeleteSelected:
                     await ReleaseEditProcessor.DeleteReleasesInStagingAsync(_selectedReleaseIds.ToArray());
                     _selectedReleaseIds.Clear();
+                    ReleasesDiscoverer.ClearCache();
                     await RefreshReleasesAsync();
                     break;
 
                 case MenuItem.MoveSelectedToLibrary:
                     await ReleaseEditProcessor.MoveReleasesToLibraryAsync(_selectedReleaseIds.ToArray());
                     _selectedReleaseIds.Clear();
+                    ReleasesDiscoverer.ClearCache();
                     await RefreshReleasesAsync();
                     break;
 
@@ -494,6 +496,7 @@
 
                 case MenuItem.SetSelectedStatusReviewed:
                     await ReleaseEditProcessor.SetReleasesStatusToReviewed(_selectedReleaseIds.ToArray());
+                    ReleasesDiscoverer.ClearCache();
                     _selectedReleaseIds.Clear();
                     await RefreshReleasesAsync();
                     break;
@@ -548,7 +551,7 @@
                             await RefreshReleasesAsync();
                             break;
                     }
-
+                    ReleasesDiscoverer.ClearCache();
                     break;
             }
         };
@@ -589,6 +592,7 @@
         Layout.IsProcessing = true;
         try
         {
+            ReleasesDiscoverer.ClearCache();
             var directoriesToProcess = 0;
             var directoriesProcessed = 0;
             DirectoryProcessorPlugin.OnProcessingStart += (sender, i) => directoriesToProcess = i;

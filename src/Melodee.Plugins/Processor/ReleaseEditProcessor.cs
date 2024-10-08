@@ -73,15 +73,23 @@ public sealed class ReleaseEditProcessor(
     private async Task SaveRelease(Release release, CancellationToken cancellationToken = default)
     {
         var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-        var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(configuration.StagingDirectory, release.ToDirectoryName()));
-        var jsonName = Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true));
-        try
+        var releaseDirectoryName = release.ToDirectoryName();
+        if (releaseDirectoryName.Nullify() != null)
         {
-            await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
+            var releaseStagingDirInfo = new DirectoryInfo(Path.Combine(configuration.StagingDirectory, releaseDirectoryName));
+            var jsonName = Path.Combine(releaseStagingDirInfo.FullName, release.ToMelodeeJsonName(true));
+            try
+            {
+                await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[{Release}] JsonName [{JsonName}]", release.ToString(), jsonName);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            Log.Error(ex, "[{Release}] JsonName [{JsonName}]", release.ToString(), jsonName);
+            Log.Warning("[{Release}] has invalid Directory Name [{ReleaseDirectoryName}]", release.ToString(), releaseDirectoryName);
         }
     }
 
@@ -261,13 +269,17 @@ public sealed class ReleaseEditProcessor(
             foreach (var selectedReleaseId in releaseIds)
             {
                 var release = await releasesDiscoverer.ReleaseByUniqueIdAsync(configuration.StagingDirectoryInfo, selectedReleaseId, cancellationToken);
-                release.SetTagValue(MetaTagIdentifier.OrigReleaseYear, year);
-                foreach (var track in release.Tracks!)
+                if (release?.IsValid(configuration) ?? false)
                 {
-                    release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.OrigReleaseYear, year);
-                    await editTrackPlugin.UpdateTrackAsync(release.Directory!, track, cancellationToken);
+                    release.SetTagValue(MetaTagIdentifier.OrigReleaseYear, year);
+                    foreach (var track in release.Tracks ?? [])
+                    {
+                        release.SetTrackTagValue(track.TrackId, MetaTagIdentifier.OrigReleaseYear, year);
+                        await editTrackPlugin.UpdateTrackAsync(release.Directory!, track, cancellationToken);
+                    }
+
+                    await SaveRelease(release, cancellationToken);
                 }
-                await SaveRelease(release, cancellationToken); 
             }
         }
         catch (Exception ex)
@@ -377,7 +389,7 @@ public sealed class ReleaseEditProcessor(
             foreach (var selectedReleaseId in releaseIds)
             {
                 var release = await releasesDiscoverer.ReleaseByUniqueIdAsync(configuration.StagingDirectoryInfo, selectedReleaseId, cancellationToken);
-                foreach (var track in release.Tracks!.Where(x => x.TrackArtist().Nullify() != null))
+                foreach (var track in release.Tracks?.Where(x => x.TrackArtist().Nullify() != null) ?? [])
                 {
                     var oldTrackArtist = track.TrackArtist();
                     var newTrackArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(oldTrackArtist);
