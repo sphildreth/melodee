@@ -134,7 +134,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         // Run PreDiscovery script
         if (!_configuration.Scripting.Disabled && _preDiscoveryScript.IsEnabled)
         {
-            LogAndRaiseEvent(LogEventLevel.Debug, "Executing PreDiscoveryScript [{0}] directories to process", null, _preDiscoveryScript.DisplayName);
+            LogAndRaiseEvent(LogEventLevel.Debug, "Executing PreDiscoveryScript [{0}]", null, _preDiscoveryScript.DisplayName);
             var preDiscoveryScriptResult = new OperationResult<bool>
             {
                 Data = false
@@ -418,7 +418,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.File.Name);
                                 if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                                 {
-                                    File.Move(track.File.FullOriginalName(directoryInfoToProcess), newTrackFileName);
+                                    track.File.MoveFile(directoryInfoToProcess, newTrackFileName);
                                 }
                                 else
                                 {
@@ -556,7 +556,14 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
     private void LogAndRaiseEvent(LogEventLevel logLevel, string messageTemplate, Exception? exception = null, params object[] args)
     {
-        Log.Write(logLevel, messageTemplate, exception, args);
+        if (exception != null)
+        {
+            Log.Write(logLevel, messageTemplate, exception);
+        }
+        else
+        {
+            Log.Write(logLevel, messageTemplate, args);    
+        }
         var eventMessage = messageTemplate;
         if (args.Length > 0)
         {

@@ -150,40 +150,34 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                     ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
                 };
                 sfvRelease.Status = _releaseValidator.ValidateRelease(sfvRelease)?.Data?.ReleaseStatus ?? ReleaseStatus.Invalid;
-                if (sfvRelease.IsValid(Configuration))
+
+                var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvRelease.ToMelodeeJsonName());
+                if (File.Exists(stagingReleaseDataName))
                 {
-                    var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvRelease.ToMelodeeJsonName());
-                    if (File.Exists(stagingReleaseDataName))
+                    if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
                     {
-                        if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                        File.Delete(stagingReleaseDataName);
+                    }
+                    else
+                    {
+                        var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                        if (existingRelease != null)
                         {
-                            File.Delete(stagingReleaseDataName);
-                        }
-                        else
-                        {
-                            var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
-                            if (existingRelease != null)
-                            {
-                                sfvRelease = sfvRelease.Merge(existingRelease);
-                            }
+                            sfvRelease = sfvRelease.Merge(existingRelease);
                         }
                     }
-
-                    var serialized = JsonSerializer.Serialize(sfvRelease);
-                    await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
-                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
-                    {
-                        sfvFile.Delete();
-                        Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
-                    }
-
-                    Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, sfvRelease.ToMelodeeJsonName());
-                    processedFiles++;
                 }
-                else
+
+                var serialized = JsonSerializer.Serialize(sfvRelease);
+                await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                 {
-                    Log.Warning($"Did not serialize invalid release [{sfvRelease}].", sfvRelease);
+                    sfvFile.Delete();
+                    Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
                 }
+
+                Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, sfvRelease.ToMelodeeJsonName());
+                processedFiles++;
             }
         }
 

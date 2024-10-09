@@ -129,40 +129,33 @@ public sealed class M3UPlaylist(IEnumerable<ITrackPlugin> trackPlugins, IRelease
                         ViaPlugins = new[] { trackPlugin.DisplayName, DisplayName }
                     };
                     m3URelease.Status = releaseValidator.ValidateRelease(m3URelease)?.Data.ReleaseStatus ?? ReleaseStatus.Invalid;
-                    if (m3URelease.IsValid(Configuration))
+                    var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3URelease.ToMelodeeJsonName());
+                    if (File.Exists(stagingReleaseDataName))
                     {
-                        var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3URelease.ToMelodeeJsonName());
-                        if (File.Exists(stagingReleaseDataName))
+                        if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
                         {
-                            if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                            File.Delete(stagingReleaseDataName);
+                        }
+                        else
+                        {
+                            var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                            if (existingRelease != null)
                             {
-                                File.Delete(stagingReleaseDataName);
-                            }
-                            else
-                            {
-                                var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
-                                if (existingRelease != null)
-                                {
-                                    m3URelease = m3URelease.Merge(existingRelease);
-                                }
+                                m3URelease = m3URelease.Merge(existingRelease);
                             }
                         }
-
-                        var serialized = JsonSerializer.Serialize(m3URelease);
-                        await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
-                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
-                        {
-                            m3UFile.Delete();
-                            Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
-                        }
-
-                        Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, m3URelease.ToMelodeeJsonName());
-                        processedFiles++;
                     }
-                    else
+
+                    var serialized = JsonSerializer.Serialize(m3URelease);
+                    await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                     {
-                        Log.Warning($"Did not serialize invalid release [{m3URelease}].", m3URelease);
+                        m3UFile.Delete();
+                        Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
                     }
+
+                    Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, m3URelease.ToMelodeeJsonName());
+                    processedFiles++;
                 }
             }
         }

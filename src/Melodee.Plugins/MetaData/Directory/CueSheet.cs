@@ -162,53 +162,47 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         });
 
                         var cueRelease = cueModel.ToRelease(fileSystemDirectoryInfo);
-                        if (cueRelease.IsValid(Configuration))
+
+                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
-                            if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                            fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
+                            fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
+                            fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.HandlesExtension);
+                            File.Delete(cueFile.FullName);
+                            var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, $"{cueFile.Name.Replace(cueFile.Extension, "")}.mp3"));
+                            if (cueFileMediaFile.Exists)
                             {
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.HandlesExtension);
-                                File.Delete(cueFile.FullName);
-                                var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, $"{cueFile.Name.Replace(cueFile.Extension, "")}.mp3"));
-                                if (cueFileMediaFile.Exists)
-                                {
-                                    cueFileMediaFile.Delete();
-                                }
+                                cueFileMediaFile.Delete();
                             }
-
-                            var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueRelease.ToMelodeeJsonName());
-                            if (File.Exists(stagingReleaseDataName))
-                            {
-                                if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
-                                {
-                                    File.Delete(stagingReleaseDataName);
-                                }
-                                else
-                                {
-                                    var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
-                                    if (existingRelease != null)
-                                    {
-                                        cueRelease = cueRelease.Merge(existingRelease);
-                                    }
-                                }
-                            }
-
-                            var serialized = JsonSerializer.Serialize(cueRelease);
-                            await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
-                            if (Configuration.PluginProcessOptions.DoDeleteOriginal)
-                            {
-                                cueFile.Delete();
-                                Log.Information("Deleted CUE File [{FileName}]", cueFile.Name);
-                            }
-
-                            Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, cueRelease.ToMelodeeJsonName());
-                            processedFiles++;
                         }
-                        else
+
+                        var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueRelease.ToMelodeeJsonName());
+                        if (File.Exists(stagingReleaseDataName))
                         {
-                            Log.Warning($"Did not serialize invalid release [{cueRelease}].", cueRelease);
+                            if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                            {
+                                File.Delete(stagingReleaseDataName);
+                            }
+                            else
+                            {
+                                var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
+                                if (existingRelease != null)
+                                {
+                                    cueRelease = cueRelease.Merge(existingRelease);
+                                }
+                            }
                         }
+
+                        var serialized = JsonSerializer.Serialize(cueRelease);
+                        await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                        {
+                            cueFile.Delete();
+                            Log.Information("Deleted CUE File [{FileName}]", cueFile.Name);
+                        }
+
+                        Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, cueRelease.ToMelodeeJsonName());
+                        processedFiles++;
                     }
                 }
             }

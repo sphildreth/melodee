@@ -13,6 +13,19 @@ public static class FileSystemDirectoryInfoExtensions
         return Path.Combine(fileSystemDirectoryInfo.Path, fileSystemDirectoryInfo.Name);
     }
 
+    public static void EnsureExists(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        if (!fileSystemDirectoryInfo.Exists())
+        {
+            Directory.CreateDirectory(fileSystemDirectoryInfo.FullName());
+        }
+    }
+    
+    public static bool Exists(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        return Directory.Exists(fileSystemDirectoryInfo.FullName());
+    }    
+
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
