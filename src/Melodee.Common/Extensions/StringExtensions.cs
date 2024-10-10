@@ -20,7 +20,9 @@ public static partial class StringExtensions
 
     private static readonly string CastRecordingTrackArtistParseRegex = @"(original broadway cast|original cast*)";
 
-    public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasWithFragmentsRegex = new(@"(\s*[\(\[]*with\s+)+", RegexOptions.Compiled);
+    
+    public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static readonly string RomanRegex = @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
 
@@ -427,18 +429,23 @@ public static partial class StringExtensions
         return input.Nullify() != null && Regex.IsMatch(input!, SoundTrackArtistParseRegex, RegexOptions.IgnoreCase);
     }
 
+    public static bool HasWithFragments(this string? input)
+    {
+        return input.Nullify() != null && HasWithFragmentsRegex.IsMatch(input!);
+    }
+    
     public static bool HasFeaturingFragments(this string? input)
     {
         return input.Nullify() != null && HasFeatureFragmentsRegex.IsMatch(input!);
     }
     
-    public static int FeaturingFragmentsCount(this string? input)
+    public static int FeaturingAndWithFragmentsCount(this string? input)
     {
         if (input.Nullify() == null)
         {
             return 0;
         }
-        return HasFeatureFragmentsRegex.Matches(input!).Count;
+        return HasWithFragmentsRegex.Matches(input!).Count + HasFeatureFragmentsRegex.Matches(input!).Count;
     }    
 
     public static string? RemoveFileExtension(this string? input)

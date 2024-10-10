@@ -56,7 +56,6 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             .AddRow("[b]Force Mode?[/]", $"{YesNo(config.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)}")
             .AddRow("[b]PreDiscovery Script[/]", $"{config.Scripting.PreDiscoveryScript}")
             .AddRow("[b]Inbound[/]", $"{config.InboundDirectory}")
-            .AddRow("[b]Library[/]", $"{config.LibraryDirectory}")
             .AddRow("[b]Staging[/]", $"{config.StagingDirectory}");
         
         AnsiConsole.Write(

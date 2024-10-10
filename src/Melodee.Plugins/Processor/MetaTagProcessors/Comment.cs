@@ -21,7 +21,7 @@ public sealed class Comment(Configuration configuration) : MetaTagProcessorBase(
         return metaTagIdentifier == MetaTagIdentifier.Comment;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {

@@ -514,6 +514,9 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 };
             }
         }
+        
+        _configuration.StagingDirectoryInfo.DeleteAllEmptyDirectories();
+        _configuration.InboundDirectoryInfo.DeleteAllEmptyDirectories();        
 
         LogAndRaiseEvent(LogEventLevel.Information, "Processing Complete!");
 

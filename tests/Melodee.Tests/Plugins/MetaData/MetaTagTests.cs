@@ -36,6 +36,30 @@ public class MetaTagTests
     }
     
     [Fact]
+    public async Task ValidateLoadingTagsForSimpleMp3FileAsync2()
+    {
+        var testFile = @"/home/steven/incoming/melodee_test/tests/test4.mp3";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Name = "tests"
+            };
+            var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(tagResult);
+            Assert.True(tagResult.IsSuccess);
+            Assert.NotNull(tagResult.Data);
+            Assert.NotNull(tagResult.Data.Tags);
+            Assert.NotNull(tagResult.Data.File);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
+            Assert.NotNull(tagResult.Data.Title()?.Nullify());
+        }
+    }    
+    
+    [Fact]
     public async Task ValidateLoadingTagsForBorkedMp3FileAsync()
     {
         var testFile = @"/home/steven/incoming/melodee_test/tests/borked.mp3";

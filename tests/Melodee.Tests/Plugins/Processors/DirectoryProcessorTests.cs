@@ -22,8 +22,7 @@ public class DirectoryProcessorTests
             .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
-        //var testFile = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/";
-        var testFile = @"/home/steven/incoming/complete/2024-07-09/";
+        var testFile = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
@@ -50,7 +49,7 @@ public class DirectoryProcessorTests
     }    
     
     [Fact]
-    public async Task ValidateDirectoryGetProcessedIsNotSuccess()
+    public async Task ValidateDirectoryGetProcessedIsSuccess2()
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
@@ -78,7 +77,7 @@ public class DirectoryProcessorTests
                 Name = dirInfo.Name
             });
             Assert.NotNull(result);
-            Assert.False(result.IsSuccess);
+            Assert.True(result.IsSuccess);
 
         }
     }

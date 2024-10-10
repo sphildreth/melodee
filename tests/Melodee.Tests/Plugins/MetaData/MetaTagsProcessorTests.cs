@@ -53,7 +53,7 @@ public class MetaTagsProcessorTests
     [InlineData("Something", "Something")]
     [InlineData("Eternally Gifted", "Eternally Gifted")]
     [InlineData("Shift Scene", "Shift Scene")]
-    [InlineData("Something With Bob", "Something")]
+    [InlineData("Something with Bob", "Something")]
     [InlineData("Something Ft Bob", "Something")]
     [InlineData("Something ft Bob", "Something")]
     [InlineData("Something Ft. Bob", "Something")]

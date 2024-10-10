@@ -22,6 +22,10 @@ public sealed record PluginProcessOptions
 
     public string ConvertedExtension { get; init; } = "_converted";
     
+    public string ProcessedExtension { get; init; } = "_processed";
+    
+    public string SkippedExtension { get; init; } = "_skipped";
+    
     public bool DoOverrideExistingMelodeeDataFiles { get; set; }
 
     public bool DoLoadEmbeddedImages { get; init; } = true;

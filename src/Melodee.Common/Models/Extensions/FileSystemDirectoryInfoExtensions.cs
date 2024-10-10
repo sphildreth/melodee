@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using ATL.Logging;
+using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 using SearchOption = System.IO.SearchOption;
 
@@ -10,6 +12,10 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
+        if (fileSystemDirectoryInfo.Path.EndsWith($"{ Path.DirectorySeparatorChar }{fileSystemDirectoryInfo.Name}"))
+        {
+            return fileSystemDirectoryInfo.Path;     
+        }
         return Path.Combine(fileSystemDirectoryInfo.Path, fileSystemDirectoryInfo.Name);
     }
 
@@ -91,12 +97,67 @@ public static class FileSystemDirectoryInfoExtensions
         return result;
     }
 
+    public static void DeleteAllEmptyDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        DeleteEmptyDirs(fileSystemDirectoryInfo.FullName());
+    }
+    
+    private static void DeleteEmptyDirs(string dir)
+    {
+        if (string.IsNullOrEmpty(dir))
+        {
+            throw new ArgumentException("Starting directory is a null reference or an empty string", nameof(dir));
+        }
+        try
+        {
+            foreach (var d in Directory.EnumerateDirectories(dir))
+            {
+                DeleteEmptyDirs(d);
+            }
+            if (Directory.EnumerateFileSystemEntries(dir).Any())
+            {
+                return;
+            }
+            try
+            {
+                Directory.Delete(dir);
+                Serilog.Log.Debug("\ud83d\udeae Deleted Empty Directory [{dir}]", dir);                
+            }
+            catch (UnauthorizedAccessException) { }
+            catch (DirectoryNotFoundException) { }
+        }
+        catch (UnauthorizedAccessException) { }
+    }      
+
     public static void DeleteAllFilesForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
         var filesToDelete = fileSystemDirectoryInfo.FileInfosForExtension(extension);
         foreach (var fileToDelete in filesToDelete)
         {
             fileToDelete.Delete();
+        }
+    }
+
+    public static void MarkAllFilesForExtensionsSkipped(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Configuration.Configuration configuration, params string[] extensions)
+        => ChangeFileExtensions(fileSystemDirectoryInfo, configuration.PluginProcessOptions.SkippedExtension, extensions);
+    
+    public static void MarkAllFilesForExtensionsProcessed(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Configuration.Configuration configuration, params string[] extensions)
+        => ChangeFileExtensions(fileSystemDirectoryInfo, configuration.PluginProcessOptions.ProcessedExtension, extensions);
+
+    private static void ChangeFileExtensions(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string newExtension, params string[] extensions)
+    {
+        if (newExtension.Nullify() == null)
+        {
+            return;
+        }
+        foreach (var extension in extensions)
+        {
+            var filesToMarkProcessed = fileSystemDirectoryInfo.FileInfosForExtension(extension);
+            foreach (var fileToDelete in filesToMarkProcessed)
+            {
+                var moveToFileName = Path.Combine(fileToDelete.DirectoryName!, $"{fileToDelete.Name}.{ newExtension }");                
+                fileToDelete.MoveTo(moveToFileName);
+            }
         }
     }
 

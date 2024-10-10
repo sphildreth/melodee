@@ -22,7 +22,7 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
         return metaTagIdentifier is MetaTagIdentifier.Artist;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
         string? trackArtist = null;
@@ -82,7 +82,7 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                 result.Add(new MetaTag<object?>
                 {
                     Identifier = MetaTagIdentifier.Artist,
-                    Value = artist.FeaturingFragmentsCount() > 1 ? artist : trackArtist
+                    Value = artist.FeaturingAndWithFragmentsCount() > 1 ? artist : trackArtist
                 });
 
                 // Ensure the ReleaseArtist is set

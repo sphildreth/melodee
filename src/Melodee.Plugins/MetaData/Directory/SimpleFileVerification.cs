@@ -90,8 +90,7 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
                     };
                 }
 
-                var firstTrack = tracks.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
-                var trackTotal = firstTrack.TrackTotalNumber();
+                var trackTotal = tracks.OrderByDescending(x => x.TrackTotalNumber()).FirstOrDefault()?.TrackTotalNumber() ?? 0;
                 if (trackTotal < 1)
                 {
                     if (models.Length == tracks.Count)
@@ -102,10 +101,10 @@ public sealed class SimpleFileVerification(IEnumerable<ITrackPlugin> trackPlugin
 
                 var newReleaseTags = new List<MetaTag<object?>>
                 {
-                    new() { Identifier = MetaTagIdentifier.Album, Value = firstTrack.ReleaseTitle(), SortOrder = 1 },
-                    new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = firstTrack.ReleaseArtist(), SortOrder = 2 },
-                    new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstTrack.MediaNumber(), SortOrder = 4 },
-                    new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = firstTrack.ReleaseYear(), SortOrder = 100 },
+                    new() { Identifier = MetaTagIdentifier.Album, Value = tracks.FirstOrDefault(x => x.ReleaseTitle().Nullify() != null)?.ReleaseTitle(), SortOrder = 1 },
+                    new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = tracks.FirstOrDefault(x => x.ReleaseArtist().Nullify() != null)?.ReleaseArtist(), SortOrder = 2 },
+                    new() { Identifier = MetaTagIdentifier.DiscNumber, Value = tracks.FirstOrDefault(x => x.MediaNumber() > 0)?.MediaNumber(), SortOrder = 4 },
+                    new() { Identifier = MetaTagIdentifier.OrigReleaseYear, Value = tracks.FirstOrDefault(x => x.ReleaseYear() > -1)?.ReleaseYear(), SortOrder = 100 },
                     new() { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
                 };
                 var genres = tracks

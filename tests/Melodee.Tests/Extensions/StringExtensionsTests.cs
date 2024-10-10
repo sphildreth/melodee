@@ -140,20 +140,27 @@ public class StringExtensionsTests
     [InlineData("Something", false)]
     [InlineData("Eternally Gifted", false)]
     [InlineData("Shift Scene", false)]
-    [InlineData("Something With Bob", true)]
     [InlineData("Something Ft Bob", true)]
     [InlineData("Something ft Bob", true)]
     [InlineData("Something Ft. Bob", true)]
     [InlineData("Something (Ft. Bob)", true)]
     [InlineData("Something Feat. Bob", true)]
     [InlineData("Something Featuring Bob", true)]
-    [InlineData("Something (with Bob)", true)]
-    [InlineData("Minds Without Fear with Vishal-Shekhar", true)]
     [InlineData("Ariana Grande ft Nonna", true)]
     public void StringHasFeaturingFragments(string? input, bool shouldBe)
     {
         Assert.Equal(shouldBe, input.HasFeaturingFragments());
     }
+    
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("Something With Bob", false)]
+    [InlineData("Something (with Bob)", true)]
+    [InlineData("Minds Without Fear with Vishal-Shekhar", true)]
+    public void StringHasWithFragments(string? input, bool shouldBe)
+    {
+        Assert.Equal(shouldBe, input.HasWithFragments());
+    }    
 
     [Theory]
     [InlineData(null, null)]

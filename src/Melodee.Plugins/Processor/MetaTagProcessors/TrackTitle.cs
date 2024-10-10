@@ -33,7 +33,7 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
         return true;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value as string;
         var updatedTagValue = false;
@@ -55,10 +55,25 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
 
             if (ContinueProcessing(trackTitle))
             {
-                if (trackTitle.HasFeaturingFragments())
+                if (trackTitle.HasFeaturingFragments() || trackTitle.HasWithFragments())
                 {
-                    var matches = StringExtensions.HasFeatureFragmentsRegex.Match(trackTitle!);
-                    var featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
+                    string? featureArtist = null;
+                    string? newTrackTitle = null;
+                    
+                    if (trackTitle.HasFeaturingFragments())
+                    {
+                        var matches = StringExtensions.HasFeatureFragmentsRegex.Match(trackTitle!);
+                        featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
+                        newTrackTitle = TrackTitleWithoutFeaturingArtist(trackTitle);                        
+                    }
+
+                    if (trackTitle.HasWithFragments())
+                    {
+                        var matches = StringExtensions.HasWithFragmentsRegex.Match(trackTitle!);
+                        featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
+                        newTrackTitle = TrackTitleWithoutWithArtist(trackTitle);                          
+                    }
+
                     featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
 
                     if (featureArtist.Nullify() != null)
@@ -70,7 +85,6 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
                         });                        
                     }
                     
-                    var newTrackTitle = TrackTitleWithoutFeaturingArtist(trackTitle);
                     if (!trackTitle.DoStringsMatch(newTrackTitle))
                     {
                         trackTitle = newTrackTitle;

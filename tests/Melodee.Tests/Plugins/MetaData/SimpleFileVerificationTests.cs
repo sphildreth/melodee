@@ -50,8 +50,7 @@ public class SimpleFileVerificationTests
                 Name = "Swartz"
             });
             Assert.NotNull(sfvResult);
-            // Is false as some of the tracks in the SFV has unwanted text.
-            Assert.False(sfvResult.IsSuccess);
+            Assert.True(sfvResult.IsSuccess);
         }
     }    
     

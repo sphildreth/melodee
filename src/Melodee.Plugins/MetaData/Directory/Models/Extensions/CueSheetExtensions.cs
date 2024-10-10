@@ -12,7 +12,7 @@ public static class CueSheetExtensions
     {
         return new ReleaseFile
         {
-            FileSystemFileInfo = cueSheet.FileSystemFileInfo,
+            FileSystemFileInfo = cueSheet.MediaFileSystemFileInfo,
             ReleaseFileType = ReleaseFileType.MetaData,
             ProcessedByPlugin = nameof(Directory.CueSheet)
         };
@@ -20,7 +20,7 @@ public static class CueSheetExtensions
 
     public static Release ToRelease(this CueSheet cueSheet, FileSystemDirectoryInfo directoryInfo)
     {
-        var fileInfo = new FileInfo(cueSheet.FileSystemFileInfo.FullName(directoryInfo));
+        var fileInfo = new FileInfo(cueSheet.MediaFileSystemFileInfo.FullName(directoryInfo));
         return new Release
         {
             Files = new[]

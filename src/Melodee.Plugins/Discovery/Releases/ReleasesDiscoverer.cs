@@ -61,7 +61,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         long uniqueId,
         CancellationToken cancellationToken = default)
     {
-        var result = (await AllReleasesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data.FirstOrDefault(x => x.UniqueId == uniqueId);
+        var result = (await AllMelodeeReleaseDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data.FirstOrDefault(x => x.UniqueId == uniqueId);
         if (result == null)
         {
             Log.Error("Unable to find Release by id[{UniqueId}]", uniqueId);
@@ -83,7 +83,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         var releases = new List<Release>();
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
 
-        var dataForDirectoryInfoResult = await AllReleasesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
+        var dataForDirectoryInfoResult = await AllMelodeeReleaseDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
         if (dataForDirectoryInfoResult.IsSuccess)
         {
             releases.AddRange(dataForDirectoryInfoResult.Data);
@@ -96,7 +96,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 break;
             }
 
-            var dataForChildDirResult = await AllReleasesForDirectoryAsync(new FileSystemDirectoryInfo
+            var dataForChildDirResult = await AllMelodeeReleaseDataFilesForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = childDir.FullName,
                 Name = childDir.Name
@@ -209,7 +209,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
         };
     }
 
-    private async Task<OperationResult<IEnumerable<Release>>> AllReleasesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    private async Task<OperationResult<IEnumerable<Release>>> AllMelodeeReleaseDataFilesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var releases = new List<Release>();
         var errors = new List<Exception>();
@@ -222,7 +222,7 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                 var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
                 if (dirInfo.Exists)
                 {
-                    using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+                    using (Operation.At(LogEventLevel.Debug).Time("AllMelodeeReleaseDataFilesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
                     {
                         foreach (var jsonFile in dirInfo.EnumerateFiles(Release.JsonFileName, SearchOption.AllDirectories))
                         {
@@ -243,8 +243,9 @@ public sealed class ReleasesDiscoverer : IReleasesDiscoverer
                             }
                             catch (Exception e)
                             {
-                                Log.Warning(e, "Unable to load release json file [{FileName}]", dirInfo.FullName);
-                                messages.Add($"Unable to load release json file [{dirInfo.FullName}]");
+                                Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
+                                messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
+                                jsonFile.Delete();
                             }
                         }
                     }

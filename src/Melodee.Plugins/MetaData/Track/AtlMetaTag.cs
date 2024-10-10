@@ -1,3 +1,4 @@
+using System.Reflection;
 using ATL;
 using FFMpegCore;
 using Mapster;
@@ -260,11 +261,11 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
                 if (artistTag != null)
                 {
-                    tags.Remove(artistTag);
                     tags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.AlbumArtist,
-                        Value = artistTag
+                        Value = artistTag.Value,
+                        OriginalValue = artistTag.OriginalValue
                     });
                 }
             }

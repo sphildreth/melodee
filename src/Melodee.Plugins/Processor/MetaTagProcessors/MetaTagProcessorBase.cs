@@ -20,7 +20,7 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
 
     public abstract bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier);
 
-    public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags);
+    public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags);
 
     protected static string? ReleaseArtistFromReleaseArtistViaFeaturing(string artist)
     {
@@ -59,6 +59,17 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
         }
         return title;
     }
+    
+    protected static string? TrackTitleWithoutWithArtist(string? title)
+    {
+        var newTitle = title ?? string.Empty;
+        var matches = StringExtensions.HasWithFragmentsRegex.Match(title!);
+        if (matches.Index > 0)
+        {
+            return newTitle[..matches.Index].CleanString();
+        }
+        return title;
+    }    
     
     private static string? ReplaceArtistSeparators(string? trackArtist)
     {

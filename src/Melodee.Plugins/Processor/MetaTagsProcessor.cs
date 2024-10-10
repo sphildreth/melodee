@@ -32,7 +32,7 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 
     public int SortOrder { get; } = 0;
 
-    public Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
+    public Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, in IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
     {
         var processedTags = new List<MetaTag<object?>>(metaTags.ToList());
         foreach (var metaTagProcessor in _metaTagProcessors.OrderBy(x => x.SortOrder))

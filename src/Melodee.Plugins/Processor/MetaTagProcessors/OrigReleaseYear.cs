@@ -24,7 +24,7 @@ public sealed class OrigReleaseYear(Configuration configuration) : MetaTagProces
         return metaTagIdentifier == MetaTagIdentifier.OrigReleaseYear;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
         var yearValue = SafeParser.ToNumber<int>(tagValue ?? string.Empty);

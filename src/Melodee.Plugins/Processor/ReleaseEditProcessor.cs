@@ -635,6 +635,7 @@ public sealed class ReleaseEditProcessor(
             }
 
             releasesDiscoverer.ClearCache();
+            configuration.StagingDirectoryInfo.DeleteAllEmptyDirectories();
             result = true;
         }
         catch (Exception ex)
