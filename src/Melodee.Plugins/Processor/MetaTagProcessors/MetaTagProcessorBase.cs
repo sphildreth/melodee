@@ -44,9 +44,18 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
         {
             return null;
         }
-        var matches = StringExtensions.HasFeatureFragmentsRegex.Match(artist);
-        var featureArtist = ReplaceArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(artist.Substring(matches.Index), string.Empty).CleanString());
-        return featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");        
+        var result = artist;
+        if (result.HasFeaturingFragments())
+        {
+            var matches = StringExtensions.HasFeatureFragmentsRegex.Match(result!);
+            result = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
+        }
+        if (result.HasWithFragments())
+        {
+            var matches = StringExtensions.HasWithFragmentsRegex.Match(result!);
+            result = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
+        }         
+        return result?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
     }
 
     protected static string? TrackTitleWithoutFeaturingArtist(string? title)
@@ -71,10 +80,14 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
         return title;
     }    
     
-    private static string? ReplaceArtistSeparators(string? trackArtist)
-    {
-        return trackArtist.Nullify() == null ? null : Artist.ReplaceArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
-    }
+
+    // [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
+    // internal static partial Regex ReplaceArtistSeparatorsRegex();    
+    //
+    // private static string? ReplaceArtistSeparators(string? trackArtist)
+    // {
+    //     return trackArtist.Nullify() == null ? null : Artist.ReplaceArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
+    // }
 
     [GeneratedRegex("[^a-zA-Z0-9 -]")]
     private static partial Regex RemoveNonAlphaNumbericRegex();

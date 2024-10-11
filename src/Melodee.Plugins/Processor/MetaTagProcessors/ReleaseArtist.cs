@@ -27,7 +27,7 @@ public sealed partial class ReleaseArtist(Configuration configuration) : MetaTag
         var tagValue = metaTag.Value;
         var releaseArtist = tagValue as string ?? string.Empty;
         var result = new List<MetaTag<object?>>();
-
+        
         if (releaseArtist.Nullify() != null)
         {
             if (Configuration.PluginProcessOptions.ArtistNameReplacements.Any())
@@ -45,7 +45,8 @@ public sealed partial class ReleaseArtist(Configuration configuration) : MetaTag
             {
                 releaseArtist = ReleaseArtistFromReleaseArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty);
             }
-            if (releaseArtist == null && result.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
+
+            if (releaseArtist != null)
             {
                 result.Add(new MetaTag<object?>
                 {
@@ -61,8 +62,4 @@ public sealed partial class ReleaseArtist(Configuration configuration) : MetaTag
             Data = result
         };
     }
-   
-
-    [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    internal static partial Regex ReplaceArtistSeparatorsRegex();
 }

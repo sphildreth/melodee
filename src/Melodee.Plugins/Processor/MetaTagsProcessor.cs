@@ -16,10 +16,10 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
         _metaTagProcessors = new IMetaTagProcessor[]
         {
             new Album(configuration),
+            new ReleaseArtist(configuration),            
             new Artist(configuration),
             new Comment(configuration),
             new OrigReleaseYear(configuration),
-            new ReleaseArtist(configuration),            
             new TrackTitle(configuration),
         };
     }
@@ -39,7 +39,7 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
         {
             if (metaTagProcessor.IsEnabled)
             {
-                foreach (var tag in processedTags.ToArray())
+                foreach (var tag in processedTags.OrderBy(x => x.SortOrder).ToArray())
                 {
                     if (metaTagProcessor.DoesHandleMetaTagIdentifier(tag.Identifier))
                     {

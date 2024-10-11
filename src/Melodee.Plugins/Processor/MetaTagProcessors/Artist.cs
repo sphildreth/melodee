@@ -25,7 +25,6 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
-        string? trackArtist = null;
         var artist = tagValue as string ?? string.Empty;
 
         var result = new List<MetaTag<object?>>();
@@ -68,6 +67,7 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
             
             // See if the Title has featuring artists
             var title = (metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value) as string;
+            string? trackArtist = null;
             if (title.Nullify() != null && title.HasFeaturingFragments())
             {
                 // Get the track artist from the title and modify the title
@@ -130,6 +130,4 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
     }
    
 
-    [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    internal static partial Regex ReplaceArtistSeparatorsRegex();
 }

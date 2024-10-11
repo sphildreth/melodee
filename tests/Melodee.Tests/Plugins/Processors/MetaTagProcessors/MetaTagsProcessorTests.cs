@@ -246,14 +246,13 @@ public class MetaTagsProcessorTests
 
 
     [Theory]
-    
     [InlineData("Ariana Grande", "Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande", "Ariana Grande Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande", "Ariana Grande - Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande", "Ariana Grande : Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande", "Ariana Grande.Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande", "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
-    public async Task ValidateAlbumTitleDoesntContainArtist(string? albumArtist, string? albumTitle, string? shouldBe)
+    public async Task ValidateAlbumTitleDoesntContainAlbumArtist(string? albumArtist, string? albumTitle, string? shouldBe)
     {
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
@@ -277,4 +276,37 @@ public class MetaTagsProcessorTests
         Assert.NotNull(albumTag);
         Assert.Equal(shouldBe, albumTag.Value);
     }
+    
+    [Theory]
+    [InlineData("Ariana Grande", null, "Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande","Nonna", "Nonna Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande",null, "Ariana Grande - Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande","Nonna", "Ariana Grande Nonna : Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande",null, "Ariana Grande.Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande",null, "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
+    public async Task ValidateAlbumTitleDoesntContainArtist(string? albumArtist, string? trackArtist, string? albumTitle, string? shouldBe)
+    {
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        }, new FileSystemFileInfo
+        {
+            Name = string.Empty,
+            Size = 0
+        }, new[]
+        {
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtist },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = trackArtist },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value =  albumTitle}
+        });
+        Assert.NotNull(processorResult);
+        Assert.True(processorResult.IsSuccess);
+        var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
+        Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
+        var albumTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
+        Assert.NotNull(albumTag);
+        Assert.Equal(shouldBe, albumTag.Value);
+    }    
 }

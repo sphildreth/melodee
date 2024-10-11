@@ -254,6 +254,23 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     Value = 0
                 });
             }
+            
+            // Set SortOrder necessary for processors
+            var tagCount = tags.Count;
+            tags.ForEach(x => x.SortOrder = tagCount);
+            tags.First(x => x.Identifier == MetaTagIdentifier.Album).SortOrder = 1;
+            tags.First(x => x.Identifier == MetaTagIdentifier.Artist).SortOrder = 2;
+            
+            // Ensure that AlbumArtist is set, if has fragments will get cleaned up by MetaTag Processor
+            if (tags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
+            {
+                tags.Add(new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.AlbumArtist,
+                    Value = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist)?.Value,
+                    SortOrder = 3
+                });
+            }
 
             var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
             if (!metaTagsProcessorResult.IsSuccess)
