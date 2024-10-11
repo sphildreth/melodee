@@ -244,7 +244,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             {
                 Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
             }
-
+            
             // Ensure that OrigReleaseYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
             if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseYear))
             {
@@ -253,21 +253,6 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     Identifier = MetaTagIdentifier.OrigReleaseYear,
                     Value = 0
                 });
-            }
-            
-            // Ensure that album artist is set
-            if (tags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
-            {
-                var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
-                if (artistTag != null)
-                {
-                    tags.Add(new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.AlbumArtist,
-                        Value = artistTag.Value,
-                        OriginalValue = artistTag.OriginalValue
-                    });
-                }
             }
 
             var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);

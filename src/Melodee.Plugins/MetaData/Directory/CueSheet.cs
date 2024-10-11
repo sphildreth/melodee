@@ -225,7 +225,6 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
 
         int trackNumber;
         string? trackTitle;
-        string? trackArtist;
 
         FileSystemFileInfo? cueSheetDataFile = null;
 

@@ -719,7 +719,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
                         var newReleaseTags = new List<MetaTag<object?>>
                         {
-                            new() { Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1 },
+                            new()
+                            {
+                                Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1
+                            },
                             new()
                             {
                                 Identifier = MetaTagIdentifier.AlbumArtist, Value = track.ReleaseArtist(), SortOrder = 2

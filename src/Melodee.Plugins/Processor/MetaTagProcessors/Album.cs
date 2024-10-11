@@ -118,6 +118,7 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
                 OriginalValue = wasTagValueModified ? metaTag.Value : null
             }
         };
+        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

@@ -1,11 +1,9 @@
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Plugins.Processor;
 
-namespace Melodee.Tests.Plugins.MetaData;
+namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 
 public class MetaTagsProcessorTests
 {

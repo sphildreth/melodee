@@ -122,6 +122,7 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
             
             
         }
+        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

@@ -55,6 +55,7 @@ public sealed partial class ReleaseArtist(Configuration configuration) : MetaTag
                 });
             }             
         }
+        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

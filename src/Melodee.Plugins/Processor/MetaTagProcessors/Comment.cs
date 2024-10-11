@@ -23,17 +23,19 @@ public sealed class Comment(Configuration configuration) : MetaTagProcessorBase(
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
+        var result = new List<MetaTag<object?>>
+        {
+            new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.Comment,
+                Value = null,
+                OriginalValue = metaTag.Value?.ToString().Nullify() == null ? null : metaTag.Value
+            }
+        };
+        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
-            Data = new[]
-            {
-                new MetaTag<object?>
-                {
-                    Identifier = MetaTagIdentifier.Comment,
-                    Value = null,
-                    OriginalValue = metaTag.Value?.ToString().Nullify() == null ? null : metaTag.Value
-                }
-            }
+            Data = result
         };
     }
 }

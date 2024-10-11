@@ -128,7 +128,7 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
                 Value = trackNumber.Value
             });
         }
-
+        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

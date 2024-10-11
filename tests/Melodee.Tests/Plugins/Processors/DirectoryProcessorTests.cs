@@ -83,7 +83,7 @@ public class DirectoryProcessorTests
     }
     
     [Fact]
-    public async Task ValidateAllReleasesForDirectoryAsyncShouldBeSingleReleaseTracksWithManyArtists()
+    public async Task ValidateDirectoryGetProcessedTracksWithMultipleArtistsIsSuccess()
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
@@ -91,14 +91,10 @@ public class DirectoryProcessorTests
             .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/tests/tracks_with_artists/";
+        var testFile = @"/home/steven/incoming/melodee_test/tests/tracks_with_artists_2/";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
-            foreach (var file in dirInfo.EnumerateFiles("*.melodee.json"))
-            {
-                file.Delete();
-            }
             var config = TestsBase.NewConfiguration;
             var validator = new ReleaseValidator(config);
             var processor = new DirectoryProcessor(
@@ -108,17 +104,20 @@ public class DirectoryProcessorTests
                 new ReleaseEditProcessor(config,
                     new ReleasesDiscoverer(validator, config),
                     new AtlMetaTag(new MetaTagsProcessor(config), config),
-                    validator), config);
-
-            var allReleases = await processor.AllReleasesForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
-            Assert.NotNull(allReleases);
-            Assert.True(allReleases.IsSuccess);   
-            Assert.Single(allReleases.Data.Item1);
+                    validator), config);  
+            var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            {
+                Path = dirInfo.FullName,
+                Name = dirInfo.Name
+            });
+            Assert.NotNull(result);
+            Assert.True(result.IsSuccess);
+            Assert.Equal(1, result.Data.NumberOfReleaseFilesProcessed);
         }
     }    
     
     [Fact]
-    public async Task ValidateAllReleasesForDirectoryAsyncShouldBeSingleReleaseTracksWithManyArtists2()
+    public async Task ValidateAllReleasesForDirectoryAsyncShouldBeSingleReleaseTracksWithManyArtists()
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
@@ -126,7 +125,7 @@ public class DirectoryProcessorTests
             .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/tests/tracks_with_artists_2/";
+        var testFile = @"/home/steven/incoming/melodee_test/tests/tracks_with_artists/";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {

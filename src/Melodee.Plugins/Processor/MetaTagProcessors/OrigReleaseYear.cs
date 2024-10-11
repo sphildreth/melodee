@@ -38,16 +38,18 @@ public sealed class OrigReleaseYear(Configuration configuration) : MetaTagProces
             }
         }
 
+        var result = new List<MetaTag<object?>>
+        {
+            new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.OrigReleaseYear,
+                Value = yearValue
+            }
+        };
+        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));       
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
-            Data = new[]
-            {
-                new MetaTag<object?>
-                {
-                    Identifier = MetaTagIdentifier.OrigReleaseYear,
-                    Value = yearValue
-                }
-            }
+            Data = result
         };
     }
 }

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
@@ -12,15 +13,14 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 
     public MetaTagsProcessor(Configuration configuration)
     {
-        var configuration1 = configuration;
         _metaTagProcessors = new IMetaTagProcessor[]
         {
-            new Album(configuration1),
-            new Artist(configuration1),
-            new Comment(configuration1),
-            new OrigReleaseYear(configuration1),
-            new ReleaseArtist(configuration1),            
-            new TrackTitle(configuration1),
+            new Album(configuration),
+            new Artist(configuration),
+            new Comment(configuration),
+            new OrigReleaseYear(configuration),
+            new ReleaseArtist(configuration),            
+            new TrackTitle(configuration),
         };
     }
 
@@ -64,7 +64,21 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
                 }
             }
         }
-
+        // Ensure that album artist is set
+        if (processedTags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
+        {
+            var groupedTags = processedTags.GroupBy(x => x.Identifier);
+            var artistTag = groupedTags.Where(x => x.Key == MetaTagIdentifier.Artist).OrderByDescending(x => x.Count()).FirstOrDefault();
+            if (artistTag != null)
+            {
+                processedTags.Add(new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.AlbumArtist,
+                    Value = artistTag.FirstOrDefault()?.Value,
+                    OriginalValue = artistTag.FirstOrDefault()?.OriginalValue
+                });
+            }
+        }
         return Task.FromResult(new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = processedTags.ToArray()

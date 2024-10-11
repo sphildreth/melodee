@@ -16,7 +16,7 @@ public sealed record MetaTag<T>
 
     public string IdentifierDescription => $"{Identifier.ToString()} {Identifier.GetEnumDescriptionValue()}";
 
-    public required T Value { get; init; }
+    public T? Value { get; init; }
 
     public T? OriginalValue { get; init; }
 
