@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>mcli</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Spectre.Console.Cli" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Spectre.Console.Json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Fonts\Straight.flf"/>
+    <Content Include="Fonts\Straight.flf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="Fonts\Elite.flf"/>
+    <Content Include="Fonts\Elite.flf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="Fonts\Cosmike.flf"/>
+    <Content Include="Fonts\Cosmike.flf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj"/>
+    <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj"/>
+  </ItemGroup>
+
+
+</Project>
