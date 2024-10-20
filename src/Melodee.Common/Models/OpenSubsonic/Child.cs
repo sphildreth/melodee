@@ -9,7 +9,7 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// <param name="Title"></param>
 /// <param name="Album"></param>
 /// <param name="Artist"></param>
-/// <param name="Track"></param>
+/// <param name="Song"></param>
 /// <param name="Year"></param>
 /// <param name="CoverArt"></param>
 /// <param name="Size"></param>
@@ -51,7 +51,7 @@ public record Child(
     string?Title,
     string? Album,
     string? Artist,
-    int? Track,
+    int? Song,
     int? Year,
     string? CoverArt,
     int? Size,

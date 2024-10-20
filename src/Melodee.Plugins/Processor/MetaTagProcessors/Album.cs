@@ -8,13 +8,13 @@ using Serilog;
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-///     Handle the release title (Album) and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
+///     Handle the Album title (Album) and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
 /// </summary>
 public sealed class Album(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
-    private static readonly Regex YearInReleaseTitleRegex = new(@"(\[|\()+[0-9]+(\]|\))+", RegexOptions.Compiled);
+    private static readonly Regex YearInAlbumTitleRegex = new(@"(\[|\()+[0-9]+(\]|\))+", RegexOptions.Compiled);
 
-    private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|disk|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|disk|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     public override string Id => "B7288065-E229-41A6-9A2C-E14F5F6B0FE7";
 
     public override string DisplayName => nameof(Album);
@@ -44,43 +44,43 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
             };
         }
 
-        var releaseTitle = tagValue as string ?? string.Empty;
+        var albumTitle = tagValue as string ?? string.Empty;
 
-        var newReleaseTitle = releaseTitle;
+        var newAlbumTitle = albumTitle;
         try
         {
-            var matches = UnwantedReleaseTitleTextRegex.Match(releaseTitle);
+            var matches = UnwantedAlbumTitleTextRegex.Match(albumTitle);
             if (matches.Length > 0)
             {
-                newReleaseTitle = newReleaseTitle[..matches.Index].CleanString();
-                var lastIndexOfOpenParenthesis = newReleaseTitle?.LastIndexOf('(') ?? 0;
-                var lastIndexOfCloseParenthesis = newReleaseTitle?.LastIndexOf(')') ?? 0;
-                if (newReleaseTitle != null && lastIndexOfOpenParenthesis > 0 && lastIndexOfCloseParenthesis < 0)
+                newAlbumTitle = newAlbumTitle[..matches.Index].CleanString();
+                var lastIndexOfOpenParenthesis = newAlbumTitle?.LastIndexOf('(') ?? 0;
+                var lastIndexOfCloseParenthesis = newAlbumTitle?.LastIndexOf(')') ?? 0;
+                if (newAlbumTitle != null && lastIndexOfOpenParenthesis > 0 && lastIndexOfCloseParenthesis < 0)
                 {
-                    newReleaseTitle = newReleaseTitle.Substring(0, lastIndexOfOpenParenthesis - 1);
+                    newAlbumTitle = newAlbumTitle.Substring(0, lastIndexOfOpenParenthesis - 1);
                 }
 
-                var lastIndexOfOpenBracket = newReleaseTitle?.LastIndexOf('[') ?? 0;
-                var lastIndexOfCloseBracket = newReleaseTitle?.LastIndexOf(']') ?? 0;
-                if (newReleaseTitle != null && lastIndexOfOpenBracket > 0 && lastIndexOfCloseBracket < 0)
+                var lastIndexOfOpenBracket = newAlbumTitle?.LastIndexOf('[') ?? 0;
+                var lastIndexOfCloseBracket = newAlbumTitle?.LastIndexOf(']') ?? 0;
+                if (newAlbumTitle != null && lastIndexOfOpenBracket > 0 && lastIndexOfCloseBracket < 0)
                 {
-                    newReleaseTitle = newReleaseTitle.Substring(0, lastIndexOfOpenBracket - 1);
+                    newAlbumTitle = newAlbumTitle.Substring(0, lastIndexOfOpenBracket - 1);
                 }
             }
 
-            var yearInTextMatches = YearInReleaseTitleRegex.Match(releaseTitle);
+            var yearInTextMatches = YearInAlbumTitleRegex.Match(albumTitle);
             if (yearInTextMatches.Length > 0)
             {
-                newReleaseTitle = YearInReleaseTitleRegex.Replace(newReleaseTitle ?? string.Empty, string.Empty).CleanString();
+                newAlbumTitle = YearInAlbumTitleRegex.Replace(newAlbumTitle ?? string.Empty, string.Empty).CleanString();
             }
 
             var albumArtistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
             if (albumArtistTag?.Value != null)
             {
                 var artistValue = albumArtistTag.Value as string ?? string.Empty;
-                if (!string.IsNullOrWhiteSpace(artistValue) && (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
+                if (!string.IsNullOrWhiteSpace(artistValue) && (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
-                    newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
                 }
             }
             else
@@ -92,15 +92,15 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
             if (artistTag?.Value != null)
             {
                 var artistValue = artistTag.Value as string ?? string.Empty;
-                if (!string.IsNullOrWhiteSpace(artistValue) && (newReleaseTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
+                if (!string.IsNullOrWhiteSpace(artistValue) && (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
-                    newReleaseTitle = newReleaseTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
                 }
             }
 
-            if (newReleaseTitle != null && Configuration.PluginProcessOptions.ReleaseTitleRemovals.Any())
+            if (newAlbumTitle != null && Configuration.PluginProcessOptions.AlbumTitleRemovals.Any())
             {
-                newReleaseTitle = Configuration.PluginProcessOptions.ReleaseTitleRemovals.Aggregate(newReleaseTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
+                newAlbumTitle = Configuration.PluginProcessOptions.AlbumTitleRemovals.Aggregate(newAlbumTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
             }
         }
         catch (Exception e)
@@ -108,13 +108,13 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
             Log.Error(e, "[{PluginName}] attempting to process [{MetaTag}]", DisplayName, metaTag);
         }
 
-        var wasTagValueModified = !string.Equals(newReleaseTitle, releaseTitle, StringComparison.OrdinalIgnoreCase);
+        var wasTagValueModified = !string.Equals(newAlbumTitle, albumTitle, StringComparison.OrdinalIgnoreCase);
         var result = new List<MetaTag<object?>>
         {
             new()
             {
                 Identifier = metaTag.Identifier,
-                Value = newReleaseTitle,
+                Value = newAlbumTitle,
                 OriginalValue = wasTagValueModified ? metaTag.Value : null
             }
         };

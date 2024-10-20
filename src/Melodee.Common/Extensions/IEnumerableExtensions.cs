@@ -1,6 +1,6 @@
 ﻿namespace Melodee.Common.Extensions;
 
-public static class IEnumerableExtensions
+public static class EnumerableExtensions
 {
     public static string ToCsv<T>(this IEnumerable<T> source, string join = ",")
     {

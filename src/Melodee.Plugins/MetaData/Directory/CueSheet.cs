@@ -11,7 +11,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Directory.Models.Extensions;
-using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.MetaData.Song;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -19,13 +19,13 @@ using SerilogTimings;
 namespace Melodee.Plugins.MetaData.Directory;
 
 /// <summary>
-///     If a CUE file is found then split out the MP3 into tracks.
+///     If a CUE file is found then split out the MP3 into Songs.
 /// </summary>
-public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
+public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Configuration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     private const string HandlesExtension = "CUE";
 
-    public readonly IEnumerable<ITrackPlugin> TrackPlugins = trackPlugins;
+    public readonly IEnumerable<ISongPlugin> SongPlugins = songPlugins;
 
     public override string Id => "3CAB0527-B13F-4C29-97AD-5541229240DD";
 
@@ -83,7 +83,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         }
                         catch (Exception ex2)
                         {
-                            Log.Error("Error reading CUE [{CUEFileForReleaseDirectory}] [{@Error}", cueFile.FullName, ex2);
+                            Log.Error("Error reading CUE [{CUEFileForAlbumDirectory}] [{@Error}", cueFile.FullName, ex2);
                             return new OperationResult<int>
                             {
                                 Errors = new[] { ex2 },
@@ -94,7 +94,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
 
                     if (throwError)
                     {
-                        Log.Error("Error reading CUE [{CUEFileForReleaseDirectory}] [{@Error}", cueFile.FullName, ex);
+                        Log.Error("Error reading CUE [{CUEFileForAlbumDirectory}] [{@Error}", cueFile.FullName, ex);
                         return new OperationResult<int>
                         {
                             Errors = new[] { ex },
@@ -108,13 +108,13 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     var cueModel = await ParseFileAsync(cueFile.FullName);
                     if (cueModel is { IsValid: true })
                     {
-                        var releaseArtist = theReader.Artist ?? cueModel.Artist() ?? throw new Exception("Invalid Artist");
-                        await Parallel.ForEachAsync(cueModel.Tracks.OrderBy(x => x.SortOrder), cancellationToken, async (track, ct) =>
+                        var albumArtist = theReader.Artist ?? cueModel.Artist() ?? throw new Exception("Invalid Artist");
+                        await Parallel.ForEachAsync(cueModel.Songs.OrderBy(x => x.SortOrder), cancellationToken, async (song, ct) =>
                         {
-                            var index = cueModel.TrackIndexes.First(x => x.TrackNumber == track.TrackNumber());
-                            var untilIndex = cueModel.TrackIndexes.FirstOrDefault(x => x.TrackNumber == index.TrackNumber + 1);
+                            var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
+                            var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
                             await FFMpegArguments.FromFileInput(cueModel.MediaFileSystemFileInfo.FullName(fileSystemDirectoryInfo))
-                                .OutputToFile(track.File.FullName(fileSystemDirectoryInfo), true, options =>
+                                .OutputToFile(song.File.FullName(fileSystemDirectoryInfo), true, options =>
                                 {
                                     var seekTs = new TimeSpan(0, index.Minutes, index.Seconds);
                                     options.Seek(seekTs);
@@ -132,7 +132,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                                 }).ProcessAsynchronously();
                         });
 
-                        var cueRelease = cueModel.ToRelease(fileSystemDirectoryInfo);
+                        var cueAlbum = cueModel.ToAlbum(fileSystemDirectoryInfo);
 
                         if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
@@ -158,32 +158,32 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                         }
                         fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.HandlesExtension);
                         
-                        var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueRelease.ToMelodeeJsonName());
-                        if (File.Exists(stagingReleaseDataName))
+                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueAlbum.ToMelodeeJsonName());
+                        if (File.Exists(stagingAlbumDataName))
                         {
                             if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
                             {
-                                File.Delete(stagingReleaseDataName);
+                                File.Delete(stagingAlbumDataName);
                             }
                             else
                             {
-                                var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
-                                if (existingRelease != null)
+                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                                if (existingAlbum != null)
                                 {
-                                    cueRelease = cueRelease.Merge(existingRelease);
+                                    cueAlbum = cueAlbum.Merge(existingAlbum);
                                 }
                             }
                         }
 
-                        var serialized = JsonSerializer.Serialize(cueRelease);
-                        await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                        var serialized = JsonSerializer.Serialize(cueAlbum);
+                        await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
                         if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
                             cueFile.Delete();
                             Log.Information("Deleted CUE File [{FileName}]", cueFile.Name);
                         }
 
-                        Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, cueRelease.ToMelodeeJsonName());
+                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, cueAlbum.ToMelodeeJsonName());
                         processedFiles++;
                     }
                 }
@@ -217,14 +217,14 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
 
         var allLinesFromFile = await File.ReadAllLinesAsync(filePath);
 
-        var releaseTags = new List<MetaTag<object?>>();
-        var tracks = new List<Common.Models.Track>();
-        var trackTags = new List<MetaTag<object?>>();
-        var trackIndexes = new List<CueIndex>();
-        var trackGaps = new List<CueIndex>();
+        var albumTags = new List<MetaTag<object?>>();
+        var songs = new List<Common.Models.Song>();
+        var songTags = new List<MetaTag<object?>>();
+        var songIndexes = new List<CueIndex>();
+        var songGaps = new List<CueIndex>();
 
-        int trackNumber;
-        string? trackTitle;
+        int songNumber;
+        string? songTitle;
 
         FileSystemFileInfo? cueSheetDataFile = null;
 
@@ -234,7 +234,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
             switch (kp.Key)
             {
                 case CueSheetKeyRegistry.Catalog:
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.CatalogNumber,
                         Value = kp.Value
@@ -242,7 +242,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     break;
 
                 case CueSheetKeyRegistry.CdTextFile:
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.MusicCdIdentifier,
                         Value = kp.Value
@@ -272,10 +272,10 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     // Only 4 Flags allowed by spec : 
                     // DCP – Digital copy permitted
                     // 4CH – Four channel audio
-                    // PRE – Pre-emphasis enabled (audio tracks only)
+                    // PRE – Pre-emphasis enabled (audio Songs only)
                     // SCMS – Serial copy management system (not supported by all recorders)                    
 
-                    trackTags.Add(new MetaTag<object?>
+                    songTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.SubCodeFlags,
                         Value = kp.Value
@@ -283,16 +283,16 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     break;
 
                 case CueSheetKeyRegistry.Index:
-                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
-                    if (trackNumber > 0)
+                    songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    if (songNumber > 0)
                     {
-                        trackIndexes.Add(ParseIndex(trackNumber, lineFromFile));
+                        songIndexes.Add(ParseIndex(songNumber, lineFromFile));
                     }
 
                     break;
 
                 case CueSheetKeyRegistry.Isrc:
-                    trackTags.Add(new MetaTag<object?>
+                    songTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.Isrc,
                         Value = kp.Value
@@ -300,9 +300,9 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     break;
 
                 case CueSheetKeyRegistry.Performer:
-                    if (releaseTags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
+                    if (albumTags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
                     {
-                        releaseTags.Add(new MetaTag<object?>
+                        albumTags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.AlbumArtist,
                             Value = kp.Value
@@ -310,7 +310,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     }
                     else
                     {
-                        trackTags.Add(new MetaTag<object?>
+                        songTags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
                             Value = kp.Value
@@ -320,19 +320,19 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     break;
 
                 case CueSheetKeyRegistry.PostGap:
-                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
-                    if (trackNumber > 0)
+                    songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    if (songNumber > 0)
                     {
-                        trackGaps.Add(ParseIndex(trackNumber, lineFromFile));
+                        songGaps.Add(ParseIndex(songNumber, lineFromFile));
                     }
 
                     break;
 
                 case CueSheetKeyRegistry.PreGap:
-                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
-                    if (trackNumber > 0)
+                    songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    if (songNumber > 0)
                     {
-                        trackGaps.Add(ParseIndex(trackNumber, lineFromFile));
+                        songGaps.Add(ParseIndex(songNumber, lineFromFile));
                     }
 
                     break;
@@ -348,7 +348,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                             break;
 
                         case CueSheetRemOptionsRegistry.Date:
-                            remIdentifier = MetaTagIdentifier.OrigReleaseYear;
+                            remIdentifier = MetaTagIdentifier.OrigAlbumYear;
                             break;
 
                         case CueSheetRemOptionsRegistry.TotalDiscs:
@@ -360,7 +360,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                             break;
                     }
 
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
                         Identifier = remIdentifier,
                         Value = v
@@ -368,9 +368,9 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     break;
 
                 case CueSheetKeyRegistry.SongWriter:
-                    if (tracks.Count == 0)
+                    if (songs.Count == 0)
                     {
-                        releaseTags.Add(new MetaTag<object?>
+                        albumTags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Composer,
                             Value = kp.Value
@@ -378,7 +378,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     }
                     else
                     {
-                        trackTags.Add(new MetaTag<object?>
+                        songTags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Composer,
                             Value = kp.Value
@@ -388,9 +388,9 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     break;
 
                 case CueSheetKeyRegistry.Title:
-                    if (releaseTags.All(x => x.Identifier != MetaTagIdentifier.Album))
+                    if (albumTags.All(x => x.Identifier != MetaTagIdentifier.Album))
                     {
-                        releaseTags.Add(new MetaTag<object?>
+                        albumTags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Album,
                             Value = kp.Value.Nullify()
@@ -398,7 +398,7 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
                     }
                     else
                     {
-                        trackTags.Add(new MetaTag<object?>
+                        songTags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Title,
                             Value = kp.Value.Nullify(),
@@ -407,28 +407,28 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
 
                     break;
 
-                case CueSheetKeyRegistry.Track:
-                    trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
-                    trackTitle = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
-                    if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle))
+                case CueSheetKeyRegistry.Song:
+                    songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    songTitle = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
+                    if (songNumber > 0 && !string.IsNullOrWhiteSpace(songTitle))
                     {
-                        var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;
-                        trackTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
-                        tracks.Add(new Common.Models.Track
+                        var mediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;
+                        songTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
+                        songs.Add(new Common.Models.Song
                         {
-                            CrcHash = CRC32.Calculate(fileInfo),
+                            CrcHash = Crc32.Calculate(fileInfo),
                             File = new FileSystemFileInfo
                             {
-                                Name = TrackExtensions.TrackFileName(trackNumber, trackTitle, mediaNumber),
+                                Name = SongExtensions.SongFileName(songNumber, songTitle, mediaNumber),
                                 Size = 0
                             },
-                            Tags = trackTags.ToArray(),
-                            SortOrder = trackNumber
+                            Tags = songTags.ToArray(),
+                            SortOrder = songNumber
                         });
-                        trackTags.Clear();
+                        songTags.Clear();
                     }
 
-                    trackTags.Add(new MetaTag<object?>
+                    songTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.TrackNumber,
                         Value = SafeParser.ToNumber<int>(kp.Value?.Replace(" AUDIO", string.Empty))
@@ -437,88 +437,88 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
             }
         }
 
-        trackNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
-        trackTitle = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
-        if (trackNumber > 0 && !string.IsNullOrWhiteSpace(trackTitle))
+        songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+        songTitle = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
+        if (songNumber > 0 && !string.IsNullOrWhiteSpace(songTitle))
         {
-            var mediaNumber = trackTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;
-            tracks.Add(new Common.Models.Track
+            var mediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 0;
+            songs.Add(new Common.Models.Song
             {
-                CrcHash = CRC32.Calculate(fileInfo),
+                CrcHash = Crc32.Calculate(fileInfo),
                 File = new FileSystemFileInfo
                 {
-                    Name = TrackExtensions.TrackFileName(trackNumber, trackTitle, mediaNumber),
+                    Name = SongExtensions.SongFileName(songNumber, songTitle, mediaNumber),
                     Size = 0
                 },
-                Tags = trackTags.ToArray()
+                Tags = songTags.ToArray()
             });
-            trackTags.Clear();
+            songTags.Clear();
         }
 
-        var releaseDate = SafeParser.ToNumber<int?>(releaseTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear)?.Value);
-        if (releaseDate == null)
+        var albumDate = SafeParser.ToNumber<int?>(albumTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)?.Value);
+        if (albumDate == null)
         {
-            // Try to get the release date from the CUE filename
-            releaseDate = fileInfo.FullName.TryToGetYearFromString();
-            if (releaseDate == null)
+            // Try to get the Album date from the CUE filename
+            albumDate = fileInfo.FullName.TryToGetYearFromString();
+            if (albumDate == null)
             {
                 var dirInfo = new DirectoryInfo(fileInfo.DirectoryName ?? string.Empty);
                 var cueSheetDataFileDirectoryInfo = dirInfo.ToDirectorySystemInfo();
 
-                releaseDate = dirInfo.Name.TryToGetYearFromString();
-                if (releaseDate == null)
+                albumDate = dirInfo.Name.TryToGetYearFromString();
+                if (albumDate == null)
                 {
                     var m3UFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension(M3UPlaylist.HandlesExtension);
                     foreach (var m3UFile in m3UFiles)
                     {
-                        releaseDate = m3UFile.Name.TryToGetYearFromString();
-                        if (releaseDate != null)
+                        albumDate = m3UFile.Name.TryToGetYearFromString();
+                        if (albumDate != null)
                         {
                             break;
                         }
                     }
                 }
 
-                if (releaseDate == null)
+                if (albumDate == null)
                 {
                     var sfvFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension(SimpleFileVerification.HandlesExtension);
                     foreach (var sfvFile in sfvFiles)
                     {
-                        releaseDate = sfvFile.Name.TryToGetYearFromString();
-                        if (releaseDate != null)
+                        albumDate = sfvFile.Name.TryToGetYearFromString();
+                        if (albumDate != null)
                         {
                             break;
                         }
                     }
                 }
 
-                if (releaseDate == null)
+                if (albumDate == null)
                 {
-                    throw new Exception("Unable to determine Release Year for CueFile.");
+                    throw new Exception("Unable to determine Album Year for CueFile.");
                 }
             }
 
-            var releaseTagForYear = releaseTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear);
-            if (releaseTagForYear != null)
+            var albumTagForYear = albumTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear);
+            if (albumTagForYear != null)
             {
-                releaseTags.Remove(releaseTagForYear);
+                albumTags.Remove(albumTagForYear);
             }
 
-            releaseTags.Add(new MetaTag<object?>
+            albumTags.Add(new MetaTag<object?>
             {
-                Identifier = MetaTagIdentifier.OrigReleaseYear,
-                Value = releaseDate
+                Identifier = MetaTagIdentifier.OrigAlbumYear,
+                Value = albumDate
             });
         }
 
-        releaseTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
+        albumTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
         return new Models.CueSheet
         {
             MediaFileSystemFileInfo = cueSheetDataFile!,
             FileSystemDirectoryInfo = new DirectoryInfo(Path.GetDirectoryName(filePath)!).ToDirectorySystemInfo(),
-            Tracks = tracks,
-            TrackIndexes = trackIndexes,
-            Tags = releaseTags
+            Songs = songs,
+            SongIndexes = songIndexes,
+            Tags = albumTags
         };
     }
 
@@ -530,13 +530,13 @@ public sealed class CueSheet(IEnumerable<ITrackPlugin> trackPlugins, Configurati
         return parts.Length == 1 ? new KeyValuePair<string, string?>(k, null) : new KeyValuePair<string, string?>(k, v);
     }
 
-    private static CueIndex ParseIndex(int trackNumber, string lineFromFile)
+    private static CueIndex ParseIndex(int songNumber, string lineFromFile)
     {
         var parts = lineFromFile.Nullify()?.Split(' ') ?? [];
         var msfParts = parts[2].Split(':');
         return new CueIndex
         {
-            TrackNumber = trackNumber,
+            SongNumber = songNumber,
             IndexNumber = SafeParser.ToNumber<int>(parts[1]),
             Minutes = SafeParser.ToNumber<int>(msfParts[0]),
             Seconds = SafeParser.ToNumber<int>(msfParts[1]),

@@ -22,15 +22,15 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// <param name="Genres"></param>
 /// <param name="Artists"></param>
 /// <param name="DisplayArtist"></param>
-/// <param name="ReleaseTypes"></param>
+/// <param name="AlbumTypes"></param>
 /// <param name="Moods"></param>
 /// <param name="SortName"></param>
-/// <param name="OriginalReleaseDate"></param>
-/// <param name="ReleaseDate"></param>
+/// <param name="OriginalAlbumDate"></param>
+/// <param name="AlbumDate"></param>
 /// <param name="IsCompilation"></param>
 /// <param name="DiscTitles"></param>
 /// <param name="Song"></param>
-public record AlbumID3WithSongs(
+public record AlbumId3WithSongs(
     string Id,
     string Name,
     string? Artist,
@@ -50,11 +50,11 @@ public record AlbumID3WithSongs(
     Genre[]? Genres,
     Artist[]? Artists,
     string? DisplayArtist,
-    string[]? ReleaseTypes,
+    string[]? AlbumTypes,
     string[]? Moods,
     string? SortName,
-    ItemDate? OriginalReleaseDate,
-    ItemDate? ReleaseDate,
+    ItemDate? OriginalAlbumDate,
+    ItemDate? AlbumDate,
     bool? IsCompilation,
     DiscTitle[]? DiscTitles,
     Child[]? Song

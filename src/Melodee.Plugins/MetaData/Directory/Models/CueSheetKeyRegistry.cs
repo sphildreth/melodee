@@ -26,5 +26,5 @@ public static class CueSheetKeyRegistry
 
     public const string Title = "TITLE";
 
-    public const string Track = "TRACK";
+    public const string Song = "Song";
 }

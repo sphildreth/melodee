@@ -3,7 +3,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 
 
@@ -113,7 +113,7 @@ public class MetaTagTests
                 Identifier = MetaTagIdentifier.Album,
                 Value = newAlbumValue
             });
-            var tagUpdateResult = await metaTag.UpdateTrackAsync(dirInfo, new Track
+            var tagUpdateResult = await metaTag.UpdateSongAsync(dirInfo, new Song
             {
                 CrcHash = "12345678",
                 File = fileInfo.ToFileSystemInfo(),
@@ -130,8 +130,8 @@ public class MetaTagTests
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
-            Assert.NotNull(tagResult.Data.ReleaseTitle()?.Nullify());
-            Assert.Equal(newAlbumValue, tagResult.Data.ReleaseTitle());
+            Assert.NotNull(tagResult.Data.AlbumTitle()?.Nullify());
+            Assert.Equal(newAlbumValue, tagResult.Data.AlbumTitle());
         }
     }    
     
@@ -153,14 +153,14 @@ public class MetaTagTests
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
 
-            var track = tagResult.Data;
+            var Song = tagResult.Data;
             
-            Assert.NotNull(track.Tags);
-            Assert.NotNull(track.File);
-            Assert.Equal(fileInfo.FullName, track.File.FullName(dirInfo));
-            Assert.NotNull(track.Title()?.Nullify());
-            Assert.False(track.TitleHasUnwantedText());
-            Assert.True(track.Duration() > 0);
+            Assert.NotNull(Song.Tags);
+            Assert.NotNull(Song.File);
+            Assert.Equal(fileInfo.FullName, Song.File.FullName(dirInfo));
+            Assert.NotNull(Song.Title()?.Nullify());
+            Assert.False(Song.TitleHasUnwantedText());
+            Assert.True(Song.Duration() > 0);
         }
     }
     
@@ -182,20 +182,20 @@ public class MetaTagTests
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
 
-            var track = tagResult.Data;
+            var Song = tagResult.Data;
             
-            Assert.NotNull(track.Tags);
-            Assert.NotNull(track.File);
-            Assert.Equal(fileInfo.FullName, track.File.FullName(dirInfo));
-            Assert.NotNull(track.Title()?.Nullify());
-            Assert.NotEmpty(track.ToTrackFileName());
+            Assert.NotNull(Song.Tags);
+            Assert.NotNull(Song.File);
+            Assert.Equal(fileInfo.FullName, Song.File.FullName(dirInfo));
+            Assert.NotNull(Song.Title()?.Nullify());
+            Assert.NotEmpty(Song.ToSongFileName());
         }
     }    
 
     [Fact]
-    public async Task ValidateMultipleTrackArtistForMp3Async()
+    public async Task ValidateMultipleSongArtistForMp3Async()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/multipleTrackArtistsTest.mp3";
+        var testFile = @"/home/steven/incoming/melodee_test/tests/multipleSongArtistsTest.mp3";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
@@ -210,14 +210,14 @@ public class MetaTagTests
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
 
-            var track = tagResult.Data;
+            var Song = tagResult.Data;
             
-            Assert.NotNull(track.Tags);
-            Assert.NotNull(track.File);
-            var releaseArtist = track.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
-            Assert.NotNull(releaseArtist?.Value);
-            var trackArtists = track.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
-            Assert.NotNull(trackArtists?.Value);
+            Assert.NotNull(Song.Tags);
+            Assert.NotNull(Song.File);
+            var AlbumArtist = Song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
+            Assert.NotNull(AlbumArtist?.Value);
+            var SongArtists = Song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+            Assert.NotNull(SongArtists?.Value);
 
         }
     }

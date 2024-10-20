@@ -6,5 +6,5 @@ public record DirectoryProcessorResult
    
    public required int NumberOfDirectoryPluginProcessed { get; init; }
    
-   public required int NumberOfReleaseFilesProcessed { get; init; }
+   public required int NumberOfAlbumFilesProcessed { get; init; }
 }

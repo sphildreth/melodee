@@ -51,7 +51,7 @@ public enum Genres
 
     Pranks,
 
-    Soundtrack,
+    SoundSong,
 
     [Display(Name = "Euro-Techno")] EuroTechno,
 

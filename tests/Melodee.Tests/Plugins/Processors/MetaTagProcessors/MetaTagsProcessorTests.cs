@@ -9,11 +9,11 @@ public class MetaTagsProcessorTests
 {
     [Theory]
     [InlineData("Something", 0, "Something")]
-    [InlineData("Something 1", 0, "Something 1")] // Single digits are ignored as they are likely part of the track name
+    [InlineData("Something 1", 0, "Something 1")] // Single digits are ignored as they are likely part of the Song name
     [InlineData("14 Something", 14, "Something")]
     [InlineData("008 Something", 8, "Something")]
     [InlineData("08 Something", 8, "Something")]
-    public async Task ValidateTrackTitleTrackNumberRemoved(string? originalTrackTitle, int trackNumber, string? shouldBe)
+    public async Task ValidateSongTitleSongNumberRemoved(string? originalSongTitle, int SongNumber, string? shouldBe)
     {
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
@@ -26,23 +26,23 @@ public class MetaTagsProcessorTests
             Size = 0
         }, new []
         {
-            new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackNumber, Value = trackNumber },
-            new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalTrackTitle }
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackNumber, Value = SongNumber },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalSongTitle }
         });
         Assert.NotNull(processorResult);
         Assert.True(processorResult.IsSuccess);
         var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
         Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
-        var trackTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title);
-        Assert.NotNull(trackTag);
-        Assert.NotNull(trackTag.Value);
-        Assert.Equal(shouldBe, trackTag.Value);
-        if (trackNumber > 0)
+        var SongTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title);
+        Assert.NotNull(SongTag);
+        Assert.NotNull(SongTag.Value);
+        Assert.Equal(shouldBe, SongTag.Value);
+        if (SongNumber > 0)
         {
-            var trackNumberTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber);
-            Assert.NotNull(trackNumberTag);
-            Assert.NotNull(trackNumberTag.Value);
-            Assert.Equal(trackNumber, trackNumberTag.Value);
+            var SongNumberTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber);
+            Assert.NotNull(SongNumberTag);
+            Assert.NotNull(SongNumberTag.Value);
+            Assert.Equal(SongNumber, SongNumberTag.Value);
         }
     }
 
@@ -67,7 +67,7 @@ public class MetaTagsProcessorTests
     [InlineData("In My Arms (Crumbling Down Extended Instrumental Remix;Remaster)", "In My Arms (Crumbling Down Extended Instrumental Remix)")]
     [InlineData("404", "404")]
     [InlineData("With", "With")]
-    public async Task ValidateTrackTitleFeaturingRemoved(string? originalTrackTitle, string? shouldBe)
+    public async Task ValidateSongTitleFeaturingRemoved(string? originalSongTitle, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
@@ -83,25 +83,25 @@ public class MetaTagsProcessorTests
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtistShouldBe },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackNumber, Value = 27 },
-            new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalTrackTitle }
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalSongTitle }
         });
         Assert.NotNull(processorResult);
         Assert.True(processorResult.IsSuccess);
         var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
         Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
-        var trackTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title);
-        Assert.NotNull(trackTag);
+        var SongTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title);
+        Assert.NotNull(SongTag);
 
         if (shouldBe != null)
         {
-            Assert.NotNull(trackTag.Value);
-            if (trackTag.Value as string != originalTrackTitle)
+            Assert.NotNull(SongTag.Value);
+            if (SongTag.Value as string != originalSongTitle)
             {
-                Assert.NotNull(trackTag.OriginalValue);
-                Assert.Equal(originalTrackTitle, trackTag.OriginalValue);
+                Assert.NotNull(SongTag.OriginalValue);
+                Assert.Equal(originalSongTitle, SongTag.OriginalValue);
             }
 
-            Assert.Equal(shouldBe, trackTag.Value);
+            Assert.Equal(shouldBe, SongTag.Value);
             var albumArtist = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
             if (albumArtist != null)
             {
@@ -111,7 +111,7 @@ public class MetaTagsProcessorTests
         }
         else
         {
-            Assert.Null(trackTag.Value);
+            Assert.Null(SongTag.Value);
         }
     }
 
@@ -131,7 +131,7 @@ public class MetaTagsProcessorTests
     [InlineData("Eternal Sunshine [Disk 2])", "Eternal Sunshine")]
     [InlineData("Eternal Sunshine (Japan Edition)", "Eternal Sunshine")]
     [InlineData("Eternal Sunshine (40th anniversary edition)", "Eternal Sunshine")]
-    [InlineData("Exodus (1977 original release)", "Exodus")]
+    [InlineData("Exodus (1977 original Album)", "Exodus")]
     [InlineData("Eternally Gifted", "Eternally Gifted")]
     [InlineData("Shift Scene", "Shift Scene")]
     [InlineData("Shift Scene ^##^", "Shift Scene")]
@@ -148,7 +148,7 @@ public class MetaTagsProcessorTests
     [InlineData("Live At Leeds (Deluxe Edition)", "Live At Leeds")]
     [InlineData("The Dark Side Of The Moon (50th Anniversary) [2023 Remaster]", "The Dark Side Of The Moon")]
     [InlineData("Me (Radio Edit)", "Me (Radio Edit)")]    
-    public async Task ValidateReleaseTitleUnwantedRemoved(string? originalAlbum, string? shouldBe)
+    public async Task ValidateAlbumTitleUnwantedRemoved(string? originalAlbum, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
@@ -169,23 +169,23 @@ public class MetaTagsProcessorTests
         Assert.True(processorResult.IsSuccess);
         var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
         Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
-        var trackTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
+        var SongTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
         if (shouldBe != null)
         {
-            Assert.NotNull(trackTag);
-            Assert.NotNull(trackTag.Value);
+            Assert.NotNull(SongTag);
+            Assert.NotNull(SongTag.Value);
 
 
-            if (trackTag.Value as string != originalAlbum)
+            if (SongTag.Value as string != originalAlbum)
             {
-                Assert.NotNull(trackTag.OriginalValue);
-                Assert.Equal(originalAlbum, trackTag.OriginalValue);
+                Assert.NotNull(SongTag.OriginalValue);
+                Assert.Equal(originalAlbum, SongTag.OriginalValue);
             }
-            Assert.Equal(shouldBe, trackTag.Value);
+            Assert.Equal(shouldBe, SongTag.Value);
         }
         else
         {
-            Assert.Null(trackTag);
+            Assert.Null(SongTag);
         }
     }    
     
@@ -217,30 +217,30 @@ public class MetaTagsProcessorTests
         Assert.True(processorResult.IsSuccess);
         var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
         Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
-        var trackTitleArtistTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+        var SongTitleArtistTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
         if (originalArtist.DoStringsMatch(albumArtistShouldBe))
         {
-            Assert.Null(trackTitleArtistTag);
+            Assert.Null(SongTitleArtistTag);
         }
         else
         {
-            Assert.NotNull(trackTitleArtistTag);
+            Assert.NotNull(SongTitleArtistTag);
 
             if (shouldBe != null)
             {
-                Assert.NotNull(trackTitleArtistTag.Value);
-                if (trackTitleArtistTag.Value as string != originalArtist)
+                Assert.NotNull(SongTitleArtistTag.Value);
+                if (SongTitleArtistTag.Value as string != originalArtist)
                 {
-                    Assert.NotNull(trackTitleArtistTag.OriginalValue);
-                    Assert.Equal(originalArtist, trackTitleArtistTag.OriginalValue);
+                    Assert.NotNull(SongTitleArtistTag.OriginalValue);
+                    Assert.Equal(originalArtist, SongTitleArtistTag.OriginalValue);
                 }                
             }
             else
             {
-                Assert.Null(trackTitleArtistTag.Value);
+                Assert.Null(SongTitleArtistTag.Value);
             }
 
-            Assert.Equal(shouldBe, trackTitleArtistTag.Value);
+            Assert.Equal(shouldBe, SongTitleArtistTag.Value);
         }
     }
 
@@ -284,7 +284,7 @@ public class MetaTagsProcessorTests
     [InlineData("Ariana Grande","Nonna", "Ariana Grande Nonna : Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande",null, "Ariana Grande.Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande",null, "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
-    public async Task ValidateAlbumTitleDoesntContainArtist(string? albumArtist, string? trackArtist, string? albumTitle, string? shouldBe)
+    public async Task ValidateAlbumTitleDoesntContainArtist(string? albumArtist, string? SongArtist, string? albumTitle, string? shouldBe)
     {
         var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
@@ -298,7 +298,7 @@ public class MetaTagsProcessorTests
         }, new[]
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtist },
-            new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = trackArtist },
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = SongArtist },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value =  albumTitle}
         });
         Assert.NotNull(processorResult);

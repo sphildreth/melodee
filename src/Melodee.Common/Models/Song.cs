@@ -7,16 +7,16 @@ using Melodee.Common.Utility;
 namespace Melodee.Common.Models;
 
 [Serializable]
-public sealed record Track
+public sealed record Song
 {
-    //public long UniqueId => SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
-    public long ReleaseUniqueId 
+    //public long UniqueId => SafeParser.Hash(this.Artist(), this.AlbumYear().ToString(), this.AlbumTitle());
+    public long AlbumUniqueId 
     {
         get
         {
             try
             {
-                return SafeParser.Hash(this.ReleaseArtist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
+                return SafeParser.Hash(this.AlbumArtist(), this.AlbumYear().ToString(), this.AlbumTitle());
             }
             catch (Exception e)
             {
@@ -28,15 +28,15 @@ public sealed record Track
     }
 
     /// <summary>
-    ///     Unique TrackId on Release
+    ///     Unique SongId on Album
     /// </summary>
-    public long TrackId
+    public long SongId
     {
         get
         {
             try
             {
-                return SafeParser.Hash(this.MediaNumber().ToString(), this.TrackNumber().ToString(), this.Title());
+                return SafeParser.Hash(this.MediaNumber().ToString(), this.SongNumber().ToString(), this.Title());
             }
             catch (Exception e)
             {
@@ -47,7 +47,7 @@ public sealed record Track
     }
 
     /// <summary>
-    ///     Globally UnqiueId
+    ///     Globally UniqueId
     /// </summary>
     public long UniqueId
     {
@@ -55,7 +55,7 @@ public sealed record Track
         {
             try
             {
-                return SafeParser.Hash(ReleaseUniqueId.ToString(), this.TrackArtist(), this.TrackYear().ToString(), this.MediaNumber().ToString(), this.TrackNumber().ToString(), this.Title());                
+                return SafeParser.Hash(AlbumUniqueId.ToString(), this.SongArtist(), this.SongYear().ToString(), this.MediaNumber().ToString(), this.SongNumber().ToString(), this.Title());                
             }
             catch (Exception e)
             {
@@ -77,10 +77,10 @@ public sealed record Track
 
     public int SortOrder { get; set; }
 
-    public string DisplaySummary => $"{this.MediaNumber().ToStringPadLeft(2)}/{this.MediaTotalNumber().ToStringPadLeft(2)} : {this.TrackNumber().ToStringPadLeft(3)}/{this.TrackTotalNumber().ToStringPadLeft(3)} : {this.Title()}";
+    public string DisplaySummary => $"{this.MediaNumber().ToStringPadLeft(2)}/{this.MediaTotalNumber().ToStringPadLeft(2)} : {this.SongNumber().ToStringPadLeft(3)}/{this.SongTotalNumber().ToStringPadLeft(3)} : {this.Title()}";
 
     public override string ToString()
     {
-        return $"ReleaseId [{ReleaseUniqueId}] TrackId [{UniqueId}] File [{File}]";
+        return $"AlbumId [{AlbumUniqueId}] SongId [{UniqueId}] File [{File}]";
     }
 }

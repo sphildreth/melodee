@@ -51,7 +51,7 @@ public static class FileSystemDirectoryInfoExtensions
     {
         foreach (var fileInfoForExtension in fileSystemDirectoryInfo.FileInfosForExtension(extension))
         {
-            if (CRC32.Calculate(fileInfoForExtension) == crcHash)
+            if (Crc32.Calculate(fileInfoForExtension) == crcHash)
             {
                 return fileInfoForExtension.ToFileSystemInfo();
             }

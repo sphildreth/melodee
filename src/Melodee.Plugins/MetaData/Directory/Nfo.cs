@@ -13,9 +13,9 @@ using SerilogTimings;
 namespace Melodee.Plugins.MetaData.Directory;
 
 /// <summary>
-///     Processes NFO and gets tags and tracks for release.
+///     Processes NFO and gets tags and Songs for Album.
 /// </summary>
-public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBase(configuration), IDirectoryPlugin
+public sealed partial class Nfo(Configuration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
 
@@ -56,29 +56,29 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
         {
             using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
             {
-                var nfoRelease = await ReleaseForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
+                var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
 
-                if (nfoRelease.IsValid(Configuration))
+                if (nfoAlbum.IsValid(Configuration))
                 {
-                    var stagingReleaseDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoRelease.ToMelodeeJsonName());
-                    if (File.Exists(stagingReleaseDataName))
+                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
+                    if (File.Exists(stagingAlbumDataName))
                     {
                         if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
                         {
-                            File.Delete(stagingReleaseDataName);
+                            File.Delete(stagingAlbumDataName);
                         }
                         else
                         {
-                            var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(stagingReleaseDataName, cancellationToken));
-                            if (existingRelease != null)
+                            var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                            if (existingAlbum != null)
                             {
-                                nfoRelease = nfoRelease.Merge(existingRelease);
+                                nfoAlbum = nfoAlbum.Merge(existingAlbum);
                             }
                         }
                     }
 
-                    var serialized = JsonSerializer.Serialize(nfoRelease);
-                    await File.WriteAllTextAsync(stagingReleaseDataName, serialized, cancellationToken);
+                    var serialized = JsonSerializer.Serialize(nfoAlbum);
+                    await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
                     if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                     {
                         nfoFile.Delete();
@@ -87,7 +87,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 }
                 else
                 {
-                    Log.Warning("Could not create release from NFO data [{nfoFile}]. Artist [{Artist}] Release Title [{ReleaseTitle}] Release Year [{ReleaseYear}]", nfoFile.Name, nfoRelease.Artist(), nfoRelease.ReleaseTitle(), nfoRelease.ReleaseYear());
+                    Log.Warning("Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", nfoFile.Name, nfoAlbum.Artist(), nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
                     if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                     {
                         nfoFile.Delete();
@@ -95,7 +95,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                     }
                 }
 
-                Log.Debug("[{Plugin}] created [{StagingReleaseDataName}]", DisplayName, nfoRelease.ToMelodeeJsonName());
+                Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, nfoAlbum.ToMelodeeJsonName());
                 processedFiles++;
             }
         }
@@ -155,19 +155,19 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
         return IsLineForMatches(new[] { "artist", "albumartist" }, line);
     }
 
-    private static bool IsLineForReleaseDate(string line)
+    private static bool IsLineForAlbumDate(string line)
     {
         return IsLineForMatches(new[] { "retaildate", "reldate", "ripdate" }, line);
     }
 
-    private static bool IsLineForReleaseTitle(string line)
+    private static bool IsLineForAlbumTitle(string line)
     {
         return IsLineForMatches(new[] { "title" }, line);
     }
 
-    private static bool IsLineForTrackTotal(string line)
+    private static bool IsLineForSongTotal(string line)
     {
-        return IsLineForMatches(new[] { "tracks" }, line);
+        return IsLineForMatches(new[] { "Songs" }, line);
     }
 
     private static bool IsLineForLength(string line)
@@ -182,17 +182,17 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
     // ReSharper enable StringLiteralTypo
 
-    private static bool IsLineForTrack(string line)
+    private static bool IsLineForSong(string line)
     {
         var l = line.ToAlphanumericName().Nullify();
-        return !string.IsNullOrWhiteSpace(l) && IsLineForTrackRegex().IsMatch(line);
+        return !string.IsNullOrWhiteSpace(l) && IsLineForSongRegex().IsMatch(line);
     }
 
-    public async Task<Release> ReleaseForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<Album> AlbumForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var splitChar = ':';
-        var releaseTags = new List<MetaTag<object?>>();
-        var tracks = new List<Common.Models.Track>();
+        var albumTags = new List<MetaTag<object?>>();
+        var songs = new List<Common.Models.Song>();
         var messages = new List<string>();
 
         var metaTagsToParseFromFile = new List<MetaTagIdentifier>
@@ -204,31 +204,31 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
         foreach (var line in await File.ReadAllLinesAsync(fileInfo.FullName, cancellationToken))
         {
-            if (IsLineForTrack(line))
+            if (IsLineForSong(line))
             {
                 var l = line.OnlyAlphaNumeric();
-                var trackNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
-                var trackDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
-                var trackTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - trackDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
-                tracks.Add(new Common.Models.Track
+                var songNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
+                var songDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
+                var songTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
+                songs.Add(new Common.Models.Song
                 {
-                    CrcHash = CRC32.Calculate(fileInfo),
+                    CrcHash = Crc32.Calculate(fileInfo),
                     Tags = new[]
                     {
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.TrackNumber,
-                            Value = trackNumber
+                            Value = songNumber
                         },
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Title,
-                            Value = trackTitle
+                            Value = songTitle
                         },
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Length,
-                            Value = trackDuration
+                            Value = songDuration
                         }
                     },
                     File = new FileSystemFileInfo
@@ -236,7 +236,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                         Name = string.Empty,
                         Size = 0
                     },
-                    SortOrder = trackNumber
+                    SortOrder = songNumber
                 });
                 continue;
             }
@@ -246,9 +246,9 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 var plr = ParseLine(line, splitChar);
                 var kp = plr.Item1;
                 var rawValue = plr.Item2;
-                if (IsLineForReleaseTitle(line))
+                if (IsLineForAlbumTitle(line))
                 {
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.Album,
                         Value = kp.Value
@@ -258,7 +258,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
                 if (IsLineForAlbumArtist(line))
                 {
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.AlbumArtist,
                         Value = kp.Value
@@ -266,21 +266,21 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                     continue;
                 }
 
-                if (IsLineForReleaseDate(line))
+                if (IsLineForAlbumDate(line))
                 {
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
-                        Identifier = MetaTagIdentifier.OrigReleaseYear,
+                        Identifier = MetaTagIdentifier.OrigAlbumYear,
                         Value = SafeParser.ToDateTime(rawValue?.OnlyAlphaNumeric() ?? string.Empty)?.Year
                     });
                     continue;
                 }
 
-                if (IsLineForTrackTotal(line))
+                if (IsLineForSongTotal(line))
                 {
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
-                        Identifier = MetaTagIdentifier.TrackTotal,
+                        Identifier = MetaTagIdentifier.SongTotal,
                         Value = SafeParser.ToNumber<int?>(rawValue?.OnlyAlphaNumeric() ?? string.Empty)
                     });
                     continue;
@@ -288,7 +288,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
                 if (IsLineForLength(line))
                 {
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.Length,
                         Value = rawValue
@@ -298,7 +298,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
 
                 if (IsLineForPublisher(line))
                 {
-                    releaseTags.Add(new MetaTag<object?>
+                    albumTags.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.Publisher,
                         Value = rawValue?.OnlyAlphaNumeric()
@@ -312,7 +312,7 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                     {
                         if (kp.Key.Equals(metaTagToParse.ToString(), StringComparison.OrdinalIgnoreCase) && kp.Value != null)
                         {
-                            releaseTags.Add(new MetaTag<object?>
+                            albumTags.Add(new MetaTag<object?>
                             {
                                 Identifier = metaTagToParse,
                                 Value = kp.Value
@@ -324,13 +324,13 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
             }
         }
 
-        var result = new Release
+        var result = new Album
         {
             Files = new[]
             {
-                new ReleaseFile
+                new AlbumFile
                 {
-                    ReleaseFileType = ReleaseFileType.MetaData,
+                    AlbumFileType = AlbumFileType.MetaData,
                     ProcessedByPlugin = DisplayName,
                     FileSystemFileInfo = fileInfo.ToFileSystemInfo()
                 }
@@ -342,19 +342,19 @@ public sealed partial class Nfo(Configuration configuration) : ReleaseMetaDataBa
                 Path = fileInfo.Directory?.FullName ?? string.Empty,
                 Name = fileInfo.Directory?.Name ?? string.Empty
             },
-            Images = tracks.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
-            Tags = releaseTags,
-            Tracks = tracks,
+            Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
+            Tags = albumTags,
+            Songs = songs,
             Messages = messages,
-            Status = ReleaseStatus.NotSet,
+            Status = AlbumStatus.NotSet,
             SortOrder = 0
         };
-        result.Status = result.IsValid(Configuration) ? ReleaseStatus.Invalid : ReleaseStatus.Ok;
+        result.Status = result.IsValid(Configuration) ? AlbumStatus.Invalid : AlbumStatus.Ok;
         return result;
     }
 
     [GeneratedRegex(@"[0-9]+\.+(.*)[0-9]{2}\:[0-9]{2}")]
-    private static partial Regex IsLineForTrackRegex();
+    private static partial Regex IsLineForSongRegex();
 
     [GeneratedRegex(@"\.{2,}")]
     private static partial Regex ReplaceMultiplePeriodsRegex();

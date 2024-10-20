@@ -1,49 +1,49 @@
 using FluentValidation;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
-using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Validation;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
 namespace Melodee.Tests.Validation;
 
-public class ReleaseValidatorTests
+public class AlbumValidatorTests
 {
     [Theory]
-    [InlineData("Release Title", "Something", 1, false)]
-    [InlineData("Release Title", "11:11", 5, false)]
-    [InlineData("Release Title", "11:11", 11, false)]
-    [InlineData("Release Title", "The Track Title", 5, false)]
+    [InlineData("Album Title", "Something", 1, false)]
+    [InlineData("Album Title", "11:11", 5, false)]
+    [InlineData("Album Title", "11:11", 11, false)]
+    [InlineData("Album Title", "The Song Title", 5, false)]
     [InlineData(null, null, 1, true)]
     [InlineData(null, "", 1, true)]
     [InlineData(null, " ", 1, true)]
     [InlineData(null, "   ", 1, true)]
-    [InlineData("Release Title", "15", 15, true)]
-    [InlineData("Release Title", "15 ", 15, true)]
-    [InlineData("Release Title", "0005 Track Title", 5, true)]
-    [InlineData("Release Title", "Track   Title", 5, true)]
-    [InlineData("Release Title", "11 - Track Title", 11, true)]
-    [InlineData("Release Title", "Track Title - Part II", 11, false)]
-    [InlineData("Release Title", "Release Title", 1, false)]
-    [InlineData("Release Title", "Release Title - 01 Track Title", 1, true)]
-    [InlineData("Release Title", "I Can't Even Walk Without You Holding My Hand", 6, false)]
-    [InlineData("Release Title", "'81 Camaro", 1, false)]
-    [InlineData("Release Title", "'81 Camaro", 8, false)]
-    [InlineData("Release Title", "'81 Camaro", 81, false)]
-    [InlineData("Release Title", "Release Title (prod DJ Stinky)", 5, true)]
-    [InlineData("Release Title", "Production Blues", 5, false)]
-    [InlineData("Release Title", "The Production Blues", 5, false)]
-    [InlineData("Release Title", "Deep Delightful (DJ Andy De Gage Remix)", 5, false)]
-    [InlineData("Release Title", "Left and Right (Feat. Jung Kook of BTS)", 5, true)]
-    [InlineData("Release Title", "Left and Right ft. Jung Kook)", 5, true)]
-    [InlineData("Release Title", "Karakondžula", 5, false)]
-    [InlineData("Release Title", "Track■Title", 5, false)]
-    [InlineData("Release Title", "Track💣Title", 5, false)]
-    [InlineData("Release Title best of 48 years (Compiled and Mixed by DJ Stinky", "Track Title (Compiled and Mixed by DJ Stinky)", 5, false)]
+    [InlineData("Album Title", "15", 15, true)]
+    [InlineData("Album Title", "15 ", 15, true)]
+    [InlineData("Album Title", "0005 Song Title", 5, true)]
+    [InlineData("Album Title", "Song   Title", 5, true)]
+    [InlineData("Album Title", "11 - Song Title", 11, true)]
+    [InlineData("Album Title", "Song Title - Part II", 11, false)]
+    [InlineData("Album Title", "Album Title", 1, false)]
+    [InlineData("Album Title", "Album Title - 01 Song Title", 1, true)]
+    [InlineData("Album Title", "I Can't Even Walk Without You Holding My Hand", 6, false)]
+    [InlineData("Album Title", "'81 Camaro", 1, false)]
+    [InlineData("Album Title", "'81 Camaro", 8, false)]
+    [InlineData("Album Title", "'81 Camaro", 81, false)]
+    [InlineData("Album Title", "Album Title (prod DJ Stinky)", 5, true)]
+    [InlineData("Album Title", "Production Blues", 5, false)]
+    [InlineData("Album Title", "The Production Blues", 5, false)]
+    [InlineData("Album Title", "Deep Delightful (DJ Andy De Gage Remix)", 5, false)]
+    [InlineData("Album Title", "Left and Right (Feat. Jung Kook of BTS)", 5, true)]
+    [InlineData("Album Title", "Left and Right ft. Jung Kook)", 5, true)]
+    [InlineData("Album Title", "Karakondžula", 5, false)]
+    [InlineData("Album Title", "Song■Title", 5, false)]
+    [InlineData("Album Title", "Song💣Title", 5, false)]
+    [InlineData("Album Title best of 48 years (Compiled and Mixed by DJ Stinky", "Song Title (Compiled and Mixed by DJ Stinky)", 5, false)]
     [InlineData("Megamix Chart Hits Best Of 12 Years (Compiled and Mixed by DJ Fl", "Megamix Chart Hits Best Of 12 Years (Compiled and Mixed by DJ Flimflam)", 5, false)]
-    public void TrackHasUnwantedText(string? releaseTitle, string? trackName, int? trackNumber, bool shouldBe)
+    public void SongHasUnwantedText(string? AlbumTitle, string? SongName, int? SongNumber, bool shouldBe)
     {
-        Assert.Equal(shouldBe, ReleaseValidator.TrackHasUnwantedText(releaseTitle, trackName, trackNumber));
+        Assert.Equal(shouldBe, AlbumValidator.SongHasUnwantedText(AlbumTitle, SongName, SongNumber));
     }
 
     [Theory]
@@ -53,23 +53,23 @@ public class ReleaseValidatorTests
     [InlineData("Retro", false)]
     [InlineData("Eternally Gifted", false)]
     [InlineData("Electric Deluge, Vol. 2", false)]
-    [InlineData("Release■Title", false)]
-    [InlineData("Release💣Title", false)]
+    [InlineData("Album■Title", false)]
+    [InlineData("Album💣Title", false)]
     [InlineData("The Fine Art Of Self Destruction", false)]
     [InlineData("Experience Yourself", false)]
     [InlineData(null, true)]
     [InlineData("", true)]
     [InlineData(" ", true)]
     [InlineData("   ", true)]
-    [InlineData("Release Title Digipak", true)]
-    [InlineData("Release Title digipak", true)]
-    [InlineData("Release Title diGIpaK", true)]
+    [InlineData("Album Title Digipak", true)]
+    [InlineData("Album Title digipak", true)]
+    [InlineData("Album Title diGIpaK", true)]
     [InlineData("Monarch Deluxe Edition", true)]
     [InlineData("Monarch Re-Master", true)]
     [InlineData("Monarch Target Edition", true)]
     [InlineData("Monarch Remastered", true)]
     [InlineData("Monarch Re-mastered", true)]
-    [InlineData("Monarch Release", true)]
+    [InlineData("Monarch Album", true)]
     [InlineData("Monarch Remaster", true)]
     [InlineData("Monarch Reissue", true)]
     [InlineData("Monarch (REISSUE)", true)]
@@ -95,9 +95,9 @@ public class ReleaseValidatorTests
     [InlineData("Escape (Deluxe)", true)]
     [InlineData("Arsenal of Glory (Re-Edition)", true)]
     [InlineData("Arsenal of Glory (2005 Edition)", true)]
-    public void ReleaseTitleHasUnwantedText(string? releaseTitle, bool shouldBe)
+    public void AlbumTitleHasUnwantedText(string? AlbumTitle, bool shouldBe)
     {
-        Assert.Equal(shouldBe, ReleaseValidator.ReleaseTitleHasUnwantedText(releaseTitle));
+        Assert.Equal(shouldBe, AlbumValidator.AlbumTitleHasUnwantedText(AlbumTitle));
     }
 
     [Theory]
@@ -116,14 +116,14 @@ public class ReleaseValidatorTests
     [InlineData("Minds Without Fear with Vishal-Shekhar", true)]
     public void StringHasFeaturingFragments(string? input, bool shouldBe)
     {
-        Assert.Equal(ReleaseValidator.StringHasFeaturingFragments(input), shouldBe);
+        Assert.Equal(AlbumValidator.StringHasFeaturingFragments(input), shouldBe);
     }
 
     [Theory]
     [InlineData(null, false)]
     [InlineData("", false)]
     [InlineData(" ", false)]
-    [InlineData("Track Title", false)]
+    [InlineData("Song Title", false)]
     [InlineData("cover-PROOF.jpg", true)]
     [InlineData("cover proof.jpg", true)]
     [InlineData("proof.jpg", true)]
@@ -133,11 +133,11 @@ public class ReleaseValidatorTests
     [InlineData("00-big_ed_the_assassin-edward_lee_knight_1971-2001-2001-proof-cr_int", true)]
     public void IsImageProofType(string? text, bool shouldBe)
     {
-        Assert.Equal(shouldBe, ReleaseValidator.IsImageAProofType(text));
+        Assert.Equal(shouldBe, AlbumValidator.IsImageAProofType(text));
     }
 
-    private static Release TestRelease
-        => new Release
+    private static Album TestAlbum
+        => new Album
         {
             ViaPlugins = [nameof(AtlMetaTag)],
             OriginalDirectory = new FileSystemDirectoryInfo
@@ -145,7 +145,7 @@ public class ReleaseValidatorTests
                 Path = string.Empty,
                 Name = string.Empty
             },
-            Status = ReleaseStatus.Ok,
+            Status = AlbumStatus.Ok,
             Tags = new[]
             {
                 new MetaTag<object?>
@@ -164,9 +164,9 @@ public class ReleaseValidatorTests
                     Value = "1971"
                 }
             },
-            Tracks = new[]
+            Songs = new[]
             {
-                new Track
+                new Song
                 {
                     CrcHash = "TestValue",
                     File = new FileSystemFileInfo
@@ -208,84 +208,84 @@ public class ReleaseValidatorTests
 
    
     [Fact]
-    public void ValidateReleaseWithNoInvalidValidations()
+    public void ValidateAlbumWithNoInvalidValidations()
     {
-        var release = TestRelease;
-        var validator = new ReleaseValidator(TestsBase.NewConfiguration);
-        var validationResult = validator.ValidateRelease(release);
+        var Album = TestAlbum;
+        var validator = new AlbumValidator(TestsBase.NewConfiguration);
+        var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(release.Status, validationResult.Data.ReleaseStatus);
+        Assert.Equal(Album.Status, validationResult.Data.AlbumStatus);
     }
 
     [Fact]
-    public void ValidateReleaseWithMissingArtist()
+    public void ValidateAlbumWithMissingArtist()
     {
-        var testRelease = TestRelease;
-        var releaseTags = (testRelease.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
-        releaseTags.Remove(new MetaTag<object?>
+        var testAlbum = TestAlbum;
+        var AlbumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
+        AlbumTags.Remove(new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.AlbumArtist,
             Value = "Billy Joel"
         });
-        var release = new Release
+        var Album = new Album
         {
-            Tags = releaseTags,
-            Tracks = testRelease.Tracks,
-            ViaPlugins = testRelease.ViaPlugins,
-            OriginalDirectory = testRelease.OriginalDirectory
+            Tags = AlbumTags,
+            Songs = testAlbum.Songs,
+            ViaPlugins = testAlbum.ViaPlugins,
+            OriginalDirectory = testAlbum.OriginalDirectory
         };
 
-        var validator = new ReleaseValidator(TestsBase.NewConfiguration);
-        var validationResult = validator.ValidateRelease(release);
+        var validator = new AlbumValidator(TestsBase.NewConfiguration);
+        var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(ReleaseStatus.Invalid, validationResult.Data.ReleaseStatus);
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
     }
 
     [Fact]
-    public void ValidateReleaseWithInvalidYear()
+    public void ValidateAlbumWithInvalidYear()
     {
-        var testRelease = TestRelease;
-        var releaseTags = (testRelease.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
-        releaseTags.Remove(new MetaTag<object?>
+        var testAlbum = TestAlbum;
+        var AlbumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
+        AlbumTags.Remove(new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.RecordingYear,
             Value = "1971"
         });
-        var release = new Release
+        var Album = new Album
         {
-            Tags = releaseTags,
-            Tracks = testRelease.Tracks,
-            ViaPlugins = testRelease.ViaPlugins,
-            OriginalDirectory = testRelease.OriginalDirectory
+            Tags = AlbumTags,
+            Songs = testAlbum.Songs,
+            ViaPlugins = testAlbum.ViaPlugins,
+            OriginalDirectory = testAlbum.OriginalDirectory
         };
 
-        var validator = new ReleaseValidator(TestsBase.NewConfiguration);
-        var validationResult = validator.ValidateRelease(release);
+        var validator = new AlbumValidator(TestsBase.NewConfiguration);
+        var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(ReleaseStatus.Invalid, validationResult.Data.ReleaseStatus);
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
     }
 
     [Fact]
-    public void ValidateReleaseWithMissingTitle()
+    public void ValidateAlbumWithMissingTitle()
     {
-        var testRelease = TestRelease;
-        var releaseTags = (testRelease.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
-        releaseTags.Remove(new MetaTag<object?>
+        var testAlbum = TestAlbum;
+        var AlbumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
+        AlbumTags.Remove(new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Album,
             Value = "Cold Spring Harbor"
         });
-        var release = new Release
+        var Album = new Album
         {
-            Tags = releaseTags,
-            Tracks = testRelease.Tracks,
-            ViaPlugins = testRelease.ViaPlugins,
-            OriginalDirectory = testRelease.OriginalDirectory
+            Tags = AlbumTags,
+            Songs = testAlbum.Songs,
+            ViaPlugins = testAlbum.ViaPlugins,
+            OriginalDirectory = testAlbum.OriginalDirectory
         };
 
-        var validator = new ReleaseValidator(TestsBase.NewConfiguration);
-        var validationResult = validator.ValidateRelease(release);
+        var validator = new AlbumValidator(TestsBase.NewConfiguration);
+        var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(ReleaseStatus.Invalid, validationResult.Data.ReleaseStatus);
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
     }
 }

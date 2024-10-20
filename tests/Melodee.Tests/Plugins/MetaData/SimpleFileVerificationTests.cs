@@ -1,6 +1,6 @@
 using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Directory.Models;
-using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Validation;
 using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
@@ -20,7 +20,7 @@ public class SimpleFileVerificationTests
                 new []
                 {
                     new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
-                }, new ReleaseValidator(TestsBase.NewConfiguration),
+                }, new AlbumValidator(TestsBase.NewConfiguration),
                    TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
@@ -43,7 +43,7 @@ public class SimpleFileVerificationTests
                 new []
                 {
                     new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
-                }, new ReleaseValidator(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
+                }, new AlbumValidator(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/inbound/Swartz",
@@ -66,7 +66,7 @@ public class SimpleFileVerificationTests
                 new []
                 {
                     new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
-                }, new ReleaseValidator(TestsBase.NewConfiguration),
+                }, new AlbumValidator(TestsBase.NewConfiguration),
                    TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
@@ -81,7 +81,7 @@ public class SimpleFileVerificationTests
     [Fact]
     public void ValidateModelFullLineParsing()
     {
-        // <trackNumber>-<releaseArtist>-<trackTitle>.mp3 <crcHash>
+        // <SongNumber>-<AlbumArtist>-<SongTitle>.mp3 <crcHash>
         var input = "01-avatar-bound_to_the_wall.mp3 7a84ce20";
         var shouldBe = new SfvLine
         {
@@ -98,7 +98,7 @@ public class SimpleFileVerificationTests
     }
 
     [Fact]
-    public void ValidateModelNoReleaseTitleLineParsing()
+    public void ValidateModelNoAlbumTitleLineParsing()
     {
         var input = "01-pole_shift.mp3 aff033ca";
         var shouldBe = new SfvLine

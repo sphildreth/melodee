@@ -22,7 +22,7 @@ public sealed record ImageInfo
 
     public int SortOrder { get; init; }
 
-    public bool WasEmbeddedInTrack { get; init; }
+    public bool WasEmbeddedInSong { get; init; }
 
     public override string ToString()
     {

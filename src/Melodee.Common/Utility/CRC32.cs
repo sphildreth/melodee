@@ -1,11 +1,11 @@
 namespace Melodee.Common.Utility;
 
-public static class CRC32
+public static class Crc32
 {
     private const int BufferSize = 8192;
     private static readonly uint[] Crc32Table = new uint[256];
 
-    static CRC32()
+    static Crc32()
     {
         unchecked
         {

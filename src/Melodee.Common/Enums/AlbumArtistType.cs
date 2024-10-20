@@ -1,12 +1,12 @@
 namespace Melodee.Common.Enums;
 
-public enum ReleaseArtistType
+public enum AlbumArtistType
 {
     NotSet = 0,
 
     ArtistOrBand,
 
-    SoundTrack,
+    SoundSong,
 
     VariousArtists
 }

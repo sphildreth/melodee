@@ -6,7 +6,7 @@ public sealed record ValidationResult
 {
     public bool IsValid { get; init; }
 
-    public required ReleaseStatus ReleaseStatus { get; init; }
+    public required AlbumStatus AlbumStatus { get; init; }
 
     public IEnumerable<ValidationResultMessage>? Messages { get; init; }
 }

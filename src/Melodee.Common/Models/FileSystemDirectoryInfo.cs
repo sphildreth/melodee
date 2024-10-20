@@ -23,7 +23,7 @@ public sealed record FileSystemDirectoryInfo
     public required string Name { get; init; }
 
     /// <summary>
-    ///     This is the total number of items found when the Release was initially processed, does not necessarily include any
+    ///     This is the total number of items found when the Album was initially processed, does not necessarily include any
     ///     files extracted or converted during processing.
     /// </summary>
     public int? TotalItemsFound { get; init; }
@@ -34,7 +34,7 @@ public sealed record FileSystemDirectoryInfo
 
     /// <summary>
     ///     This is the count of images found in the Path directory at the time of initial processing, does not necessarily
-    ///     include any extract images from Tracks.
+    ///     include any extract images from Songs.
     /// </summary>
     public int? ImageFilesFound { get; init; }
 

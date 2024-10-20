@@ -9,7 +9,7 @@ using Melodee.Plugins.Conversion;
 using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.Conversion.Media;
 using Melodee.Plugins.MetaData.Directory;
-using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor.Models;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
@@ -39,26 +39,26 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
     private readonly IScriptPlugin _postDiscoveryScript;
     private readonly IScriptPlugin _preDiscoveryScript;
-    private readonly IReleaseValidator _releaseValidator;
-    private readonly IReleaseEditProcessor _releaseEditProcessor;
-    private readonly IEnumerable<ITrackPlugin> _trackPlugins;
+    private readonly IAlbumValidator _albumValidator;
+    private readonly IAlbumEditProcessor _albumEditProcessor;
+    private readonly IEnumerable<ISongPlugin> _songPlugins;
     private bool _stopProcessingTriggered;
 
     public DirectoryProcessor(
         IScriptPlugin preDiscoveryScript,
         IScriptPlugin postDiscoveryScript,
-        IReleaseValidator releaseValidator,
-        IReleaseEditProcessor releaseEditProcessor,
+        IAlbumValidator albumValidator,
+        IAlbumEditProcessor albumEditProcessor,
         Configuration configuration)
     {
         _configuration = configuration;
 
         _preDiscoveryScript = preDiscoveryScript;
         _postDiscoveryScript = postDiscoveryScript;
-        _releaseValidator = releaseValidator;
-        _releaseEditProcessor = releaseEditProcessor;
+        _albumValidator = albumValidator;
+        _albumEditProcessor = albumEditProcessor;
 
-        _trackPlugins = new[]
+        _songPlugins = new[]
         {
             new AtlMetaTag(new MetaTagsProcessor(_configuration), _configuration)
         };
@@ -71,9 +71,9 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
         _directoryPlugins = new IDirectoryPlugin[]
         {
-            new CueSheet(_trackPlugins, _configuration),
-            new SimpleFileVerification(_trackPlugins, releaseValidator, _configuration),
-            new M3UPlaylist(_trackPlugins, releaseValidator, _configuration),
+            new CueSheet(_songPlugins, _configuration),
+            new SimpleFileVerification(_songPlugins, albumValidator, _configuration),
+            new M3UPlaylist(_songPlugins, albumValidator, _configuration),
             new Nfo(_configuration)
         };
     }
@@ -90,16 +90,16 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
     {
         var processingMessages = new List<string>();
         var processingErrors = new List<Exception>();
-        var numberOfReleaseJsonFilesProcessed = 0;
+        var numberOfAlbumJsonFilesProcessed = 0;
         var conversionPluginsProcessedFileCount = 0;
         var directoryPluginProcessedFileCount = 0;
-        var numberOfReleaseFilesProcessed = 0;
+        var numberOfAlbumFilesProcessed = 0;
 
         var result = new DirectoryProcessorResult
         {
             NumberOfConversionPluginsProcessed = 0,
             NumberOfDirectoryPluginProcessed = 0,
-            NumberOfReleaseFilesProcessed = 0
+            NumberOfAlbumFilesProcessed = 0
         };
         
 
@@ -221,8 +221,8 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     }
                 }
 
-                // Run all enabled IDirectoryPlugins to convert MetaData files into Release json files.
-                // e.g. Build Release json file for M3U or NFO or SFV, etc.
+                // Run all enabled IDirectoryPlugins to convert MetaData files into Album json files.
+                // e.g. Build Album json file for M3U or NFO or SFV, etc.
                 foreach (var plugin in _directoryPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -250,76 +250,76 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     }
                 }
 
-                // Check if any Release json files exist in given directory, if none then create from track files.
-                var releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension(Release.JsonFileName);
-                if (!releaseJsonFiles.Any())
+                // Check if any Album json files exist in given directory, if none then create from Song files.
+                var albumJsonFiles = directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName);
+                if (!albumJsonFiles.Any())
                 {
-                    var releasesForDirectory = await AllReleasesForDirectoryAsync(directoryInfoToProcess, cancellationToken);
-                    if (!releasesForDirectory.IsSuccess)
+                    var albumsForDirectory = await AllAlbumsForDirectoryAsync(directoryInfoToProcess, cancellationToken);
+                    if (!albumsForDirectory.IsSuccess)
                     {
-                        return new OperationResult<DirectoryProcessorResult>(releasesForDirectory.Messages)
+                        return new OperationResult<DirectoryProcessorResult>(albumsForDirectory.Messages)
                         {
-                            Errors = releasesForDirectory.Errors,
+                            Errors = albumsForDirectory.Errors,
                             Data = result
                         };
                     }
 
-                    numberOfReleaseFilesProcessed = releasesForDirectory.Data.Item2;
+                    numberOfAlbumFilesProcessed = albumsForDirectory.Data.Item2;
 
-                    foreach (var releaseForDirectory in releasesForDirectory.Data.Item1.ToArray())
+                    foreach (var albumForDirectory in albumsForDirectory.Data.Item1.ToArray())
                     {
                         if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                         {
                             break;
                         }
 
-                        var mergedRelease = releaseForDirectory;
+                        var mergedAlbum = albumForDirectory;
 
                         var serialized = string.Empty;
-                        var releaseDataName = Path.Combine(directoryInfoToProcess.Path, releaseForDirectory.ToMelodeeJsonName());
-                        if (File.Exists(releaseDataName))
+                        var albumDataName = Path.Combine(directoryInfoToProcess.Path, albumForDirectory.ToMelodeeJsonName());
+                        if (File.Exists(albumDataName))
                         {
                             if (_configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
                             {
-                                File.Delete(releaseDataName);
+                                File.Delete(albumDataName);
                             }
                             else
                             {
-                                var existingRelease = JsonSerializer.Deserialize<Release?>(await File.ReadAllTextAsync(releaseDataName, cancellationToken));
-                                if (existingRelease != null)
+                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(albumDataName, cancellationToken));
+                                if (existingAlbum != null)
                                 {
-                                    mergedRelease = mergedRelease.Merge(existingRelease);
+                                    mergedAlbum = mergedAlbum.Merge(existingAlbum);
                                 }
                             }
                         }
 
                         try
                         {
-                            serialized = JsonSerializer.Serialize(mergedRelease);
+                            serialized = JsonSerializer.Serialize(mergedAlbum);
                         }
                         catch (Exception e)
                         {
                             LogAndRaiseEvent(LogEventLevel.Error, "Error processing [{0}]", e, fileSystemDirectoryInfo);
                         }
 
-                        await File.WriteAllTextAsync(releaseDataName, serialized, cancellationToken);
-                        numberOfReleaseJsonFilesProcessed++;
+                        await File.WriteAllTextAsync(albumDataName, serialized, cancellationToken);
+                        numberOfAlbumJsonFilesProcessed++;
                     }
                 }
 
-                // Find all release json files in given directory, if none bail.
-                releaseJsonFiles = directoryInfoToProcess.FileInfosForExtension(Release.JsonFileName).ToArray();
-                if (!releaseJsonFiles.Any())
+                // Find all Album json files in given directory, if none bail.
+                albumJsonFiles = directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName).ToArray();
+                if (!albumJsonFiles.Any())
                 {
-                    return new OperationResult<DirectoryProcessorResult>($"No Releases found in given directory [{directoryInfoToProcess}]")
+                    return new OperationResult<DirectoryProcessorResult>($"No Albums found in given directory [{directoryInfoToProcess}]")
                     {
                         Data = result
                     };
                 }
 
-                // For each Release json find all image files and add to Release to be moved below to staging directory.
-                var releaseAndJsonFile = new Dictionary<Release, string>();
-                foreach (var releaseJsonFile in releaseJsonFiles)
+                // For each Album json find all image files and add to Album to be moved below to staging directory.
+                var albumAndJsonFile = new Dictionary<Album, string>();
+                foreach (var albumJsonFile in albumJsonFiles)
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                     {
@@ -328,77 +328,77 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
                     try
                     {
-                        var release = JsonSerializer.Deserialize<Release>(await File.ReadAllTextAsync(releaseJsonFile.FullName, cancellationToken));
-                        if (release == null)
+                        var album = JsonSerializer.Deserialize<Album>(await File.ReadAllTextAsync(albumJsonFile.FullName, cancellationToken));
+                        if (album == null)
                         {
-                            return new OperationResult<DirectoryProcessorResult>($"Invalid Release json file [{releaseJsonFile.FullName}]")
+                            return new OperationResult<DirectoryProcessorResult>($"Invalid Album json file [{albumJsonFile.FullName}]")
                             {
                                 Data = result
                             };
                         }
 
-                        var releaseImages = new List<ImageInfo>();
-                        var foundReleaseImages = (await FindImagesForRelease(release, cancellationToken)).ToArray();
-                        if (foundReleaseImages.Length != 0)
+                        var albumImages = new List<ImageInfo>();
+                        var foundAlbumImages = (await FindImagesForAlbum(album, cancellationToken)).ToArray();
+                        if (foundAlbumImages.Length != 0)
                         {
-                            foreach (var foundReleaseImage in foundReleaseImages)
+                            foreach (var foundAlbumImage in foundAlbumImages)
                             {
                                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                                 {
                                     break;
                                 }
 
-                                if (!releaseImages.Any(x => x.IsCrcHashMatch(foundReleaseImage.CrcHash)))
+                                if (!albumImages.Any(x => x.IsCrcHashMatch(foundAlbumImage.CrcHash)))
                                 {
-                                    releaseImages.Add(foundReleaseImage);
+                                    albumImages.Add(foundAlbumImage);
                                 }
                             }
                         }
 
-                        release.Images = releaseImages.ToArray();
-                        if (release.Tracks != null)
+                        album.Images = albumImages.ToArray();
+                        if (album.Songs != null)
                         {
-                            // Set TrackNumber to invalid range if TrackNumber is missing
-                            release.Tracks.Where(x => x.TrackNumber() < 1).Each((x, i) => { release.SetTrackTagValue(x.TrackId, MetaTagIdentifier.TrackNumber, _configuration.ValidationOptions.MaximumTrackNumber + i + 1); });
-                            foreach (var track in release.Tracks)
+                            // Set SongNumber to invalid range if SongNumber is missing
+                            album.Songs.Where(x => x.SongNumber() < 1).Each((x, i) => { album.SetSongTagValue(x.SongId, MetaTagIdentifier.TrackNumber, _configuration.ValidationOptions.MaximumSongNumber + i + 1); });
+                            foreach (var song in album.Songs)
                             {
                                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                                 {
                                     break;
                                 }
 
-                                track.File.Name = track.ToTrackFileName();
+                                song.File.Name = song.ToSongFileName();
                             }
                         }
-                        releaseAndJsonFile.Add(release, releaseJsonFile.FullName);
+                        albumAndJsonFile.Add(album, albumJsonFile.FullName);
                     }
                     catch (Exception e)
                     {
                         processingErrors.Add(e);
-                        LogAndRaiseEvent(LogEventLevel.Error, "Unable to load release json [{0}]", e, releaseJsonFile.FullName);
+                        LogAndRaiseEvent(LogEventLevel.Error, "Unable to load Album json [{0}]", e, albumJsonFile.FullName);
                     }
                 }
 
-                // Create directory and move files for each found release in staging directory.
+                // Create directory and move files for each found Album in staging directory.
                 if (_configuration.PluginProcessOptions.DoMoveToStagingDirectory)
                 {
-                    foreach (var releaseKvp in releaseAndJsonFile)
+                    foreach (var albumKvp in albumAndJsonFile)
                     {
                         if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                         {
                             break;
                         }
 
-                        var release = releaseKvp.Key;
-                        var releaseDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, release.ToDirectoryName()));
-                        if (!releaseDirInfo.Exists)
+                        var album = albumKvp.Key;
+                        var albumDirInfo = new DirectoryInfo(Path.Combine(_configuration.StagingDirectory, album.ToDirectoryName()));
+                        if (!albumDirInfo.Exists)
                         {
-                            releaseDirInfo.Create();
+                            albumDirInfo.Create();
                         }
 
-                        release.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
+                        album.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
                         {
-                            var newImageFileName = Path.Combine(releaseDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
+                            var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                             File.Copy(image.FileInfo!.FullOriginalName(directoryInfoToProcess), newImageFileName, true);
                             if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                             {
@@ -406,67 +406,67 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             }
                         });
 
-                        if (release.Tracks != null)
+                        if (album.Songs != null)
                         {
-                            foreach (var track in release.Tracks)
+                            foreach (var song in album.Songs)
                             {
                                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                                 {
                                     break;
                                 }
 
-                                var newTrackFileName = Path.Combine(releaseDirInfo.FullName, track.File.Name);
+                                var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
                                 if (_configuration.PluginProcessOptions.DoDeleteOriginal)
                                 {
-                                    track.File.MoveFile(directoryInfoToProcess, newTrackFileName);
+                                    song.File.MoveFile(directoryInfoToProcess, newSongFileName);
                                 }
                                 else
                                 {
-                                    File.Copy(track.File.FullOriginalName(directoryInfoToProcess), newTrackFileName, true);
+                                    File.Copy(song.File.FullOriginalName(directoryInfoToProcess), newSongFileName, true);
                                 }
                             }
 
-                            if ((release.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
-                                release.Tracks!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
+                            if ((album.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
+                                album.Songs!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
                             {
-                                var releaseDirectorySystemInfo = releaseDirInfo.ToDirectorySystemInfo();
+                                var albumDirectorySystemInfo = albumDirInfo.ToDirectorySystemInfo();
                                 // Set the value then change to NeedsAttention
-                                foreach (var trackPlugin in _trackPlugins)
+                                foreach (var songPlugin in _songPlugins)
                                 {
-                                    foreach (var track in release.Tracks)
+                                    foreach (var song in album.Songs)
                                     {
                                         if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                                         {
                                             break;
                                         }
 
-                                        await trackPlugin.UpdateTrackAsync(releaseDirectorySystemInfo, track, cancellationToken);
+                                        await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken);
                                     }
                                 }
 
-                                release.Status = ReleaseStatus.NeedsAttention;
+                                album.Status = AlbumStatus.NeedsAttention;
                             }
                         }
 
-                        release.Directory = releaseDirInfo.ToDirectorySystemInfo();
-                        release.Status = _releaseValidator.ValidateRelease(release).Data.ReleaseStatus;
-                        var serialized = JsonSerializer.Serialize(release, _jsonSerializerOptions);
-                        var jsonName = release.ToMelodeeJsonName(true);
+                        album.Directory = albumDirInfo.ToDirectorySystemInfo();
+                        album.Status = _albumValidator.ValidateAlbum(album).Data.AlbumStatus;
+                        var serialized = JsonSerializer.Serialize(album, _jsonSerializerOptions);
+                        var jsonName = album.ToMelodeeJsonName(true);
                         if (jsonName != null)
                         {
-                            await File.WriteAllTextAsync(Path.Combine(releaseDirInfo.FullName, jsonName), serialized, cancellationToken);
-                            File.Delete(releaseKvp.Value);
+                            await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
+                            File.Delete(albumKvp.Value);
                             if (_configuration.MagicOptions.IsMagicEnabled)
                             {
-                                using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", releaseDirInfo.Name))
+                                using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
                                 {
-                                    await _releaseEditProcessor.DoMagic(release.UniqueId, cancellationToken);
+                                    await _albumEditProcessor.DoMagic(album.UniqueId, cancellationToken);
                                 }
                             }
                         }
                         else
                         {
-                            processingMessages.Add($"Unable to determine JsonName for Release [{release}]");
+                            processingMessages.Add($"Unable to determine JsonName for Album [{album}]");
                         }
                     }
                 }
@@ -522,17 +522,17 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
         processingMessages.Add($"Directory Plugin(s) process count [{directoryPluginProcessedFileCount}]");
         processingMessages.Add($"Conversion Plugin(s) process count [{conversionPluginsProcessedFileCount}]");
-        processingMessages.Add($"Track Plugin(s) process count [{numberOfReleaseFilesProcessed}]");
-        processingMessages.Add($"Release process count [{numberOfReleaseJsonFilesProcessed}]");
+        processingMessages.Add($"Song Plugin(s) process count [{numberOfAlbumFilesProcessed}]");
+        processingMessages.Add($"Album process count [{numberOfAlbumJsonFilesProcessed}]");
             
         return new OperationResult<DirectoryProcessorResult>(processingMessages)
         {
             Errors = processingErrors.ToArray(),
             Data = new DirectoryProcessorResult
                 {
-                    NumberOfConversionPluginsProcessed = numberOfReleaseFilesProcessed,
+                    NumberOfConversionPluginsProcessed = numberOfAlbumFilesProcessed,
                     NumberOfDirectoryPluginProcessed = directoryPluginProcessedFileCount,
-                    NumberOfReleaseFilesProcessed = numberOfReleaseJsonFilesProcessed
+                    NumberOfAlbumFilesProcessed = numberOfAlbumJsonFilesProcessed
                 }
         };
     }
@@ -548,7 +548,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
     public event EventHandler<int>? OnProcessingStart;
 
     /// <summary>
-    ///     This is raised when a new Release is processed put into the Staging directory.
+    ///     This is raised when a new Album is processed put into the Staging directory.
     /// </summary>
     public event EventHandler<FileSystemDirectoryInfo>? OnDirectoryProcessed;
 
@@ -583,10 +583,10 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
     }
 
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForRelease(Release release, CancellationToken cancellationToken = default)
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(release.OriginalDirectory.Path, SearchOption.TopDirectoryOnly);
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly);
         var index = 0;
         foreach (var imageFile in imageFiles)
         {
@@ -596,19 +596,19 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             }
 
             var fileInfo = new FileInfo(imageFile);
-            if (release.IsFileForRelease(fileInfo) && !ReleaseValidator.IsImageAProofType(imageFile))
+            if (album.IsFileForAlbum(fileInfo) && !AlbumValidator.IsImageAProofType(imageFile))
             {
-                if (ImageHelper.IsReleaseImage(fileInfo) ||
+                if (ImageHelper.IsAlbumImage(fileInfo) ||
                     ImageHelper.IsArtistImage(fileInfo) ||
                     ImageHelper.IsArtistSecondaryImage(fileInfo) ||
-                    ImageHelper.IsReleaseSecondaryImage(fileInfo))
+                    ImageHelper.IsAlbumSecondaryImage(fileInfo))
                 {
                     var pictureIdentifier = PictureIdentifier.NotSet;
-                    if (ImageHelper.IsReleaseImage(fileInfo))
+                    if (ImageHelper.IsAlbumImage(fileInfo))
                     {
                         pictureIdentifier = PictureIdentifier.Front;
                     }
-                    else if (ImageHelper.IsReleaseSecondaryImage(fileInfo))
+                    else if (ImageHelper.IsAlbumSecondaryImage(fileInfo))
                     {
                         pictureIdentifier = PictureIdentifier.SecondaryFront;
                     }
@@ -625,7 +625,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
                     imageInfos.Add(new ImageInfo
                     {
-                        CrcHash = CRC32.Calculate(fileInfo),
+                        CrcHash = Crc32.Calculate(fileInfo),
                         FileInfo = new FileSystemFileInfo
                         {
                             Name = $"{(index + 1).ToStringPadLeft(2)}-{pictureIdentifier}.jpg",
@@ -646,17 +646,17 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         return imageInfos;
     }
 
-    public async Task<OperationResult<(IEnumerable<Release>, int)>> AllReleasesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<(IEnumerable<Album>, int)>> AllAlbumsForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var releases = new List<Release>();
+        var albums = new List<Album>();
         var messages = new List<string>();
         var viaPlugins = new List<string>();
-        var tracks = new List<Track>();
+        var songs = new List<Song>();
 
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
-            using (Operation.At(LogEventLevel.Debug).Time("AllReleasesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("AllAlbumsForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
             {
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
                 {
@@ -666,7 +666,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     }
 
                     var fsi = fileSystemInfo.ToFileSystemInfo();
-                    foreach (var plugin in _trackPlugins.OrderBy(x => x.SortOrder))
+                    foreach (var plugin in _songPlugins.OrderBy(x => x.SortOrder))
                     {
                         if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                         {
@@ -681,7 +681,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                                 if (pluginResult.IsSuccess)
                                 {
-                                    tracks.Add(pluginResult.Data);
+                                    songs.Add(pluginResult.Data);
                                     viaPlugins.Add(plugin.DisplayName);
                                 }
 
@@ -696,56 +696,56 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                     }
                 }
 
-                foreach (var track in tracks)
+                foreach (var song in songs)
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                     {
                         break;
                     }
 
-                    var foundRelease = releases.FirstOrDefault(x => x.UniqueId == track.ReleaseUniqueId);
-                    if (foundRelease != null)
+                    var foundAlbum = albums.FirstOrDefault(x => x.UniqueId == song.AlbumUniqueId);
+                    if (foundAlbum != null)
                     {
-                        releases.Remove(foundRelease);
-                        releases.Add(foundRelease.MergeTracks(tracks));
+                        albums.Remove(foundAlbum);
+                        albums.Add(foundAlbum.MergeSongs(songs));
                     }
                     else
                     {
-                        var trackTotal = track.TrackTotalNumber();
-                        if (trackTotal < 1)
+                        var songTotal = song.SongTotalNumber();
+                        if (songTotal < 1)
                         {
-                            trackTotal = tracks.Count;
+                            songTotal = songs.Count;
                         }
 
-                        var newReleaseTags = new List<MetaTag<object?>>
+                        var newAlbumTags = new List<MetaTag<object?>>
                         {
                             new()
                             {
-                                Identifier = MetaTagIdentifier.Album, Value = track.ReleaseTitle(), SortOrder = 1
+                                Identifier = MetaTagIdentifier.Album, Value = song.AlbumTitle(), SortOrder = 1
                             },
                             new()
                             {
-                                Identifier = MetaTagIdentifier.AlbumArtist, Value = track.ReleaseArtist(), SortOrder = 2
+                                Identifier = MetaTagIdentifier.AlbumArtist, Value = song.AlbumArtist(), SortOrder = 2
                             },
                             new()
                             {
-                                Identifier = MetaTagIdentifier.DiscNumber, Value = track.MediaNumber(), SortOrder = 4
+                                Identifier = MetaTagIdentifier.DiscNumber, Value = song.MediaNumber(), SortOrder = 4
                             },
                             new()
                             {
-                                Identifier = MetaTagIdentifier.DiscTotal, Value = track.MediaNumber(), SortOrder = 4
+                                Identifier = MetaTagIdentifier.DiscTotal, Value = song.MediaNumber(), SortOrder = 4
                             },                            
                             new()
                             {
-                                Identifier = MetaTagIdentifier.OrigReleaseYear, Value = track.ReleaseYear(),
+                                Identifier = MetaTagIdentifier.OrigAlbumYear, Value = song.AlbumYear(),
                                 SortOrder = 100
                             },
-                            new() { Identifier = MetaTagIdentifier.TrackTotal, Value = trackTotal, SortOrder = 101 }
+                            new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
                         };
-                        var genres = tracks
+                        var genres = songs
                             .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
                             .Where(x => x.Identifier == MetaTagIdentifier.Genre);
-                        newReleaseTags.AddRange(genres
+                        newAlbumTags.AddRange(genres
                             .GroupBy(x => x.Value)
                             .Select((genre, i) => new MetaTag<object?>
                             {
@@ -753,17 +753,17 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 Value = genre.Key,
                                 SortOrder = 5 + i
                             }));
-                        releases.Add(new Release
+                        albums.Add(new Album
                         {
-                            Images = tracks.Where(x => x.Images != null)
+                            Images = songs.Where(x => x.Images != null)
                                 .SelectMany(x => x.Images!)
                                 .DistinctBy(x => x.CrcHash).ToArray(),
                             OriginalDirectory = fileSystemDirectoryInfo,
-                            Tags = newReleaseTags,
-                            Tracks = tracks.OrderBy(x => x.SortOrder).ToArray(),
+                            Tags = newAlbumTags,
+                            Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = viaPlugins.Distinct().ToArray()
                         });
-                        if (releases.Count > _configuration.PluginProcessOptions.MaximumProcessingCountValue)
+                        if (albums.Count > _configuration.PluginProcessOptions.MaximumProcessingCountValue)
                         {
                             _stopProcessingTriggered = true;
                             break;
@@ -772,9 +772,9 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 }
             }
         }
-        return new OperationResult<(IEnumerable<Release>, int)>(messages)
+        return new OperationResult<(IEnumerable<Album>, int)>(messages)
         {
-            Data = (releases, tracks.Count)
+            Data = (albums, songs.Count)
         };
     }
 }

@@ -9,11 +9,11 @@ using Serilog;
 
 namespace Melodee.Plugins.Validation;
 
-public sealed partial class ReleaseValidator(Configuration configuration) : IReleaseValidator
+public sealed partial class AlbumValidator(Configuration configuration) : IAlbumValidator
 {
-    private static readonly Regex UnwantedReleaseTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|release|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private static readonly Regex UnwantedTrackTitleTextRegex = new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex UnwantedSongTitleTextRegex = new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -22,37 +22,37 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
     private readonly Configuration _configuration = configuration;
     private readonly List<ValidationResultMessage> _validationMessages = [];
 
-    public OperationResult<ValidationResult> ValidateRelease(Release? release)
+    public OperationResult<ValidationResult> ValidateAlbum(Album? album)
     {
-        if (release == null)
+        if (album == null)
         {
-            return new OperationResult<ValidationResult>(["Release is invalid."])
+            return new OperationResult<ValidationResult>(["Album is invalid."])
             {
                 Data = new ValidationResult
                 {
-                    ReleaseStatus = ReleaseStatus.Invalid
+                    AlbumStatus = AlbumStatus.Invalid
                 }
             };
         }
         _validationMessages.Clear();
 
-        var returnStatus = release.Status;
+        var returnStatus = album.Status;
 
         // Validations should return true if ok
-        if (IsValid(release) &&
-            AreAllTrackNumbersValid(release) &&
-            AreTracksUniquelyNumbered(release) &&
-            AreMediaNumbersValid(release) &&
-            DoAllTracksHaveSameReleaseArtist(release) &&
-            AllTrackTitlesDoNotHaveUnwantedText(release) &&
-            AlbumArtistDoesNotHaveUnwantedText(release) &&
-            ReleaseTitleDoesNotHaveUnwantedText(release) &&
-            IsReleaseYearValid(release) &&
-            DoMediaTotalMatchMediaNumbers(release) &&
-            DoesTrackTotalMatchTrackCount(release)
+        if (IsValid(album) &&
+            AreAllSongNumbersValid(album) &&
+            AreSongsUniquelyNumbered(album) &&
+            AreMediaNumbersValid(album) &&
+            DoAllSongsHaveSameAlbumArtist(album) &&
+            AllSongTitlesDoNotHaveUnwantedText(album) &&
+            AlbumArtistDoesNotHaveUnwantedText(album) &&
+            AlbumTitleDoesNotHaveUnwantedText(album) &&
+            IsAlbumYearValid(album) &&
+            DoMediaTotalMatchMediaNumbers(album) &&
+            DoesSongTotalMatchSongCount(album)
            )
         {
-            returnStatus = ReleaseStatus.Ok;
+            returnStatus = AlbumStatus.Ok;
         }
 
         return new OperationResult<ValidationResult>
@@ -60,93 +60,93 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
             Data = new ValidationResult
             {
                 Messages = _validationMessages,
-                ReleaseStatus = returnStatus
+                AlbumStatus = returnStatus
             }
         };
     }
 
-    private bool DoesTrackTotalMatchTrackCount(Release release)
+    private bool DoesSongTotalMatchSongCount(Album album)
     {
         var result = true;
-        var tracks = release.Tracks?.ToArray() ?? [];
-        if (tracks.Length == 0)
+        var songs = album.Songs?.ToArray() ?? [];
+        if (songs.Length == 0)
         {
             result = false;
         }
-        var trackCount = tracks.Length;
-        var trackTotal = release.TrackTotalValue();
-        result = trackCount == trackTotal;
+        var songCount = songs.Length;
+        var songTotal = album.SongTotalValue();
+        result = songCount == songTotal;
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release track total value does not match track count.",
+                Message = $"'{album}' Album Song total value does not match Song count.",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
         }
         return result; 
     }
 
-    private bool DoMediaTotalMatchMediaNumbers(Release release)
+    private bool DoMediaTotalMatchMediaNumbers(Album album)
     {
         var result = true;
-        var tracks = release.Tracks?.ToArray() ?? [];
-        if (tracks.Length == 0)
+        var songs = album.Songs?.ToArray() ?? [];
+        if (songs.Length == 0)
         {
             result = false;
         }
-        var mediaNumbers = tracks.Select(x => x.MediaNumber()).Distinct().ToArray();
-        var releaseMediaTotal = release.MediaCountValue();
-        result = mediaNumbers.All(mediaNumber => mediaNumber <= releaseMediaTotal);
+        var mediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
+        var albumMediaTotal = album.MediaCountValue();
+        result = mediaNumbers.All(mediaNumber => mediaNumber <= albumMediaTotal);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release media total [{releaseMediaTotal}] does not match track medias [{mediaNumbers}].",
+                Message = $"'{album}' Album media total [{albumMediaTotal}] does not match Song medias [{mediaNumbers}].",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
         }
         return result;        
     }
 
-    private bool IsValid(Release release)
+    private bool IsValid(Album album)
     {
         var result = true;
-        if (!release.IsValid(_configuration))
+        if (!album.IsValid(_configuration))
         {
-            if (release.UniqueId < 0)
+            if (album.UniqueId < 0)
             {
                 _validationMessages.Add(new ValidationResultMessage
                 {
-                    Message = $"Release has invalid Unique ID: {release.UniqueId}",
+                    Message = $"Album has invalid Unique ID: {album.UniqueId}",
                     Severity = ValidationResultMessageSeverity.MustFix
                 });
                 result = false;
             }
-            if (release.Artist().Nullify() == null)
+            if (album.Artist().Nullify() == null)
             {
                 _validationMessages.Add(new ValidationResultMessage
                 {
-                    Message = $"Release has invalid Artist [{release.Artist()}]",
+                    Message = $"Album has invalid Artist [{album.Artist()}]",
                     Severity = ValidationResultMessageSeverity.MustFix
                 });
                 result = false;
             }
-            if (release.ReleaseTitle().Nullify() == null)
+            if (album.AlbumTitle().Nullify() == null)
             {
                 _validationMessages.Add(new ValidationResultMessage
                 {
-                    Message = $"Release has invalid Release Title: {release.ReleaseTitle()}",
+                    Message = $"Album has invalid Album Title: {album.AlbumTitle()}",
                     Severity = ValidationResultMessageSeverity.MustFix
                 });
                 result = false;
             }
 
-            if (!release.HasValidReleaseYear(_configuration))
+            if (!album.HasValidAlbumYear(_configuration))
             {
                 _validationMessages.Add(new ValidationResultMessage
                 {
-                    Message = $"Release has invalid Release Year: {release.ReleaseYear()}",
+                    Message = $"Album has invalid Album Year: {album.AlbumYear()}",
                     Severity = ValidationResultMessageSeverity.MustFix
                 });
                 result = false;
@@ -155,21 +155,21 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         return result;
     }
     
-    private bool AreTracksUniquelyNumbered(Release release)
+    private bool AreSongsUniquelyNumbered(Album album)
     {
-        var tracks = release.Tracks?.ToArray() ?? [];
-        if (tracks.Length == 0)
+        var songs = album.Songs?.ToArray() ?? [];
+        if (songs.Length == 0)
         {
             return false;
         }
 
-        var trackNumbers = tracks.GroupBy(x => x.TrackNumber());
-        var result =  trackNumbers.All(group => group.Count() == 1);
+        var songNumbers = songs.GroupBy(x => x.SongNumber());
+        var result =  songNumbers.All(group => group.Count() == 1);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release has tracks with invalid track number.",
+                Message = $"'{album}' Album has Songs with invalid Song number.",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
         }
@@ -178,18 +178,18 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
     }
 
     /// <summary>
-    ///     Check if all the tracks have the same Album Artist. This is an issue if not a VA type release.
+    ///     Check if all the Songs have the same Album Artist. This is an issue if not a VA type Album.
     /// </summary>
-    private bool DoAllTracksHaveSameReleaseArtist(Release release)
+    private bool DoAllSongsHaveSameAlbumArtist(Album album)
     {
         var result = true;
-        var tracks = release.Tracks?.ToArray() ?? [];
-        if (tracks.Length == 0)
+        var songs = album.Songs?.ToArray() ?? [];
+        if (songs.Length == 0)
         {
             result = false;
         }
 
-        var albumArtist = release.Artist();
+        var albumArtist = album.Artist();
         if (string.IsNullOrWhiteSpace(albumArtist))
         {
             result = false;
@@ -197,17 +197,17 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
 
         if (result)
         {
-            var tracksGroupedByArtist = tracks.GroupBy(x => x.ReleaseArtist()).ToArray();
-            result = tracksGroupedByArtist.First().Key.Nullify() == null ||
-                     (string.Equals(tracksGroupedByArtist.First().Key, albumArtist) &&
-                      tracksGroupedByArtist.Length == 1);
+            var songsGroupedByArtist = songs.GroupBy(x => x.AlbumArtist()).ToArray();
+            result = songsGroupedByArtist.First().Key.Nullify() == null ||
+                     (string.Equals(songsGroupedByArtist.First().Key, albumArtist) &&
+                      songsGroupedByArtist.Length == 1);
         }
 
-        if (!result && !release.IsVariousArtistTypeRelease())
+        if (!result && !album.IsVariousArtistTypeAlbum())
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' tracks do not all have the same album artist.",
+                Message = $"'{album}' Songs do not all have the same album artist.",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
         }
@@ -215,14 +215,14 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         return result;
     }
 
-    private bool AlbumArtistDoesNotHaveUnwantedText(Release release)
+    private bool AlbumArtistDoesNotHaveUnwantedText(Album album)
     {
-        var result = !StringHasFeaturingFragments(release.Artist());
+        var result = !StringHasFeaturingFragments(album.Artist());
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release artist has unwanted text.",
+                Message = $"'{album}' Album artist has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
@@ -230,14 +230,14 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         return result;
     }
 
-    private bool ReleaseTitleDoesNotHaveUnwantedText(Release release)
+    private bool AlbumTitleDoesNotHaveUnwantedText(Album album)
     {
-        var result = !StringHasFeaturingFragments(release.ReleaseTitle());
+        var result = !StringHasFeaturingFragments(album.AlbumTitle());
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release title has unwanted text.",
+                Message = $"'{album}' Album title has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
@@ -245,16 +245,16 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         return result;
     }
 
-    private bool AreMediaNumbersValid(Release release)
+    private bool AreMediaNumbersValid(Album album)
     {
         var result = true;
-        var tracks = release.Tracks?.ToArray() ?? [];
-        if (tracks.Length == 0)
+        var songs = album.Songs?.ToArray() ?? [];
+        if (songs.Length == 0)
         {
             result = false;
         }
 
-        var mediaNumbers = tracks.Select(x => x.MediaNumber()).Distinct().ToArray();
+        var mediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
         if (mediaNumbers.Length != 0 && mediaNumbers.All(x => x > 0))
         {
             if (mediaNumbers.Any(x => x > _configuration.ValidationOptions.MaximumMediaNumber) || 
@@ -269,7 +269,7 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release media numbers are invalid.",
+                Message = $"'{album}' Album media numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
         }
@@ -277,18 +277,18 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         return result;
     }
 
-    private bool AllTrackTitlesDoNotHaveUnwantedText(Release release)
+    private bool AllSongTitlesDoNotHaveUnwantedText(Album album)
     {
         var result = true;
-        var tracks = release.Tracks?.ToArray() ?? [];
-        if (tracks.Length == 0)
+        var songs = album.Songs?.ToArray() ?? [];
+        if (songs.Length == 0)
         {
             result = false;
         }
 
-        foreach (var track in tracks)
+        foreach (var song in songs)
         {
-            if (TrackHasUnwantedText(release.ReleaseTitle(), track.Title(), track.TrackNumber()))
+            if (SongHasUnwantedText(album.AlbumTitle(), song.Title(), song.SongNumber()))
             {
                 result = false;
                 break;
@@ -299,7 +299,7 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' some tracks have unwanted text.",
+                Message = $"'{album}' some Songs have unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
@@ -308,50 +308,50 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
     }
 
 
-    private bool AreAllTrackNumbersValid(Release release)
+    private bool AreAllSongNumbersValid(Album album)
     {
         var result = true;
-        var tracks = release.Tracks?.ToArray() ?? [];
-        if (tracks.Length == 0)
+        var songs = album.Songs?.ToArray() ?? [];
+        if (songs.Length == 0)
         {
             result = false;
         }
 
-        var trackNumbers = tracks.Select(x => x.TrackNumber()).Distinct().ToArray();
-        if (trackNumbers.Length == 0)
+        var songNumbers = songs.Select(x => x.SongNumber()).Distinct().ToArray();
+        if (songNumbers.Length == 0)
         {
             result = false;
         }
 
-        if (trackNumbers.Contains(0))
+        if (songNumbers.Contains(0))
         {
             result = false;
         }
 
-        if (trackNumbers.Any(x => x > _configuration.ValidationOptions.MaximumTrackNumber))
+        if (songNumbers.Any(x => x > _configuration.ValidationOptions.MaximumSongNumber))
         {
             result = false;
         }
-        result = result && Enumerable.Range(0, trackNumbers.Length).All(i => trackNumbers[i] == trackNumbers[0] + i);
+        result = result && Enumerable.Range(0, songNumbers.Length).All(i => songNumbers[i] == songNumbers[0] + i);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release track numbers are invalid.",
+                Message = $"'{album}' Album Song numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
         }
         return result;
     }
 
-    private bool IsReleaseYearValid(Release release)
+    private bool IsAlbumYearValid(Album album)
     {
-        var result = release.HasValidReleaseYear(_configuration);
+        var result = album.HasValidAlbumYear(_configuration);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{release}' release year is invalid.",
+                Message = $"'{album}' Album year is invalid.",
                 Severity = ValidationResultMessageSeverity.MustFix
             });
             
@@ -369,66 +369,66 @@ public sealed partial class ReleaseValidator(Configuration configuration) : IRel
         return !string.IsNullOrWhiteSpace(imageName) && ImageNameIsProofRegex.IsMatch(imageName);
     }
 
-    public static string? ReplaceTrackArtistSeparators(string? trackArtist)
+    public static string? ReplaceSongArtistSeparators(string? songArtist)
     {
-        if (trackArtist.Nullify() == null)
+        if (songArtist.Nullify() == null)
         {
             return null;
         }
-        return ReplaceTrackArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
+        return ReplaceSongArtistSeparatorsRegex().Replace(songArtist!, "/").Trim();
     }    
     
-    public static bool ReleaseTitleHasUnwantedText(string? releaseTitle)
+    public static bool AlbumTitleHasUnwantedText(string? albumTitle)
     {
-        return string.IsNullOrWhiteSpace(releaseTitle) || UnwantedReleaseTitleTextRegex.IsMatch(releaseTitle);
+        return string.IsNullOrWhiteSpace(albumTitle) || UnwantedAlbumTitleTextRegex.IsMatch(albumTitle);
     }
 
-    public static string? RemoveUnwantedTextFromReleaseTitle(string? title)
+    public static string? RemoveUnwantedTextFromAlbumTitle(string? title)
     {
         if (title.Nullify() == null)
         {
             return null;
         }
-        return UnwantedReleaseTitleTextRegex.Replace(title!, string.Empty).Trim();
+        return UnwantedAlbumTitleTextRegex.Replace(title!, string.Empty).Trim();
     }    
 
-    public static bool TrackHasUnwantedText(string? releaseTitle, string? trackTitle, int? trackNumber)
+    public static bool SongHasUnwantedText(string? albumTitle, string? songTitle, int? songNumber)
     {
-        if (string.IsNullOrWhiteSpace(trackTitle))
+        if (string.IsNullOrWhiteSpace(songTitle))
         {
             return true;
         }
 
-        if (StringHasFeaturingFragments(trackTitle))
+        if (StringHasFeaturingFragments(songTitle))
         {
             return true;
         }
 
         try
         {
-            if (UnwantedTrackTitleTextRegex.IsMatch(trackTitle))
+            if (UnwantedSongTitleTextRegex.IsMatch(songTitle))
             {
                 return true;
             }
 
-            if (trackTitle.Any(char.IsDigit))
+            if (songTitle.Any(char.IsDigit))
             {
-                if (string.Equals(trackTitle.Trim(), (trackNumber ?? 0).ToString(), StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(songTitle.Trim(), (songNumber ?? 0).ToString(), StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
 
-                return Regex.IsMatch(trackTitle, $@"^({Regex.Escape(releaseTitle ?? string.Empty)}\s*.*\s*)?([0-9]*{trackNumber}\s)");
+                return Regex.IsMatch(songTitle, $@"^({Regex.Escape(albumTitle ?? string.Empty)}\s*.*\s*)?([0-9]*{songNumber}\s)");
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "TrackHasUnwantedText For ReleaseTitle [{releaseTitle}] for TrackTitle [{trackTitle}]", releaseTitle, trackTitle);
+            Log.Error(ex, "SongHasUnwantedText For AlbumTitle [{AlbumTitle}] for SongTitle [{SongTitle}]", albumTitle, songTitle);
         }
 
         return false;
     }
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    private static partial Regex ReplaceTrackArtistSeparatorsRegex();
+    private static partial Regex ReplaceSongArtistSeparatorsRegex();
 }

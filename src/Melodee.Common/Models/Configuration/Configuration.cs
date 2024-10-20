@@ -9,21 +9,21 @@ public sealed record Configuration
     public string? Environment { get; set; }
 
     /// <summary>
-    ///     Files in this directory are scanned and Release information is gathered.
+    ///     Files in this directory are scanned and Album information is gathered.
     /// </summary>
     public string InboundDirectory { get; set; } = null!;
     
     [JsonIgnore] public FileSystemDirectoryInfo InboundDirectoryInfo => new DirectoryInfo(InboundDirectory).ToDirectorySystemInfo();    
 
     /// <summary>
-    ///     When the user is happy with scan results the user can select Releases (and all associated files) to move to this
+    ///     When the user is happy with scan results the user can select Albums (and all associated files) to move to this
     ///     directory in the proper directory structure.
     /// </summary>
     public string StagingDirectory { get; set; } = null!;
     
     [JsonIgnore] public FileSystemDirectoryInfo StagingDirectoryInfo => new DirectoryInfo(StagingDirectory).ToDirectorySystemInfo();    
 
-    public int FilterLessThanTrackCount { get; set; } = 3;
+    public int FilterLessThanSongCount { get; set; } = 3;
 
     public double FilterLessThanConfiguredDuration { get; set; } = 720000;
 
@@ -32,7 +32,7 @@ public sealed record Configuration
     public int StagingDirectoryScanLimit { get; set; } = 250;
 
     /// <summary>
-    ///     This is the main storage library (holds all previously scanned/edited/approved Releases).
+    ///     This is the main storage library (holds all previously scanned/edited/approved Albums).
     /// </summary>
     public string LibraryDirectory { get; set; } = null!;
     
@@ -69,7 +69,7 @@ public sealed record Configuration
     public short DefaultPageSize { get; set; } = 100;
 
     /// <summary>
-    ///     When true then move the Melodee.json data file when moving releases, otherwise delete.
+    ///     When true then move the Melodee.json data file when moving Albums, otherwise delete.
     /// </summary>
     public bool MoveMelodeeJsonDataFileToLibrary { get; set; } = false;
 

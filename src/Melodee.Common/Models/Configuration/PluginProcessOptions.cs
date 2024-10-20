@@ -15,7 +15,7 @@ public sealed record PluginProcessOptions
         })
     };
 
-    public bool DoUseCurrentYearAsDefaultOrigReleaseYearValue = true;
+    public bool DoUseCurrentYearAsDefaultOrigAlbumYearValue = true;
     public bool DoDeleteOriginal { get; set; } = true;
     
     public bool DoRenameConverted { get; set; } = true;
@@ -39,18 +39,18 @@ public sealed record PluginProcessOptions
     
     public int MaximumArtistDirectoryNameLength { get; init; } = 200;
 
-    public int MaximumReleaseDirectoryNameLength { get; init; } = 200;
+    public int MaximumAlbumDirectoryNameLength { get; init; } = 200;
 
-    public int MinimumValidReleaseYear { get; init; } = 1925;
+    public int MinimumValidAlbumYear { get; init; } = 1925;
 
-    public IEnumerable<string> ReleaseTitleRemovals { get; init; } = new[]
+    public IEnumerable<string> AlbumTitleRemovals { get; init; } = new[]
     {
         "^",
         "~",
         "#"
     };
 
-    public IEnumerable<string> TrackTitleRemovals { get; init; } = new[]
+    public IEnumerable<string> SongTitleRemovals { get; init; } = new[]
     {
         ";",
         "(Remaster)",
@@ -60,7 +60,7 @@ public sealed record PluginProcessOptions
     public bool DoContinueOnDirectoryProcessingErrors { get; init; } = true;
     
     /// <summary>
-    /// When true then move Release Melodee json files to the Staging directory.
+    /// When true then move Album Melodee json files to the Staging directory.
     /// </summary>
     public bool DoMoveToStagingDirectory { get; init; }= true;
 }

@@ -8,32 +8,32 @@ namespace Melodee.Plugins.MetaData.Directory.Models.Extensions;
 
 public static class CueSheetExtensions
 {
-    private static ReleaseFile ToReleaseFile(this CueSheet cueSheet)
+    private static AlbumFile ToAlbumFile(this CueSheet cueSheet)
     {
-        return new ReleaseFile
+        return new AlbumFile
         {
             FileSystemFileInfo = cueSheet.MediaFileSystemFileInfo,
-            ReleaseFileType = ReleaseFileType.MetaData,
+            AlbumFileType = AlbumFileType.MetaData,
             ProcessedByPlugin = nameof(Directory.CueSheet)
         };
     }
 
-    public static Release ToRelease(this CueSheet cueSheet, FileSystemDirectoryInfo directoryInfo)
+    public static Album ToAlbum(this CueSheet cueSheet, FileSystemDirectoryInfo directoryInfo)
     {
         var fileInfo = new FileInfo(cueSheet.MediaFileSystemFileInfo.FullName(directoryInfo));
-        return new Release
+        return new Album
         {
             Files = new[]
             {
-                cueSheet.ToReleaseFile()
+                cueSheet.ToAlbumFile()
             },
             ViaPlugins = new string[1]
             {
                 nameof(Directory.CueSheet)
             },
             Tags = cueSheet.Tags,
-            Tracks = cueSheet.Tracks,
-            Status = cueSheet.IsValid ? ReleaseStatus.Complete : ReleaseStatus.Incomplete,
+            Songs = cueSheet.Songs,
+            Status = cueSheet.IsValid ? AlbumStatus.Complete : AlbumStatus.Incomplete,
             OriginalDirectory = new FileSystemDirectoryInfo
             {
                 Path = fileInfo.Directory!.FullName,
@@ -75,14 +75,14 @@ public static class CueSheetExtensions
         return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Artist);
     }
 
-    public static string? ReleaseTitle(this CueSheet cueSheet)
+    public static string? AlbumTitle(this CueSheet cueSheet)
     {
         return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Album);
     }
 
-    public static int TrackTotalNumber(this CueSheet cueSheet)
+    public static int SongTotalNumber(this CueSheet cueSheet)
     {
-        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.TrackTotal) ?? 0;
+        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.SongTotal) ?? 0;
     }
 
     public static int MediaNumber(this CueSheet cueSheet)
@@ -97,9 +97,9 @@ public static class CueSheetExtensions
                0;
     }
 
-    public static int? ReleaseYear(this CueSheet cueSheet)
+    public static int? AlbumYear(this CueSheet cueSheet)
     {
-        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.OrigReleaseYear) ??
+        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??
                cueSheet.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                cueSheet.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
     }

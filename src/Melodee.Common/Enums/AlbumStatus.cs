@@ -1,6 +1,6 @@
 namespace Melodee.Common.Enums;
 
-public enum ReleaseStatus
+public enum AlbumStatus
 {
     NotSet = 0,
 

@@ -115,12 +115,12 @@ public enum PictureIdentifier
     LabelLogo,
 
     /// <summary>
-    ///     Track image (usually in a compilation or a single)
+    ///     Song image (usually in a compilation or a single)
     /// </summary>
-    Track,
+    Song,
 
     /// <summary>
-    ///     Track image, but not the primary like Track01_01, Track01_02
+    ///     Song image, but not the primary like Song01_01, Song01_02
     /// </summary>
-    TrackSecondary
+    SongSecondary
 }

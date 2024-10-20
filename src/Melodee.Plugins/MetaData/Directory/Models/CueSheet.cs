@@ -8,12 +8,12 @@ namespace Melodee.Plugins.MetaData.Directory.Models;
 public sealed record CueSheet
 {
     public bool IsValid => !string.IsNullOrWhiteSpace(MediaFileSystemFileInfo.Name) && 
-                           Tracks.Any() && 
+                           Songs.Any() && 
                            Tags.Any() && 
                            Tags.Count(x => x.Identifier == MetaTagIdentifier.Album) == 1 &&
                            Tags.Count(x => x.Identifier == MetaTagIdentifier.AlbumArtist) == 1 &&
-                           Tags.Count(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear) == 1 &&
-                           TrackIndexes.Any() && 
+                           Tags.Count(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear) == 1 &&
+                           SongIndexes.Any() && 
                            MediaFileSystemFileInfo.Exists(FileSystemDirectoryInfo);
 
     /// <summary>
@@ -23,9 +23,9 @@ public sealed record CueSheet
 
     public required FileSystemDirectoryInfo FileSystemDirectoryInfo { get; init; }
 
-    public required IEnumerable<Common.Models.Track> Tracks { get; init; }
+    public required IEnumerable<Common.Models.Song> Songs { get; init; }
 
-    public required IEnumerable<CueIndex> TrackIndexes { get; init; }
+    public required IEnumerable<CueIndex> SongIndexes { get; init; }
 
     public required IEnumerable<MetaTag<object?>> Tags { get; init; }
 }

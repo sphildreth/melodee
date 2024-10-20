@@ -6,9 +6,9 @@ public sealed record ValidationOptions
 
     public int MaximumMediaNumber { get; set; } = 500;
 
-    public int MaximumTrackNumber { get; set; } = 1000;
+    public int MaximumSongNumber { get; set; } = 1000;
 
-    public int MinimumReleaseYear { get; set; } = 1860;
+    public int MinimumAlbumYear { get; set; } = 1860;
 
-    public int MaximumReleaseYear { get; set; } = 2200;
+    public int MaximumAlbumYear { get; set; } = 2200;
 }

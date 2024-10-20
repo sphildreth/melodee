@@ -7,27 +7,27 @@ using Melodee.Common.Utility;
 namespace Melodee.Common.Models;
 
 /// <summary>
-///     This is a representation of a Release (a published collection of Tracks) including all known MetaData.
+///     This is a representation of a Album (a published collection of Songs) including all known MetaData.
 /// </summary>
 [Serializable]
-public sealed record Release
+public sealed record Album
 {
     public const string JsonFileName = "melodee.json";
 
-    public long UniqueId => SafeParser.Hash(this.Artist(), this.ReleaseYear().ToString(), this.ReleaseTitle());
+    public long UniqueId => SafeParser.Hash(this.Artist(), this.AlbumYear().ToString(), this.AlbumTitle());
 
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
     
     public DateTimeOffset? Modified { get; set; }
 
     /// <summary>
-    ///     What plugins were utilized in discovering this release.
+    ///     What plugins were utilized in discovering this Album.
     /// </summary>
     public required IEnumerable<string> ViaPlugins { get; set; }
 
     /// <summary>
-    ///     This is the directory where the Release was created, it will not be the "Staging" or "Library" directory where
-    ///     there Release is moved to once processed.
+    ///     This is the directory where the Album was created, it will not be the "Staging" or "Library" directory where
+    ///     there Album is moved to once processed.
     /// </summary>
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
 
@@ -37,14 +37,14 @@ public sealed record Release
 
     public IEnumerable<MetaTag<object?>>? Tags { get; set; }
 
-    public IEnumerable<Track>? Tracks { get; set; }
+    public IEnumerable<Song>? Songs { get; set; }
 
     public IEnumerable<string> Messages { get; set; } = [];
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public ReleaseStatus Status { get; set; } = ReleaseStatus.Invalid;
+    public AlbumStatus Status { get; set; } = AlbumStatus.Invalid;
 
-    public IEnumerable<ReleaseFile> Files { get; set; } = [];
+    public IEnumerable<AlbumFile> Files { get; set; } = [];
 
     public int SortOrder { get; set; }
 
@@ -61,55 +61,55 @@ public sealed record Release
         }
     }
     
-    public string UniqueIdSummary => $"{this.Artist()} : {this.ReleaseYear()} : {this.ReleaseTitle()}";
+    public string UniqueIdSummary => $"{this.Artist()} : {this.AlbumYear()} : {this.AlbumTitle()}";
     
-    public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.TrackTotalValue().ToStringPadLeft(3)} : {this.ReleaseTitle()}";
+    public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
-    public Release MergeTracks(IEnumerable<Track> pluginResultData)
+    public Album MergeSongs(IEnumerable<Song> pluginResultData)
     {
-        var tracks = new List<Track>(Tracks ?? []);
-        foreach (var track in pluginResultData)
+        var songs = new List<Song>(Songs ?? []);
+        foreach (var song in pluginResultData)
         {
-            if (!tracks.Contains(track))
+            if (!songs.Contains(song))
             {
-                tracks.Add(track);
+                songs.Add(song);
             }
         }
 
-        var releaseTags = Tags?.ToList();
-        var trackTotalTag = releaseTags?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackTotal);
-        if (trackTotalTag != null)
+        var albumTags = Tags?.ToList();
+        var songTotalTag = albumTags?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.SongTotal);
+        if (songTotalTag != null)
         {
-            releaseTags!.Remove(trackTotalTag);
-            releaseTags.Add(new MetaTag<object?>
+            albumTags!.Remove(songTotalTag);
+            albumTags.Add(new MetaTag<object?>
             {
-                Identifier = MetaTagIdentifier.TrackTotal,
-                Value = tracks.Count,
-                SortOrder = trackTotalTag.SortOrder,
-                StyleClass = trackTotalTag.StyleClass
+                Identifier = MetaTagIdentifier.SongTotal,
+                Value = songs.Count,
+                SortOrder = songTotalTag.SortOrder,
+                StyleClass = songTotalTag.StyleClass
             });
         }
 
-        return this with { Tracks = tracks.ToArray(), Tags = releaseTags!.ToArray() };
+        return this with { Songs = songs.ToArray(), Tags = albumTags!.ToArray() };
     }
 
     public override string ToString()
     {
-        return $"UniqueId [{UniqueId}] Status [{Status}] TrackCount [{Tracks?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+        return $"UniqueId [{UniqueId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
-    public Release Merge(Release otherRelease)
+    public Album Merge(Album otherAlbum)
     {
-        var files = new List<ReleaseFile>(Files);
+        var files = new List<AlbumFile>(Files);
         var images = new List<ImageInfo>(Images ?? []);
         var messages = new List<string>(Messages);
         var tags = new List<MetaTag<object?>>(Tags ?? []);
-        var tracks = new List<Track>(Tracks ?? []);
+        var songs = new List<Song>(Songs ?? []);
         var viaPlugins = new List<string>(ViaPlugins);
 
-        if (otherRelease.Images != null)
+        if (otherAlbum.Images != null)
         {
-            foreach (var image in otherRelease.Images)
+            foreach (var image in otherAlbum.Images)
             {
                 if (!images.Any(x => x.IsCrcHashMatch(image.CrcHash)))
                 {
@@ -118,9 +118,9 @@ public sealed record Release
             }
         }
 
-        if (otherRelease.Tags != null)
+        if (otherAlbum.Tags != null)
         {
-            foreach (var tag in otherRelease.Tags)
+            foreach (var tag in otherAlbum.Tags)
             {
                 if (tags.FirstOrDefault(x => x.Identifier == tag.Identifier)?.Value?.ToString() != tag.Value?.ToString())
                 {
@@ -129,20 +129,20 @@ public sealed record Release
             }
         }
 
-        if (otherRelease.Tracks != null)
+        if (otherAlbum.Songs != null)
         {
-            foreach (var track in otherRelease.Tracks)
+            foreach (var song in otherAlbum.Songs)
             {
-                if (!tracks.Select(x => x.UniqueId).Contains(track.UniqueId))
+                if (!Songs.Select(x => x.UniqueId).Contains(song.UniqueId))
                 {
-                    tracks.Add(track);
+                    songs.Add(song);
                 }
             }
         }
 
-        if (otherRelease.ViaPlugins.Any())
+        if (otherAlbum.ViaPlugins.Any())
         {
-            foreach (var plugin in otherRelease.ViaPlugins)
+            foreach (var plugin in otherAlbum.ViaPlugins)
             {
                 if (!viaPlugins.Contains(plugin))
                 {
@@ -151,9 +151,9 @@ public sealed record Release
             }
         }
 
-        if (otherRelease.Files.Any())
+        if (otherAlbum.Files.Any())
         {
-            foreach (var file in otherRelease.Files)
+            foreach (var file in otherAlbum.Files)
             {
                 if (!files.Contains(file))
                 {
@@ -162,9 +162,9 @@ public sealed record Release
             }
         }
 
-        messages.AddRange(otherRelease.Messages);
+        messages.AddRange(otherAlbum.Messages);
 
-        return new Release
+        return new Album
         {
             OriginalDirectory = OriginalDirectory,
             Tags = tags,
@@ -173,12 +173,12 @@ public sealed record Release
             Images = images.ToArray(),
             Messages = messages.Distinct().ToArray(),
             SortOrder = SortOrder,
-            Status = ReleaseStatus.NotSet,
-            Tracks = tracks.ToArray()
+            Status = AlbumStatus.NotSet,
+            Songs = Songs.ToArray()
         };
     }
 
-    public void SetTagValue(MetaTagIdentifier identifier, object? value, bool? doSetTrackValue = true)
+    public void SetTagValue(MetaTagIdentifier identifier, object? value, bool? doSetSongValue = true)
     {
         var tags = (Tags ?? []).ToList();
         var existingTag = tags.FirstOrDefault(x => x.Identifier == identifier);
@@ -200,27 +200,27 @@ public sealed record Release
         }
 
         Tags = tags.ToArray();
-        if (doSetTrackValue ?? true)
+        if (doSetSongValue ?? true)
         {
-            foreach (var track in Tracks ?? [])
+            foreach (var song in Songs ?? [])
             {
-                SetTrackTagValue(track.TrackId, identifier, value);
+                SetSongTagValue(song.SongId, identifier, value);
             }
         }
     }
 
-    public void RemoveTrackTagValue(long trackId, MetaTagIdentifier identifier)
+    public void RemoveSongTagValue(long songId, MetaTagIdentifier identifier)
     {
-        SetTrackTagValue(trackId, identifier, null);
+        SetSongTagValue(songId, identifier, null);
     }
 
-    public void SetTrackTagValue(long trackId, MetaTagIdentifier identifier, object? value)
+    public void SetSongTagValue(long songId, MetaTagIdentifier identifier, object? value)
     {
-        var tracks = (Tracks ?? []).ToList();
-        var track = tracks.FirstOrDefault(x => x.TrackId == trackId);
-        if (track != null)
+        var songs = (Songs ?? []).ToList();
+        var song = songs.FirstOrDefault(x => x.SongId == songId);
+        if (song != null)
         {
-            var tags = (track.Tags ?? []).ToList();
+            var tags = (song.Tags ?? []).ToList();
             var existingTag = tags.FirstOrDefault(x => x.Identifier == identifier);
             if (existingTag != null)
             {
@@ -239,9 +239,9 @@ public sealed record Release
                 });
             }
 
-            tracks.Remove(track);
-            tracks.Add(track with { Tags = tags.ToArray() });
-            Tracks = tracks.ToArray();
+            songs.Remove(song);
+            songs.Add(song with { Tags = tags.ToArray() });
+            Songs = songs.ToArray();
         }
     }
 }

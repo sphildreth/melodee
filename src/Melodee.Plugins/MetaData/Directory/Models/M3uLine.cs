@@ -9,11 +9,11 @@ public sealed record M3ULine
 
     public required FileSystemFileInfo FileSystemFileInfo { get; init; }
 
-    public int TrackNumber { get; init; }
+    public int SongNumber { get; init; }
 
-    public string? ReleaseArist { get; init; }
+    public string? AlbumArist { get; init; }
 
-    public required string TrackTitle { get; init; }
+    public required string SongTitle { get; init; }
 
     public bool Equals(M3ULine? other)
     {
@@ -39,18 +39,18 @@ public sealed record M3ULine
 
         return IsValid == other.IsValid &&
                string.Equals(FileSystemFileInfo.Name, other.FileSystemFileInfo.Name, StringComparison.OrdinalIgnoreCase) &&
-               TrackNumber == other.TrackNumber &&
-               ReleaseArist == other.ReleaseArist &&
-               TrackTitle == other.TrackTitle;
+               SongNumber == other.SongNumber &&
+               AlbumArist == other.AlbumArist &&
+               SongTitle == other.SongTitle;
     }
 
     public override string ToString()
     {
-        return $"IsValid [{IsValid}] ReleaseArtist [{ReleaseArist}] TrackNumber [{TrackNumber}] TrackTitle [{TrackTitle}]";
+        return $"IsValid [{IsValid}] AlbumArtist [{AlbumArist}] SongNumber [{SongNumber}] SongTitle [{SongTitle}]";
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(IsValid, FileSystemFileInfo, TrackNumber, ReleaseArist, TrackTitle);
+        return HashCode.Combine(IsValid, FileSystemFileInfo, SongNumber, AlbumArist, SongTitle);
     }
 }

@@ -11,9 +11,9 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 
-namespace Melodee.Plugins.MetaData.Track;
+namespace Melodee.Plugins.MetaData.Song;
 
-public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
+public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ISongPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
 
@@ -35,7 +35,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Common.Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
         using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{fileSystemInfo}]", DisplayName, fileSystemInfo.Name))
         {
@@ -50,62 +50,62 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                     var fullname = fileSystemInfo.FullName(directoryInfo);
                     if (ID3v1Tag.DoesTagExist(fullname))
                     {
-                        var id3v1 = new ID3v1Tag(fullname);
+                        var id3V1 = new ID3v1Tag(fullname);
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Album,
-                            Value = id3v1.Album
+                            Value = id3V1.Album
                         });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
-                            Value = id3v1.Artist
+                            Value = id3V1.Artist
                         });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
-                            Value = id3v1.Title.ToTitleCase(false)
+                            Value = id3V1.Title.ToTitleCase(false)
                         });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.TrackNumber,
-                            Value = SafeParser.ToNumber<short?>(id3v1.TrackNumber)
+                            Value = SafeParser.ToNumber<short?>(id3V1.TrackNumber)
                         });
-                        var date = SafeParser.ToDateTime(id3v1.Year);
+                        var date = SafeParser.ToDateTime(id3V1.Year);
                         tags.Add(new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.OrigReleaseYear,
+                            Identifier = MetaTagIdentifier.OrigAlbumYear,
                             Value = date?.Year
                         });
                     }
 
                     if (ID3v2Tag.DoesTagExist(fullname))
                     {
-                        IID3v2Tag id3v2 = new ID3v2Tag(fullname);
+                        IID3v2Tag id3V2 = new ID3v2Tag(fullname);
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Album,
-                            Value = id3v2.Album
+                            Value = id3V2.Album
                         });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
-                            Value = id3v2.Artist
+                            Value = id3V2.Artist
                         });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Artist,
-                            Value = id3v2.Title.ToTitleCase(false)
+                            Value = id3V2.Title.ToTitleCase(false)
                         });
                         tags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.TrackNumber,
-                            Value = SafeParser.ToNumber<short?>(id3v2.TrackNumber)
+                            Value = SafeParser.ToNumber<short?>(id3V2.TrackNumber)
                         });
-                        var date = SafeParser.ToDateTime(id3v2.Year);
+                        var date = SafeParser.ToDateTime(id3V2.Year);
                         tags.Add(new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.OrigReleaseYear,
+                            Identifier = MetaTagIdentifier.OrigAlbumYear,
                             Value = date?.Year
                         });
                     }
@@ -116,12 +116,12 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                 Log.Error(e, "fileSystemInfo [{fileSystemInfo}]", fileSystemInfo);
             }
 
-            // Ensure that OrigReleaseYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
-            if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseYear))
+            // Ensure that OrigAlbumYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
+            if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigAlbumYear))
             {
                 tags.Add(new MetaTag<object?>
                 {
-                    Identifier = MetaTagIdentifier.OrigReleaseYear,
+                    Identifier = MetaTagIdentifier.OrigAlbumYear,
                     Value = 0
                 });
             }
@@ -129,10 +129,10 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
             var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemInfo, tags, cancellationToken);
             if (!metaTagsProcessorResult.IsSuccess)
             {
-                return new OperationResult<Common.Models.Track>(metaTagsProcessorResult.Messages)
+                return new OperationResult<Common.Models.Song>(metaTagsProcessorResult.Messages)
                 {
                     Errors = metaTagsProcessorResult.Errors,
-                    Data = new Common.Models.Track
+                    Data = new Common.Models.Song
                     {
                         CrcHash = string.Empty,
                         File = fileSystemInfo
@@ -140,23 +140,23 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                 };
             }
 
-            var track = new Common.Models.Track
+            var song = new Common.Models.Song
             {
-                CrcHash = CRC32.Calculate(new FileInfo(fileSystemInfo.FullName(directoryInfo))),
+                CrcHash = Crc32.Calculate(new FileInfo(fileSystemInfo.FullName(directoryInfo))),
                 File = fileSystemInfo,
                 Images = images,
                 Tags = metaTagsProcessorResult.Data,
                 MediaAudios = mediaAudios,
                 SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
             };
-            return new OperationResult<Common.Models.Track>
+            return new OperationResult<Common.Models.Song>
             {
-                Data = track
+                Data = song
             };
         }
     }
 
-    public Task<OperationResult<bool>> UpdateTrackAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Track track, CancellationToken cancellationToken = default)
+    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

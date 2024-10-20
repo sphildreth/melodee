@@ -4,7 +4,7 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
-using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Validation;
 using Serilog;
@@ -61,7 +61,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             new[]
             {
                 new AtlMetaTag(new MetaTagsProcessor(config), config)
-            }, new ReleaseValidator(config), config);
+            }, new AlbumValidator(config), config);
         if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
         {
             try
@@ -93,7 +93,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             new[]
             {
                 new AtlMetaTag(new MetaTagsProcessor(config), config)
-            }, new ReleaseValidator(config)
+            }, new AlbumValidator(config)
             , config);
         if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
         {
@@ -127,7 +127,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         {
             try
             {
-                var nfoParserResult = await nfo.ReleaseForNfoFileAsync(fileInfo, fileInfo.Directory.ToDirectorySystemInfo());
+                var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory.ToDirectorySystemInfo());
 
                 sw.Stop();
                 Log.Debug("ℹ️ Processed Nfo File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);

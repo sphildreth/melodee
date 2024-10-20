@@ -22,14 +22,14 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
 
     public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags);
 
-    protected static string? ReleaseArtistFromReleaseArtistViaFeaturing(string artist)
+    protected static string? AlbumArtistFromAlbumArtistViaFeaturing(string artist)
     {
         var newArtist = artist;
         var matches = StringExtensions.HasFeatureFragmentsRegex.Match(artist);
         return newArtist[..matches.Index].CleanString();
     }
     
-    protected static string? TrackArtistFromTitleViaFeaturing(string title)
+    protected static string? SongArtistFromTitleViaFeaturing(string title)
     {
         var newTitle = title;
         var matches = StringExtensions.HasFeatureFragmentsRegex.Match(title);
@@ -38,7 +38,7 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
         return rgx.Replace(result ?? string.Empty, string.Empty).Nullify();
     }    
 
-    protected static string? TrackArtistFromReleaseArtistViaFeaturing(string? artist)
+    protected static string? SongArtistFromAlbumArtistViaFeaturing(string? artist)
     {
         if (string.IsNullOrWhiteSpace(artist))
         {
@@ -48,17 +48,17 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
         if (result.HasFeaturingFragments())
         {
             var matches = StringExtensions.HasFeatureFragmentsRegex.Match(result!);
-            result = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
+            result = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
         }
         if (result.HasWithFragments())
         {
             var matches = StringExtensions.HasWithFragmentsRegex.Match(result!);
-            result = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
+            result = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
         }         
         return result?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
     }
 
-    protected static string? TrackTitleWithoutFeaturingArtist(string? title)
+    protected static string? SongTitleWithoutFeaturingArtist(string? title)
     {
         var newTitle = title ?? string.Empty;
         var matches = StringExtensions.HasFeatureFragmentsRegex.Match(title!);
@@ -69,7 +69,7 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
         return title;
     }
     
-    protected static string? TrackTitleWithoutWithArtist(string? title)
+    protected static string? SongTitleWithoutWithArtist(string? title)
     {
         var newTitle = title ?? string.Empty;
         var matches = StringExtensions.HasWithFragmentsRegex.Match(title!);
@@ -84,9 +84,9 @@ public abstract partial class MetaTagProcessorBase(Configuration configuration) 
     // [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
     // internal static partial Regex ReplaceArtistSeparatorsRegex();    
     //
-    // private static string? ReplaceArtistSeparators(string? trackArtist)
+    // private static string? ReplaceArtistSeparators(string? SongArtist)
     // {
-    //     return trackArtist.Nullify() == null ? null : Artist.ReplaceArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
+    //     return SongArtist.Nullify() == null ? null : Artist.ReplaceArtistSeparatorsRegex().Replace(SongArtist!, "/").Trim();
     // }
 
     [GeneratedRegex("[^a-zA-Z0-9 -]")]

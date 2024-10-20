@@ -10,8 +10,8 @@ public class ArtistMetaTagProcessorTests
     [Fact]
     public void ValidateArtistNameWithFeaturing()
     {
-        var releaseArtistShouldBe = "Ariana Grande";
-        var trackArtistShouldBe = "Nonna";
+        var AlbumArtistShouldBe = "Ariana Grande";
+        var SongArtistShouldBe = "Nonna";
         
         var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration);
         var tag = new MetaTag<object?>
@@ -32,8 +32,8 @@ public class ArtistMetaTagProcessorTests
         Assert.True(result.IsSuccess);
         Assert.Contains(result.Data, x => x.Identifier == MetaTagIdentifier.AlbumArtist);
         Assert.Contains(result.Data, x => x.Identifier == MetaTagIdentifier.Artist);
-        Assert.Equal(releaseArtistShouldBe, result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value);
-        Assert.Equal(trackArtistShouldBe, result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist)?.Value);
+        Assert.Equal(AlbumArtistShouldBe, result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value);
+        Assert.Equal(SongArtistShouldBe, result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist)?.Value);
     }
     
     [Fact]

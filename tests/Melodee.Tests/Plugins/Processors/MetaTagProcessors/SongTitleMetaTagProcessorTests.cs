@@ -3,12 +3,12 @@ using Melodee.Common.Models;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 
-public class TrackTitleMetaTagProcessorTests
+public class SongTitleMetaTagProcessorTests
 {
     [Fact]
-    public void ValidateTrackTitleWithFeaturing()
+    public void ValidateSongTitleWithFeaturing()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.TrackTitle(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Title,
@@ -29,9 +29,9 @@ public class TrackTitleMetaTagProcessorTests
     }
     
     [Fact]
-    public void ValidateTrackTitleWithWithShouldRemove1()
+    public void ValidateSongTitleWithWithShouldRemove1()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.TrackTitle(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Title,
@@ -52,9 +52,9 @@ public class TrackTitleMetaTagProcessorTests
     }
     
     [Fact]
-    public void ValidateTrackTitleWithWithShouldRemove2()
+    public void ValidateSongTitleWithWithShouldRemove2()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.TrackTitle(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Title,
@@ -75,9 +75,9 @@ public class TrackTitleMetaTagProcessorTests
     }    
     
     [Fact]
-    public void ValidateTrackTitleWithWithShouldStay()
+    public void ValidateSongTitleWithWithShouldStay()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.TrackTitle(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Title,

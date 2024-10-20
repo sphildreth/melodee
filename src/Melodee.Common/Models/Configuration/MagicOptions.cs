@@ -4,16 +4,16 @@ public sealed record MagicOptions
 {
     public bool IsMagicEnabled { get; init; } = true;
     
-    public bool DoRenumberTracks { get; set; } = true;
+    public bool DoRenumberSongs { get; set; } = true;
     
-    public bool DoRemoveFeaturingArtistFromTracksArtist { get; set; } = true;
+    public bool DoRemoveFeaturingArtistFromSongsArtist { get; set; } = true;
     
-    public bool DoRemoveFeaturingArtistFromTrackTitle { get; set; } = true;
+    public bool DoRemoveFeaturingArtistFromSongTitle { get; set; } = true;
     
-    public bool DoReplaceTracksArtistSeperators { get; set; } = true;
+    public bool DoReplaceSongsArtistSeperators { get; set; } = true;
     
     public bool DoSetYearToCurrentIfInvalid { get; set; } = true;
     
-    public bool DoRemoveUnwantedTextFromReleaseTitle { get; set; } = true;
+    public bool DoRemoveUnwantedTextFromAlbumTitle { get; set; } = true;
     
 }

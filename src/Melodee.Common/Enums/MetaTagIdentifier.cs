@@ -15,12 +15,12 @@ public enum MetaTagIdentifier
     [Description("[TT1]")] GeneralDescription,
 
     /// <summary>
-    ///     The 'Lead performer(s)/Soloist(s)' tag. Track Artist [TP1,TPE1] versus Album Artist
+    ///     The 'Lead performer(s)/Soloist(s)' tag. Song Artist [TP1,TPE1] versus Album Artist
     /// </summary>
     [Description("[TP1,TPE1]")] Artist,
 
     /// <summary>
-    ///     Doesn't look like an official ID3 tag but often used for multiple value artists on a track.
+    ///     Doesn't look like an official ID3 tag but often used for multiple value artists on a Song.
     /// </summary>
     [Description("[TT1]")] [MetaTagMultiValue(true)]
     Artists,
@@ -92,7 +92,7 @@ public enum MetaTagIdentifier
     [Description("[TIM, TIME]")] RecordingTime,
 
     /// <summary>
-    ///     Track number. This should be set from parsed value from [TRK] or [TRCK]
+    ///     Song number. This should be set from parsed value from [TRK] or [TRCK]
     /// </summary>
     [Description("[TRK, TRCK]")] TrackNumber,
 
@@ -144,14 +144,14 @@ public enum MetaTagIdentifier
     [Description("[TP3,TPE3]")] Conductor,
 
     /// <summary>
-    ///     Total number of tracks [TRK]
+    ///     Total number of Songs [TRK]
     /// </summary>
-    [Description("[TRK]")] TrackTotal,
+    [Description("[TRK]")] SongTotal,
 
     /// <summary>
-    ///     Alternate to TRACK_NUMBER and TRACK_TOTAL where both are in the same field [TRCK] ('1/8')
+    ///     Alternate to Song_NUMBER and Song_TOTAL where both are in the same field [TRCK] ('1/8')
     /// </summary>
-    [Description("[TRCK]")] TrackNumberTotal,
+    [Description("[TRCK]")] SongNumberTotal,
 
     /// <summary>
     ///     Disc number. This should be set from parsed value from [TPA] or [TPOS]
@@ -244,16 +244,16 @@ public enum MetaTagIdentifier
 
 
     /*
-     *  Original release date
+     *  Original Album date
      *  ID3v2.2 : TOR (year only)
      *  ID3v2.3 : TORY (year only)
      *  ID3v2.4 : TDOR (timestamp according to spec)
      */
 
     /// <summary>
-    ///     Original release year (when target format only supports year) [TORY,TOR]
+    ///     Original Album year (when target format only supports year) [TORY,TOR]
     /// </summary>
-    [Description("[TOR, TORY, TDOR]")] OrigReleaseYear,
+    [Description("[TOR, TORY, TDOR]")] OrigAlbumYear,
 
     /// <summary>
     ///     The ‘Date’ frame is a numeric string in the DDMM format containing the date for the recording. This field is always
@@ -262,21 +262,21 @@ public enum MetaTagIdentifier
     [Description("[TDA, TDAT]")] Date,
 
     /*
-     * Release date
+     * Album date
      * ID3v2.2 : no standard
      * ID3v2.3 : no standard
      * ID3v2.4 : TDRL (timestamp according to spec; actual content may vary)
      */
 
     /// <summary>
-    ///     Original release date (when target format supports date) [TDOR]
+    ///     Original Album date (when target format supports date) [TDOR]
     /// </summary>
-    [Description("[TDOR]")] OrigReleaseDate,
+    [Description("[TDOR]")] OrigAlbumDate,
 
     /// <summary>
-    ///     Release date. [TDRL]
+    ///     Album date. [TDRL]
     /// </summary>
-    [Description("[TDRL]")] ReleaseDate,
+    [Description("[TDRL]")] AlbumDate,
 
     /// <summary>
     ///     Software that encoded the file, with relevant settings if any [TSS, TSSE]

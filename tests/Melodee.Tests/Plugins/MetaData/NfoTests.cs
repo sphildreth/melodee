@@ -3,7 +3,6 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Directory.Models;
-using Melodee.Plugins.MetaData.Track;
 using CueSheet = Melodee.Plugins.MetaData.Directory.CueSheet;
 
 namespace Melodee.Tests.Plugins.MetaData;
@@ -18,7 +17,7 @@ public class NfoTests
         if (fileInfo.Exists)
         {
             var nfo = new Nfo(TestsBase.NewConfiguration);
-            var nfoParserResult = await nfo.ReleaseForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
+            var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration));
         }
@@ -32,12 +31,12 @@ public class NfoTests
         if (fileInfo.Exists)
         {
             var nfo = new Nfo(TestsBase.NewConfiguration);
-            var nfoParserResult = await nfo.ReleaseForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
+            var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
-            Assert.NotNull(nfoParserResult.Tracks);
+            Assert.NotNull(nfoParserResult.Songs);
             Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration));
             
-            Assert.DoesNotContain(nfoParserResult.Tracks, x => x.Title() != null && x.Title()!.Contains("..."));
+            Assert.DoesNotContain(nfoParserResult.Songs, x => x.Title() != null && x.Title()!.Contains("..."));
         }
     }    
    

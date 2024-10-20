@@ -4,12 +4,12 @@ using Melodee.Common.Enums;
 namespace Melodee.Common.Models;
 
 [Serializable]
-public sealed record ReleaseFile
+public sealed record AlbumFile
 {
-    public long ReleaseUniqueId { get; set; }
+    public long AlbumUniqueId { get; set; }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public required ReleaseFileType ReleaseFileType { get; init; }
+    public required AlbumFileType AlbumFileType { get; init; }
 
     public required string ProcessedByPlugin { get; init; }
 

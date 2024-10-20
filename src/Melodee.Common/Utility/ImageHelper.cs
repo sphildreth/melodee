@@ -62,7 +62,7 @@ public static class ImageHelper
     }
 
 
-    public static bool IsReleaseImage(FileInfo? fileInfo, string? releaseName = null)
+    public static bool IsAlbumImage(FileInfo? fileInfo, string? albumName = null)
     {
         if (fileInfo == null)
         {
@@ -70,11 +70,11 @@ public static class ImageHelper
         }
 
         return Regex.IsMatch(fileInfo.Name,
-            @"((f[-_\s]*[0-9]*)|00|art|big[art]*|cover|cvr|folder|release|front[-_\s]*)\.(jpg|jpeg|png|bmp|gif)",
+            @"((f[-_\s]*[0-9]*)|00|art|big[art]*|cover|cvr|folder|Album|front[-_\s]*)\.(jpg|jpeg|png|bmp|gif)",
             RegexOptions.IgnoreCase);
     }
 
-    public static bool IsReleaseSecondaryImage(FileInfo? fileInfo)
+    public static bool IsAlbumSecondaryImage(FileInfo? fileInfo)
     {
         if (fileInfo == null)
         {
@@ -82,7 +82,7 @@ public static class ImageHelper
         }
 
         return Regex.IsMatch(fileInfo.Name,
-            @"((img[\s-_]*[0-9]*[\s-_]*[0-9]*)|(book[let]*[#-_\s(]*[0-9]*-*[0-9]*(\))*)|(encartes[-_\s]*[(]*[0-9]*[)]*)|sc[an]*(.)?[0-9]*|matrix(.)?[0-9]*|(cover[\s_-]*[0-9]+)|back|dvd|traycard|jewel case|disc|(.*)[in]*side(.*)|in([side|lay|let|site])*[0-9]*|digipack.?\[?\(?([0-9]*)\]?\)?|cd.?\[?\(?([0-9]*)\]?\)?|(release[\s_-]+[0-9]+))\.(jpg|jpeg|png|bmp|gif)",
+            @"((img[\s-_]*[0-9]*[\s-_]*[0-9]*)|(book[let]*[#-_\s(]*[0-9]*-*[0-9]*(\))*)|(encartes[-_\s]*[(]*[0-9]*[)]*)|sc[an]*(.)?[0-9]*|matrix(.)?[0-9]*|(cover[\s_-]*[0-9]+)|back|dvd|traycard|jewel case|disc|(.*)[in]*side(.*)|in([side|lay|let|site])*[0-9]*|digipack.?\[?\(?([0-9]*)\]?\)?|cd.?\[?\(?([0-9]*)\]?\)?|(Album[\s_-]+[0-9]+))\.(jpg|jpeg|png|bmp|gif)",
             RegexOptions.IgnoreCase);
     }
 
@@ -125,12 +125,12 @@ public static class ImageHelper
                     break;
 
                 case PictureIdentifier.Front:
-                    if (IsReleaseImage(image))
+                    if (IsAlbumImage(image))
                     {
                         result.Add(image);
                     }
 
-                    if (IsReleaseSecondaryImage(image))
+                    if (IsAlbumSecondaryImage(image))
                     {
                         result.Add(image);
                     }

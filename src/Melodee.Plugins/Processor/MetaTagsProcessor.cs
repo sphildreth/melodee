@@ -4,6 +4,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
 using Melodee.Plugins.Processor.MetaTagProcessors;
+using Album = Melodee.Plugins.Processor.MetaTagProcessors.Album;
 
 namespace Melodee.Plugins.Processor;
 
@@ -16,11 +17,11 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
         _metaTagProcessors = new IMetaTagProcessor[]
         {
             new Album(configuration),
-            new ReleaseArtist(configuration),            
+            new AlbumArtist(configuration),            
             new Artist(configuration),
             new Comment(configuration),
-            new OrigReleaseYear(configuration),
-            new TrackTitle(configuration),
+            new OrigAlbumYear(configuration),
+            new SongTitle(configuration),
         };
     }
 
@@ -86,11 +87,11 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
     }
 
 
-    public static string? ReplaceTrackArtistSeparators(string? trackArtist)
+    public static string? ReplaceSongArtistSeparators(string? songArtist)
     {
-        return trackArtist.Nullify() == null ? null : ReplaceTrackArtistSeparatorsRegex().Replace(trackArtist!, "/").Trim();
+        return songArtist.Nullify() == null ? null : ReplaceSongArtistSeparatorsRegex().Replace(songArtist!, "/").Trim();
     }
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
-    private static partial Regex ReplaceTrackArtistSeparatorsRegex();
+    private static partial Regex ReplaceSongArtistSeparatorsRegex();
 }

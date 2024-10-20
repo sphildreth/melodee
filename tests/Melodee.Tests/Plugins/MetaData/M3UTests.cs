@@ -1,7 +1,7 @@
 using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Directory.Models;
-using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Validation;
 using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVerification;
@@ -20,7 +20,7 @@ public class M3UTests
             var m3U = new M3UPlaylist(new []
             {
                 new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
-            }, new ReleaseValidator(TestsBase.NewConfiguration),
+            }, new AlbumValidator(TestsBase.NewConfiguration),
                TestsBase.NewConfiguration);
             var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
@@ -36,7 +36,7 @@ public class M3UTests
     [Fact]
     public void ValidateModelFullLineParsing3()
     {
-        // <trackNumber>-<releaseArtist>-<trackTitle>.mp3
+        // <SongNumber>-<AlbumArtist>-<SongTitle>.mp3
         var input = "01-avatar-bound_to_the_wall.mp3";
         var shouldBe = new M3ULine()
         {
@@ -46,9 +46,9 @@ public class M3UTests
               Name = "01-avatar-bound_to_the_wall.mp3",
               Size = 0
             },
-            ReleaseArist = "Avatar",
-            TrackTitle = "Bound To The Wall",
-            TrackNumber = 1
+            AlbumArist = "Avatar",
+            SongTitle = "Bound To The Wall",
+            SongNumber = 1
         };
         var parsedModel = M3UPlaylist.ModelFromM3ULine(string.Empty, input);
         Assert.Equal(shouldBe, parsedModel);
@@ -57,7 +57,7 @@ public class M3UTests
     [Fact]
     public void ValidateModelFullLineParsing4()
     {
-        // <trackNumber>-<releaseArtist>-<trackTitle>-<crc>.mp3
+        // <SongNumber>-<AlbumArtist>-<SongTitle>-<crc>.mp3
         var input = "01-kittie-vultures-9f80b183.mp3";
         var shouldBe = new M3ULine()
         {
@@ -67,9 +67,9 @@ public class M3UTests
                 Name = "01-kittie-vultures-9f80b183.mp3",
                 Size = 0
             },
-            ReleaseArist = "Kittie",
-            TrackTitle = "Vultures",
-            TrackNumber = 1
+            AlbumArist = "Kittie",
+            SongTitle = "Vultures",
+            SongNumber = 1
         };
         var parsedModel = M3UPlaylist.ModelFromM3ULine(string.Empty, input);
         Assert.Equal(shouldBe, parsedModel);

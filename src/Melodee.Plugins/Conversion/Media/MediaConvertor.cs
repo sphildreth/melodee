@@ -7,7 +7,7 @@ using Melodee.Common.Models.Configuration;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData;
-using Melodee.Plugins.MetaData.Track.Extensions;
+using Melodee.Plugins.MetaData.Song.Extensions;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -56,15 +56,15 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
         if (fileInfo.Exists && Configuration.MediaConvertorOptions.ConversionEnabled)
         {
             var fileAtl = new Track(fileSystemInfo.FullName(directoryInfo));
-            if (ShouldMediaTrackBeConverted(fileAtl))
+            if (ShouldMediaSongBeConverted(fileAtl))
             {
                 using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
-                    var trackFileInfo = fileAtl.FileInfo();
-                    var trackDirectory = trackFileInfo.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Track");
-                    var newFileName = Path.Combine(trackDirectory, $"{Path.GetFileNameWithoutExtension(trackFileInfo.Name)}.mp3");
+                    var songFileInfo = fileAtl.FileInfo();
+                    var songDirectory = songFileInfo.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Song");
+                    var newFileName = Path.Combine(songDirectory, $"{Path.GetFileNameWithoutExtension(songFileInfo.Name)}.mp3");
 
-                    await FFMpegArguments.FromFileInput(trackFileInfo)
+                    await FFMpegArguments.FromFileInput(songFileInfo)
                         .OutputToFile(newFileName, true, options =>
                         {
                             options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration.MediaConvertorOptions.ConvertBitrate));
@@ -78,19 +78,19 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
                         fileInfo = new FileInfo(newFileName);
                         if (Configuration.PluginProcessOptions.DoDeleteOriginal)
                         {
-                            trackFileInfo.Delete();
-                            Log.Debug($"\u26a0\ufe0f Deleted converted file [{trackFileInfo.FullName}]");
+                            songFileInfo.Delete();
+                            Log.Debug($"\u26a0\ufe0f Deleted converted file [{songFileInfo.FullName}]");
                         }
                         else if (Configuration.PluginProcessOptions.DoRenameConverted)
                         {
-                            var movedFileName = Path.Combine(trackFileInfo.DirectoryName!, $"{trackFileInfo.Name}.{ Configuration.PluginProcessOptions.ConvertedExtension }");
-                            trackFileInfo.MoveTo(movedFileName);
-                            Log.Debug($"\ud83d\ude9b Renamed converted file [{trackFileInfo.Name}] => [{ Path.GetFileName(movedFileName)}]");
+                            var movedFileName = Path.Combine(songFileInfo.DirectoryName!, $"{songFileInfo.Name}.{ Configuration.PluginProcessOptions.ConvertedExtension }");
+                            songFileInfo.MoveTo(movedFileName);
+                            Log.Debug($"\ud83d\ude9b Renamed converted file [{songFileInfo.Name}] => [{ Path.GetFileName(movedFileName)}]");
                         }
                     }
                     else
                     {
-                        throw new Exception($"Unable to convert [{trackFileInfo.FullName}] to MP3");
+                        throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
                     }
                 }
             }
@@ -102,18 +102,18 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
         };
     }
 
-    private static bool ShouldMediaTrackBeConverted(Track track)
+    private static bool ShouldMediaSongBeConverted(Track song)
     {
-        if (track.AudioFormat == null || (track.AudioFormat?.MimeList?.Contains("image") ?? false))
+        if (song.AudioFormat == null || (song.AudioFormat?.MimeList?.Contains("image") ?? false))
         {
             return false;
         }
 
-        var shortName = track.AudioFormat?.ShortName ?? string.Empty;
+        var shortName = song.AudioFormat?.ShortName ?? string.Empty;
 
         if (MpegRegex().IsMatch(shortName))
         {
-            var ext = track.FileInfo().Extension;
+            var ext = song.FileInfo().Extension;
             if (ext.ToLower().EndsWith("m4a")) // M4A is an audio file using the MP4 encoding
             {
                 return true;

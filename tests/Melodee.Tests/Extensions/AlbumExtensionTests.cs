@@ -5,11 +5,11 @@ using Melodee.Common.Utility;
 
 namespace Melodee.Tests.Extensions;
 
-public class ReleaseExtensionTests
+public class AlbumExtensionTests
 {
-    public static Release NewRelease()
+    public static Album NewAlbum()
     {
-        return new Release
+        return new Album
         {
             ViaPlugins = [],
             OriginalDirectory = new FileSystemDirectoryInfo
@@ -31,7 +31,7 @@ public class ReleaseExtensionTests
                 },
                 new MetaTag<object?>
                 {
-                    Identifier = MetaTagIdentifier.OrigReleaseYear,
+                    Identifier = MetaTagIdentifier.OrigAlbumYear,
                     Value = 2024
                 },
                 new MetaTag<object?>
@@ -45,11 +45,11 @@ public class ReleaseExtensionTests
                     Value = "Fire Proof"
                 }
             },
-            Tracks = new[]
+            Songs = new[]
             {
-                new Track
+                new Song
                 {
-                    CrcHash = CRC32.Calculate(new FileInfo(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3")),
+                    CrcHash = Crc32.Calculate(new FileInfo(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3")),
                     File = new FileSystemFileInfo
                     {
                         Name = "03-holy_truth-flako_el_dark_cowboy.mp3\"",
@@ -69,7 +69,7 @@ public class ReleaseExtensionTests
                         },
                         new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.TrackTotal,
+                            Identifier = MetaTagIdentifier.SongTotal,
                             Value = 1
                         },
                         new MetaTag<object?>
@@ -89,42 +89,42 @@ public class ReleaseExtensionTests
     [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/00--fire_proof-(dzb707)-web-2024.sfv", false)]
     [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-kittie-vultures-ep-web-2024.sfv", false)]
     [InlineData("batman", false)]
-    public void ValidateFileIsForRelease(string fileName, bool shouldBe)
+    public void ValidateFileIsForAlbum(string fileName, bool shouldBe)
     {
         if (File.Exists(fileName))
         {
-            Assert.Equal(shouldBe, NewRelease().IsFileForRelease(new FileInfo(fileName)));
+            Assert.Equal(shouldBe, NewAlbum().IsFileForAlbum(new FileInfo(fileName)));
         }
     }
 
     [Fact]
     public void ValidateArtistDirectoryName()
     {
-        var artistDirectoryName = NewRelease().ArtistDirectoryName(TestsBase.NewConfiguration);
+        var artistDirectoryName = NewAlbum().ArtistDirectoryName(TestsBase.NewConfiguration);
         Assert.NotNull(artistDirectoryName);
-        Assert.Equal(12345L, NewRelease().ArtistUniqueId());
+        Assert.Equal(12345L, NewAlbum().ArtistUniqueId());
         Assert.Equal(@"H/HO/Holy Truth [12345]", artistDirectoryName);
     }
 
     [Fact]
-    public void ValidateReleaseDirectoryName()
+    public void ValidateAlbumDirectoryName()
     {
-        var artistDirectoryName = NewRelease().ReleaseDirectoryName(TestsBase.NewConfiguration);
+        var artistDirectoryName = NewAlbum().AlbumDirectoryName(TestsBase.NewConfiguration);
         Assert.NotNull(artistDirectoryName);
-        Assert.Equal(12345L, NewRelease().ArtistUniqueId());
+        Assert.Equal(12345L, NewAlbum().ArtistUniqueId());
         Assert.Equal(@"H/HO/Holy Truth [12345]/[2024] Fire Proof", artistDirectoryName);
     }
 
     [Fact]
     public void ValidateDiscTotalValue()
     {
-        Assert.Equal(2, NewRelease().MediaCountValue());
+        Assert.Equal(2, NewAlbum().MediaCountValue());
     }
     
     [Fact]
-    public void ValidateTrackTotalValueUsingTrackTotal()
+    public void ValidateSongTotalValueUsingSongTotal()
     {
-        Assert.Equal(1, NewRelease().TrackTotalValue());
+        Assert.Equal(1, NewAlbum().SongTotalValue());
     } 
    
 }

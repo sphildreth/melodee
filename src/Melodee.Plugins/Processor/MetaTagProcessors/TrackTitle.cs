@@ -7,13 +7,13 @@ using Melodee.Common.Utility;
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-///     Handle the track title and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
+///     Handle the Song title and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
 /// </summary>
-public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBase(configuration)
+public sealed class SongTitle(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
     public override string Id => "79BBF338-6B2F-4166-9F28-97D21C83D2BF";
 
-    public override string DisplayName => nameof(TrackTitle);
+    public override string DisplayName => nameof(SongTitle);
 
     public override int SortOrder { get; } = 2; // Should run after Artist
 
@@ -22,10 +22,10 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
         return metaTagIdentifier == MetaTagIdentifier.Title;
     }
 
-    private bool ContinueProcessing(string? trackTitle)
+    private bool ContinueProcessing(string? songTitle)
     {
-        // If Track Title is just a number (Knife Party - Abondon Ship - 404) then don't modify.
-        if (SafeParser.ToNumber<int>(trackTitle) > 0)
+        // If Song Title is just a number (Knife Party - Abondon Ship - 404) then don't modify.
+        if (SafeParser.ToNumber<int>(songTitle) > 0)
         {
             return false;
         }
@@ -37,41 +37,41 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
     {
         var tagValue = metaTag.Value as string;
         var updatedTagValue = false;
-        var trackTitle = tagValue ?? string.Empty;
+        var songTitle = tagValue ?? string.Empty;
         var result = new List<MetaTag<object?>>();
         
-        int? trackNumber = null;
+        int? songNumber = null;
         var metaTagsValue = metaTags?.ToArray() ?? [];
-        if (trackTitle?.Nullify() != null)
+        if (songTitle?.Nullify() != null)
         {
-            if (ContinueProcessing(trackTitle))
+            if (ContinueProcessing(songTitle))
             {
-                trackNumber = metaTagsValue.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? trackTitle.TryToGetTrackNumberFromString();
-                if ((trackNumber ?? 0) > 0)
+                songNumber = metaTagsValue.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? songTitle.TryToGetSongNumberFromString();
+                if ((songNumber ?? 0) > 0)
                 {
-                    trackTitle = trackTitle.RemoveTrackNumberFromString();
+                    songTitle = songTitle.RemoveSongNumberFromString();
                 }
             }
 
-            if (ContinueProcessing(trackTitle))
+            if (ContinueProcessing(songTitle))
             {
-                if (trackTitle.HasFeaturingFragments() || trackTitle.HasWithFragments())
+                if (songTitle.HasFeaturingFragments() || songTitle.HasWithFragments())
                 {
                     string? featureArtist = null;
-                    string? newTrackTitle = null;
+                    string? newSongTitle = null;
                     
-                    if (trackTitle.HasFeaturingFragments())
+                    if (songTitle.HasFeaturingFragments())
                     {
-                        var matches = StringExtensions.HasFeatureFragmentsRegex.Match(trackTitle!);
-                        featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
-                        newTrackTitle = TrackTitleWithoutFeaturingArtist(trackTitle);                        
+                        var matches = StringExtensions.HasFeatureFragmentsRegex.Match(songTitle!);
+                        featureArtist = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(songTitle!.Substring(matches.Index), string.Empty).CleanString());
+                        newSongTitle = SongTitleWithoutFeaturingArtist(songTitle);                        
                     }
 
-                    if (trackTitle.HasWithFragments())
+                    if (songTitle.HasWithFragments())
                     {
-                        var matches = StringExtensions.HasWithFragmentsRegex.Match(trackTitle!);
-                        featureArtist = MetaTagsProcessor.ReplaceTrackArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(trackTitle!.Substring(matches.Index), string.Empty).CleanString());
-                        newTrackTitle = TrackTitleWithoutWithArtist(trackTitle);                          
+                        var matches = StringExtensions.HasWithFragmentsRegex.Match(songTitle!);
+                        featureArtist = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(songTitle!.Substring(matches.Index), string.Empty).CleanString());
+                        newSongTitle = SongTitleWithoutWithArtist(songTitle);                          
                     }
 
                     featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
@@ -85,47 +85,47 @@ public sealed class TrackTitle(Configuration configuration) : MetaTagProcessorBa
                         });                        
                     }
                     
-                    if (!trackTitle.DoStringsMatch(newTrackTitle))
+                    if (!songTitle.DoStringsMatch(newSongTitle))
                     {
-                        trackTitle = newTrackTitle;
+                        songTitle = newSongTitle;
                         updatedTagValue = true;
                     }
                 }
             }
 
-            if (ContinueProcessing(trackTitle))
+            if (ContinueProcessing(songTitle))
             {
-                if (trackTitle != null && Configuration.PluginProcessOptions.TrackTitleRemovals.Any())
+                if (songTitle != null && Configuration.PluginProcessOptions.SongTitleRemovals.Any())
                 {
-                    trackTitle = Configuration.PluginProcessOptions.TrackTitleRemovals.Aggregate(trackTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
-                    updatedTagValue = trackTitle != tagValue;
+                    songTitle = Configuration.PluginProcessOptions.SongTitleRemovals.Aggregate(songTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
+                    updatedTagValue = songTitle != tagValue;
                 }
             }
             
-            if (trackTitle.HasFeaturingFragments())
+            if (songTitle.HasFeaturingFragments())
             {
-                trackTitle = TrackArtistFromReleaseArtistViaFeaturing(trackTitle);
+                songTitle = SongArtistFromAlbumArtistViaFeaturing(songTitle);
             }            
         }
        
-        if (trackTitle.Nullify() != null)
+        if (songTitle.Nullify() != null)
         {
             result.Add(
                 new()
                 {
                     Identifier = metaTag.Identifier,
-                    Value = trackTitle,
+                    Value = songTitle,
                     OriginalValue = updatedTagValue ? metaTag.Value : null
                 }
             );
         }
 
-        if (trackNumber.HasValue)
+        if (songNumber.HasValue)
         {
             result.Add(new MetaTag<object?>
             {
                 Identifier = MetaTagIdentifier.TrackNumber,
-                Value = trackNumber.Value
+                Value = songNumber.Value
             });
         }
         result.ForEach(x => x.AddProcessedBy(nameof(Artist)));

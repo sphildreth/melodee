@@ -7,9 +7,9 @@ using Melodee.Common.Models.Configuration;
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-///     Handle the Release Artist and split away any featuring artists.
+///     Handle the Album Artist and split away any featuring artists.
 /// </summary>
-public sealed partial class ReleaseArtist(Configuration configuration) : MetaTagProcessorBase(configuration)
+public sealed partial class AlbumArtist(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
     public override string Id => "29D61BF9-D283-4DB6-B7EB-16F6BCA76998";
 
@@ -25,33 +25,33 @@ public sealed partial class ReleaseArtist(Configuration configuration) : MetaTag
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
-        var releaseArtist = tagValue as string ?? string.Empty;
+        var albumArtist = tagValue as string ?? string.Empty;
         var result = new List<MetaTag<object?>>();
         
-        if (releaseArtist.Nullify() != null)
+        if (albumArtist.Nullify() != null)
         {
             if (Configuration.PluginProcessOptions.ArtistNameReplacements.Any())
             {
                 foreach (var kp in Configuration.PluginProcessOptions.ArtistNameReplacements)
                 {
-                    if (kp.Value.Any(kpv => string.Equals(releaseArtist, kpv)))
+                    if (kp.Value.Any(kpv => string.Equals(albumArtist, kpv)))
                     {
-                        releaseArtist = kp.Key;
+                        albumArtist = kp.Key;
                         break;
                     }
                 }
             }
-            if (releaseArtist.HasFeaturingFragments())
+            if (albumArtist.HasFeaturingFragments())
             {
-                releaseArtist = ReleaseArtistFromReleaseArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty);
+                albumArtist = AlbumArtistFromAlbumArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty);
             }
 
-            if (releaseArtist != null)
+            if (albumArtist != null)
             {
                 result.Add(new MetaTag<object?>
                 {
                     Identifier = MetaTagIdentifier.AlbumArtist,
-                    Value = releaseArtist,
+                    Value = albumArtist,
                     OriginalValue = metaTag.Value
                 });
             }             

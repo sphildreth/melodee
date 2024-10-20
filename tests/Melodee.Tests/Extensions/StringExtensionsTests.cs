@@ -73,9 +73,9 @@ public class StringExtensionsTests
     [InlineData("001 - Steve Winwood.mp3", 1)]
     [InlineData("14 - Steve Winwood.mp3", 14)]
     [InlineData(" 01 - Steve Winwood.mp3", 1)]
-    public void TryToGetTrackNumberFromString(string? input, int? shouldBe)
+    public void TryToGetSongNumberFromString(string? input, int? shouldBe)
     {
-        Assert.Equal(shouldBe, input?.TryToGetTrackNumberFromString());
+        Assert.Equal(shouldBe, input?.TryToGetSongNumberFromString());
     }    
         
     [Theory]
@@ -90,9 +90,9 @@ public class StringExtensionsTests
     [InlineData("001 - Steve Winwood.mp3", "Steve Winwood.mp3")]
     [InlineData("14 - Steve Winwood.mp3", "Steve Winwood.mp3")]
     [InlineData(" 01 - Steve Winwood.mp3", "Steve Winwood.mp3")]
-    public void RemoveTrackNumberFromString(string? input, string? shouldBe)
+    public void RemoveSongNumberFromString(string? input, string? shouldBe)
     {
-        Assert.Equal(shouldBe, input?.RemoveTrackNumberFromString());
+        Assert.Equal(shouldBe, input?.RemoveSongNumberFromString());
     }
         
     [Theory]
@@ -112,25 +112,25 @@ public class StringExtensionsTests
         
     [Theory]
     [InlineData("Bob Jones", false)]
-    [InlineData("Bob Track", false)]
-    [InlineData("Track Bob", false)]
+    [InlineData("Bob Song", false)]
+    [InlineData("Song Bob", false)]
     [InlineData("Sound Bob", false)]
-    [InlineData("SoundTracks", true)]
-    [InlineData("Sound Track", true)]
-    [InlineData("Sound Tracks", true)]
-    public void ValidateIsSoundTrackArtists(string input, bool shouldBe)
+    [InlineData("SoundSongs", true)]
+    [InlineData("Sound Song", true)]
+    [InlineData("Sound Songs", true)]
+    public void ValidateIsSoundSongArtists(string input, bool shouldBe)
     {
-        Assert.Equal(shouldBe, input.IsSoundTrackAristValue());
+        Assert.Equal(shouldBe, input.IsSoundSongAristValue());
     }     
         
     [Theory]
     [InlineData("Bob Jones", false)]
     [InlineData("Bob Cast", false)]
-    [InlineData("Track Bob", false)]
+    [InlineData("Song Bob", false)]
     [InlineData("Sound Bob", false)]
     [InlineData("Original Cast", true)]
     [InlineData("Original Broadway Cast", true)]
-    public void ValidateIsCastRecordTrackArtists(string input, bool shouldBe)
+    public void ValidateIsCastRecordSongArtists(string input, bool shouldBe)
     {
         Assert.Equal(shouldBe, input.IsCastRecording());
     }        

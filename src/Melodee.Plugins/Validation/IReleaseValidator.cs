@@ -3,7 +3,7 @@ using Melodee.Plugins.Validation.Models;
 
 namespace Melodee.Plugins.Validation;
 
-public interface IReleaseValidator
+public interface IAlbumValidator
 {
-    OperationResult<ValidationResult> ValidateRelease(Release? release);
+    OperationResult<ValidationResult> ValidateAlbum(Album? album);
 }

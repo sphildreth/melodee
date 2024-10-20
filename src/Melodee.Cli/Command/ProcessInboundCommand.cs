@@ -3,8 +3,8 @@ using System.Text.Json;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Configuration;
-using Melodee.Plugins.Discovery.Releases;
-using Melodee.Plugins.MetaData.Track;
+using Melodee.Plugins.Discovery.Albums;
+using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
@@ -62,13 +62,13 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             new Panel(grid)
                 .Header("Configuration"));
         
-        var validator = new ReleaseValidator(config);
+        var validator = new AlbumValidator(config);
         var processor = new DirectoryProcessor(
             new NullScript(config),
             new NullScript(config),
             validator,
-            new ReleaseEditProcessor(config, 
-                new ReleasesDiscoverer(validator, config), 
+            new AlbumEditProcessor(config, 
+                new AlbumsDiscoverer(validator, config), 
                 new AtlMetaTag(new MetaTagsProcessor(config), config),
                 validator),            
             config);

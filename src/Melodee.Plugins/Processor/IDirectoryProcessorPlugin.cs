@@ -14,12 +14,12 @@ public interface IDirectoryProcessorPlugin : IPlugin
     void StopProcessing();
 
     /// <summary>
-    /// Process given directory and return found Releases.
+    /// Process given directory and return found Albums.
     /// </summary>
-    /// <param name="fileSystemDirectoryInfo">Directory to get all Releases from</param>
+    /// <param name="fileSystemDirectoryInfo">Directory to get all Albums from</param>
     /// <param name="cancellationToken">Cancellation Token</param>
-    /// <returns>Tuple of Releases collection and Total Number of Tracks</returns>
-    Task<OperationResult<(IEnumerable<Release>, int)>> AllReleasesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default);
+    /// <returns>Tuple of Albums collection and Total Number of Songs</returns>
+    Task<OperationResult<(IEnumerable<Album>, int)>> AllAlbumsForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default);
 
     Task<OperationResult<DirectoryProcessorResult>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default);
 }

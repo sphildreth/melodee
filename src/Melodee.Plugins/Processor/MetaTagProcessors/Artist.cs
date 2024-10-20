@@ -7,7 +7,7 @@ using Melodee.Common.Models.Configuration;
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-///     Handle the track Artist and split away any featuring artists.
+///     Handle the Song Artist and split away any featuring artists.
 /// </summary>
 public sealed partial class Artist(Configuration configuration) : MetaTagProcessorBase(configuration)
 {
@@ -47,11 +47,11 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
             // See if the artist has featuring artists
             if (artist.Nullify() != null && artist.HasFeaturingFragments())
             {
-                // Get the track artist from the artist and modify the artist
+                // Get the Song artist from the artist and modify the artist
                 result.Add(new MetaTag<object?>
                 {
                     Identifier = MetaTagIdentifier.Artist,
-                    Value = TrackArtistFromReleaseArtistViaFeaturing(artist),
+                    Value = SongArtistFromAlbumArtistViaFeaturing(artist),
                     OriginalValue = artist
                 });
                 if (metaTagsValue?.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist) ?? false)
@@ -59,7 +59,7 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                     result.Add(new MetaTag<object?>
                     {
                         Identifier = MetaTagIdentifier.AlbumArtist,
-                        Value = ReleaseArtistFromReleaseArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty),
+                        Value = AlbumArtistFromAlbumArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty),
                         OriginalValue = artist
                     });
                 }
@@ -67,25 +67,25 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
             
             // See if the Title has featuring artists
             var title = (metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value) as string;
-            string? trackArtist = null;
+            string? songArtist = null;
             if (title.Nullify() != null && title.HasFeaturingFragments())
             {
-                // Get the track artist from the title and modify the title
+                // Get the Song artist from the title and modify the title
                 result.Add(new MetaTag<object?>
                 {
                     Identifier = MetaTagIdentifier.Title,
-                    Value = TrackTitleWithoutFeaturingArtist(title),
+                    Value = SongTitleWithoutFeaturingArtist(title),
                     OriginalValue = title
                 });
-                // Add the track artist from title 
-                trackArtist = TrackArtistFromTitleViaFeaturing(title!);
+                // Add the Song artist from title 
+                songArtist = SongArtistFromTitleViaFeaturing(title!);
                 result.Add(new MetaTag<object?>
                 {
                     Identifier = MetaTagIdentifier.Artist,
-                    Value = artist.FeaturingAndWithFragmentsCount() > 1 ? artist : trackArtist
+                    Value = artist.FeaturingAndWithFragmentsCount() > 1 ? artist : songArtist
                 });
 
-                // Ensure the ReleaseArtist is set
+                // Ensure the AlbumArtist is set
                 if (metaTagsValue?.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist) ?? false)
                 {
                     result.Add(new MetaTag<object?>
@@ -107,10 +107,10 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
                 });
             }
             
-            // If the value for the "Artist" (track artist) matches the "AlbumArtist" (release artist) then nullify the "Artist" value.
+            // If the value for the "Artist" (Song artist) matches the "AlbumArtist" (Album artist) then nullify the "Artist" value.
             var albumArtist = (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist) ?? metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist))?.Value as string;
-            trackArtist = (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist) ?? metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist))?.Value as string;            
-            if (trackArtist.Nullify() != null && trackArtist!.DoStringsMatch(albumArtist))
+            songArtist = (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist) ?? metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist))?.Value as string;            
+            if (songArtist.Nullify() != null && songArtist!.DoStringsMatch(albumArtist))
             {
                 result.Add(new MetaTag<object?>
                 {

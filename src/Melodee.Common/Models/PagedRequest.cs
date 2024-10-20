@@ -15,9 +15,9 @@ public sealed record PagedRequest
     public short? Take { get; set; } = DefaultPageSize;
     public string? Search { get; init; }
 
-    public ReleaseResultFilter? Filter { get; init; }
+    public AlbumResultFilter? Filter { get; init; }
 
-    public long[] SelectedReleaseIds { get; init; } = Array.Empty<long>();
+    public long[] SelectedAlbumIds { get; init; } = Array.Empty<long>();
 
     public short TakeValue
     {

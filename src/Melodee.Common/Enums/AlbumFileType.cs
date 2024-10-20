@@ -1,6 +1,6 @@
 namespace Melodee.Common.Enums;
 
-public enum ReleaseFileType
+public enum AlbumFileType
 {
     NotSet = 0,
 

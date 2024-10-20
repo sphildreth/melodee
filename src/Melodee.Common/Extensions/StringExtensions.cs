@@ -12,13 +12,13 @@ public static partial class StringExtensions
 {
     private static readonly string YearParseRegex = "(19|20)\\d{2}";
 
-    private static readonly string TrackNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
+    private static readonly string SongNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
 
     private static readonly string VariousArtistParseRegex = @"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))";
 
-    private static readonly string SoundTrackArtistParseRegex = @"(sound\s*track[s]*)";
+    private static readonly string SoundSongArtistParseRegex = @"(sound\s*Song[s]*)";
 
-    private static readonly string CastRecordingTrackArtistParseRegex = @"(original broadway cast|original cast*)";
+    private static readonly string CastRecordingSongArtistParseRegex = @"(original broadway cast|original cast*)";
 
     public static readonly Regex HasWithFragmentsRegex = new(@"(\s*[\(\[]*with\s+)+", RegexOptions.Compiled);
     
@@ -378,30 +378,30 @@ public static partial class StringExtensions
         return null;
     }
 
-    public static int? TryToGetTrackNumberFromString(this string input)
+    public static int? TryToGetSongNumberFromString(this string input)
     {
         if (input.Nullify() == null)
         {
             return null;
         }
 
-        if (Regex.IsMatch(input, TrackNumberParseRegex))
+        if (Regex.IsMatch(input, SongNumberParseRegex))
         {
-            var v = new string(Regex.Match(input, TrackNumberParseRegex).Value.Where(char.IsDigit).ToArray());
+            var v = new string(Regex.Match(input, SongNumberParseRegex).Value.Where(char.IsDigit).ToArray());
             return SafeParser.ToNumber<int?>(v);
         }
 
         return null;
     }
 
-    public static string? RemoveTrackNumberFromString(this string input)
+    public static string? RemoveSongNumberFromString(this string input)
     {
         if (input.Nullify() == null)
         {
             return null;
         }
 
-        return Regex.IsMatch(input, TrackNumberParseRegex) ? Regex.Replace(input, TrackNumberParseRegex, string.Empty) : input;
+        return Regex.IsMatch(input, SongNumberParseRegex) ? Regex.Replace(input, SongNumberParseRegex, string.Empty) : input;
     }
 
     public static bool IsVariousArtistValue(this string? input)
@@ -421,12 +421,12 @@ public static partial class StringExtensions
 
     public static bool IsCastRecording(this string? input)
     {
-        return input.Nullify() != null && Regex.IsMatch(input!, CastRecordingTrackArtistParseRegex, RegexOptions.IgnoreCase);
+        return input.Nullify() != null && Regex.IsMatch(input!, CastRecordingSongArtistParseRegex, RegexOptions.IgnoreCase);
     }
 
-    public static bool IsSoundTrackAristValue(this string? input)
+    public static bool IsSoundSongAristValue(this string? input)
     {
-        return input.Nullify() != null && Regex.IsMatch(input!, SoundTrackArtistParseRegex, RegexOptions.IgnoreCase);
+        return input.Nullify() != null && Regex.IsMatch(input!, SoundSongArtistParseRegex, RegexOptions.IgnoreCase);
     }
 
     public static bool HasWithFragments(this string? input)

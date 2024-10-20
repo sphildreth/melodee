@@ -1,13 +1,11 @@
-using System.Reflection;
 using ATL;
 using FFMpegCore;
-using Mapster;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
-using Melodee.Plugins.MetaData.Track.Extensions;
+using Melodee.Plugins.MetaData.Song.Extensions;
 using Melodee.Plugins.Processor;
 using Serilog;
 using Serilog.Events;
@@ -16,13 +14,13 @@ using SixLabors.ImageSharp;
 using Configuration = Melodee.Common.Models.Configuration.Configuration;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
-namespace Melodee.Plugins.MetaData.Track;
+namespace Melodee.Plugins.MetaData.Song;
 
 /// <summary>
-///     Implementation of Track Plugin using ATL Library
+///     Implementation of Song Plugin using ATL Library
 ///     <remarks>https://github.com/Zeugma440/atldotnet</remarks>
 /// </summary>
-public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ITrackPlugin
+public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ISongPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
@@ -43,7 +41,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<Common.Models.Track>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Common.Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
     {
         using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{FileSystemFileInfo}]", DisplayName, fileSystemFileInfo.Name))
         {
@@ -167,7 +165,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                 {
                                     var identifier = SafeParser.ToEnum<MetaTagIdentifier>(metaTagIdentifier.Key);
                                     if (metaTagIdentifier.Key == (int)MetaTagIdentifier.Date ||
-                                        metaTagIdentifier.Key == (int)MetaTagIdentifier.OrigReleaseDate ||
+                                        metaTagIdentifier.Key == (int)MetaTagIdentifier.OrigAlbumDate ||
                                         metaTagIdentifier.Key == (int)MetaTagIdentifier.RecordingDate)
                                     {
                                         var dt = SafeParser.ToDateTime(v);
@@ -175,7 +173,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                         {
                                             tags.Add(new MetaTag<object?>
                                             {
-                                                Identifier = MetaTagIdentifier.OrigReleaseYear,
+                                                Identifier = MetaTagIdentifier.OrigAlbumYear,
                                                 Value = dt.Value.Year
                                             });
                                         }
@@ -206,9 +204,9 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
 
                         if (fileAtl.EmbeddedPictures.Any() && Configuration.PluginProcessOptions.DoLoadEmbeddedImages)
                         {
-                            var releaseId = SafeParser.Hash(
+                            var albumId = SafeParser.Hash(
                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString() ?? string.Empty,
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigReleaseYear)?.Value?.ToString() ??
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)?.Value?.ToString() ??
                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingYear)?.Value?.ToString() ??
                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingDateOrYear)?.Value?.ToString() ?? string.Empty,
                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value?.ToString() ?? string.Empty);
@@ -216,11 +214,11 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                             foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
                             {
                                 var imageInfo = Image.Load(embeddedPicture.PictureData);
-                                var imageCrcHash = CRC32.Calculate(embeddedPicture.PictureData);
+                                var imageCrcHash = Crc32.Calculate(embeddedPicture.PictureData);
                                 if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
                                 {
                                     var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
-                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{releaseId}-{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
+                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{albumId}-{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
                                     await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
                                     images.Add(new ImageInfo
                                     {
@@ -230,7 +228,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                         Width = imageInfo.Width,
                                         Height = imageInfo.Height,
                                         SortOrder = embeddedPicture.Position,
-                                        WasEmbeddedInTrack = true
+                                        WasEmbeddedInSong = true
                                     });
                                 }
 
@@ -245,12 +243,12 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
             }
             
-            // Ensure that OrigReleaseYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
-            if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseYear))
+            // Ensure that OrigAlbumYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
+            if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigAlbumYear))
             {
                 tags.Add(new MetaTag<object?>
                 {
-                    Identifier = MetaTagIdentifier.OrigReleaseYear,
+                    Identifier = MetaTagIdentifier.OrigAlbumYear,
                     Value = 0
                 });
             }
@@ -275,10 +273,10 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
             if (!metaTagsProcessorResult.IsSuccess)
             {
-                return new OperationResult<Common.Models.Track>(metaTagsProcessorResult.Messages)
+                return new OperationResult<Common.Models.Song>(metaTagsProcessorResult.Messages)
                 {
                     Errors = metaTagsProcessorResult.Errors,
-                    Data = new Common.Models.Track
+                    Data = new Common.Models.Song
                     {
                         CrcHash = string.Empty,
                         File = fileSystemFileInfo
@@ -286,48 +284,48 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 };
             }
 
-            var track = new Common.Models.Track
+            var song = new Common.Models.Song
             {
-                CrcHash = CRC32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
+                CrcHash = Crc32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
                 File = fileSystemFileInfo,
                 Images = images,
                 Tags = metaTagsProcessorResult.Data,
                 MediaAudios = mediaAudios,
                 SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
             };
-            return new OperationResult<Common.Models.Track>
+            return new OperationResult<Common.Models.Song>
             {
-                Data = track
+                Data = song
             };
         }
     }
 
-    public async Task<OperationResult<bool>> UpdateTrackAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Track track, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
     {
         var result = false;
-        if (track.Tags?.Any() ?? false)
+        if (song.Tags?.Any() ?? false)
         {
-            var trackFileName = track.File.FullName(directoryInfo);
-            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Updating [{FileName}]", DisplayName, trackFileName))
+            var songFileName = song.File.FullName(directoryInfo);
+            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Updating [{FileName}]", DisplayName, songFileName))
             {
                 try
                 {
-                    var fileAtl = new ATL.Track(trackFileName)
+                    var fileAtl = new ATL.Track(songFileName)
                     {
-                        Album = track.ReleaseTitle(),
-                        AlbumArtist = track.ReleaseArtist(),
-                        Artist = track.TrackArtist(),
-                        DiscNumber = track.MediaNumber(),
-                        DiscTotal = track.MediaTotalNumber(),
-                        Genre = track.Genre(),
-                        OriginalReleaseDate = track.ReleaseDateValue(),
-                        TrackNumber = track.TrackNumber(),
-                        TrackTotal = track.TrackTotalNumber(),
-                        Year = track.ReleaseYear()
+                        Album = song.AlbumTitle(),
+                        AlbumArtist = song.AlbumArtist(),
+                        Artist = song.SongArtist(),
+                        DiscNumber = song.MediaNumber(),
+                        DiscTotal = song.MediaTotalNumber(),
+                        Genre = song.Genre(),
+                        OriginalReleaseDate = song.AlbumDateValue(),
+                        TrackNumber = song.SongNumber(),
+                        TrackTotal = song.SongTotalNumber(),
+                        Year = song.AlbumYear()
                     };
-                    if (track.Images?.Any() ?? false)
+                    if (song.Images?.Any() ?? false)
                     {
-                        var coverImage = track.Images.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
+                        var coverImage = song.Images.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
                         if (coverImage != null && (coverImage.FileInfo?.Exists(directoryInfo) ?? false))
                         {
                             fileAtl.EmbeddedPictures.Clear();
@@ -398,25 +396,25 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     break;
 
                 case "DATE":
-                    if (result.All(x => x.Identifier != MetaTagIdentifier.OrigReleaseDate))
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.OrigAlbumDate))
                     {
                         result.Add(new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.OrigReleaseDate,
+                            Identifier = MetaTagIdentifier.OrigAlbumDate,
                             Value = kp.Value
                         });
                     }
 
                     break;
 
-                case "TRACK":
-                    if (result.All(x => x.Identifier != MetaTagIdentifier.TrackNumberTotal))
+                case "Song":
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.SongNumberTotal))
                     {
                         if (kp.Value.Contains('/'))
                         {
                             result.Add(new MetaTag<object?>
                             {
-                                Identifier = MetaTagIdentifier.TrackNumberTotal,
+                                Identifier = MetaTagIdentifier.SongNumberTotal,
                                 Value = kp.Value
                             });
                         }
