@@ -1,5 +1,6 @@
 using Melodee.Common.Data;
 using Melodee.Components;
+using Melodee.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -19,14 +20,18 @@ builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
 
 builder.Services.AddBlazorBootstrap();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(x =>
     {
-        x.LoginPath = "/login";
+        x.LoginPath = "/account/login";
     });
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
+
+builder.Services
+    .AddScoped<LocalStorageService>();
 
 var app = builder.Build();
 

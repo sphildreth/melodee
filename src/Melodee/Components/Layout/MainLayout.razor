@@ -1,12 +1,17 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@inherits LayoutComponentBase
 
 <div class="bb-page">
 
-    <Sidebar @ref="sidebar"
-             ImageSrc="./images/melodee-logo-small.png"
-             Title="Melodee"
-             DataProvider="SidebarDataProvider" />
-
+    @if (IsUserAuthenticated)
+    {
+        <Sidebar @ref="sidebar"
+                 ImageSrc="./images/melodee-logo-small.png"
+                 Title="Melodee"
+                 DataProvider="SidebarDataProvider"/>
+    }
     <main>
         <div class="bb-top-row px-4 d-flex justify-content-between">
             <Icon Name="IconName.List" role="button" @onclick="ToggleSidebar" />
@@ -24,11 +29,14 @@
     Sidebar sidebar = default!;
     IEnumerable<NavItem> navItems;
 
+    private bool IsUserAuthenticated => HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+
     private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
     {
         if (navItems is null)
+        {
             navItems = GetNavItems();
-
+        }
         return await Task.FromResult(request.ApplyTo(navItems));
     }
 
@@ -63,7 +71,13 @@
         return navItems;
     }
 
-    private void ToggleSidebar() => sidebar.ToggleSidebar();
+    private void ToggleSidebar()
+    {
+        if (IsUserAuthenticated)
+        {
+            sidebar.ToggleSidebar();
+        }
+    }
 }
 
 
