@@ -14,6 +14,8 @@
     <PackageReference Include="Mapster"  />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="NodaTime"  />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" />
     <PackageReference Include="Serilog"  />
     <PackageReference Include="Serilog.Sinks.Console"  />
     <PackageReference Include="Serilog.Sinks.File"  />

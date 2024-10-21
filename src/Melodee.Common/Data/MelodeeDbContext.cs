@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data;
 
-public class MelodeeDbContext : DbContext
+public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbContext(options)
 {
     public DbSet<Album> Albums { get; set; }
     
@@ -42,7 +42,4 @@ public class MelodeeDbContext : DbContext
     public DbSet<UserArtist> UserArtists { get; set; }
     
     public DbSet<UserSong> UserSongs { get; set; }
-    
-
-    
 }
