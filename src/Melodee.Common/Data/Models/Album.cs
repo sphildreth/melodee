@@ -8,38 +8,19 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
-[Index(nameof(ApiKey), IsUnique = true)]
-public sealed class Album
+public sealed class Album : MetaDataModelBase
 {
-    public int Id { get; set; }
-    
     public int ArtistId { get; set; }
     
-    public bool IsLocked { get; set; }
-    
-    public short Status { get; set; }
+    public short AlbumStatus { get; set; }
     
     [NotMapped]
-    public AlbumStatus StatusValue => SafeParser.ToEnum<AlbumStatus>(Status);
+    public AlbumStatus AlbumStatusValue => SafeParser.ToEnum<AlbumStatus>(AlbumStatus);
     
-    public short Type { get; set; }
+    public short AlbumType { get; set; }
     
     [NotMapped]
-    public AlbumType TypeValue => SafeParser.ToEnum<AlbumType>(Type);
-
-    public Guid ApiKey { get; set; } = Guid.NewGuid();
-    
-    public required Instant CreatedAt { get; set; } = SystemClock.Instance.GetCurrentInstant();
-    
-    public Instant? LastUpdatedAt { get; set; }
-    
-    public Instant? LastPlayedAt { get; set; }
-    
-    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    public required string Name { get; set; }
-    
-    [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
-    public string? AlternateNames { get; set; }
+    public AlbumType AlbumTypeValue => SafeParser.ToEnum<AlbumType>(AlbumType);
     
     public LocalDate OriginalReleaseDate { get; set; }
     
@@ -51,14 +32,12 @@ public sealed class Album
     
     public short? DiscCount { get; set; }
     
-    public short? PlayCount { get; set; }
-    
-    public string? MusicBrainzId { get; set; }
-    
-    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
-    public string? Tags { get; set; }
-    
     public int Duration { get; set; }
+    
+    /// <summary>
+    /// Pipe seperated list. These are strictly defined in the Genre enum.
+    /// </summary>
+    public string? Genres { get; set; }
 
     public ICollection<AlbumDisc> Discs { get; set; } = new List<AlbumDisc>();
 }

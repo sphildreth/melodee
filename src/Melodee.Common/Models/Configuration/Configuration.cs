@@ -87,4 +87,9 @@ public sealed record Configuration
     ///     Format to use when displaying activity related dates (e.g. processing messages)
     /// </summary>
     public string DateTimeDisplayActivityFormat { get; set; } = "HH:mm:ss.fff";
+
+    /// <summary>
+    /// List of ignored articles when scanning media
+    /// </summary>
+    public string[] IgnoredArticles { get; set; } = new[] { "THE", "EL", "LA", "LOS", "LAS", "LE", "LES", "OS", "AS", "O", "A" };
 }

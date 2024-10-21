@@ -1,0 +1,30 @@
+using System.ComponentModel.DataAnnotations;
+using Melodee.Common.Data.Contants;
+using Microsoft.EntityFrameworkCore;
+
+namespace Melodee.Common.Data.Models;
+
+[Index(nameof(UserId), nameof(Name), IsUnique = true)]
+public class Playlist : DataModelBase
+{
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)] 
+    [Required]
+    public required string Name { get; set; }
+    
+    [MaxLength(MaxLengthDefinitions.MaxInputLength)] 
+    public string? Comment { get; set; }
+    
+    public int UserId { get; set; }
+    
+    public bool IsPublic { get; set; }
+    
+    public short? SongCount { get; set; }
+    
+    public int Duration { get; set; }
+    
+    /// <summary>
+    /// Pipe seperated list. Example 'terrible|sexy|Songs about Love'
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxInputLength)] 
+    public string? AllowedUserIds { get; set; }
+}
