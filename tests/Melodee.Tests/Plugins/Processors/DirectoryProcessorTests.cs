@@ -11,8 +11,6 @@ namespace Melodee.Tests.Plugins.Processors;
 
 public class DirectoryProcessorTests
 {
-    // 
-
     [Fact]
     public async Task ValidateDirectoryGetProcessedIsSuccess()
     {

@@ -25,8 +25,8 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// <param name="AlbumTypes"></param>
 /// <param name="Moods"></param>
 /// <param name="SortName"></param>
-/// <param name="OriginalAlbumDate"></param>
-/// <param name="AlbumDate"></param>
+/// <param name="OriginalAlbumDate">Date the album was originally released.</param>
+/// <param name="AlbumDate">Date the specific edition of the album was released. Note: for files using ID3 tags, releaseDate should generally be read from the TDRL tag. Servers that use a different source for this field should document the behavior.</param>
 /// <param name="IsCompilation"></param>
 /// <param name="DiscTitles"></param>
 /// <param name="Song"></param>
