@@ -27,7 +27,7 @@
 
 @code {
     Sidebar sidebar = default!;
-    IEnumerable<NavItem> navItems;
+    IEnumerable<NavItem> navItems = [];
 
     private bool IsUserAuthenticated => HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 

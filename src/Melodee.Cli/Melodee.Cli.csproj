@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EasyCaching.FasterKv" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Settings.AppSettings" />    
     <PackageReference Include="Serilog.Sinks.Console" />
@@ -36,6 +37,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj"/>
     <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj"/>
+    <ProjectReference Include="..\Melodee.Services\Melodee.Services.csproj" />
   </ItemGroup>
 
 

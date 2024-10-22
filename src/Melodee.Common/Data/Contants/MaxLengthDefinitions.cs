@@ -7,4 +7,5 @@ public static class MaxLengthDefinitions
     public const int MaxGeneralLongLength = 1000;
     public const int MaxIndexableLength = 2000;
     public const int MaxInputLength = 4000;
+    public const int MaxTextLength = 62000;
 }

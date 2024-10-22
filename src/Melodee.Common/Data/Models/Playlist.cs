@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
@@ -14,7 +15,10 @@ public class Playlist : DataModelBase
     [MaxLength(MaxLengthDefinitions.MaxInputLength)] 
     public string? Comment { get; set; }
     
+    [RequiredGreaterThanZero]
     public int UserId { get; set; }
+    
+    public User User { get; set; } = null!;
     
     public bool IsPublic { get; set; }
     
@@ -27,4 +31,6 @@ public class Playlist : DataModelBase
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)] 
     public string? AllowedUserIds { get; set; }
+    
+    public ICollection<PlaylistSong> Songs { get; set; } = new List<PlaylistSong>();
 }

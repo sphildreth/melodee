@@ -6,8 +6,6 @@ namespace Melodee.Common.Models.Configuration;
 [Serializable]
 public sealed record Configuration
 {
-    public string? Environment { get; set; }
-
     /// <summary>
     ///     Files in this directory are scanned and Album information is gathered.
     /// </summary>

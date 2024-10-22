@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
@@ -12,16 +14,16 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(AlbumDiscId), nameof(TrackNumber), IsUnique = true)]
 public class Song : MetaDataModelBase
 {
-    
-    // full_text varchar(255) default '', album_artist_id varchar(255) default '', date varchar(255) default '' not null, original_year int default 0 not null, original_date varchar(255) default '' not null, release_year int default 0 not null, release_date varchar(255) default '' not null, order_album_name varchar not null default '', order_album_artist_name varchar not null default '', order_artist_name varchar not null default '', sort_album_name varchar not null default '', sort_artist_name varchar not null default '', sort_album_artist_name varchar not null default '', sort_title varchar not null default '', disc_subtitle varchar not null default '', catalog_num varchar not null default '', comment varchar not null default '', order_title varchar not null default '', mbz_recording_id varchar not null default '', mbz_album_id varchar not null default '', mbz_artist_id varchar not null default '', mbz_album_artist_id varchar not null default '', mbz_album_type varchar not null default '', mbz_album_comment varchar not null default '', mbz_release_track_id varchar not null default '', bpm integer not null default 0, channels integer not null default 0, rg_album_gain real not null default 0, rg_album_peak real not null default 0, rg_track_gain real not null default 0, rg_track_peak real not null default 0, lyrics jsonb not null default '[]', sample_rate integer not null default 0, library_id integer not null default 1 
-    // references library(id) on delete cascade);
-        
+    [RequiredGreaterThanZero]
     public int AlbumDiscId { get; set; }
+
+    public AlbumDisc AlbumDisc { get; set; } = null!;
     
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Title { get; set; }    
     
+    [RequiredGreaterThanZero]
     public required int TrackNumber { get; set; }
     
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
@@ -32,7 +34,13 @@ public class Song : MetaDataModelBase
     [Required]
     public required string FileName { get; set; }
     
-    [Required]
+    /// <summary>
+    /// This value has special formatting for content type and timestamp formats. This value often includes single and double quotes.
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxTextLength)]
+    public string? Lyrics { get; set; }
+    
+    [RequiredGreaterThanZero]
     public required int FileSize { get; set; }
     
     [MaxLength(MaxLengthDefinitions.HashOrGuidLength)]
@@ -42,20 +50,32 @@ public class Song : MetaDataModelBase
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? PartTitles { get; set; }
     
-    [Required]
+    [RequiredGreaterThanZero]
     public required int Duration { get; set; }
     
-    [Required]
+    [RequiredGreaterThanZero]
     public required int SamplingRate { get; set; }
     
-    [Required]
+    [RequiredGreaterThanZero]
     public required int BitRate { get; set; }
     
-    [Required]
+    [RequiredGreaterThanZero]
     public required int BitDepth { get; set; }
     
-    [Required]
+    [RequiredGreaterThanZero]
     public required int BPM { get; set; }
     
     public int? ChannelCount { get; set; }
+    
+    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+    
+    public ICollection<Contributor> Contributors { get; set; } = new List<Contributor>();
+    
+    public ICollection<Playlist> Playlists { get; set; } = new List<Playlist>();
+    
+    public ICollection<PlayQueue> PlayQues { get; set; } = new List<PlayQueue>();
+    
+    public ICollection<Scrobble> Scrobbles { get; set; } = new List<Scrobble>();
+    
+    public ICollection<UserSong> UserSongs { get; set; } = new List<UserSong>();
 }

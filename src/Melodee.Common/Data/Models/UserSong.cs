@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
@@ -7,11 +8,15 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(UserId), nameof(SongId), IsUnique = true)]
 public class UserSong : DataModelBase
 {
-    [Required]
+    [RequiredGreaterThanZero]
     public required int UserId { get; set; }
     
-    [Required]
+    public User User { get; set; } = null!;
+    
+    [RequiredGreaterThanZero]
     public required int SongId { get; set; }
+    
+    public Song Song { get; set; } = null!;
     
     public int PlayedCount { get; set; }
     

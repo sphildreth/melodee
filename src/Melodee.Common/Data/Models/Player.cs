@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
@@ -9,16 +10,22 @@ namespace Melodee.Common.Data.Models;
 public class Player : DataModelBase
 {
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    [Required]
     public required string Name { get; set; }
     
+    [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? UserAgent { get; set; }
     
+    [RequiredGreaterThanZero]
     public int UserId { get; set; }
+
+    public User User { get; set; } = null!;
     
     [Required]
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public required string Client { get; set; }
     
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? IpAddress { get; set; }
     
     [Required]

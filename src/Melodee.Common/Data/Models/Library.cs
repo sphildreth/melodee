@@ -15,4 +15,6 @@ public class Library : DataModelBase
     public required string Path { get; set; }
     
     public Instant? LastScanAt { get; set; }
+    
+    public ICollection<LibraryScanHistory> ScanHistories { get; set; } = new List<LibraryScanHistory>();
 }

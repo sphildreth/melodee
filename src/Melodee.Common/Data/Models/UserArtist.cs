@@ -1,18 +1,21 @@
 using System.ComponentModel.DataAnnotations;
-using Melodee.Common.Models.OpenSubsonic;
+using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
-using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
 [Index(nameof(UserId), nameof(ArtistId), IsUnique = true)]
 public class UserArtist : DataModelBase
 {
-    [Required]
+    [RequiredGreaterThanZero]
     public required int UserId { get; set; }
     
-    [Required]
+    public User User { get; set; } = null!;
+    
+    [RequiredGreaterThanZero]
     public required int ArtistId { get; set; }
+    
+    public Artist Artist { get; set; } = null!;
   
     public bool IsStarred { get; set; }
     

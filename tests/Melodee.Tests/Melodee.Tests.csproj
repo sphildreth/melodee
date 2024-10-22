@@ -14,6 +14,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="EasyCaching.FasterKv" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="xunit" />
         <PackageReference Include="xunit.runner.visualstudio" >
@@ -29,6 +30,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\src\Melodee.Common\Melodee.Common.csproj" />
       <ProjectReference Include="..\..\src\Melodee.Plugins\Melodee.Plugins.csproj" />
+      <ProjectReference Include="..\..\src\Melodee.Services\Melodee.Services.csproj" />
     </ItemGroup>
 
 </Project>

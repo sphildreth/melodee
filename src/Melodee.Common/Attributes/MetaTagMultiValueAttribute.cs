@@ -1,4 +1,4 @@
-namespace Melodee.Common.Enums;
+namespace Melodee.Common.Attributes;
 
 /// <summary>
 ///     Is this MetaTag Identifier allowed to have multiple values. Multiple values will be seperated by a single forward

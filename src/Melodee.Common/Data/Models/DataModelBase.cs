@@ -10,6 +10,12 @@ public abstract class DataModelBase
 {
     public int Id { get; set; }
     
+    /// <summary>
+    /// Automatically updated to the PostgreSQL rowversion value when a record is updated.
+    /// </summary>
+    [Timestamp]
+    public uint Version { get; set; }
+    
     public bool IsLocked { get; set; }
     
     public int SortOrder { get; set; }

@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="Crc32.NET" />
+    <PackageReference Include="EasyCaching.FasterKv" />
     <PackageReference Include="FFMpegCore" />
     <PackageReference Include="IdSharp.Common" />
     <PackageReference Include="IdSharp.Tagging" />

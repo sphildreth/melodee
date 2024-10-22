@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Validators;
 using Melodee.Common.Enums;
 using Melodee.Common.Utility;
 using NodaTime;
@@ -10,7 +11,10 @@ namespace Melodee.Common.Data.Models;
 
 public sealed class Album : MetaDataModelBase
 {
+    [RequiredGreaterThanZero]
     public int ArtistId { get; set; }
+    
+    public Artist Artist { get; set; } = null!;
     
     public short AlbumStatus { get; set; }
     
@@ -37,7 +41,12 @@ public sealed class Album : MetaDataModelBase
     /// <summary>
     /// Pipe seperated list. These are strictly defined in the Genre enum.
     /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string? Genres { get; set; }
 
+    public ICollection<Contributor> Contributors { get; set; } = new List<Contributor>();
+    
     public ICollection<AlbumDisc> Discs { get; set; } = new List<AlbumDisc>();
+    
+    public ICollection<UserAlbum> UserAlbums { get; set; } = new List<UserAlbum>();
 }

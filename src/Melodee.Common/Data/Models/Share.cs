@@ -1,17 +1,22 @@
 using System.ComponentModel.DataAnnotations;
+using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Validators;
 using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
 public class Share : DataModelBase
 {
-    [Required]
+    [RequiredGreaterThanZero]
     public required int UserId { get; set; }
+    
+    public User User { get; set; } = null!;
 
     /// <summary>
     /// Pipe seperated list.
     /// </summary>
     [Required]
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]       
     public required string SongIds { get; set; }
 
     [Required]

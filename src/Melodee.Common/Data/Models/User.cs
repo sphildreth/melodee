@@ -54,4 +54,22 @@ public class User : DataModelBase
     public bool HasShareRole { get; set; }
     
     public bool IsScrobblingEnabled { get; set; }
+
+    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+    
+    public ICollection<Player> Players { get; set; } = new List<Player>();
+    
+    public ICollection<Playlist> Playlists { get; set; } = new List<Playlist>();
+    
+    public ICollection<PlayQueue> PlayQues { get; set; } = new List<PlayQueue>();
+    
+    public ICollection<Scrobble> Scrobbles { get; set; } = new List<Scrobble>();
+    
+    public ICollection<Share> Shares { get; set; } = new List<Share>();
+    
+    public ICollection<UserAlbum> UserAlbums { get; set; } = new List<UserAlbum>();
+    
+    public ICollection<UserArtist> UserArtists { get; set; } = new List<UserArtist>();
+    
+    public ICollection<UserSong> UserSongs { get; set; } = new List<UserSong>();
 }

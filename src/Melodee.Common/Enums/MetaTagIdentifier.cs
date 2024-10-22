@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Melodee.Common.Attributes;
 
 namespace Melodee.Common.Enums;
 

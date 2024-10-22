@@ -133,7 +133,7 @@ public sealed record Album
         {
             foreach (var song in otherAlbum.Songs)
             {
-                if (!Songs.Select(x => x.UniqueId).Contains(song.UniqueId))
+                if (Songs != null && !Songs.Select(x => x.UniqueId).Contains(song.UniqueId))
                 {
                     songs.Add(song);
                 }
@@ -174,7 +174,7 @@ public sealed record Album
             Messages = messages.Distinct().ToArray(),
             SortOrder = SortOrder,
             Status = AlbumStatus.NotSet,
-            Songs = Songs.ToArray()
+            Songs = (Songs ?? Array.Empty<Song>()).ToArray()
         };
     }
 
