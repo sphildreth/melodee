@@ -1,0 +1,43 @@
+using Melodee.Services.Interfaces;
+using Serilog;
+
+namespace Melodee.Services;
+
+public sealed class Serializer(ILogger logger) : ISerializer
+{       
+    private ILogger Logger { get; } = logger;
+
+    public string? Serialize(object? o)
+    {
+        if (o == null)
+        {
+            return null;
+        }
+        try
+        {
+            return System.Text.Json.JsonSerializer.Serialize(o);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to Serialize [{0}]", o.ToString());
+        }
+        return null;
+    }
+
+    public TOut? Deserialize<TOut>(string? s)
+    {
+        if (string.IsNullOrEmpty(s))
+        {
+            return default(TOut);
+        }
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<TOut>(s);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to Deserialize [{0}]", s);
+        }
+        return default(TOut);
+    }
+}

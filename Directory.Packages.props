@@ -1,5 +1,6 @@
 <Project ToolsVersion="15.0">
   <ItemGroup>
+    <PackageVersion Include="Ardalis.GuardClauses" Version="5.0.0" />
     <PackageVersion Include="Blazor.Bootstrap" Version="3.1.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Crc32.NET" Version="1.2.0" />

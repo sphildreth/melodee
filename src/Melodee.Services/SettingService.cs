@@ -1,9 +1,11 @@
-using EasyCaching.Core;
+using System.Net.Http.Headers;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Models;
+using Melodee.Services.Caching;
+using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using Serilog;
 using SmartFormat;
 
 namespace Melodee.Services;
@@ -12,10 +14,10 @@ namespace Melodee.Services;
 /// Settings data domain service.
 /// </summary>
 public sealed class SettingService(
-    ILogger<SettingService> logger, 
-    IEasyCachingProviderFactory cachingProviderFactory,
+    ILogger logger, 
+    ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory)
-    : ServiceBase(logger, cachingProviderFactory, contextFactory)
+    : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailTemplate = "urn:setting:{0}";
 
@@ -25,10 +27,18 @@ public sealed class SettingService(
         Setting[] settings = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            settingsCount = await scopedContext.Settings.CountAsync(cancellationToken).ConfigureAwait(false);
+            settingsCount = await scopedContext
+                .Settings
+                .AsNoTracking()
+                .CountAsync(cancellationToken)
+                .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                settings = await scopedContext.Settings.ToArrayAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                settings = await scopedContext
+                    .Settings
+                    .AsNoTracking()
+                    .ToArrayAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
             }
         }        
         return new PagedResult<Setting>
@@ -42,24 +52,22 @@ public sealed class SettingService(
         };
     }
     
-    public async Task<OperationResult<T?>> GetAsync<T>(User currentUser, string key, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Setting?>> GetAsync(User currentUser, string key, CancellationToken cancellationToken = default)
     {
-        var cacheProvider = CachingProviderFactory.GetCachingProvider(CacheName);
-        var result = await cacheProvider.GetAsync<T?>(CacheKeyDetailTemplate.FormatSmart(key), async () =>
+        var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(key), async () =>
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                var setting = await scopedContext.Settings.FirstOrDefaultAsync(x => x.Key == key, cancellationToken).ConfigureAwait(false);
-                if (setting != null)
-                {
-                    return (T)Convert.ChangeType(setting.Value, typeof(T));
-                }
-                return default;
+                return await scopedContext
+                    .Settings
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Key == key, cancellationToken)
+                    .ConfigureAwait(false);
             }
-        }, DefaultCacheDuration, cancellationToken);
-        return new OperationResult<T?>
+        }, cancellationToken);
+        return new OperationResult<Setting?>
         {
-            Data = result.Value
+            Data = result
         };
     }
 }
