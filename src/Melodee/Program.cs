@@ -33,6 +33,11 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services
     .AddScoped<LocalStorageService>();
 
+builder.Services.AddEasyCaching(option =>
+{
+    option.UseInMemory(ServiceBase.CacheName);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -33,6 +33,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     
     public DbSet<RadioStation> RadioStations { get; set; }
     
+    public DbSet<Setting> Settings { get; set; }
+    
     public DbSet<Scrobble> Scrobbles { get; set; }
     
     public DbSet<Share> Shares { get; set; }

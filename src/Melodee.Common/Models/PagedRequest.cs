@@ -38,6 +38,11 @@ public sealed record PagedRequest
 
     public int PageValue => Page ?? 1;
 
+    /// <summary>
+    /// When this is true then only return the count of records for the request, do not return any actual records.
+    /// </summary>
+    public bool IsTotalCountOnlyRequest { get; set; }
+    
     public string? Sort { get; set; }
 
     public int SkipValue
@@ -88,4 +93,6 @@ public sealed record PagedRequest
 
         return result.ToString();
     }
+
+    public int TotalPages(int totalRecordsCount) => (totalRecordsCount + TakeValue - 1) / TakeValue;
 }
