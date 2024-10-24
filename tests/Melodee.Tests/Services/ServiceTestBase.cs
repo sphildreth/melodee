@@ -1,5 +1,4 @@
 using System.Data.Common;
-using Dorssel.EntityFrameworkCore;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
@@ -30,7 +29,6 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
         _dbContextOptions = new DbContextOptionsBuilder<MelodeeDbContext>()
             .UseSqlite(_dbConnection, x => x.UseNodaTime())
-            .UseSqliteTimestamp()
             .Options;
 
         using (var context = new MelodeeDbContext(_dbContextOptions))
