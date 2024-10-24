@@ -4,12 +4,12 @@ using Serilog;
 namespace Melodee.Services.Caching;
 
 /// <summary>
-/// Fake CacheManager that does nothing, primarily for testing and debugging.
+///     Fake CacheManager that does nothing, primarily for testing and debugging.
 /// </summary>
 /// <param name="logger">Logger for CacheManager</param>
 /// <param name="defaultTimeSpan">Default Timespan for lifetime of cached items.</param>
 /// <param name="serializer">Serializer for CacheManager</param>
-public sealed class FakeCacheManager(ILogger logger, TimeSpan defaultTimeSpan, ISerializer serializer) 
+public sealed class FakeCacheManager(ILogger logger, TimeSpan defaultTimeSpan, ISerializer serializer)
     : CacheManagerBase(logger, defaultTimeSpan, serializer)
 {
     public override void Clear()

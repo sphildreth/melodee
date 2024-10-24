@@ -1,8 +1,6 @@
-using System.Net.Http.Headers;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Models;
-using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -11,10 +9,10 @@ using SmartFormat;
 namespace Melodee.Services;
 
 /// <summary>
-/// Settings data domain service.
+///     Settings data domain service.
 /// </summary>
 public sealed class SettingService(
-    ILogger logger, 
+    ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
@@ -37,10 +35,11 @@ public sealed class SettingService(
                 settings = await scopedContext
                     .Settings
                     .AsNoTracking()
-                    .ToArrayAsync(cancellationToken: cancellationToken)
+                    .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
             }
-        }        
+        }
+
         return new PagedResult<Setting>
         {
             TotalCount = settingsCount,
@@ -51,7 +50,7 @@ public sealed class SettingService(
                 .Take(pagedRequest.TakeValue)
         };
     }
-    
+
     public async Task<OperationResult<Setting?>> GetAsync(User currentUser, string key, CancellationToken cancellationToken = default)
     {
         var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(key), async () =>

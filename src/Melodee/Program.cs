@@ -1,9 +1,13 @@
+using System.Text.Json;
 using Melodee.Common.Data;
 using Melodee.Components;
 using Melodee.Services;
+using Melodee.Services.Caching;
+using Melodee.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using ILogger = Serilog.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,14 +33,19 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddDataProtection();
-builder.Services
-    .AddScoped<LocalStorageService>();
 
-builder.Services.AddEasyCaching(option =>
-{
-    option.UseInMemory(ServiceBase.CacheName);
-});
+builder.Services
+    .AddSingleton<ISerializer, Serializer>()
+    .AddSingleton<ICacheManager>(opt 
+        => new MemoryCacheManager(opt.GetRequiredService<ILogger>(),
+            new TimeSpan(1,
+                0,
+                0,
+                0),
+            opt.GetRequiredService<ISerializer>()))
+    .AddScoped<LocalStorageService>()
+    .AddScoped<SettingService>()
+    .AddScoped<UserService>();
 
 var app = builder.Build();
 

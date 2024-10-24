@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Validators;
 using NodaTime;
 
@@ -21,6 +22,8 @@ public class LibraryScanHistory : DataModelBase
     
     public int NewSongsCount { get; set; }
     
-    [Required]
-    public required Duration ScanTimeScan { get; set; }
+    [RequiredGreaterThanZero]
+    public long DurationInMs { get; set; }
+
+    [NotMapped] public Duration DurationInMillisecondsValue => Duration.FromMilliseconds(DurationInMs);
 }

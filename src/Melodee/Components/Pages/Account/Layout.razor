@@ -1,0 +1,23 @@
+@using Melodee.Components.Layout
+@inherits LayoutComponentBase
+@layout MainLayout
+
+@inject NavigationManager NavManager
+
+<div class="col-md-6 offset-md-3 mt-5">
+    @Body
+</div>
+
+@code {
+
+    [CascadingParameter] public HttpContext HttpContext { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        // redirect to home if already logged in
+        if (HttpContext?.User?.Identity?.IsAuthenticated ?? false)
+        {
+            NavManager.NavigateTo("");
+        }
+    }
+}

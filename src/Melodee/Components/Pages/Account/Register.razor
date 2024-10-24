@@ -1,0 +1,80 @@
+﻿@page "/account/register"
+@inject NavigationManager NavManager
+@inject UserService UserService
+
+<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.TopRight" />
+
+
+<div class="card">
+    <h4 class="card-header">Create a new user account 🥳</h4>
+    <div class="card-body">
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <div class="form-group mb-3">
+                <label>Username</label>
+                <InputText @bind-Value="model.Username" class="form-control" />
+                <ValidationMessage For="@(() => model.Username)" />
+            </div>
+            <div class="form-group mb-3">
+                <label>Email</label>
+                <InputText @bind-Value="model.EmailAddress" class="form-control" />
+                <ValidationMessage For="@(() => model.EmailAddress)" />
+            </div>
+            <div class="form-group mb-3">
+                <label>Password</label>
+                <InputText @bind-Value="model.Password" type="password" class="form-control" />
+                <ValidationMessage For="@(() => model.Password)" />
+            </div>
+            <button disabled="@loading" class="btn btn-primary">
+                @if (loading)
+                {
+                    <Spinner/>
+                }
+                Register
+            </button>
+            <NavLink href="account/login" class="btn btn-link">Cancel</NavLink>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private List<ToastMessage> messages = new List<ToastMessage>();
+    private ViewModels.Register model = new ViewModels.Register();
+    private bool loading;
+
+    [CascadingParameter] public HttpContext HttpContext { get; set; } = default!;
+
+    private async void OnValidSubmit()
+    {
+        loading = true;
+        try
+        {
+            await UserService.RegisterAsync(model.Username, model.EmailAddress, model.Password);
+            messages.Add(
+                new ToastMessage
+                {
+                    Type = ToastType.Success,
+                    Title = "Created new user account.",
+                    HelpText = $"{DateTime.Now}",
+                    Message = $"Successfully created new user account,",
+                });
+            NavManager.NavigateTo("account/login");
+        }
+        catch
+        {
+            messages.Add(
+                new ToastMessage
+                {
+                    Type = ToastType.Danger,
+                    Title = "Unable to create new account.",
+                    HelpText = $"{DateTime.Now}",
+                    Message = $"Melodee is unable to create a new user account for you. Perhaps you are banned?",
+                });
+            StateHasChanged();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

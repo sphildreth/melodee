@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Contants;
 using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +7,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
-[Index(nameof(UserId), nameof(ServiceUrl), nameof(SongId), nameof(PlayTime), IsUnique = true)]
+[Index(nameof(UserId), nameof(ServiceUrl), nameof(SongId), nameof(PlayTimeInMs), IsUnique = true)]
 public class Scrobble : DataModelBase
 {
     [RequiredGreaterThanZero]
@@ -23,8 +24,11 @@ public class Scrobble : DataModelBase
     
     public Song Song { get; set; } = null!;
     
-    [Required]
-    public Duration PlayTime { get; set; }
+    [RequiredGreaterThanZero]
+    public long PlayTimeInMs { get; set; }
+    
+    [NotMapped]
+    public Duration PlayTimeValue => Duration.FromMilliseconds(PlayTimeInMs);
     
     [Required]
     public Instant EnqueueTime { get; set; }

@@ -8,8 +8,6 @@
 
     <ItemGroup>
       <PackageReference Include="Blazor.Bootstrap" />
-      <PackageReference Include="EasyCaching.FasterKv" />
-      <PackageReference Include="EasyCaching.InMemory" />
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
       <PackageReference Include="Serilog" />

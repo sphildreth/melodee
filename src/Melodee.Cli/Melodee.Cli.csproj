@@ -9,8 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EasyCaching.FasterKv" />
-    <PackageReference Include="EasyCaching.InMemory" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Settings.AppSettings" />    
     <PackageReference Include="Serilog.Sinks.Console" />

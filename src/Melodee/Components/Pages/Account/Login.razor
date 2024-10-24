@@ -2,90 +2,46 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using System.Security.Claims
+@using Humanizer
 @using Melodee.ViewModels
+@using Microsoft.EntityFrameworkCore
 @inject NavigationManager NavManager
+@inject UserService UserService
 
 @attribute [AllowAnonymous]
 
-<style>
-    .login-container {
-        display: -ms-flexbox;
-        display: -webkit-box;
-        display: flex;
-        -ms-flex-align: center;
-        -ms-flex-pack: center;
-        -webkit-box-align: center;
-        align-items: center;
-        -webkit-box-pack: center;
-        justify-content: center;
-        padding-top: 40px;
-        padding-bottom: 40px;
-        background-color: #f5f5f5;
-    }
-    .form-login {
-        width: 100%;
-        max-width: 330px;
-        padding: 15px;
-        margin: 0 auto;
-    }
-    .form-login .checkbox {
-        font-weight: 400;
-    }
-    .form-login .form-control {
-        position: relative;
-        box-sizing: border-box;
-        height: auto;
-        padding: 10px;
-        font-size: 16px;
-    }
-    .form-login .form-control:focus {
-        z-index: 2;
-    }
-    .form-login input[type="email"] {
-        margin-bottom: -1px;
-        border-bottom-right-radius: 0;
-        border-bottom-left-radius: 0;
-    }
-    .form-login input[type="password"] {
-        margin-bottom: 10px;
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
-    }
-</style>
+<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.TopRight"/>
 
-<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.TopRight" />
-
-<div class="text-center">
-    <p>🚨 Please login or register.</p>
-</div>
-
-<div class="text-center login-container">
-    <EditForm Model="@UserCredentials" class="form-login" OnValidSubmit="ClickLogin">
-        <DataAnnotationsValidator/>
-        <div class="form-group">
-            <label for="inputEmail" class="sr-only">Email address</label>
-            <input type="email" id="inputEmail" @bind="UserCredentials.EmailAddress" class="form-control" placeholder="Email address" required autofocus>
-            <ValidationMessage For="@(() => UserCredentials.EmailAddress)"/>
-        </div>
-        <div class="form-group">
-            <label for="inputPassword" class="sr-only">Password</label>
-            <input type="password" id="inputPassword" @bind="UserCredentials.Password" class="form-control" placeholder="Password" required>
-            <ValidationMessage For="@(() => UserCredentials.Password)"/>
-        </div>
-        <div class="checkbox mb-3">
-            <label>
-                <input type="checkbox" @bind="UserCredentials.RememberMe" value="remember-me"> Remember me
-            </label>
-        </div>
-        <button disabled="@loading" class="btn btn-lg btn-primary btn-block" type="submit">
-            @if (loading)
-            {
-                <Spinner/>
-            }
-            Login
-        </button>
-        <NavLink href="account/register" class="btn btn-link">Register</NavLink>
-    </EditForm>
+<div class="card">
+    <h4 class="card-header">🚨 Please login or register.</h4>
+    <div class="card-body">
+        <EditForm Model="@UserCredentials" class="form-login" OnValidSubmit="ClickLogin">
+            <DataAnnotationsValidator/>
+            <div class="form-group mb-3">
+                <label for="inputEmail" class="sr-only">Email address</label>
+                <input type="email" id="inputEmail" @bind="UserCredentials.EmailAddress" class="form-control" placeholder="Email address" required autofocus>
+                <ValidationMessage For="@(() => UserCredentials.EmailAddress)"/>
+            </div>
+            <div class="form-group mb-3">
+                <label for="inputPassword" class="sr-only">Password</label>
+                <input type="password" id="inputPassword" @bind="UserCredentials.Password" class="form-control" placeholder="Password" required>
+                <ValidationMessage For="@(() => UserCredentials.Password)"/>
+            </div>
+            <div class="checkbox mb-3">
+                <label>
+                    <input type="checkbox" @bind="UserCredentials.RememberMe" value="remember-me"> Remember me
+                </label>
+            </div>
+            <button disabled="@loading" class="btn btn-lg btn-primary btn-block" type="submit">
+                @if (loading)
+                {
+                    <Spinner/>
+                }
+                Login
+            </button>
+            <NavLink href="account/register" class="btn btn-link">Register</NavLink>
+        </EditForm>
+    </div>
 </div>
 
 
@@ -101,24 +57,35 @@
 
     public async Task ClickLogin()
     {
-
         loading = true;
         try
         {
-           // await AccountService.Login(model);
-           // var returnUrl = NavigationManager.QueryString("returnUrl") ?? "";
+            var user = await UserService.AuthenticateAsync(UserCredentials.EmailAddress ?? string.Empty, UserCredentials.Password);
+            if (user.Data == null || !user.IsSuccess)
+            {
+                messages.Add(
+                    new ToastMessage
+                    {
+                        Type = ToastType.Danger,
+                        Title = "Invalid email or password.",
+                        HelpText = $"{DateTime.Now}",
+                        Message = $"Melodee is unable to log you in. Perhaps you are banned?",
+                    });
+                loading = false;
+                StateHasChanged();
+                return;
+            }
 
-           var claims = new List<Claim>();
-           claims.Add(new Claim(ClaimTypes.Name, "test")); // add more claims
-
-           var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-           var principal = new ClaimsPrincipal(claimsIdentity);
-
-           // Sign in the user
-           await HttpContext.SignInAsync(principal);
-
-           NavManager.NavigateTo(ReturnUrl ?? "/");
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Data.UserName),
+                new Claim(ClaimTypes.Email, user.Data.Email),
+                new Claim(ClaimTypes.Sid, user.Data.Id.ToString()),
+            };
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(claimsIdentity);
+            await HttpContext.SignInAsync(principal);
+            NavManager.NavigateTo(ReturnUrl ?? "/");
         }
         catch
         {
@@ -130,9 +97,12 @@
                     HelpText = $"{DateTime.Now}",
                     Message = $"Melodee is unable to log you in. Perhaps you are banned?",
                 });
-
-            loading = false;
             StateHasChanged();
         }
+        finally
+        {
+            loading = false;
+        }
     }
+
 }

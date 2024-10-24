@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Melodee.ViewModels;
 
-public class Credential
+public sealed class Credential
 {
     [Required]
     [DataType(DataType.Password)]

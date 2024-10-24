@@ -184,5 +184,14 @@ public class StringExtensionsTests
     public void ValidateToCleanedMultipleArtistsValue(string? input, string? shouldBe)
     {
         Assert.Equal(shouldBe, input.ToCleanedMultipleArtistsValue());
-    }        
+    }
+
+    [Fact]
+    public void HashAndValidateString()
+    {
+        var input = "Hello World!";
+        var hash = input.ToPasswordHash();
+        Assert.NotNull(hash.Nullify());
+        Assert.Equal(hash, input.ToPasswordHash());
+    }
 }

@@ -6,50 +6,57 @@ using Melodee.Common.Models;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.Mapping;
 using Serilog;
 using SmartFormat;
 
 namespace Melodee.Services;
 
 public sealed class UserService(
-    ILogger logger, 
+    ILogger logger,
     ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory,
-    IDataProtectionProvider dataProtectionProvider)
+    IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:user:apikey:{0}";
     private const string CacheKeyDetailByEmailAddressKeyTemplate = "urn:user:emailaddress:{0}";
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
-    
+
     public async Task<PagedResult<User>> ListAsync(User currentUser, PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int usersCount;
         User[] users = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            usersCount = await scopedContext.Users.AsNoTracking().CountAsync(cancellationToken).ConfigureAwait(false);
+            usersCount = await scopedContext
+                .Users
+                .AsNoTracking()
+                .CountAsync(cancellationToken)
+                .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                users = await scopedContext.Users.AsNoTracking().ToArrayAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                users = await scopedContext
+                    .Users
+                    .AsNoTracking()
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
             }
-        }        
+        }
+
         return new PagedResult<User>
         {
             TotalCount = usersCount,
             TotalPages = pagedRequest.TotalPages(usersCount),
             Data = users
-                .OrderBy(x => pagedRequest.Sort ?? $"{ nameof(User.SortOrder)}, { nameof(User.UserName) }")
+                .OrderBy(x => pagedRequest.Sort ?? $"{nameof(User.SortOrder)}, {nameof(User.UserName)}")
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.TakeValue)
         };
     }
-    
+
     public async Task<OperationResult<User?>> GetByEmailAddressAsync(User currentUser, string emailAddress, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
-        
+
         return await CacheManager.GetAsync(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddress), async () =>
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -64,12 +71,12 @@ public sealed class UserService(
                 return await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
             }
         }, cancellationToken);
-    }      
-    
+    }
+
     public Task<OperationResult<User?>> GetByApiKeyAsync(User currentUser, Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
-        
+
         return CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -84,12 +91,12 @@ public sealed class UserService(
                 return await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
             }
         }, cancellationToken);
-    }       
-    
+    }
+
     public async Task<OperationResult<User?>> GetAsync(User currentUser, int id, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
-        
+
         var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -105,6 +112,110 @@ public sealed class UserService(
         {
             Data = result
         };
+    }
+
+    public async Task<OperationResult<User?>> AuthenticateAsync(string emailAddress, string? password, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
+
+        if (password.Nullify() == null)
+        {
+            return new OperationResult<User?>
+            {
+                Data = null,
+                Type = OperationResponseType.Unauthorized
+            }; 
+        }
+        
+        var user = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
+        if (!user.IsSuccess)
+        {
+            return new OperationResult<User?>
+            {
+                Data = null,
+                Type = OperationResponseType.NotFound
+            };
+        }
+
+        if (user.Data?.PasswordHash != password.ToPasswordHash())
+        {
+            return new OperationResult<User?>
+            {
+                Data = null,
+                Type = OperationResponseType.Unauthorized
+            };
+        }
+
+        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+
+        _ = Task.Run(async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbUser = await scopedContext
+                    .Users
+                    .AsNoTracking()
+                    .SingleAsync(x => x.Email == emailAddress, cancellationToken)
+                    .ConfigureAwait(false);
+                dbUser.LastActivityAt = now;
+                dbUser.LastLoginAt = now;
+                await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }, cancellationToken);
+        return user;
+    }
+
+    public async Task<OperationResult<User?>> RegisterAsync(string username, string emailAddress, string password, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
+        Guard.Against.NullOrWhiteSpace(password, nameof(password));
+
+        // Ensure no user exists with given email address
+        var dbUserByEmailAddress = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
+        if (dbUserByEmailAddress.IsSuccess)
+        {
+            return new OperationResult<User?>(["User exists with Email address."])
+            {
+                Data = dbUserByEmailAddress.Data,
+                Type = OperationResponseType.ValidationFailure
+            };
+        }
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            scopedContext.Users.Add(new User
+            {
+                UserName = username,
+                Email = emailAddress,
+                PasswordHash = password.ToPasswordHash(),
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+            });
+            if (await scopedContext
+                    .SaveChangesAsync(cancellationToken)
+                    .ConfigureAwait(false) < 1)
+            {
+                return new OperationResult<User?>
+                {
+                    Data = null,
+                    Type = OperationResponseType.Error
+                };
+            }
+
+            // See if user is first user to register, is so then set to administrator
+            var dbUserCount = await scopedContext
+                .Users
+                .CountAsync(x => x.Email == emailAddress, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+            if (dbUserCount == 1)
+            {
+                await scopedContext
+                    .Users
+                    .Where(x => x.Email == emailAddress)
+                    .ExecuteUpdateAsync(x => x.SetProperty(u => u.IsAdmin, true), cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            return GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).Result;
+        }
     }
 
     public async Task<OperationResult<bool>> UpdateAsync(User currentUser, User detailToUpdate, CancellationToken cancellationToken = default)
@@ -126,7 +237,7 @@ public sealed class UserService(
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                // Load the user by DetailToUpdate Id
+                // Load the user by DetailToUpdate.Id
                 var dbDetail = await scopedContext
                     .Users
                     .FirstOrDefaultAsync(x => x.Id == detailToUpdate.Id, cancellationToken)
@@ -140,6 +251,7 @@ public sealed class UserService(
                         Type = OperationResponseType.NotFound
                     };
                 }
+
                 // Update values and save to db
                 dbDetail.Email = detailToUpdate.Email;
                 dbDetail.HasCommentRole = detailToUpdate.HasCommentRole;
@@ -155,13 +267,19 @@ public sealed class UserService(
                 dbDetail.IsAdmin = detailToUpdate.IsAdmin;
                 dbDetail.IsLocked = detailToUpdate.IsLocked;
                 dbDetail.IsScrobblingEnabled = detailToUpdate.IsScrobblingEnabled;
-                dbDetail.Name = detailToUpdate.Name;
-                dbDetail.Password = detailToUpdate.Password;
+                dbDetail.PasswordHash = detailToUpdate.PasswordHash.ToPasswordHash();
                 dbDetail.UserName = detailToUpdate.UserName;
-                
+
                 dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
-                // Clear cache
+                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+
+                if (result)
+                {
+                    CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(dbDetail.ApiKey));
+                    CacheManager.Remove(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(dbDetail.Email));
+                    CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(dbDetail.Id));
+                }
             }
         }
 

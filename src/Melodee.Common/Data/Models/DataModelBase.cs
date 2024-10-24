@@ -9,12 +9,12 @@ namespace Melodee.Common.Data.Models;
 public abstract class DataModelBase
 {
     public int Id { get; set; }
-    
+
     /// <summary>
     /// Automatically updated to the PostgreSQL rowversion value when a record is updated.
     /// </summary>
-    [Timestamp]
-    public uint Version { get; set; }
+ //   [Timestamp]
+    public uint Version { get; set; } = uint.MinValue;
     
     public bool IsLocked { get; set; }
     

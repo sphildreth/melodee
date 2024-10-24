@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Melodee.Common.Models;
@@ -488,6 +489,8 @@ public static partial class StringExtensions
 
         return result;
     }
+    
+    public static string ToPasswordHash(this string? plainPassword) => BitConverter.ToString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(plainPassword ?? string.Empty))).Replace("-", string.Empty);
 
     [GeneratedRegex("[^a-zA-Z0-9 -.:]")]
     private static partial Regex OnlyAlphaNumericRegex();
