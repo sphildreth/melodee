@@ -23,6 +23,7 @@ public sealed class ServiceUser : User
             CreatedAt = default,
             UserName = "ServiceUser",
             Email = "serviceuser@local.lan",
+            IsAdmin = true,
             PasswordHash = string.Empty
         };
     }

@@ -1,4 +1,4 @@
-namespace Melodee.Services.Interfaces;
+namespace Melodee.Common.Serialization;
 
 public interface ISerializer
 {

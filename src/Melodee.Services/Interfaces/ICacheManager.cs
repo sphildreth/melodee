@@ -1,3 +1,5 @@
+using Melodee.Common.Serialization;
+
 namespace Melodee.Services.Interfaces;
 
 public interface ICacheManager

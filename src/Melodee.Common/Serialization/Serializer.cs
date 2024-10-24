@@ -1,8 +1,7 @@
 using System.Text.Json;
-using Melodee.Services.Interfaces;
 using Serilog;
 
-namespace Melodee.Services;
+namespace Melodee.Common.Serialization;
 
 public sealed class Serializer(ILogger logger) : ISerializer
 {

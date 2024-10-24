@@ -53,6 +53,41 @@ public sealed class UserService(
         };
     }
 
+    public async Task<OperationResult<bool>> DeleteAsync(User currentuser, Guid apiKey, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+
+        if (!currentuser.IsAdmin)
+        {
+            return new OperationResult<bool>
+            {
+                Data = false,
+                Type = OperationResponseType.Unauthorized
+            };
+        }
+        var user = await GetByApiKeyAsync(currentuser, apiKey, cancellationToken).ConfigureAwait(false);
+        if (user.Data == null || !user.IsSuccess)
+        {
+            return new OperationResult<bool>
+            {
+                Data = false,
+                Type = OperationResponseType.NotFound
+            };
+        }
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var deletedResult = await scopedContext.Users
+                .Where(x => x.Id == user.Data.Id)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+            return new OperationResult<bool>
+            {
+                Data = deletedResult > 0
+            };
+        }
+    }
+
     public async Task<OperationResult<User?>> GetByEmailAddressAsync(User currentUser, string emailAddress, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
@@ -68,7 +103,10 @@ public sealed class UserService(
                     .Select(x => x.Id)
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
-                return await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
+                return userId < 1 ? new OperationResult<User?>
+                {
+                    Data = null
+                } : await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
             }
         }, cancellationToken);
     }
@@ -183,13 +221,14 @@ public sealed class UserService(
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            scopedContext.Users.Add(new User
+            var newUser = new User
             {
                 UserName = username,
                 Email = emailAddress,
                 PasswordHash = password.ToPasswordHash(),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
-            });
+            };
+            scopedContext.Users.Add(newUser);
             if (await scopedContext
                     .SaveChangesAsync(cancellationToken)
                     .ConfigureAwait(false) < 1)

@@ -49,7 +49,7 @@
         loading = true;
         try
         {
-            await UserService.RegisterAsync(model.Username, model.EmailAddress, model.Password);
+            await UserService.RegisterAsync(model.Username ?? string.Empty, model.EmailAddress ?? string.Empty, model.Password ?? string.Empty);
             messages.Add(
                 new ToastMessage
                 {

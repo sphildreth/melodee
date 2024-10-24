@@ -12,7 +12,7 @@ public sealed record PagedRequest
     public const string OrderDescDirection = "DESC";
     private int? _skipValue;
 
-    public short? Take { get; set; } = DefaultPageSize;
+    public short? PageSize { get; set; } = DefaultPageSize;
     public string? Search { get; init; }
 
     public AlbumResultFilter? Filter { get; init; }
@@ -23,13 +23,13 @@ public sealed record PagedRequest
     {
         get
         {
-            if (Take is -1)
+            if (PageSize is -1)
             {
                 // Suppose to mean return all, this limits to something sane other than Int.MaxLimit
                 return 500;
             }
 
-            return Take ?? DefaultPageSize;
+            return PageSize ?? DefaultPageSize;
         }
     }
 
