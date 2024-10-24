@@ -55,7 +55,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
 
             modelBuilder.Entity<Setting>(s =>
             {
-                s.HasData([
+                s.HasData(
                     new Setting
                     {
                         Id = 1,
@@ -408,7 +408,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                         Value = "2150",
                         CreatedAt = now,
                     }
-                ]);
+                );
             });
         
 

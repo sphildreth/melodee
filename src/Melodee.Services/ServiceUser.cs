@@ -18,7 +18,7 @@ public sealed class ServiceUser : User
 
     private static ServiceUser NewServiceUser()
     {
-        return new ServiceUser()
+        return new ServiceUser
         {
             CreatedAt = default,
             UserName = "ServiceUser",

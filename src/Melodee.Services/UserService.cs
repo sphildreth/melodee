@@ -11,6 +11,9 @@ using SmartFormat;
 
 namespace Melodee.Services;
 
+/// <summary>
+///     User data domain service.
+/// </summary>
 public sealed class UserService(
     ILogger logger,
     ICacheManager cacheManager,
@@ -65,6 +68,7 @@ public sealed class UserService(
                 Type = OperationResponseType.Unauthorized
             };
         }
+
         var user = await GetByApiKeyAsync(currentuser, apiKey, cancellationToken).ConfigureAwait(false);
         if (user.Data == null || !user.IsSuccess)
         {
@@ -103,10 +107,12 @@ public sealed class UserService(
                     .Select(x => x.Id)
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
-                return userId < 1 ? new OperationResult<User?>
-                {
-                    Data = null
-                } : await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
+                return userId < 1
+                    ? new OperationResult<User?>
+                    {
+                        Data = null
+                    }
+                    : await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
             }
         }, cancellationToken);
     }
@@ -162,9 +168,9 @@ public sealed class UserService(
             {
                 Data = null,
                 Type = OperationResponseType.Unauthorized
-            }; 
+            };
         }
-        
+
         var user = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
         if (!user.IsSuccess)
         {
@@ -243,7 +249,7 @@ public sealed class UserService(
             // See if user is first user to register, is so then set to administrator
             var dbUserCount = await scopedContext
                 .Users
-                .CountAsync(x => x.Email == emailAddress, cancellationToken: cancellationToken)
+                .CountAsync(x => x.Email == emailAddress, cancellationToken)
                 .ConfigureAwait(false);
             if (dbUserCount == 1)
             {
@@ -253,6 +259,7 @@ public sealed class UserService(
                     .ExecuteUpdateAsync(x => x.SetProperty(u => u.IsAdmin, true), cancellationToken)
                     .ConfigureAwait(false);
             }
+
             return GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).Result;
         }
     }
@@ -276,7 +283,7 @@ public sealed class UserService(
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                // Load the user by DetailToUpdate.Id
+                // Load the detail by DetailToUpdate.Id
                 var dbDetail = await scopedContext
                     .Users
                     .FirstOrDefaultAsync(x => x.Id == detailToUpdate.Id, cancellationToken)
@@ -292,6 +299,7 @@ public sealed class UserService(
                 }
 
                 // Update values and save to db
+                dbDetail.Description = detailToUpdate.Description;
                 dbDetail.Email = detailToUpdate.Email;
                 dbDetail.HasCommentRole = detailToUpdate.HasCommentRole;
                 dbDetail.HasCoverArtRole = detailToUpdate.HasCoverArtRole;
@@ -306,7 +314,10 @@ public sealed class UserService(
                 dbDetail.IsAdmin = detailToUpdate.IsAdmin;
                 dbDetail.IsLocked = detailToUpdate.IsLocked;
                 dbDetail.IsScrobblingEnabled = detailToUpdate.IsScrobblingEnabled;
+                dbDetail.Notes = detailToUpdate.Notes;
                 dbDetail.PasswordHash = detailToUpdate.PasswordHash.ToPasswordHash();
+                dbDetail.SortOrder = detailToUpdate.SortOrder;
+                dbDetail.Tags = detailToUpdate.Tags;
                 dbDetail.UserName = detailToUpdate.UserName;
 
                 dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);

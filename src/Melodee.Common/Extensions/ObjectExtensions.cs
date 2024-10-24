@@ -37,6 +37,26 @@ public static class ObjectExtensions
 
         return result;
     }
+    
+    public static object? Convert(this object? value, Type t)
+    {
+        Type? underlyingType = Nullable.GetUnderlyingType(t);
+        if (underlyingType != null && value == null)
+        {
+            return null;
+        }
+        var basetype = underlyingType ?? t;
+        return System.Convert.ChangeType(value, basetype);
+    }
+
+    public static T? Convert<T>(this object? value)
+    {
+        if (value is not IConvertible)
+        {
+            return (T?)value;
+        }
+        return value == null ? default : (T)value.Convert(typeof(T))!;
+    }    
 
     public static bool IsNullOrDefault<T>(this T argument)
     {

@@ -28,9 +28,7 @@ public sealed class UserServiceTests : ServiceTestBase
 
         var service = GetUserService();
         var listResult = await service.ListAsync(ServiceUser.Instance.Value, new PagedRequest());
-        Assert.NotNull(listResult);
-        Assert.True(listResult.IsSuccess); 
-        Assert.NotEmpty(listResult.Data);
+        AssertResultIsSuccessful(listResult);
         Assert.Contains(listResult.Data, x => x.ApiKey == shouldContainApiKey);
         Assert.Equal(1, listResult.TotalPages);
         Assert.Equal(1, listResult.TotalCount);
@@ -44,34 +42,24 @@ public sealed class UserServiceTests : ServiceTestBase
         
         var service = GetUserService();
         var registerResult = await service.RegisterAsync(emailAddress, emailAddress, emailAddress.ToPasswordHash());
-        Assert.NotNull(registerResult);
-        Assert.True(registerResult.IsSuccess);        
-        Assert.NotNull(registerResult.Data);
-        Assert.Equal(emailAddress, registerResult.Data.Email);
+        AssertResultIsSuccessful(registerResult);
+        Assert.Equal(emailAddress, registerResult.Data!.Email);
         
         // Register a second user to ensure that only the fist gets deleted
         var registerResult2 = await service.RegisterAsync(emailAddress2, emailAddress2, emailAddress2.ToPasswordHash());
-        Assert.NotNull(registerResult2);
-        Assert.True(registerResult2.IsSuccess);        
-        Assert.NotNull(registerResult2.Data);
-        Assert.Equal(emailAddress2, registerResult2.Data.Email);
-
+        AssertResultIsSuccessful(registerResult2);
+        Assert.Equal(emailAddress2, registerResult2.Data!.Email);
         
         var userByEmailAddress = await service.GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress);
-        Assert.NotNull(userByEmailAddress);
-        Assert.True(userByEmailAddress.IsSuccess);
-        Assert.NotNull(userByEmailAddress.Data);
-        Assert.Equal(emailAddress, userByEmailAddress.Data.Email);
+        AssertResultIsSuccessful(userByEmailAddress);
+        Assert.Equal(emailAddress, userByEmailAddress.Data!.Email);
         
         var authResult = await service.AuthenticateAsync(emailAddress, emailAddress.ToPasswordHash());
-        Assert.NotNull(authResult);
-        Assert.NotNull(authResult.Data);
-        Assert.True(authResult.IsSuccess);
-        Assert.Equal(emailAddress, authResult.Data.Email);
+        AssertResultIsSuccessful(authResult);
+        Assert.Equal(emailAddress, authResult.Data!.Email);
         
         var deleteResult = await service.DeleteAsync(ServiceUser.Instance.Value, userByEmailAddress.Data.ApiKey);
-        Assert.NotNull(deleteResult);
-        Assert.True(deleteResult.IsSuccess);
+        AssertResultIsSuccessful(deleteResult);
         Assert.True(deleteResult.Data);
         
         userByEmailAddress = await service.GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress);
@@ -80,15 +68,11 @@ public sealed class UserServiceTests : ServiceTestBase
         Assert.Null(userByEmailAddress.Data);
         
         userByEmailAddress = await service.GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress2);
-        Assert.NotNull(userByEmailAddress);
-        Assert.True(userByEmailAddress.IsSuccess);
-        Assert.NotNull(userByEmailAddress.Data);
-        Assert.Equal(emailAddress2, userByEmailAddress.Data.Email);
+        AssertResultIsSuccessful(userByEmailAddress);
+        Assert.Equal(emailAddress2, userByEmailAddress.Data!.Email);
         
         var listResult = await service.ListAsync(ServiceUser.Instance.Value, new PagedRequest());
-        Assert.NotNull(listResult);
-        Assert.True(listResult.IsSuccess); 
-        Assert.NotEmpty(listResult.Data);
+        AssertResultIsSuccessful(listResult);
         Assert.Contains(listResult.Data, x => x.Email == emailAddress2);
         Assert.Equal(1, listResult.TotalPages);
         Assert.Equal(1, listResult.TotalCount);        

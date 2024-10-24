@@ -205,7 +205,7 @@ public static class SafeParser
         return null;
     }
 
-    private static T? ChangeType<T>(object? value)
+    public static T? ChangeType<T>(object? value)
     {
         var t = typeof(T);
         if (!t.IsGenericType || (t.GetGenericTypeDefinition() != typeof(Nullable<>) && value != null))

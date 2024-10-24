@@ -1,5 +1,4 @@
 using Melodee.Common.Serialization;
-using Melodee.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 

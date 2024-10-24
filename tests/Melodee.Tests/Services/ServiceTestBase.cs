@@ -1,5 +1,7 @@
 using System.Data.Common;
+using Dorssel.EntityFrameworkCore;
 using Melodee.Common.Data;
+using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Services;
 using Melodee.Services.Caching;
@@ -17,7 +19,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     private readonly DbContextOptions<MelodeeDbContext> _dbContextOptions;
 
-    public ServiceTestBase()
+    protected ServiceTestBase()
     {
         Logger = new Mock<ILogger>().Object;
         Serializer = new Serializer(Logger);
@@ -28,6 +30,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
         _dbContextOptions = new DbContextOptionsBuilder<MelodeeDbContext>()
             .UseSqlite(_dbConnection, x => x.UseNodaTime())
+            .UseSqliteTimestamp()
             .Options;
 
         using (var context = new MelodeeDbContext(_dbContextOptions))
@@ -37,11 +40,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         }
     }
 
-    protected ILogger Logger { get; }
+    private ILogger Logger { get; }
 
-    protected Serializer Serializer { get; set; }
+    private Serializer Serializer { get; set; }
 
-    protected ICacheManager CacheManager { get; }
+    private ICacheManager CacheManager { get; }
 
     public async ValueTask DisposeAsync()
     {
@@ -69,5 +72,19 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected SettingService GetSettingService()
     {
         return new SettingService(Logger, CacheManager, MockFactory());
+    }
+
+    protected static void AssertResultIsSuccessful<T>(PagedResult<T> result) where T : notnull
+    {
+        Assert.NotNull(result);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);        
+    }    
+    
+    protected static void AssertResultIsSuccessful<T>(OperationResult<T?>? result)
+    {
+        Assert.NotNull(result);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);        
     }
 }

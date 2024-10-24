@@ -11,10 +11,10 @@ public abstract class DataModelBase
     public int Id { get; set; }
 
     /// <summary>
-    /// Automatically updated to the PostgreSQL rowversion value when a record is updated.
+    /// Automatically updated to the PostgresSQL row-version value when a record is updated.
     /// </summary>
- //   [Timestamp]
-    public uint Version { get; set; } = uint.MinValue;
+    [Timestamp]
+    public byte[] Version { get; set; } = null!;    
     
     public bool IsLocked { get; set; }
     
