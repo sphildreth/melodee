@@ -1,51 +1,46 @@
 @page "/account/login"
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Authentication.Cookies
 @using System.Security.Claims
-@using Humanizer
+@using Melodee.Common.Constants
 @using Melodee.ViewModels
-@using Microsoft.AspNetCore.Identity
-@using Microsoft.EntityFrameworkCore
 @inject NavigationManager NavManager
+@inject IAuthService AuthService
 @inject UserService UserService
-
 
 @attribute [AllowAnonymous]
 
 <Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.TopRight"/>
 
 <div class="card">
-    <h4 class="card-header">🚨 Please login or register.</h4>
-    <div class="card-body">
-        <EditForm Model="@UserCredentials" class="form-login" OnValidSubmit="ClickLogin">
-            <DataAnnotationsValidator/>
-            <div class="form-group mb-3">
-                <label for="inputEmail" class="sr-only">Email address</label>
-                <input type="email" id="inputEmail" @bind="UserCredentials.EmailAddress" class="form-control" placeholder="Email address" required autofocus>
-                <ValidationMessage For="@(() => UserCredentials.EmailAddress)"/>
-            </div>
-            <div class="form-group mb-3">
-                <label for="inputPassword" class="sr-only">Password</label>
-                <input type="password" id="inputPassword" @bind="UserCredentials.Password" class="form-control" placeholder="Password" required>
-                <ValidationMessage For="@(() => UserCredentials.Password)"/>
-            </div>
-            <div class="checkbox mb-3">
-                <label>
-                    <input type="checkbox" @bind="UserCredentials.RememberMe" value="remember-me"> Remember me
-                </label>
-            </div>
-            <button disabled="@loading" class="btn btn-lg btn-primary btn-block" type="submit">
-                @if (loading)
-                {
-                    <Spinner/>
-                }
-                Login
-            </button>
-            <NavLink href="account/register" class="btn btn-link">Register</NavLink>
-        </EditForm>
+        <h4 class="card-header">🚨 Please login or register.</h4>
+        <div class="card-body">
+            <EditForm Model="@UserCredentials" class="form-login" OnValidSubmit="ClickLogin">
+                <DataAnnotationsValidator/>
+                <div class="form-group mb-3">
+                    <label for="inputEmail" class="sr-only">Email address</label>
+                    <input type="email" id="inputEmail" @bind="UserCredentials.EmailAddress" class="form-control" placeholder="Email address" required autofocus>
+                    <ValidationMessage For="@(() => UserCredentials.EmailAddress)"/>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="inputPassword" class="sr-only">Password</label>
+                    <input type="password" id="inputPassword" @bind="UserCredentials.Password" class="form-control" placeholder="Password" required>
+                    <ValidationMessage For="@(() => UserCredentials.Password)"/>
+                </div>
+                <div class="checkbox mb-3">
+                    <label>
+                        <input type="checkbox" @bind="UserCredentials.RememberMe" value="remember-me"> Remember me
+                    </label>
+                </div>
+                <button disabled="@loading" class="btn btn-lg btn-primary btn-block" type="submit">
+                    @if (loading)
+                    {
+                        <Spinner/>
+                    }
+                    Login
+                </button>
+                <NavLink href="account/register" class="btn btn-link">Register</NavLink>
+            </EditForm>
+        </div>
     </div>
-</div>
-
 
 @code {
     private List<ToastMessage> messages = new List<ToastMessage>();
@@ -55,12 +50,25 @@
 
     [SupplyParameterFromQuery] [Parameter] public string? ReturnUrl { get; set; }
 
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !AuthService.IsLoggedIn)
+        {
+            var restoredFromState = await AuthService.GetStateFromTokenAsync();
+            if (restoredFromState)
+            {
+                NavManager.NavigateTo(ReturnUrl ?? "/");
+            }
+        }
+    }
+
     public async Task ClickLogin()
     {
         loading = true;
         try
         {
-            var user = await UserService.AuthenticateAsync(UserCredentials.EmailAddress ?? string.Empty, UserCredentials.Password);
+            var user = await UserService.LoginUserAsync(UserCredentials.EmailAddress ?? string.Empty, UserCredentials.Password);
             if (user.Data == null || !user.IsSuccess)
             {
                 messages.Add(
@@ -82,13 +90,14 @@
                 new Claim(ClaimTypes.Email, user.Data.Email),
                 new Claim(ClaimTypes.Sid, user.Data.Id.ToString()),
             };
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            if (user.Data.IsAdmin)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, RoleNameRegistry.Administrator));
+            }
+            var claimsIdentity = new ClaimsIdentity(claims, "jwt");
             var principal = new ClaimsPrincipal(claimsIdentity);
-            // await HttpContextAccessor.HttpContext.SignInAsync(
-            //     CookieAuthenticationDefaults.AuthenticationScheme,
-            //     new ClaimsPrincipal(claimsIdentity)
-            // );
-            await SignInManager.SignInAsync()
+
+            await AuthService.Login(principal);
             NavManager.NavigateTo(ReturnUrl ?? "/");
         }
         catch(Exception ex)

@@ -12,6 +12,7 @@ public class LocalStorageService(IJSRuntime jsRuntime)
         {
             return default;
         }
+
         return JsonSerializer.Deserialize<T>(json);
     }
 

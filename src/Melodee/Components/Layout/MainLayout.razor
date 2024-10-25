@@ -1,83 +1,81 @@
-﻿@implements IDisposable
-
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Http
-@inject AuthenticationStateProvider AuthenticationStateProvider
-
-
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inherits LayoutComponentBase
+
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
 
 <div class="bb-page">
 
-    @if (IsUserAuthenticated())
-    {
-        <Sidebar @ref="sidebar"
-                 ImageSrc="./images/melodee-logo-small.png"
-                 Title="Melodee"
-                 DataProvider="SidebarDataProvider"/>
-    }
+    <AuthorizeView>
+        <Authorized>
+            <Sidebar @ref="_sidebar"
+                     ImageSrc="./images/melodee-logo-small.png"
+                     Title="Melodee"
+                     DataProvider="SidebarDataProvider"/>
+        </Authorized>
+    </AuthorizeView>
+
     <main>
         <div class="bb-top-row px-4 d-flex justify-content-between">
-            <Icon Name="IconName.List" role="button" @onclick="ToggleSidebar" />
-            <a href="/about" target="_blank">About</a>
+            <Icon Name="IconName.List" role="button" @onclick="ToggleSidebar"/>
+            <AuthorizeView>
+                <Authorized>
+                    <div>
+                        <img src="images\avatar.png" alt="Avatar" class="avatar">
+                        @context.User.Identity.Name
+                    </div>
+                </Authorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
             @Body
         </article>
     </main>
-
 </div>
-<CascadingValue TValue="System.Threading.Tasks.Task<AuthenticationState>" Value="@_currentAuthenticationStateTask" ChildContent="@ChildContent" />
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
 
 @code {
-    private Task<AuthenticationState>? _currentAuthenticationStateTask;
 
-    /// <summary>
-    /// The content to which the authentication state should be provided.
-    /// </summary>
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
-
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
-
-        _currentAuthenticationStateTask = AuthenticationStateProvider
-            .GetAuthenticationStateAsync();
-    }
-
-    private void OnAuthenticationStateChanged(Task<AuthenticationState> newAuthStateTask)
-    {
-        _ = InvokeAsync(() =>
+        if (firstRender && !AuthService.IsLoggedIn)
         {
-            _currentAuthenticationStateTask = newAuthStateTask;
-            StateHasChanged();
-        });
+            var url = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).ToString();
+            var isLoginUrl = url.Contains("/account/login");
+            var restoredFromState = await AuthService.GetStateFromTokenAsync();
+            if (restoredFromState && isLoginUrl)
+            {
+                NavigationManager.NavigateTo("/");
+            }
+            else if (restoredFromState)
+            {
+                NavigationManager.Refresh();
+            }
+        }
     }
 
-    void IDisposable.Dispose()
-    {
-        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
-    }
-
-    Sidebar sidebar = default!;
-    IEnumerable<NavItem> navItems = [];
-
-    //private bool IsUserAuthenticated => HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+    Sidebar? _sidebar;
+    IEnumerable<NavItem>? _navItems;
 
     private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
     {
-        if (navItems is null)
+        if (_navItems is null)
         {
-            navItems = GetNavItems();
+            _navItems = GetNavItems();
         }
-        return await Task.FromResult(request.ApplyTo(navItems));
+        return await Task.FromResult(request.ApplyTo(_navItems));
     }
 
     private IEnumerable<NavItem> GetNavItems()
     {
-        navItems = new List<NavItem>
+        _navItems = new List<NavItem>
         {
             new NavItem { Id = "1", Href = "/", IconName = IconName.House, Text = "Dashboard" },
 
@@ -103,22 +101,13 @@
 
         };
 
-        return navItems;
+        return _navItems;
     }
 
-    private async Task<bool> IsUserAuthenticated()
-    {
-        // var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        // return authState?.User?.Identity?.IsAuthenticated ?? false;
-        var user =
-    }
 
-    private async Task ToggleSidebar()
+    private void ToggleSidebar()
     {
-        if (await IsUserAuthenticated())
-        {
-            sidebar.ToggleSidebar();
-        }
+        _sidebar?.ToggleSidebar();
     }
 }
 

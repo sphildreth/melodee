@@ -54,7 +54,7 @@ public sealed class UserServiceTests : ServiceTestBase
         AssertResultIsSuccessful(userByEmailAddress);
         Assert.Equal(emailAddress, userByEmailAddress.Data!.Email);
         
-        var authResult = await service.AuthenticateAsync(emailAddress, emailAddress.ToPasswordHash());
+        var authResult = await service.LoginUserAsync(emailAddress, emailAddress.ToPasswordHash());
         AssertResultIsSuccessful(authResult);
         Assert.Equal(emailAddress, authResult.Data!.Email);
         

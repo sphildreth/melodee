@@ -158,7 +158,7 @@ public sealed class UserService(
         };
     }
 
-    public async Task<OperationResult<User?>> AuthenticateAsync(string emailAddress, string? password, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<User?>> LoginUserAsync(string emailAddress, string? password, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
 

@@ -8,13 +8,16 @@
 
     <ItemGroup>
       <PackageReference Include="Blazor.Bootstrap" />
+      <PackageReference Include="Blazored.SessionStorage" />
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+      <PackageReference Include="Microsoft.IdentityModel.Tokens" />
       <PackageReference Include="Serilog" />
       <PackageReference Include="Serilog.AspNetCore" />
       <PackageReference Include="Serilog.Settings.AppSettings" />
       <PackageReference Include="Serilog.Sinks.Console" />
       <PackageReference Include="Serilog.Sinks.File" />      
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" />      
     </ItemGroup>
 
     <ItemGroup>

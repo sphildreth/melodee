@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Blazored.SessionStorage;
 using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
@@ -6,6 +7,7 @@ using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using ILogger = Serilog.ILogger;
@@ -25,12 +27,16 @@ builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddHttpContextAccessor();
 
+//The cookie authentication is never used (jwt is), but it is required to prevent a runtime error
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(x =>
     {
-        x.LoginPath = "/account/login";
+        x.Cookie.Name = "melodee_auth";
+        x.Cookie.MaxAge = TimeSpan.FromDays(365);
     });
 builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddCascadingAuthenticationState();
 
 builder.Services
@@ -46,6 +52,9 @@ builder.Services
     .AddScoped<SettingService>()
     .AddScoped<UserService>();
 
+builder.Services.AddBlazoredSessionStorage();
+builder.Services.AddScoped<ICustomSessionService, CustomSessionService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -59,10 +68,6 @@ if (!app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
-
-app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
