@@ -3,6 +3,9 @@ using Blazored.SessionStorage;
 using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
+using Melodee.Plugins;
+using Melodee.Plugins.Discovery.Albums;
+using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
@@ -41,7 +44,7 @@ builder.Services.AddCascadingAuthenticationState();
 
 builder.Services
     .AddSingleton<ISerializer, Serializer>()
-    .AddSingleton<ICacheManager>(opt 
+    .AddSingleton<ICacheManager>(opt
         => new MemoryCacheManager(opt.GetRequiredService<ILogger>(),
             new TimeSpan(1,
                 0,
@@ -50,10 +53,18 @@ builder.Services
             opt.GetRequiredService<ISerializer>()))
     .AddScoped<LocalStorageService>()
     .AddScoped<SettingService>()
-    .AddScoped<UserService>();
+    .AddScoped<UserService>()
+    .AddScoped<IPluginsConfiguration>(opt =>
+    {
+        var settingService = opt.GetRequiredService<SettingService>();
+        return new PluginsConfiguration(settingService.GetAllSettingsAsync().GetAwaiter().GetResult());
+    })
+    .AddScoped<IAlbumValidator, AlbumValidator>()
+    .AddScoped<IAlbumsDiscoverer, AlbumsDiscoverer>();
 
 builder.Services.AddBlazoredSessionStorage();
-builder.Services.AddScoped<ICustomSessionService, CustomSessionService>();
+builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();
+builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 
 var app = builder.Build();
 

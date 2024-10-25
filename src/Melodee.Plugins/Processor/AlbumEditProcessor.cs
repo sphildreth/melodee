@@ -16,17 +16,17 @@ using Serilog;
 namespace Melodee.Plugins.Processor;
 
 public sealed class AlbumEditProcessor(
-    Dictionary<string, object?> configuration,
+    IPluginsConfiguration configuration,
     IAlbumsDiscoverer albumsDiscoverer,
     ISongPlugin editSongPlugin,
     IAlbumValidator albumValidator)
     : IAlbumEditProcessor
 {
 
-    private string DirectoryStaging => SafeParser.ToString(configuration[SettingRegistry.DirectoryStaging]);
+    private string DirectoryStaging => SafeParser.ToString(configuration.Configuration[SettingRegistry.DirectoryStaging]);
     private DirectoryInfo DirectoryStagingInfo => new DirectoryInfo(DirectoryStaging);
     private FileSystemDirectoryInfo DirectoryStagingFileSystemDirectoryInfo => DirectoryStagingInfo.ToDirectorySystemInfo();
-    private string DirectoryLibrary => SafeParser.ToString(configuration[SettingRegistry.DirectoryLibrary]);
+    private string DirectoryLibrary => SafeParser.ToString(configuration.Configuration[SettingRegistry.DirectoryLibrary]);
     
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -35,7 +35,7 @@ public sealed class AlbumEditProcessor(
 
     public async Task<OperationResult<ValidationResult>> DoMagic(long albumId, CancellationToken cancellationToken = default)
     {
-        if (!SafeParser.ToBoolean(configuration[SettingRegistry.MagicEnabled]))
+        if (!SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.MagicEnabled]))
         {
             return new OperationResult<ValidationResult>
             {
@@ -45,27 +45,27 @@ public sealed class AlbumEditProcessor(
                 }
             };
         }
-        if ( SafeParser.ToBoolean(configuration[SettingRegistry.MagicDoRenumberSongs]))
+        if ( SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.MagicDoRenumberSongs]))
         {
             await RenumberSongs([albumId], cancellationToken);
         }
-        if (SafeParser.ToBoolean(configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongArtist]))
+        if (SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongArtist]))
         {
             await RemoveFeaturingArtistsFromSongsArtist(albumId, cancellationToken);
         }
-        if (SafeParser.ToBoolean(configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle]))
+        if (SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle]))
         {
             await RemoveFeaturingArtistsFromSongTitle(albumId, cancellationToken);
         }
-        if (SafeParser.ToBoolean(configuration[SettingRegistry.MagicDoReplaceSongsArtistSeparators]))
+        if (SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.MagicDoReplaceSongsArtistSeparators]))
         {
             await ReplaceAllSongArtistSeparators([albumId], cancellationToken);
         }
-        if (SafeParser.ToBoolean(configuration[SettingRegistry.MagicDoSetYearToCurrentIfInvalid]))
+        if (SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.MagicDoSetYearToCurrentIfInvalid]))
         {
             await SetYearToCurrent([albumId], cancellationToken);
         }       
-        if (SafeParser.ToBoolean(configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromAlbumTitle]))
+        if (SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromAlbumTitle]))
         {
             await RemoveUnwantedTextFromAlbumTitle(albumId, cancellationToken);
         }
@@ -276,7 +276,7 @@ public sealed class AlbumEditProcessor(
             foreach (var selectedAlbumId in albumIds)
             {
                 var album = await albumsDiscoverer.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, selectedAlbumId, cancellationToken);
-                if (album.IsValid(configuration))
+                if (album.IsValid(configuration.Configuration))
                 {
                     album.SetTagValue(MetaTagIdentifier.OrigAlbumYear, year);
                     foreach (var song in album.Songs ?? [])
@@ -638,7 +638,7 @@ public sealed class AlbumEditProcessor(
                 var album = await albumsDiscoverer.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, selectedAlbumId, cancellationToken);
                 var albumStagingDirInfo = new DirectoryInfo(Path.Combine(DirectoryStaging, album.ToDirectoryName()));
                 var albumLibraryDirInfo = new DirectoryInfo(Path.Combine(DirectoryLibrary, album.ToDirectoryName()));
-                var doMove = SafeParser.ToBoolean(configuration[SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary]);
+                var doMove = SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary]);
                 MoveDirectory(albumStagingDirInfo.FullName, albumLibraryDirInfo.FullName, doMove ? null : Album.JsonFileName);
             }
 

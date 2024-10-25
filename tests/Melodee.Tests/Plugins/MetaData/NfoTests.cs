@@ -16,7 +16,7 @@ public class NfoTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(TestsBase.NewConfiguration());
+            var nfo = new Nfo(TestsBase.NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()));
@@ -30,7 +30,7 @@ public class NfoTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(TestsBase.NewConfiguration());
+            var nfo = new Nfo(TestsBase.NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.NotNull(nfoParserResult.Songs);

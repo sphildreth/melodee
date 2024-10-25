@@ -27,10 +27,10 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
 
     private readonly IEnumerable<ISongPlugin> _songPlugins;
 
-    public AlbumsDiscoverer(IAlbumValidator albumValidator, Dictionary<string, object?> configuration, ISerializer serializer)
+    public AlbumsDiscoverer(IAlbumValidator albumValidator, IPluginsConfiguration configuration, ISerializer serializer)
     {
         _albumValidator = albumValidator;
-        _configuration = configuration;
+        _configuration = configuration.Configuration;
         var config = configuration;
 
         _songPlugins = new ISongPlugin[]
@@ -124,9 +124,9 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
                 (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)))?.ToList();
         }
 
-        if (pagedRequest.Filter != AlbumResultFilter.All && albums != null && albums.Count != 0)
+        if (pagedRequest.AlbumResultFilter != AlbumResultFilter.All && albums != null && albums.Count != 0)
         {
-            switch (pagedRequest.Filter)
+            switch (pagedRequest.AlbumResultFilter)
             {
                 case AlbumResultFilter.Duplicates:
                     var duplicates = albums
@@ -176,11 +176,11 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
         return new PagedResult<Album>
         {
             TotalCount = albumsCount,
-            TotalPages = (albumsCount + pagedRequest.TakeValue - 1) / pagedRequest.TakeValue,
+            TotalPages = (albumsCount + pagedRequest.PageSizeValue - 1) / pagedRequest.PageSizeValue,
             Data = (albums ?? [])
                 .OrderBy(x => x.SortValue)
                 .Skip(pagedRequest.SkipValue)
-                .Take(pagedRequest.TakeValue)
+                .Take(pagedRequest.PageSizeValue)
         };
     }
 

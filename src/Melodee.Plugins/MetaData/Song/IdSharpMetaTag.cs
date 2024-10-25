@@ -13,7 +13,7 @@ using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Song;
 
-public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Dictionary<string, object?> configuration) : MetaDataBase(configuration), ISongPlugin
+public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, IPluginsConfiguration configuration) : MetaDataBase(configuration), ISongPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
 

@@ -3,7 +3,7 @@ using Microsoft.JSInterop;
 
 namespace Melodee.Services;
 
-public class LocalStorageService(IJSRuntime jsRuntime)
+public class LocalStorageService(IJSRuntime jsRuntime) : ILocalStorageService
 {
     public async Task<T?> GetItem<T>(string key)
     {
@@ -21,8 +21,18 @@ public class LocalStorageService(IJSRuntime jsRuntime)
         await jsRuntime.InvokeVoidAsync("localStorage.setItem", key, JsonSerializer.Serialize(value));
     }
 
-    public async Task RemoveItem(string key)
+    public async Task RemoveItemAsync(string key)
     {
         await jsRuntime.InvokeVoidAsync("localStorage.removeItem", key);
+    }
+
+    public async Task<string> GetItemAsStringAsync(string key)
+    {
+        return await jsRuntime.InvokeAsync<string?>("localStorage.getItem", key) ?? string.Empty;
+    }
+
+    public async Task SetItemAsStringAsync(string key, string value)
+    {
+        await jsRuntime.InvokeVoidAsync("localStorage.setItem", key, value);
     }
 }

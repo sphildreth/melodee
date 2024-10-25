@@ -19,9 +19,9 @@ public class M3UTests : TestsBase
         {
             var m3U = new M3UPlaylist(new []
             {
-                new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration(), Serializer), TestsBase.NewConfiguration())
-            }, new AlbumValidator(TestsBase.NewConfiguration()),
-               TestsBase.NewConfiguration());
+                new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration())
+            }, new AlbumValidator(TestsBase.NewPluginsConfiguration()),
+               TestsBase.NewPluginsConfiguration());
             var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",

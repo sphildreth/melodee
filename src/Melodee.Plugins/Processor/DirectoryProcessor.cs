@@ -31,7 +31,7 @@ namespace Melodee.Plugins.Processor;
 /// </summary>
 public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 {
-    private readonly Dictionary<string, object?> _configuration;
+    private readonly IPluginsConfiguration _configuration;
     private readonly IEnumerable<IConversionPlugin> _conversionPlugins;
     private readonly IEnumerable<IDirectoryPlugin> _directoryPlugins;
 
@@ -47,14 +47,14 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
     private readonly IEnumerable<ISongPlugin> _songPlugins;
     private bool _stopProcessingTriggered;
 
-    private string DirectoryInbound => SafeParser.ToString(_configuration[SettingRegistry.DirectoryInbound]);
-    private string DirectoryStaging => SafeParser.ToString(_configuration[SettingRegistry.DirectoryStaging]);
+    private string DirectoryInbound => SafeParser.ToString(_configuration.Configuration[SettingRegistry.DirectoryInbound]);
+    private string DirectoryStaging => SafeParser.ToString(_configuration.Configuration[SettingRegistry.DirectoryStaging]);
     private DirectoryInfo DirectoryInboundInfo => new DirectoryInfo(DirectoryInbound);
     private DirectoryInfo DirectoryStagingInfo => new DirectoryInfo(DirectoryStaging);
     private FileSystemDirectoryInfo DirectoryStagingFileSystemDirectoryInfo => DirectoryStagingInfo.ToDirectorySystemInfo();
     
     private FileSystemDirectoryInfo DirectoryInboundFileSystemDirectoryInfo => DirectoryInboundInfo.ToDirectorySystemInfo();
-    private string DirectoryLibrary => SafeParser.ToString(_configuration[SettingRegistry.DirectoryLibrary]);
+    private string DirectoryLibrary => SafeParser.ToString(_configuration.Configuration[SettingRegistry.DirectoryLibrary]);
     
     
     public DirectoryProcessor(
@@ -62,7 +62,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         IScriptPlugin postDiscoveryScript,
         IAlbumValidator albumValidator,
         IAlbumEditProcessor albumEditProcessor,
-        Dictionary<string, object?> configuration,
+        IPluginsConfiguration configuration,
         ISerializer serializer)
     {
         _configuration = configuration;
@@ -74,7 +74,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
         _songPlugins = new[]
         {
-            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
+            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), configuration)
         };
 
         _conversionPlugins = new IConversionPlugin[]
@@ -145,7 +145,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         }
 
         // Run PreDiscovery script
-        if (!SafeParser.ToBoolean(_configuration[SettingRegistry.ScriptingEnabled]) && _preDiscoveryScript.IsEnabled)
+        if (!SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ScriptingEnabled]) && _preDiscoveryScript.IsEnabled)
         {
             LogAndRaiseEvent(LogEventLevel.Debug, "Executing PreDiscoveryScript [{0}]", null, _preDiscoveryScript.DisplayName);
             var preDiscoveryScriptResult = new OperationResult<bool>
@@ -179,7 +179,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Found [{0}] directories to process", null, directoriesToProcess.Count);
         }
 
-        foreach (var directoryInfoToProcess in directoriesToProcess.Take(SafeParser.ToNumber<int>(_configuration[SettingRegistry.ProcessingMaximumProcessingCount])))
+        foreach (var directoryInfoToProcess in directoriesToProcess.Take(SafeParser.ToNumber<int>(_configuration.Configuration[SettingRegistry.ProcessingMaximumProcessingCount])))
         {
             try
             {
@@ -292,7 +292,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         var albumDataName = Path.Combine(directoryInfoToProcess.Path, albumForDirectory.ToMelodeeJsonName());
                         if (File.Exists(albumDataName))
                         {
-                            if (SafeParser.ToBoolean(_configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
+                            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
                             {
                                 File.Delete(albumDataName);
                             }
@@ -372,7 +372,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         if (album.Songs != null)
                         {
                             // Set SongNumber to invalid range if SongNumber is missing
-                            var maximumSongNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumSongNumber]); 
+                            var maximumSongNumber = SafeParser.ToNumber<int>(_configuration.Configuration[SettingRegistry.ValidationMaximumSongNumber]); 
                             album.Songs.Where(x => x.SongNumber() < 1).Each((x, i) => { album.SetSongTagValue(x.SongId, MetaTagIdentifier.TrackNumber, maximumSongNumber + i + 1); });
                             foreach (var song in album.Songs)
                             {
@@ -394,7 +394,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                 }
 
                 // Create directory and move files for each found Album in staging directory.
-                if (SafeParser.ToBoolean(_configuration[SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory]))
+                if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory]))
                 {
                     foreach (var albumKvp in albumAndJsonFile)
                     {
@@ -414,7 +414,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         {
                             var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                             File.Copy(image.FileInfo!.FullOriginalName(directoryInfoToProcess), newImageFileName, true);
-                            if (SafeParser.ToBoolean(_configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
+                            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                             {
                                 File.Delete(image.FileInfo!.FullOriginalName(directoryInfoToProcess));
                             }
@@ -430,7 +430,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                                 }
 
                                 var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
-                                if (SafeParser.ToBoolean(_configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
+                                if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                                 {
                                     song.File.MoveFile(directoryInfoToProcess, newSongFileName);
                                 }
@@ -470,7 +470,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                         {
                             await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
                             File.Delete(albumKvp.Value);
-                            if (SafeParser.ToBoolean(_configuration[SettingRegistry.MagicEnabled]))
+                            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicEnabled]))
                             {
                                 using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
                                 {
@@ -489,7 +489,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             {
                 LogAndRaiseEvent(LogEventLevel.Error, "Processing Directory [{0}]", e, directoryInfoToProcess.ToString());
                 processingErrors.Add(e);
-                if (!SafeParser.ToBoolean(_configuration[SettingRegistry.ProcessingDoContinueOnDirectoryProcessingErrors]))
+                if (!SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ProcessingDoContinueOnDirectoryProcessingErrors]))
                 {
                     return new OperationResult<DirectoryProcessorResult>
                     {
@@ -503,7 +503,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         }
 
         // Run PostDiscovery script
-        if (!SafeParser.ToBoolean(_configuration[SettingRegistry.ScriptingEnabled]) && _postDiscoveryScript.IsEnabled)
+        if (!SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ScriptingEnabled]) && _postDiscoveryScript.IsEnabled)
         {
             var postDiscoveryScriptResult = new OperationResult<bool>
             {
@@ -777,7 +777,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = viaPlugins.Distinct().ToArray()
                         });
-                        if (albums.Count > SafeParser.ToNumber<int>(_configuration[SettingRegistry.ProcessingMaximumProcessingCount]))
+                        if (albums.Count > SafeParser.ToNumber<int>(_configuration.Configuration[SettingRegistry.ProcessingMaximumProcessingCount]))
                         {
                             _stopProcessingTriggered = true;
                             break;

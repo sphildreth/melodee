@@ -97,7 +97,7 @@
             var claimsIdentity = new ClaimsIdentity(claims, "jwt");
             var principal = new ClaimsPrincipal(claimsIdentity);
 
-            await AuthService.Login(principal);
+            await AuthService.Login(principal, UserCredentials.RememberMe);
             NavManager.NavigateTo(ReturnUrl ?? "/");
         }
         catch(Exception ex)

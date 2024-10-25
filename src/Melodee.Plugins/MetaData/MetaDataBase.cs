@@ -3,9 +3,9 @@ using Melodee.Common.Models;
 
 namespace Melodee.Plugins.MetaData;
 
-public abstract class MetaDataBase(Dictionary<string, object?> configuration)
+public abstract class MetaDataBase(IPluginsConfiguration configuration)
 {
-    protected Dictionary<string, object?> Configuration { get; } = configuration;
+    protected Dictionary<string, object?> Configuration { get; } = configuration.Configuration;
 
     public abstract string Id { get; }
 

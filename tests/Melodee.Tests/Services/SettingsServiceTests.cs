@@ -11,7 +11,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     public async Task ListAsync()
     {
         var service = GetSettingService();
-        var listResult = await service.ListAsync(ServiceUser.Instance.Value, new PagedRequest
+        var listResult = await service.ListAsync( new PagedRequest
         {
             PageSize = 1000
         });
@@ -24,15 +24,15 @@ public sealed class SettingsServiceTests : ServiceTestBase
     public async Task GetSettingByKeyAndValueAsync()
     {
         var service = GetSettingService();
-        var getResult = await service.GetAsync(ServiceUser.Instance.Value, SettingRegistry.ValidationMaximumSongNumber);
+        var getResult = await service.GetAsync( SettingRegistry.ValidationMaximumSongNumber);
         AssertResultIsSuccessful(getResult);
         
-        var getIntValueResult = await service.GetValueAsync<int>(ServiceUser.Instance.Value, SettingRegistry.ValidationMaximumSongNumber);
+        var getIntValueResult = await service.GetValueAsync<int>( SettingRegistry.ValidationMaximumSongNumber);
         AssertResultIsSuccessful(getIntValueResult);
         Assert.IsType<int>(getIntValueResult.Data);
         Assert.True(getIntValueResult.Data > 0);
         
-        var getStringValueResult = await service.GetValueAsync<string>(ServiceUser.Instance.Value, SettingRegistry.ProcessingSongTitleRemovals);
+        var getStringValueResult = await service.GetValueAsync<string>( SettingRegistry.ProcessingSongTitleRemovals);
         AssertResultIsSuccessful(getStringValueResult);
         Assert.IsType<string>(getStringValueResult.Data);
         Assert.NotNull(getStringValueResult.Data.Nullify());

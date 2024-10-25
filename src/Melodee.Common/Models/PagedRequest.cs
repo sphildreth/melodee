@@ -15,11 +15,13 @@ public sealed record PagedRequest
     public short? PageSize { get; set; } = DefaultPageSize;
     public string? Search { get; init; }
 
-    public AlbumResultFilter? Filter { get; init; }
+    public AlbumResultFilter? AlbumResultFilter { get; init; }
+    
+    public string? Filter { get; init; }
 
     public long[] SelectedAlbumIds { get; init; } = Array.Empty<long>();
 
-    public short TakeValue
+    public short PageSizeValue
     {
         get
         {
@@ -29,7 +31,8 @@ public sealed record PagedRequest
                 return 500;
             }
 
-            return PageSize ?? DefaultPageSize;
+            var result = PageSize ?? DefaultPageSize;
+            return result < 1 ? (short)DefaultPageSize : result;
         }
     }
 
@@ -53,7 +56,7 @@ public sealed record PagedRequest
             {
                 if (Page.HasValue)
                 {
-                    _skipValue = Page.Value * TakeValue - TakeValue;
+                    _skipValue = Page.Value * PageSizeValue - PageSizeValue;
                 }
                 else
                 {
@@ -94,5 +97,5 @@ public sealed record PagedRequest
         return result.ToString();
     }
 
-    public int TotalPages(int totalRecordsCount) => (totalRecordsCount + TakeValue - 1) / TakeValue;
+    public int TotalPages(int totalRecordsCount) => totalRecordsCount < 1 ? 0 : (totalRecordsCount + PageSizeValue - 1) / PageSizeValue;
 }

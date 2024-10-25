@@ -6,6 +6,7 @@ using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using Melodee.Plugins;
 using Melodee.Plugins.Discovery.Albums;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
@@ -56,16 +57,16 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         using (var scope = serviceProvider.CreateScope())
         {
             var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
-            var config = await settingService.GetAllSettingsAsync().ConfigureAwait(false);
+            var config = new PluginsConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var grid = new Grid()
                 .AddColumn(new GridColumn().NoWrap().PadRight(4))
                 .AddColumn()
-                .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(config[SettingRegistry.ProcessingDoDeleteOriginal]))}")
-                .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(config[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
-                .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(config[SettingRegistry.ScriptingPreDiscoveryScript])}")
-                .AddRow("[b]Inbound[/]", $"{SafeParser.ToString(config[SettingRegistry.DirectoryInbound])}")
-                .AddRow("[b]Staging[/]", $"{SafeParser.ToString(config[SettingRegistry.DirectoryStaging])}");
+                .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(config.Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))}")
+                .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(config.Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
+                .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(config.Configuration[SettingRegistry.ScriptingPreDiscoveryScript])}")
+                .AddRow("[b]Inbound[/]", $"{SafeParser.ToString(config.Configuration[SettingRegistry.DirectoryInbound])}")
+                .AddRow("[b]Staging[/]", $"{SafeParser.ToString(config.Configuration[SettingRegistry.DirectoryStaging])}");
 
             AnsiConsole.Write(
                 new Panel(grid)

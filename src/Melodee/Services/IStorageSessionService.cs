@@ -1,6 +1,6 @@
 ﻿namespace Melodee.Services;
 
-public interface ICustomSessionService
+public interface IStorageSessionService
 {
     Task<string> GetItemAsStringAsync(string key);
     Task SetItemAsStringAsync(string key, string value);

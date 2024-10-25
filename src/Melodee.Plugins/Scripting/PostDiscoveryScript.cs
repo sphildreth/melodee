@@ -8,9 +8,9 @@ using Serilog;
 
 namespace Melodee.Plugins.Scripting;
 
-public sealed class PostDiscoveryScript(Dictionary<string, object?> configuration) : IScriptPlugin
+public sealed class PostDiscoveryScript(IPluginsConfiguration configuration) : IScriptPlugin
 {
-    private readonly Dictionary<string, object?> _configuration = configuration;
+    private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
 
     public string Id => "1F97BA5C-E5C3-4DA1-969D-DCFCB9720E07";
 

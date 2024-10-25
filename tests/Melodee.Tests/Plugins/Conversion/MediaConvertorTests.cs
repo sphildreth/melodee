@@ -15,7 +15,7 @@ public class MediaConvertorTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(TestsBase.NewConfiguration());
+            var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -39,13 +39,13 @@ public class MediaConvertorTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(
+             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new PluginsConfiguration(
                  new Dictionary<string, object?>
                 {
                     { SettingRegistry.DirectoryInbound, @"/home/steven/incoming/melodee_test/tests" },
                     { SettingRegistry.DirectoryStaging, string.Empty },
                     { SettingRegistry.DirectoryLibrary, string.Empty }
-                }
+                })
             );
             var dirInfo = new FileSystemDirectoryInfo
             {

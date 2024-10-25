@@ -16,7 +16,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     Processes NFO and gets tags and Songs for Album.
 /// </summary>
-public sealed partial class Nfo(Dictionary<string, object?> configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed partial class Nfo(IPluginsConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
 

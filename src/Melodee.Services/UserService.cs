@@ -52,7 +52,7 @@ public sealed class UserService(
             Data = users
                 .OrderBy(x => pagedRequest.Sort ?? $"{nameof(User.SortOrder)}, {nameof(User.UserName)}")
                 .Skip(pagedRequest.SkipValue)
-                .Take(pagedRequest.TakeValue)
+                .Take(pagedRequest.PageSizeValue)
         };
     }
 
@@ -198,14 +198,18 @@ public sealed class UserService(
             {
                 var dbUser = await scopedContext
                     .Users
-                    .AsNoTracking()
                     .SingleAsync(x => x.Email == emailAddress, cancellationToken)
                     .ConfigureAwait(false);
                 dbUser.LastActivityAt = now;
                 dbUser.LastLoginAt = now;
                 await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                ClearCache(dbUser.Email, dbUser.ApiKey, dbUser.Id);                
             }
         }, cancellationToken);
+        
+        // Sets return object so consumer sees new value, actual update to DB happens in another non blocking thread.
+        user.Data.LastActivityAt = now;
+        user.Data.LastLoginAt = now;        
         return user;
     }
 
@@ -214,6 +218,7 @@ public sealed class UserService(
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
         Guard.Against.NullOrWhiteSpace(password, nameof(password));
 
+        
         // Ensure no user exists with given email address
         var dbUserByEmailAddress = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
         if (dbUserByEmailAddress.IsSuccess)
@@ -326,9 +331,7 @@ public sealed class UserService(
 
                 if (result)
                 {
-                    CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(dbDetail.ApiKey));
-                    CacheManager.Remove(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(dbDetail.Email));
-                    CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(dbDetail.Id));
+                    ClearCache(dbDetail.Email, dbDetail.ApiKey, dbDetail.Id);
                 }
             }
         }
@@ -337,5 +340,21 @@ public sealed class UserService(
         {
             Data = result
         };
+    }
+
+    private void ClearCache(string? emailAddress, Guid? apiKey, int? userId)
+    {
+        if (emailAddress != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddress));
+        }
+        if (apiKey != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey));
+        }
+        if (userId != null)
+        {
+            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(userId));
+        }
     }
 }

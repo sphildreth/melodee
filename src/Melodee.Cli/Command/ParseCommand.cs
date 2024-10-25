@@ -4,6 +4,7 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Data;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
+using Melodee.Plugins;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
@@ -46,7 +47,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         using (var scope = serviceProvider.CreateScope())
         {
             var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
-            var config = await settingService.GetAllSettingsAsync().ConfigureAwait(false);
+            var config = new PluginsConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var fileInfo = new FileInfo(settings.Filename);
             if (!fileInfo.Exists)
@@ -149,7 +150,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                                 .BorderColor(Color.Yellow));
                     }
 
-                    isValid = nfoParserResult.IsValid(config);
+                    isValid = nfoParserResult.IsValid(config.Configuration);
                 }
                 catch (Exception e)
                 {

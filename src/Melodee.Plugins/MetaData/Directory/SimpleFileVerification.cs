@@ -19,7 +19,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     Processes Simple Verification Files (SFV) and gets files (Songs) and files CRC for Album.
 /// </summary>
-public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, Dictionary<string, object?> configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IPluginsConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "SFV";
 

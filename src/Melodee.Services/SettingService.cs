@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Ardalis.GuardClauses;
+using FFMpegCore.Enums;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
@@ -96,7 +97,7 @@ public sealed class SettingService(
 
     public async Task<Dictionary<string, object?>> GetAllSettingsAsync(CancellationToken cancellationToken = default)
     {
-        var listResult = await ListAsync(ServiceUser.Instance.Value, new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
+        var listResult = await ListAsync(new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
         if (!listResult.IsSuccess)
         {
             throw new Exception("Failed to get settings from database");
@@ -105,7 +106,7 @@ public sealed class SettingService(
         return AllSettings(listDictionary);
     }
     
-    public async Task<PagedResult<Setting>> ListAsync(User currentUser, PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Setting>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int settingsCount;
         Setting[] settings = [];
@@ -113,6 +114,7 @@ public sealed class SettingService(
         {
             settingsCount = await scopedContext
                 .Settings
+                .Where(x => pagedRequest.Filter == null || x.Key.ToUpper().Contains(pagedRequest.Filter.ToUpper()))
                 .AsNoTracking()
                 .CountAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -120,6 +122,7 @@ public sealed class SettingService(
             {
                 settings = await scopedContext
                     .Settings
+                    .Where(x => pagedRequest.Filter == null || x.Key.ToUpper().Contains(pagedRequest.Filter.ToUpper()))
                     .AsNoTracking()
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
@@ -133,15 +136,15 @@ public sealed class SettingService(
             Data = settings
                 .OrderBy(x => pagedRequest.Sort ?? nameof(Setting.Key))
                 .Skip(pagedRequest.SkipValue)
-                .Take(pagedRequest.TakeValue)
+                .Take(pagedRequest.PageSizeValue)
         };
     }
 
-    public async Task<OperationResult<T?>> GetValueAsync<T>(User currentUser, string key, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<T?>> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(key, nameof(key));
 
-        var settingResult = await GetAsync(currentUser, key, cancellationToken).ConfigureAwait(false);
+        var settingResult = await GetAsync(key, cancellationToken).ConfigureAwait(false);
         if (settingResult.Data == null || !settingResult.IsSuccess)
         {
             return new OperationResult<T?>
@@ -157,26 +160,38 @@ public sealed class SettingService(
         };
     }
 
-    public async Task<OperationResult<Setting?>> GetAsync(User currentUser, string key, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Setting?>> GetAsync(string key, CancellationToken cancellationToken = default)
     {
-        var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(key), async () =>
+        try
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(key), async () =>
             {
-                return await scopedContext
-                    .Settings
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Key == key, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-        }, cancellationToken);
+                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    return await scopedContext
+                        .Settings
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Key == key, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+            }, cancellationToken);
+            return new OperationResult<Setting?>
+            {
+                Data = result
+            };
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to get setting [{0}]", key);
+        }
         return new OperationResult<Setting?>
         {
-            Data = result
+            Data = default,
+            Type = OperationResponseType.Error
         };
     }
 
-    public async Task<OperationResult<bool>> UpdateAsync(User currentUser, Setting detailToUpdate, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> UpdateAsync(Setting detailToUpdate, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate?.Id ?? 0, nameof(detailToUpdate));
 

@@ -9,5 +9,5 @@ public interface IAuthService
     event Action<ClaimsPrincipal> UserChanged;
     Task<bool> GetStateFromTokenAsync();
     Task LogoutAsync();
-    Task Login(ClaimsPrincipal user);
+    Task Login(ClaimsPrincipal user, bool? doRememberMe = null);
 }

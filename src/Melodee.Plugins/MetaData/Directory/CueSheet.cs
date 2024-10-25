@@ -22,7 +22,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     If a CUE file is found then split out the MP3 into Songs.
 /// </summary>
-public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Dictionary<string, object?> configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IPluginsConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     private const string HandlesExtension = "CUE";
 

@@ -19,7 +19,7 @@ namespace Melodee.Plugins.Conversion.Media;
 /// <summary>
 ///     This converts all Media files into MP3 files.
 /// </summary>
-public sealed partial class MediaConvertor(Dictionary<string, object?> configuration) : MetaDataBase(configuration), IConversionPlugin
+public sealed partial class MediaConvertor(IPluginsConfiguration configuration) : MetaDataBase(configuration), IConversionPlugin
 {
     public override string Id => "61995E53-D998-4BD4-BC83-2AB2F9D9B931";
 

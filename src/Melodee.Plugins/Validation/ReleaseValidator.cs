@@ -11,7 +11,7 @@ using Serilog;
 
 namespace Melodee.Plugins.Validation;
 
-public sealed partial class AlbumValidator(Dictionary<string, object?> configuration) : IAlbumValidator
+public sealed partial class AlbumValidator(IPluginsConfiguration configuration) : IAlbumValidator
 {
     private static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -21,7 +21,7 @@ public sealed partial class AlbumValidator(Dictionary<string, object?> configura
 
     private static readonly Regex ImageNameIsProofRegex = new(@"(proof)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
-    private readonly Dictionary<string, object?> _configuration = configuration;
+    private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
     private readonly List<ValidationResultMessage> _validationMessages = [];
 
     public OperationResult<ValidationResult> ValidateAlbum(Album? album)

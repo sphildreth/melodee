@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Melodee.Common.Extensions;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Melodee.Services;
@@ -8,7 +9,7 @@ namespace Melodee.Services;
 /// <summary>
 ///     Store and manage the current user's authentication state as a browser Session JWT and in Server Side Blazor
 /// </summary>
-public class AuthService(ICustomSessionService sessionService, IConfiguration configuration)
+public class AuthService(IStorageSessionService sessionService, ILocalStorageService localStorageService, IConfiguration configuration)
     : IAuthService
 {
     private const string AuthTokenName = "melodee_auth_token";
@@ -39,11 +40,15 @@ public class AuthService(ICustomSessionService sessionService, IConfiguration co
 
         //Remove the JWT from the browser session
         var authToken = await sessionService.GetItemAsStringAsync(AuthTokenName);
-
         if (!string.IsNullOrEmpty(authToken))
         {
             await sessionService.RemoveItemAsync(AuthTokenName);
         }
+        authToken = await localStorageService.GetItemAsStringAsync(AuthTokenName);
+        if (!string.IsNullOrEmpty(authToken))
+        {
+            await localStorageService.RemoveItemAsync(AuthTokenName);
+        }        
     }
 
 
@@ -57,6 +62,11 @@ public class AuthService(ICustomSessionService sessionService, IConfiguration co
         var result = false;
         var authToken = await sessionService.GetItemAsStringAsync(AuthTokenName);
 
+        if (authToken.Nullify() == null)
+        {
+            authToken = await localStorageService.GetItemAsStringAsync(AuthTokenName);
+        }
+        
         var identity = new ClaimsIdentity();
 
         if (!string.IsNullOrEmpty(authToken))
@@ -84,6 +94,7 @@ public class AuthService(ICustomSessionService sessionService, IConfiguration co
             {
                 //If the JWT is invalid, remove it from the session
                 await sessionService.RemoveItemAsync(AuthTokenName);
+                await localStorageService.RemoveItemAsync(AuthTokenName);
 
                 //This is an anonymous user
                 identity = new ClaimsIdentity();
@@ -98,7 +109,7 @@ public class AuthService(ICustomSessionService sessionService, IConfiguration co
     }
 
 
-    public async Task Login(ClaimsPrincipal user)
+    public async Task Login(ClaimsPrincipal user, bool? doRememberMe = null)
     {
         CurrentUser = user;
         var tokenEncryptionKey = configuration.GetSection("MelodeeAuthSettings:Token").Value!;
@@ -111,6 +122,13 @@ public class AuthService(ICustomSessionService sessionService, IConfiguration co
             expires: DateTime.Now.AddHours(tokenHours),
             signingCredentials: creds);
         var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-        await sessionService.SetItemAsStringAsync(AuthTokenName, jwt);
+        if (doRememberMe ?? false)
+        {
+            await localStorageService.SetItemAsStringAsync(AuthTokenName, jwt);
+        }
+        else
+        {
+            await sessionService.SetItemAsStringAsync(AuthTokenName, jwt);    
+        }
     }
 }

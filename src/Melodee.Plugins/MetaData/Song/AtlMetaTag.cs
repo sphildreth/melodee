@@ -21,7 +21,7 @@ namespace Melodee.Plugins.MetaData.Song;
 ///     Implementation of Song Plugin using ATL Library
 ///     <remarks>https://github.com/Zeugma440/atldotnet</remarks>
 /// </summary>
-public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Dictionary<string, object?> configuration) : MetaDataBase(configuration), ISongPlugin
+public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, IPluginsConfiguration configuration) : MetaDataBase(configuration), ISongPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";

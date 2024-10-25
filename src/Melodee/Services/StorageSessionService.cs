@@ -5,7 +5,7 @@ namespace Melodee.Services;
 /// <summary>
 ///     A service to manage the browser session storage using Blazored.SessionStorage
 /// </summary>
-public class CustomSessionService(ISessionStorageService sessionService) : ICustomSessionService
+public class StorageSessionService(ISessionStorageService sessionService) : IStorageSessionService
 {
     public async Task<string> GetItemAsStringAsync(string key)
     {

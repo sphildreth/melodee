@@ -211,7 +211,7 @@ public class AlbumValidatorTests
     public void ValidateAlbumWithNoInvalidValidations()
     {
         var Album = TestAlbum;
-        var validator = new AlbumValidator(TestsBase.NewConfiguration());
+        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(Album.Status, validationResult.Data.AlbumStatus);
@@ -235,7 +235,7 @@ public class AlbumValidatorTests
             OriginalDirectory = testAlbum.OriginalDirectory
         };
 
-        var validator = new AlbumValidator(TestsBase.NewConfiguration());
+        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
@@ -259,7 +259,7 @@ public class AlbumValidatorTests
             OriginalDirectory = testAlbum.OriginalDirectory
         };
 
-        var validator = new AlbumValidator(TestsBase.NewConfiguration());
+        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
@@ -283,7 +283,7 @@ public class AlbumValidatorTests
             OriginalDirectory = testAlbum.OriginalDirectory
         };
 
-        var validator = new AlbumValidator(TestsBase.NewConfiguration());
+        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);

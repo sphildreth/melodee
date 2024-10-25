@@ -12,16 +12,16 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 {
     private readonly IEnumerable<IMetaTagProcessor> _metaTagProcessors;
 
-    public MetaTagsProcessor(Dictionary<string, object?> configuration, ISerializer serializer)
+    public MetaTagsProcessor(IPluginsConfiguration configuration, ISerializer serializer)
     {
         _metaTagProcessors = new IMetaTagProcessor[]
         {
-            new Album(configuration, serializer),
-            new AlbumArtist(configuration, serializer),            
-            new Artist(configuration, serializer),
-            new Comment(configuration, serializer),
-            new OrigAlbumYear(configuration, serializer),
-            new SongTitle(configuration, serializer),
+            new Album(configuration.Configuration, serializer),
+            new AlbumArtist(configuration.Configuration, serializer),            
+            new Artist(configuration.Configuration, serializer),
+            new Comment(configuration.Configuration, serializer),
+            new OrigAlbumYear(configuration.Configuration, serializer),
+            new SongTitle(configuration.Configuration, serializer),
         };
     }
 

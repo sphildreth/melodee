@@ -1,5 +1,6 @@
 using Melodee.Common.Constants;
 using Melodee.Common.Serialization;
+using Melodee.Plugins;
 using Melodee.Services;
 using Moq;
 using Serilog;
@@ -17,6 +18,9 @@ public abstract class TestsBase
         Logger = new Mock<ILogger>().Object;
         Serializer = new Serializer(Logger);
     }
+
+    public static IPluginsConfiguration NewPluginsConfiguration()
+        => new PluginsConfiguration(NewConfiguration());
     
     public static Dictionary<string, object?> NewConfiguration()
     {

@@ -58,6 +58,8 @@ public sealed class UserServiceTests : ServiceTestBase
         AssertResultIsSuccessful(authResult);
         Assert.Equal(emailAddress, authResult.Data!.Email);
         
+        Assert.NotEqual(userByEmailAddress.Data.LastLoginAt, authResult.Data!.LastLoginAt);
+        
         var deleteResult = await service.DeleteAsync(ServiceUser.Instance.Value, userByEmailAddress.Data.ApiKey);
         AssertResultIsSuccessful(deleteResult);
         Assert.True(deleteResult.Data);
