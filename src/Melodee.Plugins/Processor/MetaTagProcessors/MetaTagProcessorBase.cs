@@ -2,14 +2,16 @@ using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+using Melodee.Common.Serialization;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
-public abstract partial class MetaTagProcessorBase(Configuration configuration) : IMetaTagProcessor
+public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> configuration, ISerializer serializer) : IMetaTagProcessor
 {
-    protected Configuration Configuration { get; } = configuration;
+    protected Dictionary<string, object?> Configuration { get; } = configuration;
 
+    protected ISerializer Serializer { get; } = serializer;
+    
     public abstract string Id { get; }
 
     public abstract string DisplayName { get; }

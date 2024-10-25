@@ -1,15 +1,18 @@
 using System.Text.RegularExpressions;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
+using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
 ///     Handle the Song Artist and split away any featuring artists.
 /// </summary>
-public sealed partial class Artist(Configuration configuration) : MetaTagProcessorBase(configuration)
+public sealed partial class Artist(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "29D61BF9-D283-4DB6-B7EB-16F6BCA76998";
 
@@ -31,9 +34,10 @@ public sealed partial class Artist(Configuration configuration) : MetaTagProcess
 
         if (artist.Nullify() != null)
         {
-            if (Configuration.PluginProcessOptions.ArtistNameReplacements.Any())
+            var artistNameReplacements = SafeParser.FromSerializedJsonDictionary(Configuration[SettingRegistry.ProcessingArtistNameReplacements], Serializer);            
+            if (artistNameReplacements.Any())
             {
-                foreach (var kp in Configuration.PluginProcessOptions.ArtistNameReplacements)
+                foreach (var kp in artistNameReplacements)
                 {
                     if (kp.Value.Any(kpv => string.Equals(artist, kpv)))
                     {

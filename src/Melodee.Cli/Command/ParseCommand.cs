@@ -1,8 +1,9 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Melodee.Cli.CommandSettings;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Serialization;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
@@ -24,22 +25,10 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
 
-        var config = new Configuration
-        {
-            PluginProcessOptions = new PluginProcessOptions
-            {
-                DoDeleteOriginal = false,
-                DoOverrideExistingMelodeeDataFiles = false
-            },
-            MediaConvertorOptions = new MediaConvertorOptions(),
-            Scripting = new Scripting
-            {
-                PreDiscoveryScript = string.Empty
-            },
-            InboundDirectory = string.Empty,
-            StagingDirectory = string.Empty,
-            LibraryDirectory = string.Empty
-        };
+        var serializer = new Serializer(Log.Logger);
+        
+        // TODO get from SettingService
+        var config = new Dictionary<string, object?>();
 
         var fileInfo = new FileInfo(settings.Filename);
         if (!fileInfo.Exists)
@@ -60,7 +49,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         var sfv = new SimpleFileVerification(
             new[]
             {
-                new AtlMetaTag(new MetaTagsProcessor(config), config)
+                new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
             }, new AlbumValidator(config), config);
         if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
         {
@@ -92,7 +81,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         var m3u = new M3UPlaylist(
             new[]
             {
-                new AtlMetaTag(new MetaTagsProcessor(config), config)
+                new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
             }, new AlbumValidator(config)
             , config);
         if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))

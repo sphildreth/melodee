@@ -91,7 +91,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     new Setting
                     {
                         Id = 5,
-                        Key = SettingRegistry.FilteringLessThanConfiguredDuration,
+                        Key = SettingRegistry.FilteringLessThanDuration,
                         Comment = "Add a default filter to show only albums with this or less duration.",
                         Value = "720000",
                         CreatedAt = now,
@@ -170,12 +170,20 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     },
                     new Setting
                     {
+                        Id = 15,
+                        Key = SettingRegistry.MagicDoRemoveFeaturingArtistFromSongArtist,
+                        Comment = "Remove featured artists from song artist when doing magic.",
+                        Value = "true",
+                        CreatedAt = now,
+                    },
+                    new Setting
+                    {
                         Id = 16,
                         Key = SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle,
                         Comment = "Remove featured artists from song title when doing magic.",
                         Value = "true",
                         CreatedAt = now,
-                    },
+                    },                    
                     new Setting
                     {
                         Id = 17,
@@ -383,7 +391,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                         Comment = "The maximum value a media number can have for an album.",
                         Value = "500",
                         CreatedAt = now,
-                    },
+                    },                    
                     new Setting
                     {
                         Id = 43,

@@ -1,14 +1,14 @@
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 
 namespace Melodee.Plugins.Scripting;
 
 /// <summary>
 ///     Do nothing script used when no script is desired or configured.
 /// </summary>
-public sealed class NullScript(Configuration configuration) : IScriptPlugin
+public sealed class NullScript(Dictionary<string, object?> configuration) : IScriptPlugin
 {
-    private readonly Configuration _configuration = configuration;
+    private readonly Dictionary<string, object?> _configuration = configuration;
 
     public string Id => "1C4F80FF-C226-4C5B-A53A-B12331534725";
 

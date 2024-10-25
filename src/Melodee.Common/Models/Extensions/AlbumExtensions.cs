@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
@@ -90,7 +91,7 @@ public static class AlbumExtensions
         return d;
     }
 
-    public static bool IsValid(this Album album, Configuration.Configuration configuration)
+    public static bool IsValid(this Album album, Dictionary<string, object?> configuration)
     {
         if (album.Tags?.Count() == 0)
         {
@@ -214,12 +215,12 @@ public static class AlbumExtensions
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
     }
 
-    public static bool HasValidAlbumYear(this Album album, Configuration.Configuration configuration)
+    public static bool HasValidAlbumYear(this Album album, Dictionary<string, object?> configuration)
     {
         var albumYear = album.AlbumYear() ?? 0;
         return albumYear > DateTime.MinValue.Year && albumYear < DateTime.MaxValue.Year &&
-               albumYear >= configuration.ValidationOptions.MinimumAlbumYear && 
-               albumYear <= configuration.ValidationOptions.MaximumAlbumYear;
+               albumYear >= SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMinimumAlbumYear]) && 
+               albumYear <= SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumAlbumYear]);
     }
 
     public static int MediaCountValue(this Album album)
@@ -360,7 +361,7 @@ public static class AlbumExtensions
         return false;
     }
 
-    public static string AlbumDirectoryName(this Album album, Configuration.Configuration configuration)
+    public static string AlbumDirectoryName(this Album album, Dictionary<string, object?> configuration)
     {
         var albumTitleValue = album.AlbumTitle();
         if (string.IsNullOrWhiteSpace(albumTitleValue))
@@ -375,22 +376,23 @@ public static class AlbumExtensions
             throw new Exception($"Unable to determine Album Path for Album [{album}].");
         }
 
-        var maxFnLength = configuration.PluginProcessOptions.MaximumAlbumDirectoryNameLength - 7;
+        var maxFnLength = SafeParser.ToNumber<int>(configuration[SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength]) - 7;
         if (albumPathTitle.Length > maxFnLength)
         {
             albumPathTitle = albumPathTitle.Substring(0, maxFnLength);
         }
 
+        var minimumAlbumYear = SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMinimumAlbumYear]);
         var albumDate = album.AlbumYear();
-        if (albumDate.HasValue && albumDate < configuration.PluginProcessOptions.MinimumValidAlbumYear)
+        if (albumDate.HasValue && albumDate < minimumAlbumYear)
         {
-            throw new Exception($"Invalid year [{albumDate}] for Album [{album}], Minimum configured value is [{configuration.PluginProcessOptions.MinimumValidAlbumYear}]");
+            throw new Exception($"Invalid year [{albumDate}] for Album [{album}], Minimum configured value is [{minimumAlbumYear}]");
         }
 
         return Path.Combine(album.ArtistDirectoryName(configuration), $"[{albumDate}] {albumPathTitle}");
     }
 
-    public static string ArtistDirectoryName(this Album album, Configuration.Configuration configuration)
+    public static string ArtistDirectoryName(this Album album, Dictionary<string, object?> configuration)
     {
         var artistNameToUse = album.ArtistSort() ?? album.Artist();
         if (string.IsNullOrWhiteSpace(artistNameToUse))
@@ -428,7 +430,7 @@ public static class AlbumExtensions
 
         var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
         var fnIdPart = $" [{album.ArtistUniqueId()}]";
-        var maxFnLength = configuration.PluginProcessOptions.MaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length) - 2;
+        var maxFnLength = SafeParser.ToNumber<int>(configuration[SettingRegistry.ProcessingMaximumArtistDirectoryNameLength]) - (fnSubPart.Length + fnIdPart.Length) - 2;
         if (artistDirectory.Length > maxFnLength)
         {
             artistDirectory = artistDirectory.Substring(0, maxFnLength);

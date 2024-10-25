@@ -1,13 +1,14 @@
+using Melodee.Common.Constants;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Utility;
 using Serilog;
 
 namespace Melodee.Plugins.Scripting;
 
-public sealed class PreDiscoveryScript(Configuration configuration) : IScriptPlugin
+public sealed class PreDiscoveryScript(Dictionary<string, object?> configuration) : IScriptPlugin
 {
-    private readonly Configuration _configuration = configuration;
+    private readonly Dictionary<string, object?> _configuration = configuration;
 
     public string Id => "837CE3BD-F854-4B8D-A64A-978649AAB08A";
 
@@ -23,16 +24,17 @@ public sealed class PreDiscoveryScript(Configuration configuration) : IScriptPlu
     {
         var result = false;
         string? scriptOutput = null;
-        if (!string.IsNullOrWhiteSpace(_configuration.Scripting.PreDiscoveryScript))
+        var script = SafeParser.ToString(_configuration[SettingRegistry.ScriptingPreDiscoveryScript]);
+        if (!string.IsNullOrWhiteSpace(script))
         {
-            var scriptFileInfo = new FileInfo(_configuration.Scripting.PreDiscoveryScript!);
+            var scriptFileInfo = new FileInfo(script!);
             if (!scriptFileInfo.Exists)
             {
                 return new OperationResult<bool>
                 {
                     Errors = new[]
                     {
-                        new Exception($"Unable to locate PreDiscoveryScript [{_configuration.Scripting.PreDiscoveryScript}]")
+                        new Exception($"Unable to locate PreDiscoveryScript [{script}]")
                     },
                     Data = false
                 };
@@ -40,8 +42,9 @@ public sealed class PreDiscoveryScript(Configuration configuration) : IScriptPlu
 
             try
             {
-                var argument = $" -d \"{fileSystemDirectoryInfo.Path}\" -r {(_configuration.PluginProcessOptions.DoDeleteOriginal ? "0" : "1")}";
-                await $"bash {_configuration.Scripting.PreDiscoveryScript}{argument}".Bash();
+                var doDeleteOriginal = SafeParser.ToBoolean(_configuration[SettingRegistry.ProcessingDoDeleteOriginal]);
+                var argument = $" -d \"{fileSystemDirectoryInfo.Path}\" -r {(doDeleteOriginal ? "0" : "1")}";
+                await $"bash {script}{argument}".Bash();
                 result = true;
             }
             catch (Exception e)

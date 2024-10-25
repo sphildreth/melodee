@@ -3,10 +3,11 @@ using System.Text.Json;
 using ATL.CatalogDataReaders;
 using FFMpegCore;
 using FFMpegCore.Enums;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
@@ -21,7 +22,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     If a CUE file is found then split out the MP3 into Songs.
 /// </summary>
-public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Configuration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Dictionary<string, object?> configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     private const string HandlesExtension = "CUE";
 
@@ -67,7 +68,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Configuration
                         var utf8Bytes = Encoding.Convert(wind1252, Encoding.UTF8, wind1252Bytes);
                         var newCueFilename = Path.ChangeExtension(cueFile.FullName, "temp");
                         await File.WriteAllBytesAsync(newCueFilename, utf8Bytes, cancellationToken);
-                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             File.Delete(cueFile.FullName);
                             File.Move(newCueFilename, cueFile.FullName);
@@ -108,6 +109,9 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Configuration
                     var cueModel = await ParseFileAsync(cueFile.FullName);
                     if (cueModel is { IsValid: true })
                     {
+                        var withAudioBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionBitrate]);
+                        var withAudioSamplingRate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]);
+                        var withVariableBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]);
                         var albumArtist = theReader.Artist ?? cueModel.Artist() ?? throw new Exception("Invalid Artist");
                         await Parallel.ForEachAsync(cueModel.Songs.OrderBy(x => x.SortOrder), cancellationToken, async (song, ct) =>
                         {
@@ -125,16 +129,17 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Configuration
                                         options.WithDuration(durationTs);
                                     }
 
-                                    options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration.MediaConvertorOptions.ConvertBitrate));
-                                    options.WithAudioSamplingRate(Configuration.MediaConvertorOptions.ConvertSamplingRate);
-                                    options.WithVariableBitrate(Configuration.MediaConvertorOptions.ConvertVbrLevel);
+                                    options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(withAudioBitrate));
+                                    options.WithAudioSamplingRate(withAudioSamplingRate);
+                                    options.WithVariableBitrate(withVariableBitrate);
                                     options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                                 }).ProcessAsynchronously();
                         });
 
                         var cueAlbum = cueModel.ToAlbum(fileSystemDirectoryInfo);
 
-                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                        var convertedExtension = SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
                             fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
@@ -146,13 +151,13 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Configuration
                                 cueFileMediaFile.Delete();
                             }
                         }
-                        else if (Configuration.PluginProcessOptions.DoRenameConverted)
+                        else if (convertedExtension.Nullify() != null)
                         {
-                            var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{ Configuration.PluginProcessOptions.ConvertedExtension }");
+                            var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{ convertedExtension }");
                             cueFile.MoveTo(movedFileName);
                             Log.Debug($"\ud83d\ude9b Renamed CUE file [{cueFile.Name}] => [{ Path.GetFileName(movedFileName)}]");
                             var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));                            
-                            var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{ Configuration.PluginProcessOptions.ConvertedExtension }");
+                            var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{ convertedExtension }");
                             cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
                             Log.Debug($"\ud83d\ude9b Renamed CUE Media file [{cueFileMediaFile.Name}] => [{ Path.GetFileName(movedCueFileMediaFileFileName)}]");                           
                         }
@@ -161,7 +166,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Configuration
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueAlbum.ToMelodeeJsonName());
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
                             {
                                 File.Delete(stagingAlbumDataName);
                             }
@@ -177,7 +182,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, Configuration
 
                         var serialized = JsonSerializer.Serialize(cueAlbum);
                         await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             cueFile.Delete();
                             Log.Information("Deleted CUE File [{FileName}]", cueFile.Name);

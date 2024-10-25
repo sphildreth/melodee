@@ -3,7 +3,7 @@ using IdSharp.Tagging.ID3v2;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Processor;
@@ -13,7 +13,7 @@ using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Song;
 
-public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ISongPlugin
+public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Dictionary<string, object?> configuration) : MetaDataBase(configuration), ISongPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
 

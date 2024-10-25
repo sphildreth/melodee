@@ -1,15 +1,17 @@
 using System.Text.RegularExpressions;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Utility;
 using Melodee.Plugins.Validation.Models;
 using Serilog;
 
 namespace Melodee.Plugins.Validation;
 
-public sealed partial class AlbumValidator(Configuration configuration) : IAlbumValidator
+public sealed partial class AlbumValidator(Dictionary<string, object?> configuration) : IAlbumValidator
 {
     private static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -19,7 +21,7 @@ public sealed partial class AlbumValidator(Configuration configuration) : IAlbum
 
     private static readonly Regex ImageNameIsProofRegex = new(@"(proof)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
-    private readonly Configuration _configuration = configuration;
+    private readonly Dictionary<string, object?> _configuration = configuration;
     private readonly List<ValidationResultMessage> _validationMessages = [];
 
     public OperationResult<ValidationResult> ValidateAlbum(Album? album)
@@ -257,8 +259,10 @@ public sealed partial class AlbumValidator(Configuration configuration) : IAlbum
         var mediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
         if (mediaNumbers.Length != 0 && mediaNumbers.All(x => x > 0))
         {
-            if (mediaNumbers.Any(x => x > _configuration.ValidationOptions.MaximumMediaNumber) || 
-                mediaNumbers.Any(x => x < _configuration.ValidationOptions.MinimumMediaNumber))
+            var maxMediaNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumMediaNumber]);
+            var minMediaNumber = 1;
+            if (mediaNumbers.Any(x => x > maxMediaNumber) || 
+                mediaNumbers.Any(x => x < minMediaNumber))
             {
                 result = false;
             }
@@ -328,7 +332,8 @@ public sealed partial class AlbumValidator(Configuration configuration) : IAlbum
             result = false;
         }
 
-        if (songNumbers.Any(x => x > _configuration.ValidationOptions.MaximumSongNumber))
+        var maximumSongNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumSongNumber]);
+        if (songNumbers.Any(x => x > maximumSongNumber))
         {
             result = false;
         }

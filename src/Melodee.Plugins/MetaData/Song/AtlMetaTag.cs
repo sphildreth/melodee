@@ -1,5 +1,6 @@
 using ATL;
 using FFMpegCore;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -11,7 +12,7 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 using SixLabors.ImageSharp;
-using Configuration = Melodee.Common.Models.Configuration.Configuration;
+
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
 namespace Melodee.Plugins.MetaData.Song;
@@ -20,7 +21,7 @@ namespace Melodee.Plugins.MetaData.Song;
 ///     Implementation of Song Plugin using ATL Library
 ///     <remarks>https://github.com/Zeugma440/atldotnet</remarks>
 /// </summary>
-public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Configuration configuration) : MetaDataBase(configuration), ISongPlugin
+public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, Dictionary<string, object?> configuration) : MetaDataBase(configuration), ISongPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
@@ -202,7 +203,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                             tags.Add(additionalTag);
                         }
 
-                        if (fileAtl.EmbeddedPictures.Any() && Configuration.PluginProcessOptions.DoLoadEmbeddedImages)
+                        if (fileAtl.EmbeddedPictures.Any() && SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoLoadEmbeddedImages]))
                         {
                             var albumId = SafeParser.Hash(
                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString() ?? string.Empty,

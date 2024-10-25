@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Melodee.Cli.CommandSettings;
+using Melodee.Common.Constants;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 using Melodee.Plugins.Discovery.Albums;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
@@ -32,31 +34,19 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
 
-        var config = new Configuration
-        {
-            PluginProcessOptions = new PluginProcessOptions
-            {
-                DoDeleteOriginal = !settings.CopyMode,
-                DoOverrideExistingMelodeeDataFiles = settings.ForceMode
-            },
-            MediaConvertorOptions = new MediaConvertorOptions(),
-            Scripting = new Scripting
-            {
-                PreDiscoveryScript = settings.PreDiscoveryScript
-            },
-            InboundDirectory = settings.Inbound,
-            StagingDirectory = settings.Staging,
-            LibraryDirectory = string.Empty
-        };
+        var serializer = new Serializer(Log.Logger);
+        
+        // TODO get from SettingService
+        var config = new Dictionary<string, object?>();
 
         var grid = new Grid()
             .AddColumn(new GridColumn().NoWrap().PadRight(4))
             .AddColumn()
-            .AddRow("[b]Copy Mode?[/]", $"{YesNo(!config.PluginProcessOptions.DoDeleteOriginal)}")
-            .AddRow("[b]Force Mode?[/]", $"{YesNo(config.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)}")
-            .AddRow("[b]PreDiscovery Script[/]", $"{config.Scripting.PreDiscoveryScript}")
-            .AddRow("[b]Inbound[/]", $"{config.InboundDirectory}")
-            .AddRow("[b]Staging[/]", $"{config.StagingDirectory}");
+            .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(config[SettingRegistry.ProcessingDoDeleteOriginal]))}")
+            .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(config[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
+            .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(config[SettingRegistry.ScriptingPreDiscoveryScript])}")
+            .AddRow("[b]Inbound[/]", $"{SafeParser.ToString(config[SettingRegistry.DirectoryInbound])}")
+            .AddRow("[b]Staging[/]", $"{SafeParser.ToString(config[SettingRegistry.DirectoryStaging])}");
         
         AnsiConsole.Write(
             new Panel(grid)
@@ -68,10 +58,10 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             new NullScript(config),
             validator,
             new AlbumEditProcessor(config, 
-                new AlbumsDiscoverer(validator, config), 
-                new AtlMetaTag(new MetaTagsProcessor(config), config),
+                new AlbumsDiscoverer(validator, config, serializer), 
+                new AtlMetaTag(new MetaTagsProcessor(config, serializer), config),
                 validator),            
-            config);
+            config, serializer);
         var dirInfo = new DirectoryInfo(settings.Inbound);
         if (!dirInfo.Exists)
         {

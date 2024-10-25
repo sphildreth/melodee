@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+using Melodee.Common.Serialization;
 using Melodee.Plugins.Processor.MetaTagProcessors;
 using Album = Melodee.Plugins.Processor.MetaTagProcessors.Album;
 
@@ -12,16 +12,16 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 {
     private readonly IEnumerable<IMetaTagProcessor> _metaTagProcessors;
 
-    public MetaTagsProcessor(Configuration configuration)
+    public MetaTagsProcessor(Dictionary<string, object?> configuration, ISerializer serializer)
     {
         _metaTagProcessors = new IMetaTagProcessor[]
         {
-            new Album(configuration),
-            new AlbumArtist(configuration),            
-            new Artist(configuration),
-            new Comment(configuration),
-            new OrigAlbumYear(configuration),
-            new SongTitle(configuration),
+            new Album(configuration, serializer),
+            new AlbumArtist(configuration, serializer),            
+            new Artist(configuration, serializer),
+            new Comment(configuration, serializer),
+            new OrigAlbumYear(configuration, serializer),
+            new SongTitle(configuration, serializer),
         };
     }
 

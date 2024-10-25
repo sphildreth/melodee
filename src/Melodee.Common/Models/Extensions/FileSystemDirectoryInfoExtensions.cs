@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using ATL.Logging;
+using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 using SearchOption = System.IO.SearchOption;
@@ -138,11 +139,11 @@ public static class FileSystemDirectoryInfoExtensions
         }
     }
 
-    public static void MarkAllFilesForExtensionsSkipped(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Configuration.Configuration configuration, params string[] extensions)
-        => ChangeFileExtensions(fileSystemDirectoryInfo, configuration.PluginProcessOptions.SkippedExtension, extensions);
+    public static void MarkAllFilesForExtensionsSkipped(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Dictionary<string, object?> configuration, params string[] extensions)
+        => ChangeFileExtensions(fileSystemDirectoryInfo, SafeParser.ToString(configuration[SettingRegistry.ProcessingSkippedExtension]), extensions);
     
-    public static void MarkAllFilesForExtensionsProcessed(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Configuration.Configuration configuration, params string[] extensions)
-        => ChangeFileExtensions(fileSystemDirectoryInfo, configuration.PluginProcessOptions.ProcessedExtension, extensions);
+    public static void MarkAllFilesForExtensionsProcessed(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Dictionary<string, object?> configuration, params string[] extensions)
+        => ChangeFileExtensions(fileSystemDirectoryInfo, SafeParser.ToString(configuration[SettingRegistry.ProcessingProcessedExtension]), extensions);
 
     private static void ChangeFileExtensions(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string newExtension, params string[] extensions)
     {

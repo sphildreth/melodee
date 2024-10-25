@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 using Serilog;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
@@ -10,7 +12,7 @@ namespace Melodee.Plugins.Processor.MetaTagProcessors;
 /// <summary>
 ///     Handle the Album title (Album) and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
 /// </summary>
-public sealed class Album(Configuration configuration) : MetaTagProcessorBase(configuration)
+public sealed class Album(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
 {
     private static readonly Regex YearInAlbumTitleRegex = new(@"(\[|\()+[0-9]+(\]|\))+", RegexOptions.Compiled);
 
@@ -80,7 +82,7 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
                 var artistValue = albumArtistTag.Value as string ?? string.Empty;
                 if (!string.IsNullOrWhiteSpace(artistValue) && (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
-                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false).ToTitleCase()?.CleanString();
                 }
             }
             else
@@ -94,13 +96,17 @@ public sealed class Album(Configuration configuration) : MetaTagProcessorBase(co
                 var artistValue = artistTag.Value as string ?? string.Empty;
                 if (!string.IsNullOrWhiteSpace(artistValue) && (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
-                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)?.ToTitleCase()?.CleanString();
+                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false).ToTitleCase()?.CleanString();
                 }
             }
 
-            if (newAlbumTitle != null && Configuration.PluginProcessOptions.AlbumTitleRemovals.Any())
+            if (newAlbumTitle != null)
             {
-                newAlbumTitle = Configuration.PluginProcessOptions.AlbumTitleRemovals.Aggregate(newAlbumTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
+                var albumTitleReplacements = SafeParser.FromSerializedJsonArray(Configuration[SettingRegistry.ProcessingAlbumTitleRemovals], Serializer);
+                if (albumTitleReplacements.Any())
+                {
+                    newAlbumTitle = albumTitleReplacements.Aggregate(newAlbumTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
+                }
             }
         }
         catch (Exception e)

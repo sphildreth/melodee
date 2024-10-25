@@ -1,9 +1,10 @@
 using System.Text.RegularExpressions;
 using FFMpegCore;
 using FFMpegCore.Enums;
+using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData;
@@ -18,7 +19,7 @@ namespace Melodee.Plugins.Conversion.Media;
 /// <summary>
 ///     This converts all Media files into MP3 files.
 /// </summary>
-public sealed partial class MediaConvertor(Configuration configuration) : MetaDataBase(configuration), IConversionPlugin
+public sealed partial class MediaConvertor(Dictionary<string, object?> configuration) : MetaDataBase(configuration), IConversionPlugin
 {
     public override string Id => "61995E53-D998-4BD4-BC83-2AB2F9D9B931";
 
@@ -53,7 +54,7 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
         }
 
         var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
-        if (fileInfo.Exists && Configuration.MediaConvertorOptions.ConversionEnabled)
+        if (fileInfo.Exists && SafeParser.ToBoolean(Configuration[SettingRegistry.ConversionEnabled]))
         {
             var fileAtl = new Track(fileSystemInfo.FullName(directoryInfo));
             if (ShouldMediaSongBeConverted(fileAtl))
@@ -67,23 +68,24 @@ public sealed partial class MediaConvertor(Configuration configuration) : MetaDa
                     await FFMpegArguments.FromFileInput(songFileInfo)
                         .OutputToFile(newFileName, true, options =>
                         {
-                            options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration.MediaConvertorOptions.ConvertBitrate));
-                            options.WithAudioSamplingRate(Configuration.MediaConvertorOptions.ConvertSamplingRate);
-                            options.WithVariableBitrate(Configuration.MediaConvertorOptions.ConvertVbrLevel);
+                            options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration[SettingRegistry.ConversionBitrate]));
+                            options.WithAudioSamplingRate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]));
+                            options.WithVariableBitrate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]));
                             options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                         }).ProcessAsynchronously();
                     var newAtl = new Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))
                     {
+                        var convertedRenamedExtension = SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
                         fileInfo = new FileInfo(newFileName);
-                        if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             songFileInfo.Delete();
                             Log.Debug($"\u26a0\ufe0f Deleted converted file [{songFileInfo.FullName}]");
                         }
-                        else if (Configuration.PluginProcessOptions.DoRenameConverted)
+                        else if (convertedRenamedExtension.Nullify() != null)
                         {
-                            var movedFileName = Path.Combine(songFileInfo.DirectoryName!, $"{songFileInfo.Name}.{ Configuration.PluginProcessOptions.ConvertedExtension }");
+                            var movedFileName = Path.Combine(songFileInfo.DirectoryName!, $"{songFileInfo.Name}.{ convertedRenamedExtension }");
                             songFileInfo.MoveTo(movedFileName);
                             Log.Debug($"\ud83d\ude9b Renamed converted file [{songFileInfo.Name}] => [{ Path.GetFileName(movedFileName)}]");
                         }

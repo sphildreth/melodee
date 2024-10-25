@@ -1,7 +1,9 @@
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
+using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
@@ -9,7 +11,7 @@ namespace Melodee.Plugins.Processor.MetaTagProcessors;
 /// <summary>
 ///     Handle the Song title and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
 /// </summary>
-public sealed class SongTitle(Configuration configuration) : MetaTagProcessorBase(configuration)
+public sealed class SongTitle(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "79BBF338-6B2F-4166-9F28-97D21C83D2BF";
 
@@ -95,9 +97,10 @@ public sealed class SongTitle(Configuration configuration) : MetaTagProcessorBas
 
             if (ContinueProcessing(songTitle))
             {
-                if (songTitle != null && Configuration.PluginProcessOptions.SongTitleRemovals.Any())
+                var songTitleRemovals = SafeParser.FromSerializedJsonArray(Configuration[SettingRegistry.ProcessingSongTitleRemovals], Serializer);
+                if (songTitle != null && songTitleRemovals.Any())
                 {
-                    songTitle = Configuration.PluginProcessOptions.SongTitleRemovals.Aggregate(songTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
+                    songTitle = songTitleRemovals.Aggregate(songTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
                     updatedTagValue = songTitle != tagValue;
                 }
             }

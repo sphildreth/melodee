@@ -1,17 +1,17 @@
+using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData;
 using SixLabors.ImageSharp;
-using Configuration = Melodee.Common.Models.Configuration.Configuration;
 
 namespace Melodee.Plugins.Conversion.Image;
 
 /// <summary>
 ///     This converts non JPG images into a JPG images.
 /// </summary>
-public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(configuration), IConversionPlugin
+public sealed class ImageConvertor(Dictionary<string, object?> configuration) : MetaDataBase(configuration), IConversionPlugin
 {
     public override string Id => "8A169045-C650-4DE5-A564-F0E2D28EF07D";
 
@@ -52,7 +52,7 @@ public sealed class ImageConvertor(Configuration configuration) : MetaDataBase(c
             var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));
             await File.WriteAllBytesAsync(newName, convertedBytes, cancellationToken);
             fileInfo = new FileInfo(newName);
-            if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
             {
                 fileInfo.Delete();
             }

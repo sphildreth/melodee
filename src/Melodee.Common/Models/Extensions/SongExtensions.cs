@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
@@ -166,7 +167,7 @@ public static class SongExtensions
                song.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ?? 0;
     }
 
-    public static bool IsValid(this Song song, Configuration.Configuration configuration)
+    public static bool IsValid(this Song song, Dictionary<string, object?> configuration)
     {
         if (song.Tags?.Count() == 0)
         {
@@ -186,8 +187,8 @@ public static class SongExtensions
         return song is { SongId: > 0, UniqueId: > 0 } &&
                albumUniqueId > 0 &&
                songNumber > 0 &&
-               songNumber < configuration.ValidationOptions.MaximumSongNumber &&
-               mediaNumber < configuration.ValidationOptions.MaximumMediaNumber &&
+               songNumber < SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]) &&
+               mediaNumber < SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]) &&
                song.Title().Nullify() != null;
     }
 

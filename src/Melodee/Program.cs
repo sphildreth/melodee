@@ -19,8 +19,6 @@ builder.Services
     .AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.Configure<Melodee.Common.Models.Configuration.Configuration>(builder.Configuration.GetSection("Melodee"));
-
 builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
 

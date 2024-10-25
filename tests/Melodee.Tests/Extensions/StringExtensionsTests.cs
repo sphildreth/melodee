@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
 
 namespace Melodee.Tests.Extensions;
 
@@ -194,4 +195,6 @@ public class StringExtensionsTests
         Assert.NotNull(hash.Nullify());
         Assert.Equal(hash, input.ToPasswordHash());
     }
+
+
 }

@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using HashidsNet;
 using Melodee.Common.Extensions;
+using Melodee.Common.Serialization;
 
 namespace Melodee.Common.Utility;
 
@@ -336,5 +337,33 @@ public static class SafeParser
         hash ^= hash << 25;
         hash += hash >> 6;
         return hash;
+    }
+
+    public static Dictionary<string, string[]> FromSerializedJsonDictionary(object? o, ISerializer serializer)
+    {
+        if (o == null)
+        {
+            return [];
+        }
+        var ss = ToString(o);
+        if (ss.Nullify() == null)
+        {
+            return [];
+        }
+        return serializer.Deserialize<Dictionary<string, string[]>>(ss) ?? [];
+    }
+
+    public static string[] FromSerializedJsonArray(object? o, ISerializer serializer)
+    {
+        if (o == null)
+        {
+            return [];
+        }
+        var ss = ToString(o);
+        if (ss.Nullify() == null)
+        {
+            return [];
+        }
+        return serializer.Deserialize<string[]>(ss) ?? [];
     }
 }

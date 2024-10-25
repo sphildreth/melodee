@@ -1,9 +1,10 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
@@ -18,7 +19,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     Processes Simple Verification Files (SFV) and gets files (Songs) and files CRC for Album.
 /// </summary>
-public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, Configuration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, Dictionary<string, object?> configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "SFV";
 
@@ -153,7 +154,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                 var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName());
                 if (File.Exists(stagingAlbumDataName))
                 {
-                    if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                    if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
                     {
                         File.Delete(stagingAlbumDataName);
                     }
@@ -169,7 +170,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
 
                 var serialized = JsonSerializer.Serialize(sfvAlbum);
                 await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                 {
                     sfvFile.Delete();
                     Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);

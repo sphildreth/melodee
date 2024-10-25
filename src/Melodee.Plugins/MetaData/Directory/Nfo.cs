@@ -1,9 +1,10 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Serilog;
@@ -15,7 +16,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     Processes NFO and gets tags and Songs for Album.
 /// </summary>
-public sealed partial class Nfo(Configuration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed partial class Nfo(Dictionary<string, object?> configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
 
@@ -63,7 +64,7 @@ public sealed partial class Nfo(Configuration configuration) : AlbumMetaDataBase
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
                     if (File.Exists(stagingAlbumDataName))
                     {
-                        if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
                         {
                             File.Delete(stagingAlbumDataName);
                         }
@@ -79,7 +80,7 @@ public sealed partial class Nfo(Configuration configuration) : AlbumMetaDataBase
 
                     var serialized = JsonSerializer.Serialize(nfoAlbum);
                     await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                    if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                     {
                         nfoFile.Delete();
                         Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
@@ -88,7 +89,7 @@ public sealed partial class Nfo(Configuration configuration) : AlbumMetaDataBase
                 else
                 {
                     Log.Warning("Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", nfoFile.Name, nfoAlbum.Artist(), nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
-                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                    if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                     {
                         nfoFile.Delete();
                         Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);

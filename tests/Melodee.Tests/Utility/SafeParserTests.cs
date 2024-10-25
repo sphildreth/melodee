@@ -1,4 +1,7 @@
-﻿using Melodee.Common.Utility;
+﻿using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
+using Moq;
+using Serilog;
 
 namespace Melodee.Tests.Utility;
 
@@ -29,4 +32,13 @@ public sealed class SafeParserTests
         string? nothing = null;
         Assert.False(SafeParser.Hash(nothing) > 0);
     }
+    
+    [Fact]
+    public void FromSerializedJsonArrayToCharArray()
+    {
+        var strings = SafeParser.FromSerializedJsonArray("['^', '~', '#']", new Serializer(new Mock<ILogger>().Object));
+        Assert.NotNull(strings);
+        Assert.NotEmpty(strings);
+        Assert.Contains("^", strings);
+    }    
 }

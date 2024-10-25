@@ -1,8 +1,9 @@
 using System.Text.Json;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
@@ -14,7 +15,7 @@ using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Directory;
 
-public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, Configuration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, Dictionary<string, object?> configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "M3U";
 
@@ -132,7 +133,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
                     if (File.Exists(stagingAlbumDataName))
                     {
-                        if (Configuration.PluginProcessOptions.DoOverrideExistingMelodeeDataFiles)
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
                         {
                             File.Delete(stagingAlbumDataName);
                         }
@@ -148,7 +149,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
 
                     var serialized = JsonSerializer.Serialize(m3UAlbum);
                     await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                    if (Configuration.PluginProcessOptions.DoDeleteOriginal)
+                    if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                     {
                         m3UFile.Delete();
                         Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);

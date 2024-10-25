@@ -1,9 +1,12 @@
 using System.Text.Json;
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Cards;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
@@ -17,14 +20,14 @@ namespace Melodee.Plugins.Discovery.Albums;
 public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
 {
     private readonly IAlbumValidator _albumValidator;
-    private readonly Configuration _configuration;
+    private readonly Dictionary<string, object?> _configuration;
 
     private readonly IEnumerable<IDirectoryPlugin> _enabledAlbumPlugins;
     private readonly IDictionary<FileSystemDirectoryInfo, IEnumerable<Album>> _albumCache = new Dictionary<FileSystemDirectoryInfo, IEnumerable<Album>>();
 
     private readonly IEnumerable<ISongPlugin> _songPlugins;
 
-    public AlbumsDiscoverer(IAlbumValidator albumValidator,Configuration configuration)
+    public AlbumsDiscoverer(IAlbumValidator albumValidator, Dictionary<string, object?> configuration, ISerializer serializer)
     {
         _albumValidator = albumValidator;
         _configuration = configuration;
@@ -32,7 +35,7 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
 
         _songPlugins = new ISongPlugin[]
         {
-            new AtlMetaTag(new MetaTagsProcessor(config), config)
+            new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
         };
         _enabledAlbumPlugins = new IDirectoryPlugin[]
         {
@@ -138,7 +141,8 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
                     break;
 
                 case AlbumResultFilter.LessThanConfiguredSongs:
-                    albums = albums.Where(x => x.Songs?.Count() < _configuration.FilterLessThanSongCount || x.SongTotalValue() < _configuration.FilterLessThanSongCount).ToList();
+                    var filterLessThanSongs = SafeParser.ToNumber<int>(_configuration[SettingRegistry.FilteringLessThanSongCount]);
+                    albums = albums.Where(x => x.Songs?.Count() < filterLessThanSongs || x.SongTotalValue() < filterLessThanSongs).ToList();
                     break;
 
                 case AlbumResultFilter.NeedsAttention:
@@ -162,7 +166,8 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
                     break;
 
                 case AlbumResultFilter.LessThanConfiguredDuration:
-                    albums = albums.Where(x => x.TotalDuration() < _configuration.FilterLessThanConfiguredDuration).ToList();
+                    var filterLessDuration = SafeParser.ToNumber<int>(_configuration[SettingRegistry.FilteringLessThanDuration]);
+                    albums = albums.Where(x => x.TotalDuration() < filterLessDuration).ToList();
                     break;
             }
         }

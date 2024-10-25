@@ -1,8 +1,10 @@
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Serilog;
 
@@ -11,7 +13,7 @@ namespace Melodee.Plugins.Processor.MetaTagProcessors;
 /// <summary>
 ///     Ensures OrigAlbumYear is set, if not tries to find it from directory title, if not sets to default.
 /// </summary>
-public sealed class OrigAlbumYear(Configuration configuration) : MetaTagProcessorBase(configuration)
+public sealed class OrigAlbumYear(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "652676F9-3BCA-48D2-8473-C7CAE28E0020";
 
@@ -28,10 +30,11 @@ public sealed class OrigAlbumYear(Configuration configuration) : MetaTagProcesso
     {
         var tagValue = metaTag.Value;
         var yearValue = SafeParser.ToNumber<int>(tagValue ?? string.Empty);
-        if (yearValue < Configuration.PluginProcessOptions.MinimumValidAlbumYear)
+        var minimumValidAlbumYear = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ValidationMinimumAlbumYear]);
+        if (yearValue < minimumValidAlbumYear)
         {
             yearValue = directoryInfo.FullName().TryToGetYearFromString() ?? fileSystemFileInfo.FullName(directoryInfo).TryToGetYearFromString() ?? 0;
-            if (yearValue < Configuration.PluginProcessOptions.MinimumValidAlbumYear && Configuration.PluginProcessOptions.DoUseCurrentYearAsDefaultOrigAlbumYearValue)
+            if (yearValue < minimumValidAlbumYear && SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue]))
             {
                 yearValue = DateTime.UtcNow.Year;
                 Log.Debug("Used current year for OrigAlbumYear.");

@@ -1,14 +1,15 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Configuration;
+
+using Melodee.Common.Serialization;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
 ///     Removes any Comments.
 /// </summary>
-public sealed class Comment(Configuration configuration) : MetaTagProcessorBase(configuration)
+public sealed class Comment(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "1CC2FAE8-AA28-4D03-8FBF-2FD42F080195";
 
