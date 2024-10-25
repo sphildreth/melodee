@@ -5,7 +5,7 @@ using Melodee.Plugins.Processor;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 
-public class MetaTagsProcessorTests
+public class MetaTagsProcessorTests : TestsBase  
 {
     [Theory]
     [InlineData("Something", 0, "Something")]
@@ -15,7 +15,7 @@ public class MetaTagsProcessorTests
     [InlineData("08 Something", 8, "Something")]
     public async Task ValidateSongTitleSongNumberRemoved(string? originalSongTitle, int SongNumber, string? shouldBe)
     {
-        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -70,7 +70,7 @@ public class MetaTagsProcessorTests
     public async Task ValidateSongTitleFeaturingRemoved(string? originalSongTitle, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
-        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -151,7 +151,7 @@ public class MetaTagsProcessorTests
     public async Task ValidateAlbumTitleUnwantedRemoved(string? originalAlbum, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
-        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -199,7 +199,7 @@ public class MetaTagsProcessorTests
     public async Task ValidateAlbumArtistValue(string? originalArtist, string? shouldBe)
     {
         var albumArtistShouldBe = "Ariana Grande";
-        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -254,7 +254,7 @@ public class MetaTagsProcessorTests
     [InlineData("Ariana Grande", "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
     public async Task ValidateAlbumTitleDoesntContainAlbumArtist(string? albumArtist, string? albumTitle, string? shouldBe)
     {
-        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -286,7 +286,7 @@ public class MetaTagsProcessorTests
     [InlineData("Ariana Grande",null, "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
     public async Task ValidateAlbumTitleDoesntContainArtist(string? albumArtist, string? SongArtist, string? albumTitle, string? shouldBe)
     {
-        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration);
+        var processor = new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,

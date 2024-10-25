@@ -8,7 +8,7 @@ using CueSheet = Melodee.Plugins.MetaData.Directory.CueSheet;
 
 namespace Melodee.Tests.Plugins.MetaData;
 
-public class CUETests
+public class CUETests : TestsBase
 {
     [Fact]
     public async Task ValidateCueSheetParsingAsync()
@@ -39,7 +39,7 @@ public class CUETests
             var cueSheet = new CueSheet(
                 new []
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
+                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration)
                 }, TestsBase.NewConfiguration);
             
             var sfvResult = await cueSheet.ProcessDirectoryAsync(new FileSystemDirectoryInfo

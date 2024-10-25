@@ -1,3 +1,4 @@
+using Melodee.Common.Constants;
 using Melodee.Common.Models;
 
 namespace Melodee.Tests.Plugins.Scripting;
@@ -11,7 +12,7 @@ public class PreDiscoveryScriptTests
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewConfiguration;
-            config.PluginProcessOptions.DoDeleteOriginal = true;
+            config[SettingRegistry.ProcessingDoDeleteOriginal] = true;
             var convertor = new Melodee.Plugins.Scripting.PreDiscoveryScript(config);
             var convertorResult = await convertor.ProcessAsync(new FileSystemDirectoryInfo
             {
@@ -35,7 +36,7 @@ public class PreDiscoveryScriptTests
             File.CreateText(testNzbFile);
             Assert.True(File.Exists(testNzbFile));
             var config = TestsBase.NewConfiguration;
-            config.PluginProcessOptions.DoDeleteOriginal = true;
+            config[SettingRegistry.ProcessingDoDeleteOriginal] = true;
             var scriptRunner = new Melodee.Plugins.Scripting.PreDiscoveryScript(config);
             var convertorResult = await scriptRunner.ProcessAsync(new FileSystemDirectoryInfo
             {

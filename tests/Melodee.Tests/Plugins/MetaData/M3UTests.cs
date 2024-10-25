@@ -8,7 +8,7 @@ using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVeri
 
 namespace Melodee.Tests.Plugins.MetaData;
 
-public class M3UTests
+public class M3UTests : TestsBase
 {
     [Fact]
     public async Task ValidateM3UFileAsync()
@@ -19,7 +19,7 @@ public class M3UTests
         {
             var m3U = new M3UPlaylist(new []
             {
-                new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
+                new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration)
             }, new AlbumValidator(TestsBase.NewConfiguration),
                TestsBase.NewConfiguration);
             var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo

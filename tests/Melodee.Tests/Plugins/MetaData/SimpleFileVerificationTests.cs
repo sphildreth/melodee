@@ -7,7 +7,7 @@ using SimpleFileVerification = Melodee.Plugins.MetaData.Directory.SimpleFileVeri
 
 namespace Melodee.Tests.Plugins.MetaData;
 
-public class SimpleFileVerificationTests
+public class SimpleFileVerificationTests : TestsBase
 {
     [Fact]
     public async Task ValidateSfvFileAsync()
@@ -19,7 +19,7 @@ public class SimpleFileVerificationTests
             var sfv = new SimpleFileVerification(
                 new []
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
+                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration)
                 }, new AlbumValidator(TestsBase.NewConfiguration),
                    TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
@@ -42,7 +42,7 @@ public class SimpleFileVerificationTests
             var sfv = new SimpleFileVerification(
                 new []
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
+                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration)
                 }, new AlbumValidator(TestsBase.NewConfiguration), TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
@@ -65,7 +65,7 @@ public class SimpleFileVerificationTests
             var sfv = new SimpleFileVerification(
                 new []
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration), TestsBase.NewConfiguration)
+                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration)
                 }, new AlbumValidator(TestsBase.NewConfiguration),
                    TestsBase.NewConfiguration);
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo

@@ -3,12 +3,12 @@ using Melodee.Common.Models;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 
-public class SongTitleMetaTagProcessorTests
+public class SongTitleMetaTagProcessorTests : TestsBase
 {
     [Fact]
     public void ValidateSongTitleWithFeaturing()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration, Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Title,
@@ -31,7 +31,7 @@ public class SongTitleMetaTagProcessorTests
     [Fact]
     public void ValidateSongTitleWithWithShouldRemove1()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration, Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Title,
@@ -54,7 +54,7 @@ public class SongTitleMetaTagProcessorTests
     [Fact]
     public void ValidateSongTitleWithWithShouldRemove2()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration, Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Title,
@@ -77,7 +77,7 @@ public class SongTitleMetaTagProcessorTests
     [Fact]
     public void ValidateSongTitleWithWithShouldStay()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.SongTitle(TestsBase.NewConfiguration, Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Title,

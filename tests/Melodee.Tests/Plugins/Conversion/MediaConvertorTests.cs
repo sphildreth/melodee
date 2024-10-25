@@ -1,3 +1,4 @@
+using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 
@@ -38,14 +39,12 @@ public class MediaConvertorTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new Configuration
+             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(
+                 new Dictionary<string, object?>
                 {
-                    MediaConvertorOptions = new MediaConvertorOptions(),
-                    PluginProcessOptions = new PluginProcessOptions(),
-                    Scripting = new Common.Models.Configuration.Scripting(),
-                    InboundDirectory = @"/home/steven/incoming/melodee_test/tests",
-                    StagingDirectory = string.Empty,
-                    LibraryDirectory = string.Empty
+                    { SettingRegistry.DirectoryInbound, @"/home/steven/incoming/melodee_test/tests" },
+                    { SettingRegistry.DirectoryStaging, string.Empty },
+                    { SettingRegistry.DirectoryLibrary, string.Empty }
                 }
             );
             var dirInfo = new FileSystemDirectoryInfo

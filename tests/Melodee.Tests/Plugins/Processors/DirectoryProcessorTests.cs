@@ -9,7 +9,7 @@ using Serilog;
 
 namespace Melodee.Tests.Plugins.Processors;
 
-public class DirectoryProcessorTests
+public class DirectoryProcessorTests : TestsBase
 {
     [Fact]
     public async Task ValidateDirectoryGetProcessedIsSuccess()
@@ -31,10 +31,11 @@ public class DirectoryProcessorTests
                 new NullScript(config), 
                 validator, 
                 new AlbumEditProcessor(config, 
-                    new AlbumsDiscoverer(validator, config), 
-                    new AtlMetaTag(new MetaTagsProcessor(config), config),
+                    new AlbumsDiscoverer(validator, config, Serializer), 
+                    new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config),
                     validator),
-                config);
+                config,
+                Serializer);
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -66,9 +67,9 @@ public class DirectoryProcessorTests
                 new NullScript(config),
                 validator,
                 new AlbumEditProcessor(config,
-                    new AlbumsDiscoverer(validator, config),
-                    new AtlMetaTag(new MetaTagsProcessor(config), config),
-                    validator), config);  
+                    new AlbumsDiscoverer(validator, config, Serializer),
+                    new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config),
+                    validator), config,Serializer);  
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -100,9 +101,9 @@ public class DirectoryProcessorTests
                 new NullScript(config),
                 validator,
                 new AlbumEditProcessor(config,
-                    new AlbumsDiscoverer(validator, config),
-                    new AtlMetaTag(new MetaTagsProcessor(config), config),
-                    validator), config);  
+                    new AlbumsDiscoverer(validator, config, Serializer),
+                    new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config),
+                    validator), config, Serializer);  
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -138,9 +139,9 @@ public class DirectoryProcessorTests
                 new NullScript(config),
                 validator,
                 new AlbumEditProcessor(config,
-                    new AlbumsDiscoverer(validator, config),
-                    new AtlMetaTag(new MetaTagsProcessor(config), config),
-                    validator), config);
+                    new AlbumsDiscoverer(validator, config, Serializer),
+                    new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config),
+                    validator), config, Serializer);
 
             var allAlbums = await processor.AllAlbumsForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
             Assert.NotNull(allAlbums);

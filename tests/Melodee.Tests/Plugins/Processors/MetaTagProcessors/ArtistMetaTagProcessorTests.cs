@@ -5,7 +5,7 @@ using SmartFormat.Utilities;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 
-public class ArtistMetaTagProcessorTests
+public class ArtistMetaTagProcessorTests : TestsBase
 {
     [Fact]
     public void ValidateArtistNameWithFeaturing()
@@ -13,7 +13,7 @@ public class ArtistMetaTagProcessorTests
         var AlbumArtistShouldBe = "Ariana Grande";
         var SongArtistShouldBe = "Nonna";
         
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration, Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Artist,
@@ -39,7 +39,7 @@ public class ArtistMetaTagProcessorTests
     [Fact]
     public void ValidateArtistNameWithFeaturingWithAlbumArtistSet()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration, Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Artist,
