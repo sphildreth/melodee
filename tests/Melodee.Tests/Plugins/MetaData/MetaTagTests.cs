@@ -17,7 +17,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration);
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration(), Serializer), TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -41,7 +41,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration);
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration(), Serializer), TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -65,7 +65,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new IdSharpMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration);
+            var metaTag = new IdSharpMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration(), Serializer), TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -75,7 +75,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
-            Assert.False(tagResult.Data.IsValid(TestsBase.NewConfiguration));
+            Assert.False(tagResult.Data.IsValid(TestsBase.NewConfiguration()));
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
@@ -89,7 +89,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration);
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration(), Serializer), TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -146,7 +146,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/home/steven/incoming/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration);
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration(), Serializer), TestsBase.NewConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -175,7 +175,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/home/steven/incoming/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration);
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration(), Serializer), TestsBase.NewConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -203,7 +203,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/home/steven/incoming/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration, Serializer), TestsBase.NewConfiguration);
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewConfiguration(), Serializer), TestsBase.NewConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);

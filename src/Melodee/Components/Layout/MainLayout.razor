@@ -1,11 +1,15 @@
-﻿@using Microsoft.AspNetCore.Http
-@inject IHttpContextAccessor HttpContextAccessor
+﻿@implements IDisposable
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
 
 @inherits LayoutComponentBase
 
 <div class="bb-page">
 
-    @if (IsUserAuthenticated)
+    @if (IsUserAuthenticated())
     {
         <Sidebar @ref="sidebar"
                  ImageSrc="./images/melodee-logo-small.png"
@@ -24,12 +28,43 @@
     </main>
 
 </div>
+<CascadingValue TValue="System.Threading.Tasks.Task<AuthenticationState>" Value="@_currentAuthenticationStateTask" ChildContent="@ChildContent" />
 
 @code {
+    private Task<AuthenticationState>? _currentAuthenticationStateTask;
+
+    /// <summary>
+    /// The content to which the authentication state should be provided.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+        _currentAuthenticationStateTask = AuthenticationStateProvider
+            .GetAuthenticationStateAsync();
+    }
+
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> newAuthStateTask)
+    {
+        _ = InvokeAsync(() =>
+        {
+            _currentAuthenticationStateTask = newAuthStateTask;
+            StateHasChanged();
+        });
+    }
+
+    void IDisposable.Dispose()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+
     Sidebar sidebar = default!;
     IEnumerable<NavItem> navItems = [];
 
-    private bool IsUserAuthenticated => HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+    //private bool IsUserAuthenticated => HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
     private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
     {
@@ -71,9 +106,16 @@
         return navItems;
     }
 
-    private void ToggleSidebar()
+    private async Task<bool> IsUserAuthenticated()
     {
-        if (IsUserAuthenticated)
+        // var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        // return authState?.User?.Identity?.IsAuthenticated ?? false;
+        var user =
+    }
+
+    private async Task ToggleSidebar()
+    {
+        if (await IsUserAuthenticated())
         {
             sidebar.ToggleSidebar();
         }

@@ -1,5 +1,6 @@
 using Melodee.Common.Constants;
 using Melodee.Common.Serialization;
+using Melodee.Services;
 using Moq;
 using Serilog;
 
@@ -17,12 +18,15 @@ public abstract class TestsBase
         Serializer = new Serializer(Logger);
     }
     
-    public static Dictionary<string, object?> NewConfiguration => new Dictionary<string, object?>
+    public static Dictionary<string, object?> NewConfiguration()
     {
-        { SettingRegistry.ProcessingDoDeleteOriginal, "false" },
-        { SettingRegistry.ScriptingPreDiscoveryScript, "/home/steven/incoming/melodee_test/scripts/PreDiscoveryWrapper.sh" },
-        { SettingRegistry.DirectoryInbound, @"/home/steven/incoming/melodee_test/tests" },
-        { SettingRegistry.DirectoryStaging, @"/home/steven/incoming/melodee_test/staging" },
-        { SettingRegistry.DirectoryLibrary, string.Empty }
-    };
+        return SettingService.AllSettings(new Dictionary<string, object?>
+        {
+            { SettingRegistry.ProcessingDoDeleteOriginal, "false" },
+            { SettingRegistry.ScriptingPreDiscoveryScript, "/home/steven/incoming/melodee_test/scripts/PreDiscoveryWrapper.sh" },
+            { SettingRegistry.DirectoryInbound, @"/home/steven/incoming/melodee_test/tests" },
+            { SettingRegistry.DirectoryStaging, @"/home/steven/incoming/melodee_test/staging" },
+            { SettingRegistry.DirectoryLibrary, string.Empty }
+        });
+    }
 }

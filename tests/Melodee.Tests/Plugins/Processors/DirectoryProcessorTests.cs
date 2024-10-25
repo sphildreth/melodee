@@ -24,7 +24,7 @@ public class DirectoryProcessorTests : TestsBase
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
-            var config = TestsBase.NewConfiguration;
+            var config = TestsBase.NewConfiguration();
             var validator = new AlbumValidator(config);
             var processor = new DirectoryProcessor(
                 new PreDiscoveryScript(config), 
@@ -60,7 +60,7 @@ public class DirectoryProcessorTests : TestsBase
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
-            var config = TestsBase.NewConfiguration;
+            var config = TestsBase.NewConfiguration();
             var validator = new AlbumValidator(config);
             var processor = new DirectoryProcessor(
                 new PreDiscoveryScript(config),
@@ -94,7 +94,7 @@ public class DirectoryProcessorTests : TestsBase
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
-            var config = TestsBase.NewConfiguration;
+            var config = TestsBase.NewConfiguration();
             var validator = new AlbumValidator(config);
             var processor = new DirectoryProcessor(
                 new PreDiscoveryScript(config),
@@ -132,7 +132,7 @@ public class DirectoryProcessorTests : TestsBase
             {
                 file.Delete();
             }
-            var config = TestsBase.NewConfiguration;
+            var config = TestsBase.NewConfiguration();
             var validator = new AlbumValidator(config);
             var processor = new DirectoryProcessor(
                 new PreDiscoveryScript(config),

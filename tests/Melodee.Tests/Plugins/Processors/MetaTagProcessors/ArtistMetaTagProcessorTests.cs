@@ -13,7 +13,7 @@ public class ArtistMetaTagProcessorTests : TestsBase
         var AlbumArtistShouldBe = "Ariana Grande";
         var SongArtistShouldBe = "Nonna";
         
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration, Serializer);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration(), Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Artist,
@@ -39,7 +39,7 @@ public class ArtistMetaTagProcessorTests : TestsBase
     [Fact]
     public void ValidateArtistNameWithFeaturingWithAlbumArtistSet()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration, Serializer);
+        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration(), Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Artist,

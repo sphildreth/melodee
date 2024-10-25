@@ -17,7 +17,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -41,7 +41,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -65,7 +65,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -89,7 +89,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -113,7 +113,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",
@@ -137,7 +137,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration);
+            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewConfiguration());
             var convertorResult = await convertor.ProcessFileAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/tests/",

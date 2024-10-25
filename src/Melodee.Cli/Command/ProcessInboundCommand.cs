@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Constants;
+using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
@@ -10,6 +11,11 @@ using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
+using Melodee.Services;
+using Melodee.Services.Caching;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -28,71 +34,85 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         //         .LeftJustified()
         //         .Color(Color.Purple3));        
 
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
+            .Build();
+        
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .WriteTo.Console()
-            .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day)
+            .ReadFrom.Configuration(configuration)
             .CreateLogger();
 
         var serializer = new Serializer(Log.Logger);
+        var cacheManager = new MemoryCacheManager(Log.Logger, TimeSpan.FromDays(1), serializer);
         
-        // TODO get from SettingService
-        var config = new Dictionary<string, object?>();
-
-        var grid = new Grid()
-            .AddColumn(new GridColumn().NoWrap().PadRight(4))
-            .AddColumn()
-            .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(config[SettingRegistry.ProcessingDoDeleteOriginal]))}")
-            .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(config[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
-            .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(config[SettingRegistry.ScriptingPreDiscoveryScript])}")
-            .AddRow("[b]Inbound[/]", $"{SafeParser.ToString(config[SettingRegistry.DirectoryInbound])}")
-            .AddRow("[b]Staging[/]", $"{SafeParser.ToString(config[SettingRegistry.DirectoryStaging])}");
+        var services = new ServiceCollection();
+        services.AddDbContextFactory<MelodeeDbContext>(opt =>
+            opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         
-        AnsiConsole.Write(
-            new Panel(grid)
-                .Header("Configuration"));
-        
-        var validator = new AlbumValidator(config);
-        var processor = new DirectoryProcessor(
-            new NullScript(config),
-            new NullScript(config),
-            validator,
-            new AlbumEditProcessor(config, 
-                new AlbumsDiscoverer(validator, config, serializer), 
-                new AtlMetaTag(new MetaTagsProcessor(config, serializer), config),
-                validator),            
-            config, serializer);
-        var dirInfo = new DirectoryInfo(settings.Inbound);
-        if (!dirInfo.Exists)
+        var serviceProvider = services.BuildServiceProvider();
+
+        using (var scope = serviceProvider.CreateScope())
         {
-            throw new Exception($"Directory [{settings.Inbound}] does not exist.");
-        }
+            var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
+            var config = await settingService.GetAllSettingsAsync().ConfigureAwait(false);
 
-        var sw = Stopwatch.StartNew();
+            var grid = new Grid()
+                .AddColumn(new GridColumn().NoWrap().PadRight(4))
+                .AddColumn()
+                .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(config[SettingRegistry.ProcessingDoDeleteOriginal]))}")
+                .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(config[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
+                .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(config[SettingRegistry.ScriptingPreDiscoveryScript])}")
+                .AddRow("[b]Inbound[/]", $"{SafeParser.ToString(config[SettingRegistry.DirectoryInbound])}")
+                .AddRow("[b]Staging[/]", $"{SafeParser.ToString(config[SettingRegistry.DirectoryStaging])}");
 
-        Log.Debug("\ud83d\udcc1 Processing directory [{Inbound}]", settings.Inbound);
-
-        var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
-        {
-            Path = dirInfo.FullName,
-            Name = dirInfo.Name
-        });
-
-        sw.Stop();
-        Log.Debug("ℹ️ Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, sw.Elapsed);
-
-        if (settings.Verbose)
-        {
             AnsiConsole.Write(
-                new Panel(new JsonText(JsonSerializer.Serialize(result)))
-                    .Header("Process Result")
-                    .Collapse()
-                    .RoundedBorder()
-                    .BorderColor(Color.Yellow));
-        }
+                new Panel(grid)
+                    .Header("Configuration"));
 
-        // For console error codes, 0 is success.
-        return result.IsSuccess ? 0 : 1;
+            var validator = new AlbumValidator(config);
+            var processor = new DirectoryProcessor(
+                new NullScript(config),
+                new NullScript(config),
+                validator,
+                new AlbumEditProcessor(config,
+                    new AlbumsDiscoverer(validator, config, serializer),
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), config),
+                    validator),
+                config, serializer);
+            var dirInfo = new DirectoryInfo(settings.Inbound);
+            if (!dirInfo.Exists)
+            {
+                throw new Exception($"Directory [{settings.Inbound}] does not exist.");
+            }
+
+            var sw = Stopwatch.StartNew();
+
+            Log.Debug("\ud83d\udcc1 Processing directory [{Inbound}]", settings.Inbound);
+
+            var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            {
+                Path = dirInfo.FullName,
+                Name = dirInfo.Name
+            });
+
+            sw.Stop();
+            Log.Debug("ℹ️ Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, sw.Elapsed);
+
+            if (settings.Verbose)
+            {
+                AnsiConsole.Write(
+                    new Panel(new JsonText(JsonSerializer.Serialize(result)))
+                        .Header("Process Result")
+                        .Collapse()
+                        .RoundedBorder()
+                        .BorderColor(Color.Yellow));
+            }
+
+            // For console error codes, 0 is success.
+            return result.IsSuccess ? 0 : 1;
+        }
     }
 
     private static string YesNo(bool value)

@@ -4,9 +4,11 @@
 @using System.Security.Claims
 @using Humanizer
 @using Melodee.ViewModels
+@using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @inject NavigationManager NavManager
 @inject UserService UserService
+
 
 @attribute [AllowAnonymous]
 
@@ -49,8 +51,6 @@
     private List<ToastMessage> messages = new List<ToastMessage>();
     private bool loading;
 
-    [CascadingParameter] public HttpContext HttpContext { get; set; } = default!;
-
     [SupplyParameterFromForm] public Credential UserCredentials { get; set; } = new Credential();
 
     [SupplyParameterFromQuery] [Parameter] public string? ReturnUrl { get; set; }
@@ -84,10 +84,14 @@
             };
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(claimsIdentity);
-            await HttpContext.SignInAsync(principal);
+            // await HttpContextAccessor.HttpContext.SignInAsync(
+            //     CookieAuthenticationDefaults.AuthenticationScheme,
+            //     new ClaimsPrincipal(claimsIdentity)
+            // );
+            await SignInManager.SignInAsync()
             NavManager.NavigateTo(ReturnUrl ?? "/");
         }
-        catch
+        catch(Exception ex)
         {
             messages.Add(
                 new ToastMessage

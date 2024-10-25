@@ -1,13 +1,18 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Melodee.Cli.CommandSettings;
-
+using Melodee.Common.Data;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Validation;
+using Melodee.Services;
+using Melodee.Services.Caching;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -19,126 +24,140 @@ public class ParseCommand : AsyncCommand<ParseSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ParseSettings settings)
     {
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
+            .Build();
+        
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .WriteTo.Console()
-            .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day)
+            .ReadFrom.Configuration(configuration)
             .CreateLogger();
 
         var serializer = new Serializer(Log.Logger);
+        var cacheManager = new MemoryCacheManager(Log.Logger, TimeSpan.FromDays(1), serializer);
         
-        // TODO get from SettingService
-        var config = new Dictionary<string, object?>();
+        var services = new ServiceCollection();
+        services.AddDbContextFactory<MelodeeDbContext>(opt =>
+            opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
+        
+        var serviceProvider = services.BuildServiceProvider();
 
-        var fileInfo = new FileInfo(settings.Filename);
-        if (!fileInfo.Exists)
+        using (var scope = serviceProvider.CreateScope())
         {
-            throw new Exception($"Parse File [{settings.Filename}] does not exist.");
-        }
+            var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
+            var config = await settingService.GetAllSettingsAsync().ConfigureAwait(false);
 
-        if (fileInfo.Directory == null)
-        {
-            throw new Exception($"Parse Directory [{settings.Filename}] does not exist.");
-        }
-
-        var sw = Stopwatch.StartNew();
-        Log.Debug("\ud83d\udcdc Parsing File [{NfoFilename}]", settings.Filename);
-
-        var isValid = false;
-
-        var sfv = new SimpleFileVerification(
-            new[]
+            var fileInfo = new FileInfo(settings.Filename);
+            if (!fileInfo.Exists)
             {
-                new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
-            }, new AlbumValidator(config), config);
-        if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
-        {
-            try
+                throw new Exception($"Parse File [{settings.Filename}] does not exist.");
+            }
+
+            if (fileInfo.Directory == null)
             {
-                var svfResult = await sfv.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
+                throw new Exception($"Parse Directory [{settings.Filename}] does not exist.");
+            }
 
-                sw.Stop();
-                Log.Debug("ℹ️  Processed SFV File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+            var sw = Stopwatch.StartNew();
+            Log.Debug("\ud83d\udcdc Parsing File [{NfoFilename}]", settings.Filename);
 
-                if (settings.Verbose)
+            var isValid = false;
+
+            var sfv = new SimpleFileVerification(
+                new[]
                 {
-                    AnsiConsole.Write(
-                        new Panel(new JsonText(JsonSerializer.Serialize(svfResult)))
-                            .Header("Parse Result")
-                            .Collapse()
-                            .RoundedBorder()
-                            .BorderColor(Color.Yellow));
-                }
-
-                isValid = svfResult.IsSuccess;
-            }
-            catch (Exception e)
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
+                }, new AlbumValidator(config), config);
+            if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
-                Console.WriteLine(e);
-            }
-        }
-
-        var m3u = new M3UPlaylist(
-            new[]
-            {
-                new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
-            }, new AlbumValidator(config)
-            , config);
-        if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
-        {
-            try
-            {
-                var svfResult = await m3u.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
-
-                sw.Stop();
-                Log.Debug("ℹ️ Processed M3U File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
-
-                if (settings.Verbose)
+                try
                 {
-                    AnsiConsole.Write(
-                        new Panel(new JsonText(JsonSerializer.Serialize(svfResult)))
-                            .Header("Parse Result")
-                            .Collapse()
-                            .RoundedBorder()
-                            .BorderColor(Color.Yellow));
+                    var svfResult = await sfv.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
+
+                    sw.Stop();
+                    Log.Debug("ℹ️  Processed SFV File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+
+                    if (settings.Verbose)
+                    {
+                        AnsiConsole.Write(
+                            new Panel(new JsonText(JsonSerializer.Serialize(svfResult)))
+                                .Header("Parse Result")
+                                .Collapse()
+                                .RoundedBorder()
+                                .BorderColor(Color.Yellow));
+                    }
+
+                    isValid = svfResult.IsSuccess;
                 }
-
-                isValid = svfResult.IsSuccess;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-        }
-
-        var nfo = new Nfo(config);
-        if (nfo.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
-        {
-            try
-            {
-                var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory.ToDirectorySystemInfo());
-
-                sw.Stop();
-                Log.Debug("ℹ️ Processed Nfo File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
-
-                if (settings.Verbose)
+                catch (Exception e)
                 {
-                    AnsiConsole.Write(
-                        new Panel(new JsonText(JsonSerializer.Serialize(nfoParserResult)))
-                            .Header("Parse Result")
-                            .Collapse()
-                            .RoundedBorder()
-                            .BorderColor(Color.Yellow));
+                    Console.WriteLine(e);
                 }
-
-                isValid = nfoParserResult.IsValid(config);
             }
-            catch (Exception e)
+
+            var m3u = new M3UPlaylist(
+                new[]
+                {
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
+                }, new AlbumValidator(config)
+                , config);
+            if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
-                Console.WriteLine(e);
-            }
-        }
+                try
+                {
+                    var svfResult = await m3u.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
 
-        return isValid ? 0 : 1;
+                    sw.Stop();
+                    Log.Debug("ℹ️ Processed M3U File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+
+                    if (settings.Verbose)
+                    {
+                        AnsiConsole.Write(
+                            new Panel(new JsonText(JsonSerializer.Serialize(svfResult)))
+                                .Header("Parse Result")
+                                .Collapse()
+                                .RoundedBorder()
+                                .BorderColor(Color.Yellow));
+                    }
+
+                    isValid = svfResult.IsSuccess;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+
+            var nfo = new Nfo(config);
+            if (nfo.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
+            {
+                try
+                {
+                    var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory.ToDirectorySystemInfo());
+
+                    sw.Stop();
+                    Log.Debug("ℹ️ Processed Nfo File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+
+                    if (settings.Verbose)
+                    {
+                        AnsiConsole.Write(
+                            new Panel(new JsonText(JsonSerializer.Serialize(nfoParserResult)))
+                                .Header("Parse Result")
+                                .Collapse()
+                                .RoundedBorder()
+                                .BorderColor(Color.Yellow));
+                    }
+
+                    isValid = nfoParserResult.IsValid(config);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+
+            return isValid ? 0 : 1;
+        }
     }
 }

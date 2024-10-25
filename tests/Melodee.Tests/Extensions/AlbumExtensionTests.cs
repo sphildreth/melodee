@@ -100,7 +100,7 @@ public class AlbumExtensionTests
     [Fact]
     public void ValidateArtistDirectoryName()
     {
-        var artistDirectoryName = NewAlbum().ArtistDirectoryName(TestsBase.NewConfiguration);
+        var artistDirectoryName = NewAlbum().ArtistDirectoryName(TestsBase.NewConfiguration());
         Assert.NotNull(artistDirectoryName);
         Assert.Equal(12345L, NewAlbum().ArtistUniqueId());
         Assert.Equal(@"H/HO/Holy Truth [12345]", artistDirectoryName);
@@ -109,7 +109,7 @@ public class AlbumExtensionTests
     [Fact]
     public void ValidateAlbumDirectoryName()
     {
-        var artistDirectoryName = NewAlbum().AlbumDirectoryName(TestsBase.NewConfiguration);
+        var artistDirectoryName = NewAlbum().AlbumDirectoryName(TestsBase.NewConfiguration());
         Assert.NotNull(artistDirectoryName);
         Assert.Equal(12345L, NewAlbum().ArtistUniqueId());
         Assert.Equal(@"H/HO/Holy Truth [12345]/[2024] Fire Proof", artistDirectoryName);

@@ -2,7 +2,6 @@ using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Services;
-using Microsoft.EntityFrameworkCore.Design;
 
 namespace Melodee.Tests.Services;
 
@@ -37,5 +36,31 @@ public sealed class SettingsServiceTests : ServiceTestBase
         AssertResultIsSuccessful(getStringValueResult);
         Assert.IsType<string>(getStringValueResult.Data);
         Assert.NotNull(getStringValueResult.Data.Nullify());
+    }
+
+    [Fact]
+    public void GetSettingSetAndConvert()
+    {
+        var settings = SettingService.AllSettings();
+        Assert.NotNull(settings);
+        Assert.Contains(settings, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
+
+        var shouldBeValueInt = 99;
+        SettingService.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueInt);
+        Assert.Equal(shouldBeValueInt, settings[SettingRegistry.ValidationMaximumSongNumber]);
+        
+        var shouldBeValueBool = true;
+        SettingService.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueBool);
+        Assert.Equal(shouldBeValueBool, settings[SettingRegistry.ValidationMaximumSongNumber]); 
+        Assert.True(SettingService.IsTrue(settings, SettingRegistry.ValidationMaximumSongNumber));
+    }
+
+    [Fact]
+    public async Task GetAllSettingsAsync()
+    {
+        var service = GetSettingService();
+        var listResult = await service.GetAllSettingsAsync();
+        Assert.NotEmpty(listResult);
+        Assert.Contains(listResult, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
     }
 }

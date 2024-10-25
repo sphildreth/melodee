@@ -15,7 +15,7 @@ public class AlbumsDiscovererTests : TestsBase
         var dir = new DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
-            var rd = new AlbumsDiscoverer(new AlbumValidator(TestsBase.NewConfiguration), TestsBase.NewConfiguration, Serializer);
+            var rd = new AlbumsDiscoverer(new AlbumValidator(TestsBase.NewConfiguration()), TestsBase.NewConfiguration(), Serializer);
             var AlbumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/staging",
