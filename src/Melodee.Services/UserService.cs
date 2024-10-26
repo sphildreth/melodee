@@ -4,10 +4,12 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Services.Interfaces;
+using MelodeeModels=Melodee.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using SmartFormat;
+using System.Linq.Dynamic.Core;
 
 namespace Melodee.Services;
 
@@ -24,15 +26,16 @@ public sealed class UserService(
     private const string CacheKeyDetailByEmailAddressKeyTemplate = "urn:user:emailaddress:{0}";
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
 
-    public async Task<PagedResult<User>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<User>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int usersCount;
         User[] users = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            // TODO Filter and Sort dynamically
+            var filter = pagedRequest.FilterByValue();
             usersCount = await scopedContext
                 .Users
+                .Where(filter)
                 .AsNoTracking()
                 .CountAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -40,13 +43,17 @@ public sealed class UserService(
             {
                 users = await scopedContext
                     .Users
+                    .Where(filter)
+                    .OrderBy(pagedRequest.OrderByValue())
+                    .Skip(pagedRequest.SkipValue)
+                    .Take(pagedRequest.TakeValue)
                     .AsNoTracking()
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
             }
         }
 
-        return new PagedResult<User>
+        return new MelodeeModels.PagedResult<User>
         {
             TotalCount = usersCount,
             TotalPages = pagedRequest.TotalPages(usersCount),

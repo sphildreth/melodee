@@ -1,4 +1,5 @@
 ﻿@page "/settings"
+@using FluentValidation.Internal
 @using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
 @inject ISerializer Serializer
@@ -34,8 +35,8 @@
                 <GridColumn TItem="Setting" HeaderText="Value" PropertyName="Value" Filterable="false" SortKeySelector="item => item.Value">
                     @context.Value
                 </GridColumn>
-                <GridColumn TItem="Setting" HeaderText="Description" PropertyName="Description" Filterable="false" SortKeySelector="item => item.Description">
-                    @context.Description
+                <GridColumn TItem="Setting" HeaderText="Comment" PropertyName="Comment" Filterable="false" SortKeySelector="item => item.Comment">
+                    @context.Comment
                 </GridColumn>
             </GridColumns>
 
@@ -69,7 +70,7 @@
             Dictionary<string, string>? sorting = null;
             if (request.Sorting.Any())
             {
-                sorting = request.Sorting.ToDictionary(x => x.SortString, x => x.SortDirection.ToString());
+                sorting = request.Sorting.ToDictionary(x => x.SortKeySelector.GetMember().Name, x => x.SortDirection == SortDirection.Descending ? PagedRequest.OrderDescDirection :  PagedRequest.OrderAscDirection);
             }
 
             FilterOperator[]? filters = null;

@@ -1,8 +1,6 @@
 using System.Text;
-using System.Linq.Dynamic.Core;
 using Melodee.Common.Enums;
 using Melodee.Common.Filtering;
-using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
@@ -57,6 +55,11 @@ public sealed record PagedRequest
     /// </summary>
     public Dictionary<string, string>? OrderBy { get; set; }
 
+    /// <summary>
+    /// Only here as syntactical sugar so the LINQ statements look nicer.
+    /// </summary>
+    public int TakeValue => PageSizeValue;
+    
     public int SkipValue
     {
         get
@@ -116,8 +119,7 @@ public sealed record PagedRequest
             {
                 result.Append($" {kp.JoinOperator } ");
             }
-
-            result.AppendFormat("{0} {1} {2}", kp.PropertyName, kp.Operator, kp.Value);
+            result.AppendFormat("\"{0}\" {1} {2}", kp.PropertyName, kp.OperatorValue, kp.ValuePattern());
         }
         return result.ToString();
     }    

@@ -10,6 +10,7 @@ using NodaTime;
 using Serilog;
 using SmartFormat;
 using System.Linq.Dynamic.Core;
+using Dapper;
 
 namespace Melodee.Services;
 
@@ -43,21 +44,27 @@ public sealed class SettingService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var filter = pagedRequest.FilterByValue();
-            settingsCount = await scopedContext
-                .Settings
-                .Where(filter)
-                .AsNoTracking()
-                .CountAsync(cancellationToken)
+            
+            var countSql = $"SELECT COUNT(1) FROM \"Settings\" WHERE {filter};";
+
+            var dbConn = scopedContext.Database.GetDbConnection();
+            
+            settingsCount = await dbConn
+                .ExecuteScalarAsync<int>(countSql, cancellationToken)
                 .ConfigureAwait(false);
+            
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                settings = await scopedContext
-                    .Settings
-                    .Where(filter)
-                    .OrderBy(pagedRequest.OrderByValue())
-                    .AsNoTracking()
-                    .ToArrayAsync(cancellationToken)
-                    .ConfigureAwait(false);
+                var listSql = $"SELECT * FROM \"Settings\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+
+                if (dbConn is Microsoft.Data.Sqlite.SqliteConnection)
+                {
+                    listSql = $"SELECT * FROM \"Settings\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                }
+                
+                settings = (await dbConn
+                    .QueryAsync<Setting>(listSql)
+                    .ConfigureAwait(false)).ToArray();
             }
         }
         return new MelodeeModels.PagedResult<Setting>

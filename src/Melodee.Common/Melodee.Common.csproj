@@ -35,7 +35,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Filtering\FilterOperatorInfo.cs" />
     <Compile Remove="Constants\PropertyTypeNameRegistry.cs" />
   </ItemGroup>
 </Project>

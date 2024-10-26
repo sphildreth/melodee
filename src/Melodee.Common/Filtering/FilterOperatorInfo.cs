@@ -1,3 +1,5 @@
+using Melodee.Common.Extensions;
+
 namespace Melodee.Common.Filtering;
 
 /// <summary>
@@ -5,10 +7,45 @@ namespace Melodee.Common.Filtering;
 /// </summary>
 /// <param name="PropertyName">Name of object type being filtered.</param>
 /// <param name="Operator">Operation of Filter.</param>
-/// <param name="Value">Value to filter on. If string then wrap in quotes as necessary.</param>
+/// <param name="Value">Value to filter on.</param>
 /// <param name="JoinOperator">The Join condition when more than one filter, e.g. '||' or '&&'</param>
-public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, string Value, string? JoinOperator = "&&")
+public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, object Value, string? JoinOperator = "&&")
 {
+    public string OperatorValue => FilterOperatorToConditionString(Operator);
+
+    public string ValuePattern()
+    {
+        if (Value.IsNumericType())
+        {
+            return Value.ToString()!;
+        }
+        switch (Operator)
+        {
+            case FilterOperator.Contains:
+            case FilterOperator.DoesNotContain:                    
+                return $"'%{Value}%'";
+            case FilterOperator.StartsWith:
+                return $"'%{Value}'";
+            case FilterOperator.EndsWith:
+                return $"'{Value}%'";
+            case FilterOperator.IsNull:
+            case FilterOperator.IsEmpty:
+            case FilterOperator.IsNotNull:
+            case FilterOperator.IsNotEmpty:
+                return string.Empty;
+        }
+        return $"'{ Value }'";
+    }
+    
+    public static bool IsLikeOperator(FilterOperator filterOperator)
+    {
+        return filterOperator switch
+        {
+            FilterOperator.Contains or FilterOperator.StartsWith or FilterOperator.EndsWith or FilterOperator.DoesNotContain => true,
+            _ => false
+        };
+    }
+    
     public static string FilterOperatorToConditionString(FilterOperator filterOperator)
     {
         return filterOperator switch
@@ -22,8 +59,8 @@ public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, s
             FilterOperator.StartsWith => "LIKE",
             FilterOperator.EndsWith => "LIKE",
             FilterOperator.DoesNotContain => "NOT LIKE",
-            FilterOperator.IsNull => "ISNULL",
-            FilterOperator.IsNotNull => "ISNULL",
+            FilterOperator.IsNull => "IS NULL",
+            FilterOperator.IsNotNull => "IS NOT NULL",
             _ => "=="
         };
     }

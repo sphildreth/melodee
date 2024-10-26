@@ -24,18 +24,19 @@ public sealed class SettingsServiceTests : ServiceTestBase
     }
     
     [Fact]
-    public async Task ListWithFilterAndSortAsync()
+    public async Task ListWithFilterOnIdValueEqualsAsync()
     {
         var service = GetSettingService();
+        int idValue = 0;
+        await using (var context = await MockFactory().CreateDbContextAsync())
+        {
+            idValue = context.Settings.First(x => x.Key == SettingRegistry.ValidationMaximumSongNumber).Id;
+        }        
         var listResult = await service.ListAsync( new PagedRequest
         {
             FilterBy = new []
             {
-                new FilterOperatorInfo(nameof(Setting.Key), FilterOperator.Equals, $"\"{ SettingRegistry.ValidationMaximumSongNumber }\""),
-            },
-            OrderBy = new Dictionary<string, string>
-            {
-                [nameof(Setting.Key)] = "desc"
+                new FilterOperatorInfo(nameof(Setting.Id), FilterOperator.Equals, idValue)
             },
             PageSize = 1
         });
@@ -44,6 +45,73 @@ public sealed class SettingsServiceTests : ServiceTestBase
         Assert.Equal(1, listResult.TotalCount);
         Assert.Equal(1, listResult.TotalPages);
     }    
+    
+    [Fact]
+    public async Task ListWithFilterOnKeyValueEqualsAsync()
+    {
+        var service = GetSettingService();
+        var listResult = await service.ListAsync( new PagedRequest
+        {
+            FilterBy = new []
+            {
+                new FilterOperatorInfo( nameof(Setting.Key), FilterOperator.Equals, SettingRegistry.ValidationMaximumSongNumber)
+            },
+            PageSize = 1
+        });
+        AssertResultIsSuccessful(listResult);
+        Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
+        Assert.Equal(1, listResult.TotalCount);
+        Assert.Equal(1, listResult.TotalPages);
+    }    
+    
+    [Fact]
+    public async Task ListWithFilterLikeAsync()
+    {
+        var service = GetSettingService();
+        var listResult = await service.ListAsync( new PagedRequest
+        {
+            FilterBy = new []
+            {
+                new FilterOperatorInfo( nameof(Setting.Key), FilterOperator.Contains, "bit")
+            },
+            PageSize = 1
+        });
+        AssertResultIsSuccessful(listResult);
+        Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
+        Assert.Equal(1, listResult.TotalCount);
+        Assert.Equal(1, listResult.TotalPages);
+    }     
+    
+    [Fact]
+    public async Task ListWithSortAsync()
+    {
+        var service = GetSettingService();
+        var listResult = await service.ListAsync( new PagedRequest
+        {
+            OrderBy = new Dictionary<string, string> 
+            {
+                { nameof(Setting.Id), PagedRequest.OrderAscDirection }
+            },
+            PageSize = 1000
+        });
+        AssertResultIsSuccessful(listResult);
+        Assert.Equal(1, listResult.Data.First().Id);
+        Assert.NotEqual(1, listResult.TotalCount);
+        Assert.Equal(1, listResult.TotalPages);
+        
+        listResult = await service.ListAsync( new PagedRequest
+        {
+            OrderBy = new Dictionary<string, string> 
+            {
+                { nameof(Setting.Id), PagedRequest.OrderDescDirection }
+            },
+            PageSize = 1000
+        });
+        AssertResultIsSuccessful(listResult);
+        Assert.NotEqual(1, listResult.Data.First().Id);
+        Assert.NotEqual(1, listResult.TotalCount);
+        Assert.Equal(1, listResult.TotalPages);        
+    }     
 
     [Fact]
     public async Task GetSettingByKeyAndValueAsync()
