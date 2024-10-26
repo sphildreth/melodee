@@ -36,7 +36,8 @@ public sealed class SafeParserTests
     [Fact]
     public void FromSerializedJsonArrayToCharArray()
     {
-        var strings = SafeParser.FromSerializedJsonArray("['^', '~', '#']", new Serializer(new Mock<ILogger>().Object));
+        var data = "['^', '~', '#']";
+        var strings = SafeParser.FromSerializedJsonArray(data, new Serializer(new Mock<ILogger>().Object));
         Assert.NotNull(strings);
         Assert.NotEmpty(strings);
         Assert.Contains("^", strings);

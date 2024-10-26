@@ -350,7 +350,7 @@ public static class SafeParser
         {
             return [];
         }
-        return serializer.Deserialize<Dictionary<string, string[]>>(ss) ?? [];
+        return serializer.Deserialize<Dictionary<string, string[]>>((ss ?? string.Empty).Replace("'", "\"")) ?? new Dictionary<string, string[]>();
     }
 
     public static string[] FromSerializedJsonArray(object? o, ISerializer serializer)
@@ -364,6 +364,6 @@ public static class SafeParser
         {
             return [];
         }
-        return serializer.Deserialize<string[]>(ss) ?? [];
+        return serializer.Deserialize<string[]>((ss ?? string.Empty).Replace("'", "\"")) ?? Array.Empty<string>();
     }
 }

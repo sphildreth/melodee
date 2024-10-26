@@ -1,3 +1,4 @@
+using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -198,6 +199,8 @@ public class MetaTagsProcessorTests : TestsBase
     [InlineData("Love/Hate", "Love/Hate")]
     public async Task ValidateAlbumArtistValue(string? originalArtist, string? shouldBe)
     {
+        var parts = TestsBase.NewConfiguration()[SettingRegistry.ProcessingArtistNameReplacements].ToString().Replace("'", "\"");       
+        var pp = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(parts);
         var albumArtistShouldBe = "Ariana Grande";
         var processor = new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
@@ -217,30 +220,30 @@ public class MetaTagsProcessorTests : TestsBase
         Assert.True(processorResult.IsSuccess);
         var groupedByIdentifier = processorResult.Data.GroupBy(x => x.Identifier);
         Assert.DoesNotContain(groupedByIdentifier, x => x.Count() > 1);
-        var SongTitleArtistTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+        var songTitleArtistTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
         if (originalArtist.DoStringsMatch(albumArtistShouldBe))
         {
-            Assert.Null(SongTitleArtistTag);
+            Assert.Null(songTitleArtistTag);
         }
         else
         {
-            Assert.NotNull(SongTitleArtistTag);
+            Assert.NotNull(songTitleArtistTag);
 
             if (shouldBe != null)
             {
-                Assert.NotNull(SongTitleArtistTag.Value);
-                if (SongTitleArtistTag.Value as string != originalArtist)
+                Assert.NotNull(songTitleArtistTag.Value);
+                if (songTitleArtistTag.Value as string != originalArtist)
                 {
-                    Assert.NotNull(SongTitleArtistTag.OriginalValue);
-                    Assert.Equal(originalArtist, SongTitleArtistTag.OriginalValue);
+                    Assert.NotNull(songTitleArtistTag.OriginalValue);
+                    Assert.Equal(originalArtist, songTitleArtistTag.OriginalValue);
                 }                
             }
             else
             {
-                Assert.Null(SongTitleArtistTag.Value);
+                Assert.Null(songTitleArtistTag.Value);
             }
 
-            Assert.Equal(shouldBe, SongTitleArtistTag.Value);
+            Assert.Equal(shouldBe, songTitleArtistTag.Value);
         }
     }
 

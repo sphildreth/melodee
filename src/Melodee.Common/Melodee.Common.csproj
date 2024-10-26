@@ -26,6 +26,7 @@
     <PackageReference Include="Serilog.Sinks.File"  />
     <PackageReference Include="SerilogTimings"  />
     <PackageReference Include="SmartFormat"  />
+    <PackageReference Include="System.Linq.Dynamic.Core" />
     <PackageReference Include="z440.atl.core"  />
   </ItemGroup>
 
