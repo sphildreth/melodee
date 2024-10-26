@@ -3,6 +3,7 @@ using System.Text.Json;
 using ATL.CatalogDataReaders;
 using FFMpegCore;
 using FFMpegCore.Enums;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -22,7 +23,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     If a CUE file is found then split out the MP3 into Songs.
 /// </summary>
-public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IPluginsConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     private const string HandlesExtension = "CUE";
 

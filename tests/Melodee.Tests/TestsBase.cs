@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Serialization;
 using Melodee.Plugins;
@@ -19,18 +20,18 @@ public abstract class TestsBase
         Serializer = new Serializer(Logger);
     }
 
-    public static IPluginsConfiguration NewPluginsConfiguration()
-        => new PluginsConfiguration(NewConfiguration());
+    public static IMelodeeConfiguration NewPluginsConfiguration()
+        => new MelodeeConfiguration(NewConfiguration());
     
     public static Dictionary<string, object?> NewConfiguration()
     {
-        return SettingService.AllSettings(new Dictionary<string, object?>
+        return MelodeeConfiguration.AllSettings(new Dictionary<string, object?>
         {
             { SettingRegistry.DirectoryInbound, @"/home/steven/incoming/melodee_test/tests" },
             { SettingRegistry.DirectoryLibrary, string.Empty },
             { SettingRegistry.DirectoryStaging, @"/home/steven/incoming/melodee_test/staging" },
             { SettingRegistry.ProcessingAlbumTitleRemovals, "['^', '~', '#']"},
-            { SettingRegistry.ProcessingArtistNameReplacements, "[{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] }, {'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }]"},
+            { SettingRegistry.ProcessingArtistNameReplacements, "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }"},
             { SettingRegistry.ProcessingDoDeleteOriginal, "false" },
             { SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength, 255},
             { SettingRegistry.ProcessingMaximumArtistDirectoryNameLength, 255 },

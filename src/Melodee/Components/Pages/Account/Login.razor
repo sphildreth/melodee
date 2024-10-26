@@ -100,7 +100,7 @@
             await AuthService.Login(principal, UserCredentials.RememberMe);
             NavManager.NavigateTo(ReturnUrl ?? "/");
         }
-        catch(Exception ex)
+        catch
         {
             messages.Add(
                 new ToastMessage

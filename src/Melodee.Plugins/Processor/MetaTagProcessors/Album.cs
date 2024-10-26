@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -102,7 +103,7 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
 
             if (newAlbumTitle != null)
             {
-                var albumTitleReplacements = SafeParser.FromSerializedJsonArray(Configuration[SettingRegistry.ProcessingAlbumTitleRemovals], Serializer);
+                var albumTitleReplacements = MelodeeConfiguration.FromSerializedJsonArray(Configuration[SettingRegistry.ProcessingAlbumTitleRemovals], Serializer);
                 if (albumTitleReplacements.Any())
                 {
                     newAlbumTitle = albumTitleReplacements.Aggregate(newAlbumTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();

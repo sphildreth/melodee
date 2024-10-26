@@ -1,4 +1,5 @@
 using ATL;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Models;
 
@@ -8,7 +9,7 @@ using Serilog;
 
 namespace Melodee.Plugins.Scripting;
 
-public sealed class PostDiscoveryScript(IPluginsConfiguration configuration) : IScriptPlugin
+public sealed class PostDiscoveryScript(IMelodeeConfiguration configuration) : IScriptPlugin
 {
     private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
 

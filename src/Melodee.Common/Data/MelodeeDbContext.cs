@@ -244,8 +244,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     {
                         Id = 24,
                         Key = SettingRegistry.ProcessingArtistNameReplacements,
-                        Comment = "Fragments of artist names to replace.",
-                        Value = "[{'AC/DC', ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] }, {'Love/Hate', ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }]",
+                        Comment = "Fragments of artist names to replace (JSON Dictionary).",
+                        Value = "{'AC/DC', ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate', ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }",
                         CreatedAt = now,
                     },
                     new Setting
@@ -332,7 +332,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     {
                         Id = 35,
                         Key = SettingRegistry.ProcessingAlbumTitleRemovals,
-                        Comment = "Fragments to remove from album titles.",
+                        Comment = "Fragments to remove from album titles (JSON array).",
                         Value = "['^', '~', '#']",
                         CreatedAt = now,
                     },
@@ -340,7 +340,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     {
                         Id = 36,
                         Key = SettingRegistry.ProcessingSongTitleRemovals,
-                        Comment = "Fragments to remove from song titles.",
+                        Comment = "Fragments to remove from song titles (JSON array).",
                         Value = "[';', '(Remaster)', 'Remaster']",
                         CreatedAt = now,
                     },

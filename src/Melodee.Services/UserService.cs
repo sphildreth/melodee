@@ -203,13 +203,13 @@ public sealed class UserService(
                 dbUser.LastActivityAt = now;
                 dbUser.LastLoginAt = now;
                 await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                ClearCache(dbUser.Email, dbUser.ApiKey, dbUser.Id);                
+                ClearCache(dbUser.Email, dbUser.ApiKey, dbUser.Id);
             }
         }, cancellationToken);
-        
+
         // Sets return object so consumer sees new value, actual update to DB happens in another non blocking thread.
         user.Data.LastActivityAt = now;
-        user.Data.LastLoginAt = now;        
+        user.Data.LastLoginAt = now;
         return user;
     }
 
@@ -218,7 +218,7 @@ public sealed class UserService(
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
         Guard.Against.NullOrWhiteSpace(password, nameof(password));
 
-        
+
         // Ensure no user exists with given email address
         var dbUserByEmailAddress = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
         if (dbUserByEmailAddress.IsSuccess)
@@ -348,10 +348,12 @@ public sealed class UserService(
         {
             CacheManager.Remove(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddress));
         }
+
         if (apiKey != null)
         {
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey));
         }
+
         if (userId != null)
         {
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(userId));

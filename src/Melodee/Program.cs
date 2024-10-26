@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Blazored.SessionStorage;
+using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
@@ -54,10 +55,10 @@ builder.Services
     .AddScoped<LocalStorageService>()
     .AddScoped<SettingService>()
     .AddScoped<UserService>()
-    .AddScoped<IPluginsConfiguration>(opt =>
+    .AddScoped<IMelodeeConfiguration>(opt =>
     {
         var settingService = opt.GetRequiredService<SettingService>();
-        return new PluginsConfiguration(settingService.GetAllSettingsAsync().GetAwaiter().GetResult());
+        return settingService.GetMelodeeConfigurationAsync().GetAwaiter().GetResult();
     })
     .AddScoped<IAlbumValidator, AlbumValidator>()
     .AddScoped<IAlbumsDiscoverer, AlbumsDiscoverer>();

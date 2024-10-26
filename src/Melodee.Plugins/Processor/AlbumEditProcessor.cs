@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -16,7 +17,7 @@ using Serilog;
 namespace Melodee.Plugins.Processor;
 
 public sealed class AlbumEditProcessor(
-    IPluginsConfiguration configuration,
+    IMelodeeConfiguration configuration,
     IAlbumsDiscoverer albumsDiscoverer,
     ISongPlugin editSongPlugin,
     IAlbumValidator albumValidator)

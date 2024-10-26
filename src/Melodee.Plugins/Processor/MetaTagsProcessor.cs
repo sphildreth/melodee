@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Melodee.Common.Configuration;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -12,7 +13,7 @@ public sealed partial class MetaTagsProcessor : IMetaTagsProcessorPlugin
 {
     private readonly IEnumerable<IMetaTagProcessor> _metaTagProcessors;
 
-    public MetaTagsProcessor(IPluginsConfiguration configuration, ISerializer serializer)
+    public MetaTagsProcessor(IMelodeeConfiguration configuration, ISerializer serializer)
     {
         _metaTagProcessors = new IMetaTagProcessor[]
         {

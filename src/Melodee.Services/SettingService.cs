@@ -1,12 +1,9 @@
-using System.Diagnostics;
 using Ardalis.GuardClauses;
-using FFMpegCore.Enums;
-using Melodee.Common.Constants;
+using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Utility;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -26,75 +23,6 @@ public sealed class SettingService(
 {
     private const string CacheKeyDetailTemplate = "urn:setting:{0}";
 
-    /// <summary>
-    /// This return all known settings in the SettingsRegistry with the option to set up given values.
-    /// </summary>
-    /// <param name="settings">Optional colletion of settings to set for result</param>
-    /// <returns>All known Settings in SettingsRegistry</returns>
-    public static Dictionary<string, object?> AllSettings(Dictionary<string, object?>? settings = null)
-    {
-        var result = new Dictionary<string, object?>();
-        foreach (var settingName in typeof(SettingRegistry).GetAllPublicConstantValues<string>())
-        {
-            result.TryAdd(settingName, null);
-        }
-        if (settings != null)
-        {
-            foreach (var setting in settings)
-            {
-                if (result.ContainsKey(setting.Key))
-                {
-                    result[setting.Key] = setting.Value;
-                }
-            }
-        }
-        return result;
-    }
-
-    public static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName)
-    {
-        if (settings.TryGetValue(settingName, out var setting))
-        {
-            try
-            {
-                return SafeParser.ChangeType<T>(setting);
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine($"Error converting setting [{ settingName }]: {e.Message}]");
-            }
-        }
-        return default;
-    }
-
-    public static bool IsTrue(Dictionary<string, object?> settings, string settingName)
-    {
-        if (settings.TryGetValue(settingName, out var setting))
-        {
-            try
-            {
-                return SafeParser.ToBoolean(setting);
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine($"Error converting setting [{ settingName }]: {e.Message}]");
-            }
-        }
-        return false;
-    }
-    
-    public static void SetSetting(Dictionary<string, object?> settings, string key, object? value)
-    {
-        if (settings.ContainsKey(key))
-        {
-            settings[key] = value;
-        }
-        else
-        {
-            settings.TryAdd(key, value);
-        }
-    }
-
     public async Task<Dictionary<string, object?>> GetAllSettingsAsync(CancellationToken cancellationToken = default)
     {
         var listResult = await ListAsync(new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
@@ -102,10 +30,11 @@ public sealed class SettingService(
         {
             throw new Exception("Failed to get settings from database");
         }
+
         var listDictionary = listResult.Data.ToDictionary(x => x.Key, x => (object?)x.Value);
-        return AllSettings(listDictionary);
+        return MelodeeConfiguration.AllSettings(listDictionary);
     }
-    
+
     public async Task<PagedResult<Setting>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int settingsCount;
@@ -184,6 +113,7 @@ public sealed class SettingService(
         {
             Logger.Error(e, "Failed to get setting [{0}]", key);
         }
+
         return new OperationResult<Setting?>
         {
             Data = default,
@@ -191,9 +121,12 @@ public sealed class SettingService(
         };
     }
 
+    public async Task<IMelodeeConfiguration> GetMelodeeConfigurationAsync(CancellationToken cancellationToken = default)
+        => new MelodeeConfiguration(await GetAllSettingsAsync(cancellationToken));
+
     public async Task<OperationResult<bool>> UpdateAsync(Setting detailToUpdate, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => x < 1, detailToUpdate?.Id ?? 0, nameof(detailToUpdate));
+        Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
         var result = false;
         var validationResult = ValidateModel(detailToUpdate);

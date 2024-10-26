@@ -339,31 +339,5 @@ public static class SafeParser
         return hash;
     }
 
-    public static Dictionary<string, string[]> FromSerializedJsonDictionary(object? o, ISerializer serializer)
-    {
-        if (o == null)
-        {
-            return [];
-        }
-        var ss = ToString(o);
-        if (ss.Nullify() == null)
-        {
-            return [];
-        }
-        return serializer.Deserialize<Dictionary<string, string[]>>((ss ?? string.Empty).Replace("'", "\"")) ?? new Dictionary<string, string[]>();
-    }
 
-    public static string[] FromSerializedJsonArray(object? o, ISerializer serializer)
-    {
-        if (o == null)
-        {
-            return [];
-        }
-        var ss = ToString(o);
-        if (ss.Nullify() == null)
-        {
-            return [];
-        }
-        return serializer.Deserialize<string[]>((ss ?? string.Empty).Replace("'", "\"")) ?? Array.Empty<string>();
-    }
 }

@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Models;
 
 
@@ -6,7 +7,7 @@ namespace Melodee.Plugins.Scripting;
 /// <summary>
 ///     Do nothing script used when no script is desired or configured.
 /// </summary>
-public sealed class NullScript(IPluginsConfiguration configuration) : IScriptPlugin
+public sealed class NullScript(IMelodeeConfiguration configuration) : IScriptPlugin
 {
     private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
 

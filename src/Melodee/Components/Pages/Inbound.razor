@@ -57,7 +57,7 @@
 @code {
 
     string? selectedRibbonItem;
-    string? _libraryFolderName = "Loading...";
+    string _libraryFolderName = "Loading...";
     private Grid<AlbumCard> grid = default!;
     private short _defaultPageSize;
 
@@ -68,7 +68,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _libraryFolderName = (await SettingService.GetValueAsync<string>(SettingRegistry.DirectoryInbound))?.Data;
+        _libraryFolderName = (await SettingService.GetValueAsync<string>(SettingRegistry.DirectoryInbound))!.Data!;
         _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10;
         StateHasChanged();
     }

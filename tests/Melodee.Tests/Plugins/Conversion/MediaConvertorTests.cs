@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -39,7 +40,7 @@ public class MediaConvertorTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new PluginsConfiguration(
+             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new MelodeeConfiguration(
                  new Dictionary<string, object?>
                 {
                     { SettingRegistry.DirectoryInbound, @"/home/steven/incoming/melodee_test/tests" },

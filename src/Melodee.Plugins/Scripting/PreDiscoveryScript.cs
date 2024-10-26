@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Models;
 
@@ -6,7 +7,7 @@ using Serilog;
 
 namespace Melodee.Plugins.Scripting;
 
-public sealed class PreDiscoveryScript(IPluginsConfiguration configuration) : IScriptPlugin
+public sealed class PreDiscoveryScript(IMelodeeConfiguration configuration) : IScriptPlugin
 {
     private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
 

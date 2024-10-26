@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Melodee.Cli.CommandSettings;
+using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
@@ -47,7 +48,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         using (var scope = serviceProvider.CreateScope())
         {
             var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
-            var config = new PluginsConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
+            var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var fileInfo = new FileInfo(settings.Filename);
             if (!fileInfo.Exists)

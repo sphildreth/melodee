@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -11,7 +12,7 @@ namespace Melodee.Plugins.Conversion.Image;
 /// <summary>
 ///     This converts non JPG images into a JPG images.
 /// </summary>
-public sealed class ImageConvertor(IPluginsConfiguration configuration) : MetaDataBase(configuration), IConversionPlugin
+public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDataBase(configuration), IConversionPlugin
 {
     public override string Id => "8A169045-C650-4DE5-A564-F0E2D28EF07D";
 

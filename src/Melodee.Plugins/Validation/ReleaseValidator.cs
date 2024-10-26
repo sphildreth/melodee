@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -11,7 +12,7 @@ using Serilog;
 
 namespace Melodee.Plugins.Validation;
 
-public sealed partial class AlbumValidator(IPluginsConfiguration configuration) : IAlbumValidator
+public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) : IAlbumValidator
 {
     private static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 

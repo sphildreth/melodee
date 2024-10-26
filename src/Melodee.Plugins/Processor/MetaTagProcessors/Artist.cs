@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -34,7 +35,7 @@ public sealed partial class Artist(Dictionary<string, object?> configuration, IS
 
         if (artist.Nullify() != null)
         {
-            var artistNameReplacements = SafeParser.FromSerializedJsonDictionary(Configuration[SettingRegistry.ProcessingArtistNameReplacements], Serializer);            
+            var artistNameReplacements = MelodeeConfiguration.FromSerializedJsonDictionary(Configuration[SettingRegistry.ProcessingArtistNameReplacements], Serializer);            
             if (artistNameReplacements.Any())
             {
                 foreach (var kp in artistNameReplacements)

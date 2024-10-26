@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ATL;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -31,7 +32,7 @@ namespace Melodee.Plugins.Processor;
 /// </summary>
 public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 {
-    private readonly IPluginsConfiguration _configuration;
+    private readonly IMelodeeConfiguration _configuration;
     private readonly IEnumerable<IConversionPlugin> _conversionPlugins;
     private readonly IEnumerable<IDirectoryPlugin> _directoryPlugins;
 
@@ -62,7 +63,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         IScriptPlugin postDiscoveryScript,
         IAlbumValidator albumValidator,
         IAlbumEditProcessor albumEditProcessor,
-        IPluginsConfiguration configuration,
+        IMelodeeConfiguration configuration,
         ISerializer serializer)
     {
         _configuration = configuration;

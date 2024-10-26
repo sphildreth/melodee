@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Melodee.Cli.CommandSettings;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
@@ -57,7 +58,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         using (var scope = serviceProvider.CreateScope())
         {
             var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
-            var config = new PluginsConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
+            var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var grid = new Grid()
                 .AddColumn(new GridColumn().NoWrap().PadRight(4))

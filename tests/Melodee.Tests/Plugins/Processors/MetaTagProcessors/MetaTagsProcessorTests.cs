@@ -199,8 +199,6 @@ public class MetaTagsProcessorTests : TestsBase
     [InlineData("Love/Hate", "Love/Hate")]
     public async Task ValidateAlbumArtistValue(string? originalArtist, string? shouldBe)
     {
-        var parts = TestsBase.NewConfiguration()[SettingRegistry.ProcessingArtistNameReplacements].ToString().Replace("'", "\"");       
-        var pp = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(parts);
         var albumArtistShouldBe = "Ariana Grande";
         var processor = new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo

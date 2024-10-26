@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
@@ -27,7 +28,7 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
 
     private readonly IEnumerable<ISongPlugin> _songPlugins;
 
-    public AlbumsDiscoverer(IAlbumValidator albumValidator, IPluginsConfiguration configuration, ISerializer serializer)
+    public AlbumsDiscoverer(IAlbumValidator albumValidator, IMelodeeConfiguration configuration, ISerializer serializer)
     {
         _albumValidator = albumValidator;
         _configuration = configuration.Configuration;

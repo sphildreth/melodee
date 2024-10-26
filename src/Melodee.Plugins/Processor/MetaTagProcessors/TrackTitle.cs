@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -97,7 +98,7 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
 
             if (ContinueProcessing(songTitle))
             {
-                var songTitleRemovals = SafeParser.FromSerializedJsonArray(Configuration[SettingRegistry.ProcessingSongTitleRemovals], Serializer);
+                var songTitleRemovals = MelodeeConfiguration.FromSerializedJsonArray(Configuration[SettingRegistry.ProcessingSongTitleRemovals], Serializer);
                 if (songTitle != null && songTitleRemovals.Any())
                 {
                     songTitle = songTitleRemovals.Aggregate(songTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();

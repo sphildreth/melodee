@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -15,7 +16,7 @@ using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Directory;
 
-public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IPluginsConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "M3U";
 

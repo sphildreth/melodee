@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -41,18 +42,18 @@ public sealed class SettingsServiceTests : ServiceTestBase
     [Fact]
     public void GetSettingSetAndConvert()
     {
-        var settings = SettingService.AllSettings();
+        var settings = MelodeeConfiguration.AllSettings();
         Assert.NotNull(settings);
         Assert.Contains(settings, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
 
         var shouldBeValueInt = 99;
-        SettingService.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueInt);
+        MelodeeConfiguration.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueInt);
         Assert.Equal(shouldBeValueInt, settings[SettingRegistry.ValidationMaximumSongNumber]);
         
         var shouldBeValueBool = true;
-        SettingService.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueBool);
+        MelodeeConfiguration.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueBool);
         Assert.Equal(shouldBeValueBool, settings[SettingRegistry.ValidationMaximumSongNumber]); 
-        Assert.True(SettingService.IsTrue(settings, SettingRegistry.ValidationMaximumSongNumber));
+        Assert.True(MelodeeConfiguration.IsTrue(settings, SettingRegistry.ValidationMaximumSongNumber));
     }
 
     [Fact]
