@@ -14,7 +14,7 @@ public static class SettingRegistry
     public const string FilteringLessThanSongCount = "filtering.lessThanSongCount";
     public const string FormattingDateTimeDisplayActivityFormat = "formatting.dateTimeDisplayActivityFormat";
     public const string FormattingDateTimeDisplayFormatShort = "formatting.dateTimeDisplayFormatShort";
-    public const string MagicDoRemoveFeaturingArtistFromSongArtist = "magic.doRemoveFeaturingArtistFromSongArtist";    
+    public const string MagicDoRemoveFeaturingArtistFromSongArtist = "magic.doRemoveFeaturingArtistFromSongArtist";
     public const string MagicDoRemoveFeaturingArtistFromSongTitle = "magic.doRemoveFeaturingArtistFromSongTitle";
     public const string MagicDoRemoveUnwantedTextFromAlbumTitle = "magic.doRemoveUnwantedTextFromAlbumTitle";
     public const string MagicDoRenumberSongs = "magic.doRenumberSongs";

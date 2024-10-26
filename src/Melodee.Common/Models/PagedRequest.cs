@@ -1,5 +1,8 @@
 using System.Text;
+using System.Linq.Dynamic.Core;
 using Melodee.Common.Enums;
+using Melodee.Common.Filtering;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
@@ -10,14 +13,18 @@ public sealed record PagedRequest
 
     public const string OrderAscDirection = "ASC";
     public const string OrderDescDirection = "DESC";
+    public const string DefaultSortField = "Id";
     private int? _skipValue;
 
     public short? PageSize { get; set; } = DefaultPageSize;
     public string? Search { get; init; }
 
     public AlbumResultFilter? AlbumResultFilter { get; init; }
-    
-    public string? Filter { get; init; }
+
+    /// <summary>
+    /// Filter by definitions. 
+    /// </summary>
+    public FilterOperatorInfo[]? FilterBy { get; init; }
 
     public long[] SelectedAlbumIds { get; init; } = Array.Empty<long>();
 
@@ -36,7 +43,6 @@ public sealed record PagedRequest
         }
     }
 
-    public string? Order { get; init; }
     public int? Page { get; init; } = 1;
 
     public int PageValue => Page ?? 1;
@@ -46,7 +52,10 @@ public sealed record PagedRequest
     /// </summary>
     public bool IsTotalCountOnlyRequest { get; set; }
     
-    public string? Sort { get; set; }
+    /// <summary>
+    /// Sort By definitions. PropertyName and Direction, e.g. 'Id', 'Desc'
+    /// </summary>
+    public Dictionary<string, string>? OrderBy { get; set; }
 
     public int SkipValue
     {
@@ -69,33 +78,50 @@ public sealed record PagedRequest
         set => _skipValue = value;
     }
 
-    /// <summary>
-    ///     Sort first with the given (if any) parameter then apply default sorting. Example is "rating" supplied then sort by
-    ///     sortName
-    /// </summary>
-    public string OrderValue(Dictionary<string, string>? orderBy = null, string? defaultSortBy = null, string? defaultOrderBy = null)
+    public string OrderByValue(string? defaultSortBy = null, string? defaultOrderBy = null)
     {
         var result = new StringBuilder();
-        if (!string.IsNullOrEmpty(Sort))
+        if (OrderBy == null)
         {
-            result.AppendFormat("{0} {1}", Sort ?? defaultSortBy, Order ?? defaultOrderBy ?? OrderAscDirection);
+            OrderBy = new Dictionary<string, string>()
+            {
+                { defaultSortBy ?? DefaultSortField, defaultOrderBy ?? OrderAscDirection }
+            };
         }
-
-        if (orderBy != null && orderBy.Count != 0)
+        if (OrderBy != null && OrderBy.Count != 0)
         {
-            foreach (var kp in orderBy)
+            foreach (var kp in OrderBy)
             {
                 if (result.Length > 0)
                 {
                     result.Append(",");
                 }
 
-                result.AppendFormat("{0} {1}", kp.Key, kp.Value);
+                result.AppendFormat("\"{0}\" {1}", kp.Key, kp.Value);
             }
         }
-
         return result.ToString();
     }
+    
+    public string FilterByValue()
+    {
+        if (FilterBy == null || FilterBy.Length == 0)
+        {
+            return "1 = 1";
+        }
+        var result = new StringBuilder();
+        foreach (var kp in FilterBy)
+        {
+            if (result.Length > 0)
+            {
+                result.Append($" {kp.JoinOperator } ");
+            }
+
+            result.AppendFormat("{0} {1} {2}", kp.PropertyName, kp.Operator, kp.Value);
+        }
+        return result.ToString();
+    }    
 
     public int TotalPages(int totalRecordsCount) => totalRecordsCount < 1 ? 0 : (totalRecordsCount + PageSizeValue - 1) / PageSizeValue;
+
 }

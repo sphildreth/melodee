@@ -1,6 +1,8 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
+using Melodee.Common.Filtering;
 using Melodee.Common.Models;
 using Melodee.Services;
 
@@ -20,6 +22,28 @@ public sealed class SettingsServiceTests : ServiceTestBase
         Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
         Assert.Equal(1, listResult.TotalPages);
     }
+    
+    [Fact]
+    public async Task ListWithFilterAndSortAsync()
+    {
+        var service = GetSettingService();
+        var listResult = await service.ListAsync( new PagedRequest
+        {
+            FilterBy = new []
+            {
+                new FilterOperatorInfo(nameof(Setting.Key), FilterOperator.Equals, $"\"{ SettingRegistry.ValidationMaximumSongNumber }\""),
+            },
+            OrderBy = new Dictionary<string, string>
+            {
+                [nameof(Setting.Key)] = "desc"
+            },
+            PageSize = 1
+        });
+        AssertResultIsSuccessful(listResult);
+        Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
+        Assert.Equal(1, listResult.TotalCount);
+        Assert.Equal(1, listResult.TotalPages);
+    }    
 
     [Fact]
     public async Task GetSettingByKeyAndValueAsync()

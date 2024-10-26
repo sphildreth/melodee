@@ -1,48 +1,41 @@
 ﻿@page "/settings"
-@using FFMpegCore.Enums
-@using Melodee.Common.Constants
-@using Melodee.Common.Data.Models
-@using Melodee.Common.Models
-@using Melodee.Common.Utility
+@using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
+@inject ISerializer Serializer
 @inject Serilog.ILogger Logger
 @inject SettingService SettingService
+@inject ModalService ModalService
 
 <PageTitle>Settings</PageTitle>
 
 <div class="inbound-container">
-    <Ribbon OnClick="OnRibbonItemClick">
-        <RibbonTab Title="Settings">
-            <Content>
-                <RibbonItemGroup>
-                    <RibbonItem Name="NewSetting" IconColor="IconColor.Success" IconName="IconName.PlusSquare" IconSize="IconSize.x2" IsFirstItem="true">New</RibbonItem>
-                    <RibbonItem Name="EditSetting" IconColor="IconColor.Primary" IconName="IconName.PencilSquare" IconSize="IconSize.x2">Edit</RibbonItem>
-                </RibbonItemGroup>
-            </Content>
-        </RibbonTab>
-    </Ribbon>
-
-    <div class="mt-2">
-        <Grid @ref="grid"
+    <div class="loading-container @(_isLoading ? string.Empty  : "d-none")">
+        <Spinner />
+    </div>
+    <div>
+        <Grid @ref="_grid"
               TItem="Setting"
               Class="table table-hover table-bordered table-striped"
               DataProvider="SettingDataProvider"
+              AllowRowClick="true"
               AllowFiltering="true"
               AllowPaging="true"
               AllowSorting="true"
-              SelectionMode="GridSelectionMode.Multiple"
-              SelectedItemsChanged="OnSelectedItemsChanged"
+              OnRowDoubleClick="OnRowDoubleClick"
               Responsive="true">
 
             <GridColumns>
-                <GridColumn TItem="Setting" HeaderText="Key" PropertyName="Key">
+                <GridColumn TItem="Setting" HeaderText="Key" PropertyName="Key" IsDefaultSortColumn="true" SortKeySelector="item => item.Key">
                     @context.Key
                 </GridColumn>
-                <GridColumn TItem="Setting" HeaderText="Category" PropertyName="Category">
+                <GridColumn TItem="Setting" HeaderText="Category" PropertyName="Category" Filterable="false" SortKeySelector="item => item.Category">
                     @context.Category
                 </GridColumn>
-                <GridColumn TItem="Setting" HeaderText="Value" PropertyName="Value">
+                <GridColumn TItem="Setting" HeaderText="Value" PropertyName="Value" Filterable="false" SortKeySelector="item => item.Value">
                     @context.Value
+                </GridColumn>
+                <GridColumn TItem="Setting" HeaderText="Description" PropertyName="Description" Filterable="false" SortKeySelector="item => item.Description">
+                    @context.Description
                 </GridColumn>
             </GridColumns>
 
@@ -53,53 +46,57 @@
 
 @code {
 
-    string? selectedRibbonItem;
-    string? _libraryFolderName = "Loading...";
-    private Grid<Setting> grid = default!;
+    private Grid<Setting> _grid = default!;
     private short _defaultPageSize;
-
-    private void OnRibbonItemClick(RibbonItemEventArgs args)
-    {
-        selectedRibbonItem = args.Name;
-    }
+    private bool _isLoading = true;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _libraryFolderName = (await SettingService.GetValueAsync<string>(SettingRegistry.DirectoryInbound))?.Data;
         _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10;
         StateHasChanged();
     }
 
-    private Task OnSelectedItemsChanged(HashSet<Setting> employees)
+    private async Task OnRowDoubleClick(GridRowEventArgs<Setting> args)
     {
-        // selectedEmployees = employees is not null && employees.Any() ? employees : new();
-        return Task.CompletedTask;
+        await ModalService.ShowAsync(new ModalOption { Type = ModalType.Primary, Title = "Setting Detail", Message = Serializer.Serialize(args.Item) ?? string.Empty });
     }
 
     private async Task<GridDataProviderResult<Setting>> SettingDataProvider(GridDataProviderRequest<Setting> request)
     {
-        string sortString = "";
-        SortDirection sortDirection = SortDirection.None;
-        if (request.Sorting.Any())
+        _isLoading = true;
+        try
         {
-            sortString = request.Sorting.FirstOrDefault()!.SortString;
-            sortDirection = request.Sorting.FirstOrDefault()!.SortDirection;
-        }
+            Dictionary<string, string>? sorting = null;
+            if (request.Sorting.Any())
+            {
+                sorting = request.Sorting.ToDictionary(x => x.SortString, x => x.SortDirection.ToString());
+            }
 
-        string? filter = null;
-        if (request.Filters.Any())
-        {
-            filter = request.Filters.First().Value;
+            FilterOperator[]? filters = null;
+            if (request.Filters.Any())
+            {
+                filters = request.Filters.Select(x => new Melodee.Common.Filtering.FilterOperatorInfo(x.PropertyName, SafeParser.ToEnum<Melodee.Common.Filtering.FilterOperator>(x.Operator.ToString()), x.Value)).ToArray();
+            }
+
+            var result = await SettingService.ListAsync(new PagedRequest
+            {
+                FilterBy = filters,
+                Page = request.PageNumber,
+                PageSize = SafeParser.ToNumber<short>(request.PageSize),
+                OrderBy = sorting
+            }, request.CancellationToken);
+            return new GridDataProviderResult<Setting> { Data = result.Data, TotalCount = result.TotalCount };
         }
-        var result = await SettingService.ListAsync(new PagedRequest
+        catch (Exception e)
         {
-            Filter = filter,
-            Order = sortDirection.ToString(),
-            Page = request.PageNumber,
-            PageSize = SafeParser.ToNumber<short>(request.PageSize),
-            Sort = sortString
-        }, request.CancellationToken);
-        return new GridDataProviderResult<Setting> { Data = result.Data, TotalCount = result.TotalCount };
+            Logger.Error(e, "Loading Settings");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+        return new GridDataProviderResult<Setting>();
     }
 
 }

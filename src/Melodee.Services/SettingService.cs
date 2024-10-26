@@ -1,14 +1,15 @@
 using Ardalis.GuardClauses;
 using Melodee.Common.Configuration;
-using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Data;
 using Melodee.Common.Extensions;
-using Melodee.Common.Models;
 using Melodee.Services.Interfaces;
+using MelodeeModels=Melodee.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using SmartFormat;
+using System.Linq.Dynamic.Core;
 
 namespace Melodee.Services;
 
@@ -25,7 +26,7 @@ public sealed class SettingService(
 
     public async Task<Dictionary<string, object?>> GetAllSettingsAsync(CancellationToken cancellationToken = default)
     {
-        var listResult = await ListAsync(new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
+        var listResult = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken);
         if (!listResult.IsSuccess)
         {
             throw new Exception("Failed to get settings from database");
@@ -35,15 +36,16 @@ public sealed class SettingService(
         return MelodeeConfiguration.AllSettings(listDictionary);
     }
 
-    public async Task<PagedResult<Setting>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<Setting>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int settingsCount;
         Setting[] settings = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
+            var filter = pagedRequest.FilterByValue();
             settingsCount = await scopedContext
                 .Settings
-                .Where(x => pagedRequest.Filter == null || x.Key.ToUpper().Contains(pagedRequest.Filter.ToUpper()))
+                .Where(filter)
                 .AsNoTracking()
                 .CountAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -51,45 +53,42 @@ public sealed class SettingService(
             {
                 settings = await scopedContext
                     .Settings
-                    .Where(x => pagedRequest.Filter == null || x.Key.ToUpper().Contains(pagedRequest.Filter.ToUpper()))
+                    .Where(filter)
+                    .OrderBy(pagedRequest.OrderByValue())
                     .AsNoTracking()
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
             }
         }
-
-        return new PagedResult<Setting>
+        return new MelodeeModels.PagedResult<Setting>
         {
             TotalCount = settingsCount,
             TotalPages = pagedRequest.TotalPages(settingsCount),
             Data = settings
-                .OrderBy(x => pagedRequest.Sort ?? nameof(Setting.Key))
-                .Skip(pagedRequest.SkipValue)
-                .Take(pagedRequest.PageSizeValue)
         };
     }
 
-    public async Task<OperationResult<T?>> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<T?>> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(key, nameof(key));
 
         var settingResult = await GetAsync(key, cancellationToken).ConfigureAwait(false);
         if (settingResult.Data == null || !settingResult.IsSuccess)
         {
-            return new OperationResult<T?>
+            return new MelodeeModels.OperationResult<T?>
             {
                 Data = default,
-                Type = OperationResponseType.NotFound
+                Type = MelodeeModels.OperationResponseType.NotFound
             };
         }
 
-        return new OperationResult<T?>
+        return new MelodeeModels.OperationResult<T?>
         {
             Data = settingResult.Data.Value.Convert<T>()
         };
     }
 
-    public async Task<OperationResult<Setting?>> GetAsync(string key, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Setting?>> GetAsync(string key, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -104,7 +103,7 @@ public sealed class SettingService(
                         .ConfigureAwait(false);
                 }
             }, cancellationToken);
-            return new OperationResult<Setting?>
+            return new MelodeeModels.OperationResult<Setting?>
             {
                 Data = result
             };
@@ -114,17 +113,17 @@ public sealed class SettingService(
             Logger.Error(e, "Failed to get setting [{0}]", key);
         }
 
-        return new OperationResult<Setting?>
+        return new MelodeeModels.OperationResult<Setting?>
         {
             Data = default,
-            Type = OperationResponseType.Error
+            Type = MelodeeModels.OperationResponseType.Error
         };
     }
 
     public async Task<IMelodeeConfiguration> GetMelodeeConfigurationAsync(CancellationToken cancellationToken = default)
         => new MelodeeConfiguration(await GetAllSettingsAsync(cancellationToken));
 
-    public async Task<OperationResult<bool>> UpdateAsync(Setting detailToUpdate, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Setting detailToUpdate, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
@@ -132,10 +131,10 @@ public sealed class SettingService(
         var validationResult = ValidateModel(detailToUpdate);
         if (!validationResult.IsSuccess)
         {
-            return new OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = false,
-                Type = OperationResponseType.ValidationFailure
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
 
@@ -151,10 +150,10 @@ public sealed class SettingService(
 
                 if (dbDetail == null)
                 {
-                    return new OperationResult<bool>
+                    return new MelodeeModels.OperationResult<bool>
                     {
                         Data = false,
-                        Type = OperationResponseType.NotFound
+                        Type = MelodeeModels.OperationResponseType.NotFound
                     };
                 }
 
@@ -180,7 +179,7 @@ public sealed class SettingService(
             }
         }
 
-        return new OperationResult<bool>
+        return new MelodeeModels.OperationResult<bool>
         {
             Data = result
         };

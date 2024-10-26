@@ -27,7 +27,7 @@ public sealed class UserServiceTests : ServiceTestBase
         }
 
         var service = GetUserService();
-        var listResult = await service.ListAsync(ServiceUser.Instance.Value, new PagedRequest());
+        var listResult = await service.ListAsync(new PagedRequest());
         AssertResultIsSuccessful(listResult);
         Assert.Contains(listResult.Data, x => x.ApiKey == shouldContainApiKey);
         Assert.Equal(1, listResult.TotalPages);
@@ -73,7 +73,7 @@ public sealed class UserServiceTests : ServiceTestBase
         AssertResultIsSuccessful(userByEmailAddress);
         Assert.Equal(emailAddress2, userByEmailAddress.Data!.Email);
         
-        var listResult = await service.ListAsync(ServiceUser.Instance.Value, new PagedRequest());
+        var listResult = await service.ListAsync(new PagedRequest());
         AssertResultIsSuccessful(listResult);
         Assert.Contains(listResult.Data, x => x.Email == emailAddress2);
         Assert.Equal(1, listResult.TotalPages);

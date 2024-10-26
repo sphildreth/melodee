@@ -286,6 +286,15 @@ public static class SafeParser
     {
         return Hash(Encoding.UTF8.GetBytes(string.Join(string.Empty, input)));
     }
+    
+    public static bool IsDigitsOnly(this string? str)
+    {
+        if (str.Nullify() == null)
+        {
+            return false;
+        }
+        return str!.All(c => c is >= '0' and <= '9');
+    }
 
     // ReSharper disable once MemberCanBePrivate.Global
     public static long Hash(byte[] dataToHash)

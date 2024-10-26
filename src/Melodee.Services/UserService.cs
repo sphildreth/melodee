@@ -24,12 +24,13 @@ public sealed class UserService(
     private const string CacheKeyDetailByEmailAddressKeyTemplate = "urn:user:emailaddress:{0}";
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
 
-    public async Task<PagedResult<User>> ListAsync(User currentUser, PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<User>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int usersCount;
         User[] users = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
+            // TODO Filter and Sort dynamically
             usersCount = await scopedContext
                 .Users
                 .AsNoTracking()
@@ -50,9 +51,6 @@ public sealed class UserService(
             TotalCount = usersCount,
             TotalPages = pagedRequest.TotalPages(usersCount),
             Data = users
-                .OrderBy(x => pagedRequest.Sort ?? $"{nameof(User.SortOrder)}, {nameof(User.UserName)}")
-                .Skip(pagedRequest.SkipValue)
-                .Take(pagedRequest.PageSizeValue)
         };
     }
 
