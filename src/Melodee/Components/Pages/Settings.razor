@@ -3,14 +3,12 @@
 @using Melodee.Common.Extensions
 @using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
-@inject ISerializer Serializer
 @inject Serilog.ILogger Logger
 @inject SettingService SettingService
 
 <PageTitle>Settings</PageTitle>
 
 <div class="inbound-container">
-    <Modal @ref="modal" />
     <div class="loading-container @(_isLoading ? string.Empty : "d-none")">
         <Spinner/>
     </div>
@@ -40,19 +38,42 @@
                 <GridColumn TItem="Setting" HeaderText="Comment" PropertyName="Comment" Filterable="false" SortKeySelector="item => item.Comment">
                     @context.Comment
                 </GridColumn>
+                <GridColumn TItem="Setting" HeaderText="Action" HeaderTextAlignment="Alignment.Center">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
+                        <Button Color="ButtonColor.Primary" Size="ButtonSize.Small" @onclick="async () => await EditSettingAsync(context)"> Edit </Button>
+                    </div>
+                </GridColumn>
             </GridColumns>
 
         </Grid>
     </div>
 </div>
-
+<Modal @ref="_dictionaryModal" />
+<Modal @ref="_editModal" Title="Edit Setting" />
 
 @code {
-    private Modal modal = default!;
+    private Modal _dictionaryModal = default!;
+    private Modal _editModal = default!;
     private Grid<Setting> _grid = default!;
     private short _defaultPageSize = 25;
     private bool _isLoading = true;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+
+    private async Task EditSettingAsync(Setting setting)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            { "Setting", setting },
+            { "OnUpdateCallback", EventCallback.Factory.Create<Setting>(this, RefreshGrid) }
+        };
+        await _editModal.ShowAsync<SettingEdit>(title: "Editing Setting", parameters: parameters);
+    }
+
+    private async Task RefreshGrid(Setting employee)
+    {
+        await _editModal.HideAsync();
+        await _grid.RefreshDataAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,7 +87,7 @@
         {
             { "ModelDictionary", args.Item.ToDictionary() }
         };
-        await modal.ShowAsync<DictionaryModal>(title: "Setting Detail", parameters: parameters);
+        await _dictionaryModal.ShowAsync<DictionaryModal>(title: "Setting Detail", parameters: parameters);
     }
 
     private async Task<GridDataProviderResult<Setting>> SettingDataProvider(GridDataProviderRequest<Setting> request)

@@ -1,0 +1,41 @@
+@inject SettingService SettingService
+
+<div class="card">
+    <h4 class="card-header">@Setting.Key</h4>
+    <div class="card-body">
+            <EditForm Model="@Setting" class="form-login" OnValidSubmit="UpdateSetting">
+                <DataAnnotationsValidator/>
+                <div class="form-group mb-3">
+                    <label for="value" class="sr-only">Value</label>
+                    <input type="text" id="value" @bind="Setting.Value" class="form-control" required autofocus>
+                    <ValidationMessage For="@(() => Setting.Value)"/>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="value" class="sr-only">Notes</label>
+                    <textarea class="form-control"
+                              rows="6"
+                              placeholder="Notes"
+                              @bind="Setting.Notes"
+                              @bind:event="oninput">
+                    </textarea>
+                    <ValidationMessage For="@(() => Setting.Notes)"/>
+                </div>
+                <Button class="mt-3" Color="ButtonColor.Info" Type="ButtonType.Submit">💾 Save </Button>
+            </EditForm>
+    </div>
+</div>
+@code {
+    [Parameter] public Setting Setting { get; set; } = default!;
+
+    [Parameter] public EventCallback<Setting> OnUpdateCallback { get; set; }
+
+    private async Task UpdateSetting()
+    {
+        await SettingService.UpdateAsync(Setting);
+
+        if (OnUpdateCallback.HasDelegate)
+        {
+            await OnUpdateCallback.InvokeAsync(Setting);
+        }
+    }
+}
