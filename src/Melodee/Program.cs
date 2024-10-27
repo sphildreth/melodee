@@ -7,6 +7,7 @@ using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
+using Melodee.Services.Scanning;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -51,11 +52,13 @@ builder.Services
             opt.GetRequiredService<ISerializer>()))
     .AddScoped<LocalStorageService>()
     .AddScoped<SettingService>()
-    .AddScoped<UserService>();
+    .AddScoped<UserService>()
+    .AddScoped<AlbumDiscoveryService>();
 
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+builder.Services.AddScoped<MainLayoutProxyService>();
 
 var app = builder.Build();
 

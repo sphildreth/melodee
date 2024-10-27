@@ -32,6 +32,11 @@ public sealed record Album
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
 
     public FileSystemDirectoryInfo? Directory { get; set; }
+    
+    /// <summary>
+    /// The full path to the melodee.json file.
+    /// </summary>
+    public string? MelodeeDataFileName { get; set; }
 
     public IEnumerable<ImageInfo>? Images { get; set; }
 
@@ -166,15 +171,16 @@ public sealed record Album
 
         return new Album
         {
-            OriginalDirectory = OriginalDirectory,
-            Tags = tags,
-            ViaPlugins = viaPlugins,
             Files = files.ToArray(),
             Images = images.ToArray(),
             Messages = messages.Distinct().ToArray(),
+            MelodeeDataFileName = MelodeeDataFileName,
+            OriginalDirectory = OriginalDirectory,
+            Songs = (Songs ?? Array.Empty<Song>()).ToArray(),
             SortOrder = SortOrder,
             Status = AlbumStatus.NotSet,
-            Songs = (Songs ?? Array.Empty<Song>()).ToArray()
+            Tags = tags,
+            ViaPlugins = viaPlugins
         };
     }
 

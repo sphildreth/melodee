@@ -2,6 +2,8 @@
 @using System.Security.Claims
 @inherits LayoutComponentBase
 
+@implements IDisposable
+@inject MainLayoutProxyService MainLayoutProxyService
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
 
@@ -19,14 +21,15 @@
     <main>
         <div class="bb-top-row px-4 d-flex justify-content-between">
             <Icon Name="IconName.List" role="button" @onclick="ToggleSidebar"/>
-            <AuthorizeView>
-                <Authorized>
-                    <div>
+            <div>
+                <Spinner Type="SpinnerType.Dots" Class="me-3" Color="SpinnerColor.Primary" Visible="@MainLayoutProxyService.ShowSpinner"/>
+                <AuthorizeView>
+                    <Authorized>
                         <img src="images\avatar.png" alt="Avatar" class="avatar">
                         @context.User?.Identity?.Name
-                    </div>
-                </Authorized>
-            </AuthorizeView>
+                    </Authorized>
+                </AuthorizeView>
+            </div>
         </div>
 
         <article class="content px-4">
@@ -42,6 +45,24 @@
 </div>
 
 @code {
+
+    protected override void OnInitialized()
+    {
+        MainLayoutProxyService.HeaderChanged += this.OnHeaderChange;
+        MainLayoutProxyService.SpinnerVisibleChanged += this.OnSpinnerChange;
+    }
+
+    private void OnHeaderChange(object? sender, EventArgs e)
+        => this.InvokeAsync(StateHasChanged);
+
+    private void OnSpinnerChange(object? sender, EventArgs e)
+        => this.InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        MainLayoutProxyService.HeaderChanged -= this.OnHeaderChange;
+        MainLayoutProxyService.SpinnerVisibleChanged -= this.OnSpinnerChange;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

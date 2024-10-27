@@ -1,17 +1,14 @@
 ﻿@page "/settings"
-@using FluentValidation.Internal
-@using Melodee.Common.Extensions
+
 @using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
+@inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
 @inject SettingService SettingService
 
 <PageTitle>Settings</PageTitle>
 
 <div class="inbound-container">
-    <div class="loading-container @(_isLoading ? string.Empty : "d-none")">
-        <Spinner/>
-    </div>
     <div>
         <Grid @ref="_grid"
               TItem="Setting"
@@ -26,16 +23,16 @@
               Responsive="true">
 
             <GridColumns>
-                <GridColumn TItem="Setting" HeaderText="Key" PropertyName="Key" IsDefaultSortColumn="true" SortKeySelector="item => item.Key">
+                <GridColumn TItem="Setting" HeaderText="Key" PropertyName="Key" IsDefaultSortColumn="true" SortString="Key" SortKeySelector="item => item.Key">
                     @context.Key
                 </GridColumn>
-                <GridColumn TItem="Setting" HeaderText="Category" PropertyName="Category" Filterable="false" SortKeySelector="item => item.CategoryValue">
+                <GridColumn TItem="Setting" HeaderText="Category" PropertyName="Category" Filterable="false" SortString="CategoryValue" SortKeySelector="item => item.CategoryValue">
                     @context.CategoryValue
                 </GridColumn>
-                <GridColumn TItem="Setting" HeaderText="Value" PropertyName="Value" Filterable="false" SortKeySelector="item => item.Value">
+                <GridColumn TItem="Setting" HeaderText="Value" PropertyName="Value" Filterable="false" SortString="Value" SortKeySelector="item => item.Value">
                     @context.Value
                 </GridColumn>
-                <GridColumn TItem="Setting" HeaderText="Comment" PropertyName="Comment" Filterable="false" SortKeySelector="item => item.Comment">
+                <GridColumn TItem="Setting" HeaderText="Comment" PropertyName="Comment" Filterable="false" SortString="Comment"  SortKeySelector="item => item.Comment">
                     @context.Comment
                 </GridColumn>
                 <GridColumn TItem="Setting" HeaderText="Action" HeaderTextAlignment="Alignment.Center">
@@ -56,7 +53,6 @@
     private Modal _editModal = default!;
     private Grid<Setting> _grid = default!;
     private short _defaultPageSize = 25;
-    private bool _isLoading = true;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
 
     private async Task EditSettingAsync(Setting setting)
@@ -92,13 +88,13 @@
 
     private async Task<GridDataProviderResult<Setting>> SettingDataProvider(GridDataProviderRequest<Setting> request)
     {
-        _isLoading = true;
+        MainLayoutProxyService.ToggleSpinnerVisible();
         try
         {
             Dictionary<string, string>? sorting = null;
             if (request.Sorting.Any())
             {
-                sorting = request.Sorting.ToDictionary(x => x.SortKeySelector.GetMember().Name, x => x.SortDirection == SortDirection.Descending ? PagedRequest.OrderDescDirection :  PagedRequest.OrderAscDirection);
+                sorting = request.Sorting.ToDictionary(x => x.SortString, x => x.SortDirection == SortDirection.Descending ? PagedRequest.OrderDescDirection :  PagedRequest.OrderAscDirection);
             }
 
             FilterOperator[]? filters = null;
@@ -106,7 +102,6 @@
             {
                 filters = request.Filters.Select(x => new Melodee.Common.Filtering.FilterOperatorInfo(x.PropertyName, SafeParser.ToEnum<Melodee.Common.Filtering.FilterOperator>(x.Operator.ToString()), x.Value)).ToArray();
             }
-
             var result = await SettingService.ListAsync(new PagedRequest
             {
                 FilterBy = filters,
@@ -122,8 +117,7 @@
         }
         finally
         {
-            _isLoading = false;
-            StateHasChanged();
+            MainLayoutProxyService.ToggleSpinnerVisible();
         }
         return new GridDataProviderResult<Setting>();
     }

@@ -96,3 +96,13 @@ textarea.form-control.invalid {
   border-radius: 50%;
 }
 
+.grid-container img.cover-image {
+  height: 35px;
+  width: auto;
+}
+
+tbody .cover-image-column {
+  padding-left: 18px;
+  display: inline-block;
+  width: 100%;
+}

@@ -26,10 +26,12 @@ public record AlbumCard
     public required AlbumStatus AlbumStatus { get; init; }
 
     public string? Duration { get; init; }
+    
+    public required string MelodeeDataFileName { get; init; }
 
     public byte[]? ImageBytes { get; init; }
-
-    public required string Directory { get; init; }
+    
+    public string? ImageBase64 => ImageBytes == null ? null : $"data:image/jpeg;base64,{ Convert.ToBase64String(ImageBytes)}";
 
     public required DateTimeOffset Created { get; init; }
 
