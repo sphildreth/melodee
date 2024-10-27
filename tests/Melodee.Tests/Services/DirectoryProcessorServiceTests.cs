@@ -12,7 +12,7 @@ namespace Melodee.Tests.Services;
 
 public class DirectoryProcessorServiceTests : ServiceTestBase
 {
-    private DirectoryProcessorService CreateDirectoryProcessorService(AlbumValidator validator, IMelodeeConfiguration config)
+    private DirectoryProcessorService CreateDirectoryProcessorService()
     =>  new DirectoryProcessorService(
         Log.Logger,
         CacheManager,
@@ -47,9 +47,9 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewPluginsConfiguration();
-            var validator = new AlbumValidator(config);
-            var processor = CreateDirectoryProcessorService(validator, config);
+            var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync();
+            processor.SetConfiguration(config);
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -75,9 +75,9 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewPluginsConfiguration();
-            var validator = new AlbumValidator(config);
-            var processor = CreateDirectoryProcessorService(validator, config);
+            var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync();
+            processor.SetConfiguration(config);
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -103,9 +103,9 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewPluginsConfiguration();
-            var validator = new AlbumValidator(config);
-            var processor = CreateDirectoryProcessorService(validator, config);
+            var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync();
+            processor.SetConfiguration(config);
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -135,9 +135,9 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
                 file.Delete();
             }
             var config = TestsBase.NewPluginsConfiguration();
-            var validator = new AlbumValidator(config);
-            var processor = CreateDirectoryProcessorService(validator, config);
+            var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync();
+            processor.SetConfiguration(config);
             var allAlbums = await processor.AllAlbumsForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
             Assert.NotNull(allAlbums);
             Assert.True(allAlbums.IsSuccess);   

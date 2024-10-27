@@ -63,6 +63,11 @@ public sealed class DirectoryProcessorService(
     
     private FileSystemDirectoryInfo DirectoryInboundFileSystemDirectoryInfo => DirectoryInboundInfo.ToDirectorySystemInfo();
 
+    /// <summary>
+    /// Used for Unit testing.
+    /// </summary>
+    /// <param name="configuration"></param>
+    public void SetConfiguration(IMelodeeConfiguration configuration) => _configuration = configuration;
 
     public async Task InitializeAsync(CancellationToken token = default)
     {
