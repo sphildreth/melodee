@@ -1,16 +1,38 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Plugins.Discovery.Albums;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
+using Melodee.Services.Scanning;
 using Serilog;
 
-namespace Melodee.Tests.Plugins.Processors;
+namespace Melodee.Tests.Services;
 
-public class DirectoryProcessorTests : TestsBase
+public class DirectoryProcessorServiceTests : ServiceTestBase
 {
+    private DirectoryProcessorService CreateDirectoryProcessorService(AlbumValidator validator, IMelodeeConfiguration config)
+    =>  new DirectoryProcessorService(
+        Log.Logger,
+        CacheManager,
+        MockFactory(),
+        GetSettingService(),
+        Serializer,
+        new MediaEditService(
+            Log.Logger,
+            CacheManager,
+            MockFactory(),
+            GetSettingService(),
+            new AlbumDiscoveryService(
+                Log.Logger,
+                CacheManager,
+                MockFactory(),
+                GetSettingService(),
+                Serializer),
+            Serializer)
+    );
+    
     [Fact]
     public async Task ValidateDirectoryGetProcessedIsSuccess()
     {
@@ -26,16 +48,8 @@ public class DirectoryProcessorTests : TestsBase
         {
             var config = TestsBase.NewPluginsConfiguration();
             var validator = new AlbumValidator(config);
-            var processor = new DirectoryProcessor(
-                new PreDiscoveryScript(config), 
-                new NullScript(config), 
-                validator, 
-                new AlbumEditProcessor(config, 
-                    new AlbumsDiscoverer(validator, config, Serializer), 
-                    new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config),
-                    validator),
-                config,
-                Serializer);
+            var processor = CreateDirectoryProcessorService(validator, config);
+            await processor.InitializeAsync();
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -62,14 +76,8 @@ public class DirectoryProcessorTests : TestsBase
         {
             var config = TestsBase.NewPluginsConfiguration();
             var validator = new AlbumValidator(config);
-            var processor = new DirectoryProcessor(
-                new PreDiscoveryScript(config),
-                new NullScript(config),
-                validator,
-                new AlbumEditProcessor(config,
-                    new AlbumsDiscoverer(validator, config, Serializer),
-                    new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config),
-                    validator), config,Serializer);  
+            var processor = CreateDirectoryProcessorService(validator, config);
+            await processor.InitializeAsync();
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -96,14 +104,8 @@ public class DirectoryProcessorTests : TestsBase
         {
             var config = TestsBase.NewPluginsConfiguration();
             var validator = new AlbumValidator(config);
-            var processor = new DirectoryProcessor(
-                new PreDiscoveryScript(config),
-                new NullScript(config),
-                validator,
-                new AlbumEditProcessor(config,
-                    new AlbumsDiscoverer(validator, config, Serializer),
-                    new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config),
-                    validator), config, Serializer);  
+            var processor = CreateDirectoryProcessorService(validator, config);
+            await processor.InitializeAsync();
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -134,15 +136,8 @@ public class DirectoryProcessorTests : TestsBase
             }
             var config = TestsBase.NewPluginsConfiguration();
             var validator = new AlbumValidator(config);
-            var processor = new DirectoryProcessor(
-                new PreDiscoveryScript(config),
-                new NullScript(config),
-                validator,
-                new AlbumEditProcessor(config,
-                    new AlbumsDiscoverer(validator, config, Serializer),
-                    new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config),
-                    validator), config, Serializer);
-
+            var processor = CreateDirectoryProcessorService(validator, config);
+            await processor.InitializeAsync();
             var allAlbums = await processor.AllAlbumsForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
             Assert.NotNull(allAlbums);
             Assert.True(allAlbums.IsSuccess);   

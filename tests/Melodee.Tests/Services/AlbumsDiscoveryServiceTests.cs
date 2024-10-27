@@ -1,12 +1,10 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Serialization;
-using Melodee.Plugins.Discovery.Albums;
-using Melodee.Plugins.Validation;
+using Melodee.Services.Scanning;
 
-namespace Melodee.Tests.Plugins.Discovery;
+namespace Melodee.Tests.Services;
 
-public class AlbumsDiscovererTests : TestsBase
+public class AlbumDiscoveryServiceTests : ServiceTestBase
 {
     [Fact]
     public async Task ValidAlbumGridResults()
@@ -15,7 +13,13 @@ public class AlbumsDiscovererTests : TestsBase
         var dir = new DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
-            var rd = new AlbumsDiscoverer(new AlbumValidator(TestsBase.NewPluginsConfiguration()), TestsBase.NewPluginsConfiguration(), Serializer);
+            var rd = new AlbumDiscoveryService(
+                Logger,
+                CacheManager,
+                MockFactory(),
+                GetSettingService(),
+                Serializer);
+            await rd.InitializeAsync();
             var AlbumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/home/steven/incoming/melodee_test/staging",

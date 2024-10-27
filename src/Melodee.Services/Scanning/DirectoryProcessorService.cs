@@ -1,8 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using ATL;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -14,10 +12,12 @@ using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.Conversion.Media;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Song;
+using Melodee.Plugins.Processor;
 using Melodee.Plugins.Processor.Models;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
-using Microsoft.Win32.SafeHandles;
+using Melodee.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -25,57 +25,51 @@ using SixLabors.ImageSharp;
 using SmartFormat;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
-namespace Melodee.Plugins.Processor;
+namespace Melodee.Services.Scanning;
 
 /// <summary>
 ///     Take a given directory and process all the directories in it.
 /// </summary>
-public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
+public sealed class DirectoryProcessorService(
+    ILogger logger,
+    ICacheManager cacheManager,
+    IDbContextFactory<MelodeeDbContext> contextFactory,
+    SettingService settingService,
+    ISerializer serializer,
+    MediaEditService mediaEditService)
+    : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private readonly IMelodeeConfiguration _configuration;
-    private readonly IEnumerable<IConversionPlugin> _conversionPlugins;
-    private readonly IEnumerable<IDirectoryPlugin> _directoryPlugins;
+    private bool _initialized;
+    private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+    private IEnumerable<IConversionPlugin> _conversionPlugins = [];
+    private IEnumerable<IDirectoryPlugin> _directoryPlugins= [];
 
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-
-    private readonly IScriptPlugin _postDiscoveryScript;
-    private readonly IScriptPlugin _preDiscoveryScript;
-    private readonly IAlbumValidator _albumValidator;
-    private readonly IAlbumEditProcessor _albumEditProcessor;
-    private readonly IEnumerable<ISongPlugin> _songPlugins;
+    private IScriptPlugin _preDiscoveryScript = new NullScript();
+    private IScriptPlugin _postDiscoveryScript = new NullScript();
+    private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
+    
+    private  IEnumerable<ISongPlugin> _songPlugins = [];
     private bool _stopProcessingTriggered;
 
     private string DirectoryInbound => SafeParser.ToString(_configuration.Configuration[SettingRegistry.DirectoryInbound]);
+    
     private string DirectoryStaging => SafeParser.ToString(_configuration.Configuration[SettingRegistry.DirectoryStaging]);
+    
     private DirectoryInfo DirectoryInboundInfo => new DirectoryInfo(DirectoryInbound);
+    
     private DirectoryInfo DirectoryStagingInfo => new DirectoryInfo(DirectoryStaging);
+    
     private FileSystemDirectoryInfo DirectoryStagingFileSystemDirectoryInfo => DirectoryStagingInfo.ToDirectorySystemInfo();
     
     private FileSystemDirectoryInfo DirectoryInboundFileSystemDirectoryInfo => DirectoryInboundInfo.ToDirectorySystemInfo();
-    private string DirectoryLibrary => SafeParser.ToString(_configuration.Configuration[SettingRegistry.DirectoryLibrary]);
-    
-    
-    public DirectoryProcessor(
-        IScriptPlugin preDiscoveryScript,
-        IScriptPlugin postDiscoveryScript,
-        IAlbumValidator albumValidator,
-        IAlbumEditProcessor albumEditProcessor,
-        IMelodeeConfiguration configuration,
-        ISerializer serializer)
+
+
+    public async Task InitializeAsync(CancellationToken token = default)
     {
-        _configuration = configuration;
-
-        _preDiscoveryScript = preDiscoveryScript;
-        _postDiscoveryScript = postDiscoveryScript;
-        _albumValidator = albumValidator;
-        _albumEditProcessor = albumEditProcessor;
-
+        _configuration = await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         _songPlugins = new[]
         {
-            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), configuration)
+            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
         };
 
         _conversionPlugins = new IConversionPlugin[]
@@ -84,25 +78,40 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
             new MediaConvertor(_configuration)
         };
 
+        _albumValidator = new AlbumValidator(_configuration);
+        
         _directoryPlugins = new IDirectoryPlugin[]
         {
             new CueSheet(_songPlugins, _configuration),
-            new SimpleFileVerification(_songPlugins, albumValidator, _configuration),
-            new M3UPlaylist(_songPlugins, albumValidator, _configuration),
+            new SimpleFileVerification(_songPlugins, _albumValidator, _configuration),
+            new M3UPlaylist(_songPlugins, _albumValidator, _configuration),
             new Nfo(_configuration)
         };
+        var preDiscoveryScript = _configuration.GetValue<string>(SettingRegistry.ScriptingPreDiscoveryScript).Nullify();
+        if (preDiscoveryScript != null)
+        {
+            _preDiscoveryScript = new PreDiscoveryScript(_configuration);
+        }
+        var postDiscoveryScript = _configuration.GetValue<string>(SettingRegistry.ScriptingPostDiscoveryScript).Nullify();
+        if (postDiscoveryScript != null)
+        {
+            _postDiscoveryScript = new PostDiscoveryScript(_configuration);
+        }        
+        _initialized = true;
     }
 
-    public string Id => "9BF95E5A-2EB5-4E28-820A-6F3B857356BD";
-
-    public string DisplayName => nameof(DirectoryProcessor);
-
-    public bool IsEnabled { get; set; } = true;
-
-    public int SortOrder { get; } = 0;
+    private void CheckInitialized()
+    {
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("Albums discovery service is not initialized.");
+        }
+    }
 
     public async Task<OperationResult<DirectoryProcessorResult>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
+        CheckInitialized();
+            
         var processingMessages = new List<string>();
         var processingErrors = new List<Exception>();
         var numberOfAlbumJsonFilesProcessed = 0;
@@ -148,7 +157,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
         // Run PreDiscovery script
         if (!SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ScriptingEnabled]) && _preDiscoveryScript.IsEnabled)
         {
-            LogAndRaiseEvent(LogEventLevel.Debug, "Executing PreDiscoveryScript [{0}]", null, _preDiscoveryScript.DisplayName);
+            LogAndRaiseEvent(LogEventLevel.Debug, "Executing _preDiscoveryScript [{0}]", null, _preDiscoveryScript.DisplayName);
             var preDiscoveryScriptResult = new OperationResult<bool>
             {
                 Data = false
@@ -299,7 +308,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             }
                             else
                             {
-                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(albumDataName, cancellationToken));
+                                var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(albumDataName, cancellationToken));
                                 if (existingAlbum != null)
                                 {
                                     mergedAlbum = mergedAlbum.Merge(existingAlbum);
@@ -309,7 +318,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
                         try
                         {
-                            serialized = JsonSerializer.Serialize(mergedAlbum);
+                            serialized = serializer.Serialize(mergedAlbum);
                         }
                         catch (Exception e)
                         {
@@ -342,7 +351,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
                     try
                     {
-                        var album = JsonSerializer.Deserialize<Album>(await File.ReadAllTextAsync(albumJsonFile.FullName, cancellationToken));
+                        var album = serializer.Deserialize<Album>(await File.ReadAllTextAsync(albumJsonFile.FullName, cancellationToken));
                         if (album == null)
                         {
                             return new OperationResult<DirectoryProcessorResult>($"Invalid Album json file [{albumJsonFile.FullName}]")
@@ -465,9 +474,9 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
 
                         album.Directory = albumDirInfo.ToDirectorySystemInfo();
                         album.Status = _albumValidator.ValidateAlbum(album).Data.AlbumStatus;
-                        var serialized = JsonSerializer.Serialize(album, _jsonSerializerOptions);
+                        var serialized = serializer.Serialize(album);
                         var jsonName = album.ToMelodeeJsonName(true);
-                        if (jsonName != null)
+                        if (jsonName.Nullify() != null)
                         {
                             await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
                             File.Delete(albumKvp.Value);
@@ -475,7 +484,7 @@ public sealed class DirectoryProcessor : IDirectoryProcessorPlugin
                             {
                                 using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
                                 {
-                                    await _albumEditProcessor.DoMagic(album.UniqueId, cancellationToken);
+                                    await mediaEditService.DoMagic(album.UniqueId, cancellationToken);
                                 }
                             }
                         }

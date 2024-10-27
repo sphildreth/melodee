@@ -4,5 +4,7 @@ public interface ISerializer
 {
     string? Serialize(object o);
 
+    TOut? Deserialize<TOut>(byte[]? s);
+    
     TOut? Deserialize<TOut>(string? s);
 }

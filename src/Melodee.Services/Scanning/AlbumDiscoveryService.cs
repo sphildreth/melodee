@@ -1,63 +1,46 @@
-using System.Text.Json;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Cards;
-
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
-using Melodee.Plugins.MetaData.Directory;
-using Melodee.Plugins.MetaData.Song;
-using Melodee.Plugins.Processor;
-using Melodee.Plugins.Validation;
+using Melodee.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 
-namespace Melodee.Plugins.Discovery.Albums;
+namespace Melodee.Services.Scanning;
 
-public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
+/// <summary>
+/// Service that returns Albums found from scanning media.
+/// </summary>
+public sealed class AlbumDiscoveryService(
+    ILogger logger,
+    ICacheManager cacheManager,
+    IDbContextFactory<MelodeeDbContext> contextFactory,
+    SettingService settingService,
+    ISerializer serializer)
+    : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private readonly IAlbumValidator _albumValidator;
-    private readonly Dictionary<string, object?> _configuration;
+    private bool _initialized;
+    private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
 
-    private readonly IEnumerable<IDirectoryPlugin> _enabledAlbumPlugins;
-    private readonly IDictionary<FileSystemDirectoryInfo, IEnumerable<Album>> _albumCache = new Dictionary<FileSystemDirectoryInfo, IEnumerable<Album>>();
-
-    private readonly IEnumerable<ISongPlugin> _songPlugins;
-
-    public AlbumsDiscoverer(IAlbumValidator albumValidator, IMelodeeConfiguration configuration, ISerializer serializer)
+    public async Task InitializeAsync(CancellationToken token = default)
     {
-        _albumValidator = albumValidator;
-        _configuration = configuration.Configuration;
-        var config = configuration;
-
-        _songPlugins = new ISongPlugin[]
-        {
-            new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
-        };
-        _enabledAlbumPlugins = new IDirectoryPlugin[]
-        {
-            new CueSheet(_songPlugins, config),
-            new Nfo(config),
-            new M3UPlaylist(_songPlugins, _albumValidator, config),
-            new SimpleFileVerification(_songPlugins, _albumValidator, config)
-        };
+        _configuration = await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        _initialized = true;
     }
 
-    public string DisplayName => nameof(AlbumsDiscoverer);
-
-    public string Id => "3528BA3F-4130-4913-9C9F-C7F0F8FF2B4D";
-
-    public bool IsEnabled { get; set; } = true;
-
-    public int SortOrder => 0;
-
-    public void ClearCache()
+    private void CheckInitialized()
     {
-        _albumCache.Clear();
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("Albums discovery service is not initialized.");
+        }
     }
 
     public async Task<Album> AlbumByUniqueIdAsync(
@@ -65,6 +48,7 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
         long uniqueId,
         CancellationToken cancellationToken = default)
     {
+        CheckInitialized();
         var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data.FirstOrDefault(x => x.UniqueId == uniqueId);
         if (result == null)
         {
@@ -84,6 +68,7 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
+        CheckInitialized();
         var albums = new List<Album>();
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
 
@@ -122,10 +107,10 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
         {
             albums = albums.Where(x =>
                 (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)) ||
-                (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)))?.ToList();
+                (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase))).ToList();
         }
 
-        if (pagedRequest.AlbumResultFilter != AlbumResultFilter.All && albums != null && albums.Count != 0)
+        if (pagedRequest.AlbumResultFilter != AlbumResultFilter.All && albums.Count != 0)
         {
             switch (pagedRequest.AlbumResultFilter)
             {
@@ -142,7 +127,7 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
                     break;
 
                 case AlbumResultFilter.LessThanConfiguredSongs:
-                    var filterLessThanSongs = SafeParser.ToNumber<int>(_configuration[SettingRegistry.FilteringLessThanSongCount]);
+                    var filterLessThanSongs = SafeParser.ToNumber<int>(_configuration.Configuration[SettingRegistry.FilteringLessThanSongCount]);
                     albums = albums.Where(x => x.Songs?.Count() < filterLessThanSongs || x.SongTotalValue() < filterLessThanSongs).ToList();
                     break;
 
@@ -167,13 +152,13 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
                     break;
 
                 case AlbumResultFilter.LessThanConfiguredDuration:
-                    var filterLessDuration = SafeParser.ToNumber<int>(_configuration[SettingRegistry.FilteringLessThanDuration]);
+                    var filterLessDuration = SafeParser.ToNumber<int>(_configuration.Configuration[SettingRegistry.FilteringLessThanDuration]);
                     albums = albums.Where(x => x.TotalDuration() < filterLessDuration).ToList();
                     break;
             }
         }
 
-        var albumsCount = albums?.Count ?? 0;
+        var albumsCount = albums.Count;
         return new PagedResult<Album>
         {
             TotalCount = albumsCount,
@@ -190,6 +175,7 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
+        CheckInitialized();
         var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
         var data = albumsForDirectoryInfo.Data.Select(async x => new AlbumCard
         {
@@ -198,7 +184,7 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
             Duration = x.Duration(),
             Directory = x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(),
             ImageBytes = await x.CoverImageBytesAsync(),
-            IsValid = x.IsValid(_configuration),
+            IsValid = x.IsValid(_configuration.Configuration),
             Title = x.AlbumTitle(),
             Year = x.AlbumYear(),
             SongCount = x.SongTotalValue(),
@@ -217,47 +203,44 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
 
     private async Task<OperationResult<IEnumerable<Album>>> AllMelodeeAlbumDataFilesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
+        CheckInitialized();
+        
         var albums = new List<Album>();
         var errors = new List<Exception>();
         var messages = new List<string>();
 
         try
         {
-            if (!_albumCache.ContainsKey(fileSystemDirectoryInfo))
+            var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+            if (dirInfo.Exists)
             {
-                var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-                if (dirInfo.Exists)
+                using (Operation.At(LogEventLevel.Debug).Time("AllMelodeeAlbumDataFilesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
                 {
-                    using (Operation.At(LogEventLevel.Debug).Time("AllMelodeeAlbumDataFilesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+                    foreach (var jsonFile in dirInfo.EnumerateFiles(Album.JsonFileName, SearchOption.AllDirectories))
                     {
-                        foreach (var jsonFile in dirInfo.EnumerateFiles(Album.JsonFileName, SearchOption.AllDirectories))
+                        if (cancellationToken.IsCancellationRequested)
                         {
-                            if (cancellationToken.IsCancellationRequested)
-                            {
-                                break;
-                            }
+                            break;
+                        }
 
-                            try
+                        try
+                        {
+                            var r = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
+                            if (r != null)
                             {
-                                var r = JsonSerializer.Deserialize<Album>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
-                                if (r != null)
-                                {
-                                    r.Directory = jsonFile.Directory?.ToDirectorySystemInfo();
-                                    r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
-                                    albums.Add(r);
-                                }
+                                r.Directory = jsonFile.Directory?.ToDirectorySystemInfo();
+                                r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
+                                albums.Add(r);
                             }
-                            catch (Exception e)
-                            {
-                                Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
-                                messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
-                                jsonFile.Delete();
-                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
+                            messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
+                            jsonFile.Delete();
                         }
                     }
                 }
-
-                _albumCache.Add(fileSystemDirectoryInfo, albums);
             }
         }
         catch (Exception e)
@@ -269,7 +252,7 @@ public sealed class AlbumsDiscoverer : IAlbumsDiscoverer
         return new OperationResult<IEnumerable<Album>>(messages)
         {
             Errors = errors,
-            Data = _albumCache[fileSystemDirectoryInfo]
+            Data = albums.ToArray()
         };
     }
 }

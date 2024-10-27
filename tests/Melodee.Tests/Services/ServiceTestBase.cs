@@ -44,11 +44,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         }
     }
 
-    private ILogger Logger { get; }
+    protected ILogger Logger { get; }
 
-    private Serializer Serializer { get; set; }
+    protected Serializer Serializer { get; set; }
 
-    private ICacheManager CacheManager { get; }
+    protected ICacheManager CacheManager { get; }
 
     public async ValueTask DisposeAsync()
     {

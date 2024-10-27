@@ -7,10 +7,8 @@ namespace Melodee.Plugins.Scripting;
 /// <summary>
 ///     Do nothing script used when no script is desired or configured.
 /// </summary>
-public sealed class NullScript(IMelodeeConfiguration configuration) : IScriptPlugin
+public sealed class NullScript() : IScriptPlugin
 {
-    private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
-
     public string Id => "1C4F80FF-C226-4C5B-A53A-B12331534725";
 
     public string DisplayName => nameof(NullScript);

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -7,14 +6,13 @@ using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
-using Melodee.Plugins;
-using Melodee.Plugins.Discovery.Albums;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
+using Melodee.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,23 +39,24 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             .AddJsonFile("appsettings.json")
             .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
             .Build();
-        
+
         Log.Logger = new LoggerConfiguration()
             .ReadFrom.Configuration(configuration)
             .CreateLogger();
 
         var serializer = new Serializer(Log.Logger);
         var cacheManager = new MemoryCacheManager(Log.Logger, TimeSpan.FromDays(1), serializer);
-        
+
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
         {
-            var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
+            var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
+            var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var grid = new Grid()
@@ -73,16 +72,25 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                 new Panel(grid)
                     .Header("Configuration"));
 
-            var validator = new AlbumValidator(config);
-            var processor = new DirectoryProcessor(
-                new NullScript(config),
-                new NullScript(config),
-                validator,
-                new AlbumEditProcessor(config,
-                    new AlbumsDiscoverer(validator, config, serializer),
-                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), config),
-                    validator),
-                config, serializer);
+            var processor = new DirectoryProcessorService(
+                Log.Logger,
+                cacheManager,
+                dbFactory,
+                settingService,
+                serializer,
+                new MediaEditService(
+                    Log.Logger,
+                    cacheManager,
+                    dbFactory,
+                    settingService,
+                    new AlbumDiscoveryService(
+                        Log.Logger,
+                        cacheManager,
+                        dbFactory,
+                        settingService,
+                        serializer),
+                    serializer)
+            );
             var dirInfo = new DirectoryInfo(settings.Inbound);
             if (!dirInfo.Exists)
             {
@@ -105,7 +113,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             if (settings.Verbose)
             {
                 AnsiConsole.Write(
-                    new Panel(new JsonText(JsonSerializer.Serialize(result)))
+                    new Panel(new JsonText(serializer.Serialize(result) ?? string.Empty))
                         .Header("Process Result")
                         .Collapse()
                         .RoundedBorder()
@@ -120,5 +128,5 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
     private static string YesNo(bool value)
     {
         return value ? "Yes" : "No";
-    }    
+    }
 }
