@@ -52,14 +52,7 @@ builder.Services
             opt.GetRequiredService<ISerializer>()))
     .AddScoped<LocalStorageService>()
     .AddScoped<SettingService>()
-    .AddScoped<UserService>()
-    .AddScoped<IMelodeeConfiguration>(opt =>
-    {
-        var settingService = opt.GetRequiredService<SettingService>();
-        return settingService.GetMelodeeConfigurationAsync().GetAwaiter().GetResult();
-    })
-    .AddScoped<IAlbumValidator, AlbumValidator>()
-    .AddScoped<IAlbumsDiscoverer, AlbumsDiscoverer>();
+    .AddScoped<UserService>();
 
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();

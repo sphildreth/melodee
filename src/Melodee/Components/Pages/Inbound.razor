@@ -3,87 +3,87 @@
 @using Melodee.Common.Models
 @using Melodee.Common.Models.Cards
 @using Melodee.Plugins.Discovery.Albums
-
-@inject Serilog.ILogger Logger
-@inject SettingService SettingService
-@inject IAlbumsDiscoverer AlbumsDiscoverer
-
-<PageTitle>Inbound</PageTitle>
-
-<div class="inbound-container">
-    <Ribbon OnClick="OnRibbonItemClick">
-        <RibbonTab Title="@_libraryFolderName">
-            <Content>
-                <RibbonItemGroup Text="Actions">
-                    <RibbonItem Name="RefreshDirectory" IconColor="IconColor.Primary" IconName="IconName.ArrowClockwise" IconSize="IconSize.x2">Refresh</RibbonItem>
-                    <RibbonItem Name="ScanDirectory" IconColor="IconColor.Primary" IconName="IconName.Recycle" IconSize="IconSize.x2">Scan</RibbonItem>
-                    <RibbonItem Name="ScanDirectory" IconColor="IconColor.Danger" IconName="IconName.Trash" IconSize="IconSize.x2">Purge</RibbonItem>
-                </RibbonItemGroup>
-            </Content>
-        </RibbonTab>
-    </Ribbon>
-
-    <div class="mt-2">
-        <Grid @ref="grid"
-              TItem="AlbumCard"
-              Class="table table-hover table-bordered table-striped"
-              DataProvider="AlbumDataProvider"
-              AllowFiltering="true"
-              Responsive="true">
-
-            <GridColumns>
-                <GridColumn TItem="AlbumCard" HeaderText="Id" PropertyName="Cover">
-                    Image goes here
-                </GridColumn>
-                <GridColumn TItem="AlbumCard" HeaderText="Employee Name" PropertyName="Artist">
-                    @context.Artist
-                </GridColumn>
-                <GridColumn TItem="AlbumCard" HeaderText="Designation" PropertyName="Year">
-                    @context.Year
-                </GridColumn>
-                <GridColumn TItem="AlbumCard" HeaderText="DOJ" PropertyName="Title">
-                    @context.Title
-                </GridColumn>
-                <GridColumn TItem="AlbumCard" HeaderText="Active" PropertyName="Song #">
-                    @context.SongCount
-                </GridColumn>
-            </GridColumns>
-
-        </Grid>
-    </div>
-</div>
-
-
-@code {
-
-    string? selectedRibbonItem;
-    string _libraryFolderName = "Loading...";
-    private Grid<AlbumCard> grid = default!;
-    private short _defaultPageSize;
-
-    private void OnRibbonItemClick(RibbonItemEventArgs args)
-    {
-        selectedRibbonItem = args.Name;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        _libraryFolderName = (await SettingService.GetValueAsync<string>(SettingRegistry.DirectoryInbound))!.Data!;
-        _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10;
-        StateHasChanged();
-    }
-
-    private async Task<GridDataProviderResult<AlbumCard>> AlbumDataProvider(GridDataProviderRequest<AlbumCard> request)
-    {
-        var result = await AlbumsDiscoverer.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
-        {
-            Path = _libraryFolderName,
-            Name = _libraryFolderName
-        }, new PagedRequest
-        {
-            PageSize = _defaultPageSize
-        });
-        return new GridDataProviderResult<AlbumCard> { Data = result.Data, TotalCount = result.TotalCount };
-    }
-}
+@* *@
+@* @inject Serilog.ILogger Logger *@
+@* @inject SettingService SettingService *@
+@* @inject IAlbumsDiscoverer AlbumsDiscoverer *@
+@* *@
+@* <PageTitle>Inbound</PageTitle> *@
+@* *@
+@* <div class="inbound-container"> *@
+@*     <Ribbon OnClick="OnRibbonItemClick"> *@
+@*         <RibbonTab Title="@_libraryFolderName"> *@
+@*             <Content> *@
+@*                 <RibbonItemGroup Text="Actions"> *@
+@*                     <RibbonItem Name="RefreshDirectory" IconColor="IconColor.Primary" IconName="IconName.ArrowClockwise" IconSize="IconSize.x2">Refresh</RibbonItem> *@
+@*                     <RibbonItem Name="ScanDirectory" IconColor="IconColor.Primary" IconName="IconName.Recycle" IconSize="IconSize.x2">Scan</RibbonItem> *@
+@*                     <RibbonItem Name="ScanDirectory" IconColor="IconColor.Danger" IconName="IconName.Trash" IconSize="IconSize.x2">Purge</RibbonItem> *@
+@*                 </RibbonItemGroup> *@
+@*             </Content> *@
+@*         </RibbonTab> *@
+@*     </Ribbon> *@
+@* *@
+@*     <div class="mt-2"> *@
+@*         <Grid @ref="grid" *@
+@*               TItem="AlbumCard" *@
+@*               Class="table table-hover table-bordered table-striped" *@
+@*               DataProvider="AlbumDataProvider" *@
+@*               AllowFiltering="true" *@
+@*               Responsive="true"> *@
+@* *@
+@*             <GridColumns> *@
+@*                 <GridColumn TItem="AlbumCard" HeaderText="Id" PropertyName="Cover"> *@
+@*                     Image goes here *@
+@*                 </GridColumn> *@
+@*                 <GridColumn TItem="AlbumCard" HeaderText="Employee Name" PropertyName="Artist"> *@
+@*                     @context.Artist *@
+@*                 </GridColumn> *@
+@*                 <GridColumn TItem="AlbumCard" HeaderText="Designation" PropertyName="Year"> *@
+@*                     @context.Year *@
+@*                 </GridColumn> *@
+@*                 <GridColumn TItem="AlbumCard" HeaderText="DOJ" PropertyName="Title"> *@
+@*                     @context.Title *@
+@*                 </GridColumn> *@
+@*                 <GridColumn TItem="AlbumCard" HeaderText="Active" PropertyName="Song #"> *@
+@*                     @context.SongCount *@
+@*                 </GridColumn> *@
+@*             </GridColumns> *@
+@* *@
+@*         </Grid> *@
+@*     </div> *@
+@* </div> *@
+@* *@
+@* *@
+@* @code { *@
+@* *@
+@*     string? selectedRibbonItem; *@
+@*     string _libraryFolderName = "Loading..."; *@
+@*     private Grid<AlbumCard> grid = default!; *@
+@*     private short _defaultPageSize; *@
+@* *@
+@*     private void OnRibbonItemClick(RibbonItemEventArgs args) *@
+@*     { *@
+@*         selectedRibbonItem = args.Name; *@
+@*     } *@
+@* *@
+@*     protected override async Task OnAfterRenderAsync(bool firstRender) *@
+@*     { *@
+@*         _libraryFolderName = (await SettingService.GetValueAsync<string>(SettingRegistry.DirectoryInbound))!.Data!; *@
+@*         _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10; *@
+@*         StateHasChanged(); *@
+@*     } *@
+@* *@
+@*     private async Task<GridDataProviderResult<AlbumCard>> AlbumDataProvider(GridDataProviderRequest<AlbumCard> request) *@
+@*     { *@
+@*         var result = await AlbumsDiscoverer.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo *@
+@*         { *@
+@*             Path = _libraryFolderName, *@
+@*             Name = _libraryFolderName *@
+@*         }, new PagedRequest *@
+@*         { *@
+@*             PageSize = _defaultPageSize *@
+@*         }); *@
+@*         return new GridDataProviderResult<AlbumCard> { Data = result.Data, TotalCount = result.TotalCount }; *@
+@*     } *@
+@* } *@
 
