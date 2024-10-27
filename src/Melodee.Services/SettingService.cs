@@ -1,16 +1,16 @@
 using Ardalis.GuardClauses;
+using Dapper;
 using Melodee.Common.Configuration;
-using Melodee.Common.Data.Models;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Services.Interfaces;
-using MelodeeModels=Melodee.Common.Models;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using SmartFormat;
-using System.Linq.Dynamic.Core;
-using Dapper;
+using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Services;
 
@@ -39,34 +39,39 @@ public sealed class SettingService(
 
     public async Task<MelodeeModels.PagedResult<Setting>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        int settingsCount;
+        int settingsCount = 0;
         Setting[] settings = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
+            const string tableName = "Settings";
             var filter = pagedRequest.FilterByValue();
-            
-            var countSql = $"SELECT COUNT(1) FROM \"Settings\" WHERE {filter};";
 
-            var dbConn = scopedContext.Database.GetDbConnection();
-            
-            settingsCount = await dbConn
-                .ExecuteScalarAsync<int>(countSql, cancellationToken)
-                .ConfigureAwait(false);
-            
-            if (!pagedRequest.IsTotalCountOnlyRequest)
+            try
             {
-                var listSql = $"SELECT * FROM \"Settings\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-
-                if (dbConn is Microsoft.Data.Sqlite.SqliteConnection)
+                var countSql = $"SELECT COUNT(*) FROM \"{tableName}\" WHERE {filter};";
+                var dbConn = scopedContext.Database.GetDbConnection();
+                settingsCount = await dbConn
+                    .ExecuteScalarAsync<int>(countSql, cancellationToken)
+                    .ConfigureAwait(false);
+                if (!pagedRequest.IsTotalCountOnlyRequest)
                 {
-                    listSql = $"SELECT * FROM \"Settings\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                    var listSql = $"SELECT * FROM \"{tableName}\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                    if (dbConn is SqliteConnection)
+                    {
+                        listSql = $"SELECT * FROM \"{tableName}\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                    }
+
+                    settings = (await dbConn
+                        .QueryAsync<Setting>(listSql)
+                        .ConfigureAwait(false)).ToArray();
                 }
-                
-                settings = (await dbConn
-                    .QueryAsync<Setting>(listSql)
-                    .ConfigureAwait(false)).ToArray();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to get settings from database");
             }
         }
+
         return new MelodeeModels.PagedResult<Setting>
         {
             TotalCount = settingsCount,
@@ -126,15 +131,17 @@ public sealed class SettingService(
             Type = MelodeeModels.OperationResponseType.Error
         };
     }
-
+    
     public async Task<IMelodeeConfiguration> GetMelodeeConfigurationAsync(CancellationToken cancellationToken = default)
-        => new MelodeeConfiguration(await GetAllSettingsAsync(cancellationToken));
+    {
+        return new MelodeeConfiguration(await GetAllSettingsAsync(cancellationToken));
+    }
 
     public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Setting detailToUpdate, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
-        var result = false;
+        bool result;
         var validationResult = ValidateModel(detailToUpdate);
         if (!validationResult.IsSuccess)
         {
@@ -145,46 +152,44 @@ public sealed class SettingService(
             };
         }
 
-        if (detailToUpdate != null)
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            // Load the detail by DetailToUpdate.Id
+            var dbDetail = await scopedContext
+                .Settings
+                .FirstOrDefaultAsync(x => x.Id == detailToUpdate.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (dbDetail == null)
             {
-                // Load the detail by DetailToUpdate.Id
-                var dbDetail = await scopedContext
-                    .Settings
-                    .FirstOrDefaultAsync(x => x.Id == detailToUpdate.Id, cancellationToken)
-                    .ConfigureAwait(false);
-
-                if (dbDetail == null)
+                return new MelodeeModels.OperationResult<bool>
                 {
-                    return new MelodeeModels.OperationResult<bool>
-                    {
-                        Data = false,
-                        Type = MelodeeModels.OperationResponseType.NotFound
-                    };
-                }
+                    Data = false,
+                    Type = MelodeeModels.OperationResponseType.NotFound
+                };
+            }
 
-                // Update values and save to db
-                dbDetail.Category = detailToUpdate.Category;
-                dbDetail.Comment = detailToUpdate.Comment;
-                dbDetail.Description = detailToUpdate.Description;
-                dbDetail.IsLocked = detailToUpdate.IsLocked;
-                dbDetail.Key = detailToUpdate.Key;
-                dbDetail.Notes = detailToUpdate.Notes;
-                dbDetail.SortOrder = detailToUpdate.SortOrder;
-                dbDetail.Tags = detailToUpdate.Tags;
-                dbDetail.Value = detailToUpdate.Value;
+            // Update values and save to db
+            dbDetail.Category = detailToUpdate.Category;
+            dbDetail.Comment = detailToUpdate.Comment;
+            dbDetail.Description = detailToUpdate.Description;
+            dbDetail.IsLocked = detailToUpdate.IsLocked;
+            dbDetail.Key = detailToUpdate.Key;
+            dbDetail.Notes = detailToUpdate.Notes;
+            dbDetail.SortOrder = detailToUpdate.SortOrder;
+            dbDetail.Tags = detailToUpdate.Tags;
+            dbDetail.Value = detailToUpdate.Value;
 
-                dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
-                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
 
-                if (result)
-                {
-                    CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(dbDetail.Id));
-                }
+            if (result)
+            {
+                CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(dbDetail.Id));
             }
         }
+
 
         return new MelodeeModels.OperationResult<bool>
         {

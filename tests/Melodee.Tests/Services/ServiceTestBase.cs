@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
@@ -24,9 +25,14 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         Serializer = new Serializer(Logger);
         CacheManager = new FakeCacheManager(Logger, TimeSpan.FromDays(1), Serializer);
 
-        _dbConnection = new SqliteConnection("Filename=:memory:");
+        _dbConnection = new SqliteConnection("Filename=:memory:;Cache=Shared;");
         _dbConnection.Open();
 
+        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+        SqlMapper.AddTypeHandler(new GuidHandler());
+        SqlMapper.AddTypeHandler(new TimeSpanHandler());
+        SqlMapper.AddTypeHandler(new InstantHandler());     
+        
         _dbContextOptions = new DbContextOptionsBuilder<MelodeeDbContext>()
             .UseSqlite(_dbConnection, x => x.UseNodaTime())
             .Options;

@@ -12,11 +12,20 @@ public class User : DataModelBase
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string UserName { get; set; }
+
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    [Required]
+    
+    public required string UserNameNormalized { get; set; }
     
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     [DataType(DataType.EmailAddress)]
     public required string Email { get; set; }
+    
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]    
+    [Required]
+    public required string EmailNormalized { get; set; }
    
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]

@@ -19,7 +19,9 @@ public sealed class UserServiceTests : ServiceTestBase
             {
                 ApiKey = shouldContainApiKey,
                 UserName = "Test User",
+                UserNameNormalized = "Test User".ToUpperInvariant(),
                 Email = "testemail@local.lan",
+                EmailNormalized = "testemail@local.lan".ToUpperInvariant(),
                 PasswordHash = "hopefully_a_good_password".ToPasswordHash(),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             });

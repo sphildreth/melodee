@@ -12,6 +12,8 @@ namespace Melodee.Common.Configuration;
 /// <param name="Configuration">Initial configuration from database.</param>
 public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : IMelodeeConfiguration
 {
+    public T? GetValue<T>(string key) => GetSettingValue<T>(Configuration, key);
+    
     /// <summary>
     /// This return all known settings in the SettingsRegistry with the option to set up given values.
     /// </summary>
@@ -43,11 +45,6 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             try
             {
-                // var t = typeof(T);
-                // if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-                // {
-                //     return SafeParser.ChangeType<T>(setting.ToString().rep
-                // }
                 return SafeParser.ChangeType<T>(setting);
             }
             catch (Exception e)

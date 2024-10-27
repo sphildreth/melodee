@@ -77,7 +77,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
             PageSize = 1
         });
         AssertResultIsSuccessful(listResult);
-        Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
+        Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ConversionBitrate);
         Assert.Equal(1, listResult.TotalCount);
         Assert.Equal(1, listResult.TotalPages);
     }     

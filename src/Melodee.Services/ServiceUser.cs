@@ -22,7 +22,9 @@ public sealed class ServiceUser : User
         {
             CreatedAt = default,
             UserName = "ServiceUser",
+            UserNameNormalized = "ServiceUser".ToUpperInvariant(),
             Email = "serviceuser@local.lan",
+            EmailNormalized = "serviceuser@local.lan".ToUpperInvariant(),
             IsAdmin = true,
             PasswordHash = string.Empty
         };

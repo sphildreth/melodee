@@ -1,15 +1,15 @@
 using Ardalis.GuardClauses;
+using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
-using Melodee.Common.Models;
 using Melodee.Services.Interfaces;
-using MelodeeModels=Melodee.Common.Models;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using SmartFormat;
-using System.Linq.Dynamic.Core;
+using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Services;
 
@@ -26,30 +26,31 @@ public sealed class UserService(
     private const string CacheKeyDetailByEmailAddressKeyTemplate = "urn:user:emailaddress:{0}";
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
 
-    public async Task<MelodeeModels.PagedResult<User>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<User>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int usersCount;
         User[] users = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
+            const string tableName = "Users";
             var filter = pagedRequest.FilterByValue();
-            usersCount = await scopedContext
-                .Users
-                .Where(filter)
-                .AsNoTracking()
-                .CountAsync(cancellationToken)
+
+            var countSql = $"SELECT COUNT(*) FROM \"{tableName}\" WHERE {filter};";
+            var dbConn = scopedContext.Database.GetDbConnection();
+            usersCount = await dbConn
+                .ExecuteScalarAsync<int>(countSql, cancellationToken)
                 .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                users = await scopedContext
-                    .Users
-                    .Where(filter)
-                    .OrderBy(pagedRequest.OrderByValue())
-                    .Skip(pagedRequest.SkipValue)
-                    .Take(pagedRequest.TakeValue)
-                    .AsNoTracking()
-                    .ToArrayAsync(cancellationToken)
-                    .ConfigureAwait(false);
+                var listSql = $"SELECT * FROM \"{tableName}\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                if (dbConn is SqliteConnection)
+                {
+                    listSql = $"SELECT * FROM \"{tableName}\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                }
+
+                users = (await dbConn
+                    .QueryAsync<User>(listSql)
+                    .ConfigureAwait(false)).ToArray();
             }
         }
 
@@ -61,26 +62,26 @@ public sealed class UserService(
         };
     }
 
-    public async Task<OperationResult<bool>> DeleteAsync(User currentuser, Guid apiKey, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(User currentuser, Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         if (!currentuser.IsAdmin)
         {
-            return new OperationResult<bool>
+            return new MelodeeModels.OperationResult<bool>
             {
                 Data = false,
-                Type = OperationResponseType.Unauthorized
+                Type = MelodeeModels.OperationResponseType.Unauthorized
             };
         }
 
         var user = await GetByApiKeyAsync(currentuser, apiKey, cancellationToken).ConfigureAwait(false);
         if (user.Data == null || !user.IsSuccess)
         {
-            return new OperationResult<bool>
+            return new MelodeeModels.OperationResult<bool>
             {
                 Data = false,
-                Type = OperationResponseType.NotFound
+                Type = MelodeeModels.OperationResponseType.NotFound
             };
         }
 
@@ -90,14 +91,14 @@ public sealed class UserService(
                 .Where(x => x.Id == user.Data.Id)
                 .ExecuteDeleteAsync(cancellationToken)
                 .ConfigureAwait(false);
-            return new OperationResult<bool>
+            return new MelodeeModels.OperationResult<bool>
             {
                 Data = deletedResult > 0
             };
         }
     }
 
-    public async Task<OperationResult<User?>> GetByEmailAddressAsync(User currentUser, string emailAddress, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(User currentUser, string emailAddress, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
 
@@ -105,24 +106,33 @@ public sealed class UserService(
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                var userId = await scopedContext
-                    .Users
-                    .AsNoTracking()
-                    .Where(x => x.Email.ToUpper() == emailAddress.ToUpper())
-                    .Select(x => x.Id)
-                    .FirstOrDefaultAsync(cancellationToken)
-                    .ConfigureAwait(false);
-                return userId < 1
-                    ? new OperationResult<User?>
-                    {
-                        Data = null
-                    }
-                    : await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    var dbConn = scopedContext.Database.GetDbConnection();
+                    var userId = await dbConn
+                        .ExecuteScalarAsync<int>("SELECT \"Id\" FROM \"Users\" WHERE \"EmailNormalized\" = @Email;", new { Email = emailAddress.ToUpperInvariant() })
+                        .ConfigureAwait(false);
+                    return userId < 1
+                        ? new MelodeeModels.OperationResult<User?>
+                        {
+                            Data = null
+                        }
+                        : await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "Failed to get user by email address.");
+                }
+
+                return new MelodeeModels.OperationResult<User?>
+                {
+                    Data = null
+                };
             }
         }, cancellationToken);
     }
 
-    public Task<OperationResult<User?>> GetByApiKeyAsync(User currentUser, Guid apiKey, CancellationToken cancellationToken = default)
+    public Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(User currentUser, Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
@@ -142,7 +152,7 @@ public sealed class UserService(
         }, cancellationToken);
     }
 
-    public async Task<OperationResult<User?>> GetAsync(User currentUser, int id, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetAsync(User currentUser, int id, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
 
@@ -157,41 +167,41 @@ public sealed class UserService(
                     .ConfigureAwait(false);
             }
         }, cancellationToken);
-        return new OperationResult<User?>
+        return new MelodeeModels.OperationResult<User?>
         {
             Data = result
         };
     }
 
-    public async Task<OperationResult<User?>> LoginUserAsync(string emailAddress, string? password, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> LoginUserAsync(string emailAddress, string? password, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
 
         if (password.Nullify() == null)
         {
-            return new OperationResult<User?>
+            return new MelodeeModels.OperationResult<User?>
             {
                 Data = null,
-                Type = OperationResponseType.Unauthorized
+                Type = MelodeeModels.OperationResponseType.Unauthorized
             };
         }
 
         var user = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
         if (!user.IsSuccess)
         {
-            return new OperationResult<User?>
+            return new MelodeeModels.OperationResult<User?>
             {
                 Data = null,
-                Type = OperationResponseType.NotFound
+                Type = MelodeeModels.OperationResponseType.NotFound
             };
         }
 
         if (user.Data?.PasswordHash != password.ToPasswordHash())
         {
-            return new OperationResult<User?>
+            return new MelodeeModels.OperationResult<User?>
             {
                 Data = null,
-                Type = OperationResponseType.Unauthorized
+                Type = MelodeeModels.OperationResponseType.Unauthorized
             };
         }
 
@@ -218,7 +228,7 @@ public sealed class UserService(
         return user;
     }
 
-    public async Task<OperationResult<User?>> RegisterAsync(string username, string emailAddress, string password, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> RegisterAsync(string username, string emailAddress, string password, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
         Guard.Against.NullOrWhiteSpace(password, nameof(password));
@@ -228,10 +238,10 @@ public sealed class UserService(
         var dbUserByEmailAddress = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
         if (dbUserByEmailAddress.IsSuccess)
         {
-            return new OperationResult<User?>(["User exists with Email address."])
+            return new MelodeeModels.OperationResult<User?>(["User exists with Email address."])
             {
                 Data = dbUserByEmailAddress.Data,
-                Type = OperationResponseType.ValidationFailure
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
 
@@ -240,7 +250,9 @@ public sealed class UserService(
             var newUser = new User
             {
                 UserName = username,
+                UserNameNormalized = username.ToUpperInvariant(),
                 Email = emailAddress,
+                EmailNormalized = emailAddress.ToUpperInvariant(),
                 PasswordHash = password.ToPasswordHash(),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             };
@@ -249,10 +261,10 @@ public sealed class UserService(
                     .SaveChangesAsync(cancellationToken)
                     .ConfigureAwait(false) < 1)
             {
-                return new OperationResult<User?>
+                return new MelodeeModels.OperationResult<User?>
                 {
                     Data = null,
-                    Type = OperationResponseType.Error
+                    Type = MelodeeModels.OperationResponseType.Error
                 };
             }
 
@@ -274,7 +286,7 @@ public sealed class UserService(
         }
     }
 
-    public async Task<OperationResult<bool>> UpdateAsync(User currentUser, User detailToUpdate, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(User currentUser, User detailToUpdate, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate?.Id ?? 0, nameof(detailToUpdate));
 
@@ -282,10 +294,10 @@ public sealed class UserService(
         var validationResult = ValidateModel(detailToUpdate);
         if (!validationResult.IsSuccess)
         {
-            return new OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = false,
-                Type = OperationResponseType.ValidationFailure
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
 
@@ -301,16 +313,17 @@ public sealed class UserService(
 
                 if (dbDetail == null)
                 {
-                    return new OperationResult<bool>
+                    return new MelodeeModels.OperationResult<bool>
                     {
                         Data = false,
-                        Type = OperationResponseType.NotFound
+                        Type = MelodeeModels.OperationResponseType.NotFound
                     };
                 }
 
                 // Update values and save to db
                 dbDetail.Description = detailToUpdate.Description;
                 dbDetail.Email = detailToUpdate.Email;
+                dbDetail.EmailNormalized = detailToUpdate.Email.ToUpperInvariant();
                 dbDetail.HasCommentRole = detailToUpdate.HasCommentRole;
                 dbDetail.HasCoverArtRole = detailToUpdate.HasCoverArtRole;
                 dbDetail.HasDownloadRole = detailToUpdate.HasDownloadRole;
@@ -329,6 +342,7 @@ public sealed class UserService(
                 dbDetail.SortOrder = detailToUpdate.SortOrder;
                 dbDetail.Tags = detailToUpdate.Tags;
                 dbDetail.UserName = detailToUpdate.UserName;
+                dbDetail.UserNameNormalized = detailToUpdate.UserName.ToUpperInvariant();
 
                 dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
@@ -341,7 +355,7 @@ public sealed class UserService(
             }
         }
 
-        return new OperationResult<bool>
+        return new MelodeeModels.OperationResult<bool>
         {
             Data = result
         };

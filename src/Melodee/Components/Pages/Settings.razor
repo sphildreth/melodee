@@ -6,6 +6,7 @@
 @inject Serilog.ILogger Logger
 @inject SettingService SettingService
 @inject ModalService ModalService
+@inject IMelodeeConfiguration Configuration
 
 <PageTitle>Settings</PageTitle>
 
@@ -23,6 +24,9 @@
               AllowPaging="true"
               AllowSorting="true"
               OnRowDoubleClick="OnRowDoubleClick"
+              PageSize="_defaultPageSize"
+              PageSizeSelectorVisible="true"
+              PageSizeSelectorItems="@(new int[] { 25, 50, 100, _defaultPageSize }.Distinct().OrderBy(x => x).ToArray())"
               Responsive="true">
 
             <GridColumns>
@@ -48,13 +52,13 @@
 @code {
 
     private Grid<Setting> _grid = default!;
-    private short _defaultPageSize;
+    private short _defaultPageSize = 25;
     private bool _isLoading = true;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override void OnInitialized()
     {
-        _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10;
-        StateHasChanged();
+        _defaultPageSize = Configuration.GetValue<short>(SettingRegistry.DefaultsPageSize);
+        base.OnInitialized();
     }
 
     private async Task OnRowDoubleClick(GridRowEventArgs<Setting> args)

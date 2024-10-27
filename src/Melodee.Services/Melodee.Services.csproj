@@ -12,8 +12,8 @@
 
   <ItemGroup>
     <PackageReference Include="Ardalis.GuardClauses"/>
-    <PackageReference Include="Dapper" />
-    <PackageReference Include="Microsoft.Data.Sqlite.Core" />
+    <PackageReference Include="Dapper"/>
+    <PackageReference Include="Microsoft.Data.Sqlite.Core"/>
   </ItemGroup>
 
 </Project>

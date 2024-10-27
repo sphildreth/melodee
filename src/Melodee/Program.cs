@@ -1,10 +1,8 @@
-using System.Text.Json;
 using Blazored.SessionStorage;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
-using Melodee.Plugins;
 using Melodee.Plugins.Discovery.Albums;
 using Melodee.Plugins.Validation;
 using Melodee.Services;
