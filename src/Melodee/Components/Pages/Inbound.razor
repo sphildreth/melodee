@@ -17,7 +17,7 @@
             <Content>
                 <RibbonItemGroup Text="Actions">
                     <RibbonItem Name="RefreshDirectory" IconColor="IconColor.Primary" IconName="IconName.ArrowClockwise" IconSize="IconSize.x2">Refresh</RibbonItem>
-                    <RibbonItem Name="ScanDirectory" IconColor="IconColor.Primary" IconName="IconName.Recycle" IconSize="IconSize.x2">Scan</RibbonItem>
+                    <RibbonItem Name="ProcessDirectory" IconColor="IconColor.Primary" IconName="IconName.Cpu" IconSize="IconSize.x2">Process</RibbonItem>
                     <RibbonItem Name="DeleteSelected" IconColor="IconColor.Danger" IconName="IconName.Trash" IconSize="IconSize.x2">Delete</RibbonItem>
                     <RibbonItem Name="PurgeDirectory" IconColor="IconColor.Danger" IconName="IconName.FileEarmarkX" IconSize="IconSize.x2">Purge</RibbonItem>
                 </RibbonItemGroup>
@@ -65,7 +65,6 @@
 <ConfirmDialog @ref="_confirmDeleteDialog" />
 
 @code {
-    private bool _isLoading = true;
     private string? _selectedRibbonItem;
     private string? _libraryFolderName;
     private Grid<AlbumCard> _grid = default!;

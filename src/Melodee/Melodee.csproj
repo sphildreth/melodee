@@ -9,6 +9,12 @@
     <ItemGroup>
       <PackageReference Include="Blazor.Bootstrap" />
       <PackageReference Include="Blazored.SessionStorage" />
+      <PackageReference Include="Hangfire.AspNetCore" />
+      <PackageReference Include="Hangfire.Core" />
+      <PackageReference Include="Hangfire.Heartbeat" />
+      <PackageReference Include="Hangfire.InMemory" />
+      <PackageReference Include="Hangfire.JobsLogger" />
+      <PackageReference Include="Hangfire.Storage.SQLite" />
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
       <PackageReference Include="Microsoft.IdentityModel.Tokens" />

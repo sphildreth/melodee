@@ -17,8 +17,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         {
             authenticationState = new AuthenticationState(newUser);
 
-            NotifyAuthenticationStateChanged(
-                Task.FromResult(new AuthenticationState(newUser)));
+            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(newUser)));
         };
     }
 

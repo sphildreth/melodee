@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Text;
 using Melodee.Common.Extensions;
+using Melodee.Utils;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Melodee.Services;
@@ -9,9 +10,10 @@ namespace Melodee.Services;
 /// <summary>
 ///     Store and manage the current user's authentication state as a browser Session JWT and in Server Side Blazor
 /// </summary>
-public class AuthService(IStorageSessionService sessionService, ILocalStorageService localStorageService, IConfiguration configuration)
+public class AuthService(IStorageSessionService sessionService, ILocalStorageService localStorageService, CookieStorageAccessor cookieStorageAccessor, IConfiguration configuration)
     : IAuthService
 {
+    public CookieStorageAccessor CookieStorageAccessor { get; } = cookieStorageAccessor;
     private const string AuthTokenName = "melodee_auth_token";
     private ClaimsPrincipal? _currentUser;
 
@@ -49,6 +51,7 @@ public class AuthService(IStorageSessionService sessionService, ILocalStorageSer
         {
             await localStorageService.RemoveItemAsync(AuthTokenName);
         }        
+        await CookieStorageAccessor.RemoveAsync("jwt"); 
     }
 
 
@@ -88,6 +91,7 @@ public class AuthService(IStorageSessionService sessionService, ILocalStorageSer
 
                 var jwtToken = (JwtSecurityToken)validatedToken;
                 identity = new ClaimsIdentity(jwtToken.Claims, "jwt");
+                await CookieStorageAccessor.SetValueAsync("jwt", authToken);                
                 result = true;
             }
             catch
@@ -130,5 +134,6 @@ public class AuthService(IStorageSessionService sessionService, ILocalStorageSer
         {
             await sessionService.SetItemAsStringAsync(AuthTokenName, jwt);    
         }
+        await CookieStorageAccessor.SetValueAsync("jwt", jwt);    
     }
 }
