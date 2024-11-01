@@ -1,19 +1,12 @@
 using Blazored.SessionStorage;
-using Hangfire;
-using Hangfire.Heartbeat;
-using Hangfire.Heartbeat.Server;
-using Hangfire.JobsLogger;
-using Hangfire.Server;
 using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
-using Melodee.Filters;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using Melodee.Utils;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -67,15 +60,6 @@ builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddScoped<MainLayoutProxyService>();
 
-builder.Services.AddTransient<IBackgroundProcess, ProcessMonitor>(x => new ProcessMonitor(checkInterval: TimeSpan.FromSeconds(10)));
-builder.Services.AddHangfire(configuration => configuration
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseSerilogLogProvider()
-    .UseInMemoryStorage()
-    .UseRecommendedSerializerSettings()
-    .UseHeartbeatPage(checkInterval: TimeSpan.FromSeconds(10))
-    .UseJobsLogger());
 
 var app = builder.Build();
 
@@ -93,15 +77,6 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
-
-// This is used by the Hangfire auth to get the JWT cookie and see if the user has the admin credential. Yes it is ugly.
-var jwtValidatorToken = builder.Configuration.GetValue<string>("MelodeeAuthSettings:Token")!;
-
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
-{
-    DashboardTitle = "Melodee Hangfire Dashboard",
-    Authorization = new [] { new MelodeeHangfireAuthorizationFilter(jwtValidatorToken) }
-});
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

@@ -1,5 +1,4 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
-@using System.Security.Claims
 @inherits LayoutComponentBase
 
 @implements IDisposable
@@ -118,8 +117,9 @@
             new NavItem { Id = "62", Href = "/library", IconName = IconName.Folder2, Text = "Library", ParentId="60"},
             new NavItem { Id = "63", Href = "/staging", Class = "border-bottom", IconName = IconName.Folder2, Text = "Staging", ParentId="60"},
 
-            new NavItem { Id = "70",Href = "/settings", IconName = IconName.Sliders, Text = "Settings" },
-            new NavItem { Id = "71",Href = "/hangfire", IconName = IconName.Boxes, Text = "Hangfire" },
+            new NavItem { Id = "70",Href = "/jobs", IconName = IconName.ListTask, Text = "Jobs" },
+            new NavItem { Id = "71",Href = "/settings", IconName = IconName.Sliders, Text = "Settings" },
+
 
         };
 
