@@ -36,6 +36,10 @@
     <PackageVersion Include="NodaTime" Version="3.2.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" Version="8.0.10" />
+    <PackageVersion Include="Quartz.AspNetCore" Version="3.13.0" />
+    <PackageVersion Include="Quartz.Jobs" Version="3.13.0" />
+    <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.0" />
+    <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.13.0" />
     <PackageVersion Include="Serilog" Version="4.1.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageVersion Include="Serilog.Settings.AppSettings" Version="3.0.0" />

@@ -2,6 +2,7 @@ using Blazored.SessionStorage;
 using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
+using Melodee.Jobs;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
@@ -10,6 +11,9 @@ using Melodee.Utils;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Quartz;
+using Quartz.AspNetCore;
+using Quartz.Job;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
@@ -53,13 +57,43 @@ builder.Services
     .AddScoped<LocalStorageService>()
     .AddScoped<SettingService>()
     .AddScoped<UserService>()
-    .AddScoped<AlbumDiscoveryService>();
+    .AddScoped<AlbumDiscoveryService>()
+    .AddScoped<MediaEditService>()
+    .AddScoped<DirectoryProcessorService>();
 
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddScoped<MainLayoutProxyService>();
 
+builder.Services.AddQuartz(q =>
+{
+    q.UseTimeZoneConverter();
+    
+    var jobKey = new JobKey(nameof(MediaScanJob));
+    q.AddJob<MediaScanJob>(opts => opts.WithIdentity(jobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("MediaScanJob-trigger")
+        .WithCronSchedule("0 0/1 * * * ?")
+    );
+    
+});
+builder.Services.AddSingleton<IScheduler>(provider =>
+{
+    var factory = provider.GetRequiredService<ISchedulerFactory>();
+    var scheduler = factory.GetScheduler().Result;
+    return scheduler;
+});
+
+//builder.Services.AddScoped<MediaScanJob>();
+
+// ASP.NET Core hosting
+builder.Services.AddQuartzServer(opts =>
+{
+    // when shutting down we want jobs to complete gracefully
+    opts.WaitForJobsToComplete = true;
+});
 
 var app = builder.Build();
 

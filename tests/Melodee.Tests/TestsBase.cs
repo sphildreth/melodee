@@ -33,6 +33,7 @@ public abstract class TestsBase
             { SettingRegistry.ProcessingAlbumTitleRemovals, "['^', '~', '#']"},
             { SettingRegistry.ProcessingArtistNameReplacements, "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }"},
             { SettingRegistry.ProcessingDoDeleteOriginal, "false" },
+            { SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory, "true"},            
             { SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength, 255},
             { SettingRegistry.ProcessingMaximumArtistDirectoryNameLength, 255 },
             { SettingRegistry.ProcessingSongTitleRemovals, "[';', '(Remaster)', 'Remaster']"},

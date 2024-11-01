@@ -1,5 +1,6 @@
 namespace Melodee.Common.Constants;
 
+
 public static class SettingRegistry
 {
     public const string ConversionBitrate = "conversion.bitrate";
@@ -21,6 +22,10 @@ public static class SettingRegistry
     public const string MagicDoReplaceSongsArtistSeparators = "magic.doReplaceSongsArtistSeparators";
     public const string MagicDoSetYearToCurrentIfInvalid = "magic.doSetYearToCurrentIfInvalid";
     public const string MagicEnabled = "magic.enabled";
+    public const string PluginEnabledCueSheet = "plugin.cueSheet.enabled";
+    public const string PluginEnabledNfo = "plugin.nfo.enabled";
+    public const string PluginEnabledM3u = "plugin.m3u.enabled";
+    public const string PluginEnabledSimpleFileVerification = "plugin.simpleFileVerification.enabled";
     public const string ProcessingAlbumTitleRemovals = "processing.albumTitleRemovals";
     public const string ProcessingArtistNameReplacements = "processing.artistNameReplacements";
     public const string ProcessingConvertedExtension = "processing.convertedExtension";

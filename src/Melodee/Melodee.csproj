@@ -12,6 +12,10 @@
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
       <PackageReference Include="Microsoft.IdentityModel.Tokens" />
+      <PackageReference Include="Quartz.AspNetCore" />
+      <PackageReference Include="Quartz.Jobs" />
+      <PackageReference Include="Quartz.Plugins.TimeZoneConverter" />
+      <PackageReference Include="Quartz.Serialization.SystemTextJson" />
       <PackageReference Include="Serilog" />
       <PackageReference Include="Serilog.AspNetCore" />
       <PackageReference Include="Serilog.Settings.AppSettings" />
@@ -27,6 +31,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
+      <ProjectReference Include="..\Melodee.Jobs\Melodee.Jobs.csproj" />
       <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
       <ProjectReference Include="..\Melodee.Services\Melodee.Services.csproj" />
     </ItemGroup>

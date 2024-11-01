@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
+      <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
+      <ProjectReference Include="..\Melodee.Services\Melodee.Services.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Quartz.Jobs" />
+      <PackageReference Include="Quartz.Serialization.SystemTextJson" />
+    </ItemGroup>
+
+</Project>

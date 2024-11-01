@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ATL.Logging;
 using Melodee.Common.Constants;
@@ -108,6 +109,12 @@ public static class FileSystemDirectoryInfoExtensions
         if (string.IsNullOrEmpty(dir))
         {
             throw new ArgumentException("Starting directory is a null reference or an empty string", nameof(dir));
+        }
+
+        if (!Directory.Exists(dir))
+        {
+            Trace.WriteLine($"Delete Empty Dirs called with a directory that does not exist [{dir}]", TraceLevel.Warning.ToString());
+            return;
         }
         try
         {

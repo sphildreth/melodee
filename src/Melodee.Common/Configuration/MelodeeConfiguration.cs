@@ -12,7 +12,9 @@ namespace Melodee.Common.Configuration;
 /// <param name="Configuration">Initial configuration from database.</param>
 public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : IMelodeeConfiguration
 {
-    public T? GetValue<T>(string key) => GetSettingValue<T>(Configuration, key);
+    public void SetSetting<T>(string key, T? value) => Configuration[key] = value;
+
+    public T? GetValue<T>(string key, Func<T?, T?>? returnValue = null) => returnValue == null ? GetSettingValue<T>(Configuration, key) : returnValue(GetSettingValue<T>(Configuration, key));
     
     /// <summary>
     /// This return all known settings in the SettingsRegistry with the option to set up given values.
@@ -39,7 +41,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         return result;
     }
 
-    public static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName)
+    public static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName, T? defaultValue = default)
     {
         if (settings.TryGetValue(settingName, out var setting))
         {
@@ -52,7 +54,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
                 Trace.WriteLine($"Error converting setting [{ settingName }]: {e.Message}]");
             }
         }
-        return default;
+        return defaultValue;
     }
 
     public static bool IsTrue(Dictionary<string, object?> settings, string settingName)

@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Services", "src\Melodee.Services\Melodee.Services.csproj", "{94FB6F6C-4A91-414D-9FD6-697425971FE1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Jobs", "src\Melodee.Jobs\Melodee.Jobs.csproj", "{C099CDB8-E94E-4E9D-B4D6-7D1F8DEB07B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,5 +51,9 @@ Global
 		{94FB6F6C-4A91-414D-9FD6-697425971FE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94FB6F6C-4A91-414D-9FD6-697425971FE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94FB6F6C-4A91-414D-9FD6-697425971FE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C099CDB8-E94E-4E9D-B4D6-7D1F8DEB07B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C099CDB8-E94E-4E9D-B4D6-7D1F8DEB07B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C099CDB8-E94E-4E9D-B4D6-7D1F8DEB07B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C099CDB8-E94E-4E9D-B4D6-7D1F8DEB07B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

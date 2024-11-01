@@ -1,5 +1,6 @@
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
+using Melodee.Common.Filtering;
 using Melodee.Common.Models;
 using Melodee.Services;
 using NodaTime;
@@ -33,6 +34,40 @@ public sealed class UserServiceTests : ServiceTestBase
         Assert.Equal(1, listResult.TotalPages);
         Assert.Equal(1, listResult.TotalCount);
     }
+    
+    [Fact]
+    public async Task ListUsersWithFilterAsync()
+    {
+        var shouldContainApiKey = Guid.NewGuid();
+
+        await using (var context = await MockFactory().CreateDbContextAsync())
+        {
+            context.Users.Add(new User
+            {
+                ApiKey = shouldContainApiKey,
+                UserName = "Test User",
+                UserNameNormalized = "Test User".ToUpperInvariant(),
+                Email = "testemail@local.lan",
+                EmailNormalized = "testemail@local.lan".ToUpperInvariant(),
+                PasswordHash = "hopefully_a_good_password".ToPasswordHash(),
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+            });
+            await context.SaveChangesAsync();
+        }
+        var listResult = await GetUserService().ListAsync(new PagedRequest
+        {
+            Page = 1,
+            PageSize = 1,
+            FilterBy = 
+            [
+                new FilterOperatorInfo(nameof(User.Email), FilterOperator.Equals, "testemail@local.lan")
+            ]
+        });
+        AssertResultIsSuccessful(listResult);
+        Assert.Contains(listResult.Data, x => x.ApiKey == shouldContainApiKey);
+        Assert.Equal(1, listResult.TotalPages);
+        Assert.Equal(1, listResult.TotalCount);
+    }    
 
     [Fact]
     public async Task RegisterGetAuthenticateAndDeleteUserAsync()

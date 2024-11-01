@@ -10,7 +10,7 @@ using SixLabors.ImageSharp;
 namespace Melodee.Plugins.Conversion.Image;
 
 /// <summary>
-///     This converts non JPG images into a JPG images.
+///     This converts non JPG image into a JPG image.
 /// </summary>
 public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDataBase(configuration), IConversionPlugin
 {

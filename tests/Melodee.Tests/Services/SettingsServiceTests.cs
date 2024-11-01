@@ -155,5 +155,26 @@ public sealed class SettingsServiceTests : ServiceTestBase
         var listResult = await service.GetAllSettingsAsync();
         Assert.NotEmpty(listResult);
         Assert.Contains(listResult, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
+        Assert.Contains(listResult, x => x.Key == SettingRegistry.ProcessingMaximumProcessingCount);
+    }
+
+    [Fact]
+    public async Task GetSettingWithFunc()
+    {
+        var shouldBeValueInt = 99;
+        var service = GetSettingService();
+        var configuration = await service.GetMelodeeConfigurationAsync();
+        Assert.NotEmpty(configuration.Configuration);
+
+        configuration.SetSetting(SettingRegistry.ProcessingMaximumProcessingCount, shouldBeValueInt);
+        var getIntValueResult = configuration.GetValue<int>( SettingRegistry.ProcessingMaximumProcessingCount);
+        Assert.Equal(shouldBeValueInt, getIntValueResult);
+        
+        configuration.SetSetting(SettingRegistry.ProcessingMaximumProcessingCount, 15);
+        getIntValueResult = configuration.GetValue<int>( SettingRegistry.ProcessingMaximumProcessingCount, value => int.MaxValue);
+        Assert.NotEqual(shouldBeValueInt, getIntValueResult);
+        
+        
+        
     }
 }
