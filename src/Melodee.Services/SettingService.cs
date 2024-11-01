@@ -43,26 +43,24 @@ public sealed class SettingService(
         Setting[] settings = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            const string tableName = "Settings";
-            var filter = pagedRequest.FilterByValue();
-
             try
             {
-                var countSql = $"SELECT COUNT(*) FROM \"{tableName}\" WHERE {filter};";
+                var orderBy = pagedRequest.OrderByValue();                
                 var dbConn = scopedContext.Database.GetDbConnection();
+                var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Settings\"");
                 settingsCount = await dbConn
-                    .ExecuteScalarAsync<int>(countSql, cancellationToken)
+                    .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
                     .ConfigureAwait(false);
                 if (!pagedRequest.IsTotalCountOnlyRequest)
                 {
-                    var listSql = $"SELECT * FROM \"{tableName}\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                    var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Settings\"");
+                    var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                     if (dbConn is SqliteConnection)
                     {
-                        listSql = $"SELECT * FROM \"{tableName}\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                        listSql = $"{listSqlParts.Item1 } ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
                     }
-
                     settings = (await dbConn
-                        .QueryAsync<Setting>(listSql)
+                        .QueryAsync<Setting>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();
                 }
             }

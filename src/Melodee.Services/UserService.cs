@@ -32,24 +32,22 @@ public sealed class UserService(
         User[] users = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            const string tableName = "Users";
-            var filter = pagedRequest.FilterByValue();
-
-            var countSql = $"SELECT COUNT(*) FROM \"{tableName}\" WHERE {filter};";
-            var dbConn = scopedContext.Database.GetDbConnection();
+            var orderBy = pagedRequest.OrderByValue();
+            var dbConn = scopedContext.Database.GetDbConnection();            
+            var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Users\"");
             usersCount = await dbConn
-                .ExecuteScalarAsync<int>(countSql, cancellationToken)
-                .ConfigureAwait(false);
+                .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
+                .ConfigureAwait(false);            
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                var listSql = $"SELECT * FROM \"{tableName}\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Users\"");
+                var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 if (dbConn is SqliteConnection)
                 {
-                    listSql = $"SELECT * FROM \"{tableName}\" WHERE {filter} ORDER BY {pagedRequest.OrderByValue()} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                    listSql = $"{listSqlParts.Item1 } ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
                 }
-
                 users = (await dbConn
-                    .QueryAsync<User>(listSql)
+                    .QueryAsync<User>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
             }
         }

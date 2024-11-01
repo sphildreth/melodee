@@ -36,13 +36,13 @@ public sealed class UserServiceTests : ServiceTestBase
     }
     
     [Fact]
-    public async Task ListUsersWithFilterAsync()
+    public async Task ListUsersWithFilterEqualsAsync()
     {
         var shouldContainApiKey = Guid.NewGuid();
 
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
-            context.Users.Add(new User
+            context.Users.AddRange(new User
             {
                 ApiKey = shouldContainApiKey,
                 UserName = "Test User",
@@ -50,6 +50,16 @@ public sealed class UserServiceTests : ServiceTestBase
                 Email = "testemail@local.lan",
                 EmailNormalized = "testemail@local.lan".ToUpperInvariant(),
                 PasswordHash = "hopefully_a_good_password".ToPasswordHash(),
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+            },
+            new User
+            {
+                ApiKey = Guid.NewGuid(),
+                UserName = "Test User2",
+                UserNameNormalized = "Test User2".ToUpperInvariant(),
+                Email = "testemail2@local.lan",
+                EmailNormalized = "testemail2@local.lan".ToUpperInvariant(),
+                PasswordHash = "hopefully_a_good_password2".ToPasswordHash(),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             });
             await context.SaveChangesAsync();
@@ -69,6 +79,51 @@ public sealed class UserServiceTests : ServiceTestBase
         Assert.Equal(1, listResult.TotalCount);
     }    
 
+    [Fact]
+    public async Task ListUsersWithFilterContainsAsync()
+    {
+        var shouldContainApiKey = Guid.NewGuid();
+
+        await using (var context = await MockFactory().CreateDbContextAsync())
+        {
+            context.Users.AddRange(new User
+                {
+                    ApiKey = shouldContainApiKey,
+                    UserName = "Test User",
+                    UserNameNormalized = "Test User".ToUpperInvariant(),
+                    Email = "testemail@local.lan",
+                    EmailNormalized = "testemail@local.lan".ToUpperInvariant(),
+                    PasswordHash = "hopefully_a_good_password".ToPasswordHash(),
+                    CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+                },
+                new User
+                {
+                    ApiKey = Guid.NewGuid(),
+                    UserName = "Test User2",
+                    UserNameNormalized = "Test User2".ToUpperInvariant(),
+                    Email = "bingobango@local.lan",
+                    EmailNormalized = "bingobango@local.lan".ToUpperInvariant(),
+                    PasswordHash = "hopefully_a_good_password2".ToPasswordHash(),
+                    CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+                });
+            await context.SaveChangesAsync();
+        }
+        var listResult = await GetUserService().ListAsync(new PagedRequest
+        {
+            Page = 1,
+            PageSize = 1,
+            FilterBy = 
+            [
+                new FilterOperatorInfo(nameof(User.Email), FilterOperator.Contains, "testemail")
+            ]
+        });
+        AssertResultIsSuccessful(listResult);
+        Assert.Contains(listResult.Data, x => x.ApiKey == shouldContainApiKey);
+        Assert.Equal(1, listResult.TotalPages);
+        Assert.Equal(1, listResult.TotalCount);
+    }    
+    
+    
     [Fact]
     public async Task RegisterGetAuthenticateAndDeleteUserAsync()
     {

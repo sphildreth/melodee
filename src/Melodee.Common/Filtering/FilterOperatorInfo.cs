@@ -11,30 +11,33 @@ namespace Melodee.Common.Filtering;
 /// <param name="JoinOperator">The Join condition when more than one filter, e.g. '||' or '&&'</param>
 public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, object Value, string? JoinOperator = "&&")
 {
+    private const string SqlWildCard = "%";
+    
     public string OperatorValue => FilterOperatorToConditionString(Operator);
-
-    public string ValuePattern()
+    
+    public object ValuePattern()
     {
         if (Value.IsNumericType())
         {
-            return Value.ToString()!;
+            return Value;
         }
         switch (Operator)
         {
             case FilterOperator.Contains:
             case FilterOperator.DoesNotContain:                    
-                return $"'%{Value}%'";
+                return $"{SqlWildCard}{Value}{SqlWildCard}";
             case FilterOperator.StartsWith:
-                return $"'%{Value}'";
+                return $"{SqlWildCard}{Value}";
             case FilterOperator.EndsWith:
-                return $"'{Value}%'";
+                return $"{Value}{SqlWildCard}";
             case FilterOperator.IsNull:
             case FilterOperator.IsEmpty:
             case FilterOperator.IsNotNull:
             case FilterOperator.IsNotEmpty:
                 return string.Empty;
         }
-        return $"'{ Value }'";
+
+        return Value;
     }
     
     public static bool IsLikeOperator(FilterOperator filterOperator)

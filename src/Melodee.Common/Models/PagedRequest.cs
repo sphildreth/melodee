@@ -1,4 +1,5 @@
 using System.Text;
+using FFMpegCore.Enums;
 using Melodee.Common.Enums;
 using Melodee.Common.Filtering;
 
@@ -122,8 +123,27 @@ public sealed record PagedRequest
             result.AppendFormat("\"{0}\" {1} {2}", kp.PropertyName, kp.OperatorValue, kp.ValuePattern());
         }
         return result.ToString();
-    }    
+    }
 
+    /// <summary>
+    /// Returns a tuple of SQL statement (built off the sql start fragment parameter) and dictionary of parameters for a parameterized query to be executed.
+    /// </summary>
+    public (string, Dictionary<string, object>?) FilterByParts(string sqlStartFragment)
+    {
+        if (FilterBy == null || FilterBy.Length == 0)
+        {
+            return ($"{sqlStartFragment} WHERE 1 = 1", null);
+        }
+        var sqlResult = new StringBuilder(sqlStartFragment);
+        sqlResult.Append(" WHERE ");
+        foreach (var fb in FilterBy)
+        {
+            sqlResult.Append($"\"{fb.PropertyName}\" {fb.OperatorValue} @p_{fb.PropertyName}");
+        }
+        return (sqlResult.ToString(), FilterBy.ToDictionary(x => $"@p_{x.PropertyName}", object (x) => x.ValuePattern()));
+    }
+
+    
     public int TotalPages(int totalRecordsCount) => totalRecordsCount < 1 ? 0 : (totalRecordsCount + PageSizeValue - 1) / PageSizeValue;
 
 }
