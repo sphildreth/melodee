@@ -71,13 +71,13 @@ builder.Services.AddQuartz(q =>
 {
     q.UseTimeZoneConverter();
     
-    // var jobKey = new JobKey(nameof(InboundDirectoryScanJob));
-    // q.AddJob<InboundDirectoryScanJob>(opts => opts.WithIdentity(jobKey));
-    // q.AddTrigger(opts => opts
-    //     .ForJob(jobKey)
-    //     .WithIdentity("MediaScanJob-trigger")
-    //     .WithCronSchedule("0 0/1 * * * ?")
-    // );
+    var jobKey = new JobKey(nameof(InboundDirectoryScanJob));
+    q.AddJob<InboundDirectoryScanJob>(opts => opts.WithIdentity(jobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("MediaScanJob-trigger")
+        .WithCronSchedule("0 0/5 * * * ?")
+    );
     
 });
 builder.Services.AddSingleton<IScheduler>(provider =>

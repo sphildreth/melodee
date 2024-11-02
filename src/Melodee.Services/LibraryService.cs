@@ -1,12 +1,14 @@
+using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
-using Melodee.Common.Filtering;
 using Melodee.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
+using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Services;
@@ -18,30 +20,42 @@ public class LibraryService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
 
+    private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
+    
     public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
     {
-        var library = await LibraryByType((int)LibraryType.Inbound, cancellationToken);
-        if (library == null)
+        const int libraryType = (int)LibraryType.Inbound;
+        var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
         {
-            throw new Exception("Inbound library not found. A 'Library' record must be setup for a inbound library.");
-        }
+            var library = await LibraryByType(libraryType, cancellationToken);
+            if (library == null)
+            {
+                throw new Exception("Inbound library not found. A 'Library' record must be setup for a inbound library.");
+            }
+            return library;
+        }, cancellationToken);        
         return new MelodeeModels.OperationResult<Library>
         {
-            Data = library
+            Data = result
         }; 
     }
     
     public async Task<MelodeeModels.OperationResult<Library>> GetLibraryAsync(CancellationToken cancellationToken = default)
     {
-        var library = await LibraryByType((int)LibraryType.Library, cancellationToken);
-        if (library == null)
+        const int libraryType = (int)LibraryType.Library;
+        var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
         {
-            throw new Exception("Library not found. A 'Library' record must be setup for a library.");
-        }
+            var library = await LibraryByType(libraryType, cancellationToken);
+            if (library == null)
+            {
+                throw new Exception("Library not found. A 'Library' record must be setup for a library.");
+            }
+            return library;
+        }, cancellationToken);        
         return new MelodeeModels.OperationResult<Library>
         {
-            Data = library
-        }; 
+            Data = result
+        };         
     }
 
     private async Task<Library> LibraryByType(int type, CancellationToken cancellationToken = default)
@@ -58,20 +72,25 @@ public class LibraryService(
     
     public async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(CancellationToken cancellationToken = default)
     {
-        var library = await LibraryByType((int)LibraryType.Staging, cancellationToken);
-        if (library == null)
+        const int libraryType = (int)LibraryType.Staging;
+        var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
         {
-            throw new Exception("Staging library not found. A 'Library' record must be setup for a staging library.");
-        }
+            var library = await LibraryByType(libraryType, cancellationToken);
+            if (library == null)
+            {
+                throw new Exception("Staging library not found. A 'Library' record must be setup for a staging library.");
+            }
+            return library;
+        }, cancellationToken);        
         return new MelodeeModels.OperationResult<Library>
         {
-            Data = library
-        };
+            Data = result
+        };          
     }
 
     public async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        int libariesCount = 0;
+        int librariesCount = 0;
         Library[] libraries = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -80,7 +99,7 @@ public class LibraryService(
                 var orderBy = pagedRequest.OrderByValue();                
                 var dbConn = scopedContext.Database.GetDbConnection();
                 var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Libraries\"");
-                libariesCount = await dbConn
+                librariesCount = await dbConn
                     .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
                     .ConfigureAwait(false);
                 if (!pagedRequest.IsTotalCountOnlyRequest)
@@ -104,9 +123,74 @@ public class LibraryService(
 
         return new MelodeeModels.PagedResult<Library>
         {
-            TotalCount = libariesCount,
-            TotalPages = pagedRequest.TotalPages(libariesCount),
+            TotalCount = librariesCount,
+            TotalPages = pagedRequest.TotalPages(librariesCount),
             Data = libraries
         };
+    }
+
+    private void ClearCache()
+    {
+        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Inbound));
+        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Library));
+        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Staging));
+    }
+    
+    public async Task<MelodeeModels.OperationResult<LibraryScanHistory?>> CreateLibraryScanHistory(Library library, LibraryScanHistory libraryScanHistory, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x > 0, library.Id, nameof(library));
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbLibrary = await scopedContext.Libraries.FirstOrDefaultAsync(x => x.Id == library.Id, cancellationToken).ConfigureAwait(false);
+            if (dbLibrary == null)
+            {
+                return new MelodeeModels.OperationResult<LibraryScanHistory?>("Invalid Library Id")
+                {
+                    Data = null,
+                    Type = MelodeeModels.OperationResponseType.Error,
+                };
+            }
+
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            var newLibraryScanHistory = new LibraryScanHistory
+            {
+                LibraryId = library.Id,
+                CreatedAt = now,
+                DurationInMs = libraryScanHistory.DurationInMs,
+                ForAlbumId = libraryScanHistory.ForAlbumId,
+                ForArtistId = libraryScanHistory.ForArtistId,
+                NewAlbumsCount = libraryScanHistory.NewAlbumsCount,
+                NewArtistsCount = libraryScanHistory.NewArtistsCount,
+                NewSongsCount = libraryScanHistory.NewSongsCount
+            };
+            scopedContext.LibraryScanHistories.Add(newLibraryScanHistory);
+            if (await scopedContext
+                    .SaveChangesAsync(cancellationToken)
+                    .ConfigureAwait(false) < 1)
+            {
+                return new MelodeeModels.OperationResult<LibraryScanHistory?>
+                {
+                    Data = null,
+                    Type = MelodeeModels.OperationResponseType.Error
+                };
+            }
+            dbLibrary.LastScanAt = now;
+            if (await scopedContext
+                    .SaveChangesAsync(cancellationToken)
+                    .ConfigureAwait(false) < 1)
+            {
+                return new MelodeeModels.OperationResult<LibraryScanHistory?>
+                {
+                    Data = null,
+                    Type = MelodeeModels.OperationResponseType.Error
+                };
+            }
+            ClearCache();
+            return new MelodeeModels.OperationResult<LibraryScanHistory?>
+            {
+                Data = newLibraryScanHistory
+            };      
+        }
     }
 }

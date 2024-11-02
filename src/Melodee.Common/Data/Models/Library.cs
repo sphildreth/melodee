@@ -32,4 +32,15 @@ public class Library : DataModelBase
     public Instant? LastScanAt { get; set; }
     
     public ICollection<LibraryScanHistory> ScanHistories { get; set; } = new List<LibraryScanHistory>();
+
+    public Instant LastWriteTime() => !Directory.Exists(Path) ? Instant.MinValue : Instant.FromDateTimeUtc(Directory.GetLastWriteTimeUtc(Path));
+
+    public bool NeedsScanning()
+    {
+        if (!Directory.Exists(Path))
+        {
+            return false;
+        }
+        return LastScanAt == null || LastScanAt < LastWriteTime();
+    }
 }

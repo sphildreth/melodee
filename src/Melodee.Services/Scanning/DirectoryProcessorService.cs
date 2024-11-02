@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
@@ -53,11 +54,7 @@ public sealed class DirectoryProcessorService(
     private IEnumerable<ISongPlugin> _songPlugins = [];
     private bool _stopProcessingTriggered;
 
-    private string _directoryInbound = null!;
-
     private string _directoryStaging = null!;
-
-    private DirectoryInfo DirectoryStagingInfo => new DirectoryInfo(_directoryStaging);
 
     /// <summary>
     /// Used for Unit testing.
@@ -69,8 +66,7 @@ public sealed class DirectoryProcessorService(
     {
         _configuration = await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         
-        _directoryInbound = (await _libraryService.GetInboundLibraryAsync(token)).Data!.Path;
-        _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data!.Path;        
+        _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;        
         
         _songPlugins = new[]
         {
@@ -138,13 +134,23 @@ public sealed class DirectoryProcessorService(
         var directoryPluginProcessedFileCount = 0;
         var numberOfAlbumFilesProcessed = 0;
 
+
+        var artistsUniqueIdsSeen = new List<long>();
+        var albumsUniqueIdsSeen = new List<long>();
+        var songsUniqueIdsSeen = new List<long>();
+
         var result = new DirectoryProcessorResult
         {
             NumberOfConversionPluginsProcessed = 0,
             NumberOfDirectoryPluginProcessed = 0,
-            NumberOfAlbumFilesProcessed = 0
+            NumberOfAlbumFilesProcessed = 0,
+            NewArtistsCount = 0,
+            NewAlbumsCount = 0,
+            NewSongsCount = 0,
+            DurationInMs = 0
         };
 
+        var sw = Stopwatch.StartNew();
 
         // Ensure directory to process exists
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
@@ -161,7 +167,7 @@ public sealed class DirectoryProcessorService(
         }
 
         // Ensure that staging directory exists
-        if (!DirectoryStagingInfo.Exists)
+        if (!Directory.Exists(_directoryStaging))
         {
             return new OperationResult<DirectoryProcessorResult>
             {
@@ -508,6 +514,9 @@ public sealed class DirectoryProcessorService(
                                 await mediaEditService.DoMagic(album.UniqueId, cancellationToken);
                             }
                         }
+                        artistsUniqueIdsSeen.Add(album.ArtistUniqueId());
+                        albumsUniqueIdsSeen.Add(album.UniqueId);
+                        songsUniqueIdsSeen.AddRange(album.Songs?.Select(x => x.UniqueId) ?? []);
                     }
                     else
                     {
@@ -569,19 +578,20 @@ public sealed class DirectoryProcessorService(
         processingMessages.Add($"Song Plugin(s) process count [{numberOfAlbumFilesProcessed}]");
         processingMessages.Add($"Album process count [{numberOfAlbumJsonFilesProcessed}]");
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-          //  scopedContext.LibraryScanHistories.Add()
-        }
-
+        sw.Stop();
+        
         return new OperationResult<DirectoryProcessorResult>(processingMessages)
         {
             Errors = processingErrors.ToArray(),
             Data = new DirectoryProcessorResult
             {
+                DurationInMs = sw.ElapsedMilliseconds,
+                NewAlbumsCount = albumsUniqueIdsSeen.Distinct().Count(),
+                NewArtistsCount = artistsUniqueIdsSeen.Distinct().Count(),
+                NewSongsCount = songsUniqueIdsSeen.Distinct().Count(),
+                NumberOfAlbumFilesProcessed = numberOfAlbumJsonFilesProcessed,
                 NumberOfConversionPluginsProcessed = numberOfAlbumFilesProcessed,
-                NumberOfDirectoryPluginProcessed = directoryPluginProcessedFileCount,
-                NumberOfAlbumFilesProcessed = numberOfAlbumJsonFilesProcessed
+                NumberOfDirectoryPluginProcessed = directoryPluginProcessedFileCount
             }
         };
     }

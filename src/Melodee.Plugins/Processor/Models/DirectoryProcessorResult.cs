@@ -7,4 +7,12 @@ public record DirectoryProcessorResult
    public required int NumberOfDirectoryPluginProcessed { get; init; }
    
    public required int NumberOfAlbumFilesProcessed { get; init; }
+   
+   public required int NewArtistsCount { get; set; }
+    
+   public required int NewAlbumsCount { get; set; }
+    
+   public required int NewSongsCount { get; set; }
+    
+   public required long DurationInMs { get; set; }   
 }
