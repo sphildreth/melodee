@@ -87,15 +87,18 @@
     {
         var confirmation = await _confirmDeleteDialog.ShowAsync(
             title: "Sure you want to delete?",
-            message1: "This will delete the selected Melodee JSON Data files (melodee.json).",
+            message1: "This will delete everything about selected releases.",
             message2: "Do you want to proceed?");
 
         if (confirmation)
         {
             foreach (var selected in _selectedAlbumCards)
             {
-                File.Delete(selected.MelodeeDataFileName);
-                Logger.Debug("Deleted Melodee Data File [{0}]", selected.MelodeeDataFileName);
+                if (selected.DirectoryName != null)
+                {
+                    Directory.Delete(selected.DirectoryName, true);
+                    Logger.Debug("Deleted Staging Directory [{0}]", selected.DirectoryName);
+                }
             }
             await _grid.RefreshDataAsync();
         }
