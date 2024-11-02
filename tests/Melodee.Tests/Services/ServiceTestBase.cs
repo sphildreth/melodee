@@ -68,6 +68,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return mockFactory.Object;
     }
 
+    protected LibraryService GetLibraryService()
+    {
+        return new LibraryService(Logger, CacheManager, MockFactory());
+    }
+    
     protected UserService GetUserService()
     {
         return new UserService(Logger, CacheManager, MockFactory());

@@ -8,9 +8,6 @@ public static class SettingRegistry
     public const string ConversionSamplingRate = "conversion.samplingRate";
     public const string ConversionVbrLevel = "conversion.vbrLevel";
     public const string DefaultsPageSize = "defaults.pagesize";
-    public const string DirectoryInbound = "directory.inbound";
-    public const string DirectoryLibrary = "directory.library";
-    public const string DirectoryStaging = "directory.staging";
     public const string FilteringLessThanDuration = "filtering.lessThanDuration";
     public const string FilteringLessThanSongCount = "filtering.lessThanSongCount";
     public const string FormattingDateTimeDisplayActivityFormat = "formatting.dateTimeDisplayActivityFormat";

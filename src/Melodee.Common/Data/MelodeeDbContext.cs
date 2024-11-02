@@ -56,30 +56,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
             s.HasData(
                 new Setting
                 {
-                    Id = 1,
-                    Key = SettingRegistry.DirectoryInbound,
-                    Comment = "Files in this directory are scanned and Album information is gathered.",
-                    Value = "/storage/inbound",
-                    CreatedAt = now,
-                },
-                new Setting
-                {
-                    Id = 2,
-                    Key = SettingRegistry.DirectoryLibrary,
-                    Comment = "This is the main storage library (holds all previously scanned/edited/approved Albums. This is directory is where the API gets media file data from.",
-                    Value = "/storage/library",
-                    CreatedAt = now,
-                },
-                new Setting
-                {
-                    Id = 3,
-                    Key = SettingRegistry.DirectoryStaging,
-                    Comment = "When one is happy with scan results one can select Albums (and all associated files) to move to this directory in the proper directory structure.",
-                    Value = "/storage/staging",
-                    CreatedAt = now,
-                },
-                new Setting
-                {
                     Id = 4,
                     Key = SettingRegistry.FilteringLessThanSongCount,
                     Comment = "Add a default filter to show only albums with this or less number of songs.",

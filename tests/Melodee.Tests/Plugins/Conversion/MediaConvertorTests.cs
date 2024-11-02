@@ -43,9 +43,6 @@ public class MediaConvertorTests
              var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new MelodeeConfiguration(
                  new Dictionary<string, object?>
                 {
-                    { SettingRegistry.DirectoryInbound, @"/home/steven/incoming/melodee_test/tests" },
-                    { SettingRegistry.DirectoryStaging, string.Empty },
-                    { SettingRegistry.DirectoryLibrary, string.Empty }
                 })
             );
             var dirInfo = new FileSystemDirectoryInfo

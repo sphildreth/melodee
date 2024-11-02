@@ -18,12 +18,14 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         CacheManager,
         MockFactory(),
         GetSettingService(),
+        GetLibraryService(),
         Serializer,
         new MediaEditService(
             Log.Logger,
             CacheManager,
             MockFactory(),
             GetSettingService(),
+            GetLibraryService(),
             new AlbumDiscoveryService(
                 Log.Logger,
                 CacheManager,

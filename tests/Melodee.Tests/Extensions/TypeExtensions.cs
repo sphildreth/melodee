@@ -10,6 +10,6 @@ public class TypeExtensions
     {
         var allConsts = typeof(SettingRegistry).GetAllPublicConstantValues<string>();
         Assert.NotNull(allConsts);
-        Assert.Contains(allConsts, x => x == SettingRegistry.DirectoryLibrary);
+        Assert.Contains(allConsts, x => x == SettingRegistry.ConversionEnabled);
     }
 }

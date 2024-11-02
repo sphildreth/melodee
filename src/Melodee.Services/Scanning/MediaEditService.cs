@@ -25,24 +25,29 @@ public sealed class MediaEditService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     SettingService settingService,
+    LibraryService libraryService,
     AlbumDiscoveryService albumDiscoveryService,
     ISerializer serializer): ServiceBase(logger, cacheManager, contextFactory)
 {
+    private readonly LibraryService _libraryService = libraryService;
     private bool _initialized;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private ISongPlugin _editSongPlugin = new NullSongPlugin();
-    
-    private string DirectoryStaging => SafeParser.ToString(_configuration.Configuration[SettingRegistry.DirectoryStaging]);
-    private DirectoryInfo DirectoryStagingInfo => new DirectoryInfo(DirectoryStaging);
+
+    private string _directoryStaging = null!;
+    private DirectoryInfo DirectoryStagingInfo => new DirectoryInfo(_directoryStaging);
     private FileSystemDirectoryInfo DirectoryStagingFileSystemDirectoryInfo => DirectoryStagingInfo.ToDirectorySystemInfo();
-    private string DirectoryLibrary => SafeParser.ToString(_configuration.Configuration[SettingRegistry.DirectoryLibrary]);
+    private string _directoryLibrary= null!;
     
     public async Task InitializeAsync(CancellationToken token = default)
     {
         _configuration = await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         _albumValidator = new AlbumValidator(_configuration);
         _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration);
+     
+        _directoryLibrary = (await _libraryService.GetLibraryAsync(token)).Data!.Path;
+        _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data!.Path;
         
         _initialized = true;
     }    
@@ -110,7 +115,7 @@ public sealed class MediaEditService(
         var albumDirectoryName = album.ToDirectoryName();
         if (albumDirectoryName.Nullify() != null)
         {
-            var albumStagingDirInfo = new DirectoryInfo(Path.Combine(DirectoryStaging, albumDirectoryName));
+            var albumStagingDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, albumDirectoryName));
             var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
             try
             {
@@ -526,7 +531,7 @@ public sealed class MediaEditService(
             foreach (var selectedAlbumId in albumIds)
             {
                 var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, selectedAlbumId, cancellationToken);
-                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(DirectoryStaging, album.ToDirectoryName()));
+                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, album.ToDirectoryName()));
                 album.Images = [];
                 var serialized = serializer.Serialize(album);
                 await File.WriteAllTextAsync(Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true)), serialized, cancellationToken);
@@ -646,7 +651,7 @@ public sealed class MediaEditService(
             foreach (var selectedAlbumId in albumIds)
             {
                 var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, selectedAlbumId, cancellationToken);
-                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(DirectoryStaging, album.ToDirectoryName()));
+                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, album.ToDirectoryName()));
                 try
                 {
                     Directory.Delete(albumStagingDirInfo.FullName, true);
@@ -688,8 +693,8 @@ public sealed class MediaEditService(
             foreach (var selectedAlbumId in albumIds)
             {
                 var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, selectedAlbumId, cancellationToken);
-                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(DirectoryStaging, album.ToDirectoryName()));
-                var albumLibraryDirInfo = new DirectoryInfo(Path.Combine(DirectoryLibrary, album.ToDirectoryName()));
+                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, album.ToDirectoryName()));
+                var albumLibraryDirInfo = new DirectoryInfo(Path.Combine(_directoryLibrary, album.ToDirectoryName()));
                 var doMove = SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary]);
                 MoveDirectory(albumStagingDirInfo.FullName, albumLibraryDirInfo.FullName, doMove ? null : Album.JsonFileName);
             }

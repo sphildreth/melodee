@@ -57,16 +57,20 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
+            var libraryService = new LibraryService(Log.Logger, cacheManager, dbFactory);
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
+            var directoryInbound = (await libraryService.GetInboundLibraryAsync()).Data!.Path;
+            var directoryStaging = (await libraryService.GetStagingLibraryAsync()).Data!.Path;  
+            
             var grid = new Grid()
                 .AddColumn(new GridColumn().NoWrap().PadRight(4))
                 .AddColumn()
                 .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(config.Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))}")
                 .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(config.Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
                 .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(config.Configuration[SettingRegistry.ScriptingPreDiscoveryScript])}")
-                .AddRow("[b]Inbound[/]", $"{SafeParser.ToString(config.Configuration[SettingRegistry.DirectoryInbound])}")
-                .AddRow("[b]Staging[/]", $"{SafeParser.ToString(config.Configuration[SettingRegistry.DirectoryStaging])}");
+                .AddRow("[b]Inbound[/]", $"{directoryInbound}")
+                .AddRow("[b]Staging[/]", $"{directoryStaging}");
 
             AnsiConsole.Write(
                 new Panel(grid)
@@ -77,12 +81,14 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                 cacheManager,
                 dbFactory,
                 settingService,
+                libraryService,
                 serializer,
                 new MediaEditService(
                     Log.Logger,
                     cacheManager,
                     dbFactory,
                     settingService,
+                    libraryService,
                     new AlbumDiscoveryService(
                         Log.Logger,
                         cacheManager,

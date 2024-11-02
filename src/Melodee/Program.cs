@@ -56,6 +56,7 @@ builder.Services
             opt.GetRequiredService<ISerializer>()))
     .AddScoped<LocalStorageService>()
     .AddScoped<SettingService>()
+    .AddScoped<LibraryService>()
     .AddScoped<UserService>()
     .AddScoped<AlbumDiscoveryService>()
     .AddScoped<MediaEditService>()
@@ -70,13 +71,13 @@ builder.Services.AddQuartz(q =>
 {
     q.UseTimeZoneConverter();
     
-    var jobKey = new JobKey(nameof(MediaScanJob));
-    q.AddJob<MediaScanJob>(opts => opts.WithIdentity(jobKey));
-    q.AddTrigger(opts => opts
-        .ForJob(jobKey)
-        .WithIdentity("MediaScanJob-trigger")
-        .WithCronSchedule("0 0/1 * * * ?")
-    );
+    // var jobKey = new JobKey(nameof(InboundDirectoryScanJob));
+    // q.AddJob<InboundDirectoryScanJob>(opts => opts.WithIdentity(jobKey));
+    // q.AddTrigger(opts => opts
+    //     .ForJob(jobKey)
+    //     .WithIdentity("MediaScanJob-trigger")
+    //     .WithCronSchedule("0 0/1 * * * ?")
+    // );
     
 });
 builder.Services.AddSingleton<IScheduler>(provider =>

@@ -35,10 +35,12 @@ public sealed class DirectoryProcessorService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     SettingService settingService,
+    LibraryService libraryService,
     ISerializer serializer,
     MediaEditService mediaEditService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
+    private readonly LibraryService _libraryService = libraryService;
     private bool _initialized;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private IEnumerable<IConversionPlugin> _conversionPlugins = [];
@@ -51,11 +53,11 @@ public sealed class DirectoryProcessorService(
     private IEnumerable<ISongPlugin> _songPlugins = [];
     private bool _stopProcessingTriggered;
 
-    private string DirectoryInbound => _configuration.GetValue<string>(SettingRegistry.DirectoryInbound)!;
+    private string _directoryInbound = null!;
 
-    private string DirectoryStaging => _configuration.GetValue<string>(SettingRegistry.DirectoryStaging)!;
+    private string _directoryStaging = null!;
 
-    private DirectoryInfo DirectoryStagingInfo => new DirectoryInfo(DirectoryStaging);
+    private DirectoryInfo DirectoryStagingInfo => new DirectoryInfo(_directoryStaging);
 
     /// <summary>
     /// Used for Unit testing.
@@ -66,6 +68,10 @@ public sealed class DirectoryProcessorService(
     public async Task InitializeAsync(CancellationToken token = default)
     {
         _configuration = await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        
+        _directoryInbound = (await _libraryService.GetInboundLibraryAsync(token)).Data!.Path;
+        _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data!.Path;        
+        
         _songPlugins = new[]
         {
             new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
@@ -161,7 +167,7 @@ public sealed class DirectoryProcessorService(
             {
                 Errors = new[]
                 {
-                    new Exception($"Staging Directory [{DirectoryStaging}] not found.")
+                    new Exception($"Staging Directory [{_directoryStaging}] not found.")
                 },
                 Data = result
             };
@@ -426,7 +432,7 @@ public sealed class DirectoryProcessorService(
                     }
 
                     var album = albumKvp.Key;
-                    var albumDirInfo = new DirectoryInfo(Path.Combine(DirectoryStaging, album.ToDirectoryName()));
+                    var albumDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, album.ToDirectoryName()));
                     if (!albumDirInfo.Exists)
                     {
                         albumDirInfo.Create();
@@ -562,6 +568,11 @@ public sealed class DirectoryProcessorService(
         processingMessages.Add($"Conversion Plugin(s) process count [{conversionPluginsProcessedFileCount}]");
         processingMessages.Add($"Song Plugin(s) process count [{numberOfAlbumFilesProcessed}]");
         processingMessages.Add($"Album process count [{numberOfAlbumJsonFilesProcessed}]");
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+          //  scopedContext.LibraryScanHistories.Add()
+        }
 
         return new OperationResult<DirectoryProcessorResult>(processingMessages)
         {

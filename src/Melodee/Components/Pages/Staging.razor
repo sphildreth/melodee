@@ -1,4 +1,4 @@
-﻿@page "/inbound"
+﻿@page "/staging"
 
 @using Melodee.Common.Models.Cards
 @using Melodee.Services.Scanning
@@ -10,9 +10,9 @@
 @inject LibraryService LibraryService
 @inject AlbumDiscoveryService AlbumsDiscoverer
 
-<PageTitle>Inbound</PageTitle>
+<PageTitle>Staging</PageTitle>
 
-<div class="inbound-container grid-container">
+<div class="staging-container grid-container">
     <Ribbon OnClick="OnRibbonItemClick">
         <RibbonTab Title="@(_libraryFolderName ?? "Loading...")">
             <Content>
@@ -112,7 +112,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _libraryFolderName = (await LibraryService.GetInboundLibraryAsync()).Data!.Path;
+        _libraryFolderName = (await LibraryService.GetStagingLibraryAsync()).Data!.Path;
+
         _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10;
         _defaultReleaseCover = $"data:image/jpeg;base64,{ Convert.ToBase64String(await File.ReadAllBytesAsync("wwwroot/images/release.jpg"))}";
         StateHasChanged();
