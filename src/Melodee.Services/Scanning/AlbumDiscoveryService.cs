@@ -39,7 +39,7 @@ public sealed class AlbumDiscoveryService(
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Albums discovery service is not initialized.");
+            throw new InvalidOperationException("Album discovery service is not initialized.");
         }
     }
 

@@ -19,6 +19,7 @@ using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -42,6 +43,7 @@ public sealed class DirectoryProcessorService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private readonly LibraryService _libraryService = libraryService;
+    private readonly MediaEditService _mediaEditService = mediaEditService;
     private bool _initialized;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private IEnumerable<IConversionPlugin> _conversionPlugins = [];
@@ -112,6 +114,8 @@ public sealed class DirectoryProcessorService(
             _postDiscoveryScript = new PostDiscoveryScript(_configuration);
         }
 
+        await _mediaEditService.InitializeAsync(token).ConfigureAwait(false);
+        
         _initialized = true;
     }
 
@@ -119,11 +123,11 @@ public sealed class DirectoryProcessorService(
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Albums discovery service is not initialized.");
+            throw new InvalidOperationException("Directory processor service is not initialized.");
         }
     }
 
-    public async Task<OperationResult<DirectoryProcessorResult>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<DirectoryProcessorResult>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, Instant? lastProcessDate, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
@@ -207,7 +211,7 @@ public sealed class DirectoryProcessorService(
             }
         }
 
-        var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(SearchOption.AllDirectories).ToList();
+        var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
         if (directoriesToProcess.Count > 0)
         {
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
@@ -511,10 +515,11 @@ public sealed class DirectoryProcessorService(
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
                             {
-                                await mediaEditService.DoMagic(album.UniqueId, cancellationToken);
+                                await _mediaEditService.DoMagic(album.UniqueId, cancellationToken);
                             }
                         }
                         artistsUniqueIdsSeen.Add(album.ArtistUniqueId());
+                        artistsUniqueIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId() ?? 0) ?? []);
                         albumsUniqueIdsSeen.Add(album.UniqueId);
                         songsUniqueIdsSeen.AddRange(album.Songs?.Select(x => x.UniqueId) ?? []);
                     }

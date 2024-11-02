@@ -138,7 +138,7 @@ public class LibraryService(
     
     public async Task<MelodeeModels.OperationResult<LibraryScanHistory?>> CreateLibraryScanHistory(Library library, LibraryScanHistory libraryScanHistory, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => x > 0, library.Id, nameof(library));
+        Guard.Against.Expression(x => x < 1, library.Id, nameof(library));
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {

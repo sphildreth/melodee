@@ -60,8 +60,10 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             var libraryService = new LibraryService(Log.Logger, cacheManager, dbFactory);
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
-            var directoryInbound = (await libraryService.GetInboundLibraryAsync()).Data!.Path;
-            var directoryStaging = (await libraryService.GetStagingLibraryAsync()).Data!.Path;  
+            var inboundLibrary = (await libraryService.GetInboundLibraryAsync().ConfigureAwait(false)).Data;
+            
+            var directoryInbound = inboundLibrary.Path;
+            var directoryStaging = (await libraryService.GetStagingLibraryAsync().ConfigureAwait(false)).Data!.Path;  
             
             var grid = new Grid()
                 .AddColumn(new GridColumn().NoWrap().PadRight(4))
@@ -111,7 +113,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             {
                 Path = dirInfo.FullName,
                 Name = dirInfo.Name
-            });
+            }, inboundLibrary.LastScanAt);
 
             sw.Stop();
             Log.Debug("ℹ️ Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, sw.Elapsed);

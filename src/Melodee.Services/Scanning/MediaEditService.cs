@@ -49,6 +49,8 @@ public sealed class MediaEditService(
         _directoryLibrary = (await _libraryService.GetLibraryAsync(token)).Data!.Path;
         _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data!.Path;
         
+        await albumDiscoveryService.InitializeAsync(token).ConfigureAwait(false);
+        
         _initialized = true;
     }    
     
@@ -56,7 +58,7 @@ public sealed class MediaEditService(
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Albums discovery service is not initialized.");
+            throw new InvalidOperationException("Media edit service is not initialized.");
         }
     }  
    

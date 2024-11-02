@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using ATL.Logging;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
+using NodaTime;
 using SearchOption = System.IO.SearchOption;
 
 namespace Melodee.Common.Models.Extensions;
@@ -62,26 +62,24 @@ public static class FileSystemDirectoryInfoExtensions
         return null;
     }
 
-    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, SearchOption searchOption)
+    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Instant? modifiedSince, SearchOption searchOption)
     {
         if (string.IsNullOrWhiteSpace(fileSystemDirectoryInfo.Path))
         {
             return [];
         }
-
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
             return [];
         }
-
         var result = new List<FileSystemDirectoryInfo>();
-        result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption) where dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)) select dir.ToDirectorySystemInfo());
-        if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)))
+        var modifiedSinceValue = modifiedSince?.ToDateTimeUtc() ?? DateTime.MinValue;
+        result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption) where dir.LastWriteTimeUtc >= modifiedSinceValue && dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)) select dir.ToDirectorySystemInfo());
+        if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => x.LastWriteTimeUtc >= modifiedSinceValue && FileHelper.IsFileMediaType(x.Extension)))
         {
             result.Add(fileSystemDirectoryInfo);
         }
-
         return result;
     }
 

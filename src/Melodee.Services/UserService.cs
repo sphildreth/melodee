@@ -194,7 +194,7 @@ public sealed class UserService(
             };
         }
 
-        if (user.Data?.PasswordHash != password.ToPasswordHash())
+        if (user.Data?.PasswordHash != (emailAddress + password).ToPasswordHash())
         {
             return new MelodeeModels.OperationResult<User?>
             {
@@ -220,7 +220,7 @@ public sealed class UserService(
             }
         }, cancellationToken);
 
-        // Sets return object so consumer sees new value, actual update to DB happens in another non blocking thread.
+        // Sets return object so consumer sees new value, actual update to DB happens in another non-blocking thread.
         user.Data.LastActivityAt = now;
         user.Data.LastLoginAt = now;
         return user;
@@ -251,7 +251,7 @@ public sealed class UserService(
                 UserNameNormalized = username.ToUpperInvariant(),
                 Email = emailAddress,
                 EmailNormalized = emailAddress.ToUpperInvariant(),
-                PasswordHash = password.ToPasswordHash(),
+                PasswordHash = (emailAddress + password).ToPasswordHash(),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             };
             scopedContext.Users.Add(newUser);
@@ -279,14 +279,16 @@ public sealed class UserService(
                     .ExecuteUpdateAsync(x => x.SetProperty(u => u.IsAdmin, true), cancellationToken)
                     .ConfigureAwait(false);
             }
-
+            
+            ClearCache(emailAddress, null, null);
+            
             return GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).Result;
         }
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(User currentUser, User detailToUpdate, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => x < 1, detailToUpdate?.Id ?? 0, nameof(detailToUpdate));
+        Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
         var result = false;
         var validationResult = ValidateModel(detailToUpdate);
@@ -336,7 +338,6 @@ public sealed class UserService(
                 dbDetail.IsLocked = detailToUpdate.IsLocked;
                 dbDetail.IsScrobblingEnabled = detailToUpdate.IsScrobblingEnabled;
                 dbDetail.Notes = detailToUpdate.Notes;
-                dbDetail.PasswordHash = detailToUpdate.PasswordHash.ToPasswordHash();
                 dbDetail.SortOrder = detailToUpdate.SortOrder;
                 dbDetail.Tags = detailToUpdate.Tags;
                 dbDetail.UserName = detailToUpdate.UserName;

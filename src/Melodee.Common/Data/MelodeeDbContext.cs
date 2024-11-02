@@ -251,7 +251,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 28,
                     Key = SettingRegistry.ProcessingArtistNameReplacements,
                     Comment = "Fragments of artist names to replace (JSON Dictionary).",
-                    Value = "{'AC/DC', ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate', ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }",
+                    Value = "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }",
                     CreatedAt = now,
                 },
                 new Setting

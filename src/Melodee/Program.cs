@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Quartz.AspNetCore;
-using Quartz.Job;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
@@ -86,23 +85,16 @@ builder.Services.AddSingleton<IScheduler>(provider =>
     var scheduler = factory.GetScheduler().Result;
     return scheduler;
 });
-
-//builder.Services.AddScoped<MediaScanJob>();
-
-// ASP.NET Core hosting
 builder.Services.AddQuartzServer(opts =>
 {
-    // when shutting down we want jobs to complete gracefully
     opts.WaitForJobsToComplete = true;
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -114,6 +106,6 @@ app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+   .AddInteractiveServerRenderMode();
 
 app.Run();

@@ -23,9 +23,8 @@ public sealed class Serializer(ILogger logger) : ISerializer
         catch (Exception ex)
         {
             Logger.Error(ex, "Failed to Serialize [{0}]", o.ToString());
+            throw;
         }
-
-        return null;
     }
     
     public TOut? Deserialize<TOut>(string? s)
@@ -50,8 +49,7 @@ public sealed class Serializer(ILogger logger) : ISerializer
         catch (Exception ex)
         {
             Logger.Error(ex, "Failed to Deserialize [{0}]", typeof(TOut).Name);
+            throw;
         }
-
-        return default;
     }
 }

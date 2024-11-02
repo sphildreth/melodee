@@ -81,6 +81,16 @@ public static class SongExtensions
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.Artist);
     }
+    
+    public static long? SongArtistUniqueId(this Song song)
+    {
+        var songArtist = song.SongArtist().Nullify();
+        if (songArtist == null)
+        {
+            return null;
+        }
+        return SafeParser.Hash(songArtist);
+    }    
 
     public static string? AlbumArtist(this Song song)
     {

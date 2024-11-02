@@ -19,12 +19,9 @@ public sealed class InboundDirectoryScanJob(
     LibraryService libraryService,
     DirectoryProcessorService directoryProcessorService) : JobBase(logger, settingService)
 {
-    private readonly DirectoryProcessorService _directoryProcessorService = directoryProcessorService;
-    private readonly LibraryService _libraryService = libraryService;
-
     public override async Task Execute(IJobExecutionContext context)
     {
-        var library = (await _libraryService.GetInboundLibraryAsync(context.CancellationToken).ConfigureAwait(false)).Data;
+        var library = (await libraryService.GetInboundLibraryAsync(context.CancellationToken).ConfigureAwait(false)).Data;
         var directoryInbound = library.Path;
         if (directoryInbound.Nullify() == null)
         {
@@ -36,24 +33,33 @@ public sealed class InboundDirectoryScanJob(
             Logger.Debug($"Inbound library does not need scanning. Directory last scanned [{ library.LastScanAt }], Directory last write [{ library.LastWriteTime()}]");
             return;
         }
-        await _directoryProcessorService.InitializeAsync(context.CancellationToken).ConfigureAwait(false);        
-        var result = await _directoryProcessorService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+
+        try
         {
-            Path = directoryInbound,
-            Name = directoryInbound
-        },context.CancellationToken).ConfigureAwait(false);
-        if (!result.IsSuccess)
-        {
-            Logger.Warning("Failed to Scan inbound library.");
+            await directoryProcessorService.InitializeAsync(context.CancellationToken).ConfigureAwait(false);        
+            var result = await directoryProcessorService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            {
+                Path = directoryInbound,
+                Name = directoryInbound
+            },library.LastScanAt,context.CancellationToken).ConfigureAwait(false);
+            
+            if (!result.IsSuccess)
+            {
+                Logger.Warning("Failed to Scan inbound library.");
+            }
+            await libraryService.CreateLibraryScanHistory(library, new LibraryScanHistory
+            {
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                DurationInMs = result.Data.DurationInMs,
+                LibraryId = library.Id,
+                NewAlbumsCount = result.Data.NewAlbumsCount,
+                NewArtistsCount = result.Data.NewArtistsCount,
+                NewSongsCount = result.Data.NewSongsCount,
+            }, context.CancellationToken).ConfigureAwait(false);
         }
-        await _libraryService.CreateLibraryScanHistory(library, new LibraryScanHistory
+        catch (Exception e)
         {
-            CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
-            DurationInMs = result.Data.DurationInMs,
-            LibraryId = library.Id,
-            NewAlbumsCount = result.Data.NewAlbumsCount,
-            NewArtistsCount = result.Data.NewArtistsCount,
-            NewSongsCount = result.Data.NewSongsCount,
-        }, context.CancellationToken).ConfigureAwait(false);
+            Logger.Error(e, "Failed to Scan inbound library.");
+        }
     }
 }

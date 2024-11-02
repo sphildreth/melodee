@@ -43,9 +43,9 @@ public sealed class SafeParserTests : TestsBase
         Assert.NotNull(strings);
         Assert.NotEmpty(strings);
         Assert.Contains("^", strings);
-        
-        
     }
+    
+    
 
     [Fact]
     public void FromSerializedJsonDictionary()
