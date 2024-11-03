@@ -26,8 +26,7 @@ public sealed record Album
     public required IEnumerable<string> ViaPlugins { get; set; }
 
     /// <summary>
-    ///     This is the directory where the Album was created, it will not be the "Staging" or "Library" directory where
-    ///     there Album is moved to once processed.
+    ///     This is the directory where the Album was created, it will not be the "Staging" or "Library" directory where the Album is moved to once processed.
     /// </summary>
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
 
@@ -70,6 +69,21 @@ public sealed record Album
     
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
+    public async Task<string?> CoverImageBase64Async(FileSystemDirectoryInfo imageDirectory, CancellationToken cancellationToken = default)
+    {
+        if (Images == null || !Images.Any())
+        {
+            return null;
+        }
+        var cover = Images.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
+        if (cover != null)
+        {
+            var imageBytes = await File.ReadAllBytesAsync(cover.FileInfo?.FullName(imageDirectory) ?? string.Empty, cancellationToken);
+            return $"data:image/jpeg;base64,{ Convert.ToBase64String(imageBytes)}";   
+        }
+        return null;
+    }    
+    
     public Album MergeSongs(IEnumerable<Song> pluginResultData)
     {
         var songs = new List<Song>(Songs ?? []);

@@ -84,6 +84,23 @@ public static partial class StringExtensions
 
         return input.Trim();
     }
+    
+    public static string ToBase64(this string text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    public static string FromBase64(this string text)
+    {
+        text = text.Replace('_', '/').Replace('-', '+');
+        switch (text.Length % 4)
+        {
+            case 2:
+                text += "==";
+                break;
+            case 3:
+                text += "=";
+                break;
+        }
+        return Encoding.UTF8.GetString(Convert.FromBase64String(text));
+    }    
 
     public static string? ToTitleCase(this string input, bool doPutTheAtEnd = true)
     {

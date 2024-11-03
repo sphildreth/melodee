@@ -7,12 +7,13 @@
 @using Quartz
 @using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
-@inject MainLayoutProxyService MainLayoutProxyService
-@inject Serilog.ILogger Logger
-@inject SettingService SettingService
-@inject LibraryService LibraryService
 @inject AlbumDiscoveryService AlbumsDiscoverer
 @inject DefaultImages DefaultImages
+@inject LibraryService LibraryService
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject NavigationManager NavManager
+@inject Serilog.ILogger Logger
+@inject SettingService SettingService
 
 <PageTitle>Staging</PageTitle>
 
@@ -41,6 +42,7 @@
               AllowPaging="true"
               AllowSorting="true"
               PageSize="_defaultPageSize"
+              OnRowDoubleClick="OnRowDoubleClick"
               AllowSelection="true"
               SelectionMode="GridSelectionMode.Multiple"
               SelectedItemsChanged="OnSelectedItemsChanged"
@@ -62,6 +64,9 @@
                 <GridColumn TItem="AlbumCard" HeaderText="Duration" PropertyName="Duration" SortString="Duration" SortKeySelector="item => item.Duration">
                     @context.Duration
                 </GridColumn>
+                <GridColumn TItem="AlbumCard" di HeaderText="Duration" PropertyName="Duration" SortString="Duration" SortKeySelector="item => item.Duration">
+                    @context.Duration
+                </GridColumn>
                 <GridColumn TItem="AlbumCard" HeaderText="Song #" PropertyName="SongCount" SortString="SongCount" SortKeySelector="item => item.SongCount">
                     @context.SongCount
                 </GridColumn>
@@ -76,12 +81,18 @@
 @code {
     private readonly List<ToastMessage> _messages = [];
     private int _libraryId;
+    private Guid _libraryApiKey;
     private string? _libraryFolderName;
     private Grid<AlbumCard> _grid = default!;
     private short _defaultPageSize;
     private string _formattingDateTimeDisplayActivityFormat = null!;
     private ConfirmDialog _confirmDeleteDialog = default!;
     private HashSet<AlbumCard> _selectedAlbumCards = new();
+
+    private void OnRowDoubleClick(GridRowEventArgs<AlbumCard> args)
+    {
+        NavManager.NavigateTo($"/album/{_libraryApiKey}/{args.Item.UniqueId}/{"/staging".ToBase64()}");
+    }
 
     private Task OnSelectedItemsChanged(HashSet<AlbumCard> albumCards)
     {
@@ -180,6 +191,7 @@
         var library = (await LibraryService.GetStagingLibraryAsync()).Data!;
         _libraryFolderName = library.Path;
         _libraryId = library.Id;
+        _libraryApiKey = library.ApiKey;
         _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize, 10)).Data!;
         _formattingDateTimeDisplayActivityFormat = (await SettingService.GetValueAsync(SettingRegistry.FormattingDateTimeDisplayActivityFormat, MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault)).Data!;
         StateHasChanged();

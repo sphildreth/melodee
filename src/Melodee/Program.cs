@@ -3,6 +3,8 @@ using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
 using Melodee.Jobs;
+using Melodee.Plugins.MetaData.Song;
+using Melodee.Plugins.Processor;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;

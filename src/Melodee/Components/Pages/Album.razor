@@ -1,0 +1,177 @@
+﻿@page "/album/{libraryApiKey:guid}/{uniqueId:long}/{returnUrl}"
+
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
+@using Melodee.Common.Models.Extensions
+@using Melodee.Plugins.MetaData.Song
+@using Melodee.Plugins.Processor
+@using Melodee.Services.Scanning
+@using Melodee.ViewModels
+@inject AlbumDiscoveryService AlbumsDiscoverer
+@inject DefaultImages DefaultImages
+@inject LibraryService LibraryService
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject NavigationManager NavManager
+@inject Serilog.ILogger Logger
+@inject SettingService SettingService
+@inject ISerializer Serializer
+
+<PageTitle>Album Detail</PageTitle>
+
+<Toasts class="p-3" Messages="_messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.TopRight"/>
+
+<div class="album-edit-container container">
+    <p class="font-monospace fs-6">@(_albumFullPath ?? "Loading...")</p>
+    <Ribbon OnClick="OnRibbonItemClick" Class="mb-2">
+        <RibbonTab Title="Actions" Active="true">
+            <Content>
+                <RibbonItem Name="SaveAlbum" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.Save">Save</RibbonItem>
+                <RibbonItem Name="DeleteAlbum" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash">Delete</RibbonItem>
+            </Content>
+        </RibbonTab>
+        <RibbonTab Title="Cover Image">
+            <Content>
+                <RibbonItem Name="ChangeCoverImage" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.FileImage">Change</RibbonItem>
+                <RibbonItem Name="DeleteAlbumImages" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash2">Remove</RibbonItem>
+            </Content>
+        </RibbonTab>
+    </Ribbon>
+    <div class="row">
+        <div class="col-4">
+            <img alt="@_albumEdit.Artist" class="cover-image" src="@_albumCoverBase64"/>
+        </div>
+        <div class="col-8">
+            <EditForm EditContext="_editFormEditContext" class="form-login" FormName="AlbumEdit">
+                <DataAnnotationsValidator/>
+                <div class="form-group">
+                    <label>Artist Name</label>
+                    <div class="mb-2">
+                        <InputText @bind-Value="_albumEdit.Artist" class="form-control"/>
+                        <ValidationMessage For="() => _albumEdit.Artist"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Album Title</label>
+                    <div class="mb-2">
+                        <InputText @bind-Value="_albumEdit.Title" class="form-control"/>
+                        <ValidationMessage For="() => _albumEdit.Title"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Release Year</label>
+                    <div class="mb-2">
+                        <InputNumber @bind-Value="_albumEdit.Year" class="form-control"/>
+                        <ValidationMessage For="() => _albumEdit.Year"/>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? _albumCoverBase64;
+    private string? _albumFullPath;
+    private bool _loading = true;
+    private EditContext? _editFormEditContext;
+    private readonly List<ToastMessage> _messages = [];
+
+    private AlbumEdit _albumEdit = new AlbumEdit
+    {
+        Artist = string.Empty,
+        Title = string.Empty,
+        Year = DateTime.MinValue.Year
+    };
+
+    [Parameter] public Guid LibraryApiKey { get; set; }
+
+    [Parameter] public long UniqueId { get; set; }
+
+    [Parameter] public string? ReturnUrl { get; set; }
+
+    private async Task OnRibbonItemClick(RibbonItemEventArgs args)
+    {
+        if (args.Name == "SaveAlbum")
+        {
+            await SaveAlbum();
+        }
+    }
+
+    private async Task SaveAlbum()
+    {
+        if (_editFormEditContext != null && _editFormEditContext.Validate())
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+            try
+            {
+                // Save release
+                var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
+                var album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), UniqueId);
+
+                album.SetTagValue(MetaTagIdentifier.Album, _albumEdit.Title);
+                album.SetTagValue(MetaTagIdentifier.Artist, _albumEdit.Artist);
+                album.SetTagValue(MetaTagIdentifier.OrigAlbumYear, _albumEdit.Year);
+
+                if (album.Songs != null)
+                {
+                    var configuration = await SettingService.GetMelodeeConfigurationAsync();
+                    var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), configuration);
+                    foreach (var song in album.Songs)
+                    {
+                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.Album, _albumEdit.Title);
+                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.Artist, _albumEdit.Artist);
+                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.OrigAlbumYear, _albumEdit.Year);
+                        await editSongPlugin.UpdateSongAsync(album.Directory!, song);
+                    }
+                }
+
+                var serialized = Serializer.Serialize(album);
+                var albumDirectoryName = album.ToDirectoryName();
+                if (albumDirectoryName.Nullify() != null)
+                {
+                    var albumStagingDirInfo = new DirectoryInfo(Path.Combine(library.Path, albumDirectoryName));
+                    var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
+                    await File.WriteAllTextAsync(jsonName, serialized);
+                    NavManager.NavigateTo(ReturnUrl?.FromBase64() ?? "/");
+                }
+
+                _messages.Add(
+                    new ToastMessage
+                    {
+                        Type = ToastType.Danger,
+                        Title = $"Error saving Album",
+                        HelpText = $"{DateTime.Now}",
+                        Message = $"Unable to save Album edits.",
+                    });
+            }
+            finally
+            {
+                MainLayoutProxyService.ToggleSpinnerVisible();
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _editFormEditContext = new(_albumEdit);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
+        await AlbumsDiscoverer.InitializeAsync();
+        var album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), UniqueId);
+        _albumEdit = new AlbumEdit
+        {
+            Artist = album.Artist() ?? string.Empty,
+            Title = album.AlbumTitle() ?? string.Empty,
+            Year = album.AlbumYear() ?? DateTime.MinValue.Year
+        };
+        _editFormEditContext = new(_albumEdit);
+        _albumFullPath = album.Directory?.FullName();
+        _albumCoverBase64 = await album.CoverImageBase64Async(library.ToFileSystemDirectoryInfo()) ?? DefaultImages.ReleaseCover;
+        _loading = false;
+        StateHasChanged();
+    }
+
+}

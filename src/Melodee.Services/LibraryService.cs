@@ -22,7 +22,9 @@ public class LibraryService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
 
+    private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
     private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
+    private const string CacheKeyDetailTemplate = "urn:library:{0}";
     
     public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
     {
@@ -41,6 +43,47 @@ public class LibraryService(
             Data = result
         }; 
     }
+    
+    public Task<MelodeeModels.OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+
+        return CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var libraryId = await scopedContext
+                    .Libraries
+                    .AsNoTracking()
+                    .Where(x => x.ApiKey == apiKey)
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                return await GetAsync(libraryId, cancellationToken).ConfigureAwait(false);
+            }
+        }, cancellationToken);
+    }
+    
+    public async Task<MelodeeModels.OperationResult<Library?>> GetAsync(int id, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, id, nameof(id));
+
+        var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                return await scopedContext
+                    .Libraries
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }, cancellationToken);
+        return new MelodeeModels.OperationResult<Library?>
+        {
+            Data = result
+        };
+    }    
     
     public async Task<MelodeeModels.OperationResult<Library>> GetLibraryAsync(CancellationToken cancellationToken = default)
     {
