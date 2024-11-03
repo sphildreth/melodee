@@ -41,17 +41,15 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.Console()
-            .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+            .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/";
+        var testFile = @"/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
-            var config = TestsBase.NewPluginsConfiguration();
             var processor = CreateDirectoryProcessorService();
-            await processor.InitializeAsync();
-            processor.SetConfiguration(config);
+            await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -69,17 +67,15 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.Console()
-            .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+            .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL/";
+        var testFile = @"/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL/";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
-            var config = TestsBase.NewPluginsConfiguration();
             var processor = CreateDirectoryProcessorService();
-            await processor.InitializeAsync();
-            processor.SetConfiguration(config);
+            await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -92,22 +88,54 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
     }
     
     [Fact]
+    public async Task ValidateDirectoryGetAlbumsWithMultipleReleasesSameFolder()
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.Console()
+            .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+        
+        var testFile = @"/melodee_test/inbound/3AlbumsMixed/";
+        var dirInfo = new DirectoryInfo(testFile);
+        if (dirInfo.Exists)
+        {  
+            foreach (var file in dirInfo.EnumerateFiles("*.melodee.json"))
+            {
+                file.Delete();
+            }
+            var config = TestsBase.NewPluginsConfiguration();
+            var processor = CreateDirectoryProcessorService();
+            await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
+            var allAlbums = await processor.AllAlbumsForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
+            Assert.NotNull(allAlbums);
+            Assert.True(allAlbums.IsSuccess);   
+            Assert.Equal(3, allAlbums.Data.Item1.Count());
+            
+            // Ensure the three albums found in the folder don't have the same songs
+            var firstAlbumSongCount = allAlbums.Data.Item1.First().Songs?.Count() ?? 0;
+            var secondAlbumSongCount = allAlbums.Data.Item1.Skip(1).Take(1).First().Songs?.Count() ?? 0;
+            var thirdAlbumSongCount = allAlbums.Data.Item1.Last().Songs?.Count() ?? 0;
+            Assert.True(firstAlbumSongCount  != secondAlbumSongCount && firstAlbumSongCount != thirdAlbumSongCount);
+        }
+    }     
+    
+    [Fact]
     public async Task ValidateDirectoryGetProcessedSongsWithMultipleArtistsIsSuccess()
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.Console()
-            .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+            .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/tests/Songs_with_artists_2/";
+        var testFile = @"/melodee_test/tests/Songs_with_artists_2/";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
             var config = TestsBase.NewPluginsConfiguration();
             var processor = CreateDirectoryProcessorService();
-            await processor.InitializeAsync();
-            processor.SetConfiguration(config);
+            await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
@@ -125,10 +153,10 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.Console()
-            .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+            .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
-        var testFile = @"/home/steven/incoming/melodee_test/tests/Songs_with_artists/";
+        var testFile = @"/melodee_test/tests/Songs_with_artists/";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
@@ -136,10 +164,8 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             {
                 file.Delete();
             }
-            var config = TestsBase.NewPluginsConfiguration();
             var processor = CreateDirectoryProcessorService();
-            await processor.InitializeAsync();
-            processor.SetConfiguration(config);
+            await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var allAlbums = await processor.AllAlbumsForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
             Assert.NotNull(allAlbums);
             Assert.True(allAlbums.IsSuccess);   

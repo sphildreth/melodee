@@ -13,7 +13,7 @@ public class CUETests : TestsBase
     [Fact]
     public async Task ValidateCueSheetParsingAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL/01-pixel_-_reality_strikes_back-mycel.cue";
+        var testFile = @"/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL/01-pixel_-_reality_strikes_back-mycel.cue";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
@@ -26,14 +26,14 @@ public class CUETests : TestsBase
     [Fact]
     public async Task ValidateCueSheetFileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL/01-pixel_-_reality_strikes_back-mycel.cue";
+        var testFile = @"/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL/01-pixel_-_reality_strikes_back-mycel.cue";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .WriteTo.Console()
-                .WriteTo.File("/home/steven/incoming/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+                .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();       
             
             var cueSheet = new CueSheet(
@@ -44,7 +44,7 @@ public class CUETests : TestsBase
             
             var sfvResult = await cueSheet.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL",
+                Path = @"/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL",
                 Name = "Pixel_-_Reality_Strikes_Back-2004-MYCEL"
             });
             Assert.NotNull(sfvResult);

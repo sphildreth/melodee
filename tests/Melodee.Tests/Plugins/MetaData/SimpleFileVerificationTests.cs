@@ -12,7 +12,7 @@ public class SimpleFileVerificationTests : TestsBase
     [Fact]
     public async Task ValidateSfvFileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.sfv";
+        var testFile = @"/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.sfv";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
@@ -24,7 +24,7 @@ public class SimpleFileVerificationTests : TestsBase
                    TestsBase.NewPluginsConfiguration());
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
+                Path = @"/melodee_test/inbound/00-k 2024",
                 Name = "00-k 2024"
             });
             Assert.NotNull(sfvResult);
@@ -35,7 +35,7 @@ public class SimpleFileVerificationTests : TestsBase
     [Fact]
     public async Task ValidateSfvFile2Async()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/Swartz/00-edu_schwartz-with_me-(wthi110)-web-2024.sfv";
+        var testFile = @"/melodee_test/inbound/Swartz/00-edu_schwartz-with_me-(wthi110)-web-2024.sfv";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
@@ -46,7 +46,7 @@ public class SimpleFileVerificationTests : TestsBase
                 }, new AlbumValidator(TestsBase.NewPluginsConfiguration()), TestsBase.NewPluginsConfiguration());
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/inbound/Swartz",
+                Path = @"/melodee_test/inbound/Swartz",
                 Name = "Swartz"
             });
             Assert.NotNull(sfvResult);
@@ -58,7 +58,7 @@ public class SimpleFileVerificationTests : TestsBase
     public async Task ValidateSfvFile3Async()
     {
         // A SFV which has CRCs that don't match should fail
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/00-va-the_sound_of_melodic_techno_vol._21-web-2024.sfv";
+        var testFile = @"/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21/00-va-the_sound_of_melodic_techno_vol._21-web-2024.sfv";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
@@ -70,7 +70,7 @@ public class SimpleFileVerificationTests : TestsBase
                    TestsBase.NewPluginsConfiguration());
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21",
+                Path = @"/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21",
                 Name = "The Sound Of Melodic Techno Vol. 21/"
             });
             Assert.NotNull(sfvResult);

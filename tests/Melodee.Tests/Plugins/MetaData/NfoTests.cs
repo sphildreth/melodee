@@ -12,7 +12,7 @@ public class NfoTests
     [Fact]
     public async Task ParseNfoFile()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.nfo";
+        var testFile = @"/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.nfo";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
@@ -26,7 +26,7 @@ public class NfoTests
     [Fact]
     public async Task ParseNfoFile01()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/test_nfo01.nfo";
+        var testFile = @"/melodee_test/tests/test_nfo01.nfo";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {

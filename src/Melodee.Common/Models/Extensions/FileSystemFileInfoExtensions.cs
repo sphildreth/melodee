@@ -29,7 +29,7 @@ public static class FileSystemFileInfoExtensions
     /// </summary>
     public static void MoveFile(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo, string destinationFileName)
     {
-        var fullName = fileSystemFileInfo.FullName(directoryInfo);        
+        var fullName = fileSystemFileInfo.FullOriginalName(directoryInfo);        
         if (fileSystemFileInfo.Exists(directoryInfo))
         {
             File.Copy(fullName, destinationFileName);

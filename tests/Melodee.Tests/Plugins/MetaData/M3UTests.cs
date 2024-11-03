@@ -13,7 +13,7 @@ public class M3UTests : TestsBase
     [Fact]
     public async Task ValidateM3UFileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.m3u";
+        var testFile = @"/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.m3u";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
@@ -24,7 +24,7 @@ public class M3UTests : TestsBase
                TestsBase.NewPluginsConfiguration());
             var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
+                Path = @"/melodee_test/inbound/00-k 2024",
                 Name = "00-k 2024"
             });
             Assert.NotNull(m3UResult);

@@ -9,7 +9,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
     [Fact]
     public async Task ValidAlbumGridInboundResults()
     {
-        var testDirectory = @"/home/steven/incoming/melodee_test/inbound";
+        var testDirectory = @"/melodee_test/inbound";
         var dir = new DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
@@ -19,10 +19,10 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
                 MockFactory(),
                 GetSettingService(),
                 Serializer);
-            await rd.InitializeAsync();
+            await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/inbound",
+                Path = @"/melodee_test/inbound",
                 Name = "staging"
             }, new PagedRequest());
             Assert.NotNull(albumsForDirectoryAsync);
@@ -46,9 +46,10 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
     [Fact]
     public async Task ValidAlbumGridStagingResults()
     {
-        var testDirectory = @"/home/steven/incoming/melodee_test/staging";
+        var testDirectory = @"/melodee_test/staging";
         var dir = new DirectoryInfo(testDirectory);
-        if (dir.Exists)
+        // Only run if the test staging directory exists and if the test staging directory has directories (otherwise no albums to return).
+        if (dir.Exists && Directory.GetDirectories(testDirectory).Length > 0)
         {
             var rd = new AlbumDiscoveryService(
                 Logger,
@@ -56,10 +57,10 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
                 MockFactory(),
                 GetSettingService(),
                 Serializer);
-            await rd.InitializeAsync();
+            await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/staging",
+                Path = @"/melodee_test/staging",
                 Name = "staging"
             }, new PagedRequest());
             Assert.NotNull(albumsForDirectoryAsync);

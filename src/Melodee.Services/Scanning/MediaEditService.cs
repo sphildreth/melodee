@@ -12,6 +12,7 @@ using Melodee.Plugins.Processor;
 using Melodee.Plugins.Validation;
 using Melodee.Plugins.Validation.Models;
 using Melodee.Services.Interfaces;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -40,16 +41,16 @@ public sealed class MediaEditService(
     private FileSystemDirectoryInfo DirectoryStagingFileSystemDirectoryInfo => DirectoryStagingInfo.ToDirectorySystemInfo();
     private string _directoryLibrary= null!;
     
-    public async Task InitializeAsync(CancellationToken token = default)
+    public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
-        _configuration = await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         _albumValidator = new AlbumValidator(_configuration);
         _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration);
      
-        _directoryLibrary = (await _libraryService.GetLibraryAsync(token)).Data!.Path;
-        _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data!.Path;
+        _directoryLibrary = configuration?.GetValue<string?>(SettingRegistry.DirectoryLibrary) ?? (await _libraryService.GetLibraryAsync(token)).Data.Path;        
+        _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
         
-        await albumDiscoveryService.InitializeAsync(token).ConfigureAwait(false);
+        await albumDiscoveryService.InitializeAsync(configuration, token).ConfigureAwait(false);
         
         _initialized = true;
     }    
@@ -119,14 +120,7 @@ public sealed class MediaEditService(
         {
             var albumStagingDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, albumDirectoryName));
             var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
-            try
-            {
-                await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "[{Album}] JsonName [{JsonName}]", album.ToString(), jsonName);
-            }
+            await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
         }
         else
         {

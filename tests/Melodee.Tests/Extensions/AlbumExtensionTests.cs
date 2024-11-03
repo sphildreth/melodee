@@ -14,7 +14,7 @@ public class AlbumExtensionTests
             ViaPlugins = [],
             OriginalDirectory = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/inbound/00-k 2024",
+                Path = @"/melodee_test/inbound/00-k 2024",
                 Name = "00-k 2024"
             },
             Tags = new[]
@@ -49,7 +49,7 @@ public class AlbumExtensionTests
             {
                 new Song
                 {
-                    CrcHash = Crc32.Calculate(new FileInfo(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3")),
+                    CrcHash = Crc32.Calculate(new FileInfo(@"/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3")),
                     File = new FileSystemFileInfo
                     {
                         Name = "03-holy_truth-flako_el_dark_cowboy.mp3\"",
@@ -84,10 +84,10 @@ public class AlbumExtensionTests
     }
 
     [Theory]
-    [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.sfv", true)]
-    [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3", true)]
-    [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/00--fire_proof-(dzb707)-web-2024.sfv", false)]
-    [InlineData(@"/home/steven/incoming/melodee_test/inbound/00-k 2024/00-kittie-vultures-ep-web-2024.sfv", false)]
+    [InlineData(@"/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.sfv", true)]
+    [InlineData(@"/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3", true)]
+    [InlineData(@"/melodee_test/inbound/00-k 2024/00--fire_proof-(dzb707)-web-2024.sfv", false)]
+    [InlineData(@"/melodee_test/inbound/00-k 2024/00-kittie-vultures-ep-web-2024.sfv", false)]
     [InlineData("batman", false)]
     public void ValidateFileIsForAlbum(string fileName, bool shouldBe)
     {

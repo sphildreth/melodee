@@ -21,40 +21,40 @@ public sealed class InboundDirectoryScanJob(
 {
     public override async Task Execute(IJobExecutionContext context)
     {
-        var library = (await libraryService.GetInboundLibraryAsync(context.CancellationToken).ConfigureAwait(false)).Data;
-        var directoryInbound = library.Path;
+        var inboundLibrary = (await libraryService.GetInboundLibraryAsync(context.CancellationToken).ConfigureAwait(false)).Data;
+        var directoryInbound = inboundLibrary.Path;
         if (directoryInbound.Nullify() == null)
         {
             Logger.Warning("No inbound library configuration found.");
             return;
         }
-        if (!library.NeedsScanning())
+        if (!inboundLibrary.NeedsScanning())
         {
-            Logger.Debug($"Inbound library does not need scanning. Directory last scanned [{ library.LastScanAt }], Directory last write [{ library.LastWriteTime()}]");
+            Logger.Debug($"Inbound library does not need scanning. Directory last scanned [{ inboundLibrary.LastScanAt }], Directory last write [{ inboundLibrary.LastWriteTime()}]");
             return;
         }
 
         try
         {
-            await directoryProcessorService.InitializeAsync(context.CancellationToken).ConfigureAwait(false);        
+            await directoryProcessorService.InitializeAsync(null, context.CancellationToken).ConfigureAwait(false);        
             var result = await directoryProcessorService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = directoryInbound,
                 Name = directoryInbound
-            },library.LastScanAt,context.CancellationToken).ConfigureAwait(false);
+            },inboundLibrary.LastScanAt,context.CancellationToken).ConfigureAwait(false);
             
             if (!result.IsSuccess)
             {
                 Logger.Warning("Failed to Scan inbound library.");
             }
-            await libraryService.CreateLibraryScanHistory(library, new LibraryScanHistory
+            await libraryService.CreateLibraryScanHistory(inboundLibrary, new LibraryScanHistory
             {
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
                 DurationInMs = result.Data.DurationInMs,
-                LibraryId = library.Id,
-                NewAlbumsCount = result.Data.NewAlbumsCount,
-                NewArtistsCount = result.Data.NewArtistsCount,
-                NewSongsCount = result.Data.NewSongsCount,
+                LibraryId = inboundLibrary.Id,
+                FoundAlbumsCount = result.Data.NewAlbumsCount,
+                FoundArtistsCount = result.Data.NewArtistsCount,
+                FoundSongsCount = result.Data.NewSongsCount,
             }, context.CancellationToken).ConfigureAwait(false);
         }
         catch (Exception e)

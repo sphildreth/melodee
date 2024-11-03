@@ -29,12 +29,12 @@ public sealed class AlbumDiscoveryService(
     private bool _initialized;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
 
-    public async Task InitializeAsync(CancellationToken token = default)
+    public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
-        _configuration = await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         _initialized = true;
     }
-
+    
     private void CheckInitialized()
     {
         if (!_initialized)

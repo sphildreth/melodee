@@ -78,7 +78,7 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(opts => opts
         .ForJob(jobKey)
         .WithIdentity("MediaScanJob-trigger")
-        .WithCronSchedule("0 0/5 * * * ?")
+        .WithCronSchedule("0 0/1 * * * ?")
     );
     
 });

@@ -58,17 +58,11 @@ public sealed class DirectoryProcessorService(
 
     private string _directoryStaging = null!;
 
-    /// <summary>
-    /// Used for Unit testing.
-    /// </summary>
-    /// <param name="configuration"></param>
-    public void SetConfiguration(IMelodeeConfiguration configuration) => _configuration = configuration;
-
-    public async Task InitializeAsync(CancellationToken token = default)
+    public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
-        _configuration = await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         
-        _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;        
+        _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;        
         
         _songPlugins = new[]
         {
@@ -114,7 +108,7 @@ public sealed class DirectoryProcessorService(
             _postDiscoveryScript = new PostDiscoveryScript(_configuration);
         }
 
-        await _mediaEditService.InitializeAsync(token).ConfigureAwait(false);
+        await _mediaEditService.InitializeAsync(configuration, token).ConfigureAwait(false);
         
         _initialized = true;
     }
@@ -466,13 +460,21 @@ public sealed class DirectoryProcessorService(
                             {
                                 break;
                             }
-
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
-                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                            var copyNotMoveFile = !_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal);
+                            if (!copyNotMoveFile)
                             {
-                                song.File.MoveFile(directoryInfoToProcess, newSongFileName);
+                                try
+                                {
+                                    song.File.MoveFile(directoryInfoToProcess, newSongFileName);
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.Warning(e, "Error moving file [{0}] to [{1}]", song.File.FullOriginalName(directoryInfoToProcess), newSongFileName);
+                                    copyNotMoveFile = true;
+                                }
                             }
-                            else
+                            if(copyNotMoveFile)
                             {
                                 File.Copy(song.File.FullOriginalName(directoryInfoToProcess), newSongFileName, true);
                             }
@@ -761,77 +763,80 @@ public sealed class DirectoryProcessorService(
                     }
                 }
 
-                foreach (var song in songs)
+                foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.AlbumUniqueId))
                 {
-                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                    foreach (var song in songsGroupedByAlbum)
                     {
-                        break;
-                    }
-
-                    var foundAlbum = albums.FirstOrDefault(x => x.UniqueId == song.AlbumUniqueId);
-                    if (foundAlbum != null)
-                    {
-                        albums.Remove(foundAlbum);
-                        albums.Add(foundAlbum.MergeSongs(songs));
-                    }
-                    else
-                    {
-                        var songTotal = song.SongTotalNumber();
-                        if (songTotal < 1)
+                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                         {
-                            songTotal = songs.Count;
+                            break;
                         }
 
-                        var newAlbumTags = new List<MetaTag<object?>>
+                        var foundAlbum = albums.FirstOrDefault(x => x.UniqueId == songsGroupedByAlbum.Key);
+                        if (foundAlbum != null)
                         {
-                            new()
-                            {
-                                Identifier = MetaTagIdentifier.Album, Value = song.AlbumTitle(), SortOrder = 1
-                            },
-                            new()
-                            {
-                                Identifier = MetaTagIdentifier.AlbumArtist, Value = song.AlbumArtist(), SortOrder = 2
-                            },
-                            new()
-                            {
-                                Identifier = MetaTagIdentifier.DiscNumber, Value = song.MediaNumber(), SortOrder = 4
-                            },
-                            new()
-                            {
-                                Identifier = MetaTagIdentifier.DiscTotal, Value = song.MediaNumber(), SortOrder = 4
-                            },
-                            new()
-                            {
-                                Identifier = MetaTagIdentifier.OrigAlbumYear, Value = song.AlbumYear(),
-                                SortOrder = 100
-                            },
-                            new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
-                        };
-                        var genres = songs
-                            .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                            .Where(x => x.Identifier == MetaTagIdentifier.Genre);
-                        newAlbumTags.AddRange(genres
-                            .GroupBy(x => x.Value)
-                            .Select((genre, i) => new MetaTag<object?>
-                            {
-                                Identifier = MetaTagIdentifier.Genre,
-                                Value = genre.Key,
-                                SortOrder = 5 + i
-                            }));
-                        albums.Add(new Album
+                            albums.Remove(foundAlbum);
+                            albums.Add(foundAlbum.MergeSongs([song]));
+                        }
+                        else
                         {
-                            Images = songs.Where(x => x.Images != null)
-                                .SelectMany(x => x.Images!)
-                                .DistinctBy(x => x.CrcHash).ToArray(),
-                            OriginalDirectory = fileSystemDirectoryInfo,
-                            Tags = newAlbumTags,
-                            Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
-                            ViaPlugins = viaPlugins.Distinct().ToArray()
-                        });
-                        if (albums.Count > _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value))
-                        {
-                            _stopProcessingTriggered = true;
-                            break;
+                            var songTotal = song.SongTotalNumber();
+                            if (songTotal < 1)
+                            {
+                                songTotal = songsGroupedByAlbum.Count();
+                            }
+
+                            var newAlbumTags = new List<MetaTag<object?>>
+                            {
+                                new()
+                                {
+                                    Identifier = MetaTagIdentifier.Album, Value = song.AlbumTitle(), SortOrder = 1
+                                },
+                                new()
+                                {
+                                    Identifier = MetaTagIdentifier.AlbumArtist, Value = song.AlbumArtist(), SortOrder = 2
+                                },
+                                new()
+                                {
+                                    Identifier = MetaTagIdentifier.DiscNumber, Value = song.MediaNumber(), SortOrder = 4
+                                },
+                                new()
+                                {
+                                    Identifier = MetaTagIdentifier.DiscTotal, Value = song.MediaNumber(), SortOrder = 4
+                                },
+                                new()
+                                {
+                                    Identifier = MetaTagIdentifier.OrigAlbumYear, Value = song.AlbumYear(),
+                                    SortOrder = 100
+                                },
+                                new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
+                            };
+                            var genres = songsGroupedByAlbum
+                                .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
+                                .Where(x => x.Identifier == MetaTagIdentifier.Genre);
+                            newAlbumTags.AddRange(genres
+                                .GroupBy(x => x.Value)
+                                .Select((genre, i) => new MetaTag<object?>
+                                {
+                                    Identifier = MetaTagIdentifier.Genre,
+                                    Value = genre.Key,
+                                    SortOrder = 5 + i
+                                }));
+                            albums.Add(new Album
+                            {
+                                Images = songsGroupedByAlbum.Where(x => x.Images != null)
+                                    .SelectMany(x => x.Images!)
+                                    .DistinctBy(x => x.CrcHash).ToArray(),
+                                OriginalDirectory = fileSystemDirectoryInfo,
+                                Tags = newAlbumTags,
+                                Songs = songsGroupedByAlbum.OrderBy(x => x.SortOrder).ToArray(),
+                                ViaPlugins = viaPlugins.Distinct().ToArray()
+                            });
+                            if (albums.Count > _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value))
+                            {
+                                _stopProcessingTriggered = true;
+                                break;
+                            }
                         }
                     }
                 }

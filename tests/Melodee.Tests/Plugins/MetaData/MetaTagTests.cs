@@ -13,14 +13,14 @@ public class MetaTagTests : TestsBase
     [Fact]
     public async Task ValidateLoadingTagsForSimpleMp3FileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/test.mp3";
+        var testFile = @"/melodee_test/tests/test.mp3";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
@@ -37,14 +37,14 @@ public class MetaTagTests : TestsBase
     [Fact]
     public async Task ValidateLoadingTagsForSimpleMp3FileAsync2()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/test4.mp3";
+        var testFile = @"/melodee_test/tests/test4.mp3";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
@@ -61,14 +61,14 @@ public class MetaTagTests : TestsBase
     [Fact]
     public async Task ValidateLoadingTagsForBorkedMp3FileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/borked.mp3";
+        var testFile = @"/melodee_test/tests/borked.mp3";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var metaTag = new IdSharpMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
@@ -85,14 +85,14 @@ public class MetaTagTests : TestsBase
     [Fact]
     public async Task ValidateLoadingEditingAndSavingTagsForSimpleMp3FileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/test.mp3";
+        var testFile = @"/melodee_test/tests/test.mp3";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
@@ -137,13 +137,13 @@ public class MetaTagTests : TestsBase
     [Fact]
     public async Task ValidateLoadingTagsForMp3FileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/test2.mp3";
+        var testFile = @"/melodee_test/tests/test2.mp3";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
             var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
@@ -166,13 +166,13 @@ public class MetaTagTests : TestsBase
     [Fact]
     public async Task ValidateLoadingTagsForMp3Test4FileAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/test4.mp3";
+        var testFile = @"/melodee_test/tests/test4.mp3";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
             var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
@@ -194,13 +194,13 @@ public class MetaTagTests : TestsBase
     [Fact]
     public async Task ValidateMultipleSongArtistForMp3Async()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/multipleSongArtistsTest.mp3";
+        var testFile = @"/melodee_test/tests/multipleSongArtistsTest.mp3";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
             var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());

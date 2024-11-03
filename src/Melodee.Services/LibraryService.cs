@@ -204,9 +204,9 @@ public class LibraryService(
                 DurationInMs = libraryScanHistory.DurationInMs,
                 ForAlbumId = libraryScanHistory.ForAlbumId,
                 ForArtistId = libraryScanHistory.ForArtistId,
-                NewAlbumsCount = libraryScanHistory.NewAlbumsCount,
-                NewArtistsCount = libraryScanHistory.NewArtistsCount,
-                NewSongsCount = libraryScanHistory.NewSongsCount
+                FoundAlbumsCount = libraryScanHistory.FoundAlbumsCount,
+                FoundArtistsCount = libraryScanHistory.FoundArtistsCount,
+                FoundSongsCount = libraryScanHistory.FoundSongsCount
             };
             scopedContext.LibraryScanHistories.Add(newLibraryScanHistory);
             if (await scopedContext

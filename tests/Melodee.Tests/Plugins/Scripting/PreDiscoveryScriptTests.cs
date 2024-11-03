@@ -7,7 +7,7 @@ public class PreDiscoveryScriptTests
 {
     [Fact] public async Task ValidatePreDiscoveryScripTestsDisabled()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024";
+        var testFile = @"/melodee_test/inbound/00-k 2024";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists)
         {
@@ -27,8 +27,8 @@ public class PreDiscoveryScriptTests
     
     [Fact] public async Task ValidatePreDiscoveryScripTests()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/inbound/00-k 2024";
-        var testScriptFile = @"/home/steven/incoming/melodee_test/scripts/PreDiscoveryWrapper.sh";
+        var testFile = @"/melodee_test/inbound/00-k 2024";
+        var testScriptFile = @"/melodee_test/scripts/PreDiscoveryWrapper.sh";
         var dirInfo = new DirectoryInfo(testFile);
         if (dirInfo.Exists && File.Exists(testScriptFile))
         {

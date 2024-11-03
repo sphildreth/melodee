@@ -12,14 +12,14 @@ public class MediaConvertorTests
 {
     [Fact] public async Task ValidateConvertingFlacToMp3Async()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/testflac.flac";
+        var testFile = @"/melodee_test/tests/testflac.flac";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
             var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
@@ -36,7 +36,7 @@ public class MediaConvertorTests
     [Fact]
     public async Task ValidateConvertingNonMediaFailsAsync()
     {
-        var testFile = @"/home/steven/incoming/melodee_test/tests/testbmp.bmp";
+        var testFile = @"/melodee_test/tests/testbmp.bmp";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
@@ -47,7 +47,7 @@ public class MediaConvertorTests
             );
             var dirInfo = new FileSystemDirectoryInfo
             {
-                Path = @"/home/steven/incoming/melodee_test/tests/",
+                Path = @"/melodee_test/tests/",
                 Name = "tests"
             };            
             var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
