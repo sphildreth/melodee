@@ -461,22 +461,17 @@ public sealed class DirectoryProcessorService(
                                 break;
                             }
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
-                            var copyNotMoveFile = !_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal);
-                            if (!copyNotMoveFile)
+                            File.Copy(song.File.FullOriginalName(directoryInfoToProcess), newSongFileName, true);
+                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                             {
                                 try
                                 {
-                                    song.File.MoveFile(directoryInfoToProcess, newSongFileName);
+                                    File.Delete(song.File.FullOriginalName(directoryInfoToProcess));
                                 }
                                 catch (Exception e)
                                 {
-                                    Logger.Warning(e, "Error moving file [{0}] to [{1}]", song.File.FullOriginalName(directoryInfoToProcess), newSongFileName);
-                                    copyNotMoveFile = true;
+                                    Logger.Warning(e, "Error deleting original file [{0}]", song.File.FullOriginalName(directoryInfoToProcess));
                                 }
-                            }
-                            if(copyNotMoveFile)
-                            {
-                                File.Copy(song.File.FullOriginalName(directoryInfoToProcess), newSongFileName, true);
                             }
                         }
 
@@ -511,6 +506,10 @@ public sealed class DirectoryProcessorService(
                         if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory))
                         {
                             await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
+                            File.Delete(albumKvp.Value);
+                        }
+                        if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                        {
                             File.Delete(albumKvp.Value);
                         }
                         if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))

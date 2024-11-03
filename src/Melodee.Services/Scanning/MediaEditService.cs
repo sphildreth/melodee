@@ -30,7 +30,6 @@ public sealed class MediaEditService(
     AlbumDiscoveryService albumDiscoveryService,
     ISerializer serializer): ServiceBase(logger, cacheManager, contextFactory)
 {
-    private readonly LibraryService _libraryService = libraryService;
     private bool _initialized;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
@@ -47,8 +46,8 @@ public sealed class MediaEditService(
         _albumValidator = new AlbumValidator(_configuration);
         _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration);
      
-        _directoryLibrary = configuration?.GetValue<string?>(SettingRegistry.DirectoryLibrary) ?? (await _libraryService.GetLibraryAsync(token)).Data.Path;        
-        _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
+        _directoryLibrary = configuration?.GetValue<string?>(SettingRegistry.DirectoryLibrary) ?? (await libraryService.GetLibraryAsync(token)).Data.Path;        
+        _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await libraryService.GetStagingLibraryAsync(token)).Data.Path;
         
         await albumDiscoveryService.InitializeAsync(configuration, token).ConfigureAwait(false);
         

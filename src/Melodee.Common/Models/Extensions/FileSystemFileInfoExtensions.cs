@@ -23,19 +23,4 @@ public static class FileSystemFileInfoExtensions
     {
         return Path.GetExtension(fileSystemFileInfo.FullName(directoryInfo));
     }
-    
-    /// <summary>
-    /// This exists because in some systems where data is on one mapped drive it cannot be "Moved" to another mapped drive ("Cross link" error), it must be copied and then deleted.
-    /// </summary>
-    public static void MoveFile(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo, string destinationFileName)
-    {
-        var fullName = fileSystemFileInfo.FullOriginalName(directoryInfo);        
-        if (fileSystemFileInfo.Exists(directoryInfo))
-        {
-            File.Copy(fullName, destinationFileName);
-            File.Delete(fullName);
-            return;
-        }
-        Log.Warning("Unable to move file [{Filename}]. File not found.", fullName);
-    }     
 }
