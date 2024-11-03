@@ -12,6 +12,7 @@ namespace Melodee.Common.Data.Models;
 /// <summary>
 /// Should be a single record for each type of library. A staging, an inbound, a library.
 /// </summary>
+[Serializable]
 [Index(nameof(Type), IsUnique = true)]
 public class Library : DataModelBase
 {

@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -115,7 +116,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 11,
                     Key = SettingRegistry.FormattingDateTimeDisplayActivityFormat,
                     Comment = "Format to use when displaying activity related dates (e.g. processing messages)",
-                    Value = "HH:mm:ss.fff",
+                    Value = MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault,
                     CreatedAt = now,
                 },
                 new Setting

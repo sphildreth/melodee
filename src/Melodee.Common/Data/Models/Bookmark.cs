@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(UserId), nameof(SongId), IsUnique = true)]
 public class Bookmark : MetaDataModelBase
 {

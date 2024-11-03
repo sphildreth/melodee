@@ -5,6 +5,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(Name), IsUnique = true)]
 [Index(nameof(SortName))]
 public abstract class MetaDataModelBase : DataModelBase

@@ -4,6 +4,7 @@ using Melodee.Common.Data.Contants;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 public class Artist : MetaDataModelBase
 {
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]

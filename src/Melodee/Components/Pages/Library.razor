@@ -1,4 +1,4 @@
-﻿@page "/inbound"
+﻿@page "/library"
 
 @using Melodee.Common.Models.Cards
 @using Melodee.Services.Scanning
@@ -14,7 +14,7 @@
 @inject IScheduler Scheduler
 @inject DefaultImages DefaultImages
 
-<PageTitle>Inbound</PageTitle>
+<PageTitle>Library</PageTitle>
 
 <div class="inbound-container grid-container">
     <p class="font-monospace fs-6">@(_libraryFolderName ?? "Loading...")</p>
@@ -22,9 +22,7 @@
         <RibbonTab Title="Actions" Active="true">
             <Content>
                 <RibbonItem Name="RefreshDirectory" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.ArrowClockwise">Refresh</RibbonItem>
-                <RibbonItem Name="ProcessDirectory" IconSize="IconSize.x5" IconColor="IconColor.Warning" IconName="IconName.Cpu">Process</RibbonItem>
                 <RibbonItem Name="DeleteSelected" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash">Delete</RibbonItem>
-                <RibbonItem Name="PurgeDirectory" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.FileEarmarkX">Purge</RibbonItem>
             </Content>
         </RibbonTab>
     </Ribbon>
@@ -72,7 +70,6 @@
 <ConfirmDialog @ref="_confirmDeleteDialog" />
 
 @code {
-    private string? _selectedRibbonItem;
     private string? _libraryFolderName;
     private Grid<AlbumCard> _grid = default!;
     private short _defaultPageSize;
@@ -103,28 +100,11 @@
         }
     }
 
-    private async Task ShowConfirmProcessAsync()
-    {
-        var confirmation = await _confirmDeleteDialog.ShowAsync(
-            title: "Continue?",
-            message1: "This will force a process run on the Inbound library.",
-            message2: "Do you want to proceed?");
-        if (confirmation)
-        {
-            await Scheduler.TriggerJob(new JobKey(nameof(Melodee.Jobs.InboundDirectoryScanJob)));
-        }
-    }
-
     private async Task OnRibbonItemClick(RibbonItemEventArgs args)
     {
-        _selectedRibbonItem = args.Name;
         if (args.Name == "DeleteSelected" && _selectedAlbumCards.Count > 0)
         {
             await ShowConfirmDeleteAsync();
-        }
-        if (args.Name == "ProcessDirectory")
-        {
-            await ShowConfirmProcessAsync();
         }
         if (args.Name == "RefreshDirectory")
         {
@@ -134,7 +114,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _libraryFolderName = (await LibraryService.GetInboundLibraryAsync()).Data!.Path;
+        _libraryFolderName = (await LibraryService.GetLibraryAsync()).Data!.Path;
         _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10;
         StateHasChanged();
     }

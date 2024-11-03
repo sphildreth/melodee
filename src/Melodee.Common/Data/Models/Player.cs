@@ -6,6 +6,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(UserId), nameof(Client), nameof(UserAgent))]
 public class Player : DataModelBase
 {

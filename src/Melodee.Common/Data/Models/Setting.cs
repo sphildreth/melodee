@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(Key), IsUnique = true)]
 [Index(nameof(Category))]
 public class Setting : DataModelBase

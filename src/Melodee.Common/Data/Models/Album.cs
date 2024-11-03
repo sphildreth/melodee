@@ -9,6 +9,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 public sealed class Album : MetaDataModelBase
 {
     [RequiredGreaterThanZero]

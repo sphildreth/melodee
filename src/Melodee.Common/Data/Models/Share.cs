@@ -5,6 +5,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 public class Share : DataModelBase
 {
     [RequiredGreaterThanZero]

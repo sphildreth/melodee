@@ -7,6 +7,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(UserId), nameof(ServiceUrl), nameof(SongId), nameof(PlayTimeInMs), IsUnique = true)]
 public class Scrobble : DataModelBase
 {

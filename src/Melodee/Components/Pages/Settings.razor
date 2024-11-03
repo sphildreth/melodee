@@ -35,7 +35,7 @@
                 <GridColumn TItem="Setting" HeaderText="Comment" PropertyName="Comment" Filterable="false" SortString="Comment"  SortKeySelector="item => item.Comment">
                     @context.Comment
                 </GridColumn>
-                <GridColumn TItem="Setting" HeaderText="Action" HeaderTextAlignment="Alignment.Center">
+                <GridColumn TItem="Setting" HeaderText="Action" Filterable="false" HeaderTextAlignment="Alignment.Center">
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
                         <Button Color="ButtonColor.Primary" Size="ButtonSize.Small" @onclick="async () => await EditSettingAsync(context)"> Edit </Button>
                     </div>

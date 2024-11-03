@@ -5,6 +5,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(UserId), nameof(SongId), IsUnique = true)]
 public class UserSong : DataModelBase
 {

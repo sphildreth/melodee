@@ -4,7 +4,7 @@ using Melodee.Common.Data.Validators;
 
 namespace Melodee.Common.Data.Models;
 
-
+[Serializable]
 public class Contributor : DataModelBase
 {
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]

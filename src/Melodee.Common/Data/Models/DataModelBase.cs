@@ -5,6 +5,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(ApiKey), IsUnique = true)]
 public abstract class DataModelBase
 {

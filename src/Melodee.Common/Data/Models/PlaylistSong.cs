@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(SongId), nameof(PlaylistId), IsUnique = true)]
 [PrimaryKey(nameof(SongId), nameof(PlaylistId))]
 public class PlaylistSong 

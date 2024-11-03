@@ -3,6 +3,7 @@ using Melodee.Common.Data.Contants;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 public class RadioStation : DataModelBase
 {
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]

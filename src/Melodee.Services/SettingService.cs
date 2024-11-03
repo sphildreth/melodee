@@ -78,7 +78,7 @@ public sealed class SettingService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<T?>> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<T?>> GetValueAsync<T>(string key, T? defaultValue = default, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(key, nameof(key));
 
@@ -87,7 +87,7 @@ public sealed class SettingService(
         {
             return new MelodeeModels.OperationResult<T?>
             {
-                Data = default,
+                Data = defaultValue ?? default,
                 Type = MelodeeModels.OperationResponseType.NotFound
             };
         }

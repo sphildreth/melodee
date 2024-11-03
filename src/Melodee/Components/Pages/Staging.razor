@@ -1,7 +1,10 @@
 ﻿@page "/staging"
 
+@using System.Diagnostics
 @using Melodee.Common.Models.Cards
 @using Melodee.Services.Scanning
+@using Melodee.Utils
+@using Quartz
 @using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -9,19 +12,21 @@
 @inject SettingService SettingService
 @inject LibraryService LibraryService
 @inject AlbumDiscoveryService AlbumsDiscoverer
+@inject DefaultImages DefaultImages
 
 <PageTitle>Staging</PageTitle>
 
+<Toasts class="p-3" Messages="_messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.TopRight"/>
+
 <div class="staging-container grid-container">
+    <p class="font-monospace fs-6">@(_libraryFolderName ?? "Loading...")</p>
     <Ribbon OnClick="OnRibbonItemClick">
-        <RibbonTab Title="@(_libraryFolderName ?? "Loading...")">
+        <RibbonTab Title="Actions" Active="true">
             <Content>
-                <RibbonItemGroup Text="Actions">
-                    <RibbonItem Name="RefreshDirectory" IconColor="IconColor.Primary" IconName="IconName.ArrowClockwise" IconSize="IconSize.x2">Refresh</RibbonItem>
-                    <RibbonItem Name="ProcessDirectory" IconColor="IconColor.Primary" IconName="IconName.Cpu" IconSize="IconSize.x2">Process</RibbonItem>
-                    <RibbonItem Name="DeleteSelected" IconColor="IconColor.Danger" IconName="IconName.Trash" IconSize="IconSize.x2">Delete</RibbonItem>
-                    <RibbonItem Name="PurgeDirectory" IconColor="IconColor.Danger" IconName="IconName.FileEarmarkX" IconSize="IconSize.x2">Purge</RibbonItem>
-                </RibbonItemGroup>
+                <RibbonItem Name="RefreshDirectory" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.ArrowClockwise">Refresh</RibbonItem>
+                <RibbonItem Name="DeleteSelected" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash">Delete</RibbonItem>
+                <RibbonItem Name="MoveToLibrary" IconSize="IconSize.x5" IconColor="IconColor.Warning" IconName="IconName.FolderSymlink">Move To Library</RibbonItem>
+                <RibbonItem Name="PurgeDirectory" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.FileEarmarkX">Purge</RibbonItem>
             </Content>
         </RibbonTab>
     </Ribbon>
@@ -43,7 +48,7 @@
 
             <GridColumns>
                 <GridColumn TItem="AlbumCard" ColumnClass="@(x => "ml-2 cover-image-column")" Filterable="false" Sortable="false" HeaderText="Cover" PropertyName="Cover" SortString="Title" SortKeySelector="item => item.Title">
-                    <img alt="@context.Title" class="cover-image" src="@(context.ImageBase64 ?? _defaultReleaseCover)"/>
+                    <img alt="@context.Title" class="cover-image" src="@(context.ImageBase64 ?? DefaultImages.ReleaseCover)"/>
                 </GridColumn>
                 <GridColumn TItem="AlbumCard" HeaderText="Artist" PropertyName="Artist" SortString="Artist" SortKeySelector="item => item.Artist">
                     @context.Artist
@@ -69,11 +74,12 @@
 <ConfirmDialog @ref="_confirmDeleteDialog" />
 
 @code {
-    private string? _selectedRibbonItem;
+    private readonly List<ToastMessage> _messages = [];
+    private int _libraryId;
     private string? _libraryFolderName;
     private Grid<AlbumCard> _grid = default!;
     private short _defaultPageSize;
-    private string? _defaultReleaseCover;
+    private string _formattingDateTimeDisplayActivityFormat = null!;
     private ConfirmDialog _confirmDeleteDialog = default!;
     private HashSet<AlbumCard> _selectedAlbumCards = new();
 
@@ -87,7 +93,7 @@
     {
         var confirmation = await _confirmDeleteDialog.ShowAsync(
             title: "Sure you want to delete?",
-            message1: "This will delete everything about selected releases.",
+            message1: "This will delete everything about selected albums.",
             message2: "Do you want to proceed?");
 
         if (confirmation)
@@ -104,21 +110,78 @@
         }
     }
 
+    private async Task ShowConfirmMoveToLibraryAsync()
+    {
+        var sw = Stopwatch.StartNew();
+        var confirmation = await _confirmDeleteDialog.ShowAsync(
+            title: "Move selected albums to Library?",
+            message1: $"This will move all {_selectedAlbumCards.Count.ToStringPadLeft(4)} selected albums to the Library.",
+            message2: "Do you want to proceed?");
+
+        if (confirmation)
+        {
+            foreach (var selected in _selectedAlbumCards)
+            {
+                if (selected.DirectoryName != null)
+                {
+                    Directory.Delete(selected.DirectoryName, true);
+                    Logger.Debug("Deleted Staging Directory [{0}]", selected.DirectoryName);
+                }
+            }
+            sw.Stop();
+            _messages.Add(
+                new ToastMessage
+                {
+                    Type = ToastType.Info,
+                    Title = $"Moved {_selectedAlbumCards.Count.ToStringPadLeft(4)} albums to the Library.",
+                    HelpText = $"{DateTime.Now}",
+                    Message = $"Moving albums total elapsed time { sw.Elapsed.ToString(_formattingDateTimeDisplayActivityFormat)}.",
+                });
+            await _grid.RefreshDataAsync();
+        }
+    }
+
+    private async Task ShowConfirmPurgeAsync()
+    {
+        var confirmation = await _confirmDeleteDialog.ShowAsync(
+            title: "Sure you want to purge?",
+            message1: "This will delete all history and all albums in Staging library.",
+            message2: "Do you want to proceed?");
+
+        if (confirmation)
+        {
+            await LibraryService.PurgeLibraryAsync(_libraryId);
+            await _grid.RefreshDataAsync();
+        }
+    }
+
     private async Task OnRibbonItemClick(RibbonItemEventArgs args)
     {
-        _selectedRibbonItem = args.Name;
-        if (args.Name == "DeleteSelected")
+        if (args.Name == "DeleteSelected" && _selectedAlbumCards.Count > 0)
         {
             await ShowConfirmDeleteAsync();
+        }
+        if (args.Name == "MoveToLibrary" && _selectedAlbumCards.Count > 0)
+        {
+            await ShowConfirmMoveToLibraryAsync();
+        }
+        if (args.Name == "PurgeDirectory")
+        {
+            await ShowConfirmPurgeAsync();
+        }
+        if (args.Name == "RefreshDirectory")
+        {
+            await _grid.RefreshDataAsync();
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
-        _libraryFolderName = (await LibraryService.GetStagingLibraryAsync()).Data!.Path;
-
-        _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10;
-        _defaultReleaseCover = $"data:image/jpeg;base64,{ Convert.ToBase64String(await File.ReadAllBytesAsync("wwwroot/images/release.jpg"))}";
+        var library = (await LibraryService.GetStagingLibraryAsync()).Data!;
+        _libraryFolderName = library.Path;
+        _libraryId = library.Id;
+        _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize, 10)).Data!;
+        _formattingDateTimeDisplayActivityFormat = (await SettingService.GetValueAsync(SettingRegistry.FormattingDateTimeDisplayActivityFormat, MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault)).Data!;
         StateHasChanged();
     }
 

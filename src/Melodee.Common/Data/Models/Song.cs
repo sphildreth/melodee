@@ -10,6 +10,7 @@ namespace Melodee.Common.Data.Models;
 /// Song record.
 /// <remarks>See https://opensubsonic.netlify.app/docs/responses/child/</remarks>
 /// </summary>
+[Serializable]
 [Index(nameof(Title))]
 [Index(nameof(AlbumDiscId), nameof(TrackNumber), IsUnique = true)]
 public class Song : MetaDataModelBase

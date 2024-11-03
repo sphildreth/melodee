@@ -2,7 +2,9 @@ using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
+using Melodee.Common.Models.Extensions;
 using Melodee.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -68,6 +70,45 @@ public class LibraryService(
                 .QuerySingleAsync<Library>(sql)
                 .ConfigureAwait(false);         
         }
+    }
+
+    public async Task<MelodeeModels.OperationResult<Library?>> PurgeLibraryAsync(int libraryId, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, libraryId, nameof(libraryId));
+
+        var libraryType = (int)LibraryType.Library;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbLibrary = await scopedContext
+                .Libraries
+                .FirstOrDefaultAsync(x => x.Id == libraryId, cancellationToken)
+                .ConfigureAwait(false);
+            if (dbLibrary == null)
+            {
+                return new MelodeeModels.OperationResult<Library?>("Invalid Library Id")
+                {
+                    Data = null,
+                    Type = MelodeeModels.OperationResponseType.Error,
+                };
+            }
+            libraryType = dbLibrary.Type;
+            dbLibrary.PurgePath();
+            
+            await scopedContext
+                .LibraryScanHistories
+                .Where(x => x.LibraryId == libraryId)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            dbLibrary.LastScanAt = null;
+            dbLibrary.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            ClearCache();
+        }
+        return new MelodeeModels.OperationResult<Library?>
+        {
+            Data = await LibraryByType(libraryType, cancellationToken).ConfigureAwait(false)
+        };        
     }
     
     public async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(CancellationToken cancellationToken = default)
@@ -142,7 +183,10 @@ public class LibraryService(
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var dbLibrary = await scopedContext.Libraries.FirstOrDefaultAsync(x => x.Id == library.Id, cancellationToken).ConfigureAwait(false);
+            var dbLibrary = await scopedContext
+                .Libraries
+                .FirstOrDefaultAsync(x => x.Id == library.Id, cancellationToken)
+                .ConfigureAwait(false);
             if (dbLibrary == null)
             {
                 return new MelodeeModels.OperationResult<LibraryScanHistory?>("Invalid Library Id")

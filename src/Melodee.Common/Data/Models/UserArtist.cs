@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(UserId), nameof(ArtistId), IsUnique = true)]
 public class UserArtist : DataModelBase
 {

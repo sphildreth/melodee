@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
 
+[Serializable]
 [Index(nameof(AlbumId), nameof(DiscNumber), IsUnique = true)]
 [PrimaryKey(nameof(AlbumId), nameof(DiscNumber))]
 public sealed class AlbumDisc
