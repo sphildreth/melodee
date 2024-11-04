@@ -148,7 +148,7 @@ public sealed class DirectoryProcessorService(
             DurationInMs = 0
         };
 
-        var sw = Stopwatch.StartNew();
+        var startTicks = Stopwatch.GetTimestamp();
 
         // Ensure directory to process exists
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
@@ -584,14 +584,13 @@ public sealed class DirectoryProcessorService(
         processingMessages.Add($"Song Plugin(s) process count [{numberOfAlbumFilesProcessed}]");
         processingMessages.Add($"Album process count [{numberOfAlbumJsonFilesProcessed}]");
 
-        sw.Stop();
-        
+       
         return new OperationResult<DirectoryProcessorResult>(processingMessages)
         {
             Errors = processingErrors.ToArray(),
             Data = new DirectoryProcessorResult
             {
-                DurationInMs = sw.ElapsedMilliseconds,
+                DurationInMs = Stopwatch.GetElapsedTime(startTicks).TotalMilliseconds,
                 NewAlbumsCount = albumsUniqueIdsSeen.Distinct().Count(),
                 NewArtistsCount = artistsUniqueIdsSeen.Distinct().Count(),
                 NewSongsCount = songsUniqueIdsSeen.Distinct().Count(),

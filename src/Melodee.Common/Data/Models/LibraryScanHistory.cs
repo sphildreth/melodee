@@ -30,7 +30,7 @@ public class LibraryScanHistory
     public int FoundSongsCount { get; set; }
     
     [RequiredGreaterThanZero]
-    public long DurationInMs { get; set; }
+    public double DurationInMs { get; set; }
 
     [NotMapped] public Duration DurationInMillisecondsValue => Duration.FromMilliseconds(DurationInMs);
 }

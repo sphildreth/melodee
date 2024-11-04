@@ -105,7 +105,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                 throw new Exception($"Directory [{settings.Inbound}] does not exist.");
             }
 
-            var sw = Stopwatch.StartNew();
+            var startTicks = Stopwatch.GetTimestamp();
 
             Log.Debug("\ud83d\udcc1 Processing directory [{Inbound}]", settings.Inbound);
 
@@ -115,8 +115,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                 Name = dirInfo.Name
             }, inboundLibrary.LastScanAt);
 
-            sw.Stop();
-            Log.Debug("ℹ️ Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, sw.Elapsed);
+            Log.Debug("ℹ️ Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, Stopwatch.GetElapsedTime(startTicks));
 
             if (settings.Verbose)
             {

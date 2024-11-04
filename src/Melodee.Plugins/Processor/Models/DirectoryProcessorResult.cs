@@ -14,5 +14,5 @@ public record DirectoryProcessorResult
     
    public required int NewSongsCount { get; set; }
     
-   public required long DurationInMs { get; set; }   
+   public required double DurationInMs { get; set; }   
 }

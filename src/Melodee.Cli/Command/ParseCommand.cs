@@ -61,7 +61,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 throw new Exception($"Parse Directory [{settings.Filename}] does not exist.");
             }
 
-            var sw = Stopwatch.StartNew();
+            var startTicks = Stopwatch.GetTimestamp();
             Log.Debug("\ud83d\udcdc Parsing File [{NfoFilename}]", settings.Filename);
 
             var isValid = false;
@@ -77,8 +77,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 {
                     var svfResult = await sfv.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
 
-                    sw.Stop();
-                    Log.Debug("ℹ️  Processed SFV File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+                    Log.Debug("ℹ️  Processed SFV File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, Stopwatch.GetElapsedTime(startTicks));
 
                     if (settings.Verbose)
                     {
@@ -110,8 +109,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 {
                     var svfResult = await m3u.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
 
-                    sw.Stop();
-                    Log.Debug("ℹ️ Processed M3U File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+                    Log.Debug("ℹ️ Processed M3U File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, Stopwatch.GetElapsedTime(startTicks));
 
                     if (settings.Verbose)
                     {
@@ -138,8 +136,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 {
                     var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory.ToDirectorySystemInfo());
 
-                    sw.Stop();
-                    Log.Debug("ℹ️ Processed Nfo File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, sw.Elapsed);
+                    Log.Debug("ℹ️ Processed Nfo File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, Stopwatch.GetElapsedTime(startTicks));
 
                     if (settings.Verbose)
                     {

@@ -123,7 +123,7 @@
 
     private async Task ShowConfirmMoveToLibraryAsync()
     {
-        var sw = Stopwatch.StartNew();
+        var startTicks = Stopwatch.GetTimestamp();
         var confirmation = await _confirmDeleteDialog.ShowAsync(
             title: "Move selected albums to Library?",
             message1: $"This will move all {_selectedAlbumCards.Count.ToStringPadLeft(4)} selected albums to the Library.",
@@ -139,14 +139,13 @@
                     Logger.Debug("Deleted Staging Directory [{0}]", selected.DirectoryName);
                 }
             }
-            sw.Stop();
             _messages.Add(
                 new ToastMessage
                 {
                     Type = ToastType.Info,
                     Title = $"Moved {_selectedAlbumCards.Count.ToStringPadLeft(4)} albums to the Library.",
                     HelpText = $"{DateTime.Now}",
-                    Message = $"Moving albums total elapsed time { sw.Elapsed.ToString(_formattingDateTimeDisplayActivityFormat)}.",
+                    Message = $"Moving albums total elapsed time { Stopwatch.GetElapsedTime(startTicks).ToString(_formattingDateTimeDisplayActivityFormat) }.",
                 });
             await _grid.RefreshDataAsync();
         }
