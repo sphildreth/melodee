@@ -75,8 +75,8 @@ builder.Services.AddQuartz(q =>
 {
     q.UseTimeZoneConverter();
     
-    var jobKey = new JobKey(nameof(InboundDirectoryScanJob));
-    q.AddJob<InboundDirectoryScanJob>(opts => opts.WithIdentity(jobKey));
+    var jobKey = new JobKey(nameof(InboundDirectoryProcessJob));
+    q.AddJob<InboundDirectoryProcessJob>(opts => opts.WithIdentity(jobKey));
     q.AddTrigger(opts => opts
         .ForJob(jobKey)
         .WithIdentity("MediaScanJob-trigger")

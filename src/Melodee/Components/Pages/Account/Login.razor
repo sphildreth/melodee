@@ -97,7 +97,7 @@
             var principal = new ClaimsPrincipal(claimsIdentity);
 
             await AuthService.Login(principal, UserCredentials.RememberMe);
-            NavManager.NavigateTo(ReturnUrl ?? "/");
+            NavManager.NavigateTo(ReturnUrl ?? "/", true);
         }
         catch
         {

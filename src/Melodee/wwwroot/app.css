@@ -106,4 +106,7 @@ tbody .cover-image-column {
   width: 100%;
 }
 
+img.cover-image {
+  max-width: 100%;
+}
 

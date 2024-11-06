@@ -69,7 +69,7 @@ public sealed record Album
     
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
-    public async Task<string?> CoverImageBase64Async(FileSystemDirectoryInfo imageDirectory, CancellationToken cancellationToken = default)
+    public async Task<string?> CoverImageBase64Async(CancellationToken cancellationToken = default)
     {
         if (Images == null || !Images.Any())
         {
@@ -78,7 +78,7 @@ public sealed record Album
         var cover = Images.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
         if (cover != null)
         {
-            var imageBytes = await File.ReadAllBytesAsync(cover.FileInfo?.FullName(imageDirectory) ?? string.Empty, cancellationToken);
+            var imageBytes = await File.ReadAllBytesAsync(cover.FileInfo?.FullName(Directory) ?? string.Empty, cancellationToken);
             return $"data:image/jpeg;base64,{ Convert.ToBase64String(imageBytes)}";   
         }
         return null;

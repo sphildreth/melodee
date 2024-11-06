@@ -111,7 +111,7 @@
             message2: "Do you want to proceed?");
         if (confirmation)
         {
-            await Scheduler.TriggerJob(new JobKey(nameof(Melodee.Jobs.InboundDirectoryScanJob)));
+            await Scheduler.TriggerJob(new JobKey(nameof(Melodee.Jobs.InboundDirectoryProcessJob)));
         }
     }
 

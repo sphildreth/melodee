@@ -10,10 +10,10 @@ using Serilog;
 namespace Melodee.Jobs;
 
 /// <summary>
-/// Scans inbound directory for media and puts processed into staging directory.
+/// Processes inbound directory for media and puts processed into staging directory.
 /// </summary>
 [DisallowConcurrentExecution]
-public sealed class InboundDirectoryScanJob(
+public sealed class InboundDirectoryProcessJob(
     ILogger logger,
     SettingService settingService,
     LibraryService libraryService,
