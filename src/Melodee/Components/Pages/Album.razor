@@ -119,7 +119,7 @@
                                 <tbody>
                                 @foreach (var song in _albumEdit.Songs)
                                 {
-                                    <tr role='button' @onclick="() => _selectedSong = song">
+                                    <tr role='button' class="@(song.IsSelected ? "selected" : string.Empty)" @onclick="() => _selectedSong = song">
                                         <th scope="row">@song.SongNumber</th>
                                         <td>@song.Title</td>
                                         <td>@song.Duration</td>
@@ -168,8 +168,8 @@
                             @foreach (var info in _filteredInfo.OrderBy(x => x.Key))
                             {
                                 <tr>
-                                    <th scope="row">@info.Key</th>
-                                    <td>@info.Value</td>
+                                    <th style="width:40%;" scope="row">@info.Key</th>
+                                    <td style="width:60%;">@info.Value</td>
                                 </tr>
                             }
                             </tbody>
@@ -294,6 +294,7 @@
                 Duration = x.DurationTimeShort()
             }).ToArray() ?? []
         };
+        _selectedSong = _albumEdit.Songs?.FirstOrDefault() ?? new SongEdit();
         _editFormEditContext = new(_albumEdit);
         _albumFullPath = _album.Directory?.FullName();
         _albumCoverBase64 = await _album.CoverImageBase64Async() ?? DefaultImages.ReleaseCover;
@@ -303,7 +304,7 @@
         {
             foreach (var tag in _album.Tags.OrderBy(x => x.SortOrder))
             {
-                _info.Add(new KeyValuePair<string, object?>(tag.Identifier.ToString(), tag.Value));
+                _info.Add(new KeyValuePair<string, object?>(tag.IdentifierDescription, tag.Value));
             }
             if (_album.Songs != null)
             {
@@ -314,7 +315,7 @@
                     {
                         foreach (var tag in song.Tags.OrderBy(x => x.SortOrder))
                         {
-                            _info.Add(new KeyValuePair<string, object?>($"Song:{song.SongNumber().ToStringPadLeft(maximumTrackNumberLength)}:{tag.Identifier.ToString()}", tag.Value));
+                            _info.Add(new KeyValuePair<string, object?>($"Song:{song.SongNumber().ToStringPadLeft(maximumTrackNumberLength)}:{tag.IdentifierDescription}", tag.Value));
                         }
                     }
                     if (song.MediaAudios != null)

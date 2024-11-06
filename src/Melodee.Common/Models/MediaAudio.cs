@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models;
 
