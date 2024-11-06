@@ -54,8 +54,7 @@ public enum MetaTagIdentifier
     [Description("[TT2, TIT2]")] Title,
 
     /// <summary>
-    ///     The ‘Subtitle/Description refinement’ frame is used for information directly related to the contents title  [TT3,
-    ///     TIT3]
+    ///     The ‘Subtitle/Description refinement’ frame is used for information directly related to the contents title  [TT3, TIT3]
     /// </summary>
     [Description("[TT3, TIT]")] SubTitle,
 

@@ -145,6 +145,11 @@ public static class SongExtensions
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.Title);
     }
+    
+    public static string? SubTitle(this Song song)
+    {
+        return song.MetaTagValue<string?>(MetaTagIdentifier.SubTitle);
+    }    
 
     public static DateTime? AlbumDateValue(this Song song)
     {
@@ -165,6 +170,11 @@ public static class SongExtensions
     {
         return song.MetaTagValue<int?>(MetaTagIdentifier.DiscNumber) ?? 0;
     }
+    
+    public static string? MediaSubTitle(this Song song)
+    {
+        return song.MetaTagValue<string?>(MetaTagIdentifier.SubTitle);
+    }    
 
     public static string? Genre(this Song song)
     {

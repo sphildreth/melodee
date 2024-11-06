@@ -8,9 +8,10 @@ namespace Melodee.Common.Data.Models;
 
 [Serializable]
 [Index(nameof(AlbumId), nameof(DiscNumber), IsUnique = true)]
-[PrimaryKey(nameof(AlbumId), nameof(DiscNumber))]
 public sealed class AlbumDisc
 {
+    public int Id { get; set; }
+    
     [RequiredGreaterThanZero]
     public int AlbumId { get; set; }
 
@@ -21,6 +22,9 @@ public sealed class AlbumDisc
     
     public short? SongCount { get; set; }
     
+    /// <summary>
+    /// TSST
+    /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? Title { get; set; }
     

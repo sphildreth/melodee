@@ -18,13 +18,8 @@ public sealed class AlbumEdit
     [RequiredGreaterThanZero(ErrorMessage = "Album release year is required.")]
     public required int Year { get; set; }
     
+    public required DiscEdit[] Discs { get; set; }
+    
     public required SongEdit[] Songs { get; set; }
 
-    public void SetSelected(SongEdit selectedSong)
-    {
-        foreach (var song in Songs)
-        {
-            song.IsSelected = song == selectedSong;
-        }
-    }
 }

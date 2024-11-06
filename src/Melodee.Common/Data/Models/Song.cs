@@ -48,6 +48,9 @@ public class Song : MetaDataModelBase
     [Required]
     public required string FileHash { get; set; }
     
+    /// <summary>
+    /// TIT3
+    /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? PartTitles { get; set; }
     
