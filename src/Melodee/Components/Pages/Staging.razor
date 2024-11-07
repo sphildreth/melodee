@@ -49,6 +49,9 @@
                 <GridColumn TItem="AlbumCard" ColumnClass="@(x => "ml-2 cover-image-column")" Filterable="false" Sortable="false" HeaderText="Cover" PropertyName="Cover" SortString="Title" SortKeySelector="item => item.Title">
                     <img alt="@context.Title" class="cover-image" src="@(context.ImageBase64 ?? DefaultImages.ReleaseCover)"/>
                 </GridColumn>
+                <GridColumn TItem="AlbumCard" HeaderText="Status" PropertyName="AlbumStatus" SortString="AlbumStatus" SortKeySelector="item => item.AlbumStatus">
+                    @context.AlbumStatus.ToString()
+                </GridColumn>
                 <GridColumn TItem="AlbumCard" HeaderText="Artist" PropertyName="Artist" SortString="Artist" SortKeySelector="item => item.Artist">
                     @context.Artist
                 </GridColumn>
@@ -114,7 +117,7 @@
                     Logger.Debug("Deleted Staging Directory [{0}]", selected.DirectoryName);
                 }
             }
-            await _grid.RefreshDataAsync();
+            await _grid.RefreshDataAsync().ConfigureAwait(false);;
         }
     }
 
@@ -144,7 +147,7 @@
                     HelpText = $"{DateTime.Now}",
                     Message = $"Moving albums total elapsed time { Stopwatch.GetElapsedTime(startTicks).ToString(_formattingDateTimeDisplayActivityFormat) }.",
                 });
-            await _grid.RefreshDataAsync();
+            await _grid.RefreshDataAsync().ConfigureAwait(false);;
         }
     }
 
@@ -157,8 +160,8 @@
 
         if (confirmation)
         {
-            await LibraryService.PurgeLibraryAsync(_libraryId);
-            await _grid.RefreshDataAsync();
+            await LibraryService.PurgeLibraryAsync(_libraryId).ConfigureAwait(false);;
+            await _grid.RefreshDataAsync().ConfigureAwait(false);;
         }
     }
 
@@ -178,19 +181,18 @@
         }
         if (args.Name == "RefreshDirectory")
         {
-            await _grid.RefreshDataAsync();
+            await _grid.RefreshDataAsync().ConfigureAwait(false);;
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
-        var library = (await LibraryService.GetStagingLibraryAsync()).Data!;
+        var library = (await LibraryService.GetStagingLibraryAsync().ConfigureAwait(false)).Data!;
         _libraryFolderName = library.Path;
         _libraryId = library.Id;
         _libraryApiKey = library.ApiKey;
-        _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize, 10)).Data!;
-        _formattingDateTimeDisplayActivityFormat = (await SettingService.GetValueAsync(SettingRegistry.FormattingDateTimeDisplayActivityFormat, MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault)).Data!;
-        StateHasChanged();
+        _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize, 10).ConfigureAwait(false)).Data!;
+        _formattingDateTimeDisplayActivityFormat = (await SettingService.GetValueAsync(SettingRegistry.FormattingDateTimeDisplayActivityFormat, MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault).ConfigureAwait(false)).Data!;
     }
 
     private async Task<GridDataProviderResult<AlbumCard>> AlbumDataProvider(GridDataProviderRequest<AlbumCard> request)
@@ -215,7 +217,7 @@
                 filters = request.Filters.Select(x => new Melodee.Common.Filtering.FilterOperatorInfo(x.PropertyName, SafeParser.ToEnum<Melodee.Common.Filtering.FilterOperator>(x.Operator.ToString()), x.Value)).ToArray();
             }
 
-            await AlbumsDiscoverer.InitializeAsync();
+            await AlbumsDiscoverer.InitializeAsync().ConfigureAwait(false);
             var result = await AlbumsDiscoverer.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = _libraryFolderName,
@@ -226,7 +228,7 @@
                 Page = request.PageNumber,
                 PageSize = SafeParser.ToNumber<short>(request.PageSize),
                 OrderBy = sorting
-            });
+            }).ConfigureAwait(false);
             return new GridDataProviderResult<AlbumCard> { Data = result.Data, TotalCount = result.TotalCount };
         }
         catch (Exception e)

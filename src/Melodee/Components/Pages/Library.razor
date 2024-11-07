@@ -112,7 +112,6 @@
     {
         _libraryFolderName = (await LibraryService.GetLibraryAsync()).Data!.Path;
         _defaultPageSize = (await SettingService.GetValueAsync<short>(SettingRegistry.DefaultsPageSize))?.Data ?? 10;
-        StateHasChanged();
     }
 
     private async Task<GridDataProviderResult<AlbumCard>> AlbumDataProvider(GridDataProviderRequest<AlbumCard> request)

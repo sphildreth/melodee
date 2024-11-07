@@ -45,7 +45,7 @@
             </Content>
         </RibbonTab>
     </Ribbon>
-    <Tabs EnableFadeEffect="true" Class="mt-1">
+    <Tabs EnableFadeEffect="true" Class="mt-1" @ref="_tabsRef">
         <Tab Active="true">
             <TitleTemplate>
                 <Icon Name="IconName.Vinyl" /> Album
@@ -111,7 +111,7 @@
                                 @foreach (var disc in _albumEdit.Discs)
                                 {
                                 <tr role='button' class="@(SelectedDiscClass(disc))" @onclick="() => _selectedDisc = disc">
-                                    <td class="number-container" scope="row">@disc.DiscNumber.ToStringPadLeft(_maximumMediaNumberLength)</td>
+                                    <td class="number-container">@disc.DiscNumber.ToStringPadLeft(_maximumMediaNumberLength)</td>
                                     <td>@disc.PartTitles</td>
                                     <td>@disc.SongCount.ToStringPadLeft(_maximumTrackNumberLength)</td>
                                 </tr>
@@ -163,7 +163,7 @@
                                 @foreach (var song in _albumEdit.Songs)
                                 {
                                 <tr role='button' class="@(SelectedSongClass(song))" @onclick="() => _selectedSong = song">
-                                    <td class="number-container" scope="row">@song.DiscNumber.ToStringPadLeft(_maximumMediaNumberLength)</td>
+                                    <td class="number-container">@song.DiscNumber.ToStringPadLeft(_maximumMediaNumberLength)</td>
                                     <td class="number-container">@song.SongNumber.ToStringPadLeft(_maximumTrackNumberLength)</td>
                                     <td>@song.Title</td>
                                     <td>@song.Duration</td>
@@ -233,9 +233,31 @@
                             @foreach (var info in _filteredInfo.OrderBy(x => x.Key))
                             {
                                 <tr>
-                                    <td style="width:40%;" scope="row">@info.Key</td>
+                                    <td style="width:40%;">@info.Key</td>
                                     <td style="width:60%;">@info.Value</td>
                                 </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </Content>
+        </Tab>
+        <Tab Name="IssuesTab">
+            <TitleTemplate>
+                <Icon Name="IconName.EmojiAngry" Color="IconColor.Danger" /> Issues
+            </TitleTemplate>
+            <Content>
+                <div class="row mt-2">
+                    <div class="col">
+                        <table class="table table-striped table-bordered table-sm">
+                            <tbody>
+                            @foreach (var info in _issues.OrderBy(x => x.Key))
+                            {
+                            <tr>
+                                <td style="width:40%;">@info.Key</td>
+                                <td style="width:60%;">@info.Value</td>
+                            </tr>
                             }
                             </tbody>
                         </table>
@@ -248,6 +270,7 @@
 
 
 @code {
+    private Tabs _tabsRef = default!;
     private string? _albumCoverBase64;
     private string? _albumFullPath;
     private bool _loading = true;
@@ -255,6 +278,7 @@
     private readonly List<ToastMessage> _messages = [];
     private List<KeyValuePair<string, object?>> _info = [];
     private List<KeyValuePair<string, object?>> _filteredInfo = [];
+    private List<KeyValuePair<string, object?>> _issues = [];
 
     private DiscEdit _selectedDisc = new DiscEdit();
     private SongEdit _selectedSong = new SongEdit();
@@ -273,6 +297,7 @@
 
     private short _maximumTrackNumberLength;
     private short _maximumMediaNumberLength;
+    private string _formattingDateTimeDisplayActivityFormat;
 
     [Parameter] public Guid LibraryApiKey { get; set; }
 
@@ -374,45 +399,59 @@
                 Duration = x.DurationTimeShort()
             }).ToArray() ?? []
         };
-        _selectedSong = _albumEdit.Songs?.FirstOrDefault() ?? new SongEdit();
+        _selectedSong = _albumEdit.Songs.FirstOrDefault() ?? new SongEdit();
+        _selectedDisc = _albumEdit.Discs.FirstOrDefault() ?? new DiscEdit();
         _editFormEditContext = new(_albumEdit);
         _albumFullPath = _album.Directory?.FullName();
         _albumCoverBase64 = await _album.CoverImageBase64Async() ?? DefaultImages.ReleaseCover;
         _info = [];
         _maximumTrackNumberLength = SafeParser.ToNumber<short>((await SettingService.GetValueAsync(SettingRegistry.ValidationMaximumSongNumber, 1000)).Data.ToString().Length);
         _maximumMediaNumberLength = SafeParser.ToNumber<short>((await SettingService.GetValueAsync(SettingRegistry.ValidationMaximumMediaNumber, 500)).Data.ToString().Length);
+        _formattingDateTimeDisplayActivityFormat = (await SettingService.GetValueAsync(SettingRegistry.FormattingDateTimeDisplayActivityFormat, MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault).ConfigureAwait(false)).Data!;
+        _info.Add(new KeyValuePair<string, object?>("Album: Created", _album.Created.ToString(_formattingDateTimeDisplayActivityFormat)));
+        _info.Add(new KeyValuePair<string, object?>("Album: Display Summary", _album.DisplaySummary));
+        _info.Add(new KeyValuePair<string, object?>("Album: Status", _album.Status.ToString()));
+        _info.Add(new KeyValuePair<string, object?>("Album: Sort Name", _album.SortValue));
+        _info.Add(new KeyValuePair<string, object?>("Album: Unique Id", _album.UniqueId));
+        _info.Add(new KeyValuePair<string, object?>("Album: Via Plugins", string.Join(", ", _album.ViaPlugins)));
         if (_album.Tags != null)
         {
             foreach (var tag in _album.Tags.OrderBy(x => x.SortOrder))
             {
-                _info.Add(new KeyValuePair<string, object?>(tag.IdentifierDescription, tag.Value));
+                _info.Add(new KeyValuePair<string, object?>($"Album: {tag.IdentifierDescription}", tag.Value));
             }
             if (_album.Songs != null)
             {
                 foreach (var song in _album.Songs.OrderBy(x => x.SortOrder))
                 {
-                    _info.Add(new KeyValuePair<string, object?>($"Song:{song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}", song.DisplaySummary));
+                    _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}: File", song.File.ToString()));
+                    _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}: Unique Id", song.UniqueId));
+                    _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}", song.DisplaySummary));
                     if (song.Tags != null)
                     {
                         foreach (var tag in song.Tags.OrderBy(x => x.SortOrder))
                         {
-                            _info.Add(new KeyValuePair<string, object?>($"Song:{song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}:{tag.IdentifierDescription}", tag.Value));
+                            _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}: {tag.IdentifierDescription}", tag.Value));
                         }
                     }
                     if (song.MediaAudios != null)
                     {
                         foreach (var tag in song.MediaAudios.OrderBy(x => x.SortOrder))
                         {
-                            _info.Add(new KeyValuePair<string, object?>($"Song:{song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}:{tag.Identifier.ToString()}", tag.Value));
+                            _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}: {tag.Identifier.ToString()}", tag.Value));
                         }
                     }
                 }
             }
         }
-
         _filteredInfo = _info;
+        _issues = [];
+
+        if (_issues.Count == 0)
+        {
+            _tabsRef.RemoveTabByName("IssuesTab");
+        }
         _loading = false;
-        StateHasChanged();
     }
 
     private void FilterChanged(ChangeEventArgs args)
@@ -425,5 +464,4 @@
     private string SelectedSongClass(SongEdit song) => song == _selectedSong ? "selected" : string.Empty;
 
     private object SelectedDiscClass(DiscEdit disc) => disc == _selectedDisc ? "selected" : string.Empty;
-
 }

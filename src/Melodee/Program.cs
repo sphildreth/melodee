@@ -3,8 +3,6 @@ using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
 using Melodee.Jobs;
-using Melodee.Plugins.MetaData.Song;
-using Melodee.Plugins.Processor;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
@@ -55,7 +53,7 @@ builder.Services
                 0,
                 0),
             opt.GetRequiredService<ISerializer>()))
-    .AddSingleton<DefaultImages>(opt => new DefaultImages(
+    .AddSingleton<DefaultImages>(_ => new DefaultImages(
         $"data:image/png;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/avatar.png"))}",
         $"data:image/jpeg;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/release.jpg"))}"))
     .AddScoped<LocalStorageService>()
@@ -80,7 +78,7 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(opts => opts
         .ForJob(jobKey)
         .WithIdentity("MediaScanJob-trigger")
-        .WithCronSchedule("0 0/1 * * * ?")
+        .WithCronSchedule("0 0/10 * * * ?")
     );
     
 });
