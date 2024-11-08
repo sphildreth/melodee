@@ -273,7 +273,7 @@
         </Tab>
     <Tab Name="IssuesTab">
         <TitleTemplate>
-            <Icon Name="IconName.EmojiAngry" Color="IconColor.Warning"/> Issues  <Badge Color="BadgeColor.Warning">@(_issues.Count())</Badge>
+            <Icon Name="IconName.EmojiAngry" Color="InfoTabIconColor()"/> Issues  <Badge Color="InfoTabBadgeColor()">@(_issues.Count())</Badge>
         </TitleTemplate>
         <Content>
             <div class="row mt-2">
@@ -283,7 +283,7 @@
                         @foreach (var info in _issues.OrderBy(x => x.SortOrder))
                         {
                             <tr>
-                                <td style="width:10%;" class="text-warning">@info.Severity.ToString()</td>
+                                <td style="width:10%;"> <Icon Color="InfoMessageColor(info)" Name="IconName.EmojiAngry"/> @info.Severity.ToString()</td>
                                 <td style="width:90%;">@info.Message</td>
                             </tr>
                         }
@@ -526,5 +526,20 @@
                 });
         }
     }
+
+    private IconColor InfoMessageColor(ValidationResultMessage info)
+    {
+        return info.Severity switch
+        {
+            ValidationResultMessageSeverity.Critical => IconColor.Danger,
+            _ => IconColor.Warning
+        };
+    }
+
+    private IconColor InfoTabIconColor()
+        => _issues.Any(x => x.Severity == ValidationResultMessageSeverity.Critical) ? IconColor.Danger : IconColor.Warning;
+
+    private BadgeColor InfoTabBadgeColor()
+        => _issues.Any(x => x.Severity == ValidationResultMessageSeverity.Critical) ? BadgeColor.Danger : BadgeColor.Warning;
 
 }
