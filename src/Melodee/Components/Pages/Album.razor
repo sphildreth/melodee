@@ -244,48 +244,48 @@
             </div>
         </Content>
     </Tab>
-    <Tab Name="InfoTab">
-            <TitleTemplate>
-                <Icon Name="IconName.InfoSquare"/> Info
-            </TitleTemplate>
-            <Content>
-                <div class="row mt-2">
-                    <div class="col-2">
-                        <input type="text" placeholder="Filter" @oninput="FilterChanged"/>
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col">
-                        <table class="table table-striped table-bordered table-sm">
-                            <tbody>
-                            @foreach (var info in _filteredInfo.OrderBy(x => x.Key))
-                            {
-                            <tr>
-                                <td style="width:40%;">@info.Key</td>
-                                <td style="width:60%;">@info.Value</td>
-                            </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </Content>
-        </Tab>
     <Tab Name="IssuesTab">
+    <TitleTemplate>
+        <Icon Name="IconName.EmojiAngry" Color="InfoTabIconColor()"/> Issues  <Badge Color="InfoTabBadgeColor()">@(_issues.Count())</Badge>
+    </TitleTemplate>
+    <Content>
+        <div class="row mt-2">
+            <div class="col">
+                <table class="table table-striped table-bordered table-sm">
+                    <tbody>
+                    @foreach (var info in _issues.OrderBy(x => x.SortOrder))
+                    {
+                        <tr>
+                            <td style="width:10%;"> <Icon Color="InfoMessageColor(info)" Name="IconName.EmojiAngry"/> @info.Severity.ToString()</td>
+                            <td style="width:90%;">@info.Message</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </Content>
+</Tab>
+    <Tab Name="InfoTab">
         <TitleTemplate>
-            <Icon Name="IconName.EmojiAngry" Color="InfoTabIconColor()"/> Issues  <Badge Color="InfoTabBadgeColor()">@(_issues.Count())</Badge>
+            <Icon Name="IconName.InfoSquare"/> Info
         </TitleTemplate>
         <Content>
+            <div class="row mt-2">
+                <div class="col-2">
+                    <input type="text" placeholder="Filter" @oninput="FilterChanged"/>
+                </div>
+            </div>
             <div class="row mt-2">
                 <div class="col">
                     <table class="table table-striped table-bordered table-sm">
                         <tbody>
-                        @foreach (var info in _issues.OrderBy(x => x.SortOrder))
+                        @foreach (var info in _filteredInfo.OrderBy(x => x.Key))
                         {
-                            <tr>
-                                <td style="width:10%;"> <Icon Color="InfoMessageColor(info)" Name="IconName.EmojiAngry"/> @info.Severity.ToString()</td>
-                                <td style="width:90%;">@info.Message</td>
-                            </tr>
+                        <tr>
+                            <td style="width:40%;">@info.Key</td>
+                            <td style="width:60%;">@info.Value</td>
+                        </tr>
                         }
                         </tbody>
                     </table>

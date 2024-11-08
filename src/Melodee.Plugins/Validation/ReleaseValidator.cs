@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -156,9 +157,16 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             return false;
         }
-
-        var songNumbers = songs.GroupBy(x => x.SongNumber());
-        var result =  songNumbers.All(group => group.Count() == 1);
+        var result = true;
+        foreach (var mediaSongs in songs.GroupBy(x => x.MediaNumber()))
+        {
+            var songNumbers = mediaSongs.GroupBy(x => x.SongNumber());
+            if (songNumbers.Any(group => group.Count() > 1))
+            {
+                result = false;
+                break;
+            }
+        }
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -248,7 +256,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             result = false;
         }
 
-        var mediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
+        var mediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().Order().ToArray();
         if (mediaNumbers.Length != 0 && mediaNumbers.All(x => x > 0))
         {
             var maxMediaNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumMediaNumber]);
@@ -282,20 +290,24 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             result = false;
         }
 
-        foreach (var song in songs)
+        var messageResult = new StringBuilder("Some Songs have unwanted text: ");
+        if (result)
         {
-            if (SongHasUnwantedText(album.AlbumTitle(), song.Title(), song.SongNumber()))
+            foreach (var song in songs)
             {
-                result = false;
-                break;
+                if (SongHasUnwantedText(album.AlbumTitle(), song.Title(), song.SongNumber()))
+                {
+                    messageResult.Append($"[{ song }]");
+                    result = false;
+                    break;
+                }
             }
         }
-
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Some Songs have unwanted text.",
+                Message = messageResult.ToString(),
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
