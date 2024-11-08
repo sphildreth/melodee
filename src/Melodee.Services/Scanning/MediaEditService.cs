@@ -611,7 +611,7 @@ public sealed class MediaEditService(
             foreach (var selectedAlbumId in albumIds)
             {
                 var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, selectedAlbumId, cancellationToken);
-                album.Status = AlbumStatus.Reviewed;
+                album.Status = AlbumStatus.Ok;
                 await SaveAlbum(album, cancellationToken);                 
             }
 

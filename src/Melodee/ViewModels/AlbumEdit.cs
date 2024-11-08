@@ -21,5 +21,7 @@ public sealed class AlbumEdit
     public required DiscEdit[] Discs { get; set; }
     
     public required SongEdit[] Songs { get; set; }
+    
+    public required FileEdit[] AlbumDirectoryFiles { get; set; }
 
 }

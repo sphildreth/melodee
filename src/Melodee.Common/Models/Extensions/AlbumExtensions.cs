@@ -113,7 +113,7 @@ public static class AlbumExtensions
         return album.UniqueId > 0 &&
                artist != null &&
                albumTitle != null &&
-               album.Status is AlbumStatus.Complete or AlbumStatus.New or AlbumStatus.Ok or AlbumStatus.Reviewed &&
+               album.Status is AlbumStatus.Ok or AlbumStatus.New &&
                album.HasValidAlbumYear(configuration); 
     }
 

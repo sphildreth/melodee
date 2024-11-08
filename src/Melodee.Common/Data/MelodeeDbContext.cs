@@ -427,16 +427,16 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 43,
                     Key = SettingRegistry.ValidationMaximumMediaNumber,
-                    Comment = "The maximum value a media number can have for an album.",
-                    Value = "500",
+                    Comment = "The maximum value a media number can have for an album. The length of this is used for formatting song names.",
+                    Value = "999",
                     CreatedAt = now,
                 },
                 new Setting
                 {
                     Id = 44,
                     Key = SettingRegistry.ValidationMaximumSongNumber,
-                    Comment = "The maximum value a song number can have for an album.",
-                    Value = "1000",
+                    Comment = "The maximum value a song number can have for an album. The length of this is used for formatting song names.",
+                    Value = "9999",
                     CreatedAt = now,
                 },
                 new Setting

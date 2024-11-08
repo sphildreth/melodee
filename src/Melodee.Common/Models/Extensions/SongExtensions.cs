@@ -252,7 +252,7 @@ public static class SongExtensions
         return false;
     }
 
-    public static string SongFileName(int songNumber, string? songTitle, int mediaNumber)
+    public static string SongFileName(int maximumSongNumber, int songNumber, string? songTitle, int maximumMediaNumber, int mediaNumber, int totalMediaNumber)
     {
         if (songNumber < 1)
         {
@@ -264,20 +264,22 @@ public static class SongExtensions
             throw new Exception($"Invalid Song title [{songTitle}]");
         }
 
-        var songNumberValue = songNumber.ToString("D3");
+        var songNumberPaddingLength = SafeParser.ToNumber<short>(maximumSongNumber.ToString().Length);
+        var songMediaNumberPaddingLength = SafeParser.ToNumber<short>(maximumMediaNumber.ToString().Length);
 
-        // Put an "m" for media on the TPOS greater than 1 so the directory sorts proper
+        var songNumberValue = songNumber.ToStringPadLeft(songNumberPaddingLength);
+
         /*
-          Example when not part of a media set Song 7
-          "007 Something.mpg"
+          Example when not part of a media (totalMediaNumber number is less than 2) set Song 7
+          "0007 Something.mpg"
 
           Example media 1 Song 14
-          "001-014 Something.mpg"
+          "001-0014 Something.mpg"
 
           Example media 2 Song 5
-          "002-005 Something Else.mpg"
+          "002-0005 Something Else.mpg"
         */
-        var disc = mediaNumber > 1 ? $"{mediaNumber:D3}-" : string.Empty;
+        var disc = totalMediaNumber > 1 ? $"{mediaNumber.ToStringPadLeft(songMediaNumberPaddingLength)}-" : string.Empty;
 
         // Get new name for file
         var fileNameFromTitle = songTitle.ToTitleCase(false)?.ToFileNameFriendly();
@@ -294,8 +296,14 @@ public static class SongExtensions
         return $"{disc}{songNumberValue} {fileNameFromTitle}.mp3";
     }
 
-    public static string ToSongFileName(this Song song)
+    public static string ToSongFileName(this Song song, Dictionary<string, object?> configuration)
     {
-        return SongFileName(song.SongNumber(), song.Title(), song.MediaNumber());
+        return SongFileName(
+            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
+            song.SongNumber(),
+            song.Title(),
+            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),            
+            song.MediaNumber(),
+            song.MediaTotalNumber());
     }
 }

@@ -1,4 +1,5 @@
 using Melodee.Common.Enums;
+using Melodee.Common.Models.Validation;
 
 namespace Melodee.Plugins.Validation.Models;
 

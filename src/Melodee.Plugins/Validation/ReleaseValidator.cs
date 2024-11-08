@@ -6,6 +6,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Validation.Models;
 using Serilog;
@@ -33,7 +34,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             {
                 Data = new ValidationResult
                 {
-                    AlbumStatus = AlbumStatus.Invalid
+                    AlbumStatus = AlbumStatus.NeedsAttention
                 }
             };
         }
@@ -83,8 +84,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Album Song total value does not match Song count.",
-                Severity = ValidationResultMessageSeverity.MustFix
+                Message = $"Album Song total value does not match Song count.",
+                Severity = ValidationResultMessageSeverity.Critical
             });
         }
         return result; 
@@ -105,8 +106,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Album media total [{albumMediaTotal}] does not match Song medias [{mediaNumbers}].",
-                Severity = ValidationResultMessageSeverity.MustFix
+                Message = $"Album media total [{albumMediaTotal}] does not match Song medias [{mediaNumbers}].",
+                Severity = ValidationResultMessageSeverity.Critical
             });
         }
         return result;        
@@ -122,7 +123,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 _validationMessages.Add(new ValidationResultMessage
                 {
                     Message = $"Album has invalid Unique ID: {album.UniqueId}",
-                    Severity = ValidationResultMessageSeverity.MustFix
+                    Severity = ValidationResultMessageSeverity.Critical
                 });
                 result = false;
             }
@@ -131,7 +132,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 _validationMessages.Add(new ValidationResultMessage
                 {
                     Message = $"Album has invalid Artist [{album.Artist()}]",
-                    Severity = ValidationResultMessageSeverity.MustFix
+                    Severity = ValidationResultMessageSeverity.Critical
                 });
                 result = false;
             }
@@ -140,7 +141,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 _validationMessages.Add(new ValidationResultMessage
                 {
                     Message = $"Album has invalid Album Title: {album.AlbumTitle()}",
-                    Severity = ValidationResultMessageSeverity.MustFix
+                    Severity = ValidationResultMessageSeverity.Critical
                 });
                 result = false;
             }
@@ -150,7 +151,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 _validationMessages.Add(new ValidationResultMessage
                 {
                     Message = $"Album has invalid Album Year: {album.AlbumYear()}",
-                    Severity = ValidationResultMessageSeverity.MustFix
+                    Severity = ValidationResultMessageSeverity.Critical
                 });
                 result = false;
             }
@@ -172,8 +173,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Album has Songs with invalid Song number.",
-                Severity = ValidationResultMessageSeverity.MustFix
+                Message = $"'Album has Songs with invalid Song number.",
+                Severity = ValidationResultMessageSeverity.Critical
             });
         }
 
@@ -210,8 +211,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Songs do not all have the same album artist.",
-                Severity = ValidationResultMessageSeverity.MustFix
+                Message = $"'Songs do not all have the same album artist.",
+                Severity = ValidationResultMessageSeverity.Critical
             });
         }
 
@@ -225,7 +226,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Album artist has unwanted text.",
+                Message = $"'Album artist has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
@@ -240,7 +241,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Album title has unwanted text.",
+                Message = $"'Album title has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
@@ -274,8 +275,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Album media numbers are invalid.",
-                Severity = ValidationResultMessageSeverity.MustFix
+                Message = $"'Album media numbers are invalid.",
+                Severity = ValidationResultMessageSeverity.Critical
             });
         }
 
@@ -304,7 +305,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' some Songs have unwanted text.",
+                Message = $"'Some Songs have unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
@@ -343,8 +344,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Album Song numbers are invalid.",
-                Severity = ValidationResultMessageSeverity.MustFix
+                Message = $"'Album Song numbers are invalid.",
+                Severity = ValidationResultMessageSeverity.Critical
             });
         }
         return result;
@@ -357,8 +358,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"'{album}' Album year is invalid.",
-                Severity = ValidationResultMessageSeverity.MustFix
+                Message = $"Album year is invalid.",
+                Severity = ValidationResultMessageSeverity.Critical
             });
             
         }

@@ -83,18 +83,17 @@ public static class FileSystemDirectoryInfoExtensions
         return result;
     }
 
-    public static IEnumerable<FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    public static IEnumerable<FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo) 
+        => fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension));
+
+    public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null)
     {
-        var result = new List<FileInfo>();
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
-            return result;
+            return [];
         }
-
-        result.AddRange(dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
-            .Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension)));
-        return result;
+        return dirInfo.EnumerateFiles(searchPattern ?? "*.*", SearchOption.TopDirectoryOnly);
     }
 
     public static void DeleteAllEmptyDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)

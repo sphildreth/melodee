@@ -1,4 +1,4 @@
-namespace Melodee.Plugins.Validation.Models;
+namespace Melodee.Common.Models.Validation;
 
 public sealed record ValidationResultMessage
 {

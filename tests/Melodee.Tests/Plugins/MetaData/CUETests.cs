@@ -17,7 +17,7 @@ public class CUETests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var parsed = await CueSheet.ParseFileAsync(testFile);
+            var parsed = await CueSheet.ParseFileAsync(testFile, NewConfiguration());
             Assert.NotNull(parsed);
             Assert.True(parsed.IsValid);
         }

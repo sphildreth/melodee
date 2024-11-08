@@ -195,7 +195,6 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
         var splitChar = ':';
         var albumTags = new List<MetaTag<object?>>();
         var songs = new List<Common.Models.Song>();
-        var messages = new List<string>();
 
         var metaTagsToParseFromFile = new List<MetaTagIdentifier>
         {
@@ -347,11 +346,10 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
             Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
             Tags = albumTags,
             Songs = songs,
-            Messages = messages,
             Status = AlbumStatus.NotSet,
             SortOrder = 0
         };
-        result.Status = result.IsValid(Configuration) ? AlbumStatus.Invalid : AlbumStatus.Ok;
+        result.Status = result.IsValid(Configuration) ? AlbumStatus.NeedsAttention : AlbumStatus.Ok;
         return result;
     }
 

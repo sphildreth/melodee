@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Melodee.Common.Utility;
 
 public static class Crc32
@@ -44,12 +46,11 @@ public static class Crc32
         {
             throw new ArgumentNullException(nameof(file));
         }
-
         if (!file.Exists)
         {
-            throw new ArgumentException($"File [{file.FullName}] not found.");
+            Trace.WriteLine($"Unable to calculate CRC32. File [{file.FullName}] not found. Returning default value.");
+            return string.Empty;
         }
-
         return $"{CalculateInt32(file):X8}";
     }
 

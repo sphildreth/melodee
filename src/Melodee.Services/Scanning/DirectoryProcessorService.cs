@@ -61,9 +61,9 @@ public sealed class DirectoryProcessorService(
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
-        
-        _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;        
-        
+
+        _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
+
         _songPlugins = new[]
         {
             new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
@@ -109,7 +109,7 @@ public sealed class DirectoryProcessorService(
         }
 
         await _mediaEditService.InitializeAsync(configuration, token).ConfigureAwait(false);
-        
+
         _initialized = true;
     }
 
@@ -131,7 +131,6 @@ public sealed class DirectoryProcessorService(
         var conversionPluginsProcessedFileCount = 0;
         var directoryPluginProcessedFileCount = 0;
         var numberOfAlbumFilesProcessed = 0;
-
 
         var artistsUniqueIdsSeen = new List<long>();
         var albumsUniqueIdsSeen = new List<long>();
@@ -414,7 +413,7 @@ public sealed class DirectoryProcessorService(
                                     break;
                                 }
 
-                                song.File.Name = song.ToSongFileName();
+                                song.File.Name = song.ToSongFileName(_configuration.Configuration);
                             }
                         }
 
@@ -460,17 +459,22 @@ public sealed class DirectoryProcessorService(
                             {
                                 break;
                             }
+
+                            var oldSongFilename = song.File.FullOriginalName(directoryInfoToProcess);
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
-                            File.Copy(song.File.FullOriginalName(directoryInfoToProcess), newSongFileName, true);
-                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                            if(!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                             {
-                                try
+                                File.Copy(oldSongFilename, newSongFileName, true);
+                                if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                                 {
-                                    File.Delete(song.File.FullOriginalName(directoryInfoToProcess));
-                                }
-                                catch (Exception e)
-                                {
-                                    Logger.Warning(e, "Error deleting original file [{0}]", song.File.FullOriginalName(directoryInfoToProcess));
+                                    try
+                                    {
+                                        File.Delete(oldSongFilename);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
+                                    }
                                 }
                             }
                         }
@@ -498,7 +502,9 @@ public sealed class DirectoryProcessorService(
                     }
 
                     album.Directory = albumDirInfo.ToDirectorySystemInfo();
-                    album.Status = _albumValidator.ValidateAlbum(album).Data.AlbumStatus;
+                    var validationResult = _albumValidator.ValidateAlbum(album);
+                    album.ValidationMessages = validationResult.Data.Messages ?? [];
+                    album.Status = validationResult.Data.AlbumStatus;
                     var serialized = serializer.Serialize(album);
                     var jsonName = album.ToMelodeeJsonName(true);
                     if (jsonName.Nullify() != null)
@@ -508,10 +514,12 @@ public sealed class DirectoryProcessorService(
                             await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
                             File.Delete(albumKvp.Value);
                         }
+
                         if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                         {
                             File.Delete(albumKvp.Value);
                         }
+
                         if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
@@ -519,6 +527,7 @@ public sealed class DirectoryProcessorService(
                                 await _mediaEditService.DoMagic(album.UniqueId, cancellationToken);
                             }
                         }
+
                         artistsUniqueIdsSeen.Add(album.ArtistUniqueId());
                         artistsUniqueIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId() ?? 0) ?? []);
                         albumsUniqueIdsSeen.Add(album.UniqueId);
@@ -575,8 +584,6 @@ public sealed class DirectoryProcessorService(
         }
 
         fileSystemDirectoryInfo.DeleteAllEmptyDirectories();
-        //  DirectoryStagingFileSystemDirectoryInfo.DeleteAllEmptyDirectories();
-
         LogAndRaiseEvent(LogEventLevel.Information, "Processing Complete!");
 
         processingMessages.Add($"Directory Plugin(s) process count [{directoryPluginProcessedFileCount}]");
@@ -584,7 +591,6 @@ public sealed class DirectoryProcessorService(
         processingMessages.Add($"Song Plugin(s) process count [{numberOfAlbumFilesProcessed}]");
         processingMessages.Add($"Album process count [{numberOfAlbumJsonFilesProcessed}]");
 
-       
         return new OperationResult<DirectoryProcessorResult>(processingMessages)
         {
             Errors = processingErrors.ToArray(),

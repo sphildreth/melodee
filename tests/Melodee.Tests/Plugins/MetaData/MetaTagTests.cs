@@ -187,7 +187,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(Song.File);
             Assert.Equal(fileInfo.FullName, Song.File.FullName(dirInfo));
             Assert.NotNull(Song.Title()?.Nullify());
-            Assert.NotEmpty(Song.ToSongFileName());
+            Assert.NotEmpty(Song.ToSongFileName(NewConfiguration()));
         }
     }    
 

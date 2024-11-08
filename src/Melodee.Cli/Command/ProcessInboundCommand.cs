@@ -16,6 +16,7 @@ using Melodee.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NodaTime;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -109,11 +110,13 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
 
             Log.Debug("\ud83d\udcc1 Processing directory [{Inbound}]", settings.Inbound);
 
+            await processor.InitializeAsync();
+            
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,
                 Name = dirInfo.Name
-            }, inboundLibrary.LastScanAt);
+            }, settings.ForceMode ? null : inboundLibrary.LastScanAt);
 
             Log.Debug("ℹ️ Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, Stopwatch.GetElapsedTime(startTicks));
 

@@ -13,6 +13,7 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 
+
 namespace Melodee.Services.Scanning;
 
 /// <summary>
@@ -123,7 +124,7 @@ public sealed class AlbumDiscoveryService(
                     break;
 
                 case AlbumResultFilter.Incomplete:
-                    albums = albums.Where(x => x.Status == AlbumStatus.Incomplete).ToList();
+                    albums = albums.Where(x => x.Status == AlbumStatus.NeedsAttention).ToList();
                     break;
 
                 case AlbumResultFilter.LessThanConfiguredSongs:
@@ -140,7 +141,7 @@ public sealed class AlbumDiscoveryService(
                     break;
 
                 case AlbumResultFilter.ReadyToMove:
-                    albums = albums.Where(x => x.Status is AlbumStatus.Ok or AlbumStatus.Reviewed).ToList();
+                    albums = albums.Where(x => x.Status is AlbumStatus.Ok).ToList();
                     break;
 
                 case AlbumResultFilter.Selected:
@@ -155,6 +156,26 @@ public sealed class AlbumDiscoveryService(
                     var filterLessDuration = SafeParser.ToNumber<int>(_configuration.Configuration[SettingRegistry.FilteringLessThanDuration]);
                     albums = albums.Where(x => x.TotalDuration() < filterLessDuration).ToList();
                     break;
+            }
+        }
+
+        if (pagedRequest.FilterBy != null)
+        {
+            foreach (var filterBy in pagedRequest.FilterBy)
+            {
+             switch (filterBy.PropertyName)
+             {
+                case "AlbumStatus":
+                    var filterStatusValue = SafeParser.ToEnum<AlbumStatus>(filterBy.Value);
+                    albums = albums.Where(x => x.Status == filterStatusValue).ToList();
+                    break;
+                
+                case "Year":
+                    var filterYearValue = SafeParser.ToNumber<int>(filterBy.Value);
+                    albums = albums.Where(x => x.AlbumYear() == filterYearValue).ToList();
+                    break;
+             }
+
             }
         }
 

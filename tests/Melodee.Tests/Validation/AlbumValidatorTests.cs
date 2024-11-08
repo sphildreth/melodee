@@ -238,7 +238,7 @@ public class AlbumValidatorTests
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumStatus.NeedsAttention, validationResult.Data.AlbumStatus);
     }
 
     [Fact]
@@ -262,7 +262,7 @@ public class AlbumValidatorTests
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumStatus.NeedsAttention, validationResult.Data.AlbumStatus);
     }
 
     [Fact]
@@ -286,6 +286,6 @@ public class AlbumValidatorTests
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumStatus.NeedsAttention, validationResult.Data.AlbumStatus);
     }
 }

@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
@@ -43,10 +44,10 @@ public sealed record Album
 
     public IEnumerable<Song>? Songs { get; set; }
 
-    public IEnumerable<string> Messages { get; set; } = [];
+    public IEnumerable<ValidationResultMessage> ValidationMessages { get; set; } = [];
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public AlbumStatus Status { get; set; } = AlbumStatus.Invalid;
+    public AlbumStatus Status { get; set; } = AlbumStatus.NeedsAttention;
 
     public IEnumerable<AlbumFile> Files { get; set; } = [];
 
@@ -121,7 +122,7 @@ public sealed record Album
     {
         var files = new List<AlbumFile>(Files);
         var images = new List<ImageInfo>(Images ?? []);
-        var messages = new List<string>(Messages);
+        var messages = new List<ValidationResultMessage>(ValidationMessages);
         var tags = new List<MetaTag<object?>>(Tags ?? []);
         var songs = new List<Song>(Songs ?? []);
         var viaPlugins = new List<string>(ViaPlugins);
@@ -181,13 +182,13 @@ public sealed record Album
             }
         }
 
-        messages.AddRange(otherAlbum.Messages);
+        messages.AddRange(otherAlbum.ValidationMessages);
 
         return new Album
         {
             Files = files.ToArray(),
             Images = images.ToArray(),
-            Messages = messages.Distinct().ToArray(),
+            ValidationMessages = messages.Distinct().ToArray(),
             MelodeeDataFileName = MelodeeDataFileName,
             OriginalDirectory = OriginalDirectory,
             Songs = (Songs ?? Array.Empty<Song>()).ToArray(),

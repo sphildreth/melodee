@@ -150,7 +150,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                     Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                     ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                 };
-                sfvAlbum.Status = _albumValidator.ValidateAlbum(sfvAlbum)?.Data?.AlbumStatus ?? AlbumStatus.Invalid;
+                sfvAlbum.Status = _albumValidator.ValidateAlbum(sfvAlbum)?.Data?.AlbumStatus ?? AlbumStatus.NeedsAttention;
 
                 var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName());
                 if (File.Exists(stagingAlbumDataName))

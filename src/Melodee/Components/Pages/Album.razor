@@ -1,4 +1,5 @@
 ﻿@page "/album/{libraryApiKey:guid}/{uniqueId:long}/{returnUrl}"
+@using Melodee.Common.Models.Validation
 
 @inject AlbumDiscoveryService AlbumsDiscoverer
 @inject DefaultImages DefaultImages
@@ -14,216 +15,243 @@
 <Toasts class="p-3" Messages="_messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.TopRight"/>
 
 <div class="album-edit-container container">
-    <p class="font-monospace fs-6">@(_albumFullPath ?? "Loading...")</p>
-    <Ribbon OnClick="OnRibbonItemClick">
-        <RibbonTab Title="Actions" Active="true">
-            <Content>
-                <RibbonItem Name="SaveAlbum" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.Save">Save</RibbonItem>
-                <RibbonItem Name="DoMagic" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Magic">Do Magic</RibbonItem>
-                <RibbonItem Name="DeleteAlbum" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash">Delete</RibbonItem>
-                <RibbonItem Name="MoveToLibrary" IconSize="IconSize.x5" IconColor="IconColor.Warning" IconName="IconName.FolderSymlink">Move to Library</RibbonItem>
-                <RibbonItem Name="DeleteAlbum" IconSize="IconSize.x5" IconColor="IconColor.Warning" IconName="IconName.Cpu">Re-Process</RibbonItem>
+<p class="font-monospace fs-6">@(_albumFullPath ?? "Loading...")</p>
+<Ribbon OnClick="OnRibbonItemClick">
+    <RibbonTab Title="Actions" Active="true">
+        <Content>
+            <RibbonItem Name="SaveAlbum" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.Save">Save</RibbonItem>
+            <RibbonItem Name="DoMagic" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Magic">Do Magic</RibbonItem>
+            <RibbonItem Name="DeleteAlbum" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash">Delete</RibbonItem>
+            <RibbonItem Name="MoveToLibrary" IconSize="IconSize.x5" IconColor="IconColor.Warning" IconName="IconName.FolderSymlink">Move to Library</RibbonItem>
+            <RibbonItem Name="DeleteAlbum" IconSize="IconSize.x5" IconColor="IconColor.Warning" IconName="IconName.Cpu">Re-Process</RibbonItem>
 
-                @* <RibbonItemGroup Text="Album"> *@
-                @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Pencil">Set year to current</RibbonItem> *@
-                @* </RibbonItemGroup> *@
-                @* <RibbonItemGroup Text="Artist"> *@
-                @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Pencil">Remove artist from song titles</RibbonItem> *@
-                @* </RibbonItemGroup> *@
-                @* <RibbonItemGroup Text="Songs"> *@
-                @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.Pencil">Promote song artist</RibbonItem> *@
-                @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.Pencil">Renumber songs</RibbonItem> *@
-                @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Pencil">Remove featuring artist from song titles</RibbonItem> *@
-                @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Pencil">Trim song titles</RibbonItem> *@
-                @* </RibbonItemGroup> *@
-            </Content>
-        </RibbonTab>
-        <RibbonTab Title="Cover Image">
-            <Content>
-                <RibbonItem Name="ChangeCoverImage" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.FileImage">Change</RibbonItem>
-                <RibbonItem Name="DeleteAlbumImages" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash2">Remove</RibbonItem>
-            </Content>
-        </RibbonTab>
-    </Ribbon>
-    <Tabs EnableFadeEffect="true" Class="mt-1" @ref="_tabsRef">
-        <Tab Active="true">
-            <TitleTemplate>
-                <Icon Name="IconName.Vinyl" /> Album
-            </TitleTemplate>
-            <Content>
-                <div class="row mt-2">
-                    <div class="col-3">
-                        <img alt="@_albumEdit.Artist" class="cover-image m-1" src="@_albumCoverBase64"/>
-                    </div>
-                    <div class="col-9">
-                        <EditForm EditContext="_editFormEditContext" class="form-login mt-2" FormName="AlbumEdit">
-                            <DataAnnotationsValidator/>
-                            <div class="form-group">
-                                <label>Artist Name</label>
-                                <div class="mb-2">
-                                    <InputText @bind-Value="_albumEdit.Artist" class="form-control"/>
-                                    <ValidationMessage For="() => _albumEdit.Artist"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Album Title</label>
-                                <div class="mb-2">
-                                    <InputText @bind-Value="_albumEdit.Title" class="form-control"/>
-                                    <ValidationMessage For="() => _albumEdit.Title"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Genre</label>
-                                <div class="mb-2">
-                                    <InputText @bind-Value="_albumEdit.Genre" class="form-control"/>
-                                    <ValidationMessage For="() => _albumEdit.Genre"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Year</label>
-                                <div class="mb-2">
-                                    <InputNumber @bind-Value="_albumEdit.Year" class="form-control"/>
-                                    <ValidationMessage For="() => _albumEdit.Year"/>
-                                </div>
-                            </div>
-                        </EditForm>
-                    </div>
+            @* <RibbonItemGroup Text="Album"> *@
+            @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Pencil">Set year to current</RibbonItem> *@
+            @* </RibbonItemGroup> *@
+            @* <RibbonItemGroup Text="Artist"> *@
+            @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Pencil">Remove artist from song titles</RibbonItem> *@
+            @* </RibbonItemGroup> *@
+            @* <RibbonItemGroup Text="Songs"> *@
+            @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.Pencil">Promote song artist</RibbonItem> *@
+            @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.Pencil">Renumber songs</RibbonItem> *@
+            @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Pencil">Remove featuring artist from song titles</RibbonItem> *@
+            @*     <RibbonItem Name="MergeArtist" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.Pencil">Trim song titles</RibbonItem> *@
+            @* </RibbonItemGroup> *@
+        </Content>
+    </RibbonTab>
+    <RibbonTab Title="Cover Image">
+        <Content>
+            <RibbonItem Name="ChangeCoverImage" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.FileImage">Change</RibbonItem>
+            <RibbonItem Name="DeleteAlbumImages" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash2">Remove</RibbonItem>
+        </Content>
+    </RibbonTab>
+</Ribbon>
+<Tabs EnableFadeEffect="true" Class="mt-1" @ref="_tabsRef">
+    <Tab  Name="AlbumTab" Active="true">
+        <TitleTemplate>
+            <Icon Name="IconName.Vinyl"/> Album
+        </TitleTemplate>
+        <Content>
+            <div class="row mt-2">
+                <div class="col-3">
+                    <img alt="@_albumEdit.Artist" class="cover-image m-1" src="@_albumCoverBase64"/>
                 </div>
-            </Content>
-        </Tab>
-        <Tab>
-            <TitleTemplate>
-                <Icon Name="IconName.Disc" /> Discs <Badge Color="BadgeColor.Info">@(_album?.Songs?.GroupBy(x => x.MediaNumber()).Count() ?? 0)</Badge>
-            </TitleTemplate>
-            <Content>
-                <div class="row mt-2">
-                    <div class="col-5">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered table-sm table-hover">
-                                <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Title</th>
-                                    <th scope="col">Song Count</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach (var disc in _albumEdit.Discs)
-                                {
+                <div class="col-9">
+                    <EditForm EditContext="_editFormEditContext" class="form-login mt-2" FormName="AlbumEdit">
+                        <DataAnnotationsValidator/>
+                        <div class="form-group">
+                            <label>Artist Name</label>
+                            <div class="mb-2">
+                                <InputText @bind-Value="_albumEdit.Artist" class="form-control"/>
+                                <ValidationMessage For="() => _albumEdit.Artist"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Album Title</label>
+                            <div class="mb-2">
+                                <InputText @bind-Value="_albumEdit.Title" class="form-control"/>
+                                <ValidationMessage For="() => _albumEdit.Title"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Genre</label>
+                            <div class="mb-2">
+                                <InputText @bind-Value="_albumEdit.Genre" class="form-control"/>
+                                <ValidationMessage For="() => _albumEdit.Genre"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Year</label>
+                            <div class="mb-2">
+                                <InputNumber @bind-Value="_albumEdit.Year" class="form-control"/>
+                                <ValidationMessage For="() => _albumEdit.Year"/>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </Content>
+    </Tab>
+    <Tab  Name="DiscsTab">
+        <TitleTemplate>
+            <Icon Name="IconName.Disc"/> Discs <Badge Color="BadgeColor.Info">@(_album?.Songs?.GroupBy(x => x.MediaNumber()).Count() ?? 0)</Badge>
+        </TitleTemplate>
+        <Content>
+            <div class="row mt-2">
+                <div class="col-5">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-sm table-hover">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Song Count</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var disc in _albumEdit.Discs)
+                            {
                                 <tr role='button' class="@(SelectedDiscClass(disc))" @onclick="() => _selectedDisc = disc">
                                     <td class="number-container">@disc.DiscNumber.ToStringPadLeft(_maximumMediaNumberLength)</td>
                                     <td>@disc.PartTitles</td>
                                     <td>@disc.SongCount.ToStringPadLeft(_maximumTrackNumberLength)</td>
                                 </tr>
-                                }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="col-7">
-                        <EditForm Model="_selectedDisc" class="form-login mt-2" FormName="DiscEdit">
-                            <DataAnnotationsValidator/>
-                            <div class="form-group">
-                                <label>Disc Number</label>
-                                <div class="mb-2">
-                                    <InputNumber @bind-Value="_selectedDisc.DiscNumber" class="form-control"/>
-                                    <ValidationMessage For="() => _selectedSong.DiscNumber"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>SubTitle</label>
-                                <div class="mb-2">
-                                    <InputText @bind-Value="_selectedDisc.PartTitles" class="form-control"/>
-                                    <ValidationMessage For="() => _selectedSong.PartTitles"/>
-                                </div>
-                            </div>
-                        </EditForm>
+                            }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </Content>
-        </Tab>
-        <Tab>
-            <TitleTemplate>
-                <Icon Name="IconName.MusicNote" /> Songs <Badge Color="BadgeColor.Info">@(_album?.Songs?.Count() ?? 0)</Badge>
-            </TitleTemplate>
-            <Content>
-                <div class="row mt-2">
-                    <div class="col-5">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered table-sm table-hover">
-                                <thead>
-                                <tr>
-                                    <th scope="col">Disc #</th>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Title</th>
-                                    <th scope="col">Duration</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach (var song in _albumEdit.Songs)
-                                {
+                <div class="col-7">
+                    <EditForm Model="_selectedDisc" class="form-login mt-2" FormName="DiscEdit">
+                        <DataAnnotationsValidator/>
+                        <div class="form-group">
+                            <label>Disc Number</label>
+                            <div class="mb-2">
+                                <InputNumber @bind-Value="_selectedDisc.DiscNumber" class="form-control"/>
+                                <ValidationMessage For="() => _selectedSong.DiscNumber"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>SubTitle</label>
+                            <div class="mb-2">
+                                <InputText @bind-Value="_selectedDisc.PartTitles" class="form-control"/>
+                                <ValidationMessage For="() => _selectedSong.PartTitles"/>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </Content>
+    </Tab>
+    <Tab  Name="SongTab">
+        <TitleTemplate>
+            <Icon Name="IconName.MusicNote"/> Songs <Badge Color="BadgeColor.Info">@(_album?.Songs?.Count() ?? 0)</Badge>
+        </TitleTemplate>
+        <Content>
+            <div class="row mt-2">
+                <div class="col-5">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-sm table-hover">
+                            <thead>
+                            <tr>
+                                <th scope="col">Disc #</th>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Duration</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var song in _albumEdit.Songs)
+                            {
                                 <tr role='button' class="@(SelectedSongClass(song))" @onclick="() => _selectedSong = song">
                                     <td class="number-container">@song.DiscNumber.ToStringPadLeft(_maximumMediaNumberLength)</td>
                                     <td class="number-container">@song.SongNumber.ToStringPadLeft(_maximumTrackNumberLength)</td>
                                     <td>@song.Title</td>
                                     <td>@song.Duration</td>
                                 </tr>
-                                }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="col-7">
-                        <EditForm Model="_selectedSong" class="form-login mt-2" FormName="SongEdit">
-                            <DataAnnotationsValidator/>
-                            <div class="form-group">
-                                <label>Disc Number</label>
-                                <div class="mb-2">
-                                    <InputNumber @bind-Value="_selectedSong.DiscNumber" class="form-control"/>
-                                    <ValidationMessage For="() => _selectedSong.DiscNumber"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Song Number</label>
-                                <div class="mb-2">
-                                    <InputNumber @bind-Value="_selectedSong.SongNumber" class="form-control"/>
-                                    <ValidationMessage For="() => _selectedSong.SongNumber"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Song Title</label>
-                                <div class="mb-2">
-                                    <InputText @bind-Value="_selectedSong.Title" class="form-control"/>
-                                    <ValidationMessage For="() => _selectedSong.Title"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Song Artist</label>
-                                <div class="mb-2">
-                                    <InputText @bind-Value="_selectedSong.SongArtist" class="form-control"/>
-                                    <ValidationMessage For="() => _selectedSong.SongArtist"/>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Subtitle/Description</label>
-                                <div class="mb-2">
-                                    <InputText @bind-Value="_selectedSong.PartTitles" class="form-control"/>
-                                    <ValidationMessage For="() => _selectedSong.PartTitles"/>
-                                </div>
-                            </div>
-                        </EditForm>
+                            }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </Content>
-        </Tab>
-        <Tab>
+                <div class="col-7">
+                    <EditForm Model="_selectedSong" class="form-login mt-2" FormName="SongEdit">
+                        <DataAnnotationsValidator/>
+                        <div class="form-group">
+                            <label>Disc Number</label>
+                            <div class="mb-2">
+                                <InputNumber @bind-Value="_selectedSong.DiscNumber" class="form-control"/>
+                                <ValidationMessage For="() => _selectedSong.DiscNumber"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Song Number</label>
+                            <div class="mb-2">
+                                <InputNumber @bind-Value="_selectedSong.SongNumber" class="form-control"/>
+                                <ValidationMessage For="() => _selectedSong.SongNumber"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Song Title</label>
+                            <div class="mb-2">
+                                <InputText @bind-Value="_selectedSong.Title" class="form-control"/>
+                                <ValidationMessage For="() => _selectedSong.Title"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Song Artist</label>
+                            <div class="mb-2">
+                                <InputText @bind-Value="_selectedSong.SongArtist" class="form-control"/>
+                                <ValidationMessage For="() => _selectedSong.SongArtist"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Subtitle/Description</label>
+                            <div class="mb-2">
+                                <InputText @bind-Value="_selectedSong.PartTitles" class="form-control"/>
+                                <ValidationMessage For="() => _selectedSong.PartTitles"/>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </Content>
+    </Tab>
+    <Tab Name="FilesTab">
+        <TitleTemplate>
+            <Icon Name="IconName.Files"/> Files <Badge Color="BadgeColor.Info">@(_albumEdit.AlbumDirectoryFiles.Count())</Badge>
+        </TitleTemplate>
+        <Content>
+            <div class="row mt-2">
+                <div class="col">
+                    <table class="table table-striped table-bordered table-sm">
+                        <tbody>
+                        @foreach (var albumDirectoryFile in _albumEdit.AlbumDirectoryFiles.OrderBy(x => x.FileType).ThenBy(x => x.FileSystemInfo.Name))
+                        {
+                            <tr>
+                                <td style="width:10%;">@albumDirectoryFile.FileType</td>
+                                <td style="width:85%;" class="text-wrap">@albumDirectoryFile.FileSystemInfo.Name</td>
+                                <td style="width:5%;">
+                                    <span role="button" @onclick="args => DeleteAlbumDirectoryFile(albumDirectoryFile)">
+                                        <Icon Name="IconName.Trash"/>
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </Content>
+    </Tab>
+    <Tab Name="InfoTab">
             <TitleTemplate>
-                <Icon Name="IconName.InfoSquare" /> Info
+                <Icon Name="IconName.InfoSquare"/> Info
             </TitleTemplate>
             <Content>
                 <div class="row mt-2">
                     <div class="col-2">
-                        <input type="text" placeholder="Filter" @oninput="FilterChanged" />
+                        <input type="text" placeholder="Filter" @oninput="FilterChanged"/>
                     </div>
                 </div>
                 <div class="row mt-2">
@@ -231,28 +259,6 @@
                         <table class="table table-striped table-bordered table-sm">
                             <tbody>
                             @foreach (var info in _filteredInfo.OrderBy(x => x.Key))
-                            {
-                                <tr>
-                                    <td style="width:40%;">@info.Key</td>
-                                    <td style="width:60%;">@info.Value</td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </Content>
-        </Tab>
-        <Tab Name="IssuesTab">
-            <TitleTemplate>
-                <Icon Name="IconName.EmojiAngry" Color="IconColor.Danger" /> Issues
-            </TitleTemplate>
-            <Content>
-                <div class="row mt-2">
-                    <div class="col">
-                        <table class="table table-striped table-bordered table-sm">
-                            <tbody>
-                            @foreach (var info in _issues.OrderBy(x => x.Key))
                             {
                             <tr>
                                 <td style="width:40%;">@info.Key</td>
@@ -265,7 +271,29 @@
                 </div>
             </Content>
         </Tab>
-    </Tabs>
+    <Tab Name="IssuesTab">
+        <TitleTemplate>
+            <Icon Name="IconName.EmojiAngry" Color="IconColor.Warning"/> Issues  <Badge Color="BadgeColor.Warning">@(_issues.Count())</Badge>
+        </TitleTemplate>
+        <Content>
+            <div class="row mt-2">
+                <div class="col">
+                    <table class="table table-striped table-bordered table-sm">
+                        <tbody>
+                        @foreach (var info in _issues.OrderBy(x => x.SortOrder))
+                        {
+                            <tr>
+                                <td style="width:10%;" class="text-warning">@info.Severity.ToString()</td>
+                                <td style="width:90%;">@info.Message</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </Content>
+    </Tab>
+</Tabs>
 </div>
 
 
@@ -278,7 +306,7 @@
     private readonly List<ToastMessage> _messages = [];
     private List<KeyValuePair<string, object?>> _info = [];
     private List<KeyValuePair<string, object?>> _filteredInfo = [];
-    private List<KeyValuePair<string, object?>> _issues = [];
+    private List<ValidationResultMessage> _issues = [];
 
     private DiscEdit _selectedDisc = new DiscEdit();
     private SongEdit _selectedSong = new SongEdit();
@@ -290,7 +318,8 @@
         Discs = [],
         Title = string.Empty,
         Year = DateTime.MinValue.Year,
-        Songs = []
+        Songs = [],
+        AlbumDirectoryFiles = []
     };
 
     private Common.Models.Album? _album;
@@ -318,6 +347,7 @@
         if (_editFormEditContext != null && _editFormEditContext.Validate())
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
+
             try
             {
                 // Save release
@@ -350,7 +380,10 @@
                     await File.WriteAllTextAsync(jsonName, serialized);
                     NavManager.NavigateTo(ReturnUrl?.FromBase64() ?? "/");
                 }
-
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception, "Unable to save album [{albumInfo}]", _album?.ToString());
                 _messages.Add(
                     new ToastMessage
                     {
@@ -386,6 +419,11 @@
                 PartTitles = x.First().MediaSubTitle(),
                 SongCount = x.Count()
             }).ToArray() ?? [],
+            AlbumDirectoryFiles = _album.Directory!.AllFileInfos()?.Select(x => new FileEdit
+            {
+                FileSystemInfo = x,
+                FileType = x.Extension
+            }).ToArray() ?? [],
             Title = _album.AlbumTitle() ?? string.Empty,
             Year = _album.AlbumYear() ?? DateTime.MinValue.Year,
             Songs = _album.Songs?.Select(x => new SongEdit
@@ -420,6 +458,7 @@
             {
                 _info.Add(new KeyValuePair<string, object?>($"Album: {tag.IdentifierDescription}", tag.Value));
             }
+
             if (_album.Songs != null)
             {
                 foreach (var song in _album.Songs.OrderBy(x => x.SortOrder))
@@ -434,6 +473,7 @@
                             _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}: {tag.IdentifierDescription}", tag.Value));
                         }
                     }
+
                     if (song.MediaAudios != null)
                     {
                         foreach (var tag in song.MediaAudios.OrderBy(x => x.SortOrder))
@@ -444,13 +484,15 @@
                 }
             }
         }
-        _filteredInfo = _info;
-        _issues = [];
 
-        if (_issues.Count == 0)
-        {
-            _tabsRef.RemoveTabByName("IssuesTab");
-        }
+        _filteredInfo = _info;
+        _issues = _album.ValidationMessages.ToList();
+
+        // if (_issues.Count == 0)
+        // {
+        //     await _tabsRef.ShowFirstTabAsync();
+        //     _tabsRef.RemoveTabByName("IssuesTab");
+        // }
         _loading = false;
     }
 
@@ -460,8 +502,29 @@
         _filteredInfo = filterValue != null ? _info.Where(x => x.Key.ToUpperInvariant().Contains(filterValue) || (x.Value != null && x.Value.ToString()!.ToUpperInvariant().Contains(filterValue))).ToList() : _info;
     }
 
-
     private string SelectedSongClass(SongEdit song) => song == _selectedSong ? "selected" : string.Empty;
 
     private object SelectedDiscClass(DiscEdit disc) => disc == _selectedDisc ? "selected" : string.Empty;
+
+    private void DeleteAlbumDirectoryFile(FileEdit albumDirectoryFile)
+    {
+        try
+        {
+            albumDirectoryFile.FileSystemInfo.Delete();
+            _albumEdit.AlbumDirectoryFiles = _albumEdit.AlbumDirectoryFiles.Where(x => x != albumDirectoryFile).ToArray();
+        }
+        catch (Exception exception)
+        {
+            Logger.Error(exception, "Unable to delete file [{FileName}]", albumDirectoryFile.FileSystemInfo.FullName);
+            _messages.Add(
+                new ToastMessage
+                {
+                    Type = ToastType.Danger,
+                    Title = $"Error deleting file",
+                    HelpText = $"{DateTime.Now}",
+                    Message = $"Unable to delete file [{ albumDirectoryFile.FileSystemInfo.FullName}] Error [{exception.Message}].",
+                });
+        }
+    }
+
 }
