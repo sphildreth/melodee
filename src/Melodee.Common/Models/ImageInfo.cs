@@ -23,6 +23,8 @@ public sealed record ImageInfo
     public int SortOrder { get; init; }
 
     public bool WasEmbeddedInSong { get; init; }
+    
+    public string? OriginalFilename { get; init; }
 
     public override string ToString()
     {

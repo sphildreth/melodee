@@ -60,6 +60,10 @@ public sealed class DirectoryProcessorService(
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
+        if (_initialized)
+        {
+            return;
+        }
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
 
         _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;

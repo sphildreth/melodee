@@ -1,0 +1,81 @@
+@inject IJSRuntime JsRuntime
+@inject ImageConversionService ImageConversionService
+@implements IAsyncDisposable
+
+
+<div @ref="dropZoneElement" class="drop-zone">
+    <p>Drop a file, paste an image from the clipboard, or click the button to select a file.</p>
+    <InputFile OnChange="@OnChange" @ref="inputFile" />
+</div>
+
+@code {
+    ElementReference dropZoneElement;
+    InputFile inputFile;
+
+    IJSObjectReference _module;
+    IJSObjectReference _dropZoneInstance;
+
+    [Parameter] public Common.Models.Album Album { get; set; } = default!;
+
+    [Parameter] public EventCallback<Common.Models.Album> OnUpdateCallback { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Load the JS file
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/FileDropZone.js");
+
+            // Initialize the drop zone
+            _dropZoneInstance = await _module.InvokeAsync<IJSObjectReference>("initializeFileDropZone", dropZoneElement, inputFile.Element);
+        }
+    }
+
+    // Called when a new file is uploaded
+    async Task OnChange(InputFileChangeEventArgs e)
+    {
+        await using var stream = e.File.OpenReadStream();
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+
+        var imageBytes = ms.ToArray();
+
+        var newImageFilename = Path.Combine(Album.Directory!.FullName(), $"cover.jpg");
+        var newImageFileInfo = new FileInfo(newImageFilename);
+        await File.WriteAllBytesAsync(newImageFilename, imageBytes);
+
+        var processResult = await ImageConversionService.ConvertImageAsync(newImageFileInfo);
+
+        var albumImages = Album.Images?.ToList() ?? [];
+        albumImages.RemoveAll(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
+        albumImages.Add(new ImageInfo
+        {
+            FileInfo = newImageFileInfo.ToFileSystemInfo(),
+            PictureIdentifier = PictureIdentifier.Front,
+            CrcHash = Crc32.Calculate(imageBytes),
+            OriginalFilename = e.File.Name,
+            Width = 0,
+            Height = 0
+        });
+        Album.Images = albumImages.ToArray();
+        if (OnUpdateCallback.HasDelegate)
+        {
+            await OnUpdateCallback.InvokeAsync(Album);
+        }
+    }
+
+    // Unregister the drop zone events
+    public async ValueTask DisposeAsync()
+    {
+        if (_dropZoneInstance != null)
+        {
+            await _dropZoneInstance.InvokeVoidAsync("dispose");
+            await _dropZoneInstance.DisposeAsync();
+        }
+
+        if (_module != null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+}

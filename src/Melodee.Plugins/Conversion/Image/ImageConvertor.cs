@@ -47,7 +47,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         }
 
         var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
-        if (fileInfo.Exists && !string.Equals("jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
+        if (fileInfo.Exists && !string.Equals(".jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
         {
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
             var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));

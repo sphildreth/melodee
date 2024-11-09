@@ -3,6 +3,7 @@ using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
 using Melodee.Jobs;
+using Melodee.Plugins.Conversion.Image;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
@@ -62,8 +63,9 @@ builder.Services
     .AddScoped<UserService>()
     .AddScoped<AlbumDiscoveryService>()
     .AddScoped<MediaEditService>()
-    .AddScoped<DirectoryProcessorService>();
-
+    .AddScoped<DirectoryProcessorService>()
+    .AddScoped<ImageConversionService>(); 
+    
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
