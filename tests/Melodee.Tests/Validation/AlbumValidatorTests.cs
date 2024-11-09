@@ -41,6 +41,7 @@ public class AlbumValidatorTests
     [InlineData("Album Title", "Song💣Title", 5, false)]
     [InlineData("Album Title best of 48 years (Compiled and Mixed by DJ Stinky", "Song Title (Compiled and Mixed by DJ Stinky)", 5, false)]
     [InlineData("Megamix Chart Hits Best Of 12 Years (Compiled and Mixed by DJ Fl", "Megamix Chart Hits Best Of 12 Years (Compiled and Mixed by DJ Flimflam)", 5, false)]
+    [InlineData("Album Title", "Flowers (Demo)", 11, false)]    
     public void SongHasUnwantedText(string? AlbumTitle, string? SongName, int? SongNumber, bool shouldBe)
     {
         Assert.Equal(shouldBe, AlbumValidator.SongHasUnwantedText(AlbumTitle, SongName, SongNumber));
@@ -287,5 +288,14 @@ public class AlbumValidatorTests
         var validationResult = validator.ValidateAlbum(Album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.NeedsAttention, validationResult.Data.AlbumStatus);
+    }
+
+    [Theory]
+    [InlineData("A simple song title", "A simple song title")]    
+    [InlineData("Flowers   (DEMO)", "Flowers (DEMO)")]
+    [InlineData("Bless em With The Blade (Orchestral Version)", "Bless em With The Blade (Orchestral Version)")]
+    public void ValidateSongTitleReplacement(string input, string shouldBe)
+    {
+        Assert.Equal(shouldBe, AlbumValidator.RemoveUnwantedTextFromSongTitle(input) );
     }
 }

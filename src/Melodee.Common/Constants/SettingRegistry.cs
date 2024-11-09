@@ -18,6 +18,7 @@ public static class SettingRegistry
     public const string MagicDoRemoveFeaturingArtistFromSongArtist = "magic.doRemoveFeaturingArtistFromSongArtist";
     public const string MagicDoRemoveFeaturingArtistFromSongTitle = "magic.doRemoveFeaturingArtistFromSongTitle";
     public const string MagicDoRemoveUnwantedTextFromAlbumTitle = "magic.doRemoveUnwantedTextFromAlbumTitle";
+    public const string MagicDoRemoveUnwantedTextFromSongTitles = "magic.doRemoveUnwantedTextFromSongTitles";
     public const string MagicDoRenumberSongs = "magic.doRenumberSongs";
     public const string MagicDoReplaceSongsArtistSeparators = "magic.doReplaceSongsArtistSeparators";
     public const string MagicDoSetYearToCurrentIfInvalid = "magic.doSetYearToCurrentIfInvalid";

@@ -23,4 +23,6 @@ public sealed class SongEdit
     public string? SongArtist { get; set; }
     
     public string? Duration { get; init; }
+    
+    public string? FullFileName { get; set; }
 }

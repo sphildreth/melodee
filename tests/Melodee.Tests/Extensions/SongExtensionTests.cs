@@ -7,9 +7,9 @@ public class SongExtensionTests
     [Fact]
     public void ValidateSongNewFileName()
     {
-        var Album = AlbumExtensionTests.NewAlbum();
-        var SongNewFileName = Album.Songs!.First().ToSongFileName(TestsBase.NewConfiguration());
-        Assert.NotNull(SongNewFileName);
-        Assert.Equal(@"003 Flako El Dark Cowboy.mp3", SongNewFileName);
+        var album = AlbumExtensionTests.NewAlbum();
+        var songNewFileName = album.Songs!.First().ToSongFileName(TestsBase.NewConfiguration());
+        Assert.NotNull(songNewFileName);
+        Assert.Equal(@"003 Flako El Dark Cowboy.mp3", songNewFileName);
     }
 }

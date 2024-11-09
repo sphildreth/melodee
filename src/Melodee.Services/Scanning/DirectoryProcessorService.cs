@@ -447,11 +447,15 @@ public sealed class DirectoryProcessorService(
 
                     album.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
                     {
+                        var oldImageFileName = image.FileInfo!.FullOriginalName(directoryInfoToProcess);
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
-                        File.Copy(image.FileInfo!.FullOriginalName(directoryInfoToProcess), newImageFileName, true);
-                        if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                        if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
-                            File.Delete(image.FileInfo!.FullOriginalName(directoryInfoToProcess));
+                            File.Copy(oldImageFileName, newImageFileName, true);                            
+                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                            {
+                                File.Delete(image.FileInfo!.FullOriginalName(directoryInfoToProcess));
+                            }
                         }
                     });
 

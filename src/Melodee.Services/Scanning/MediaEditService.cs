@@ -101,6 +101,10 @@ public sealed class MediaEditService(
         {
             await RemoveUnwantedTextFromAlbumTitle(albumId, cancellationToken);
         }
+        if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromSongTitles]))
+        {
+            await RemoveUnwantedTextFromSongTitles(albumId, cancellationToken);
+        }        
         var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, albumId, cancellationToken);
         var validationResult = _albumValidator.ValidateAlbum(album);
         album.Status = validationResult.Data.AlbumStatus;
@@ -160,7 +164,7 @@ public sealed class MediaEditService(
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Remove featuring Artists from Songs Artist.");
+            Log.Error(ex, "Remove unwanted text from album title.");
         }
 
         return new OperationResult<bool>
@@ -168,6 +172,53 @@ public sealed class MediaEditService(
             Data = result
         };        
     }
+    
+    public async Task<OperationResult<bool>> RemoveUnwantedTextFromSongTitles(long albumId, CancellationToken cancellationToken = default)
+    {
+        CheckInitialized();
+
+        if (albumId < 1)
+        {
+            return new OperationResult<bool>
+            {
+                Data = false
+            };
+        }
+        var result = false;
+        try
+        {
+            var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, albumId, cancellationToken);
+            if (album.Songs?.Count() > 0)
+            {
+                var modified = false;
+                foreach (var song in album.Songs)
+                {
+                    var title = song.Title();
+                    var newTitle = AlbumValidator.RemoveUnwantedTextFromSongTitle(title);
+                    if (!string.Equals(title, newTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.Title, newTitle);
+                        await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                        modified = true;
+                    }
+                }
+                if (modified)
+                {
+                    await SaveAlbum(album, cancellationToken);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Removing unwanted text from song titles.");
+        }
+
+        return new OperationResult<bool>
+        {
+            Data = result
+        };        
+    }
+
     
     public async Task<OperationResult<bool>> RemoveFeaturingArtistsFromSongTitle(long albumId, CancellationToken cancellationToken = default)
     {

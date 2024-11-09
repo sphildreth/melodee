@@ -40,7 +40,7 @@
 
             <GridColumns>
                 <GridColumn TItem="AlbumCard" ColumnClass="@(x => "ml-2 cover-image-column")" Filterable="false" Sortable="false" HeaderText="Cover" PropertyName="Cover" SortString="Title" SortKeySelector="item => item.Title">
-                    <img alt="@context.Title" class="cover-image" src="@(context.ImageBase64 ?? DefaultImages.ReleaseCover)"/>
+                    <img alt="@context.Title" class="cover-image" src="@(context.ImageBase64 ?? DefaultImages.AlbumCover)"/>
                 </GridColumn>
                 <GridColumn TItem="AlbumCard" HeaderText="Artist" PropertyName="Artist" SortString="Artist" SortKeySelector="item => item.Artist">
                     @context.Artist

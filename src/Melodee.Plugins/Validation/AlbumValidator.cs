@@ -164,7 +164,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             if (songNumbers.Any(group => group.Count() > 1))
             {
                 result = false;
-                break;
             }
         }
         if (!result)
@@ -299,7 +298,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 {
                     messageResult.Append($"[{ song }]");
                     result = false;
-                    break;
                 }
             }
         }
@@ -400,6 +398,15 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         }
         return UnwantedAlbumTitleTextRegex.Replace(title!, string.Empty).Trim();
     }    
+    
+    public static string? RemoveUnwantedTextFromSongTitle(string? title)
+    {
+        if (title?.CleanString().Nullify() == null)
+        {
+            return null;
+        }
+        return UnwantedSongTitleTextRegex.Replace(title.CleanString(doTitleCase: false)!, string.Empty).Trim();
+    }       
 
     public static bool SongHasUnwantedText(string? albumTitle, string? songTitle, int? songNumber)
     {
@@ -440,4 +447,5 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
     private static partial Regex ReplaceSongArtistSeparatorsRegex();
+
 }

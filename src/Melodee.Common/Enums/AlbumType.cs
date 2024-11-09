@@ -8,7 +8,7 @@ public enum AlbumType
     
     Ep,
     
-    Release,
+    Album,
     
     Single
 }

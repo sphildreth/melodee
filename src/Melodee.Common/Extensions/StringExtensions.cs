@@ -214,20 +214,22 @@ public static partial class StringExtensions
         return nameString;
     }
 
-    public static string? CleanString(this string input, bool? doPutTheAtEnd = false)
+    public static string? CleanString(this string input, bool? doPutTheAtEnd = false, bool? doTitleCase = true)
     {
         if (string.IsNullOrEmpty(input) || string.IsNullOrWhiteSpace(input))
         {
             return null;
         }
-
         var result = input;
-        result = result.Trim().ToTitleCase(doPutTheAtEnd ?? false);
+        result = result.Trim();
+        if (doTitleCase ?? true)
+        {
+            result = result.ToTitleCase(doPutTheAtEnd ?? false);
+        }
         if (string.IsNullOrEmpty(result))
         {
             return input;
         }
-
         return Regex.Replace(result.Replace("’", "'"), @"\s+", " ").Trim();
     }
 

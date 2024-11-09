@@ -56,7 +56,7 @@ builder.Services
             opt.GetRequiredService<ISerializer>()))
     .AddSingleton<DefaultImages>(_ => new DefaultImages(
         $"data:image/png;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/avatar.png"))}",
-        $"data:image/jpeg;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/release.jpg"))}"))
+        $"data:image/jpeg;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/album.jpg"))}"))
     .AddScoped<LocalStorageService>()
     .AddScoped<SettingService>()
     .AddScoped<LibraryService>()

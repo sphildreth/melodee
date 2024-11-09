@@ -177,6 +177,7 @@
                 </div>
             </div>
             <div class="col-7">
+                Song File: <span class="text-nerdy text-wrap">@_selectedSong.FullFileName</span>
                 <EditForm Model="_selectedSong" class="form-login mt-2" FormName="SongEdit">
                     <DataAnnotationsValidator/>
                     <div class="form-group">
@@ -453,7 +454,7 @@
 
         if (confirmation)
         {
-            Directory.Delete(_album!.Directory!.FullName());
+            Directory.Delete(_album!.Directory!.FullName(), true);
             NavManager.NavigateTo(ReturnUrl?.FromBase64() ?? "/");
         }
     }
@@ -506,7 +507,7 @@
 
             try
             {
-                // Save release
+                // Save album
                 var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
                 var album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), UniqueId);
 
@@ -584,20 +585,21 @@
             Year = _album.AlbumYear() ?? DateTime.MinValue.Year,
             Songs = _album.Songs?.OrderBy(x => x.MediaNumber()).ThenBy(x => x.SongNumber()).Select(x => new SongEdit
             {
-                IsSelected = x.SortOrder == 1,
                 DiscNumber = x.MediaNumber() < 1 ? 1 : x.MediaNumber(),
-                SongNumber = x.SongNumber() < 1 ? 1 : x.SongNumber(),
-                SongArtist = x.SongArtist(),
-                Title = x.Title(),
+                Duration = x.DurationTimeShort(),
+                FullFileName = x.File.FullName(_album.Directory!),
+                IsSelected = x.SortOrder == 1,
                 PartTitles = x.SubTitle(),
-                Duration = x.DurationTimeShort()
+                SongArtist = x.SongArtist(),
+                SongNumber = x.SongNumber() < 1 ? 1 : x.SongNumber(),
+                Title = x.Title()
             }).ToArray() ?? []
         };
         _selectedSong = _albumEdit.Songs.FirstOrDefault() ?? new SongEdit();
         _selectedDisc = _albumEdit.Discs.FirstOrDefault() ?? new DiscEdit();
         _editFormEditContext = new(_albumEdit);
         _albumFullPath = _album.Directory?.FullName();
-        _albumCoverBase64 = await _album.CoverImageBase64Async() ?? DefaultImages.ReleaseCover;
+        _albumCoverBase64 = await _album.CoverImageBase64Async() ?? DefaultImages.AlbumCover;
         _info = [];
         _maximumTrackNumberLength = SafeParser.ToNumber<short>((await SettingService.GetValueAsync(SettingRegistry.ValidationMaximumSongNumber, 1000)).Data.ToString().Length);
         _maximumMediaNumberLength = SafeParser.ToNumber<short>((await SettingService.GetValueAsync(SettingRegistry.ValidationMaximumMediaNumber, 500)).Data.ToString().Length);
