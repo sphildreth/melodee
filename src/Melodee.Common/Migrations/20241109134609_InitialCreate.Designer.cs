@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Melodee.Common.Migrations
 {
     [DbContext(typeof(MelodeeDbContext))]
-    [Migration("20241106215725_InitialCreate")]
+    [Migration("20241109134609_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -93,6 +93,9 @@ namespace Melodee.Common.Migrations
 
                     b.Property<Instant?>("LastUpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("MediaUniqueId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("MusicBrainzId")
                         .HasColumnType("text");
@@ -228,6 +231,9 @@ namespace Melodee.Common.Migrations
 
                     b.Property<Instant?>("LastUpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("MediaUniqueId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("MusicBrainzId")
                         .HasColumnType("text");
@@ -520,8 +526,8 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 1,
-                            ApiKey = new Guid("7c962f89-3cc5-4fe1-be79-4d876f632bfa"),
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            ApiKey = new Guid("d3f09efc-7821-4cb8-8d79-a191d1052e3f"),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             Description = "Files in this directory are scanned and Album information is gathered via processing.",
                             IsLocked = false,
                             Name = "Inbound",
@@ -532,8 +538,8 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 2,
-                            ApiKey = new Guid("bad70e85-2969-4b22-a2f9-8881e8c732af"),
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            ApiKey = new Guid("05167c65-ddaf-4877-b372-847918365cf5"),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             Description = "The staging directory to place processed files into (Inbound -> Staging -> Library).",
                             IsLocked = false,
                             Name = "Staging",
@@ -544,8 +550,8 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 3,
-                            ApiKey = new Guid("359c137e-7c7a-4a81-bd11-4d7389cf5fd8"),
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            ApiKey = new Guid("09f4238e-158a-4fca-bb07-c4383bffdc57"),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             Description = "The library directory to place processed, reviewed and ready to use music files into.",
                             IsLocked = false,
                             Name = "Library",
@@ -1018,9 +1024,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 1,
-                            ApiKey = new Guid("f82bdb30-a1b6-4385-a2a6-b0d27184e156"),
+                            ApiKey = new Guid("49432a45-b3be-42f8-bf17-f3599b67b857"),
                             Comment = "Add a default filter to show only albums with this or less number of songs.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "filtering.lessThanSongCount",
                             SortOrder = 0,
@@ -1029,9 +1035,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 2,
-                            ApiKey = new Guid("ee623f8f-3690-448b-8752-eb4fd3b3f29c"),
+                            ApiKey = new Guid("5a29593c-ec8b-42a2-a1c9-842d474296e6"),
                             Comment = "Add a default filter to show only albums with this or less duration.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "filtering.lessThanDuration",
                             SortOrder = 0,
@@ -1040,9 +1046,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 3,
-                            ApiKey = new Guid("132f3e03-7544-4626-b967-ff1f7e9f7774"),
+                            ApiKey = new Guid("6c3a697f-982e-47fc-8cbd-453ba0e7d9d3"),
                             Comment = "Maximum number of albums to scan when processing inbound directory.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.stagingDirectoryScanLimit",
                             SortOrder = 0,
@@ -1051,9 +1057,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 4,
-                            ApiKey = new Guid("c7cc9696-f49e-4633-a4aa-df31e9e168bc"),
+                            ApiKey = new Guid("7e58ef47-dbe0-4963-84e5-812ac31d54ff"),
                             Comment = "Default page size when view including pagination.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "defaults.pagesize",
                             SortOrder = 0,
@@ -1062,9 +1068,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 5,
-                            ApiKey = new Guid("49801fbb-6800-44d7-a959-0333f221a0c5"),
+                            ApiKey = new Guid("b40adc48-6b8b-408c-ae35-35b8f546bf25"),
                             Comment = "When true then move the Melodee.json data file when moving Albums, otherwise delete.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.moveMelodeeJsonDataFileToLibrary",
                             SortOrder = 0,
@@ -1073,9 +1079,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 6,
-                            ApiKey = new Guid("47f631f4-8ef2-4776-8371-ebf9a7f396c2"),
+                            ApiKey = new Guid("e7512043-c263-4d89-bad7-a6af969da9c8"),
                             Comment = "Amount of time to display a Toast then auto-close (in milliseconds.)",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "userinterface.toastAutoCloseTime",
                             SortOrder = 0,
@@ -1084,9 +1090,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 7,
-                            ApiKey = new Guid("e1db55a0-18a3-4192-b3ac-2eca27eae4a4"),
+                            ApiKey = new Guid("b29e0dcd-06f7-4093-a1e6-a083a29fad93"),
                             Comment = "Short Format to use when displaying full dates.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "formatting.dateTimeDisplayFormatShort",
                             SortOrder = 0,
@@ -1095,9 +1101,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 8,
-                            ApiKey = new Guid("8b6157b3-dcac-4dd8-8f4e-3fbc2c19ff76"),
+                            ApiKey = new Guid("699f4097-77ef-4e1b-82a5-0ff71b59aa0a"),
                             Comment = "Format to use when displaying activity related dates (e.g. processing messages)",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "formatting.dateTimeDisplayActivityFormat",
                             SortOrder = 0,
@@ -1106,9 +1112,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 9,
-                            ApiKey = new Guid("667aea58-ea02-40aa-af38-60e50b086478"),
+                            ApiKey = new Guid("639bc9c0-dcb4-4243-a0ab-3c91fd4341e4"),
                             Comment = "List of ignored articles when scanning media (pipe delimited).",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.ignoredArticles",
                             SortOrder = 0,
@@ -1117,9 +1123,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 10,
-                            ApiKey = new Guid("4d553494-1677-43fe-b35d-15f0c3f96ed7"),
+                            ApiKey = new Guid("58cfe6a1-e81f-4173-9f9a-b782171567e1"),
                             Comment = "Is Magic processing enabled.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "magic.enabled",
                             SortOrder = 0,
@@ -1128,9 +1134,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 11,
-                            ApiKey = new Guid("82c32ee5-4056-468d-9074-53def368a33a"),
+                            ApiKey = new Guid("403b0f89-4419-44f5-be72-88865599f8f8"),
                             Comment = "Renumber songs when doing magic processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "magic.doRenumberSongs",
                             SortOrder = 0,
@@ -1139,9 +1145,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 12,
-                            ApiKey = new Guid("beba0f76-a18b-4a78-b4d1-32f7532cd35e"),
+                            ApiKey = new Guid("3b42624d-1357-4e4f-b781-e35ba58917c6"),
                             Comment = "Remove featured artists from song artist when doing magic.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "magic.doRemoveFeaturingArtistFromSongArtist",
                             SortOrder = 0,
@@ -1150,9 +1156,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 13,
-                            ApiKey = new Guid("fb0f7407-dc60-4687-9e74-e1ee1c06b78f"),
+                            ApiKey = new Guid("0f5f32ef-5931-4935-b6bb-7389c626b405"),
                             Comment = "Remove featured artists from song title when doing magic.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "magic.doRemoveFeaturingArtistFromSongTitle",
                             SortOrder = 0,
@@ -1161,9 +1167,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 14,
-                            ApiKey = new Guid("4c4d3151-f322-4077-b001-ba6ca5faaf4f"),
+                            ApiKey = new Guid("fdbe10a2-b1d0-453d-b315-29ed33dfb82c"),
                             Comment = "Replace song artist separators with standard ID3 separator ('/') when doing magic.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "magic.doReplaceSongsArtistSeparators",
                             SortOrder = 0,
@@ -1172,9 +1178,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 15,
-                            ApiKey = new Guid("53f90d49-409f-4c49-bc85-b6dc1d1d7cf9"),
+                            ApiKey = new Guid("cf687b9d-7e66-4d9a-b129-bdd844c96e7c"),
                             Comment = "Set the song year to current year if invalid or missing when doing magic.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "magic.doSetYearToCurrentIfInvalid",
                             SortOrder = 0,
@@ -1183,9 +1189,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 16,
-                            ApiKey = new Guid("fb62d5d9-ac10-4ec0-8526-36592491ee43"),
+                            ApiKey = new Guid("cf91b352-c11c-4b6a-bbca-3e2f53fd88fc"),
                             Comment = "Remove unwanted text from album title when doing magic.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "magic.doRemoveUnwantedTextFromAlbumTitle",
                             SortOrder = 0,
@@ -1194,9 +1200,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 17,
-                            ApiKey = new Guid("5b5c9db8-5538-4385-900b-43b809e3c1b0"),
+                            ApiKey = new Guid("80de75f0-bea4-4e91-8961-749749123c3d"),
                             Comment = "Enable Melodee to convert non-mp3 media files during processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "conversion.enabled",
                             SortOrder = 0,
@@ -1205,9 +1211,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 18,
-                            ApiKey = new Guid("677a3fb4-1769-413d-80a1-013d142887ce"),
+                            ApiKey = new Guid("9bbbd04a-3272-4058-b461-726316624ef6"),
                             Comment = "Bitrate to convert non-mp3 media files during processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "conversion.bitrate",
                             SortOrder = 0,
@@ -1216,9 +1222,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 19,
-                            ApiKey = new Guid("2d916ce9-68d8-4462-aad8-3f29113f6cd7"),
+                            ApiKey = new Guid("c81e70d8-e5b4-4337-a456-1546580a5856"),
                             Comment = "Vbr to convert non-mp3 media files during processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "conversion.vbrLevel",
                             SortOrder = 0,
@@ -1227,9 +1233,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 20,
-                            ApiKey = new Guid("aafb557f-e28f-4dc7-85e5-6b5c861b514c"),
+                            ApiKey = new Guid("26e9a7a6-7dae-455c-afca-cf4cdeac327e"),
                             Comment = "Sampling rate to convert non-mp3 media files during processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "conversion.samplingRate",
                             SortOrder = 0,
@@ -1238,9 +1244,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 21,
-                            ApiKey = new Guid("a57fac19-5450-4b5a-a6d9-193e6ca9d89f"),
+                            ApiKey = new Guid("c9c6c25d-5113-4d7b-8624-1c76f24ed6ac"),
                             Comment = "Process of CueSheet files during processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "plugin.cueSheet.enabled",
                             SortOrder = 0,
@@ -1249,9 +1255,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 22,
-                            ApiKey = new Guid("5a317ea2-6a00-4190-8c4e-5dc12c8576e8"),
+                            ApiKey = new Guid("aef72993-9179-4bcc-a839-27d18fa8d84e"),
                             Comment = "Process of M3U files during processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "plugin.m3u.enabled",
                             SortOrder = 0,
@@ -1260,9 +1266,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 23,
-                            ApiKey = new Guid("855d304b-0fd4-419c-81f0-640b6d2dfb1c"),
+                            ApiKey = new Guid("589edbb9-7fc6-484d-b786-21fc289274db"),
                             Comment = "Process of NFO files during processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "plugin.nfo.enabled",
                             SortOrder = 0,
@@ -1271,9 +1277,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 24,
-                            ApiKey = new Guid("8f8a95ef-a878-4268-89dc-dd8517a84429"),
+                            ApiKey = new Guid("6cd0695d-4e93-4edd-bccd-497ac3d0de3e"),
                             Comment = "Process of Simple File Verification (SFV) files during processing.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "plugin.simpleFileVerification.enabled",
                             SortOrder = 0,
@@ -1282,9 +1288,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 25,
-                            ApiKey = new Guid("efff4ebc-06c5-451e-8ca7-c5d97767f962"),
+                            ApiKey = new Guid("f7397d64-dfe3-4a9f-9a81-03ea506edc21"),
                             Comment = "Fragments of artist names to replace (JSON Dictionary).",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.artistNameReplacements",
                             SortOrder = 0,
@@ -1293,9 +1299,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 26,
-                            ApiKey = new Guid("d7b74c3e-d05d-4f3d-88e5-bc7bc54c131f"),
+                            ApiKey = new Guid("562f43b4-cec6-42e7-a5ad-874212fd38c1"),
                             Comment = "If OrigAlbumYear [TOR, TORY, TDOR] value is invalid use current year.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue",
                             SortOrder = 0,
@@ -1304,9 +1310,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 27,
-                            ApiKey = new Guid("e5893961-15e2-4920-a9f8-4e06bf8e7571"),
+                            ApiKey = new Guid("03a83bce-01cb-43c2-8ddf-93195f98d181"),
                             Comment = "Delete original files when processing. When false a copy if made, else original is deleted after processed.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.doDeleteOriginal",
                             SortOrder = 0,
@@ -1315,9 +1321,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 28,
-                            ApiKey = new Guid("003df30f-b03f-4b5a-8244-c9b4883b9702"),
+                            ApiKey = new Guid("77e30610-e640-4710-a2e3-19da70997fd7"),
                             Comment = "Extension to add to file when converted, leave blank to disable.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.convertedExtension",
                             SortOrder = 0,
@@ -1326,9 +1332,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 29,
-                            ApiKey = new Guid("4639884d-a7ff-4a93-b84b-b6a531bf95d6"),
+                            ApiKey = new Guid("1e48e070-ac4f-4da1-9ebf-2e2c24caf643"),
                             Comment = "Extension to add to file when processed, leave blank to disable.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.processedExtension",
                             SortOrder = 0,
@@ -1337,9 +1343,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 30,
-                            ApiKey = new Guid("6d0e5d73-2f07-4a37-8d53-8479ca16d207"),
+                            ApiKey = new Guid("c62c4863-2aad-4bd7-8885-0904c0d5175c"),
                             Comment = "Extension to add to file to indicate other files in the same category where processed and this file was skipped during processing, leave blank to disable.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.skippedExtension",
                             SortOrder = 0,
@@ -1348,9 +1354,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 31,
-                            ApiKey = new Guid("f984a7b5-4aa7-4093-86e3-661438e91da4"),
+                            ApiKey = new Guid("61557590-92bb-4861-b696-d888dbc0cfb2"),
                             Comment = "When processing over write any existing Melodee data files, otherwise skip and leave in place.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.doOverrideExistingMelodeeDataFiles",
                             SortOrder = 0,
@@ -1359,9 +1365,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 32,
-                            ApiKey = new Guid("5b6b0e79-a0b0-46c8-b345-52a85b5feb86"),
+                            ApiKey = new Guid("c999c80c-5b84-42d5-9ceb-8c752f08c0c0"),
                             Comment = "Include any embedded images from media files into the Melodee data file.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.doLoadEmbeddedImages",
                             SortOrder = 0,
@@ -1370,9 +1376,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 33,
-                            ApiKey = new Guid("7fe6d8d6-5c57-4657-bfda-8fd79cb1033f"),
+                            ApiKey = new Guid("da34a0a7-4b30-4a70-9e4d-5b97d47fb283"),
                             Comment = "The maximum number of files to process, set to zero for infinite.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.maximumProcessingCount",
                             SortOrder = 0,
@@ -1381,9 +1387,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 34,
-                            ApiKey = new Guid("db8f536d-85d9-4325-8162-d8288cd7b29a"),
+                            ApiKey = new Guid("8630320f-0d25-4c39-8dcb-a0df1c99e8c8"),
                             Comment = "Maximum allowed length of album directory name.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.maximumAlbumDirectoryNameLength",
                             SortOrder = 0,
@@ -1392,9 +1398,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 35,
-                            ApiKey = new Guid("c67cffe8-138d-443e-8e27-6ac6b3990b66"),
+                            ApiKey = new Guid("03f1b0f3-c74f-43b3-9f9a-e4eb62bac2e5"),
                             Comment = "Maximum allowed length of artist directory name.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.maximumArtistDirectoryNameLength",
                             SortOrder = 0,
@@ -1403,9 +1409,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 36,
-                            ApiKey = new Guid("125aa78f-8f7e-469d-948e-d9e0fdb423c5"),
+                            ApiKey = new Guid("c0724508-9dc8-467f-84b4-2e0064e58d17"),
                             Comment = "Fragments to remove from album titles (JSON array).",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.albumTitleRemovals",
                             SortOrder = 0,
@@ -1414,9 +1420,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 37,
-                            ApiKey = new Guid("691d91ab-e2d3-4560-b7c3-a7f4dabca834"),
+                            ApiKey = new Guid("f458e908-c538-4376-af63-7c4aca6ef2d1"),
                             Comment = "Fragments to remove from song titles (JSON array).",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.songTitleRemovals",
                             SortOrder = 0,
@@ -1425,9 +1431,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 38,
-                            ApiKey = new Guid("2988b248-241d-4bcb-a289-cfaf418dbcf1"),
+                            ApiKey = new Guid("2edf1a64-6f10-4c97-92f6-1a57f3df6e07"),
                             Comment = "Continue processing if an error is encountered.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.doContinueOnDirectoryProcessingErrors",
                             SortOrder = 0,
@@ -1436,9 +1442,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 39,
-                            ApiKey = new Guid("d484a4c9-f4e8-4fd3-a8a2-ee3bf5114059"),
+                            ApiKey = new Guid("33f71acc-decf-45c6-afe0-b57355071e4d"),
                             Comment = "When true then move Album Melodee json files to the Staging directory.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "processing.doMoveMelodeeDataFileToStagingDirectory",
                             SortOrder = 0,
@@ -1447,9 +1453,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 40,
-                            ApiKey = new Guid("78745a29-4908-4886-b4dc-386ebc856f6c"),
+                            ApiKey = new Guid("d021e990-f1cf-44c9-a120-ac616ab184e3"),
                             Comment = "Is scripting enabled.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "scripting.enabled",
                             SortOrder = 0,
@@ -1458,9 +1464,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 41,
-                            ApiKey = new Guid("b3101960-5b66-4566-9b59-f6ca9d39c0a5"),
+                            ApiKey = new Guid("3a8afea3-b55c-478f-8539-06bdf2718a6f"),
                             Comment = "Script to run before processing the inbound directory, leave blank to disable.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "scripting.preDiscoveryScript",
                             SortOrder = 0,
@@ -1469,9 +1475,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 42,
-                            ApiKey = new Guid("0b8657bf-9588-4062-b8e5-55203c537821"),
+                            ApiKey = new Guid("50f1d5bd-92e4-4a86-acef-b634fbc97e06"),
                             Comment = "Script to run after processing the inbound directory, leave blank to disable.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "scripting.postDiscoveryScript",
                             SortOrder = 0,
@@ -1480,31 +1486,31 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 43,
-                            ApiKey = new Guid("0276b7dc-4def-486e-8de5-4e6f48022cee"),
-                            Comment = "The maximum value a media number can have for an album.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            ApiKey = new Guid("ae5c3c70-f16a-42cf-bab2-b2c6fb51fbe3"),
+                            Comment = "The maximum value a media number can have for an album. The length of this is used for formatting song names.",
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "validation.maximumMediaNumber",
                             SortOrder = 0,
-                            Value = "500"
+                            Value = "999"
                         },
                         new
                         {
                             Id = 44,
-                            ApiKey = new Guid("765fe706-4657-4904-af86-03302c25f2fc"),
-                            Comment = "The maximum value a song number can have for an album.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            ApiKey = new Guid("efc20d73-a29a-489a-9126-4c3b9880804f"),
+                            Comment = "The maximum value a song number can have for an album. The length of this is used for formatting song names.",
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "validation.maximumSongNumber",
                             SortOrder = 0,
-                            Value = "1000"
+                            Value = "9999"
                         },
                         new
                         {
                             Id = 45,
-                            ApiKey = new Guid("731c3068-d715-4ecd-9cd5-6cc61fdef438"),
+                            ApiKey = new Guid("4f0172be-3f19-4e7b-8501-5052e689859e"),
                             Comment = "Minimum allowed year for an album.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "validation.minimumAlbumYear",
                             SortOrder = 0,
@@ -1513,9 +1519,9 @@ namespace Melodee.Common.Migrations
                         new
                         {
                             Id = 46,
-                            ApiKey = new Guid("06467c7f-1593-44dd-acd9-d39ed70f27a8"),
+                            ApiKey = new Guid("ae6e1b37-0730-4efd-969a-e438be977cbc"),
                             Comment = "Maximum allowed year for an album.",
-                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17309302442167887L),
+                            CreatedAt = NodaTime.Instant.FromUnixTimeTicks(17311599690342493L),
                             IsLocked = false,
                             Key = "validation.maximumAlbumYear",
                             SortOrder = 0,
@@ -1673,6 +1679,9 @@ namespace Melodee.Common.Migrations
                     b.Property<string>("Lyrics")
                         .HasMaxLength(62000)
                         .HasColumnType("character varying(62000)");
+
+                    b.Property<long>("MediaUniqueId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("MusicBrainzId")
                         .HasColumnType("text");

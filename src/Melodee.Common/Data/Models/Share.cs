@@ -8,23 +8,21 @@ namespace Melodee.Common.Data.Models;
 [Serializable]
 public class Share : DataModelBase
 {
-    [RequiredGreaterThanZero]
-    public required int UserId { get; set; }
-    
+    [RequiredGreaterThanZero] public required int UserId { get; set; }
+
     public User User { get; set; } = null!;
 
     /// <summary>
-    /// Pipe seperated list.
+    ///     Pipe seperated list.
     /// </summary>
     [Required]
-    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]       
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public required string SongIds { get; set; }
 
-    [Required]
-    public required Instant ExpiresAt { get; set; }
-    
+    [Required] public required Instant ExpiresAt { get; set; }
+
     public bool IsDownloadable { get; set; }
-    
+
     public Instant? LastVisitedAt { get; set; }
 
     public int VisitCount { get; set; }

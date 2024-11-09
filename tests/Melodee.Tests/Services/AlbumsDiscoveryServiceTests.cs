@@ -9,7 +9,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
     [Fact]
     public async Task ValidAlbumGridInboundResults()
     {
-        var testDirectory = @"/melodee_test/inbound";
+        var testDirectory = @"/melodee_test/staging";
         var dir = new DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
@@ -22,7 +22,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
             await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
             {
-                Path = @"/melodee_test/inbound",
+                Path = @"/melodee_test/staging",
                 Name = "staging"
             }, new PagedRequest());
             Assert.NotNull(albumsForDirectoryAsync);

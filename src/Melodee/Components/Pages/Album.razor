@@ -46,7 +46,7 @@
         </Content>
     </RibbonTab>
 </Ribbon>
-<Tabs EnableFadeEffect="true" Class="mt-1" @ref="_tabsRef">
+<Tabs EnableFadeEffect="true" Class="mt-1">
     <Tab  Name="AlbumTab" Active="true">
         <TitleTemplate>
             <Icon Name="IconName.Vinyl"/> Album
@@ -232,7 +232,7 @@
                                 <td style="width:10%;">@albumDirectoryFile.FileType</td>
                                 <td style="width:85%;" class="text-wrap">@albumDirectoryFile.FileSystemInfo.Name</td>
                                 <td style="width:5%;">
-                                    <span role="button" @onclick="args => DeleteAlbumDirectoryFile(albumDirectoryFile)">
+                                    <span role="button" @onclick="_ => DeleteAlbumDirectoryFile(albumDirectoryFile)">
                                         <Icon Name="IconName.Trash"/>
                                     </span>
                                 </td>
@@ -298,10 +298,9 @@
 
 
 @code {
-    private Tabs _tabsRef = default!;
     private string? _albumCoverBase64;
     private string? _albumFullPath;
-    private bool _loading = true;
+
     private EditContext? _editFormEditContext;
     private readonly List<ToastMessage> _messages = [];
     private List<KeyValuePair<string, object?>> _info = [];
@@ -326,7 +325,7 @@
 
     private short _maximumTrackNumberLength;
     private short _maximumMediaNumberLength;
-    private string _formattingDateTimeDisplayActivityFormat;
+    private string _formattingDateTimeDisplayActivityFormat = null!;
 
     [Parameter] public Guid LibraryApiKey { get; set; }
 
@@ -419,11 +418,11 @@
                 PartTitles = x.First().MediaSubTitle(),
                 SongCount = x.Count()
             }).ToArray() ?? [],
-            AlbumDirectoryFiles = _album.Directory!.AllFileInfos()?.Select(x => new FileEdit
+            AlbumDirectoryFiles = _album.Directory!.AllFileInfos().Select(x => new FileEdit
             {
                 FileSystemInfo = x,
                 FileType = x.Extension
-            }).ToArray() ?? [],
+            }).ToArray(),
             Title = _album.AlbumTitle() ?? string.Empty,
             Year = _album.AlbumYear() ?? DateTime.MinValue.Year,
             Songs = _album.Songs?.Select(x => new SongEdit
@@ -484,16 +483,8 @@
                 }
             }
         }
-
         _filteredInfo = _info;
         _issues = _album.ValidationMessages.ToList();
-
-        // if (_issues.Count == 0)
-        // {
-        //     await _tabsRef.ShowFirstTabAsync();
-        //     _tabsRef.RemoveTabByName("IssuesTab");
-        // }
-        _loading = false;
     }
 
     private void FilterChanged(ChangeEventArgs args)

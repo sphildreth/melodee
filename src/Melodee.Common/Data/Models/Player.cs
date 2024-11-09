@@ -13,26 +13,24 @@ public class Player : DataModelBase
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Name { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? UserAgent { get; set; }
-    
-    [RequiredGreaterThanZero]
-    public int UserId { get; set; }
+
+    [RequiredGreaterThanZero] public int UserId { get; set; }
 
     public User User { get; set; } = null!;
-    
+
     [Required]
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public required string Client { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? IpAddress { get; set; }
-    
-    [Required]
-    public required Instant LastSeenAt { get; set; }
-    
+
+    [Required] public required Instant LastSeenAt { get; set; }
+
     public int? MaxBitRate { get; set; }
-    
+
     public bool ScrobbleEnabled { get; set; }
 }

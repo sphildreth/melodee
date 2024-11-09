@@ -10,17 +10,20 @@ public static class LibraryExtensions
         {
             return;
         }
+
         Directory.Delete(library.Path, true);
         if (!Directory.Exists(library.Path))
         {
             Directory.CreateDirectory(library.Path);
         }
     }
-    
-    public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this Library library) =>
-        new()
+
+    public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this Library library)
+    {
+        return new FileSystemDirectoryInfo
         {
             Path = library.Path,
             Name = library.Path
         };
+    }
 }

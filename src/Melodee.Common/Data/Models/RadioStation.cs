@@ -9,11 +9,11 @@ public class RadioStation : DataModelBase
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Name { get; set; }
-    
+
     [Required]
-    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]    
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public required string StreamUrl { get; set; }
-    
-    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]   
+
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string? HomePageUrl { get; set; }
 }

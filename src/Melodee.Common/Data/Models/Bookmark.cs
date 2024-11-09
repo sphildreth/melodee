@@ -9,18 +9,16 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(UserId), nameof(SongId), IsUnique = true)]
 public class Bookmark : MetaDataModelBase
 {
-    [RequiredGreaterThanZero]
-    public required int UserId { get; set; }
+    [RequiredGreaterThanZero] public required int UserId { get; set; }
 
     public User User { get; set; } = null!;
-    
-    [RequiredGreaterThanZero]
-    public required int SongId { get; set; }
-    
+
+    [RequiredGreaterThanZero] public required int SongId { get; set; }
+
     public Song Song { get; set; } = null!;
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? Comment { get; set; }
-    
+
     public int Position { get; set; }
 }
