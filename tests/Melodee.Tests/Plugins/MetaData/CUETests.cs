@@ -1,6 +1,4 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.MetaData.Directory;
-using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Serilog;
@@ -21,8 +19,8 @@ public class CUETests : TestsBase
             Assert.NotNull(parsed);
             Assert.True(parsed.IsValid);
         }
-    }    
-    
+    }
+
     [Fact]
     public async Task ValidateCueSheetFileAsync()
     {
@@ -34,14 +32,14 @@ public class CUETests : TestsBase
                 .MinimumLevel.Verbose()
                 .WriteTo.Console()
                 .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
-                .CreateLogger();       
-            
+                .CreateLogger();
+
             var cueSheet = new CueSheet(
-                new []
+                new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration())
-                }, TestsBase.NewPluginsConfiguration());
-            
+                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())
+                }, NewPluginsConfiguration());
+
             var sfvResult = await cueSheet.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/inbound/Pixel_-_Reality_Strikes_Back-2004-MYCEL",
@@ -51,5 +49,4 @@ public class CUETests : TestsBase
             Assert.True(sfvResult.IsSuccess);
         }
     }
-   
 }

@@ -189,7 +189,7 @@ public static class AlbumExtensions
 
     public static long ArtistUniqueId(this Album album)
     {
-        return album.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(album.ArtistSort() ?? album.Artist() ?? Guid.NewGuid().ToString());
+        return album.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(album.Artist()?.ToNormalizedString() ?? Guid.NewGuid().ToString());
     }
 
     public static string? ArtistSort(this Album album)

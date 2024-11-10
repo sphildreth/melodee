@@ -31,8 +31,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
         SqlMapper.AddTypeHandler(new GuidHandler());
         SqlMapper.AddTypeHandler(new TimeSpanHandler());
-        SqlMapper.AddTypeHandler(new InstantHandler());     
-        
+        SqlMapper.AddTypeHandler(new InstantHandler());
+
         _dbContextOptions = new DbContextOptionsBuilder<MelodeeDbContext>()
             .UseSqlite(_dbConnection, x => x.UseNodaTime())
             .Options;
@@ -72,17 +72,17 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         return new ArtistService(Logger, CacheManager, MockFactory());
     }
-    
+
     protected AlbumService GetAlbumService()
     {
         return new AlbumService(Logger, CacheManager, MockFactory());
-    }    
+    }
 
     protected LibraryService GetLibraryService()
     {
         return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService(), GetArtistService(), GetAlbumService());
     }
-    
+
     protected UserService GetUserService()
     {
         return new UserService(Logger, CacheManager, MockFactory());
@@ -97,13 +97,13 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         Assert.NotNull(result);
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Data);        
-    }    
-    
+        Assert.NotNull(result.Data);
+    }
+
     protected static void AssertResultIsSuccessful<T>(OperationResult<T?>? result)
     {
         Assert.NotNull(result);
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Data);        
+        Assert.NotNull(result.Data);
     }
 }

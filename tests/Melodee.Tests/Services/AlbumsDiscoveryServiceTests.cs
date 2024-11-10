@@ -30,19 +30,17 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
             Assert.DoesNotContain(albumsForDirectoryAsync.Data, x => x.UniqueId == 0);
 
             var albums = albumsForDirectoryAsync.Data.ToArray();
-            Assert.NotNull(albums);        
+            Assert.NotNull(albums);
             Assert.NotEmpty(albums);
-    
+
             var firstAlbum = albums.First();
-    
+
             Assert.True(firstAlbum.SongCount > 1);
             Assert.True(firstAlbum.Year > 0);
             Assert.NotNull(firstAlbum.Duration?.Nullify());
-    
         }
-    
-    }    
-    
+    }
+
     [Fact]
     public async Task ValidAlbumGridStagingResults()
     {
@@ -68,16 +66,14 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
             Assert.DoesNotContain(albumsForDirectoryAsync.Data, x => x.UniqueId == 0);
 
             var albums = albumsForDirectoryAsync.Data.ToArray();
-            Assert.NotNull(albums);        
+            Assert.NotNull(albums);
             Assert.NotEmpty(albums);
-    
+
             var firstAlbum = albums.First();
-    
+
             Assert.True(firstAlbum.SongCount > 1);
             Assert.True(firstAlbum.Year > 0);
             Assert.NotNull(firstAlbum.Duration?.Nullify());
-    
         }
-    
     }
 }

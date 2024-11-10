@@ -14,9 +14,11 @@ public class FileHelperTests
     [InlineData("txt", false)]
     [InlineData("jpg", false)]
     [InlineData("png", false)]
-    public void ValidateIsMediaMetaDataTypeFile(string extension, bool shouldBe) =>
-        Assert.Equal(shouldBe, FileHelper.IsFileMediaMetaDataType(extension));    
-    
+    public void ValidateIsMediaMetaDataTypeFile(string extension, bool shouldBe)
+    {
+        Assert.Equal(shouldBe, FileHelper.IsFileMediaMetaDataType(extension));
+    }
+
     [Theory]
     [InlineData("mp3", true)]
     [InlineData("MP3", true)]
@@ -28,9 +30,11 @@ public class FileHelperTests
     [InlineData("txt", false)]
     [InlineData("jpg", false)]
     [InlineData("png", false)]
-    public void ValidateIsMediaTypeFile(string extension, bool shouldBe) =>
+    public void ValidateIsMediaTypeFile(string extension, bool shouldBe)
+    {
         Assert.Equal(shouldBe, FileHelper.IsFileMediaType(extension));
-    
+    }
+
     [Theory]
     [InlineData("jpg", true)]
     [InlineData("JPG", true)]
@@ -43,6 +47,8 @@ public class FileHelperTests
     [InlineData("sfv", false)]
     [InlineData("mxx", false)]
     [InlineData("txt", false)]
-    public void ValidateIsImageFileTypeFile(string extension, bool shouldBe) =>
-        Assert.Equal(shouldBe, FileHelper.IsFileImageType(extension));    
+    public void ValidateIsImageFileTypeFile(string extension, bool shouldBe)
+    {
+        Assert.Equal(shouldBe, FileHelper.IsFileImageType(extension));
+    }
 }

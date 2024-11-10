@@ -11,6 +11,8 @@ namespace Melodee.Common.Extensions;
 
 public static partial class StringExtensions
 {
+    public const char TagsSeparator = '|';
+    
     private static readonly string YearParseRegex = "(19|20)\\d{2}";
 
     private static readonly string SongNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
@@ -287,6 +289,95 @@ public static partial class StringExtensions
         return string.IsNullOrEmpty(input) ? null : OnlyAlphaNumericRegex().Replace(input, " ").Nullify();
     }
 
+    /// <summary>
+    ///     If the given input is a tag delimited string, return a enumerable of tags, otherwise return null.
+    /// </summary>
+    /// <param name="str">Nullable string of tag delimited values</param>
+    /// <returns>Enumerable collection of tags</returns>
+    public static IEnumerable<string>? ToTags(this string? str)
+    {
+        if (SafeParser.IsNull(str))
+        {
+            return null;
+        }
+        if (!str!.Contains(TagsSeparator))
+        {
+            return new[] { str };
+        }
+        return str.Split(TagsSeparator).Where(x => !SafeParser.IsNull(x));
+    }    
+    
+    /// <summary>
+    ///     Add tags to the given string value.
+    /// </summary>
+    /// <param name="str">Tag value to return tags joined by split value</param>
+    /// <param name="value">Value to add to Tag result, can be Tags also joined by split value</param>
+    /// <param name="tagSplit">Tag split value</param>
+    /// <param name="dontLowerCase">Dont return lowercase value, leave value case as is</param>
+    /// <returns>Unique and sorted Tags joined by split value</returns>
+    public static string? AddTag(this string? str, string? value, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
+        => AddTag(str, value?.Split(tagSplit ?? TagsSeparator), tagSplit, dontLowerCase);
+
+    /// <summary>
+    ///     Add tags to the given string value.
+    /// </summary>
+    /// <param name="str">Tag value to return tags joined by split value</param>
+    /// <param name="values">Values to add to Tag result</param>
+    /// <param name="tagSplit">Tag split value</param>
+    /// <param name="dontLowerCase">Dont return lowercase value, leave value case as is</param>
+    /// <returns>Unique and sorted Tags joined by split value</returns>
+    public static string? AddTag(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
+    {
+        var vv = values as string[] ?? values?.ToArray() ?? [];
+        if (SafeParser.IsNull(str) && vv.Length == 0)
+        {
+            return null;
+        }
+        var ts = tagSplit ?? TagsSeparator;
+        var value = string.Join(ts, vv.Where(x => !string.IsNullOrEmpty(x)).Select(x => x));
+        var tags = (str ?? value).Nullify()?.Split(ts).Select(x => x.Nullify()).ToList() ?? [];
+        if (value.Contains(ts))
+        {
+            tags.AddRange(value.Split(ts));
+        }
+        else if (!SafeParser.IsTruthy(tags.Any(x => string.Equals(x, value.Nullify(), StringComparison.OrdinalIgnoreCase))))
+        {
+            tags.Add(value.Nullify());
+        }
+        var result = string.Join(ts, tags.Where(x => !string.IsNullOrEmpty(x)).Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(x => x)).Nullify();
+        if (dontLowerCase ?? false)
+        {
+            return result;
+        }
+        return result?.ToLower();
+    }    
+    
+    public static string? TrimAndNullify(this string? value)
+        => value?.Nullify();    
+    
+    public static string? ToNormalizedString(this string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return null;
+        }
+        var v = input?.TrimAndNullify();
+        if (string.IsNullOrWhiteSpace(v))
+        {
+            return null;
+        }
+
+        v = ReplaceWithCharacter().Replace(v, string.Empty);
+        return ReplaceDuplicatePipeCharacters()
+            .Replace(RemoveNonAlphanumericCharacters()
+                    .Replace(v.RemoveAccents()
+                                 ?.ToUpperInvariant() ??
+                             string.Empty,
+                        string.Empty),
+                "|")
+            .Nullify();
+    }
+
     public static string ToAlphanumericName(this string input, bool stripSpaces = true, bool stripCommas = true)
     {
         if (string.IsNullOrEmpty(input))
@@ -553,10 +644,30 @@ public static partial class StringExtensions
     }
     
     public static string ToPasswordHash(this string? plainPassword) => BitConverter.ToString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(plainPassword ?? string.Empty))).Replace("-", string.Empty);
-
+    
+    private static string? RemoveAccents(this string? value)
+    {
+        if (SafeParser.IsNull(value))
+        {
+            return null;
+        }
+        return new string(value!.Normalize(NormalizationForm.FormD)
+            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            .ToArray());
+    }
+    
     [GeneratedRegex("[^a-zA-Z0-9 -.:]")]
     private static partial Regex OnlyAlphaNumericRegex();
 
     [GeneratedRegex(@"\s{2,}")]
     private static partial Regex ReplaceMultipleSpacesRegex();
+    
+    [GeneratedRegex("[^A-Z0-9|]")]
+    private static partial Regex RemoveNonAlphanumericCharacters();
+
+    [GeneratedRegex("(\\|{2,})")]
+    public static partial Regex ReplaceDuplicatePipeCharacters();
+
+    [GeneratedRegex("\t+|\r+|\\s+|\r+|@+")]
+    public static partial Regex ReplaceWithCharacter();    
 }

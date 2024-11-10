@@ -1,7 +1,6 @@
 using Melodee.Common.Enums;
-using Melodee.Common.Exceptions;
 using Melodee.Common.Models;
-using SmartFormat.Utilities;
+using Melodee.Plugins.Processor.MetaTagProcessors;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 
@@ -12,8 +11,8 @@ public class ArtistMetaTagProcessorTests : TestsBase
     {
         var AlbumArtistShouldBe = "Ariana Grande";
         var SongArtistShouldBe = "Nonna";
-        
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration(), Serializer);
+
+        var metatagProcessor = new Artist(NewConfiguration(), Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Artist,
@@ -23,7 +22,7 @@ public class ArtistMetaTagProcessorTests : TestsBase
         {
             Path = string.Empty,
             Name = string.Empty
-        },new FileSystemFileInfo
+        }, new FileSystemFileInfo
         {
             Name = string.Empty,
             Size = 0
@@ -35,11 +34,11 @@ public class ArtistMetaTagProcessorTests : TestsBase
         Assert.Equal(AlbumArtistShouldBe, result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value);
         Assert.Equal(SongArtistShouldBe, result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist)?.Value);
     }
-    
+
     [Fact]
     public void ValidateArtistNameWithFeaturingWithAlbumArtistSet()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Artist(TestsBase.NewConfiguration(), Serializer);
+        var metatagProcessor = new Artist(NewConfiguration(), Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Artist,
@@ -49,18 +48,20 @@ public class ArtistMetaTagProcessorTests : TestsBase
         {
             Path = string.Empty,
             Name = string.Empty
-        },new FileSystemFileInfo
+        }, new FileSystemFileInfo
         {
             Name = string.Empty,
             Size = 0
-        }, tag, [new MetaTag<object?>
-        {
-            Identifier = MetaTagIdentifier.AlbumArtist,
-            Value = "Ariana Grande"
-        }]);
+        }, tag, [
+            new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.AlbumArtist,
+                Value = "Ariana Grande"
+            }
+        ]);
         Assert.NotNull(result);
         Assert.True(result.IsSuccess);
         Assert.Single(result.Data);
         Assert.Equal("Nonna", result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist)?.Value);
-    }    
+    }
 }

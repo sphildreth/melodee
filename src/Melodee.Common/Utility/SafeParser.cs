@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using HashidsNet;
+using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Serialization;
 
@@ -10,6 +12,96 @@ public static class SafeParser
 {
     private const string Salt = "9A0786D9-3DF7-4BE3-AB51-6E1CB91B028A";
 
+    /// <summary>
+    ///     Return true if value is null or when string or char either whitespace or empty.
+    /// </summary>
+    public static bool IsNull(object? value)
+    {
+        if (value == null)
+        {
+            return true;
+        }
+        var vt = value.GetType();
+        if (vt == typeof(string) || vt == typeof(char))
+        {
+            return string.IsNullOrWhiteSpace(value.ToString()?.Nullify());
+        }
+        return !IsTruthy(value);
+    }    
+    
+    public static bool IsTruthy(bool? value) => value ?? false;
+
+    public static bool IsTruthy(bool value) => value;
+
+   
+    /// <summary>
+    ///     Falsy type checking of given value.
+    /// </summary>
+    public static bool IsTruthy(object? value)
+    {
+        if (value == null)
+        {
+            return false;
+        }
+        try
+        {
+            var vt = value.GetType();
+            switch (Type.GetTypeCode(vt))
+            {
+                case TypeCode.Boolean:
+                    return (bool)value;
+
+                case TypeCode.Char:
+                    return IsCharTruthy((char)value);
+
+                case TypeCode.DateTime:
+                    var dt = (DateTime)value;
+                    return dt > DateTime.MinValue && dt < DateTime.MaxValue;
+
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                    return long.Parse(value.ToString() ?? "0") > 0;
+
+                case TypeCode.Double:
+                case TypeCode.Decimal:
+                case TypeCode.Single:
+                    return decimal.Parse(value.ToString() ?? "0") > 0;
+
+                case TypeCode.String:
+                    return IsCharTruthy(((string)value).Nullify()?.ToLower().First() ?? '0');
+            }
+
+            if (vt == typeof(Guid))
+            {
+                return Guid.Parse(value.ToString() ?? string.Empty) != Guid.Empty;
+            }
+
+            if (vt == typeof(DateTimeOffset))
+            {
+                var dt = (DateTimeOffset)value;
+                return dt.DateTime > DateTime.MinValue && dt.DateTime < DateTime.MaxValue;
+            }
+
+            if (value.IsEnumerable())
+            {
+                var ie = typeof(Enumerable).GetMethod("Cast")?
+                    .MakeGenericMethod(typeof(object))
+                    .Invoke(null, new[] { value });
+                return (ie as IEnumerable<object>)?.Any() ?? false;
+            }
+
+            return vt.IsClass || IsCharTruthy(value.ToString()?.Nullify()?.ToLower().First() ?? '0');
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Error determining if object is truthy [{value}] [{ex}]", TraceWriteLineCategoryRegistry.Error);
+        }
+        return false;
+    }    
+    
     /// <summary>
     ///     Safely return a Boolean for a given Input.
     ///     <remarks>Has Additional String Operations</remarks>
@@ -348,5 +440,6 @@ public static class SafeParser
         return hash;
     }
 
+    private static bool IsCharTruthy(char value) => value is 'y' or 't' or '1';
 
 }

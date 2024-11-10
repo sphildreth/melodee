@@ -1,4 +1,5 @@
 using Melodee.Common.Data.Models;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Services;
 
@@ -24,7 +25,7 @@ public sealed class ServiceUser : User
             UserName = "ServiceUser",
             UserNameNormalized = "ServiceUser".ToUpperInvariant(),
             Email = "serviceuser@local.lan",
-            EmailNormalized = "serviceuser@local.lan".ToUpperInvariant(),
+            EmailNormalized = "serviceuser@local.lan".ToNormalizedString()!,
             IsAdmin = true,
             PasswordHash = string.Empty
         };

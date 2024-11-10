@@ -1,15 +1,12 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
-using Melodee.Plugins;
+using Melodee.Plugins.Conversion.Image;
 
 namespace Melodee.Tests.Plugins.Conversion;
 
 public class ImageConversionTests
 {
-    
-    
     [Fact]
     public async Task ValidateConvertingPngToJpgAsync()
     {
@@ -17,7 +14,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewPluginsConfiguration());
+            var convertor = new ImageConvertor(TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -30,10 +27,9 @@ public class ImageConversionTests
 
             var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
-
         }
     }
-    
+
     [Fact]
     public async Task ValidateConvertingGifToJpgAsync()
     {
@@ -41,7 +37,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewPluginsConfiguration());
+            var convertor = new ImageConvertor(TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -54,10 +50,9 @@ public class ImageConversionTests
 
             var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
-
         }
-    }    
-    
+    }
+
     [Fact]
     public async Task ValidateConvertingTiffToJpgAsync()
     {
@@ -65,7 +60,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewPluginsConfiguration());
+            var convertor = new ImageConvertor(TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -78,10 +73,9 @@ public class ImageConversionTests
 
             var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
-
         }
-    }      
-    
+    }
+
     [Fact]
     public async Task ValidateConvertingWebpJpgAsync()
     {
@@ -89,31 +83,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewPluginsConfiguration());
-            var dirInfo = new FileSystemDirectoryInfo
-            {
-                Path = @"/melodee_test/tests/",
-                Name = "tests"
-            };            
-            var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
-            Assert.NotNull(convertorResult);
-            Assert.True(convertorResult.IsSuccess);
-            Assert.NotNull(convertorResult.Data);
-
-            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
-            Assert.True(convertedFileInfo.Exists);
-
-        }
-    }      
-    
-    [Fact]
-    public async Task ValidateConvertingBitmapJpgAsync()
-    {
-        var testFile = @"/melodee_test/tests/testbmp.bmp";
-        var fileInfo = new FileInfo(testFile);
-        if (fileInfo.Exists)
-        {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewPluginsConfiguration());
+            var convertor = new ImageConvertor(TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -126,10 +96,32 @@ public class ImageConversionTests
 
             var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
-
         }
-    }      
-    
+    }
+
+    [Fact]
+    public async Task ValidateConvertingBitmapJpgAsync()
+    {
+        var testFile = @"/melodee_test/tests/testbmp.bmp";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var convertor = new ImageConvertor(TestsBase.NewPluginsConfiguration());
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/melodee_test/tests/",
+                Name = "tests"
+            };
+            var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(convertorResult);
+            Assert.True(convertorResult.IsSuccess);
+            Assert.NotNull(convertorResult.Data);
+
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
+            Assert.True(convertedFileInfo.Exists);
+        }
+    }
+
     [Fact]
     public async Task ValidateConvertingNonImageFailsAsync()
     {
@@ -137,7 +129,7 @@ public class ImageConversionTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Image.ImageConvertor(TestsBase.NewPluginsConfiguration());
+            var convertor = new ImageConvertor(TestsBase.NewPluginsConfiguration());
             var convertorResult = await convertor.ProcessFileAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -146,5 +138,5 @@ public class ImageConversionTests
             Assert.NotNull(convertorResult);
             Assert.False(convertorResult.IsSuccess);
         }
-    }      
+    }
 }

@@ -17,11 +17,11 @@ public class SimpleFileVerificationTests : TestsBase
         if (fileInfo.Exists)
         {
             var sfv = new SimpleFileVerification(
-                new []
+                new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration())
-                }, new AlbumValidator(TestsBase.NewPluginsConfiguration()),
-                   TestsBase.NewPluginsConfiguration());
+                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())
+                }, new AlbumValidator(NewPluginsConfiguration()),
+                NewPluginsConfiguration());
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/inbound/00-k 2024",
@@ -40,10 +40,10 @@ public class SimpleFileVerificationTests : TestsBase
         if (fileInfo.Exists)
         {
             var sfv = new SimpleFileVerification(
-                new []
+                new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration())
-                }, new AlbumValidator(TestsBase.NewPluginsConfiguration()), TestsBase.NewPluginsConfiguration());
+                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())
+                }, new AlbumValidator(NewPluginsConfiguration()), NewPluginsConfiguration());
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/inbound/Swartz",
@@ -52,8 +52,8 @@ public class SimpleFileVerificationTests : TestsBase
             Assert.NotNull(sfvResult);
             Assert.True(sfvResult.IsSuccess);
         }
-    }    
-    
+    }
+
     [Fact]
     public async Task ValidateSfvFile3Async()
     {
@@ -63,11 +63,11 @@ public class SimpleFileVerificationTests : TestsBase
         if (fileInfo.Exists)
         {
             var sfv = new SimpleFileVerification(
-                new []
+                new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration())
-                }, new AlbumValidator(TestsBase.NewPluginsConfiguration()),
-                   TestsBase.NewPluginsConfiguration());
+                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())
+                }, new AlbumValidator(NewPluginsConfiguration()),
+                NewPluginsConfiguration());
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/inbound/The Sound Of Melodic Techno Vol. 21",
@@ -76,8 +76,8 @@ public class SimpleFileVerificationTests : TestsBase
             Assert.NotNull(sfvResult);
             Assert.False(sfvResult.IsSuccess);
         }
-    }        
-    
+    }
+
     [Fact]
     public void ValidateModelFullLineParsing()
     {
@@ -111,10 +111,10 @@ public class SimpleFileVerificationTests : TestsBase
                 Size = 0
             }
         };
-        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty,input);
+        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty, input);
         Assert.Equal(shouldBe, parsedModel);
-    }    
-    
+    }
+
     [Fact]
     public void ValidateModelOnlyFilenameLineParsing()
     {
@@ -129,7 +129,7 @@ public class SimpleFileVerificationTests : TestsBase
                 Size = 0
             }
         };
-        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty,input);
+        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty, input);
         Assert.Equal(shouldBe, parsedModel);
-    }       
+    }
 }

@@ -231,33 +231,66 @@ public class LibraryService(
         // TODO Musicbrainz Db for metadata update job
         
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+
+        if (!album.IsValid(configuration.Configuration))
+        {
+            return new MelodeeModels.OperationResult<bool>($"Album is invalid.")
+            {
+                Data = false
+            };
+        }
         
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            
+            var artistName = album.Artist() ?? throw new Exception("Album artist is required.");
+            var albumTitle = album.AlbumTitle() ?? throw new Exception("Album title is required.");
+            
+            // See if the artist can be found by the MediaUniqueId
             var dbArtistResult = await artistService.GetByMediaUniqueId(album.ArtistUniqueId(), cancellationToken).ConfigureAwait(false);
+            
+            // If the artist isn't found by the MediaUniqueId see if it can be found by the NameNormalized value
+            if (!dbArtistResult.IsSuccess)
+            {
+                dbArtistResult = await artistService.GetByNameNormalized(artistName.ToNormalizedString() ?? artistName, cancellationToken).ConfigureAwait(false);
+            }
             var dbArtist = dbArtistResult.Data;
+            
+            // Artist isn't found proceed to create
             if (!dbArtistResult.IsSuccess)
             {
                 dbArtist = new Artist
                 {
-                    AlternateNames = album.Artist()?.ToAlphanumericName(),
+                    AlternateNames = artistName.ToAlphanumericName(),
                     AlbumCount = 1,
                     CreatedAt = now,
                     MediaUniqueId = album.ArtistUniqueId(),
                     MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
-                    Name = album.Artist() ?? throw new Exception("Album artist is required."),
+                    Name = artistName,
+                    NameNormalized = artistName.ToNormalizedString() ?? artistName,
                     SongCount = album.Songs?.Count() ?? 0,
-                    SortName = album.Artist() ?? throw new Exception("Album artist is required.")
+                    SortName = artistName.CleanString(doPutTheAtEnd:true)
                 };
                 await scopedContext.Artists.AddAsync(dbArtist, cancellationToken).ConfigureAwait(false);
             }
+            
+            // See if the album can be found by the MediaUniqueId
             var dbAlbumResult = await albumService.GetByMediaUniqueId(album.UniqueId, cancellationToken).ConfigureAwait(false);
+            
+            // If the artist isn't found by the MediaUniqueId see if it can be found by the NameNormalized value
+            if (!dbAlbumResult.IsSuccess)
+            {
+                dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist!.Id, albumTitle.ToNormalizedString() ?? albumTitle, cancellationToken).ConfigureAwait(false);
+            }
+            
+            // Album isn't found for artist proceed to create
             if (!dbAlbumResult.IsSuccess)
             {
                 var dbAlbum = new Album
                 {
                     AlbumStatus = (short)album.Status,
+                    AlternateNames = albumTitle.ToAlphanumericName(),
                     AlbumType = (int)AlbumType.Album,
                     ArtistId = dbArtist!.Id,
                     CreatedAt = now,
@@ -267,11 +300,12 @@ public class LibraryService(
                     IsCompilation = album.IsVariousArtistTypeAlbum(),
                     MediaUniqueId = album.UniqueId,
                     MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
-                    Name = album.AlbumTitle() ?? throw new Exception("Album title is required."),
+                    Name = albumTitle,
+                    NameNormalized = albumTitle.ToNormalizedString() ?? albumTitle,
                     OriginalReleaseDate = album.OriginalAlbumYear() == null ? null : new LocalDate(album.OriginalAlbumYear()!.Value, 1, 1),                    
                     ReleaseDate = new LocalDate(album.AlbumYear() ?? throw new Exception("Album year is required."), 1, 1),
                     SongCount = SafeParser.ToNumber<short>(album.Songs?.Count() ?? 0),
-                    SortName = album.AlbumTitle() ?? throw new Exception("Album title is required.")
+                    SortName = albumTitle.CleanString(doPutTheAtEnd:true)
                 };
                 await scopedContext.Albums.AddAsync(dbAlbum, cancellationToken).ConfigureAwait(false);
                 var dbAlbumDiscsToAdd = new List<AlbumDisc>();
@@ -290,10 +324,12 @@ public class LibraryService(
                 foreach (var song in album.Songs!)
                 {
                     var songFileInfo = song.File.ToFileInfo(album.Directory!);
+                    var songTitle = song.Title() ?? throw new Exception("Song title is required.");
+                    
                     dbSongsToAdd.Add(new Song
                     {
                         AlbumDiscId = dbAlbumDiscsToAdd.First(x => x.DiscNumber == song.MediaNumber()).Id,
-                        AlternateNames = song.Title()?.ToAlphanumericName(),
+                        AlternateNames = songTitle.ToAlphanumericName(),
                         BitDepth = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value),
                         BitRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value),
                         BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
@@ -306,16 +342,17 @@ public class LibraryService(
                         FileSize = songFileInfo.Length,
                         Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics) ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics),
                         MediaUniqueId = song.UniqueId,
-                        Name = song.Title() ?? throw new Exception("Song title is required."),
                         PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle),
                         SamplingRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value),
-                        SortName = song.MetaTagValue<string>(MetaTagIdentifier.SortTitle) ?? song.Title() ?? throw new Exception("Song title is required."),
                         SortOrder = song.SortOrder,
-                        Title = song.Title() ?? throw new Exception("Song title is required."),
+                        Title = songTitle,
+                        TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
+                        TitleSort = songTitle.CleanString(doPutTheAtEnd:true),
                         SongNumber = song.SongNumber()
                     });
                 }
                 await scopedContext.Songs.AddRangeAsync(dbSongsToAdd, cancellationToken).ConfigureAwait(false);
+                
                 
                 var dbContributorsToAdd = new List<Contributor>();
                 foreach (var song in album.Songs!)
@@ -325,11 +362,11 @@ public class LibraryService(
                     var songArtist = song.SongArtist();
                     if (songArtist.Nullify() != null)
                     {
-
+                        
                         dbContributorsToAdd.Add(new Contributor
                         {
                             CreatedAt = now,
-                            Role = "Track Artist",
+                            Role = "Track Artist (TPE1)",
                             ArtistId = 0,
                             SongId = dbSongId,
                             AlbumId = dbAlbum.Id,
@@ -344,20 +381,20 @@ public class LibraryService(
                         dbContributorsToAdd.Add(new Contributor
                         {
                             CreatedAt = now,
-                            Role = "Author/Writer/Lyricist",
+                            Role = "Author/Writer/Lyricist (TEXT)",
                             ArtistId = 0,
                             SongId = dbSongId,
                             AlbumId = dbAlbum.Id,
                         });
                     }                    
-                    // Composer (TCOM)
-                    var composer = song.MetaTagValue<string?>(MetaTagIdentifier.Lyricist);
+
+                    var composer = song.MetaTagValue<string?>(MetaTagIdentifier.Composer);
                     if (composer.Nullify() != null)
                     {
                         dbContributorsToAdd.Add(new Contributor
                         {
                             CreatedAt = now,
-                            Role = "Composer",
+                            Role = "Composer (TCOM)",
                             ArtistId = 0,
                             SongId = dbSongId,
                             AlbumId = dbAlbum.Id,

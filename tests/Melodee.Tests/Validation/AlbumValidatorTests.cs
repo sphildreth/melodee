@@ -1,14 +1,82 @@
-using FluentValidation;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Validation;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
 namespace Melodee.Tests.Validation;
 
 public class AlbumValidatorTests
 {
+    private static Album TestAlbum
+        => new()
+        {
+            ViaPlugins = [nameof(AtlMetaTag)],
+            OriginalDirectory = new FileSystemDirectoryInfo
+            {
+                Path = string.Empty,
+                Name = string.Empty
+            },
+            Status = AlbumStatus.Ok,
+            Tags = new[]
+            {
+                new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.AlbumArtist,
+                    Value = "Billy Joel"
+                },
+                new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.Album,
+                    Value = "Cold Spring Harbor"
+                },
+                new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.RecordingYear,
+                    Value = "1971"
+                }
+            },
+            Songs = new[]
+            {
+                new Song
+                {
+                    CrcHash = "TestValue",
+                    File = new FileSystemFileInfo
+                    {
+                        Name = string.Empty,
+                        Size = 12345
+                    },
+                    Tags = new[]
+                    {
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.AlbumArtist,
+                            Value = "Billy Joel"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Album,
+                            Value = "Cold Spring Harbor"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.RecordingYear,
+                            Value = "1971"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.TrackNumber,
+                            Value = "1"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Title,
+                            Value = "She's Got a Way"
+                        }
+                    }
+                }
+            }
+        };
+
     [Theory]
     [InlineData("Album Title", "Something", 1, false)]
     [InlineData("Album Title", "11:11", 5, false)]
@@ -41,7 +109,7 @@ public class AlbumValidatorTests
     [InlineData("Album Title", "Song💣Title", 5, false)]
     [InlineData("Album Title best of 48 years (Compiled and Mixed by DJ Stinky", "Song Title (Compiled and Mixed by DJ Stinky)", 5, false)]
     [InlineData("Megamix Chart Hits Best Of 12 Years (Compiled and Mixed by DJ Fl", "Megamix Chart Hits Best Of 12 Years (Compiled and Mixed by DJ Flimflam)", 5, false)]
-    [InlineData("Album Title", "Flowers (Demo)", 11, false)]    
+    [InlineData("Album Title", "Flowers (Demo)", 11, false)]
     public void SongHasUnwantedText(string? AlbumTitle, string? SongName, int? SongNumber, bool shouldBe)
     {
         Assert.Equal(shouldBe, AlbumValidator.SongHasUnwantedText(AlbumTitle, SongName, SongNumber));
@@ -137,77 +205,7 @@ public class AlbumValidatorTests
         Assert.Equal(shouldBe, AlbumValidator.IsImageAProofType(text));
     }
 
-    private static Album TestAlbum
-        => new Album
-        {
-            ViaPlugins = [nameof(AtlMetaTag)],
-            OriginalDirectory = new FileSystemDirectoryInfo
-            {
-                Path = string.Empty,
-                Name = string.Empty
-            },
-            Status = AlbumStatus.Ok,
-            Tags = new[]
-            {
-                new MetaTag<object?>
-                {
-                    Identifier = MetaTagIdentifier.AlbumArtist,
-                    Value = "Billy Joel"
-                },
-                new MetaTag<object?>
-                {
-                    Identifier = MetaTagIdentifier.Album,
-                    Value = "Cold Spring Harbor"
-                },
-                new MetaTag<object?>
-                {
-                    Identifier = MetaTagIdentifier.RecordingYear,
-                    Value = "1971"
-                }
-            },
-            Songs = new[]
-            {
-                new Song
-                {
-                    CrcHash = "TestValue",
-                    File = new FileSystemFileInfo
-                    {
-                        Name = string.Empty,
-                        Size = 12345
-                    },
-                    Tags = new[]
-                    {
-                        new MetaTag<object?>
-                        {
-                            Identifier = MetaTagIdentifier.AlbumArtist,
-                            Value = "Billy Joel"
-                        },
-                        new MetaTag<object?>
-                        {
-                            Identifier = MetaTagIdentifier.Album,
-                            Value = "Cold Spring Harbor"
-                        },
-                        new MetaTag<object?>
-                        {
-                            Identifier = MetaTagIdentifier.RecordingYear,
-                            Value = "1971"
-                        },
-                        new MetaTag<object?>
-                        {
-                            Identifier = MetaTagIdentifier.TrackNumber,
-                            Value = "1"
-                        },
-                        new MetaTag<object?>
-                        {
-                            Identifier = MetaTagIdentifier.Title,
-                            Value = "She's Got a Way"
-                        },
-                    },
-                }
-            }
-        };
 
-   
     [Fact]
     public void ValidateAlbumWithNoInvalidValidations()
     {
@@ -291,11 +289,11 @@ public class AlbumValidatorTests
     }
 
     [Theory]
-    [InlineData("A simple song title", "A simple song title")]    
+    [InlineData("A simple song title", "A simple song title")]
     [InlineData("Flowers   (DEMO)", "Flowers (DEMO)")]
     [InlineData("Bless em With The Blade (Orchestral Version)", "Bless em With The Blade (Orchestral Version)")]
     public void ValidateSongTitleReplacement(string input, string shouldBe)
     {
-        Assert.Equal(shouldBe, AlbumValidator.RemoveUnwantedTextFromSongTitle(input) );
+        Assert.Equal(shouldBe, AlbumValidator.RemoveUnwantedTextFromSongTitle(input));
     }
 }

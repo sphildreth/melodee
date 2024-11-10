@@ -4,7 +4,6 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.Models;
-using Melodee.Services;
 
 namespace Melodee.Tests.Services;
 
@@ -14,7 +13,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     public async Task ListAsync()
     {
         var service = GetSettingService();
-        var listResult = await service.ListAsync( new PagedRequest
+        var listResult = await service.ListAsync(new PagedRequest
         {
             PageSize = 1000
         });
@@ -22,19 +21,20 @@ public sealed class SettingsServiceTests : ServiceTestBase
         Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
         Assert.Equal(1, listResult.TotalPages);
     }
-    
+
     [Fact]
     public async Task ListWithFilterOnIdValueEqualsAsync()
     {
         var service = GetSettingService();
-        int idValue = 0;
+        var idValue = 0;
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
             idValue = context.Settings.First(x => x.Key == SettingRegistry.ValidationMaximumSongNumber).Id;
-        }        
-        var listResult = await service.ListAsync( new PagedRequest
+        }
+
+        var listResult = await service.ListAsync(new PagedRequest
         {
-            FilterBy = new []
+            FilterBy = new[]
             {
                 new FilterOperatorInfo(nameof(Setting.Id), FilterOperator.Equals, idValue)
             },
@@ -44,17 +44,17 @@ public sealed class SettingsServiceTests : ServiceTestBase
         Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
         Assert.Equal(1, listResult.TotalCount);
         Assert.Equal(1, listResult.TotalPages);
-    }    
-    
+    }
+
     [Fact]
     public async Task ListWithFilterOnKeyValueEqualsAsync()
     {
         var service = GetSettingService();
-        var listResult = await service.ListAsync( new PagedRequest
+        var listResult = await service.ListAsync(new PagedRequest
         {
-            FilterBy = new []
+            FilterBy = new[]
             {
-                new FilterOperatorInfo( nameof(Setting.Key), FilterOperator.Equals, SettingRegistry.ValidationMaximumSongNumber)
+                new FilterOperatorInfo(nameof(Setting.Key), FilterOperator.Equals, SettingRegistry.ValidationMaximumSongNumber)
             },
             PageSize = 1
         });
@@ -62,17 +62,17 @@ public sealed class SettingsServiceTests : ServiceTestBase
         Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
         Assert.Equal(1, listResult.TotalCount);
         Assert.Equal(1, listResult.TotalPages);
-    }    
-    
+    }
+
     [Fact]
     public async Task ListWithFilterLikeAsync()
     {
         var service = GetSettingService();
-        var listResult = await service.ListAsync( new PagedRequest
+        var listResult = await service.ListAsync(new PagedRequest
         {
-            FilterBy = new []
+            FilterBy = new[]
             {
-                new FilterOperatorInfo( nameof(Setting.Key), FilterOperator.Contains, "bit")
+                new FilterOperatorInfo(nameof(Setting.Key), FilterOperator.Contains, "bit")
             },
             PageSize = 1
         });
@@ -80,15 +80,15 @@ public sealed class SettingsServiceTests : ServiceTestBase
         Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ConversionBitrate);
         Assert.Equal(1, listResult.TotalCount);
         Assert.Equal(1, listResult.TotalPages);
-    }     
-    
+    }
+
     [Fact]
     public async Task ListWithSortAsync()
     {
         var service = GetSettingService();
-        var listResult = await service.ListAsync( new PagedRequest
+        var listResult = await service.ListAsync(new PagedRequest
         {
-            OrderBy = new Dictionary<string, string> 
+            OrderBy = new Dictionary<string, string>
             {
                 { nameof(Setting.Id), PagedRequest.OrderAscDirection }
             },
@@ -98,10 +98,10 @@ public sealed class SettingsServiceTests : ServiceTestBase
         Assert.Equal(1, listResult.Data.First().Id);
         Assert.NotEqual(1, listResult.TotalCount);
         Assert.Equal(1, listResult.TotalPages);
-        
-        listResult = await service.ListAsync( new PagedRequest
+
+        listResult = await service.ListAsync(new PagedRequest
         {
-            OrderBy = new Dictionary<string, string> 
+            OrderBy = new Dictionary<string, string>
             {
                 { nameof(Setting.Id), PagedRequest.OrderDescDirection }
             },
@@ -110,22 +110,22 @@ public sealed class SettingsServiceTests : ServiceTestBase
         AssertResultIsSuccessful(listResult);
         Assert.NotEqual(1, listResult.Data.First().Id);
         Assert.NotEqual(1, listResult.TotalCount);
-        Assert.Equal(1, listResult.TotalPages);        
-    }     
+        Assert.Equal(1, listResult.TotalPages);
+    }
 
     [Fact]
     public async Task GetSettingByKeyAndValueAsync()
     {
         var service = GetSettingService();
-        var getResult = await service.GetAsync( SettingRegistry.ValidationMaximumSongNumber);
+        var getResult = await service.GetAsync(SettingRegistry.ValidationMaximumSongNumber);
         AssertResultIsSuccessful(getResult);
-        
-        var getIntValueResult = await service.GetValueAsync<int>( SettingRegistry.ValidationMaximumSongNumber);
+
+        var getIntValueResult = await service.GetValueAsync<int>(SettingRegistry.ValidationMaximumSongNumber);
         AssertResultIsSuccessful(getIntValueResult);
         Assert.IsType<int>(getIntValueResult.Data);
         Assert.True(getIntValueResult.Data > 0);
-        
-        var getStringValueResult = await service.GetValueAsync<string>( SettingRegistry.ProcessingSongTitleRemovals);
+
+        var getStringValueResult = await service.GetValueAsync<string>(SettingRegistry.ProcessingSongTitleRemovals);
         AssertResultIsSuccessful(getStringValueResult);
         Assert.IsType<string>(getStringValueResult.Data);
         Assert.NotNull(getStringValueResult.Data.Nullify());
@@ -141,10 +141,10 @@ public sealed class SettingsServiceTests : ServiceTestBase
         var shouldBeValueInt = 99;
         MelodeeConfiguration.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueInt);
         Assert.Equal(shouldBeValueInt, settings[SettingRegistry.ValidationMaximumSongNumber]);
-        
+
         var shouldBeValueBool = true;
         MelodeeConfiguration.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueBool);
-        Assert.Equal(shouldBeValueBool, settings[SettingRegistry.ValidationMaximumSongNumber]); 
+        Assert.Equal(shouldBeValueBool, settings[SettingRegistry.ValidationMaximumSongNumber]);
         Assert.True(MelodeeConfiguration.IsTrue(settings, SettingRegistry.ValidationMaximumSongNumber));
     }
 
@@ -167,14 +167,11 @@ public sealed class SettingsServiceTests : ServiceTestBase
         Assert.NotEmpty(configuration.Configuration);
 
         configuration.SetSetting(SettingRegistry.ProcessingMaximumProcessingCount, shouldBeValueInt);
-        var getIntValueResult = configuration.GetValue<int>( SettingRegistry.ProcessingMaximumProcessingCount);
+        var getIntValueResult = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount);
         Assert.Equal(shouldBeValueInt, getIntValueResult);
-        
+
         configuration.SetSetting(SettingRegistry.ProcessingMaximumProcessingCount, 15);
-        getIntValueResult = configuration.GetValue<int>( SettingRegistry.ProcessingMaximumProcessingCount, value => int.MaxValue);
+        getIntValueResult = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => int.MaxValue);
         Assert.NotEqual(shouldBeValueInt, getIntValueResult);
-        
-        
-        
     }
 }

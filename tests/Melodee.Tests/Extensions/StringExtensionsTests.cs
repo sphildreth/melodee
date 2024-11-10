@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using Melodee.Common.Extensions;
-using Melodee.Common.Utility;
+﻿using Melodee.Common.Extensions;
 
 namespace Melodee.Tests.Extensions;
 
@@ -18,7 +16,7 @@ public class StringExtensionsTests
     [InlineData("Steve ^#BOOGER#^", "Steve", false)]
     public void DoStringMatch(string? string1, string? string2, bool shouldBe)
     {
-        Assert.Equal(shouldBe, StringExtensions.DoStringsMatch(string1, string2));
+        Assert.Equal(shouldBe, string1.DoStringsMatch(string2));
     }
 
     [Theory]
@@ -45,14 +43,14 @@ public class StringExtensionsTests
     public void Nullify(string? input, string? shouldBe)
     {
         Assert.Equal(shouldBe, input?.Nullify());
-    }        
-        
+    }
+
     [Theory]
     [InlineData(null, null)]
     [InlineData("", null)]
     [InlineData("Bob", null)]
-    [InlineData("09/Bob Rocks", null)]        
-    [InlineData("Bob Rocks", null)]        
+    [InlineData("09/Bob Rocks", null)]
+    [InlineData("Bob Rocks", null)]
     [InlineData("/Discography 2001-2010/2009/Bob Rocks", 2009)]
     [InlineData("2009/Bob Rocks", 2009)]
     [InlineData("2009 Bob Rocks", 2009)]
@@ -61,7 +59,7 @@ public class StringExtensionsTests
     {
         Assert.Equal(shouldBe, input?.TryToGetYearFromString());
     }
-        
+
     [Theory]
     [InlineData(null, null)]
     [InlineData("", null)]
@@ -77,8 +75,8 @@ public class StringExtensionsTests
     public void TryToGetSongNumberFromString(string? input, int? shouldBe)
     {
         Assert.Equal(shouldBe, input?.TryToGetSongNumberFromString());
-    }    
-        
+    }
+
     [Theory]
     [InlineData(null, null)]
     [InlineData("", null)]
@@ -95,7 +93,7 @@ public class StringExtensionsTests
     {
         Assert.Equal(shouldBe, input?.RemoveSongNumberFromString());
     }
-        
+
     [Theory]
     [InlineData("Bob Jones", false)]
     [InlineData("Bob Various", false)]
@@ -110,7 +108,7 @@ public class StringExtensionsTests
     {
         Assert.Equal(shouldBe, input.IsVariousArtistValue());
     }
-        
+
     [Theory]
     [InlineData("Bob Jones", false)]
     [InlineData("Bob Song", false)]
@@ -122,8 +120,8 @@ public class StringExtensionsTests
     public void ValidateIsSoundSongArtists(string input, bool shouldBe)
     {
         Assert.Equal(shouldBe, input.IsSoundSongAristValue());
-    }     
-        
+    }
+
     [Theory]
     [InlineData("Bob Jones", false)]
     [InlineData("Bob Cast", false)]
@@ -134,8 +132,8 @@ public class StringExtensionsTests
     public void ValidateIsCastRecordSongArtists(string input, bool shouldBe)
     {
         Assert.Equal(shouldBe, input.IsCastRecording());
-    }        
-        
+    }
+
     [Theory]
     [InlineData(null, false)]
     [InlineData("Something", false)]
@@ -152,7 +150,7 @@ public class StringExtensionsTests
     {
         Assert.Equal(shouldBe, input.HasFeaturingFragments());
     }
-    
+
     [Theory]
     [InlineData(null, false)]
     [InlineData("Something With Bob", false)]
@@ -161,7 +159,7 @@ public class StringExtensionsTests
     public void StringHasWithFragments(string? input, bool shouldBe)
     {
         Assert.Equal(shouldBe, input.HasWithFragments());
-    }    
+    }
 
     [Theory]
     [InlineData(null, null)]
@@ -169,12 +167,18 @@ public class StringExtensionsTests
     [InlineData("Something With Bob", "Something With Bob")]
     [InlineData("Something\ufffdWith Bob=", "Something With Bob")]
     [InlineData("       \ufffd   \ufffd\ufffd\ufffd   Artist....: Holy Truth                          \ufffd\ufffd\ufffd", "Artist....: Holy Truth")]
-    public void StringOnlyAlphanumeric(string? input, string? shouldBe) => Assert.Equal(shouldBe, input.OnlyAlphaNumeric());
+    public void StringOnlyAlphanumeric(string? input, string? shouldBe)
+    {
+        Assert.Equal(shouldBe, input.OnlyAlphaNumeric());
+    }
 
     [Theory]
     [InlineData("00-pixel_-_reality_strikes_back-2004-mycel.sfv", 2004)]
-    public void ValidateParsingYearFromFileName(string input, int? shouldBe) => Assert.Equal(shouldBe, input.TryToGetYearFromString());
-        
+    public void ValidateParsingYearFromFileName(string input, int? shouldBe)
+    {
+        Assert.Equal(shouldBe, input.TryToGetYearFromString());
+    }
+
     [Theory]
     [InlineData(null, null)]
     [InlineData(" ", null)]
@@ -187,6 +191,19 @@ public class StringExtensionsTests
         Assert.Equal(shouldBe, input.ToCleanedMultipleArtistsValue());
     }
 
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("Bob", "BOB")]
+    [InlineData("Bob Jones ", "BOBJONES")]
+    [InlineData("Bob JONEs ", "BOBJONES")]
+    [InlineData("Bob JONEs and The 'secret' five!", "BOBJONESANDTHESECRETFIVE")]
+    public void ValidateNormalizedString(string? input, string? shouldBe)
+    {
+        Assert.Equal(shouldBe, input.ToNormalizedString());
+    }
+
     [Fact]
     public void HashAndValidateString()
     {
@@ -195,6 +212,4 @@ public class StringExtensionsTests
         Assert.NotNull(hash.Nullify());
         Assert.Equal(hash, input.ToPasswordHash());
     }
-
-
 }

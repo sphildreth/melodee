@@ -1,4 +1,3 @@
-using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -6,7 +5,7 @@ using Melodee.Plugins.Processor;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 
-public class MetaTagsProcessorTests : TestsBase  
+public class MetaTagsProcessorTests : TestsBase
 {
     [Theory]
     [InlineData("Something", 0, "Something")]
@@ -16,7 +15,7 @@ public class MetaTagsProcessorTests : TestsBase
     [InlineData("08 Something", 8, "Something")]
     public async Task ValidateSongTitleSongNumberRemoved(string? originalSongTitle, int SongNumber, string? shouldBe)
     {
-        var processor = new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer);
+        var processor = new MetaTagsProcessor(NewPluginsConfiguration(), Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -25,7 +24,7 @@ public class MetaTagsProcessorTests : TestsBase
         {
             Name = string.Empty,
             Size = 0
-        }, new []
+        }, new[]
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.TrackNumber, Value = SongNumber },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Title, Value = originalSongTitle }
@@ -71,7 +70,7 @@ public class MetaTagsProcessorTests : TestsBase
     public async Task ValidateSongTitleFeaturingRemoved(string? originalSongTitle, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
-        var processor = new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer);
+        var processor = new MetaTagsProcessor(NewPluginsConfiguration(), Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -148,11 +147,11 @@ public class MetaTagsProcessorTests : TestsBase
     [InlineData("Balearic Classics Vol. 1", "Balearic Classics Vol. 1")]
     [InlineData("Live At Leeds (Deluxe Edition)", "Live At Leeds")]
     [InlineData("The Dark Side Of The Moon (50th Anniversary) [2023 Remaster]", "The Dark Side Of The Moon")]
-    [InlineData("Me (Radio Edit)", "Me (Radio Edit)")]    
+    [InlineData("Me (Radio Edit)", "Me (Radio Edit)")]
     public async Task ValidateAlbumTitleUnwantedRemoved(string? originalAlbum, string? shouldBe)
     {
         var albumArtistShouldBe = "Da Artist";
-        var processor = new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer);
+        var processor = new MetaTagsProcessor(NewPluginsConfiguration(), Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -182,14 +181,15 @@ public class MetaTagsProcessorTests : TestsBase
                 Assert.NotNull(SongTag.OriginalValue);
                 Assert.Equal(originalAlbum, SongTag.OriginalValue);
             }
+
             Assert.Equal(shouldBe, SongTag.Value);
         }
         else
         {
             Assert.Null(SongTag);
         }
-    }    
-    
+    }
+
     [Theory]
     [InlineData(null, null)]
     [InlineData("Ariana Grande", null)]
@@ -200,7 +200,7 @@ public class MetaTagsProcessorTests : TestsBase
     public async Task ValidateAlbumArtistValue(string? originalArtist, string? shouldBe)
     {
         var albumArtistShouldBe = "Ariana Grande";
-        var processor = new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer);
+        var processor = new MetaTagsProcessor(NewPluginsConfiguration(), Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -234,7 +234,7 @@ public class MetaTagsProcessorTests : TestsBase
                 {
                     Assert.NotNull(songTitleArtistTag.OriginalValue);
                     Assert.Equal(originalArtist, songTitleArtistTag.OriginalValue);
-                }                
+                }
             }
             else
             {
@@ -255,7 +255,7 @@ public class MetaTagsProcessorTests : TestsBase
     [InlineData("Ariana Grande", "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
     public async Task ValidateAlbumTitleDoesntContainAlbumArtist(string? albumArtist, string? albumTitle, string? shouldBe)
     {
-        var processor = new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer);
+        var processor = new MetaTagsProcessor(NewPluginsConfiguration(), Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -267,7 +267,7 @@ public class MetaTagsProcessorTests : TestsBase
         }, new[]
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtist },
-            new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value =  albumTitle}
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = albumTitle }
         });
         Assert.NotNull(processorResult);
         Assert.True(processorResult.IsSuccess);
@@ -277,17 +277,17 @@ public class MetaTagsProcessorTests : TestsBase
         Assert.NotNull(albumTag);
         Assert.Equal(shouldBe, albumTag.Value);
     }
-    
+
     [Theory]
     [InlineData("Ariana Grande", null, "Eternal Sunshine", "Eternal Sunshine")]
-    [InlineData("Ariana Grande","Nonna", "Nonna Eternal Sunshine", "Eternal Sunshine")]
-    [InlineData("Ariana Grande",null, "Ariana Grande - Eternal Sunshine", "Eternal Sunshine")]
-    [InlineData("Ariana Grande","Nonna", "Ariana Grande Nonna : Eternal Sunshine", "Eternal Sunshine")]
-    [InlineData("Ariana Grande",null, "Ariana Grande.Eternal Sunshine", "Eternal Sunshine")]
-    [InlineData("Ariana Grande",null, "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", "Nonna", "Nonna Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", null, "Ariana Grande - Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", "Nonna", "Ariana Grande Nonna : Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", null, "Ariana Grande.Eternal Sunshine", "Eternal Sunshine")]
+    [InlineData("Ariana Grande", null, "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
     public async Task ValidateAlbumTitleDoesntContainArtist(string? albumArtist, string? SongArtist, string? albumTitle, string? shouldBe)
     {
-        var processor = new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer);
+        var processor = new MetaTagsProcessor(NewPluginsConfiguration(), Serializer);
         var processorResult = await processor.ProcessMetaTagAsync(new FileSystemDirectoryInfo
         {
             Path = string.Empty,
@@ -300,7 +300,7 @@ public class MetaTagsProcessorTests : TestsBase
         {
             new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = albumArtist },
             new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = SongArtist },
-            new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value =  albumTitle}
+            new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = albumTitle }
         });
         Assert.NotNull(processorResult);
         Assert.True(processorResult.IsSuccess);
@@ -309,5 +309,5 @@ public class MetaTagsProcessorTests : TestsBase
         var albumTag = processorResult.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
         Assert.NotNull(albumTag);
         Assert.Equal(shouldBe, albumTag.Value);
-    }    
+    }
 }

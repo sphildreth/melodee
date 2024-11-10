@@ -23,6 +23,13 @@ public class Song : MetaDataModelBase
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Title { get; set; }
+    
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    public string? TitleSort { get; set; }    
+    
+    [Required]
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    public required string TitleNormalized { get; set; }      
 
     [RequiredGreaterThanZero] public required int SongNumber { get; set; }
 

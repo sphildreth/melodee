@@ -8,7 +8,7 @@ using Melodee.Common.Utility;
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
-public class Artist : MetaDataModelBase
+public class Artist : NamedMetaDataModelBase
 {
     [RequiredGreaterThanZero] public long MediaUniqueId { get; set; }
 

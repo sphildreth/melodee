@@ -9,7 +9,7 @@ using NodaTime;
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
-public sealed class Album : MetaDataModelBase
+public sealed class Album : NamedMetaDataModelBase
 {
     [RequiredGreaterThanZero] public int ArtistId { get; set; }
 

@@ -1,22 +1,21 @@
 using Melodee.Common.Configuration;
-using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
-using Melodee.Plugins;
+using Melodee.Plugins.Conversion.Media;
 
 namespace Melodee.Tests.Plugins.Conversion;
 
 public class MediaConvertorTests
 {
-    [Fact] public async Task ValidateConvertingFlacToMp3Async()
+    [Fact]
+    public async Task ValidateConvertingFlacToMp3Async()
     {
         var testFile = @"/melodee_test/tests/testflac.flac";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(TestsBase.NewPluginsConfiguration());
+            var convertor = new MediaConvertor(TestsBase.NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -29,10 +28,9 @@ public class MediaConvertorTests
 
             var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
-
         }
-    }       
-    
+    }
+
     [Fact]
     public async Task ValidateConvertingNonMediaFailsAsync()
     {
@@ -40,19 +38,17 @@ public class MediaConvertorTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-             var convertor = new Melodee.Plugins.Conversion.Media.MediaConvertor(new MelodeeConfiguration(
-                 new Dictionary<string, object?>
-                {
-                })
+            var convertor = new MediaConvertor(new MelodeeConfiguration(
+                new Dictionary<string, object?>())
             );
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
-            };            
+            };
             var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(convertorResult);
             Assert.False(convertorResult.IsSuccess);
         }
-    }  
+    }
 }

@@ -8,7 +8,7 @@ public class FileSystemDirectoryInfoExtensionTests
     [Theory]
     [InlineData("Albums", true)]
     [InlineData("Studio Albums", true)]
-    [InlineData("Stuff", true)]        
+    [InlineData("Stuff", true)]
     [InlineData("Singles", false)]
     [InlineData("Demos", false)]
     [InlineData("02 Singles", false)]
@@ -16,10 +16,10 @@ public class FileSystemDirectoryInfoExtensionTests
     [InlineData("Live Albums", false)]
     public void IsDirectoryNotStudioAlbums(string input, bool shouldBe)
     {
-        Assert.Equal(shouldBe, (new FileSystemDirectoryInfo
+        Assert.Equal(shouldBe, new FileSystemDirectoryInfo
         {
             Path = string.Empty,
             Name = input
-        }).IsDirectoryNotStudioAlbums());
-    }   
+        }.IsDirectoryNotStudioAlbums());
+    }
 }

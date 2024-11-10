@@ -5,7 +5,6 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 
-
 namespace Melodee.Tests.Plugins.MetaData;
 
 public class MetaTagTests : TestsBase
@@ -17,7 +16,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -33,7 +32,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
         }
     }
-    
+
     [Fact]
     public async Task ValidateLoadingTagsForSimpleMp3FileAsync2()
     {
@@ -41,7 +40,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -56,8 +55,8 @@ public class MetaTagTests : TestsBase
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
         }
-    }    
-    
+    }
+
     [Fact]
     public async Task ValidateLoadingTagsForBorkedMp3FileAsync()
     {
@@ -65,7 +64,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new IdSharpMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
+            var metaTag = new IdSharpMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -75,13 +74,13 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
-            Assert.False(tagResult.Data.IsValid(TestsBase.NewConfiguration()));
+            Assert.False(tagResult.Data.IsValid(NewConfiguration()));
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
         }
-    }    
-    
+    }
+
     [Fact]
     public async Task ValidateLoadingEditingAndSavingTagsForSimpleMp3FileAsync()
     {
@@ -89,7 +88,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -121,7 +120,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagUpdateResult);
             Assert.True(tagUpdateResult.IsSuccess);
             Assert.True(tagUpdateResult.Data);
-            
+
             tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -132,8 +131,8 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data.AlbumTitle()?.Nullify());
             Assert.Equal(newAlbumValue, tagResult.Data.AlbumTitle());
         }
-    }    
-    
+    }
+
     [Fact]
     public async Task ValidateLoadingTagsForMp3FileAsync()
     {
@@ -146,14 +145,14 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
 
             var Song = tagResult.Data;
-            
+
             Assert.NotNull(Song.Tags);
             Assert.NotNull(Song.File);
             Assert.Equal(fileInfo.FullName, Song.File.FullName(dirInfo));
@@ -162,7 +161,7 @@ public class MetaTagTests : TestsBase
             Assert.True(Song.Duration() > 0);
         }
     }
-    
+
     [Fact]
     public async Task ValidateLoadingTagsForMp3Test4FileAsync()
     {
@@ -175,21 +174,21 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
 
             var Song = tagResult.Data;
-            
+
             Assert.NotNull(Song.Tags);
             Assert.NotNull(Song.File);
             Assert.Equal(fileInfo.FullName, Song.File.FullName(dirInfo));
             Assert.NotNull(Song.Title()?.Nullify());
             Assert.NotEmpty(Song.ToSongFileName(NewConfiguration()));
         }
-    }    
+    }
 
     [Fact]
     public async Task ValidateMultipleSongArtistForMp3Async()
@@ -203,25 +202,20 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(TestsBase.NewPluginsConfiguration(), Serializer), TestsBase.NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
             Assert.NotNull(tagResult.Data);
 
             var Song = tagResult.Data;
-            
+
             Assert.NotNull(Song.Tags);
             Assert.NotNull(Song.File);
             var AlbumArtist = Song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
             Assert.NotNull(AlbumArtist?.Value);
             var SongArtists = Song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
             Assert.NotNull(SongArtists?.Value);
-
         }
     }
-    
-    
-
-
 }

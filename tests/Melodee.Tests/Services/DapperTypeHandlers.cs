@@ -7,20 +7,24 @@ using NodaTime;
  */
 
 
-abstract class SqliteTypeHandler<T> : SqlMapper.TypeHandler<T>
+internal abstract class SqliteTypeHandler<T> : SqlMapper.TypeHandler<T>
 {
     // Parameters are converted by Microsoft.Data.Sqlite
     public override void SetValue(IDbDataParameter parameter, T? value)
-        => parameter.Value = value;
+    {
+        parameter.Value = value;
+    }
 }
 
-class DateTimeOffsetHandler : SqliteTypeHandler<DateTimeOffset>
+internal class DateTimeOffsetHandler : SqliteTypeHandler<DateTimeOffset>
 {
     public override DateTimeOffset Parse(object value)
-        => DateTimeOffset.Parse((string)value);
+    {
+        return DateTimeOffset.Parse((string)value);
+    }
 }
 
-class InstantHandler : SqliteTypeHandler<Instant>
+internal class InstantHandler : SqliteTypeHandler<Instant>
 {
     public override Instant Parse(object value)
     {
@@ -36,23 +40,27 @@ class InstantHandler : SqliteTypeHandler<Instant>
         }
 
         if (DateTime.TryParse(value as string, out var parsedDateTime))
-        { 
+        {
             var dt = DateTime.SpecifyKind(parsedDateTime, DateTimeKind.Utc);
             return Instant.FromDateTimeUtc(dt);
         }
-        
+
         throw new DataException("Cannot convert " + value.GetType() + " to NodaTime.Instant");
     }
 }
 
-class GuidHandler : SqliteTypeHandler<Guid>
+internal class GuidHandler : SqliteTypeHandler<Guid>
 {
     public override Guid Parse(object value)
-        => Guid.Parse((string)value);
+    {
+        return Guid.Parse((string)value);
+    }
 }
 
-class TimeSpanHandler : SqliteTypeHandler<TimeSpan>
+internal class TimeSpanHandler : SqliteTypeHandler<TimeSpan>
 {
     public override TimeSpan Parse(object value)
-        => TimeSpan.Parse((string)value);
+    {
+        return TimeSpan.Parse((string)value);
+    }
 }

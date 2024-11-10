@@ -6,17 +6,8 @@ using NodaTime;
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
-[Index(nameof(Name), IsUnique = true)]
-[Index(nameof(SortName))]
 public abstract class MetaDataModelBase : DataModelBase
 {
-    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    [Required]
-    public required string Name { get; set; }
-
-    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    public string? SortName { get; set; }
-
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? AlternateNames { get; set; }
 

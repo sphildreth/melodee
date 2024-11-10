@@ -1,9 +1,5 @@
-using Mapster;
-using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
-using Melodee.Plugins.MetaData.Directory.Models;
-using CueSheet = Melodee.Plugins.MetaData.Directory.CueSheet;
 
 namespace Melodee.Tests.Plugins.MetaData;
 
@@ -22,7 +18,7 @@ public class NfoTests
             Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()));
         }
     }
-    
+
     [Fact]
     public async Task ParseNfoFile01()
     {
@@ -35,9 +31,8 @@ public class NfoTests
             Assert.NotNull(nfoParserResult);
             Assert.NotNull(nfoParserResult.Songs);
             Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()));
-            
+
             Assert.DoesNotContain(nfoParserResult.Songs, x => x.Title() != null && x.Title()!.Contains("..."));
         }
-    }    
-   
+    }
 }

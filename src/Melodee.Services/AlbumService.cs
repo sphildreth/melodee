@@ -21,6 +21,7 @@ public class AlbumService(
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:album:apikey:{0}";
     private const string CacheKeyDetailByMediaUniqueIdTemplate = "urn:album:mediauniqueid:{0}";    
+    private const string CacheKeyDetailByNameNormalizedTemplate = "urn:album:namenormalized:{0}";
     private const string CacheKeyDetailTemplate = "urn:album:{0}";    
     
     public async Task<MelodeeModels.PagedResult<Album>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
@@ -57,24 +58,38 @@ public class AlbumService(
         };
     }    
     
-    public Task<MelodeeModels.OperationResult<Album?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Album?>> GetByArtistIdAndNameNormalized(int artistId, string nameNormalized, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => x < 1, mediaUniqueId, nameof(mediaUniqueId));
+        Guard.Against.NullOrEmpty(nameNormalized, nameof(nameNormalized));
 
-        return CacheManager.GetAsync(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(mediaUniqueId), async () =>
+        var id = await CacheManager.GetAsync(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(nameNormalized), async () =>
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                var userId = await scopedContext
-                    .Albums
-                    .AsNoTracking()
-                    .Where(x => x.MediaUniqueId == mediaUniqueId)
-                    .Select(x => x.Id)
-                    .FirstOrDefaultAsync(cancellationToken)
-                    .ConfigureAwait(false);
-                return await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+                var dbConn = scopedContext.Database.GetDbConnection();            
+                return await dbConn
+                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Albums\" WHERE \"ArtistId\" = @artistId && \"NameNormalized\" = @nameNormalized", new { artistId, nameNormalized })
+                    .ConfigureAwait(false);    
             }
         }, cancellationToken);
+        return await GetAsync(id, cancellationToken).ConfigureAwait(false);
+    }     
+    
+    public async Task<MelodeeModels.OperationResult<Album?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, mediaUniqueId, nameof(mediaUniqueId));
+
+        var id = await CacheManager.GetAsync(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(mediaUniqueId), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();            
+                return await dbConn
+                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Albums\" WHERE \"MediaUniqueId\" = @mediaUniqueId", new { mediaUniqueId })
+                    .ConfigureAwait(false);                 
+            }
+        }, cancellationToken);
+        return await GetAsync(id, cancellationToken).ConfigureAwait(false);        
     }     
     
     public async Task<MelodeeModels.OperationResult<Album?>> GetAsync(int id, CancellationToken cancellationToken = default)
@@ -101,23 +116,20 @@ public class AlbumService(
         };
     }
     
-    public Task<MelodeeModels.OperationResult<Album?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Album?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
-        return CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
+        var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                var userId = await scopedContext
-                    .Albums
-                    .AsNoTracking()
-                    .Where(x => x.ApiKey == apiKey)
-                    .Select(x => x.Id)
-                    .FirstOrDefaultAsync(cancellationToken)
-                    .ConfigureAwait(false);
-                return await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+                var dbConn = scopedContext.Database.GetDbConnection();            
+                return await dbConn
+                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Albums\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
+                    .ConfigureAwait(false);   
             }
         }, cancellationToken);
+        return await GetAsync(id, cancellationToken).ConfigureAwait(false);        
     }    
 }
