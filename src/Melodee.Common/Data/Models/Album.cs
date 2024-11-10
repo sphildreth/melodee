@@ -22,20 +22,20 @@ public sealed class Album : MetaDataModelBase
     [NotMapped] public AlbumStatus AlbumStatusValue => SafeParser.ToEnum<AlbumStatus>(AlbumStatus);
 
     public int MetaDataStatus { get; set; } = SafeParser.ToNumber<int>(MetaDataModelStatus.ReadyToProcess);
-   
-    [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);    
-    
+
+    [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);
+
     public short AlbumType { get; set; }
 
     [NotMapped] public AlbumType AlbumTypeValue => SafeParser.ToEnum<AlbumType>(AlbumType);
 
     /// <summary>
-    /// Date the album was originally released. If not a re-release this value is null.
+    ///     Date the album was originally released. If not a re-release this value is null.
     /// </summary>
     public LocalDate? OriginalReleaseDate { get; set; }
 
     /// <summary>
-    /// Date the specific edition of the album was released. 
+    ///     Date the specific edition of the album was released.
     /// </summary>
     public LocalDate ReleaseDate { get; set; }
 

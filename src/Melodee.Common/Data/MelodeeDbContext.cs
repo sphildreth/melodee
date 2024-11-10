@@ -62,7 +62,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Description = "Files in this directory are scanned and Album information is gathered via processing.",
                     Path = "/storage/inbound",
                     Type = (int)LibraryType.Inbound,
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Library
                 {
@@ -71,7 +71,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Description = "The staging directory to place processed files into (Inbound -> Staging -> Library).",
                     Path = "/storage/staging",
                     Type = (int)LibraryType.Staging,
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Library
                 {
@@ -80,10 +80,10 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Description = "The library directory to place processed, reviewed and ready to use music files into.",
                     Path = "/storage/library",
                     Type = (int)LibraryType.Library,
-                    CreatedAt = now,
+                    CreatedAt = now
                 });
         });
-        
+
         modelBuilder.Entity<Setting>(s =>
         {
             s.HasData(
@@ -93,7 +93,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.FilteringLessThanSongCount,
                     Comment = "Add a default filter to show only albums with this or less number of songs.",
                     Value = "3",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -101,7 +101,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.FilteringLessThanDuration,
                     Comment = "Add a default filter to show only albums with this or less duration.",
                     Value = "720000",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -109,7 +109,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingStagingDirectoryScanLimit,
                     Comment = "Maximum number of albums to scan when processing inbound directory.",
                     Value = "250",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -117,7 +117,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.DefaultsPageSize,
                     Comment = "Default page size when view including pagination.",
                     Value = "100",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -125,7 +125,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary,
                     Comment = "When true then move the Melodee.json data file when moving Albums, otherwise delete.",
                     Value = "false",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -133,7 +133,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.UserInterfaceToastAutoCloseTime,
                     Comment = "Amount of time to display a Toast then auto-close (in milliseconds.)",
                     Value = "2000",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -141,7 +141,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.FormattingDateTimeDisplayFormatShort,
                     Comment = "Short Format to use when displaying full dates.",
                     Value = "yyyyMMdd HH:mm",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -149,7 +149,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.FormattingDateTimeDisplayActivityFormat,
                     Comment = "Format to use when displaying activity related dates (e.g. processing messages)",
                     Value = MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault,
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -157,7 +157,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingIgnoredArticles,
                     Comment = "List of ignored articles when scanning media (pipe delimited).",
                     Value = "THE|EL|LA|LOS|LAS|LE|LES|OS|AS|O|A",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -165,7 +165,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.MagicEnabled,
                     Comment = "Is Magic processing enabled.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -173,7 +173,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.MagicDoRenumberSongs,
                     Comment = "Renumber songs when doing magic processing.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -181,7 +181,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.MagicDoRemoveFeaturingArtistFromSongArtist,
                     Comment = "Remove featured artists from song artist when doing magic.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -189,7 +189,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle,
                     Comment = "Remove featured artists from song title when doing magic.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -197,7 +197,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.MagicDoReplaceSongsArtistSeparators,
                     Comment = "Replace song artist separators with standard ID3 separator ('/') when doing magic.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -205,7 +205,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.MagicDoSetYearToCurrentIfInvalid,
                     Comment = "Set the song year to current year if invalid or missing when doing magic.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -213,7 +213,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.MagicDoRemoveUnwantedTextFromAlbumTitle,
                     Comment = "Remove unwanted text from album title when doing magic.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -221,15 +221,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.MagicDoRemoveUnwantedTextFromSongTitles,
                     Comment = "Remove unwanted text from song titles when doing magic.",
                     Value = "true",
-                    CreatedAt = now,
-                },                
+                    CreatedAt = now
+                },
                 new Setting
                 {
                     Id = 18,
                     Key = SettingRegistry.ConversionEnabled,
                     Comment = "Enable Melodee to convert non-mp3 media files during processing.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -237,7 +237,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ConversionBitrate,
                     Comment = "Bitrate to convert non-mp3 media files during processing.",
                     Value = "384",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -245,7 +245,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ConversionVbrLevel,
                     Comment = "Vbr to convert non-mp3 media files during processing.",
                     Value = "4",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -253,7 +253,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ConversionSamplingRate,
                     Comment = "Sampling rate to convert non-mp3 media files during processing.",
                     Value = "48000",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -261,7 +261,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.PluginEnabledCueSheet,
                     Comment = "Process of CueSheet files during processing.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -269,7 +269,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.PluginEnabledM3u,
                     Comment = "Process of M3U files during processing.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -277,7 +277,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.PluginEnabledNfo,
                     Comment = "Process of NFO files during processing.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -285,7 +285,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.PluginEnabledSimpleFileVerification,
                     Comment = "Process of Simple File Verification (SFV) files during processing.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -293,7 +293,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingArtistNameReplacements,
                     Comment = "Fragments of artist names to replace (JSON Dictionary).",
                     Value = "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -301,7 +301,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue,
                     Comment = "If OrigAlbumYear [TOR, TORY, TDOR] value is invalid use current year.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -309,7 +309,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingDoDeleteOriginal,
                     Comment = "Delete original files when processing. When false a copy if made, else original is deleted after processed.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -317,7 +317,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingConvertedExtension,
                     Comment = "Extension to add to file when converted, leave blank to disable.",
                     Value = "_converted",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -325,7 +325,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingProcessedExtension,
                     Comment = "Extension to add to file when processed, leave blank to disable.",
                     Value = "_processed",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -333,7 +333,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingSkippedExtension,
                     Comment = "Extension to add to file to indicate other files in the same category where processed and this file was skipped during processing, leave blank to disable.",
                     Value = "_skipped",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -341,7 +341,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles,
                     Comment = "When processing over write any existing Melodee data files, otherwise skip and leave in place.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -349,7 +349,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingDoLoadEmbeddedImages,
                     Comment = "Include any embedded images from media files into the Melodee data file.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -357,7 +357,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingMaximumProcessingCount,
                     Comment = "The maximum number of files to process, set to zero for infinite.",
                     Value = "0",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -365,7 +365,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength,
                     Comment = "Maximum allowed length of album directory name.",
                     Value = "255",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -373,7 +373,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingMaximumArtistDirectoryNameLength,
                     Comment = "Maximum allowed length of artist directory name.",
                     Value = "255",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -381,7 +381,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingAlbumTitleRemovals,
                     Comment = "Fragments to remove from album titles (JSON array).",
                     Value = "['^', '~', '#']",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -389,7 +389,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingSongTitleRemovals,
                     Comment = "Fragments to remove from song titles (JSON array).",
                     Value = "[';', '(Remaster)', 'Remaster']",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -397,7 +397,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingDoContinueOnDirectoryProcessingErrors,
                     Comment = "Continue processing if an error is encountered.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -405,7 +405,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory,
                     Comment = "When true then move Album Melodee json files to the Staging directory.",
                     Value = "true",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -413,7 +413,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ScriptingEnabled,
                     Comment = "Is scripting enabled.",
                     Value = "false",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -421,7 +421,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ScriptingPreDiscoveryScript,
                     Comment = "Script to run before processing the inbound directory, leave blank to disable.",
                     Value = "",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -429,7 +429,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ScriptingPostDiscoveryScript,
                     Comment = "Script to run after processing the inbound directory, leave blank to disable.",
                     Value = "",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -437,7 +437,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ValidationMaximumMediaNumber,
                     Comment = "The maximum value a media number can have for an album. The length of this is used for formatting song names.",
                     Value = "999",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -445,7 +445,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ValidationMaximumSongNumber,
                     Comment = "The maximum value a song number can have for an album. The length of this is used for formatting song names.",
                     Value = "9999",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -453,7 +453,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ValidationMinimumAlbumYear,
                     Comment = "Minimum allowed year for an album.",
                     Value = "1860",
-                    CreatedAt = now,
+                    CreatedAt = now
                 },
                 new Setting
                 {
@@ -461,7 +461,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ValidationMaximumAlbumYear,
                     Comment = "Maximum allowed year for an album.",
                     Value = "2150",
-                    CreatedAt = now,
+                    CreatedAt = now
                 }
             );
         });
@@ -476,7 +476,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
         //     })
         //     .HasMethod("GIN")
         //     .IsTsVectorExpressionIndex("english");          
-        
+
         // modelBuilder.Entity<User>()
         //     .HasGeneratedTsVectorColumn(u => u.SearchVector, "english", u => new { u.Email, u.UserName })
         //     .HasIndex(u => u.Email)

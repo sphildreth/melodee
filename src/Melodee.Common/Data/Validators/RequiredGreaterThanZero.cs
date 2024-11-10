@@ -5,7 +5,7 @@ namespace Melodee.Common.Data.Validators;
 public class RequiredGreaterThanZero : RequiredAttribute
 {
     /// <summary>
-    /// Designed for dropdowns to ensure that a selection is valid and not the dummy "SELECT" entry
+    ///     Designed for dropdowns to ensure that a selection is valid and not the dummy "SELECT" entry
     /// </summary>
     /// <param name="value">The integer value of the selection</param>
     /// <returns>True if value is greater than zero</returns>

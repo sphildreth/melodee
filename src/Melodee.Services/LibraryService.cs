@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.Marshalling;
 using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Constants;
@@ -15,7 +14,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
-using SixLabors.ImageSharp;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -54,7 +52,7 @@ public class LibraryService(
     
     public Task<MelodeeModels.OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+        Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         return CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
@@ -277,20 +275,21 @@ public class LibraryService(
                 };
                 await scopedContext.Albums.AddAsync(dbAlbum, cancellationToken).ConfigureAwait(false);
                 var dbAlbumDiscsToAdd = new List<AlbumDisc>();
-                for (short i = 0; i < album.MediaCountValue(); i++)
+                var mediaCountValue = album.MediaCountValue() < 1 ? 1 : album.MediaCountValue();
+                for (short i = 0; i < mediaCountValue; i++)
                 {
                     dbAlbumDiscsToAdd.Add(new AlbumDisc
                     {
                         AlbumId = dbAlbum.Id,
                         DiscNumber = i,
-                        SongCount = SafeParser.ToNumber<short>(album.Songs?.Where(x => x.MediaNumber() == i)?.Count() ?? 0)
+                        SongCount = SafeParser.ToNumber<short>(album.Songs?.Where(x => x.MediaNumber() == i).Count() ?? 0)
                     });
                 }
                 await scopedContext.AlbumDiscs.AddRangeAsync(dbAlbumDiscsToAdd, cancellationToken).ConfigureAwait(false);
                 var dbSongsToAdd = new List<Song>();
-                foreach (var song in album.Songs)
+                foreach (var song in album.Songs!)
                 {
-                    var songFileInfo = song.File.ToFileInfo(album.Directory);
+                    var songFileInfo = song.File.ToFileInfo(album.Directory!);
                     dbSongsToAdd.Add(new Song
                     {
                         AlbumDiscId = dbAlbumDiscsToAdd.First(x => x.DiscNumber == song.MediaNumber()).Id,
@@ -318,7 +317,67 @@ public class LibraryService(
                 }
                 await scopedContext.Songs.AddRangeAsync(dbSongsToAdd, cancellationToken).ConfigureAwait(false);
                 
-                // Contributors
+                var dbContributorsToAdd = new List<Contributor>();
+                foreach (var song in album.Songs!)
+                {
+                    var dbSongId = dbSongsToAdd.First(x => x.MediaUniqueId == song.UniqueId).Id;
+                    
+                    var songArtist = song.SongArtist();
+                    if (songArtist.Nullify() != null)
+                    {
+
+                        dbContributorsToAdd.Add(new Contributor
+                        {
+                            CreatedAt = now,
+                            Role = "Track Artist",
+                            ArtistId = 0,
+                            SongId = dbSongId,
+                            AlbumId = dbAlbum.Id,
+                        });
+                    }
+                    
+                    // Arranger (TIPL:arranger)
+
+                    var lyricist = song.MetaTagValue<string?>(MetaTagIdentifier.Lyricist);
+                    if (lyricist.Nullify() != null)
+                    {
+                        dbContributorsToAdd.Add(new Contributor
+                        {
+                            CreatedAt = now,
+                            Role = "Author/Writer/Lyricist",
+                            ArtistId = 0,
+                            SongId = dbSongId,
+                            AlbumId = dbAlbum.Id,
+                        });
+                    }                    
+                    // Composer (TCOM)
+                    var composer = song.MetaTagValue<string?>(MetaTagIdentifier.Lyricist);
+                    if (composer.Nullify() != null)
+                    {
+                        dbContributorsToAdd.Add(new Contributor
+                        {
+                            CreatedAt = now,
+                            Role = "Composer",
+                            ArtistId = 0,
+                            SongId = dbSongId,
+                            AlbumId = dbAlbum.Id,
+                        });
+                    }   
+                    
+                    // Conductor (TPE3)
+                    // Engineer (TIPL:engineer)
+                    // Involved Person (IPL, IPLS, TIPL)
+                    // Mix-DJ (TIPL:DJ-mix)
+                    // Mix Engineer (TPIL:mix)
+                    // Musician Credit (TMCL)
+                    // Original Artist (TOPE)
+                    // Original Lyricist (TOLY)
+                    // Performer (TMCL:<instrument>)
+                    // Producer (TIPL:producer)
+                    // Publisher (TPUB)
+                    // Remixed By (TPE4)                    
+                }                
+                await scopedContext.Contributors.AddRangeAsync(dbContributorsToAdd, cancellationToken).ConfigureAwait(false);
                 
                 var saveResult = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 if (saveResult < 1)

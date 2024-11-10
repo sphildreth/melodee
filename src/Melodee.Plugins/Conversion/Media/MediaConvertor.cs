@@ -32,16 +32,22 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo))
+        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo) || !configuration.GetValue<bool>(SettingRegistry.ConversionEnabled))
         {
             return false;
         }
-
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
     public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
+        if (!configuration.GetValue<bool>(SettingRegistry.ConversionEnabled))
+        {
+            return new OperationResult<FileSystemFileInfo>($"Configuration value '{SettingRegistry.ConversionEnabled}' has disabled media conversion.")
+            {
+                Data = fileSystemInfo
+            };
+        }
         if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo)))
         {
             return new OperationResult<FileSystemFileInfo>

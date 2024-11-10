@@ -293,6 +293,7 @@ public static class SongExtensions
                 .ToTitleCase(false);
         }
 
+        // TODO this wont work if using FLAC/APE/OGG (not mp3)
         return $"{disc}{songNumberValue} {fileNameFromTitle}.mp3";
     }
 

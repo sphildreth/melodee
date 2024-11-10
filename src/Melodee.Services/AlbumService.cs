@@ -89,6 +89,7 @@ public class AlbumService(
                     .Albums
                     .Include(x => x.Discs)
                     .ThenInclude(x => x.Songs)
+                    .ThenInclude(x => x.Contributors)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                     .ConfigureAwait(false);

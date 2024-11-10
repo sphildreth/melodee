@@ -30,10 +30,10 @@ public class Artist : MetaDataModelBase
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? Biography { get; set; }
-    
+
     public int MetaDataStatus { get; set; } = SafeParser.ToNumber<int>(MetaDataModelStatus.ReadyToProcess);
-   
-    [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);     
+
+    [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);
 
     public ICollection<Album> Albums { get; set; } = new List<Album>();
 
