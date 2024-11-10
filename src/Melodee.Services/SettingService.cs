@@ -49,7 +49,7 @@ public sealed class SettingService(
                 var dbConn = scopedContext.Database.GetDbConnection();
                 var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Settings\"");
                 settingsCount = await dbConn
-                    .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
+                    .QuerySingleOrDefaultAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
                     .ConfigureAwait(false);
                 if (!pagedRequest.IsTotalCountOnlyRequest)
                 {

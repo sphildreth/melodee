@@ -168,7 +168,8 @@ public static class SongExtensions
 
     public static short MediaNumber(this Song song)
     {
-        return song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumber) ?? 0;
+        var mediaNumber = song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumber) ?? 1;
+        return mediaNumber < 1 ? (short)1 : mediaNumber;
     }
     
     public static string? MediaSubTitle(this Song song)

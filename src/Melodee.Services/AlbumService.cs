@@ -68,11 +68,18 @@ public class AlbumService(
             {
                 var dbConn = scopedContext.Database.GetDbConnection();            
                 return await dbConn
-                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Albums\" WHERE \"ArtistId\" = @artistId && \"NameNormalized\" = @nameNormalized", new { artistId, nameNormalized })
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Albums\" WHERE \"ArtistId\" = @artistId AND \"NameNormalized\" = @nameNormalized", new { artistId, nameNormalized })
                     .ConfigureAwait(false);    
             }
         }, cancellationToken);
-        return await GetAsync(id, cancellationToken).ConfigureAwait(false);
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Album?>("Unknown album.")
+            {
+                Data = null
+            };
+        }        
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }     
     
     public async Task<MelodeeModels.OperationResult<Album?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
@@ -85,11 +92,18 @@ public class AlbumService(
             {
                 var dbConn = scopedContext.Database.GetDbConnection();            
                 return await dbConn
-                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Albums\" WHERE \"MediaUniqueId\" = @mediaUniqueId", new { mediaUniqueId })
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Albums\" WHERE \"MediaUniqueId\" = @mediaUniqueId", new { mediaUniqueId })
                     .ConfigureAwait(false);                 
             }
         }, cancellationToken);
-        return await GetAsync(id, cancellationToken).ConfigureAwait(false);        
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Album?>("Unknown album.")
+            {
+                Data = null
+            };
+        }           
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);        
     }     
     
     public async Task<MelodeeModels.OperationResult<Album?>> GetAsync(int id, CancellationToken cancellationToken = default)
@@ -126,10 +140,17 @@ public class AlbumService(
             {
                 var dbConn = scopedContext.Database.GetDbConnection();            
                 return await dbConn
-                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Albums\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Albums\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
                     .ConfigureAwait(false);   
             }
         }, cancellationToken);
-        return await GetAsync(id, cancellationToken).ConfigureAwait(false);        
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Album?>("Unknown album.")
+            {
+                Data = null
+            };
+        }           
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);        
     }    
 }

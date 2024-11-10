@@ -357,7 +357,8 @@
                     break;
 
                 case "MoveToLibrary":
-                    throw new NotImplementedException();
+                    await MoveAlbumToLibrary();
+                    break;
 
                 case "DeleteAlbum":
                     await DeleteAsync();
@@ -396,7 +397,7 @@
 
     private async Task MoveAlbumToLibrary()
     {
-        var library = await LibraryService.GetByApiKeyAsync(LibraryApiKey);
+        var library = await LibraryService.GetLibraryAsync();
         var result = await LibraryService.MoveAlbumToLibrary(library.Data, _album);
         if (result.IsSuccess)
         {

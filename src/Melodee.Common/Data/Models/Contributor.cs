@@ -19,6 +19,9 @@ public class Contributor : DataModelBase
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? SubRole { get; set; }
 
+    /// <summary>
+    /// This is the artist who did the contribution, not necessarily the song or album artist.
+    /// </summary>
     [RequiredGreaterThanZero] public int ArtistId { get; set; }
 
     public Artist Artist { get; set; } = null!;
@@ -31,7 +34,7 @@ public class Contributor : DataModelBase
     public Song? Song { get; set; }
 
     /// <summary>
-    ///     This is always set if Album or song contribution. This is the artist who did the contribution, not necessarily the song or album artist.
+    ///     This is always set if Album or song contribution. 
     /// </summary>
     [RequiredGreaterThanZero]
     public required int AlbumId { get; set; }

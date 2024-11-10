@@ -89,11 +89,18 @@ public class ArtistService(
             {
                 var dbConn = scopedContext.Database.GetDbConnection();            
                 return await dbConn
-                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Artists\" WHERE \"NameNormalized\" = @nameNormalized", new { nameNormalized })
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Artists\" WHERE \"NameNormalized\" = @nameNormalized", new { nameNormalized })
                     .ConfigureAwait(false);    
             }
         }, cancellationToken);
-        return await GetAsync(id, cancellationToken).ConfigureAwait(false);
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
+            {
+                Data = null
+            };
+        }
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }     
     
     public async Task<MelodeeModels.OperationResult<Artist?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
@@ -106,11 +113,18 @@ public class ArtistService(
             {
                 var dbConn = scopedContext.Database.GetDbConnection();            
                 return await dbConn
-                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Artists\" WHERE \"MediaUniqueId\" = @mediaUniqueId", new { mediaUniqueId })
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Artists\" WHERE \"MediaUniqueId\" = @mediaUniqueId", new { mediaUniqueId })
                     .ConfigureAwait(false);                   
             }
         }, cancellationToken);
-        return await GetAsync(id, cancellationToken).ConfigureAwait(false);        
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
+            {
+                Data = null
+            };
+        }        
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);        
     } 
     
     
@@ -124,10 +138,17 @@ public class ArtistService(
             {
                 var dbConn = scopedContext.Database.GetDbConnection();            
                 return await dbConn
-                    .QuerySingleAsync<int>("SELECT \"Id\" FROM \"Artists\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Artists\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
                     .ConfigureAwait(false);                   
             }
         }, cancellationToken);
-        return await GetAsync(id, cancellationToken).ConfigureAwait(false);        
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
+            {
+                Data = null
+            };
+        }        
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);        
     }    
 }

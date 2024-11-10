@@ -100,22 +100,23 @@ public sealed class UserService(
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
 
-        var id = await CacheManager.GetAsync(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddress), async () =>
+        var emailAddressNormalized = emailAddress.ToNormalizedString() ?? emailAddress;
+        var id = await CacheManager.GetAsync(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddressNormalized), async () =>
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbConn = scopedContext.Database.GetDbConnection();
                 return await dbConn
-                    .ExecuteScalarAsync<int>("SELECT \"Id\" FROM \"Users\" WHERE \"EmailNormalized\" = @Email;", new { Email = emailAddress.ToNormalizedString() })
+                    .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"EmailNormalized\" = @Email;", new { Email = emailAddressNormalized })
                     .ConfigureAwait(false);
             }
-        }, cancellationToken);
-        return id < 1
+        }, cancellationToken).ConfigureAwait(false);
+        return id == null
             ? new MelodeeModels.OperationResult<User?>
             {
                 Data = null
             }
-            : await GetAsync(id, cancellationToken).ConfigureAwait(false);        
+            : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);        
     }
 
     public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
@@ -134,8 +135,13 @@ public sealed class UserService(
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
             }
-        }, cancellationToken);
-        return await GetAsync(id, cancellationToken).ConfigureAwait(false);        
+        }, cancellationToken).ConfigureAwait(false);
+        return id < 1
+            ? new MelodeeModels.OperationResult<User?>
+            {
+                Data = null
+            }
+            : await GetAsync(id, cancellationToken).ConfigureAwait(false);          
     }
 
     public async Task<MelodeeModels.OperationResult<User?>> GetAsync(int id, CancellationToken cancellationToken = default)
@@ -152,7 +158,7 @@ public sealed class UserService(
                     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                     .ConfigureAwait(false);
             }
-        }, cancellationToken);
+        }, cancellationToken).ConfigureAwait(false);
         return new MelodeeModels.OperationResult<User?>
         {
             Data = result
@@ -181,7 +187,6 @@ public sealed class UserService(
                 Type = MelodeeModels.OperationResponseType.NotFound
             };
         }
-
         if (user.Data?.PasswordHash != (emailAddress + password).ToPasswordHash())
         {
             return new MelodeeModels.OperationResult<User?>
@@ -237,7 +242,7 @@ public sealed class UserService(
                 UserName = username,
                 UserNameNormalized = username.ToNormalizedString() ?? username.ToUpperInvariant(),
                 Email = emailAddress,
-                EmailNormalized = username.ToNormalizedString() ?? emailAddress.ToUpperInvariant(),
+                EmailNormalized = emailAddress.ToNormalizedString() ?? emailAddress.ToUpperInvariant(),
                 PasswordHash = (emailAddress + password).ToPasswordHash(),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             };
@@ -267,7 +272,7 @@ public sealed class UserService(
                     .ConfigureAwait(false);
             }
             
-            ClearCache(emailAddress, null, null);
+            ClearCache(emailAddress, newUser.ApiKey, newUser.Id);
             
             return GetByEmailAddressAsync(emailAddress, cancellationToken).Result;
         }
@@ -351,7 +356,7 @@ public sealed class UserService(
     {
         if (emailAddress != null)
         {
-            CacheManager.Remove(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddress));
+            CacheManager.Remove(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddress.ToNormalizedString() ?? emailAddress));
         }
 
         if (apiKey != null)

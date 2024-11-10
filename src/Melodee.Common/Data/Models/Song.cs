@@ -11,15 +11,20 @@ namespace Melodee.Common.Data.Models;
 /// </summary>
 [Serializable]
 [Index(nameof(Title))]
+[Index(nameof(LibraryId))]
 [Index(nameof(AlbumDiscId), nameof(SongNumber), IsUnique = true)]
 public class Song : MetaDataModelBase
 {
     [RequiredGreaterThanZero] public int AlbumDiscId { get; set; }
+    
+    [RequiredGreaterThanZero] public int LibraryId { get; set; }
 
     [RequiredGreaterThanZero] public long MediaUniqueId { get; set; }
 
     public AlbumDisc AlbumDisc { get; set; } = null!;
-
+    
+    public Library Library { get; set; } = null!;
+    
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Title { get; set; }
@@ -32,10 +37,6 @@ public class Song : MetaDataModelBase
     public required string TitleNormalized { get; set; }      
 
     [RequiredGreaterThanZero] public required int SongNumber { get; set; }
-
-    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
-    [Required]
-    public required string FilePath { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     [Required]
