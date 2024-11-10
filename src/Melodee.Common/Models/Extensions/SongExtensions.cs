@@ -105,7 +105,7 @@ public static class SongExtensions
    
     public static int? AlbumYear(this Song song)
     {
-        return song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??
+        return song.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
                song.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumDate) ??
                song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
@@ -113,7 +113,7 @@ public static class SongExtensions
 
     public static int? SongYear(this Song song)
     {
-        return song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??
+        return song.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
                song.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumDate) ??
                song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
@@ -166,9 +166,9 @@ public static class SongExtensions
         return song.MetaTagValue<int?>(MetaTagIdentifier.SongTotal) ?? 0;
     }
 
-    public static int MediaNumber(this Song song)
+    public static short MediaNumber(this Song song)
     {
-        return song.MetaTagValue<int?>(MetaTagIdentifier.DiscNumber) ?? 0;
+        return song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumber) ?? 0;
     }
     
     public static string? MediaSubTitle(this Song song)
@@ -181,10 +181,10 @@ public static class SongExtensions
         return song.MetaTagValue<string?>(MetaTagIdentifier.Genre);
     }
 
-    public static int MediaTotalNumber(this Song song)
+    public static short MediaTotalNumber(this Song song)
     {
-        return song.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
-               song.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ?? 0;
+        return song.MetaTagValue<short?>(MetaTagIdentifier.DiscTotal) ??
+               song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumberTotal) ?? 0;
     }
 
     public static bool IsValid(this Song song, Dictionary<string, object?> configuration)

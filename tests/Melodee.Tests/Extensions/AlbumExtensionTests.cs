@@ -31,7 +31,7 @@ public class AlbumExtensionTests
                 },
                 new MetaTag<object?>
                 {
-                    Identifier = MetaTagIdentifier.OrigAlbumYear,
+                    Identifier = MetaTagIdentifier.AlbumDate,
                     Value = 2024
                 },
                 new MetaTag<object?>
@@ -109,10 +109,10 @@ public class AlbumExtensionTests
     [Fact]
     public void ValidateAlbumDirectoryName()
     {
-        var artistDirectoryName = NewAlbum().AlbumDirectoryName(TestsBase.NewConfiguration());
-        Assert.NotNull(artistDirectoryName);
+        var albumDirectoryName = NewAlbum().AlbumDirectoryName(TestsBase.NewConfiguration());
+        Assert.NotNull(albumDirectoryName);
         Assert.Equal(12345L, NewAlbum().ArtistUniqueId());
-        Assert.Equal(@"H/HO/Holy Truth [12345]/[2024] Fire Proof", artistDirectoryName);
+        Assert.Equal(@"H/HO/Holy Truth [12345]/[2024] Fire Proof", albumDirectoryName);
     }
 
     [Fact]

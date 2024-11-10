@@ -1,20 +1,16 @@
-using System.Text.RegularExpressions;
-using ATL;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
-using Melodee.Common.Utility;
-using Microsoft.Win32.SafeHandles;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
 ///     Handle the Album Artist and split away any featuring artists.
 /// </summary>
-public sealed partial class AlbumArtist(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
+public sealed class AlbumArtist(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "29D61BF9-D283-4DB6-B7EB-16F6BCA76998";
 
@@ -32,7 +28,7 @@ public sealed partial class AlbumArtist(Dictionary<string, object?> configuratio
         var tagValue = metaTag.Value;
         var albumArtist = tagValue as string ?? string.Empty;
         var result = new List<MetaTag<object?>>();
-        
+
         if (albumArtist.Nullify() != null)
         {
             var artistNameReplacements = MelodeeConfiguration.FromSerializedJsonDictionary(Configuration[SettingRegistry.ProcessingArtistNameReplacements], Serializer);
@@ -47,6 +43,7 @@ public sealed partial class AlbumArtist(Dictionary<string, object?> configuratio
                     }
                 }
             }
+
             if (albumArtist.HasFeaturingFragments())
             {
                 albumArtist = AlbumArtistFromAlbumArtistViaFeaturing(metaTag.Value?.ToString() ?? string.Empty);
@@ -60,9 +57,10 @@ public sealed partial class AlbumArtist(Dictionary<string, object?> configuratio
                     Value = albumArtist,
                     OriginalValue = metaTag.Value
                 });
-            }             
+            }
         }
-        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
+
+        result.ForEach(x => x.AddProcessedBy(nameof(AlbumArtist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

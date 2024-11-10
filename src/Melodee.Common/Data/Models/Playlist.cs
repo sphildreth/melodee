@@ -24,7 +24,7 @@ public class Playlist : DataModelBase
 
     public short? SongCount { get; set; }
 
-    public int Duration { get; set; }
+    public double Duration { get; set; }
 
     /// <summary>
     ///     Pipe seperated list. Example 'terrible|sexy|Songs about Love'

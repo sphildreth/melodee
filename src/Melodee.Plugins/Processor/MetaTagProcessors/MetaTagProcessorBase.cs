@@ -11,7 +11,7 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
     protected Dictionary<string, object?> Configuration { get; } = configuration;
 
     protected ISerializer Serializer { get; } = serializer;
-    
+
     public abstract string Id { get; }
 
     public abstract string DisplayName { get; }
@@ -30,15 +30,15 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
         var matches = StringExtensions.HasFeatureFragmentsRegex.Match(artist);
         return newArtist[..matches.Index].CleanString();
     }
-    
+
     protected static string? SongArtistFromTitleViaFeaturing(string title)
     {
         var newTitle = title;
         var matches = StringExtensions.HasFeatureFragmentsRegex.Match(title);
         var result = newTitle.Substring(matches.Index + matches.Length).CleanString();
-        Regex rgx = RemoveNonAlphaNumbericRegex();
+        var rgx = RemoveNonAlphaNumbericRegex();
         return rgx.Replace(result ?? string.Empty, string.Empty).Nullify();
-    }    
+    }
 
     protected static string? SongArtistFromAlbumArtistViaFeaturing(string? artist)
     {
@@ -46,17 +46,20 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
         {
             return null;
         }
+
         var result = artist;
         if (result.HasFeaturingFragments())
         {
             var matches = StringExtensions.HasFeatureFragmentsRegex.Match(result!);
             result = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
         }
+
         if (result.HasWithFragments())
         {
             var matches = StringExtensions.HasWithFragmentsRegex.Match(result!);
             result = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
-        }         
+        }
+
         return result?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
     }
 
@@ -68,9 +71,10 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
         {
             return newTitle[..matches.Index].CleanString();
         }
+
         return title;
     }
-    
+
     protected static string? SongTitleWithoutWithArtist(string? title)
     {
         var newTitle = title ?? string.Empty;
@@ -79,9 +83,10 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
         {
             return newTitle[..matches.Index].CleanString();
         }
+
         return title;
-    }    
-    
+    }
+
 
     // [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
     // internal static partial Regex ReplaceArtistSeparatorsRegex();    

@@ -116,7 +116,7 @@ public static class AlbumExtensions
                album.Status is AlbumStatus.Ok or AlbumStatus.New &&
                album.HasValidAlbumYear(configuration); 
     }
-
+    
     public static string ToMelodeeJsonName(this Album album, bool? isForAlbumDirectory = null)
     {
         if (album.UniqueId < 1)
@@ -210,10 +210,20 @@ public static class AlbumExtensions
     /// </summary>
     public static int? AlbumYear(this Album album)
     {
+        return album.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
+               album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??
+               album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
+    }
+    
+    /// <summary>
+    ///     Return the value set for the OrigAlbumYear ?? RecordingYear ?? RecordingDateOrYear
+    /// </summary>
+    public static int? OriginalAlbumYear(this Album album)
+    {
         return album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
-    }
+    }    
 
     public static bool HasValidAlbumYear(this Album album, Dictionary<string, object?> configuration)
     {
@@ -223,9 +233,9 @@ public static class AlbumExtensions
                albumYear <= SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumAlbumYear]);
     }
 
-    public static int MediaCountValue(this Album album)
+    public static short MediaCountValue(this Album album)
     {
-        var discTotal = album.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal);
+        var discTotal = album.MetaTagValue<short?>(MetaTagIdentifier.DiscTotal);
         if (discTotal == null)
         {
             var discTotalToParse = album.MetaTagValue<string?>(MetaTagIdentifier.DiscNumberTotal);
@@ -234,11 +244,11 @@ public static class AlbumExtensions
                 var discTotalParts = discTotalToParse.Split('/');
                 if (discTotalParts.Length > 1)
                 {
-                    discTotal = SafeParser.ToNumber<int?>(discTotalParts[1]);
+                    discTotal = SafeParser.ToNumber<short?>(discTotalParts[1]);
                 }
                 else
                 {
-                    discTotal = SafeParser.ToNumber<int?>(discTotalToParse);
+                    discTotal = SafeParser.ToNumber<short?>(discTotalToParse);
                 }
             }
         }

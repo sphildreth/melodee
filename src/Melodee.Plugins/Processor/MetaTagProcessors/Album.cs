@@ -5,7 +5,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
-using Melodee.Common.Utility;
 using Serilog;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
@@ -125,7 +124,7 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
                 OriginalValue = wasTagValueModified ? metaTag.Value : null
             }
         };
-        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
+        result.ForEach(x => x.AddProcessedBy(nameof(Album)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

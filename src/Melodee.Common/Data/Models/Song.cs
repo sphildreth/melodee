@@ -11,7 +11,7 @@ namespace Melodee.Common.Data.Models;
 /// </summary>
 [Serializable]
 [Index(nameof(Title))]
-[Index(nameof(AlbumDiscId), nameof(TrackNumber), IsUnique = true)]
+[Index(nameof(AlbumDiscId), nameof(SongNumber), IsUnique = true)]
 public class Song : MetaDataModelBase
 {
     [RequiredGreaterThanZero] public int AlbumDiscId { get; set; }
@@ -24,7 +24,7 @@ public class Song : MetaDataModelBase
     [Required]
     public required string Title { get; set; }
 
-    [RequiredGreaterThanZero] public required int TrackNumber { get; set; }
+    [RequiredGreaterThanZero] public required int SongNumber { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     [Required]
@@ -41,7 +41,7 @@ public class Song : MetaDataModelBase
     [MaxLength(MaxLengthDefinitions.MaxTextLength)]
     public string? Lyrics { get; set; }
 
-    [RequiredGreaterThanZero] public required int FileSize { get; set; }
+    [RequiredGreaterThanZero] public required long FileSize { get; set; }
 
     [MaxLength(MaxLengthDefinitions.HashOrGuidLength)]
     [Required]
@@ -53,7 +53,7 @@ public class Song : MetaDataModelBase
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? PartTitles { get; set; }
 
-    [RequiredGreaterThanZero] public required int Duration { get; set; }
+    [RequiredGreaterThanZero] public required double Duration { get; set; }
 
     [RequiredGreaterThanZero] public required int SamplingRate { get; set; }
 

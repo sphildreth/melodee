@@ -167,7 +167,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                 {
                                     var identifier = SafeParser.ToEnum<MetaTagIdentifier>(metaTagIdentifier.Key);
                                     if (metaTagIdentifier.Key == (int)MetaTagIdentifier.Date ||
-                                        metaTagIdentifier.Key == (int)MetaTagIdentifier.OrigAlbumDate ||
+                                        metaTagIdentifier.Key == (int)MetaTagIdentifier.AlbumDate ||
                                         metaTagIdentifier.Key == (int)MetaTagIdentifier.RecordingDate)
                                     {
                                         var dt = SafeParser.ToDateTime(v);
@@ -302,6 +302,34 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
         }
     }
 
+    public async Task<OperationResult<bool>> RemoveImagesAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
+    {
+        var result = false;
+        if (song.Tags?.Any() ?? false)
+        {
+            var songFileName = song.File.FullName(directoryInfo);
+            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Removing images from [{FileName}]", DisplayName, songFileName))
+            {
+                try
+                {
+                    var fileAtl = new ATL.Track(songFileName);
+                    fileAtl.EmbeddedPictures.Clear();
+                    result = await fileAtl.SaveAsync();
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
+                }
+            }
+        }
+
+        return new OperationResult<bool>
+        {
+            Data = result
+        };
+        
+    }
+
     public async Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
     {
         var result = false;
@@ -341,8 +369,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                         fileAtl.EmbeddedPictures.Clear();
                     }
 
-                    await fileAtl.SaveAsync();
-                    result = true;
+                    result = await fileAtl.SaveAsync();
                 }
                 catch (Exception e)
                 {
@@ -398,11 +425,11 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     break;
 
                 case "DATE":
-                    if (result.All(x => x.Identifier != MetaTagIdentifier.OrigAlbumDate))
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.AlbumDate))
                     {
                         result.Add(new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.OrigAlbumDate,
+                            Identifier = MetaTagIdentifier.AlbumDate,
                             Value = kp.Value
                         });
                     }

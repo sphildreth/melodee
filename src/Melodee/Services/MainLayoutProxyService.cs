@@ -18,9 +18,9 @@ public sealed class MainLayoutProxyService
         HeaderChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void ToggleSpinnerVisible()
+    public void ToggleSpinnerVisible(bool? forceState = null)
     {
-        ShowSpinner = !ShowSpinner;
+        ShowSpinner = forceState ?? !ShowSpinner;
         SpinnerVisibleChanged?.Invoke(this, EventArgs.Empty);
     }
 

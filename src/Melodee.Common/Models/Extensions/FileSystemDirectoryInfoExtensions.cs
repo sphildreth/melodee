@@ -12,6 +12,8 @@ public static class FileSystemDirectoryInfoExtensions
 {
     private static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|compilation(s*)|live|promo(s*)|demo)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo) => new(fileSystemDirectoryInfo.FullName());
+
     public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         if (fileSystemDirectoryInfo.Path.EndsWith($"{ Path.DirectorySeparatorChar }{fileSystemDirectoryInfo.Name}"))

@@ -15,7 +15,7 @@ public sealed class AlbumDisc
 
     public Album Album { get; init; } = null!;
 
-    [RequiredGreaterThanZero] public int DiscNumber { get; set; }
+    [RequiredGreaterThanZero] public short DiscNumber { get; set; }
 
     public short? SongCount { get; set; }
 

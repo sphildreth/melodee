@@ -1,7 +1,6 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Serialization;
 
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
@@ -26,14 +25,14 @@ public sealed class Comment(Dictionary<string, object?> configuration, ISerializ
     {
         var result = new List<MetaTag<object?>>
         {
-            new MetaTag<object?>
+            new()
             {
                 Identifier = MetaTagIdentifier.Comment,
                 Value = null,
                 OriginalValue = metaTag.Value?.ToString().Nullify() == null ? null : metaTag.Value
             }
         };
-        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
+        result.ForEach(x => x.AddProcessedBy(nameof(Comment)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

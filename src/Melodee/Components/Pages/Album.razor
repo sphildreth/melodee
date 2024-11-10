@@ -353,6 +353,9 @@
                     break;
 
                 case "DeleteAlbumImages":
+                    await DeleteAllAlbumImages();
+                    break;
+
                 case "MoveToLibrary":
                     throw new NotImplementedException();
 
@@ -389,7 +392,52 @@
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
+    }
 
+    private async Task MoveAlbumToLibrary()
+    {
+        var library = await LibraryService.GetByApiKeyAsync(LibraryApiKey);
+        var result = await LibraryService.MoveAlbumToLibrary(library.Data, _album);
+        if (result.IsSuccess)
+        {
+            NavManager.NavigateTo(ReturnUrl?.FromBase64() ?? "/");
+        }
+        else
+        {
+            _messages.Add(
+                new ToastMessage
+                {
+                    Type = ToastType.Danger,
+                    Title = $"Error moving album to library!",
+                    Message = string.Join("<br />", result.Messages) + "<br />" + string.Join("<br />", result.Errors.ToString())
+                });
+        }
+    }
+
+    private async Task DeleteAllAlbumImages()
+    {
+        foreach (var file in ImageHelper.ImageFilesInDirectory(_album!.Directory!.FullName(), SearchOption.AllDirectories))
+        {
+            File.Delete(file);
+        }
+        if (_album.Songs?.Any() ?? false)
+        {
+            var configuration = await SettingService.GetMelodeeConfigurationAsync();
+            var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), configuration);
+            foreach (var song in _album.Songs)
+            {
+                await editSongPlugin.RemoveImagesAsync(_album.Directory!, song);
+            }
+        }
+        if (_album.Images?.Any() ?? false)
+        {
+            _album.Images = [];
+            await SaveAlbumMelodeeDataFile();
+        }
+        else
+        {
+            NavManager.ReloadPage();
+        }
     }
 
     private async Task ShowChangeAlbumImageModal()
@@ -397,21 +445,24 @@
         await _changeAlbumImageModal.ShowAsync<AlbumImageEdit>(title: "Changing album image", parameters: new Dictionary<string, object>
         {
             { "Album", _album },
-            { "OnUpdateCallback", EventCallback.Factory.Create<Common.Models.Album>(this, SaveAlbumImage) }
+            { "OnUpdateCallback", EventCallback.Factory.Create<Common.Models.Album>(this, SaveAlbumMelodeeDataFile) }
         });
     }
 
-    private async Task SaveAlbumImage()
+    private async Task SaveAlbumMelodeeDataFile()
     {
-        var albumDirectoryName = _album.ToDirectoryName();
-        if (albumDirectoryName.Nullify() != null)
+        if (_album != null)
         {
-            var serialized = Serializer.Serialize(_album);
-            var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
-            var albumStagingDirInfo = new DirectoryInfo(Path.Combine(library.Path, albumDirectoryName));
-            var jsonName = Path.Combine(albumStagingDirInfo.FullName, _album.ToMelodeeJsonName(true));
-            await File.WriteAllTextAsync(jsonName, serialized);
-            NavManager.ReloadPage();
+            var albumDirectoryName = _album.ToDirectoryName();
+            if (albumDirectoryName.Nullify() != null)
+            {
+                var serialized = Serializer.Serialize(_album);
+                var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
+                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(library.Path, albumDirectoryName));
+                var jsonName = Path.Combine(albumStagingDirInfo.FullName, _album.ToMelodeeJsonName(true));
+                await File.WriteAllTextAsync(jsonName, serialized);
+                NavManager.ReloadPage();
+            }
         }
     }
 
@@ -475,17 +526,7 @@
         {
             var message = "ℹ️ Re-Processed directory [{DirectoryName}] in [{ElapsedTime}]";
             Logger.Debug(message, _album!.Directory!.FullName(), Stopwatch.GetElapsedTime(startTicks));
-            _messages.Add(
-                new ToastMessage
-                {
-                    Type = ToastType.Success,
-                    Title = $"Re-Processed album",
-                    Message = message.FormatSmart(new
-                    {
-                        DirectoryName = _album!.Directory!.FullName(),
-                        ElapsedTime = Stopwatch.GetElapsedTime(startTicks)
-                    })
-                });
+            NavManager.ReloadPage();
         }
         else
         {
@@ -644,6 +685,7 @@
         }
         _filteredInfo = _info;
         _issues = _album.ValidationMessages.ToList();
+        MainLayoutProxyService.ToggleSpinnerVisible(false);
     }
 
     private void FilterChanged(ChangeEventArgs args)

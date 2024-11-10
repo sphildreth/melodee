@@ -87,7 +87,8 @@ public static class ImageHelper
     }
 
 
-    public static IEnumerable<FileInfo> FindImageTypeInDirectory(DirectoryInfo? directory,
+    public static IEnumerable<FileInfo> FindImageTypeInDirectory(
+        DirectoryInfo? directory,
         PictureIdentifier type,
         SearchOption directorySearchOptions = SearchOption.AllDirectories)
     {

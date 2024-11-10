@@ -271,7 +271,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                 {
                     albumTags.Add(new MetaTag<object?>
                     {
-                        Identifier = MetaTagIdentifier.OrigAlbumYear,
+                        Identifier = MetaTagIdentifier.AlbumDate,
                         Value = SafeParser.ToDateTime(rawValue?.OnlyAlphaNumeric() ?? string.Empty)?.Year
                     });
                     continue;

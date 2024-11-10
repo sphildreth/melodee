@@ -2,14 +2,13 @@
 
 public static class EnumerableExtensions
 {
-    public static string ToCsv<T>(this IEnumerable<T> source, string join = ",")
+    public static string ToDelimitedList<T>(this IEnumerable<T> source, char delimiter = '|')
     {
         if (source == null)
         {
             throw new ArgumentNullException("source");
         }
-
-        return string.Join(join, source.Select(s => s?.ToString()).ToArray());
+        return string.Join(delimiter, source.Select(s => s?.ToString()).ToArray());
     }
 
     public static void Each<T>(this IEnumerable<T> ie, Action<T, int> action)

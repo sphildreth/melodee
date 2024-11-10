@@ -21,12 +21,22 @@ public sealed class Album : MetaDataModelBase
 
     [NotMapped] public AlbumStatus AlbumStatusValue => SafeParser.ToEnum<AlbumStatus>(AlbumStatus);
 
+    public int MetaDataStatus { get; set; } = SafeParser.ToNumber<int>(MetaDataModelStatus.ReadyToProcess);
+   
+    [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);    
+    
     public short AlbumType { get; set; }
 
     [NotMapped] public AlbumType AlbumTypeValue => SafeParser.ToEnum<AlbumType>(AlbumType);
 
-    public LocalDate OriginalReleaseDate { get; set; }
+    /// <summary>
+    /// Date the album was originally released. If not a re-release this value is null.
+    /// </summary>
+    public LocalDate? OriginalReleaseDate { get; set; }
 
+    /// <summary>
+    /// Date the specific edition of the album was released. 
+    /// </summary>
     public LocalDate ReleaseDate { get; set; }
 
     public bool IsCompilation { get; set; }
@@ -35,7 +45,7 @@ public sealed class Album : MetaDataModelBase
 
     public short? DiscCount { get; set; }
 
-    public int Duration { get; set; }
+    public double Duration { get; set; }
 
     /// <summary>
     ///     Pipe seperated list. These are strictly defined in the Genre enum.

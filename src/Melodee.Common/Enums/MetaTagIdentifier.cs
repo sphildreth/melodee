@@ -269,7 +269,7 @@ public enum MetaTagIdentifier
      */
 
     /// <summary>
-    ///     Original Album date (when target format supports date) [TDOR]
+    ///     Original date the album was originally released. (when target format supports date), could be a year (TOR, TORY) could be a ISO8601 (TDOR)
     /// </summary>
     [Description("[TDOR]")] OrigAlbumDate,
 

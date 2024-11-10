@@ -68,9 +68,19 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return mockFactory.Object;
     }
 
+    protected ArtistService GetArtistService()
+    {
+        return new ArtistService(Logger, CacheManager, MockFactory());
+    }
+    
+    protected AlbumService GetAlbumService()
+    {
+        return new AlbumService(Logger, CacheManager, MockFactory());
+    }    
+
     protected LibraryService GetLibraryService()
     {
-        return new LibraryService(Logger, CacheManager, MockFactory());
+        return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService(), GetArtistService(), GetAlbumService());
     }
     
     protected UserService GetUserService()

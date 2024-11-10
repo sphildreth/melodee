@@ -6,7 +6,7 @@ public enum MediaAudioIdentifier
 {
     NotSet = 0,
 
-    Bitrate,
+    BitRate,
 
     BitDepth,
 

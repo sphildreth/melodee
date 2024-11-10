@@ -1,5 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Contants;
+using Melodee.Common.Enums;
+using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
@@ -21,6 +24,8 @@ public abstract class MetaDataModelBase : DataModelBase
     public string? AlternateNames { get; set; }
 
     public Instant? LastPlayedAt { get; set; }
+    
+    public Instant? LastMetaDataUpdatedAt { get; set; }
 
     public int PlayedCount { get; set; }
 

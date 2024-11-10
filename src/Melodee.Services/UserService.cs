@@ -73,7 +73,7 @@ public sealed class UserService(
             };
         }
 
-        var user = await GetByApiKeyAsync(currentuser, apiKey, cancellationToken).ConfigureAwait(false);
+        var user = await GetByApiKeyAsync(apiKey, cancellationToken).ConfigureAwait(false);
         if (user.Data == null || !user.IsSuccess)
         {
             return new MelodeeModels.OperationResult<bool>
@@ -96,7 +96,7 @@ public sealed class UserService(
         }
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(User currentUser, string emailAddress, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(string emailAddress, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
 
@@ -115,7 +115,7 @@ public sealed class UserService(
                         {
                             Data = null
                         }
-                        : await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
+                        : await GetAsync(userId, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -130,7 +130,7 @@ public sealed class UserService(
         }, cancellationToken);
     }
 
-    public Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(User currentUser, Guid apiKey, CancellationToken cancellationToken = default)
+    public Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
@@ -145,12 +145,12 @@ public sealed class UserService(
                     .Select(x => x.Id)
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
-                return await GetAsync(currentUser, userId, cancellationToken).ConfigureAwait(false);
+                return await GetAsync(userId, cancellationToken).ConfigureAwait(false);
             }
         }, cancellationToken);
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetAsync(User currentUser, int id, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
 
@@ -184,7 +184,7 @@ public sealed class UserService(
             };
         }
 
-        var user = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
+        var user = await GetByEmailAddressAsync(emailAddress, cancellationToken).ConfigureAwait(false);
         if (!user.IsSuccess)
         {
             return new MelodeeModels.OperationResult<User?>
@@ -233,7 +233,7 @@ public sealed class UserService(
 
 
         // Ensure no user exists with given email address
-        var dbUserByEmailAddress = await GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).ConfigureAwait(false);
+        var dbUserByEmailAddress = await GetByEmailAddressAsync(emailAddress, cancellationToken).ConfigureAwait(false);
         if (dbUserByEmailAddress.IsSuccess)
         {
             return new MelodeeModels.OperationResult<User?>(["User exists with Email address."])
@@ -282,7 +282,7 @@ public sealed class UserService(
             
             ClearCache(emailAddress, null, null);
             
-            return GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress, cancellationToken).Result;
+            return GetByEmailAddressAsync(emailAddress, cancellationToken).Result;
         }
     }
 

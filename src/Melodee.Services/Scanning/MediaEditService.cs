@@ -761,7 +761,7 @@ public sealed class MediaEditService(
     /// <summary>
     /// This exists because in some systems where data is on one mapped drive it cannot be "Moved" to another mapped drive ("Cross link" error), it must be copied and then deleted.
     /// </summary>
-    private static void MoveDirectory(string toMove, string destination, string? dontMoveFileName)
+    public static void MoveDirectory(string toMove, string destination, string? dontMoveFileName)
     {
         if (!Directory.Exists(destination))
         {

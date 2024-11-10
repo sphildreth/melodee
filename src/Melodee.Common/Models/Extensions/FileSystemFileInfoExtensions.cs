@@ -4,6 +4,8 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemFileInfoExtensions
 {
+    public static FileInfo ToFileInfo(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo) => new(fileSystemFileInfo.FullName(directoryInfo));
+    
     public static string FullName(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo)
     {
         return Path.Combine(directoryInfo.Path, fileSystemFileInfo.Name);

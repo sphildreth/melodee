@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Contants;
 using Melodee.Common.Data.Validators;
+using Melodee.Common.Enums;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Data.Models;
 
@@ -27,6 +30,10 @@ public class Artist : MetaDataModelBase
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? Biography { get; set; }
+    
+    public int MetaDataStatus { get; set; } = SafeParser.ToNumber<int>(MetaDataModelStatus.ReadyToProcess);
+   
+    [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);     
 
     public ICollection<Album> Albums { get; set; } = new List<Album>();
 

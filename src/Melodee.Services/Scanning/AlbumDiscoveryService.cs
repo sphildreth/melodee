@@ -35,7 +35,7 @@ public sealed class AlbumDiscoveryService(
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         _initialized = true;
     }
-    
+
     private void CheckInitialized()
     {
         if (!_initialized)
@@ -163,19 +163,22 @@ public sealed class AlbumDiscoveryService(
         {
             foreach (var filterBy in pagedRequest.FilterBy)
             {
-             switch (filterBy.PropertyName)
-             {
-                case "AlbumStatus":
-                    var filterStatusValue = SafeParser.ToEnum<AlbumStatus>(filterBy.Value);
-                    albums = albums.Where(x => x.Status == filterStatusValue).ToList();
-                    break;
-                
-                case "Year":
-                    var filterYearValue = SafeParser.ToNumber<int>(filterBy.Value);
-                    albums = albums.Where(x => x.AlbumYear() == filterYearValue).ToList();
-                    break;
-             }
+                switch (filterBy.PropertyName)
+                {
+                    case "Artist":
+                        albums = albums.Where(x => x.Artist() != null && x.Artist()!.ToUpperInvariant().Contains(filterBy.Value?.ToString()?.ToUpperInvariant() ?? string.Empty)).ToList();
+                        break;
 
+                    case "AlbumStatus":
+                        var filterStatusValue = SafeParser.ToEnum<AlbumStatus>(filterBy.Value);
+                        albums = albums.Where(x => x.Status == filterStatusValue).ToList();
+                        break;
+
+                    case "Year":
+                        var filterYearValue = SafeParser.ToNumber<int>(filterBy.Value);
+                        albums = albums.Where(x => x.AlbumYear() == filterYearValue).ToList();
+                        break;
+                }
             }
         }
 
@@ -225,7 +228,7 @@ public sealed class AlbumDiscoveryService(
     private async Task<OperationResult<IEnumerable<Album>>> AllMelodeeAlbumDataFilesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        
+
         var albums = new List<Album>();
         var errors = new List<Exception>();
         var messages = new List<string>();
@@ -237,7 +240,7 @@ public sealed class AlbumDiscoveryService(
             {
                 using (Operation.At(LogEventLevel.Debug).Time("AllMelodeeAlbumDataFilesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
                 {
-                    foreach (var jsonFile in dirInfo.EnumerateFiles($"*{ Album.JsonFileName}", SearchOption.AllDirectories))
+                    foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
                     {
                         if (cancellationToken.IsCancellationRequested)
                         {

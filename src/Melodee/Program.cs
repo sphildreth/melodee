@@ -59,6 +59,8 @@ builder.Services
         $"data:image/jpeg;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/album.jpg"))}"))
     .AddScoped<LocalStorageService>()
     .AddScoped<SettingService>()
+    .AddScoped<ArtistService>()
+    .AddScoped<AlbumService>()
     .AddScoped<LibraryService>()
     .AddScoped<UserService>()
     .AddScoped<AlbumDiscoveryService>()

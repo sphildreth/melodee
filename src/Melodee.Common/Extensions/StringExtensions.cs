@@ -213,6 +213,49 @@ public static partial class StringExtensions
         nameString = Regex.Replace(nameString, @"'\w\b", x => x.ToString().ToLower()); // Lowercase 's
         return nameString;
     }
+    
+    public static bool IsValueInDelimitedList(this string input, string value, char delimiter = '|')
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return false;
+        }
+
+        var p = input.Split(delimiter);
+        return p.Any() && p.Any(x => x.Trim().Equals(value, StringComparison.OrdinalIgnoreCase));
+    }    
+    
+    public static string? AddToDelimitedList(this string? input, IEnumerable<string>? values, char delimiter = '|')
+    {
+        if (string.IsNullOrEmpty(input) && (values == null || !(values?.Any() ?? false)))
+        {
+            return null;
+        }
+        if (string.IsNullOrEmpty(input))
+        {
+            return string.Join(delimiter.ToString(), values);
+        }
+        if (values == null || !values.Any())
+        {
+            return input;
+        }
+        foreach (var value in values)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                continue;
+            }
+            if (!input.IsValueInDelimitedList(value, delimiter))
+            {
+                if (!input.EndsWith(delimiter.ToString()))
+                {
+                    input += delimiter;
+                }
+                input += value;
+            }
+        }
+        return input;
+    }    
 
     public static string? CleanString(this string input, bool? doPutTheAtEnd = false, bool? doTitleCase = true)
     {

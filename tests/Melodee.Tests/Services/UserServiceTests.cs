@@ -147,7 +147,7 @@ public sealed class UserServiceTests : ServiceTestBase
 
         Thread.Sleep(sleepTime);
         
-        var userByEmailAddress = await GetUserService().GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress);
+        var userByEmailAddress = await GetUserService().GetByEmailAddressAsync(emailAddress);
         AssertResultIsSuccessful(userByEmailAddress);
         Assert.Equal(emailAddress, userByEmailAddress.Data!.Email);
         
@@ -167,14 +167,14 @@ public sealed class UserServiceTests : ServiceTestBase
         
         Thread.Sleep(sleepTime);
         
-        userByEmailAddress = await userService.GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress);
+        userByEmailAddress = await userService.GetByEmailAddressAsync(emailAddress);
         Assert.NotNull(userByEmailAddress);
         Assert.False(userByEmailAddress.IsSuccess);
         Assert.Null(userByEmailAddress.Data);
         
         Thread.Sleep(sleepTime);
         
-        userByEmailAddress = await userService.GetByEmailAddressAsync(ServiceUser.Instance.Value, emailAddress2);
+        userByEmailAddress = await userService.GetByEmailAddressAsync(emailAddress2);
         AssertResultIsSuccessful(userByEmailAddress);
         Assert.Equal(emailAddress2, userByEmailAddress.Data!.Email);
         

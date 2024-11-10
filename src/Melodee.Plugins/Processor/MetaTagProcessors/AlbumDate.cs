@@ -2,7 +2,6 @@ using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
@@ -11,19 +10,19 @@ using Serilog;
 namespace Melodee.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
-///     Ensures OrigAlbumYear is set, if not tries to find it from directory title, if not sets to default.
+///     Ensures AlbumDate is set, if not tries to find it from directory title, if not sets to default.
 /// </summary>
-public sealed class OrigAlbumYear(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
+public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "652676F9-3BCA-48D2-8473-C7CAE28E0020";
 
-    public override string DisplayName => nameof(OrigAlbumYear);
+    public override string DisplayName => nameof(AlbumDate);
 
     public override int SortOrder { get; } = 0;
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
-        return metaTagIdentifier == MetaTagIdentifier.OrigAlbumYear;
+        return metaTagIdentifier == MetaTagIdentifier.AlbumDate;
     }
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
@@ -43,13 +42,13 @@ public sealed class OrigAlbumYear(Dictionary<string, object?> configuration, ISe
 
         var result = new List<MetaTag<object?>>
         {
-            new MetaTag<object?>
+            new()
             {
-                Identifier = MetaTagIdentifier.OrigAlbumYear,
+                Identifier = MetaTagIdentifier.AlbumDate,
                 Value = yearValue
             }
         };
-        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));       
+        result.ForEach(x => x.AddProcessedBy(nameof(AlbumDate)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result

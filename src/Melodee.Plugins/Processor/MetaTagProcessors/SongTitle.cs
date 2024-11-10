@@ -3,7 +3,6 @@ using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 
@@ -42,7 +41,7 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
         var updatedTagValue = false;
         var songTitle = tagValue ?? string.Empty;
         var result = new List<MetaTag<object?>>();
-        
+
         int? songNumber = null;
         var metaTagsValue = metaTags?.ToArray() ?? [];
         if (songTitle?.Nullify() != null)
@@ -62,19 +61,19 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
                 {
                     string? featureArtist = null;
                     string? newSongTitle = null;
-                    
+
                     if (songTitle.HasFeaturingFragments())
                     {
                         var matches = StringExtensions.HasFeatureFragmentsRegex.Match(songTitle!);
                         featureArtist = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(songTitle!.Substring(matches.Index), string.Empty).CleanString());
-                        newSongTitle = SongTitleWithoutFeaturingArtist(songTitle);                        
+                        newSongTitle = SongTitleWithoutFeaturingArtist(songTitle);
                     }
 
                     if (songTitle.HasWithFragments())
                     {
                         var matches = StringExtensions.HasWithFragmentsRegex.Match(songTitle!);
                         featureArtist = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(songTitle!.Substring(matches.Index), string.Empty).CleanString());
-                        newSongTitle = SongTitleWithoutWithArtist(songTitle);                          
+                        newSongTitle = SongTitleWithoutWithArtist(songTitle);
                     }
 
                     featureArtist = featureArtist?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");
@@ -85,9 +84,9 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
                         {
                             Identifier = MetaTagIdentifier.Artist,
                             Value = featureArtist
-                        });                        
+                        });
                     }
-                    
+
                     if (!songTitle.DoStringsMatch(newSongTitle))
                     {
                         songTitle = newSongTitle;
@@ -105,17 +104,17 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
                     updatedTagValue = songTitle != tagValue;
                 }
             }
-            
+
             if (songTitle.HasFeaturingFragments())
             {
                 songTitle = SongArtistFromAlbumArtistViaFeaturing(songTitle);
-            }            
+            }
         }
-       
+
         if (songTitle.Nullify() != null)
         {
             result.Add(
-                new()
+                new MetaTag<object?>
                 {
                     Identifier = metaTag.Identifier,
                     Value = songTitle,
@@ -132,7 +131,8 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
                 Value = songNumber.Value
             });
         }
-        result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
+
+        result.ForEach(x => x.AddProcessedBy(nameof(SongTitle)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = result
