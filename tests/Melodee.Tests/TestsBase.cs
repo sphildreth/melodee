@@ -32,6 +32,7 @@ public abstract class TestsBase
             { SettingRegistry.DirectoryInbound, "/melodee_test/inbound/" },
             { SettingRegistry.DirectoryStaging, "/melodee_test/staging/" },
             { SettingRegistry.DirectoryLibrary, "/melodee_test/library/" },
+            { SettingRegistry.EncryptionPrivateKey, "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y"},
             { SettingRegistry.ProcessingDoDeleteOriginal, "false" },
             { SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory, "true" },
             { SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength, 255 },

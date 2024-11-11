@@ -85,7 +85,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected UserService GetUserService()
     {
-        return new UserService(Logger, CacheManager, MockFactory());
+        return new UserService(Logger, CacheManager, MockFactory(), GetSettingService());
     }
 
     protected SettingService GetSettingService()

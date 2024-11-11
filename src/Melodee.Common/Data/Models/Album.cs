@@ -52,9 +52,9 @@ public sealed class Album : NamedMetaDataModelBase
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string? Genres { get; set; }
-    
+
     /// <summary>
-    /// The directory that holds the files for the Album. This is inside of a library path directory.
+    ///     The directory that holds the files for the Album. This is inside of a library path directory.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     [Required]

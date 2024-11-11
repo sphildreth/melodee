@@ -643,8 +643,6 @@ public static partial class StringExtensions
         return result;
     }
     
-    public static string ToPasswordHash(this string? plainPassword) => BitConverter.ToString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(plainPassword ?? string.Empty))).Replace("-", string.Empty);
-    
     private static string? RemoveAccents(this string? value)
     {
         if (SafeParser.IsNull(value))

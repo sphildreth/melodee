@@ -1,13 +1,19 @@
 using Ardalis.GuardClauses;
 using Dapper;
+using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
 using Melodee.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
+using Serilog.Data;
+using SixLabors.ImageSharp;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -19,13 +25,15 @@ namespace Melodee.Services;
 public sealed class UserService(
     ILogger logger,
     ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory)
+    IDbContextFactory<MelodeeDbContext> contextFactory,
+    SettingService settingService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:user:apikey:{0}";
     private const string CacheKeyDetailByEmailAddressKeyTemplate = "urn:user:emailaddress:{0}";
+    private const string CacheKeyDetailByUsernameTemplate = "urn:user:username:{0}";
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
-
+    
     public async Task<MelodeeModels.PagedResult<User>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int usersCount;
@@ -119,6 +127,28 @@ public sealed class UserService(
             : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);        
     }
 
+    public async Task<MelodeeModels.OperationResult<User?>> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrWhiteSpace(username, nameof(username));
+        var usernameNormalized = username.ToNormalizedString() ?? username;
+        var id = await CacheManager.GetAsync(CacheKeyDetailByUsernameTemplate.FormatSmart(usernameNormalized), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();
+                return await dbConn
+                    .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"UserNameNormalized\" = @Username;", new { Username = usernameNormalized })
+                    .ConfigureAwait(false);
+            }
+        }, cancellationToken).ConfigureAwait(false);
+        return id == null
+            ? new MelodeeModels.OperationResult<User?>
+            {
+                Data = null
+            }
+            : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);       
+    }    
+    
     public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
@@ -165,6 +195,51 @@ public sealed class UserService(
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<bool>> AuthenticateSubsonicApiAsync(string clientApplicationId, string username, string salt, string token, string subsonicApiVersion, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrWhiteSpace(username, nameof(username));
+        Guard.Against.NullOrWhiteSpace(salt, nameof(salt));
+        Guard.Against.NullOrWhiteSpace(token, nameof(token));
+
+        bool result = false;
+
+        var user = await GetByUsernameAsync(username, cancellationToken).ConfigureAwait(false);
+        if (!user.IsSuccess || user.Data.IsLocked)
+        {
+            Logger.Warning("Locked user [{Username}] attempted to authenticate with [{Client}]", username, clientApplicationId);
+            return new MelodeeModels.OperationResult<bool>
+            {
+                Data = false
+            }; 
+        }
+        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);        
+        var usersPassword = user.Data.Decrypt(user.Data.PasswordEncrypted, configuration);
+        var userMd5 = HashHelper.CreateMd5($"{usersPassword}{salt}");
+        if (string.Equals(userMd5, token, StringComparison.InvariantCultureIgnoreCase))
+        {
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            _ = Task.Run(async () =>
+            {
+                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    var dbUser = await scopedContext
+                        .Users
+                        .SingleAsync(x => x.Id == user.Data.Id, cancellationToken)
+                        .ConfigureAwait(false);
+                    dbUser.LastActivityAt = now;
+                    dbUser.LastLoginAt = now;
+                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    ClearCache(dbUser.EmailNormalized, dbUser.ApiKey, dbUser.Id, dbUser.UserNameNormalized);
+                }
+            }, cancellationToken);
+            result = true;
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+
     public async Task<MelodeeModels.OperationResult<User?>> LoginUserAsync(string emailAddress, string? password, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
@@ -179,7 +254,7 @@ public sealed class UserService(
         }
 
         var user = await GetByEmailAddressAsync(emailAddress, cancellationToken).ConfigureAwait(false);
-        if (!user.IsSuccess)
+        if (!user.IsSuccess || user.Data == null)
         {
             return new MelodeeModels.OperationResult<User?>
             {
@@ -187,7 +262,8 @@ public sealed class UserService(
                 Type = MelodeeModels.OperationResponseType.NotFound
             };
         }
-        if (user.Data?.PasswordHash != (emailAddress + password).ToPasswordHash())
+        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        if (user.Data.PasswordEncrypted != user.Data.Encrypt(password!, configuration))
         {
             return new MelodeeModels.OperationResult<User?>
             {
@@ -209,7 +285,7 @@ public sealed class UserService(
                 dbUser.LastActivityAt = now;
                 dbUser.LastLoginAt = now;
                 await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                ClearCache(dbUser.Email, dbUser.ApiKey, dbUser.Id);
+                ClearCache(dbUser.EmailNormalized, dbUser.ApiKey, dbUser.Id, dbUser.UserNameNormalized);
             }
         }, cancellationToken);
 
@@ -219,10 +295,10 @@ public sealed class UserService(
         return user;
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> RegisterAsync(string username, string emailAddress, string password, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> RegisterAsync(string username, string emailAddress, string plainTextPassword, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
-        Guard.Against.NullOrWhiteSpace(password, nameof(password));
+        Guard.Against.NullOrWhiteSpace(plainTextPassword, nameof(plainTextPassword));
 
         // Ensure no user exists with given email address
         var dbUserByEmailAddress = await GetByEmailAddressAsync(emailAddress, cancellationToken).ConfigureAwait(false);
@@ -237,13 +313,17 @@ public sealed class UserService(
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
+            var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+            var usersPublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64();
+            var emailNormalized = emailAddress.ToNormalizedString() ?? emailAddress.ToUpperInvariant();
             var newUser = new User
             {
                 UserName = username,
                 UserNameNormalized = username.ToNormalizedString() ?? username.ToUpperInvariant(),
                 Email = emailAddress,
-                EmailNormalized = emailAddress.ToNormalizedString() ?? emailAddress.ToUpperInvariant(),
-                PasswordHash = (emailAddress + password).ToPasswordHash(),
+                EmailNormalized = emailNormalized,
+                PublicKey = usersPublicKey,
+                PasswordEncrypted = EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, plainTextPassword, usersPublicKey),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             };
             scopedContext.Users.Add(newUser);
@@ -272,7 +352,7 @@ public sealed class UserService(
                     .ConfigureAwait(false);
             }
             
-            ClearCache(emailAddress, newUser.ApiKey, newUser.Id);
+            ClearCache(newUser.EmailNormalized, newUser.ApiKey, newUser.Id, newUser.UserNameNormalized);
             
             return GetByEmailAddressAsync(emailAddress, cancellationToken).Result;
         }
@@ -341,7 +421,7 @@ public sealed class UserService(
 
                 if (result)
                 {
-                    ClearCache(dbDetail.Email, dbDetail.ApiKey, dbDetail.Id);
+                    ClearCache(dbDetail.EmailNormalized, dbDetail.ApiKey, dbDetail.Id, dbDetail.UserNameNormalized);
                 }
             }
         }
@@ -352,7 +432,7 @@ public sealed class UserService(
         };
     }
 
-    private void ClearCache(string? emailAddress, Guid? apiKey, int? id)
+    private void ClearCache(string? emailAddress, Guid? apiKey, int? id, string? username)
     {
         if (emailAddress != null)
         {
@@ -368,5 +448,10 @@ public sealed class UserService(
         {
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(id));
         }
+        
+        if (username != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByUsernameTemplate.FormatSmart(username));
+        }        
     }
 }

@@ -1,7 +1,9 @@
+using Melodee.Common.Constants;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.Models;
+using Melodee.Common.Utility;
 using Melodee.Services;
 using NodaTime;
 
@@ -16,6 +18,7 @@ public sealed class UserServiceTests : ServiceTestBase
 
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
+            var usersPublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64();
             context.Users.Add(new User
             {
                 ApiKey = shouldContainApiKey,
@@ -23,7 +26,8 @@ public sealed class UserServiceTests : ServiceTestBase
                 UserNameNormalized = "Test User".ToUpperInvariant(),
                 Email = "testemail@local.lan",
                 EmailNormalized = "testemail@local.lan".ToNormalizedString()!,
-                PasswordHash = "hopefully_a_good_password".ToPasswordHash(),
+                PublicKey = usersPublicKey,
+                PasswordEncrypted = EncryptionHelper.Encrypt(TestsBase.NewPluginsConfiguration().GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, "hopefully_a_good_password", usersPublicKey),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             });
             await context.SaveChangesAsync();
@@ -43,6 +47,9 @@ public sealed class UserServiceTests : ServiceTestBase
 
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
+            var usersPublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64();
+            var usersPublicKey2 = EncryptionHelper.GenerateRandomPublicKeyBase64();
+            
             context.Users.AddRange(new User
                 {
                     ApiKey = shouldContainApiKey,
@@ -50,7 +57,8 @@ public sealed class UserServiceTests : ServiceTestBase
                     UserNameNormalized = "Test User".ToUpperInvariant(),
                     Email = "testemail@local.lan",
                     EmailNormalized = "testemail@local.lan".ToNormalizedString()!,
-                    PasswordHash = "hopefully_a_good_password".ToPasswordHash(),
+                    PublicKey = usersPublicKey,
+                    PasswordEncrypted = EncryptionHelper.Encrypt(TestsBase.NewPluginsConfiguration().GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, "hopefully_a_good_password", usersPublicKey),
                     CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
                 },
                 new User
@@ -60,7 +68,8 @@ public sealed class UserServiceTests : ServiceTestBase
                     UserNameNormalized = "Test User2".ToUpperInvariant(),
                     Email = "testemail2@local.lan",
                     EmailNormalized = "testemail2@local.lan".ToNormalizedString()!,
-                    PasswordHash = "hopefully_a_good_password2".ToPasswordHash(),
+                    PasswordEncrypted = EncryptionHelper.Encrypt(TestsBase.NewPluginsConfiguration().GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, "hopefully_a_good_password2", usersPublicKey2),
+                    PublicKey = usersPublicKey2,
                     CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
                 });
             await context.SaveChangesAsync();
@@ -88,6 +97,8 @@ public sealed class UserServiceTests : ServiceTestBase
 
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
+            var usersPublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64();
+            var usersPublicKey2 = EncryptionHelper.GenerateRandomPublicKeyBase64();
             context.Users.AddRange(new User
                 {
                     ApiKey = shouldContainApiKey,
@@ -95,7 +106,8 @@ public sealed class UserServiceTests : ServiceTestBase
                     UserNameNormalized = "Test User".ToUpperInvariant(),
                     Email = "testemail@local.lan",
                     EmailNormalized = "testemail@local.lan".ToNormalizedString()!,
-                    PasswordHash = "hopefully_a_good_password".ToPasswordHash(),
+                    PasswordEncrypted = EncryptionHelper.Encrypt(TestsBase.NewPluginsConfiguration().GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, ("testemail@local.lan".ToNormalizedString() + "hopefully_a_good_password"), usersPublicKey),
+                    PublicKey = usersPublicKey,
                     CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
                 },
                 new User
@@ -105,7 +117,8 @@ public sealed class UserServiceTests : ServiceTestBase
                     UserNameNormalized = "Test User2".ToUpperInvariant(),
                     Email = "bingobango@local.lan",
                     EmailNormalized = "bingobango@local.lan".ToNormalizedString()!,
-                    PasswordHash = "hopefully_a_good_password2".ToPasswordHash(),
+                    PasswordEncrypted = EncryptionHelper.Encrypt(TestsBase.NewPluginsConfiguration().GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, "hopefully_a_good_password2", usersPublicKey2),
+                    PublicKey = usersPublicKey2,
                     CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
                 });
             await context.SaveChangesAsync();
@@ -137,14 +150,14 @@ public sealed class UserServiceTests : ServiceTestBase
         var sleepTime = 200;
 
         var userService = GetUserService();
-        var registerResult = await userService.RegisterAsync(emailAddress, emailAddress, emailAddress.ToPasswordHash());
+        var registerResult = await userService.RegisterAsync(emailAddress, emailAddress, emailAddress);
         AssertResultIsSuccessful(registerResult);
         Assert.Equal(emailAddress, registerResult.Data!.Email);
 
         Thread.Sleep(sleepTime);
 
         // Register a second user to ensure that only the fist gets deleted
-        var registerResult2 = await userService.RegisterAsync(emailAddress2, emailAddress2, emailAddress2.ToPasswordHash());
+        var registerResult2 = await userService.RegisterAsync(emailAddress2, emailAddress2, emailAddress);
         AssertResultIsSuccessful(registerResult2);
         Assert.Equal(emailAddress2, registerResult2.Data!.Email);
 
@@ -156,7 +169,7 @@ public sealed class UserServiceTests : ServiceTestBase
 
         Thread.Sleep(sleepTime);
 
-        var authResult = await userService.LoginUserAsync(emailAddress, emailAddress.ToPasswordHash());
+        var authResult = await userService.LoginUserAsync(emailAddress, emailAddress);
         AssertResultIsSuccessful(authResult);
         Assert.Equal(emailAddress, authResult.Data!.Email);
 

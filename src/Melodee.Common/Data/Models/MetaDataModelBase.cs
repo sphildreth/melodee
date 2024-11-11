@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using Melodee.Common.Data.Contants;
-using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
 namespace Melodee.Common.Data.Models;

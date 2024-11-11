@@ -16,25 +16,25 @@ namespace Melodee.Common.Data.Models;
 public class Song : MetaDataModelBase
 {
     [RequiredGreaterThanZero] public int AlbumDiscId { get; set; }
-    
+
     [RequiredGreaterThanZero] public int LibraryId { get; set; }
 
     [RequiredGreaterThanZero] public long MediaUniqueId { get; set; }
 
     public AlbumDisc AlbumDisc { get; set; } = null!;
-    
+
     public Library Library { get; set; } = null!;
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Title { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    public string? TitleSort { get; set; }    
-    
+    public string? TitleSort { get; set; }
+
     [Required]
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    public required string TitleNormalized { get; set; }      
+    public required string TitleNormalized { get; set; }
 
     [RequiredGreaterThanZero] public required int SongNumber { get; set; }
 

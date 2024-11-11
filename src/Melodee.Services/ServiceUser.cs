@@ -1,5 +1,6 @@
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
 
 namespace Melodee.Services;
 
@@ -22,12 +23,13 @@ public sealed class ServiceUser : User
         return new ServiceUser
         {
             CreatedAt = default,
+            PublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64(),
             UserName = "ServiceUser",
             UserNameNormalized = "ServiceUser".ToUpperInvariant(),
             Email = "serviceuser@local.lan",
             EmailNormalized = "serviceuser@local.lan".ToNormalizedString()!,
             IsAdmin = true,
-            PasswordHash = string.Empty
+            PasswordEncrypted = string.Empty
         };
     }
 }

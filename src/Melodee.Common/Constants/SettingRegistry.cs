@@ -11,6 +11,7 @@ public static class SettingRegistry
     public const string DirectoryLibrary = "directory.library";
     public const string DirectoryStaging = "directory.staging";    
     public const string DefaultsPageSize = "defaults.pagesize";
+    public const string EncryptionPrivateKey = "encryption.privateKey";
     public const string FilteringLessThanDuration = "filtering.lessThanDuration";
     public const string FilteringLessThanSongCount = "filtering.lessThanSongCount";
     public const string FormattingDateTimeDisplayActivityFormat = "formatting.dateTimeDisplayActivityFormat";

@@ -16,6 +16,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<Artist> Artists { get; set; }
 
     public DbSet<Bookmark> Bookmarks { get; set; }
+    
+    public DbSet<ClientApplication> ClientApplications { get; set; }
 
     public DbSet<Contributor> Contributors { get; set; }
 
@@ -462,7 +464,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Maximum allowed year for an album.",
                     Value = "2150",
                     CreatedAt = now
-                }
+                },
+                new Setting
+                {
+                    Id = 48,
+                    Key = SettingRegistry.EncryptionPrivateKey,
+                    Comment = "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.",
+                    Value = "generate_a_new_key_and_update_this_value",
+                    CreatedAt = now
+                }                
             );
         });
 

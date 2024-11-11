@@ -204,12 +204,4 @@ public class StringExtensionsTests
         Assert.Equal(shouldBe, input.ToNormalizedString());
     }
 
-    [Fact]
-    public void HashAndValidateString()
-    {
-        var input = "Hello World!";
-        var hash = input.ToPasswordHash();
-        Assert.NotNull(hash.Nullify());
-        Assert.Equal(hash, input.ToPasswordHash());
-    }
 }

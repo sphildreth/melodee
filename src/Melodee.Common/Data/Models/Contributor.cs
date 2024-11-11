@@ -8,21 +8,23 @@ namespace Melodee.Common.Data.Models;
 public class Contributor : DataModelBase
 {
     /// <summary>
-    /// The contributor role.
+    ///     The contributor role.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public required string Role { get; set; }
 
     /// <summary>
-    /// The subRole for roles that may require it. Ex: The instrument for the performer role (TMCL/performer tags). Note: For consistency between different tag formats, the TIPL sub roles should be directly exposed in the role field.
+    ///     The subRole for roles that may require it. Ex: The instrument for the performer role (TMCL/performer tags). Note:
+    ///     For consistency between different tag formats, the TIPL sub roles should be directly exposed in the role field.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? SubRole { get; set; }
 
     /// <summary>
-    /// This is the artist who did the contribution, not necessarily the song or album artist.
+    ///     This is the artist who did the contribution, not necessarily the song or album artist.
     /// </summary>
-    [RequiredGreaterThanZero] public int ArtistId { get; set; }
+    [RequiredGreaterThanZero]
+    public int ArtistId { get; set; }
 
     public Artist Artist { get; set; } = null!;
 
@@ -34,7 +36,7 @@ public class Contributor : DataModelBase
     public Song? Song { get; set; }
 
     /// <summary>
-    ///     This is always set if Album or song contribution. 
+    ///     This is always set if Album or song contribution.
     /// </summary>
     [RequiredGreaterThanZero]
     public required int AlbumId { get; set; }

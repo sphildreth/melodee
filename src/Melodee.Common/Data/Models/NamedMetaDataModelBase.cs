@@ -16,8 +16,8 @@ public abstract class NamedMetaDataModelBase : MetaDataModelBase
 
     [Required]
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    public required string NameNormalized { get; set; }    
-    
+    public required string NameNormalized { get; set; }
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? SortName { get; set; }
 }

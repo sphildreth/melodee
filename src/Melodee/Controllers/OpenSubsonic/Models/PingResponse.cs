@@ -5,5 +5,6 @@ public record PingResponse(
     string version,
     string type,
     string serverVersion,
-    bool openSubsonic
+    bool openSubsonic,
+    Error? error
 );
