@@ -123,8 +123,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 5,
                     Key = SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary,
-                    Comment = "When true then move the Melodee.json data file when moving Albums, otherwise delete.",
-                    Value = "false",
+                    Comment = "When true then move the Melodee.json data file, created during staging, when moving Albums into Library - otherwise delete.",
+                    Value = "true",
                     CreatedAt = now
                 },
                 new Setting

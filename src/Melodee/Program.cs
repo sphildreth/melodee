@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Blazored.SessionStorage;
 using Melodee.Common.Data;
 using Melodee.Common.Serialization;
@@ -114,5 +115,7 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
+
+app.MapControllers();
 
 app.Run();
