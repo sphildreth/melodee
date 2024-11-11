@@ -1,3 +1,5 @@
+using Melodee.Common.Models.OpenSubsonic;
+
 namespace Melodee.Controllers.OpenSubsonic.Models;
 
 public record PingResponse(

@@ -10,7 +10,21 @@ public static class EnumerableExtensions
         }
         return string.Join(delimiter, source.Select(s => s?.ToString()).ToArray());
     }
-
+    
+    public static IEnumerable<string>? FromDelimitedList(this string? csvList, bool nullOrWhitespaceInputReturnsNull = false, char delimiter = '|')
+    {
+        if (string.IsNullOrWhiteSpace(csvList))
+        {
+            return nullOrWhitespaceInputReturnsNull ? null : [];
+        }
+        return csvList
+            .TrimEnd(',')
+            .Split(',')
+            .AsEnumerable<string>()
+            .Select(s => s.Trim())
+            .ToList();
+    }    
+    
     public static void Each<T>(this IEnumerable<T> ie, Action<T, int> action)
     {
         var i = 0;

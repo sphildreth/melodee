@@ -1,4 +1,4 @@
-namespace Melodee.Controllers.OpenSubsonic.Models;
+namespace Melodee.Common.Models.OpenSubsonic;
 
 public record Error(short code, string message)
 {

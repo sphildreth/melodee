@@ -33,4 +33,10 @@ public class Player : DataModelBase
     public int? MaxBitRate { get; set; }
 
     public bool ScrobbleEnabled { get; set; }
+    
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    public string? TranscodingId { get; set; }
+    
+    [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
+    public string? Hostname { get; set; }
 }

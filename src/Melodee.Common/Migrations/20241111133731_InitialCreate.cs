@@ -57,27 +57,6 @@ namespace Melodee.Common.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ClientApplications",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    ClientApplicationStatus = table.Column<int>(type: "integer", nullable: false),
-                    IsLocked = table.Column<bool>(type: "boolean", nullable: false),
-                    SortOrder = table.Column<int>(type: "integer", nullable: false),
-                    ApiKey = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreatedAt = table.Column<Instant>(type: "timestamp with time zone", nullable: false),
-                    LastUpdatedAt = table.Column<Instant>(type: "timestamp with time zone", nullable: true),
-                    Tags = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    Notes = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
-                    Description = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ClientApplications", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Libraries",
                 columns: table => new
                 {
@@ -281,6 +260,8 @@ namespace Melodee.Common.Migrations
                     LastSeenAt = table.Column<Instant>(type: "timestamp with time zone", nullable: false),
                     MaxBitRate = table.Column<int>(type: "integer", nullable: true),
                     ScrobbleEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    TranscodingId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    Hostname = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     IsLocked = table.Column<bool>(type: "boolean", nullable: false),
                     SortOrder = table.Column<int>(type: "integer", nullable: false),
                     ApiKey = table.Column<Guid>(type: "uuid", nullable: false),
@@ -760,9 +741,9 @@ namespace Melodee.Common.Migrations
                 columns: new[] { "Id", "ApiKey", "CreatedAt", "Description", "IsLocked", "LastScanAt", "LastUpdatedAt", "Name", "Notes", "Path", "SortOrder", "Tags", "Type" },
                 values: new object[,]
                 {
-                    { 1, new Guid("33626ccd-d8b9-4c72-b511-fc29482444f0"), NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), "Files in this directory are scanned and Album information is gathered via processing.", false, null, null, "Inbound", null, "/storage/inbound", 0, null, 1 },
-                    { 2, new Guid("942b60f5-4fa4-409f-aeb2-1569e6731fde"), NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), "The staging directory to place processed files into (Inbound -> Staging -> Library).", false, null, null, "Staging", null, "/storage/staging", 0, null, 2 },
-                    { 3, new Guid("9358d119-82bd-4e5a-9bc5-374b0512437a"), NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), "The library directory to place processed, reviewed and ready to use music files into.", false, null, null, "Library", null, "/storage/library", 0, null, 3 }
+                    { 1, new Guid("3fce6dc1-d024-4b21-bdde-b0b08f3823b7"), NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), "Files in this directory are scanned and Album information is gathered via processing.", false, null, null, "Inbound", null, "/storage/inbound", 0, null, 1 },
+                    { 2, new Guid("32fd3b2b-df94-4ab6-8179-d54de886ed5a"), NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), "The staging directory to place processed files into (Inbound -> Staging -> Library).", false, null, null, "Staging", null, "/storage/staging", 0, null, 2 },
+                    { 3, new Guid("d92a701e-42bb-46f4-8aed-588c108bff69"), NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), "The library directory to place processed, reviewed and ready to use music files into.", false, null, null, "Library", null, "/storage/library", 0, null, 3 }
                 });
 
             migrationBuilder.InsertData(
@@ -770,54 +751,57 @@ namespace Melodee.Common.Migrations
                 columns: new[] { "Id", "ApiKey", "Category", "Comment", "CreatedAt", "Description", "IsLocked", "Key", "LastUpdatedAt", "Notes", "SortOrder", "Tags", "Value" },
                 values: new object[,]
                 {
-                    { 1, new Guid("852982fd-85a8-4a80-87ad-0076af038b29"), null, "Add a default filter to show only albums with this or less number of songs.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "filtering.lessThanSongCount", null, null, 0, null, "3" },
-                    { 2, new Guid("d034a6eb-0251-47a4-a1b7-3eaa2c8e2181"), null, "Add a default filter to show only albums with this or less duration.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "filtering.lessThanDuration", null, null, 0, null, "720000" },
-                    { 3, new Guid("f3c4ec56-9208-4ff7-9255-0e19b1265628"), null, "Maximum number of albums to scan when processing inbound directory.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.stagingDirectoryScanLimit", null, null, 0, null, "250" },
-                    { 4, new Guid("797f7256-81bc-47cd-aec0-307e9c7cf0dc"), null, "Default page size when view including pagination.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "defaults.pagesize", null, null, 0, null, "100" },
-                    { 5, new Guid("edbe7828-bea1-4ffe-9081-6c3764a821a9"), null, "When true then move the Melodee.json data file, created during staging, when moving Albums into Library - otherwise delete.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.moveMelodeeJsonDataFileToLibrary", null, null, 0, null, "true" },
-                    { 6, new Guid("f600075d-cf3f-40bb-9d2b-858a307c039c"), null, "Amount of time to display a Toast then auto-close (in milliseconds.)", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "userinterface.toastAutoCloseTime", null, null, 0, null, "2000" },
-                    { 7, new Guid("e5dfb195-4e4a-461e-8acb-44413f1b68a2"), null, "Short Format to use when displaying full dates.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "formatting.dateTimeDisplayFormatShort", null, null, 0, null, "yyyyMMdd HH:mm" },
-                    { 8, new Guid("bfae3103-56e5-4ec0-9cb9-51e73133ff8a"), null, "Format to use when displaying activity related dates (e.g. processing messages)", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "formatting.dateTimeDisplayActivityFormat", null, null, 0, null, "HH:mm:ss.fff" },
-                    { 9, new Guid("cac573bc-35c7-4c4d-b0e0-f008a7a14cc8"), null, "List of ignored articles when scanning media (pipe delimited).", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.ignoredArticles", null, null, 0, null, "THE|EL|LA|LOS|LAS|LE|LES|OS|AS|O|A" },
-                    { 10, new Guid("2cc64d35-7483-4c6c-bb22-641c996049d6"), null, "Is Magic processing enabled.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "magic.enabled", null, null, 0, null, "true" },
-                    { 11, new Guid("78044f22-efc4-46d7-8bc6-73af2eb2323f"), null, "Renumber songs when doing magic processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "magic.doRenumberSongs", null, null, 0, null, "true" },
-                    { 12, new Guid("91c25ca8-db4b-4c3d-a56f-bf8aedae7ba5"), null, "Remove featured artists from song artist when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "magic.doRemoveFeaturingArtistFromSongArtist", null, null, 0, null, "true" },
-                    { 13, new Guid("7710ea0f-96a3-4b54-8f15-b7e16bc8438f"), null, "Remove featured artists from song title when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "magic.doRemoveFeaturingArtistFromSongTitle", null, null, 0, null, "true" },
-                    { 14, new Guid("12ed3882-66e9-4b58-a4ac-ac1bf4aef040"), null, "Replace song artist separators with standard ID3 separator ('/') when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "magic.doReplaceSongsArtistSeparators", null, null, 0, null, "true" },
-                    { 15, new Guid("69a05cb1-8d4f-4bbe-9d11-e54e2fdba8b4"), null, "Set the song year to current year if invalid or missing when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "magic.doSetYearToCurrentIfInvalid", null, null, 0, null, "true" },
-                    { 16, new Guid("441f2334-1bd3-4eb2-801a-12a3fda5b653"), null, "Remove unwanted text from album title when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "magic.doRemoveUnwantedTextFromAlbumTitle", null, null, 0, null, "true" },
-                    { 17, new Guid("f59a3df2-f8b1-4641-a9a2-a78d808beafa"), null, "Remove unwanted text from song titles when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "magic.doRemoveUnwantedTextFromSongTitles", null, null, 0, null, "true" },
-                    { 18, new Guid("b353cfe2-090e-4732-820f-db1d2f0dbf05"), null, "Enable Melodee to convert non-mp3 media files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "conversion.enabled", null, null, 0, null, "true" },
-                    { 19, new Guid("5df6976c-6274-4115-9566-924f1e4c5d0d"), null, "Bitrate to convert non-mp3 media files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "conversion.bitrate", null, null, 0, null, "384" },
-                    { 20, new Guid("fcefba32-2a94-4516-99d0-22d9b46eff0c"), null, "Vbr to convert non-mp3 media files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "conversion.vbrLevel", null, null, 0, null, "4" },
-                    { 21, new Guid("ad8b0473-6733-4850-9c07-9477b32d6f0c"), null, "Sampling rate to convert non-mp3 media files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "conversion.samplingRate", null, null, 0, null, "48000" },
-                    { 22, new Guid("1d89fdce-5241-4038-8948-8bfd5c3c0ec9"), null, "Process of CueSheet files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "plugin.cueSheet.enabled", null, null, 0, null, "true" },
-                    { 23, new Guid("77780752-2c55-4434-b6f0-59d0934fb58d"), null, "Process of M3U files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "plugin.m3u.enabled", null, null, 0, null, "true" },
-                    { 24, new Guid("0ad372fb-76ae-47a4-bdfa-e491a984211c"), null, "Process of NFO files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "plugin.nfo.enabled", null, null, 0, null, "true" },
-                    { 25, new Guid("8d140a7f-2bba-4f88-a6d5-d8540a93c558"), null, "Process of Simple File Verification (SFV) files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "plugin.simpleFileVerification.enabled", null, null, 0, null, "true" },
-                    { 26, new Guid("cc983268-b0b5-4880-9fe3-57801a64f70f"), null, "Fragments of artist names to replace (JSON Dictionary).", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.artistNameReplacements", null, null, 0, null, "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }" },
-                    { 27, new Guid("f5da88c0-6fef-4111-93fd-9d06de0893ea"), null, "If OrigAlbumYear [TOR, TORY, TDOR] value is invalid use current year.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue", null, null, 0, null, "true" },
-                    { 28, new Guid("00810ebb-711b-4730-ba2c-20cf1dd8b495"), null, "Delete original files when processing. When false a copy if made, else original is deleted after processed.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.doDeleteOriginal", null, null, 0, null, "true" },
-                    { 29, new Guid("b2935710-2b40-4ac6-bc05-ee30bcaebd42"), null, "Extension to add to file when converted, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.convertedExtension", null, null, 0, null, "_converted" },
-                    { 30, new Guid("c5c1dbcd-44c7-4763-ad43-dee4b255c5c3"), null, "Extension to add to file when processed, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.processedExtension", null, null, 0, null, "_processed" },
-                    { 31, new Guid("14d479d3-3125-47c1-be43-86b1f35cfb87"), null, "Extension to add to file to indicate other files in the same category where processed and this file was skipped during processing, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.skippedExtension", null, null, 0, null, "_skipped" },
-                    { 32, new Guid("d4e2b896-a3e1-4f4a-b340-15aacb05c99f"), null, "When processing over write any existing Melodee data files, otherwise skip and leave in place.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.doOverrideExistingMelodeeDataFiles", null, null, 0, null, "true" },
-                    { 33, new Guid("272281ff-9962-4f17-82eb-66c35efbd681"), null, "Include any embedded images from media files into the Melodee data file.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.doLoadEmbeddedImages", null, null, 0, null, "true" },
-                    { 34, new Guid("3e42892c-eef2-472c-a90e-f787c4ec4f3e"), null, "The maximum number of files to process, set to zero for infinite.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.maximumProcessingCount", null, null, 0, null, "0" },
-                    { 35, new Guid("9441a749-7ad9-4333-ba5a-6aed98295a2e"), null, "Maximum allowed length of album directory name.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.maximumAlbumDirectoryNameLength", null, null, 0, null, "255" },
-                    { 36, new Guid("9c66806e-7046-48da-a6da-923bc52acd80"), null, "Maximum allowed length of artist directory name.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.maximumArtistDirectoryNameLength", null, null, 0, null, "255" },
-                    { 37, new Guid("8488b30d-afe1-4528-8211-ca174fe50b28"), null, "Fragments to remove from album titles (JSON array).", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.albumTitleRemovals", null, null, 0, null, "['^', '~', '#']" },
-                    { 38, new Guid("7fdf6d25-9fc7-472a-b882-88c636e7e439"), null, "Fragments to remove from song titles (JSON array).", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.songTitleRemovals", null, null, 0, null, "[';', '(Remaster)', 'Remaster']" },
-                    { 39, new Guid("7d34c0a8-9167-459e-9e3b-a760306ead8e"), null, "Continue processing if an error is encountered.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.doContinueOnDirectoryProcessingErrors", null, null, 0, null, "true" },
-                    { 40, new Guid("848ed2cf-5d67-4b4d-a031-39935dc2fa5d"), null, "When true then move Album Melodee json files to the Staging directory.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "processing.doMoveMelodeeDataFileToStagingDirectory", null, null, 0, null, "true" },
-                    { 41, new Guid("dde268dc-355e-476b-bae5-11f15d1383cd"), null, "Is scripting enabled.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "scripting.enabled", null, null, 0, null, "false" },
-                    { 42, new Guid("2f324070-1a4b-40e6-941e-783eb5ecf312"), null, "Script to run before processing the inbound directory, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "scripting.preDiscoveryScript", null, null, 0, null, "" },
-                    { 43, new Guid("e1c58d56-d5cc-416b-8262-7444f670dae5"), null, "Script to run after processing the inbound directory, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "scripting.postDiscoveryScript", null, null, 0, null, "" },
-                    { 44, new Guid("b366bd0f-ab90-49a7-819e-e638508931ab"), null, "The maximum value a media number can have for an album. The length of this is used for formatting song names.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "validation.maximumMediaNumber", null, null, 0, null, "999" },
-                    { 45, new Guid("faa45e72-e02d-4c8a-8cc4-16c02dba5fef"), null, "The maximum value a song number can have for an album. The length of this is used for formatting song names.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "validation.maximumSongNumber", null, null, 0, null, "9999" },
-                    { 46, new Guid("4f9213ae-c197-4082-938e-1ccc5eebe4c7"), null, "Minimum allowed year for an album.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "validation.minimumAlbumYear", null, null, 0, null, "1860" },
-                    { 47, new Guid("402c7421-4909-4e4f-91ca-7f3ad9203b38"), null, "Maximum allowed year for an album.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "validation.maximumAlbumYear", null, null, 0, null, "2150" },
-                    { 48, new Guid("c6da2f3e-6f63-494a-b719-8774aca0f39c"), null, "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.", NodaTime.Instant.FromUnixTimeTicks(17313017283652584L), null, false, "encryption.privateKey", null, null, 0, null, "generate_a_new_key_and_update_this_value" }
+                    { 1, new Guid("00224a69-ecd0-4d77-9356-ebcf38a59765"), null, "Add a default filter to show only albums with this or less number of songs.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "filtering.lessThanSongCount", null, null, 0, null, "3" },
+                    { 2, new Guid("783d05b6-e5f5-4650-bb0f-7e3d583c38f4"), null, "Add a default filter to show only albums with this or less duration.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "filtering.lessThanDuration", null, null, 0, null, "720000" },
+                    { 3, new Guid("915b34ad-dcc8-4ad4-aa8c-a5597555b4e8"), null, "Maximum number of albums to scan when processing inbound directory.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.stagingDirectoryScanLimit", null, null, 0, null, "250" },
+                    { 4, new Guid("819b06ff-cf42-4836-8db3-82b4adcde56d"), null, "Default page size when view including pagination.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "defaults.pagesize", null, null, 0, null, "100" },
+                    { 5, new Guid("b5113401-d308-4c2f-99e8-1dacab5c3553"), null, "When true then move the Melodee.json data file, created during staging, when moving Albums into Library - otherwise delete.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.moveMelodeeJsonDataFileToLibrary", null, null, 0, null, "true" },
+                    { 6, new Guid("8c6cc18c-315c-4241-9115-b7c6f61cc1a4"), null, "Amount of time to display a Toast then auto-close (in milliseconds.)", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "userinterface.toastAutoCloseTime", null, null, 0, null, "2000" },
+                    { 7, new Guid("a4c4f202-3354-40c8-8395-777c5239fcec"), null, "Short Format to use when displaying full dates.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "formatting.dateTimeDisplayFormatShort", null, null, 0, null, "yyyyMMdd HH:mm" },
+                    { 8, new Guid("db5f9ef6-d273-4282-a675-7297e96d4ff3"), null, "Format to use when displaying activity related dates (e.g. processing messages)", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "formatting.dateTimeDisplayActivityFormat", null, null, 0, null, "HH:mm:ss.fff" },
+                    { 9, new Guid("966f2ca9-c263-42b0-990c-3a93998de472"), null, "List of ignored articles when scanning media (pipe delimited).", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.ignoredArticles", null, null, 0, null, "THE|EL|LA|LOS|LAS|LE|LES|OS|AS|O|A" },
+                    { 10, new Guid("0826dc54-96b8-4b44-8509-c99abe567aba"), null, "Is Magic processing enabled.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "magic.enabled", null, null, 0, null, "true" },
+                    { 11, new Guid("b81ffaa6-fe23-4c90-aab5-b8afab7cf0af"), null, "Renumber songs when doing magic processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "magic.doRenumberSongs", null, null, 0, null, "true" },
+                    { 12, new Guid("decece5b-b4a5-4314-8837-ef471bea6406"), null, "Remove featured artists from song artist when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "magic.doRemoveFeaturingArtistFromSongArtist", null, null, 0, null, "true" },
+                    { 13, new Guid("eb5e8e5f-8701-41ed-8293-9977bf3f4954"), null, "Remove featured artists from song title when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "magic.doRemoveFeaturingArtistFromSongTitle", null, null, 0, null, "true" },
+                    { 14, new Guid("8d6986fd-124e-4003-9b39-1c132ffd34b3"), null, "Replace song artist separators with standard ID3 separator ('/') when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "magic.doReplaceSongsArtistSeparators", null, null, 0, null, "true" },
+                    { 15, new Guid("03c6fac6-1c72-4e23-8ca7-7c555029f39b"), null, "Set the song year to current year if invalid or missing when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "magic.doSetYearToCurrentIfInvalid", null, null, 0, null, "true" },
+                    { 16, new Guid("a995cd5f-6e32-4e55-bf1e-c2a8ae335500"), null, "Remove unwanted text from album title when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "magic.doRemoveUnwantedTextFromAlbumTitle", null, null, 0, null, "true" },
+                    { 17, new Guid("733ec143-8fab-424a-939a-a121a2fea9e4"), null, "Remove unwanted text from song titles when doing magic.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "magic.doRemoveUnwantedTextFromSongTitles", null, null, 0, null, "true" },
+                    { 18, new Guid("f8de0976-00b5-4749-8ba5-1cbffe163a5a"), null, "Enable Melodee to convert non-mp3 media files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "conversion.enabled", null, null, 0, null, "true" },
+                    { 19, new Guid("fa047e81-bc14-47d3-9f5a-bbe331ca0c9d"), null, "Bitrate to convert non-mp3 media files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "conversion.bitrate", null, null, 0, null, "384" },
+                    { 20, new Guid("27e04767-22b9-44d0-ade7-19f4b99ddc75"), null, "Vbr to convert non-mp3 media files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "conversion.vbrLevel", null, null, 0, null, "4" },
+                    { 21, new Guid("78919932-f655-4233-ac23-6db371f7cf8b"), null, "Sampling rate to convert non-mp3 media files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "conversion.samplingRate", null, null, 0, null, "48000" },
+                    { 22, new Guid("3f72e9a5-2936-40d6-bd5c-79b6db91d2a2"), null, "Process of CueSheet files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "plugin.cueSheet.enabled", null, null, 0, null, "true" },
+                    { 23, new Guid("795e066c-3aee-44ea-b415-999285fff2d4"), null, "Process of M3U files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "plugin.m3u.enabled", null, null, 0, null, "true" },
+                    { 24, new Guid("6a84ef97-d92a-4487-87b2-a57b37c0232f"), null, "Process of NFO files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "plugin.nfo.enabled", null, null, 0, null, "true" },
+                    { 25, new Guid("955425a6-79c9-4323-ac01-d726c81271fd"), null, "Process of Simple File Verification (SFV) files during processing.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "plugin.simpleFileVerification.enabled", null, null, 0, null, "true" },
+                    { 26, new Guid("6d480f33-4b3c-427c-9c06-2d53176782f2"), null, "Fragments of artist names to replace (JSON Dictionary).", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.artistNameReplacements", null, null, 0, null, "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }" },
+                    { 27, new Guid("226cbba7-b1c9-4c55-952c-43b783e1ae91"), null, "If OrigAlbumYear [TOR, TORY, TDOR] value is invalid use current year.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue", null, null, 0, null, "true" },
+                    { 28, new Guid("0f359a56-986d-4c8b-80bc-5cf82f6de1db"), null, "Delete original files when processing. When false a copy if made, else original is deleted after processed.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.doDeleteOriginal", null, null, 0, null, "true" },
+                    { 29, new Guid("c4ebe06a-dee8-453a-831c-c8932e56d620"), null, "Extension to add to file when converted, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.convertedExtension", null, null, 0, null, "_converted" },
+                    { 30, new Guid("f4d2baa0-30f7-4176-89d1-bc3dcfdae80b"), null, "Extension to add to file when processed, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.processedExtension", null, null, 0, null, "_processed" },
+                    { 31, new Guid("c1ad7819-ab1f-4049-a74c-e65ce78b8ac0"), null, "Extension to add to file to indicate other files in the same category where processed and this file was skipped during processing, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.skippedExtension", null, null, 0, null, "_skipped" },
+                    { 32, new Guid("b021fdfb-e11d-4127-b0d2-924e37d06884"), null, "When processing over write any existing Melodee data files, otherwise skip and leave in place.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.doOverrideExistingMelodeeDataFiles", null, null, 0, null, "true" },
+                    { 33, new Guid("3f34def7-8e9b-49ab-844e-5ab9eba6fa31"), null, "Include any embedded images from media files into the Melodee data file.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.doLoadEmbeddedImages", null, null, 0, null, "true" },
+                    { 34, new Guid("37c31bfc-73ba-4d00-8bff-570bb3107ddc"), null, "The maximum number of files to process, set to zero for infinite.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.maximumProcessingCount", null, null, 0, null, "0" },
+                    { 35, new Guid("2f8bb05c-cd79-4688-92dc-52fdd45fd61e"), null, "Maximum allowed length of album directory name.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.maximumAlbumDirectoryNameLength", null, null, 0, null, "255" },
+                    { 36, new Guid("bbc68e40-e3a5-4a87-9f65-e9c3bdb3725e"), null, "Maximum allowed length of artist directory name.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.maximumArtistDirectoryNameLength", null, null, 0, null, "255" },
+                    { 37, new Guid("631cd6e4-2f10-4d2a-b86d-ced3086d9723"), null, "Fragments to remove from album titles (JSON array).", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.albumTitleRemovals", null, null, 0, null, "['^', '~', '#']" },
+                    { 38, new Guid("ecbf1456-48b8-4a13-b793-7c4bc9312eeb"), null, "Fragments to remove from song titles (JSON array).", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.songTitleRemovals", null, null, 0, null, "[';', '(Remaster)', 'Remaster']" },
+                    { 39, new Guid("6c11562c-d8fa-4824-bb76-e8b4d9efba39"), null, "Continue processing if an error is encountered.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.doContinueOnDirectoryProcessingErrors", null, null, 0, null, "true" },
+                    { 40, new Guid("5a067dcd-fe10-4070-a52b-59a8d3c40474"), null, "When true then move Album Melodee json files to the Staging directory.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "processing.doMoveMelodeeDataFileToStagingDirectory", null, null, 0, null, "true" },
+                    { 41, new Guid("86fb0059-4e82-47a4-a059-eef004030b15"), null, "Is scripting enabled.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "scripting.enabled", null, null, 0, null, "false" },
+                    { 42, new Guid("936f960a-8c68-4464-bfac-1143f83da5b4"), null, "Script to run before processing the inbound directory, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "scripting.preDiscoveryScript", null, null, 0, null, "" },
+                    { 43, new Guid("28c1c641-afe2-4f89-af35-d377b886adae"), null, "Script to run after processing the inbound directory, leave blank to disable.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "scripting.postDiscoveryScript", null, null, 0, null, "" },
+                    { 44, new Guid("a32d534d-8a32-48c3-8bad-cfa1b7bd78b6"), null, "The maximum value a media number can have for an album. The length of this is used for formatting song names.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "validation.maximumMediaNumber", null, null, 0, null, "999" },
+                    { 45, new Guid("a9f2209f-4787-4aa1-9b8c-93d70f6410d5"), null, "The maximum value a song number can have for an album. The length of this is used for formatting song names.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "validation.maximumSongNumber", null, null, 0, null, "9999" },
+                    { 46, new Guid("0b6e2385-7722-4d77-91b5-7f64ffdf91e8"), null, "Minimum allowed year for an album.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "validation.minimumAlbumYear", null, null, 0, null, "1860" },
+                    { 47, new Guid("7c4ecdba-4fd2-4323-9d45-7d97ed60d42a"), null, "Maximum allowed year for an album.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "validation.maximumAlbumYear", null, null, 0, null, "2150" },
+                    { 48, new Guid("10e117d9-8f60-4554-873c-26c414582b4b"), null, "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "encryption.privateKey", null, null, 0, null, "generate_a_new_key_and_update_this_value" },
+                    { 49, new Guid("0fe07674-5526-454e-8378-d3e10f2c0130"), null, "OpenSubsonic server supported Subsonic API version.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "scripting.openSubsonicServerSupportedVersion", null, null, 0, null, "1.16.1" },
+                    { 50, new Guid("fff1ca76-0788-4cbc-8f14-9e817e1c8ac2"), null, "OpenSubsonic server name.", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "scripting.openSubsonicServerType", null, null, 0, null, "Melodee" },
+                    { 51, new Guid("f6e4c18a-d3e5-4b17-bedb-16192fea942e"), null, "OpenSubsonic server actual version. [Ex: 1.2.3 (beta)]", NodaTime.Instant.FromUnixTimeTicks(17313322508940297L), null, false, "scripting.openSubsonicServerVersion", null, null, 0, null, "1.0.1 (beta)" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -890,12 +874,6 @@ namespace Melodee.Common.Migrations
                 name: "IX_Bookmarks_UserId_SongId",
                 table: "Bookmarks",
                 columns: new[] { "UserId", "SongId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ClientApplications_ApiKey",
-                table: "ClientApplications",
-                column: "ApiKey",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1139,9 +1117,6 @@ namespace Melodee.Common.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Bookmarks");
-
-            migrationBuilder.DropTable(
-                name: "ClientApplications");
 
             migrationBuilder.DropTable(
                 name: "Contributors");

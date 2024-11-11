@@ -49,6 +49,9 @@ public static class SettingRegistry
     public const string ScriptingEnabled = "scripting.enabled";
     public const string ScriptingPostDiscoveryScript = "scripting.postDiscoveryScript";
     public const string ScriptingPreDiscoveryScript = "scripting.preDiscoveryScript";
+    public const string OpenSubsonicServerSupportedVersion = "scripting.openSubsonicServerSupportedVersion";
+    public const string OpenSubsonicServerType = "scripting.openSubsonicServerType";
+    public const string OpenSubsonicServerVersion = "scripting.openSubsonicServerVersion";
     public const string UserInterfaceToastAutoCloseTime = "userinterface.toastAutoCloseTime";
     public const string ValidationMaximumAlbumYear = "validation.maximumAlbumYear";
     public const string ValidationMaximumMediaNumber = "validation.maximumMediaNumber";

@@ -17,8 +17,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
 
     public DbSet<Bookmark> Bookmarks { get; set; }
     
-    public DbSet<ClientApplication> ClientApplications { get; set; }
-
     public DbSet<Contributor> Contributors { get; set; }
 
     public DbSet<Library> Libraries { get; set; }
@@ -472,7 +470,31 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.",
                     Value = "generate_a_new_key_and_update_this_value",
                     CreatedAt = now
-                }                
+                },
+                new Setting
+                {
+                    Id = 49,
+                    Key = SettingRegistry.OpenSubsonicServerSupportedVersion,
+                    Comment = "OpenSubsonic server supported Subsonic API version.",
+                    Value = "1.16.1",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 50,
+                    Key = SettingRegistry.OpenSubsonicServerType,
+                    Comment = "OpenSubsonic server name.",
+                    Value = "Melodee",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 51,
+                    Key = SettingRegistry.OpenSubsonicServerVersion,
+                    Comment = "OpenSubsonic server actual version. [Ex: 1.2.3 (beta)]",
+                    Value = "1.0.1 (beta)",
+                    CreatedAt = now
+                }             
             );
         });
 
