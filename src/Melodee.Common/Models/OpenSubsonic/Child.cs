@@ -1,7 +1,7 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
-/// A media.
+///     A media.
 /// </summary>
 /// <param name="Id"></param>
 /// <param name="Parent"></param>
@@ -48,7 +48,7 @@ public record Child(
     string Id,
     string? Parent,
     bool? IsDir,
-    string?Title,
+    string? Title,
     string? Album,
     string? Artist,
     int? Song,

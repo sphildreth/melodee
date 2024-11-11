@@ -9,6 +9,7 @@
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject NavigationManager NavManager
 @inject Serilog.ILogger Logger
+@inject ISerializer Serializer
 @inject SettingService SettingService
 
 <PageTitle>Staging</PageTitle>
@@ -130,14 +131,13 @@
 
         if (confirmation)
         {
-            foreach (var selected in _selectedAlbumCards)
-            {
-                if (selected.DirectoryName != null)
-                {
-                    Directory.Delete(selected.DirectoryName, true);
-                    Logger.Debug("Deleted Staging Directory [{0}]", selected.DirectoryName);
-                }
-            }
+            var library = await LibraryService.GetLibraryAsync();
+            var albums = new List<Melodee.Common.Models.Album>();
+             foreach (var selected in _selectedAlbumCards)
+             {
+                 albums.Add(Serializer.Deserialize<Common.Models.Album>(await File.ReadAllBytesAsync(selected.MelodeeDataFileName))!);
+             }
+            await LibraryService.MoveAlbumsToLibrary(library.Data, albums.ToArray());
             _messages.Add(
                 new ToastMessage
                 {

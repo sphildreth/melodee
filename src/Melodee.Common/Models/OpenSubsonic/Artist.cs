@@ -1,7 +1,7 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
-/// An artist from ID3 tags.
+///     An artist from ID3 tags.
 /// </summary>
 /// <param name="Id">The id of the artist</param>
 /// <param name="Name">The artist name.</param>
@@ -25,4 +25,3 @@ public record Artist(
     string? SortName,
     string[]? Roles
 );
-

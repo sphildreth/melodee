@@ -1,10 +1,10 @@
 namespace Melodee.Common.Models.OpenSubsonic.Responses;
 
 public record ApiResponse(
-    string status,
-    string version,
-    string type,
-    string serverVersion,
-    bool openSubsonic,
-    Error? error
+    string Status,
+    string Version,
+    string Type,
+    string ServerVersion,
+    bool OpenSubsonic,
+    Error? Error
 );

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Melodee.Common.Data;
+using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,22 @@ public abstract class ServiceBase(
 {
     public const string CacheName = "melodee";
     protected static TimeSpan DefaultCacheDuration = TimeSpan.FromDays(1);
+    
+    protected static MetaTagIdentifier[] ContributorMetaTagIdentifiers => new []
+    {
+        MetaTagIdentifier.Artist,
+        MetaTagIdentifier.Composer,
+        MetaTagIdentifier.Conductor,
+        MetaTagIdentifier.Engineer,
+        MetaTagIdentifier.InterpretedRemixedOrOtherwiseModifiedBy,
+        MetaTagIdentifier.Lyricist,
+        MetaTagIdentifier.MixDj,
+        MetaTagIdentifier.MixEngineer,
+        MetaTagIdentifier.MusicianCredit,
+        MetaTagIdentifier.OriginalArtist,
+        MetaTagIdentifier.OriginalLyricist,
+        MetaTagIdentifier.Producer
+    };  
 
     protected ILogger Logger { get; } = logger;
     protected ICacheManager CacheManager { get; } = cacheManager;

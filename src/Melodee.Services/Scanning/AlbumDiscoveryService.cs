@@ -206,7 +206,7 @@ public sealed class AlbumDiscoveryService(
             Artist = x.Artist(),
             Created = x.Created,
             Duration = x.Duration(),
-            MelodeeDataFileName = Path.Combine(x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(), x.ToMelodeeJsonName()),
+            MelodeeDataFileName = Path.Combine(x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(), Album.JsonFileName),
             ImageBytes = await x.CoverImageBytesAsync(),
             IsValid = x.IsValid(_configuration.Configuration),
             Title = x.AlbumTitle(),

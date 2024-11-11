@@ -7,6 +7,7 @@ using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
@@ -25,13 +26,14 @@ public class LibraryService(
     IDbContextFactory<MelodeeDbContext> contextFactory,
     SettingService settingService,
     ArtistService artistService,
-    AlbumService albumService)
+    AlbumService albumService,
+    ISerializer serializer)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
     private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
     private const string CacheKeyDetailTemplate = "urn:library:{0}";
-    
+
     public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Inbound;
@@ -42,14 +44,15 @@ public class LibraryService(
             {
                 throw new Exception("Inbound library not found. A Library record must be setup with a type of '1' (Inbound).");
             }
+
             return library;
-        }, cancellationToken).ConfigureAwait(false);        
+        }, cancellationToken).ConfigureAwait(false);
         return new MelodeeModels.OperationResult<Library>
         {
             Data = result
-        }; 
+        };
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
@@ -58,10 +61,10 @@ public class LibraryService(
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                var dbConn = scopedContext.Database.GetDbConnection();            
+                var dbConn = scopedContext.Database.GetDbConnection();
                 return await dbConn
                     .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Libraries\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
-                    .ConfigureAwait(false);   
+                    .ConfigureAwait(false);
             }
         }, cancellationToken);
         if (id == null)
@@ -70,10 +73,11 @@ public class LibraryService(
             {
                 Data = null
             };
-        }           
-        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);        
+        }
+
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Library?>> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
@@ -93,8 +97,8 @@ public class LibraryService(
         {
             Data = result
         };
-    }    
-    
+    }
+
     public async Task<MelodeeModels.OperationResult<Library>> GetLibraryAsync(CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Library;
@@ -105,12 +109,13 @@ public class LibraryService(
             {
                 throw new Exception("Library not found. A Library record must be setup with a type of '3' (Library).");
             }
+
             return library;
-        }, cancellationToken);        
+        }, cancellationToken);
         return new MelodeeModels.OperationResult<Library>
         {
             Data = result
-        };         
+        };
     }
 
     private async Task<Library?> LibraryByType(int type, CancellationToken cancellationToken = default)
@@ -121,7 +126,7 @@ public class LibraryService(
             var sql = $"SELECT * FROM \"Libraries\" WHERE \"Type\" = {type};";
             return await dbConn
                 .QuerySingleOrDefaultAsync<Library?>(sql)
-                .ConfigureAwait(false);         
+                .ConfigureAwait(false);
         }
     }
 
@@ -144,9 +149,10 @@ public class LibraryService(
                     Type = MelodeeModels.OperationResponseType.Error,
                 };
             }
+
             libraryType = dbLibrary.Type;
             dbLibrary.PurgePath();
-            
+
             await scopedContext
                 .LibraryScanHistories
                 .Where(x => x.LibraryId == libraryId)
@@ -158,12 +164,13 @@ public class LibraryService(
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             ClearCache();
         }
+
         return new MelodeeModels.OperationResult<Library?>
         {
             Data = await LibraryByType(libraryType, cancellationToken).ConfigureAwait(false)
-        };        
+        };
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Staging;
@@ -174,12 +181,13 @@ public class LibraryService(
             {
                 throw new Exception("Staging library not found. A Library record must be setup with a type of '2' (Staging).");
             }
+
             return library;
-        }, cancellationToken).ConfigureAwait(false);        
+        }, cancellationToken).ConfigureAwait(false);
         return new MelodeeModels.OperationResult<Library>
         {
             Data = result
-        };          
+        };
     }
 
     public async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
@@ -190,7 +198,7 @@ public class LibraryService(
         {
             try
             {
-                var orderBy = pagedRequest.OrderByValue();                
+                var orderBy = pagedRequest.OrderByValue();
                 var dbConn = scopedContext.Database.GetDbConnection();
                 var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Libraries\"");
                 librariesCount = await dbConn
@@ -202,8 +210,9 @@ public class LibraryService(
                     var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                     if (dbConn is SqliteConnection)
                     {
-                        listSql = $"{listSqlParts.Item1 } ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                        listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
                     }
+
                     libraries = (await dbConn
                         .QueryAsync<Library>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();
@@ -230,248 +239,240 @@ public class LibraryService(
         CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Staging));
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumToLibrary(Library library, MelodeeModels.Album album, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
         // TODO Musicbrainz Db for metadata update job
 
         bool result = false;
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
 
-        if (!album.IsValid(configuration.Configuration))
+        if (albums.Any(x => !x.IsValid(configuration.Configuration)))
         {
-            return new MelodeeModels.OperationResult<bool>($"Album is invalid.")
+            return new MelodeeModels.OperationResult<bool>(albums.Where(x => !x.IsValid(configuration.Configuration)).Select(x => $"Album [{x}] is invalid."))
             {
                 Data = false
             };
         }
-        
-        var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);        
-        
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            await using (var transaction = await scopedContext.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false))
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);            
+            foreach (var album in albums)
             {
-                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-
-                var artistName = album.Artist() ?? throw new Exception("Album artist is required.");
-                var albumTitle = album.AlbumTitle() ?? throw new Exception("Album title is required.");
-
-                // See if the artist can be found by the MediaUniqueId
-                var dbArtistResult = await artistService.GetByMediaUniqueId(album.ArtistUniqueId(), cancellationToken).ConfigureAwait(false);
-
-                // If the artist isn't found by the MediaUniqueId see if it can be found by the NameNormalized value
-                if (!dbArtistResult.IsSuccess)
+                var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);
+                await using (var transaction = await scopedContext.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    dbArtistResult = await artistService.GetByNameNormalized(artistName.ToNormalizedString() ?? artistName, cancellationToken).ConfigureAwait(false);
-                }
+                    var artistName = album.Artist() ?? throw new Exception("Album artist is required.");
+                    var albumTitle = album.AlbumTitle() ?? throw new Exception("Album title is required.");
 
-                var dbArtist = dbArtistResult.Data;
+                    // See if the artist can be found by the MediaUniqueId
+                    var dbArtistResult = await artistService.GetByMediaUniqueId(album.ArtistUniqueId(), cancellationToken).ConfigureAwait(false);
 
-                // Artist isn't found proceed to create
-                if (!dbArtistResult.IsSuccess)
-                {
-                    dbArtist = new Artist
+                    // If the artist isn't found by the MediaUniqueId see if it can be found by the NameNormalized value
+                    if (!dbArtistResult.IsSuccess)
                     {
-                        AlbumCount = 1,
-                        CreatedAt = now,
-                        MediaUniqueId = album.ArtistUniqueId(),
-                        MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
-                        Name = artistName,
-                        NameNormalized = artistName.ToNormalizedString() ?? artistName,
-                        SongCount = album.Songs?.Count() ?? 0,
-                        SortName = artistName.CleanString(doPutTheAtEnd: true)
-                    };
-                    await scopedContext.Artists.AddAsync(dbArtist, cancellationToken).ConfigureAwait(false);
-                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                }
-
-                // See if the album can be found by the MediaUniqueId
-                var dbAlbumResult = await albumService.GetByMediaUniqueId(album.UniqueId, cancellationToken).ConfigureAwait(false);
-
-                // If the artist isn't found by the MediaUniqueId see if it can be found by the NameNormalized value
-                if (!dbAlbumResult.IsSuccess)
-                {
-                    dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist!.Id, albumTitle.ToNormalizedString() ?? albumTitle, cancellationToken).ConfigureAwait(false);
-                }
-
-                // Album isn't found for artist proceed to create
-                if (!dbAlbumResult.IsSuccess)
-                {
-                    var dbAlbum = new Album
-                    {
-                        AlbumStatus = (short)album.Status,
-                        AlbumType = (int)AlbumType.Album,
-                        ArtistId = dbArtist!.Id,
-                        CreatedAt = now,
-                        Directory = albumDirectory,
-                        DiscCount = album.MediaCountValue(),
-                        Duration = album.TotalDuration(),
-                        Genres = album.Genre() == null ? null : string.Join('|', album.Genre()!.Split('/')),
-                        IsCompilation = album.IsVariousArtistTypeAlbum(),
-                        MediaUniqueId = album.UniqueId,
-                        MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
-                        Name = albumTitle,
-                        NameNormalized = albumTitle.ToNormalizedString() ?? albumTitle,
-                        OriginalReleaseDate = album.OriginalAlbumYear() == null ? null : new LocalDate(album.OriginalAlbumYear()!.Value, 1, 1),
-                        ReleaseDate = new LocalDate(album.AlbumYear() ?? throw new Exception("Album year is required."), 1, 1),
-                        SongCount = SafeParser.ToNumber<short>(album.Songs?.Count() ?? 0),
-                        SortName = albumTitle.CleanString(doPutTheAtEnd: true)
-                    };
-                    await scopedContext.Albums.AddAsync(dbAlbum, cancellationToken).ConfigureAwait(false);
-                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                    
-                    var dbAlbumDiscsToAdd = new List<AlbumDisc>();
-                    var mediaCountValue = album.MediaCountValue() < 1 ? 1 : album.MediaCountValue();
-                    for (short i = 1; i <= mediaCountValue; i++)
-                    {
-                        dbAlbumDiscsToAdd.Add(new AlbumDisc
-                        {
-                            AlbumId = dbAlbum.Id,
-                            DiscNumber = i,
-                            SongCount = SafeParser.ToNumber<short>(album.Songs?.Where(x => x.MediaNumber() == i).Count() ?? 0)
-                        });
+                        dbArtistResult = await artistService.GetByNameNormalized(artistName.ToNormalizedString() ?? artistName, cancellationToken).ConfigureAwait(false);
                     }
 
-                    await scopedContext.AlbumDiscs.AddRangeAsync(dbAlbumDiscsToAdd, cancellationToken).ConfigureAwait(false);
-                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                  
-                    
-                    var dbSongsToAdd = new List<Song>();
-                    foreach (var song in album.Songs!)
-                    {
-                        var songFileInfo = song.File.ToFileInfo(album.Directory!);
-                        var songTitle = song.Title() ?? throw new Exception("Song title is required.");
+                    var dbArtist = dbArtistResult.Data;
 
-                        dbSongsToAdd.Add(new Song
+                    // Artist isn't found proceed to create
+                    if (!dbArtistResult.IsSuccess)
+                    {
+                        dbArtist = new Artist
                         {
-                            AlbumDiscId = dbAlbumDiscsToAdd.First(x => x.DiscNumber == song.MediaNumber()).Id,
-                            BitDepth = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value),
-                            BitRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value),
-                            BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
-                            ChannelCount = SafeParser.ToNumber<int?>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.Channels)?.Value),
+                            AlbumCount = 1,
                             CreatedAt = now,
-                            Duration = song.Duration() ?? throw new Exception("Song duration is required."),
-                            FileHash = Crc32.Calculate(songFileInfo),
-                            FileName = songFileInfo.Name,
-                            FileSize = songFileInfo.Length,
-                            LibraryId = library.Id,
-                            Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics) ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics),
-                            MediaUniqueId = song.UniqueId,
-                            PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle),
-                            SamplingRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value),
-                            SortOrder = song.SortOrder,
-                            Title = songTitle,
-                            TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
-                            TitleSort = songTitle.CleanString(doPutTheAtEnd: true),
-                            SongNumber = song.SongNumber()
-                        });
+                            MediaUniqueId = album.ArtistUniqueId(),
+                            MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
+                            Name = artistName,
+                            NameNormalized = artistName.ToNormalizedString() ?? artistName,
+                            SongCount = album.Songs?.Count() ?? 0,
+                            SortName = artistName.CleanString(doPutTheAtEnd: true)
+                        };
+                        await scopedContext.Artists.AddAsync(dbArtist, cancellationToken).ConfigureAwait(false);
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    await scopedContext.Songs.AddRangeAsync(dbSongsToAdd, cancellationToken).ConfigureAwait(false);
-                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                    
-                    var dbContributorsToAdd = new List<Contributor>();
-                    foreach (var song in album.Songs!)
-                    {
-                        var dbSongId = dbSongsToAdd.First(x => x.MediaUniqueId == song.UniqueId).Id;
+                    // See if the album can be found by the MediaUniqueId
+                    var dbAlbumResult = await albumService.GetByMediaUniqueId(album.UniqueId, cancellationToken).ConfigureAwait(false);
 
-                        var songArtist = song.SongArtist().ToNormalizedString() ?? song.SongArtist();
-                        if (songArtist != null)
+                    // If the artist isn't found by the MediaUniqueId see if it can be found by the NameNormalized value
+                    if (!dbAlbumResult.IsSuccess)
+                    {
+                        dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist!.Id, albumTitle.ToNormalizedString() ?? albumTitle, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    // Album isn't found for artist proceed to create
+                    if (!dbAlbumResult.IsSuccess)
+                    {
+                        var dbAlbum = new Album
                         {
-                            var artist = await artistService.GetByNameNormalized(songArtist, cancellationToken).ConfigureAwait(false);
-                            if (artist.IsSuccess)
+                            AlbumStatus = (short)album.Status,
+                            AlbumType = (int)AlbumType.Album,
+                            ArtistId = dbArtist!.Id,
+                            CreatedAt = now,
+                            Directory = albumDirectory,
+                            DiscCount = album.MediaCountValue(),
+                            Duration = album.TotalDuration(),
+                            Genres = album.Genre() == null ? null : album.Genre()!.Split('/'),
+                            IsCompilation = album.IsVariousArtistTypeAlbum(),
+                            MediaUniqueId = album.UniqueId,
+                            MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
+                            Name = albumTitle,
+                            NameNormalized = albumTitle.ToNormalizedString() ?? albumTitle,
+                            OriginalReleaseDate = album.OriginalAlbumYear() == null ? null : new LocalDate(album.OriginalAlbumYear()!.Value, 1, 1),
+                            ReleaseDate = new LocalDate(album.AlbumYear() ?? throw new Exception("Album year is required."), 1, 1),
+                            SongCount = SafeParser.ToNumber<short>(album.Songs?.Count() ?? 0),
+                            SortName = albumTitle.CleanString(doPutTheAtEnd: true)
+                        };
+                        await scopedContext.Albums.AddAsync(dbAlbum, cancellationToken).ConfigureAwait(false);
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+                        var dbAlbumDiscsToAdd = new List<AlbumDisc>();
+                        var mediaCountValue = album.MediaCountValue() < 1 ? 1 : album.MediaCountValue();
+                        for (short i = 1; i <= mediaCountValue; i++)
+                        {
+                            dbAlbumDiscsToAdd.Add(new AlbumDisc
                             {
-                                var artistContributorId = artist.Data!.Id;
-                                if (artistContributorId != dbArtist.Id)
+                                AlbumId = dbAlbum.Id,
+                                DiscNumber = i,
+                                SongCount = SafeParser.ToNumber<short>(album.Songs?.Where(x => x.MediaNumber() == i).Count() ?? 0)
+                            });
+                        }
+
+                        await scopedContext.AlbumDiscs.AddRangeAsync(dbAlbumDiscsToAdd, cancellationToken).ConfigureAwait(false);
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+                        var dbSongsToAdd = new List<Song>();
+                        foreach (var song in album.Songs!)
+                        {
+                            var songFileInfo = song.File.ToFileInfo(album.Directory!);
+                            var songTitle = song.Title() ?? throw new Exception("Song title is required.");
+
+                            dbSongsToAdd.Add(new Song
+                            {
+                                AlbumDiscId = dbAlbumDiscsToAdd.First(x => x.DiscNumber == song.MediaNumber()).Id,
+                                BitDepth = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value),
+                                BitRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value),
+                                BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
+                                ChannelCount = SafeParser.ToNumber<int?>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.Channels)?.Value),
+                                CreatedAt = now,
+                                Duration = song.Duration() ?? throw new Exception("Song duration is required."),
+                                FileHash = Crc32.Calculate(songFileInfo),
+                                FileName = songFileInfo.Name,
+                                FileSize = songFileInfo.Length,
+                                Genres = album.Genre() == null ? null : song.Genre()!.Split('/'),
+                                LibraryId = library.Id,
+                                Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics) ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics),
+                                MediaUniqueId = song.UniqueId,
+                                PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle),
+                                SamplingRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value),
+                                SortOrder = song.SortOrder,
+                                Title = songTitle,
+                                TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
+                                TitleSort = songTitle.CleanString(doPutTheAtEnd: true),
+                                SongNumber = song.SongNumber()
+                            });
+                        }
+
+                        await scopedContext.Songs.AddRangeAsync(dbSongsToAdd, cancellationToken).ConfigureAwait(false);
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                        
+                        var dbContributorsToAdd = new List<Contributor>();
+                        foreach (var song in album.Songs!)
+                        {
+                            var dbSongId = dbSongsToAdd.First(x => x.MediaUniqueId == song.UniqueId).Id;
+
+                            foreach (var contributorTag in ContributorMetaTagIdentifiers)
+                            {
+                                var contributorForTag = await CreateContributorForSongAndTag(song, contributorTag, dbArtist.Id, dbAlbum.Id, dbSongId, now, null, cancellationToken);
+                                if (contributorForTag != null)
                                 {
-                                    dbContributorsToAdd.Add(new Contributor
-                                    {
-                                        CreatedAt = now,
-                                        Role = "Track Artist (TPE1)",
-                                        ArtistId = artistContributorId,
-                                        SongId = dbSongId,
-                                        AlbumId = dbAlbum.Id,
-                                    });
+                                    dbContributorsToAdd.Add(contributorForTag);
                                 }
                             }
-                            else
+                            foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.InvariantCultureIgnoreCase)) ?? [])
                             {
-                                Logger.Warning("Unable to find 'Track Artist' by name [{Name}]", songArtist);
+                                var role = tmclTag.Value.ToString().Substring(6).Trim();
+                                var contributorForTag = await CreateContributorForSongAndTag(song, tmclTag.Identifier, dbArtist.Id, dbAlbum.Id, dbSongId, now, role, cancellationToken);
+                                if (contributorForTag != null)
+                                {
+                                    dbContributorsToAdd.Add(contributorForTag);
+                                }
                             }
+                            // TODO, Publisher (TPUB)
                         }
 
-                        // Arranger (TIPL:arranger)
-
-                        var lyricist = song.MetaTagValue<string?>(MetaTagIdentifier.Lyricist);
-                        if (lyricist.Nullify() != null)
+                        if (dbContributorsToAdd.Count > 0)
                         {
-                            dbContributorsToAdd.Add(new Contributor
-                            {
-                                CreatedAt = now,
-                                Role = "Author/Writer/Lyricist (TEXT)",
-                                ArtistId = 0,
-                                SongId = dbSongId,
-                                AlbumId = dbAlbum.Id,
-                            });
+                            Log.Debug("Addedd [{Count}] contributors to album [{Album}].", dbContributorsToAdd.Count, album);
                         }
 
-                        var composer = song.MetaTagValue<string?>(MetaTagIdentifier.Composer);
-                        if (composer.Nullify() != null)
-                        {
-                            dbContributorsToAdd.Add(new Contributor
-                            {
-                                CreatedAt = now,
-                                Role = "Composer (TCOM)",
-                                ArtistId = 0,
-                                SongId = dbSongId,
-                                AlbumId = dbAlbum.Id,
-                            });
-                        }
+                        await scopedContext.Contributors.AddRangeAsync(dbContributorsToAdd, cancellationToken).ConfigureAwait(false);
 
-                        // Conductor (TPE3)
-                        // Engineer (TIPL:engineer)
-                        // Involved Person (IPL, IPLS, TIPL)
-                        // Mix-DJ (TIPL:DJ-mix)
-                        // Mix Engineer (TPIL:mix)
-                        // Musician Credit (TMCL)
-                        // Original Artist (TOPE)
-                        // Original Lyricist (TOLY)
-                        // Performer (TMCL:<instrument>)
-                        // Producer (TIPL:producer)
-                        // Publisher (TPUB)
-                        // Remixed By (TPE4)                    
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+                        result = true;
                     }
-
-                    await scopedContext.Contributors.AddRangeAsync(dbContributorsToAdd, cancellationToken).ConfigureAwait(false);
-
-                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                    await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-
-                    result = true;
-
                 }
-            }
+                var libraryAlbumPath = Path.Combine(library.Path, albumDirectory);
+                if (!Directory.Exists(libraryAlbumPath))
+                {
+                    Directory.CreateDirectory(libraryAlbumPath);
+                }
+                else
+                {
+                    // if data album exists for model album if so determine which is better quality
+                }
 
-            var libraryAlbumPath = Path.Combine(library.Path, albumDirectory);
-            if (!Directory.Exists(libraryAlbumPath))
-            {
-                Directory.CreateDirectory(libraryAlbumPath);
+                var doMove = SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary]);
+                MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, doMove ? null : MelodeeModels.Album.JsonFileName);
             }
-            else
-            {
-                // if data album exists for model album if so determine which is better quality
-                
-            }
-            var doMove = SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary]);
-            MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, doMove ? null : MelodeeModels.Album.JsonFileName);
-
             return new MelodeeModels.OperationResult<bool>
             {
                 Data = result
             };
         }
     }
-    
+
+    private async Task<Contributor?> CreateContributorForSongAndTag(MelodeeModels.Song song,
+        MetaTagIdentifier tag,
+        int dbArtist,
+        int dbAlbumId,
+        int dbSongId,
+        Instant now,
+        string? role,
+        CancellationToken cancellationToken = default)
+    {
+        var tagValue = song.MetaTagValue<string?>(tag);
+        if (tagValue != null)
+        {
+            var artist = await artistService.GetByNameNormalized(tagValue, cancellationToken).ConfigureAwait(false);
+            if (artist.IsSuccess)
+            {
+                var artistContributorId = artist.Data!.Id;
+                if (artistContributorId != dbArtist)
+                {
+                    return new Contributor
+                    {
+                        CreatedAt = now,
+                        Role = role ?? tag.GetEnumDescriptionValue(),
+                        ArtistId = artistContributorId,
+                        SongId = dbSongId,
+                        AlbumId = dbAlbumId
+                    };
+                }
+            }
+            else
+            {
+                Logger.Warning("Unable to find '{Tag}' by name [{Name}]", tag.ToString(), tagValue);
+            }
+        }
+
+        return null;
+    }
+
     public async Task<MelodeeModels.OperationResult<LibraryScanHistory?>> CreateLibraryScanHistory(Library library, LibraryScanHistory libraryScanHistory, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, library.Id, nameof(library));
@@ -514,6 +515,7 @@ public class LibraryService(
                     Type = MelodeeModels.OperationResponseType.Error
                 };
             }
+
             dbLibrary.LastScanAt = now;
             if (await scopedContext
                     .SaveChangesAsync(cancellationToken)
@@ -525,11 +527,12 @@ public class LibraryService(
                     Type = MelodeeModels.OperationResponseType.Error
                 };
             }
+
             ClearCache();
             return new MelodeeModels.OperationResult<LibraryScanHistory?>
             {
                 Data = newLibraryScanHistory
-            };      
+            };
         }
     }
 }

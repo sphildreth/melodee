@@ -1,3 +1,4 @@
+using Ardalis.GuardClauses;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Services;
@@ -5,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class BrowsingController(ApiService apiService) : ControllerBase
+public class BrowsingController(OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
     
     //getAlbum
@@ -32,19 +33,5 @@ public class BrowsingController(ApiService apiService) : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getGenres.view")]
     public async Task<IActionResult> GetGenres(CancellationToken cancellationToken = default)
-    {
-        
-        return new JsonResult(new GetAlbumList2Response
-        {
-            ResponseData = new ApiResponse(
-                "ok",
-                "1.16.1",
-                "Melodee",
-                "0.1.1 (tag)",
-                true,
-                null
-            ),
-            AlbumList2 = []
-        });
-    }
+        => new JsonResult(await openSubsonicApiService.GetGenresAsync(ApiRequest, cancellationToken).ConfigureAwait(false));
 }

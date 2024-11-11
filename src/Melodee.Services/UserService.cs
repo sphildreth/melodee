@@ -365,6 +365,10 @@ public sealed class UserService(
                 dbDetail.IsAdmin = detailToUpdate.IsAdmin;
                 dbDetail.IsLocked = detailToUpdate.IsLocked;
                 dbDetail.IsScrobblingEnabled = detailToUpdate.IsScrobblingEnabled;
+                // Take whatever is newer
+                dbDetail.LastActivityAt = dbDetail.LastActivityAt > detailToUpdate.LastActivityAt ? dbDetail.LastActivityAt : detailToUpdate.LastActivityAt;
+                // Take whatever is newer
+                dbDetail.LastLoginAt = dbDetail.LastLoginAt > detailToUpdate.LastLoginAt ? dbDetail.LastLoginAt : detailToUpdate.LastLoginAt;
                 dbDetail.Notes = detailToUpdate.Notes;
                 dbDetail.SortOrder = detailToUpdate.SortOrder;
                 dbDetail.Tags = detailToUpdate.Tags;

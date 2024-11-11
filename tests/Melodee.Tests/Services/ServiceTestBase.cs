@@ -2,6 +2,7 @@ using System.Data.Common;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
+using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Serialization;
 using Melodee.Services;
 using Melodee.Services.Caching;
@@ -68,6 +69,33 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return mockFactory.Object;
     }
 
+    protected ApiRequest GetApiRequest(string username, string salt, string password)
+    {
+        return new ApiRequest(username,
+            "1.16.1",
+            "json",
+            null,
+            null,
+            password,
+            salt,
+            new ApiRequestPlayer(null,
+                null,
+                null,
+                null));
+    }
+
+    protected OpenSubsonicApiService GetOpenSubsonicApiService()
+    {
+        return new OpenSubsonicApiService(
+            Logger,
+            CacheManager,
+            MockFactory(),
+            GetSettingService(),
+            GetUserService(),
+            GetArtistService(),
+            GetAlbumService());
+    }
+
     protected ArtistService GetArtistService()
     {
         return new ArtistService(Logger, CacheManager, MockFactory());
@@ -80,7 +108,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected LibraryService GetLibraryService()
     {
-        return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService(), GetArtistService(), GetAlbumService());
+        return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService(), GetArtistService(), GetAlbumService(), Serializer);
     }
 
     protected UserService GetUserService()

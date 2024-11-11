@@ -3,7 +3,6 @@ using Melodee.Common.Models.OpenSubsonic.Enums;
 namespace Melodee.Common.Models.OpenSubsonic.Requests;
 
 /// <summary>
-/// 
 /// </summary>
 /// <param name="Type">The list type.</param>
 /// <param name="Size">The number of albums to return. Max 500.</param>

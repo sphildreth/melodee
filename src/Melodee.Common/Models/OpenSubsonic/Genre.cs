@@ -1,9 +1,13 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
-/// A genre returned in list of genres for an item.
+///     A genre returned in list of genres for an item.
 /// </summary>
-/// <param name="Name">Genre name</param>
-public record Genre(
-    string Name
-);
+public record Genre
+{
+    public string Value { get; init; }
+    
+    public int SongCount { get; init; }
+    
+    public int AlbumCount { get; init; }
+}

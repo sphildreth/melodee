@@ -47,6 +47,8 @@ internal class InstantHandler : SqliteTypeHandler<Instant>
 
         throw new DataException("Cannot convert " + value.GetType() + " to NodaTime.Instant");
     }
+    
+    
 }
 
 internal class GuidHandler : SqliteTypeHandler<Guid>

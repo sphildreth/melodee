@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Contants;
 using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,12 @@ public class Song : MetaDataModelBase
     [Required]
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public required string TitleNormalized { get; set; }
+    
+    /// <summary>
+    /// These are strictly defined in the Genre enum.
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
+    public string[]? Genres { get; set; }    
 
     [RequiredGreaterThanZero] public required int SongNumber { get; set; }
 

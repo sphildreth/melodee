@@ -48,10 +48,10 @@ public sealed class Album : NamedMetaDataModelBase
     public double Duration { get; set; }
 
     /// <summary>
-    ///     Pipe seperated list. These are strictly defined in the Genre enum.
+    /// These are strictly defined in the Genre enum. 
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
-    public string? Genres { get; set; }
+    public string[]? Genres { get; set; }
 
     /// <summary>
     ///     The directory that holds the files for the Album. This is inside of a library path directory.

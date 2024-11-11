@@ -36,6 +36,11 @@ public enum MetaTagIdentifier
     ///     Comment [COM, COMM]
     /// </summary>
     [Description("[COM, COMM]")] Comment,
+    
+    /// <summary>
+    ///     Musician Credits [TMCL]
+    /// </summary>
+    [Description("TMCL")] MusicianCredit,
 
     /// <summary>
     ///     Genre [TCO, TCON]
@@ -142,6 +147,11 @@ public enum MetaTagIdentifier
     ///     Conductor [TP3,TPE3]
     /// </summary>
     [Description("[TP3,TPE3]")] Conductor,
+    
+    /// <summary>
+    /// Engineer
+    /// </summary>
+    [Description("TIPL:ENGINEER")] Engineer,
 
     /// <summary>
     ///     Total number of Songs [TRK]
@@ -309,6 +319,18 @@ public enum MetaTagIdentifier
     /// </summary>
     [MetaTagMultiValue(true)] [Description("[TXT, TEXT]")]
     Lyricist,
+    
+    /// <summary>
+    /// Mix Engineer 
+    /// </summary>
+    [Description("TIPL:mix")]
+    MixEngineer,
+    
+    /// <summary>
+    /// Mix-DJ
+    /// </summary>
+    [Description("TIPL:DJ-mix")]
+    MixDj,
 
     /// <summary>
     ///     Mapping between functions (e.g. "producer") and names. Every odd field is a function and every even is a name or a
@@ -431,6 +453,12 @@ public enum MetaTagIdentifier
     /// </summary>
     [MetaTagMultiValue(true)] [Description("[TOL, TOLY]")]
     OriginalLyricist,
+    
+    /// <summary>
+    /// TIPL:producer
+    /// </summary>
+    [Description("TIPL:producer")]
+    Producer,
 
     /// <summary>
     ///     [TP4, TPE4]

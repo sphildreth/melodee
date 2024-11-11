@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class AlbumSongController(ApiService apiService) : ControllerBase
+public class AlbumSongController(OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
 
     //getAlbumList
@@ -16,25 +16,13 @@ public class AlbumSongController(ApiService apiService) : ControllerBase
     //getNowPlaying
     //getStarred
     //getStarred2
-    
+
     /// <summary>
     /// Returns a list of random, newest, highest rated etc. albums.
     /// </summary>
+    /// <param name="getAlbumListRequest">Request model</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getAlbumList2.view")]
-    public async Task<IActionResult> GetAlbumList2(GetAlbumListRequest apiRequest, CancellationToken cancellationToken = default)
-    {
-        return new JsonResult(new GetAlbumList2Response
-        {
-            ResponseData = new ApiResponse(
-                "ok",
-                "1.16.1",
-                "Melodee",
-                "0.1.1 (tag)",
-                true,
-                null
-            ),
-            AlbumList2 = []
-        });
-    }
+    public async Task<IActionResult> GetAlbumList2(GetAlbumListRequest getAlbumListRequest, CancellationToken cancellationToken = default)
+        => new JsonResult(await openSubsonicApiService.GetAlbumList2Async(getAlbumListRequest, ApiRequest, cancellationToken).ConfigureAwait(false));
 }

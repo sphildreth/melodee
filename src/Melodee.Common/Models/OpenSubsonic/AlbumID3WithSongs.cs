@@ -1,63 +1,106 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
-/// Album with songs.
+///     Album with songs.
+///     <remarks>https://opensubsonic.netlify.app/docs/responses/albumid3/</remarks>
 /// </summary>
-/// <param name="Id"></param>
-/// <param name="Name"></param>
-/// <param name="Title"></param>
-/// <param name="Artist"></param>
-/// <param name="Year"></param>
-/// <param name="CoverArt"></param>
-/// <param name="Starred"></param>
-/// <param name="Duration"></param>
-/// <param name="PlayCount"></param>
-/// <param name="Genre"></param>
-/// <param name="Created"></param>
-/// <param name="ArtistId"></param>
-/// <param name="SongCount"></param>
-/// <param name="Played"></param>
-/// <param name="UserRating"></param>
-/// <param name="RecordLabels"></param>
-/// <param name="MusicBrainzId"></param>
-/// <param name="Genres"></param>
-/// <param name="Artists"></param>
-/// <param name="DisplayArtist"></param>
-/// <param name="AlbumTypes"></param>
-/// <param name="Moods"></param>
-/// <param name="SortName"></param>
-/// <param name="OriginalAlbumDate">Date the album was originally released.</param>
-/// <param name="AlbumDate">Date the specific edition of the album was released. Note: for files using ID3 tags, releaseDate should generally be read from the TDRL tag. Servers that use a different source for this field should document the behavior.</param>
-/// <param name="IsCompilation"></param>
-/// <param name="DiscTitles"></param>
-/// <param name="Song"></param>
-public record AlbumId3WithSongs(
-    string Id,
-    string Name,
-    string Title,
-    string? Artist,
-    int? Year,
-    string? CoverArt,
-    string? Starred,
-    int Duration,
-    int? PlayCount,
-    string? Genre,
-    string Created,
-    string? ArtistId,
-    int SongCount,
-    string? Played,
-    int? UserRating,
-    RecordLabel[]? RecordLabels,
-    string? MusicBrainzId,
-    Genre[]? Genres,
-    Artist[]? Artists,
-    string? DisplayArtist,
-    string[]? AlbumTypes,
-    string[]? Moods,
-    string? SortName,
-    ItemDate? OriginalAlbumDate,
-    ItemDate? AlbumDate,
-    bool? IsCompilation,
-    DiscTitle[]? DiscTitles,
-    Child[]? Song
-);
+public record AlbumId3WithSongs
+{
+    /// <summary>
+    ///     The id of the album
+    /// </summary>
+    public required string Id { get; init; }
+
+    /// <summary>
+    ///     The album name.
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary></summary>
+    public string? Title { get; init; }
+
+    /// <summary>
+    ///     The id of the artist
+    /// </summary>
+    public string? Artist { get; init; }
+
+    /// <summary></summary>
+    public int? Year { get; init; }
+
+    /// <summary></summary>
+    public string? CoverArt { get; init; }
+
+    /// <summary></summary>
+    public string? Starred { get; init; }
+
+    /// <summary>
+    ///     Total duration of the album in seconds
+    /// </summary>
+    public required int Duration { get; init; }
+
+    /// <summary></summary>
+    public int? PlayCount { get; init; }
+
+    /// <summary></summary>
+    public string? Genre { get; init; }
+
+    /// <summary>
+    ///     Date the album was added. [ISO 8601]
+    /// </summary>
+    public required string Created { get; init; }
+
+    /// <summary></summary>
+    public string? ArtistId { get; init; }
+
+    /// <summary></summary>
+    public int SongCount { get; init; }
+
+    /// <summary></summary>
+    public string? Played { get; init; }
+
+    /// <summary></summary>
+    public int? UserRating { get; init; }
+
+    /// <summary></summary>
+    public RecordLabel[]? RecordLabels { get; init; }
+
+    /// <summary></summary>
+    public string? MusicBrainzId { get; init; }
+
+    /// <summary></summary>
+    public Genre[]? Genres { get; init; }
+
+    /// <summary></summary>
+    public Artist[]? Artists { get; init; }
+
+    /// <summary></summary>
+    public string? DisplayArtist { get; init; }
+
+    /// <summary></summary>
+    public string[]? AlbumTypes { get; init; }
+
+    /// <summary></summary>
+    public string[]? Moods { get; init; }
+
+    /// <summary></summary>
+    public string? SortName { get; init; }
+
+    /// <summary>Date the album was originally released.</summary>
+    public ItemDate? OriginalAlbumDate { get; init; }
+
+    /// <summary>
+    ///     Date the specific edition of the album was released. Note: for files using ID3 tags, releaseDate should
+    ///     generally be read from the TDRL tag. Servers that use a different source for this field should document the
+    ///     behavior.
+    /// </summary>
+    public ItemDate? AlbumDate { get; init; }
+
+    /// <summary></summary>
+    public bool? IsCompilation { get; init; }
+
+    /// <summary></summary>
+    public DiscTitle[]? DiscTitles { get; init; }
+
+    /// <summary></summary>
+    public Child[]? Song { get; init; }
+}
