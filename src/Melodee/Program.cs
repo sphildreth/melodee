@@ -69,7 +69,8 @@ builder.Services
     .AddScoped<AlbumDiscoveryService>()
     .AddScoped<MediaEditService>()
     .AddScoped<DirectoryProcessorService>()
-    .AddScoped<ImageConversionService>(); 
+    .AddScoped<ImageConversionService>()
+    .AddScoped<ApiService>();
     
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();

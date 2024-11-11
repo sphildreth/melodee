@@ -6,6 +6,7 @@ using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Utility;
 using Melodee.Services.Interfaces;
 using Microsoft.Data.Sqlite;
@@ -190,52 +191,6 @@ public sealed class UserService(
             }
         }, cancellationToken).ConfigureAwait(false);
         return new MelodeeModels.OperationResult<User?>
-        {
-            Data = result
-        };
-    }
-
-    public async Task<MelodeeModels.OperationResult<bool>> AuthenticateSubsonicApiAsync(MelodeeModels.OpenSubsonic.ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
-    {
-        Guard.Against.NullOrWhiteSpace(apiApiRequest.Username, nameof(apiApiRequest.Username));
-        Guard.Against.NullOrWhiteSpace(apiApiRequest.Salt, nameof(apiApiRequest.Salt));
-        Guard.Against.NullOrWhiteSpace(apiApiRequest.Token, nameof(apiApiRequest.Token));
-
-        bool result = false;
-
-        var user = await GetByUsernameAsync(apiApiRequest.Username, cancellationToken).ConfigureAwait(false);
-        if (!user.IsSuccess || user.Data.IsLocked)
-        {
-            Logger.Warning("Locked user [{Username}] attempted to authenticate with [{Client}]", apiApiRequest.Username, apiApiRequest.ApiRequestPlayer);
-            return new MelodeeModels.OperationResult<bool>
-            {
-                Data = false
-            }; 
-        }
-        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);        
-        var usersPassword = user.Data.Decrypt(user.Data.PasswordEncrypted, configuration);
-        var userMd5 = HashHelper.CreateMd5($"{usersPassword}{apiApiRequest.Salt}");
-        if (string.Equals(userMd5, apiApiRequest.Token, StringComparison.InvariantCultureIgnoreCase))
-        {
-            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-            // TODO use background worker for this  https://stackoverflow.com/a/482210/74071
-            // _ = Task.Run(async () =>
-            // {
-            //     await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-            //     {
-            //         var dbUser = await scopedContext
-            //             .Users
-            //             .SingleAsync(x => x.Id == user.Data.Id, cancellationToken)
-            //             .ConfigureAwait(false);
-            //         dbUser.LastActivityAt = now;
-            //         dbUser.LastLoginAt = now;
-            //         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            //         ClearCache(dbUser.EmailNormalized, dbUser.ApiKey, dbUser.Id, dbUser.UserNameNormalized);
-            //     }
-            // });
-            result = true;
-        }
-        return new MelodeeModels.OperationResult<bool>
         {
             Data = result
         };

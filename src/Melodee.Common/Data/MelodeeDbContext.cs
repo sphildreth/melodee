@@ -494,7 +494,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "OpenSubsonic server actual version. [Ex: 1.2.3 (beta)]",
                     Value = "1.0.1 (beta)",
                     CreatedAt = now
-                }             
+                },
+                new Setting
+                {
+                    Id = 52,
+                    Key = SettingRegistry.OpenSubsonicServerLicenseEmail,
+                    Comment = "OpenSubsonic email to use in License responses.",
+                    Value = "noreply@localhost.lan",
+                    CreatedAt = now
+                }              
             );
         });
 

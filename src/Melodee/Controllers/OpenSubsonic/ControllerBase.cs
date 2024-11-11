@@ -1,5 +1,6 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
+using Melodee.Common.Models.OpenSubsonic.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 

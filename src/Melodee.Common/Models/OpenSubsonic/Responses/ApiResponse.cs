@@ -1,8 +1,6 @@
-using Melodee.Common.Models.OpenSubsonic;
+namespace Melodee.Common.Models.OpenSubsonic.Responses;
 
-namespace Melodee.Controllers.OpenSubsonic.Models;
-
-public record PingResponse(
+public record ApiResponse(
     string status,
     string version,
     string type,

@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 // ReSharper disable InconsistentNaming
 
-namespace Melodee.Controllers.OpenSubsonic.Models;
+namespace Melodee.Common.Models.OpenSubsonic.Responses;
 
 public record ResponseModel<T>
 {

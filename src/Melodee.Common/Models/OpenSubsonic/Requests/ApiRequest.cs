@@ -1,4 +1,4 @@
-namespace Melodee.Common.Models.OpenSubsonic;
+namespace Melodee.Common.Models.OpenSubsonic.Requests;
 
 /// <summary>
 /// Setup from Query/Post parameters for the Subsonic request.

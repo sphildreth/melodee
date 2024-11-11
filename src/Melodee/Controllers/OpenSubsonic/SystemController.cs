@@ -1,14 +1,14 @@
 using Mapster;
 using Melodee.Common.Models.OpenSubsonic;
-using Melodee.Controllers.OpenSubsonic.Models;
+using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class SystemController(UserService userService) : ControllerBase
+public class SystemController(ApiService apiService) : ControllerBase
 {
-    //getLicense
+    
     //getOpenSubsonicExtensions
 
     /// <summary>
@@ -16,21 +16,14 @@ public class SystemController(UserService userService) : ControllerBase
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/ping.view")]
-    public async Task<IActionResult> Ping(CancellationToken cancellationToken = default)
-    {
-        var userAuthResult = await userService.AuthenticateSubsonicApiAsync(ApiRequest, cancellationToken);
-        
-        return new JsonResult(new ResponseModel<PingResponse>
-        {
-            ResponseData = new PingResponse
-            (
-                userAuthResult.Data ? "ok" : "failed",
-                "1.16.1",
-                "Melodee",
-                "0.1.1 (tag)",
-                true,
-                userAuthResult.Data ? null : Error.AuthError
-            )
-        });
-    }
+    public async Task<IActionResult> Ping(CancellationToken cancellationToken = default) 
+        => new JsonResult(await apiService.AuthenticateSubsonicApiAsync(ApiRequest, cancellationToken).ConfigureAwait(false));
+    
+    /// <summary>
+    /// Get details about the software license.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/getLicense.view")]
+    public async Task<IActionResult> GetLicense(CancellationToken cancellationToken = default) 
+        => new JsonResult(await apiService.GetLicense(ApiRequest, cancellationToken).ConfigureAwait(false));    
 }

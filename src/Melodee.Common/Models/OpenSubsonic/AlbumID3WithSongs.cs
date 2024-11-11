@@ -5,6 +5,7 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// </summary>
 /// <param name="Id"></param>
 /// <param name="Name"></param>
+/// <param name="Title"></param>
 /// <param name="Artist"></param>
 /// <param name="Year"></param>
 /// <param name="CoverArt"></param>
@@ -33,6 +34,7 @@ namespace Melodee.Common.Models.OpenSubsonic;
 public record AlbumId3WithSongs(
     string Id,
     string Name,
+    string Title,
     string? Artist,
     int? Year,
     string? CoverArt,
