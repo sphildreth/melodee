@@ -6,6 +6,8 @@ public record ResponseModel
 {
     public bool IsSuccess { get; init; }
 
+    public required UserInfo UserInfo { get; init; }
+
     /// <summary>
     /// This is the '"subsonic-response"' level object returned to API consumers.
     /// </summary>

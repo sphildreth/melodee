@@ -4,6 +4,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Models.OpenSubsonic.Requests;
@@ -32,10 +33,14 @@ public class OpenSubsonicApiService(
 {
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
+    /// <summary>
+    /// Get details about the software license.
+    /// </summary>
     public async Task<ResponseModel> GetLicense(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
     {
         return new ResponseModel
         {
+            UserInfo = BlankUserInfo,
             IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
@@ -49,6 +54,66 @@ public class OpenSubsonicApiService(
         };
     }
 
+    /// <summary>
+    /// Returns all playlists a user is allowed to play.
+    /// </summary>
+    public async Task<ResponseModel> GetPlaylists(ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        Playlist[] data = [];
+        var sql = string.Empty;
+
+        try
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();
+                var sqlParameters = new Dictionary<string, object>
+                {
+                    { "UserId", authResponse.UserInfo.Id }
+                };
+                sql = """
+                    SELECT *
+                    FROM "Playlists"
+                    where "UserId" = @userId
+                    or "IsPublic" is true
+                    ORDER BY "SortOrder";
+                    """;
+                data = (await dbConn
+                    .QueryAsync<Playlist>(sql, sqlParameters)
+                    .ConfigureAwait(false)).ToArray();
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to get Playlists SQL [{Sql}] Request [{ApiResult}]", sql, apiRequest);
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            IsSuccess = true,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data,
+                DataPropertyName = "playlists",
+                DataDetailPropertyName = "playlist"
+            }
+        };        
+    }
+    
+    /// <summary>
+    /// Returns a list of random, newest, highest rated etc. albums.
+    /// </summary>
     public async Task<ResponseModel> GetAlbumList2Async(GetAlbumListRequest albumListRequest, ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -56,6 +121,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
+                UserInfo = BlankUserInfo,
                 ResponseData = authResponse.ResponseData
             };
         }
@@ -128,15 +194,20 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
+            UserInfo = authResponse.UserInfo,
             IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
-                DataPropertyName = "albumList2"
+                DataPropertyName = "albumList2",
+                DataDetailPropertyName = "album"
             }
         };
     }
 
+    /// <summary>
+    /// Returns all genres.
+    /// </summary>
     public async Task<ResponseModel> GetGenresAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -144,6 +215,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
+                UserInfo = BlankUserInfo,
                 ResponseData = authResponse.ResponseData
             };
         }
@@ -184,21 +256,25 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
+            UserInfo = authResponse.UserInfo,            
             ResponseData = authResponse.ResponseData with
             {
                 Data = data,
-                DataPropertyName = "genres"
+                DataPropertyName = "genres",
+                DataDetailPropertyName = "genre"
             }
         };
     }
 
     /// <summary>
-    /// Note: Unlike all other APIs getOpenSubsonicExtensions must be publicly accessible.
+    /// List the OpenSubsonic extensions supported by this server.
+    /// <remarks>Unlike all other APIs getOpenSubsonicExtensions must be publicly accessible.</remarks>
     /// </summary>
     public async Task<ResponseModel> GetOpenSubsonicExtensions(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = new ResponseModel
         {
+            UserInfo = BlankUserInfo,
             IsSuccess = true,
             ResponseData = await NewApiResponse(true, string.Empty, null)
         };
@@ -209,6 +285,7 @@ public class OpenSubsonicApiService(
         };
         return new ResponseModel
         {
+            UserInfo = BlankUserInfo,
             ResponseData = authResponse.ResponseData with
             {
                 Data = data,
@@ -225,16 +302,16 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
+                UserInfo = new UserInfo(0, Guid.Empty, string.Empty, string.Empty),
                 IsSuccess = false,
-                ResponseData = await NewApiResponse(false, string.Empty, Error.AuthError)
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.AuthError)
             };
         }
 
         var result = false;
-
+        var user = await userService.GetByUsernameAsync(apiApiRequest.Username, cancellationToken).ConfigureAwait(false);
         try
         {
-            var user = await userService.GetByUsernameAsync(apiApiRequest.Username, cancellationToken).ConfigureAwait(false);
             if (!user.IsSuccess || user.Data.IsLocked)
             {
                 Logger.Warning("Locked user [{Username}] attempted to authenticate with [{Client}]", apiApiRequest.Username, apiApiRequest.ApiRequestPlayer);
@@ -284,17 +361,20 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
+            UserInfo = user.Data?.ToUserInfo() ?? BlankUserInfo,
             IsSuccess = result,
-            ResponseData = await NewApiResponse(result, string.Empty, result ? null : Error.AuthError)
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
         };
     }
 
+    private UserInfo BlankUserInfo => new UserInfo(0, Guid.Empty, string.Empty, string.Empty);
+    
     private Task<ApiResponse> DefaultApiResponse()
     {
-        return NewApiResponse(true, string.Empty);
+        return NewApiResponse(true, string.Empty, string.Empty);
     }
 
-    private async Task<ApiResponse> NewApiResponse(bool isOk, string dataPropertyName, Error? error = null, object? data = null)
+    private async Task<ApiResponse> NewApiResponse(bool isOk, string dataPropertyName, string dataDetailPropertyName, Error? error = null, object? data = null)
     {
         return new ApiResponse
         {
@@ -305,6 +385,7 @@ public class OpenSubsonicApiService(
             ServerVersion = (await Configuration.Value).GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? throw new InvalidOperationException(),
             Error = error,
             Data = data,
+            DataDetailPropertyName = dataDetailPropertyName,
             DataPropertyName = dataPropertyName
         };
     }

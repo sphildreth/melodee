@@ -4,7 +4,15 @@ public record ApiResponse
 {
     public bool IsSuccess { get; init; }
     
+    /// <summary>
+    /// Used for the collection of data elements to return, e.g. "albumList2"
+    /// </summary>
     public required string DataPropertyName { get; init; }
+    
+    /// <summary>
+    /// Used for the type of element in the collection of data to return, e.g. "album"
+    /// </summary>
+    public required string DataDetailPropertyName { get; init; }
     
     public required string Status { get; init; }
     
