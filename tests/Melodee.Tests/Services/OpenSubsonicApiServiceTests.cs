@@ -1,8 +1,10 @@
+using System.Net.Mail;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Utility;
@@ -38,8 +40,9 @@ public class OpenSubsonicApiServiceTests : ServiceTestBase
         Assert.NotNull(licenseResult);
         Assert.True(licenseResult.IsSuccess);
         Assert.NotNull(licenseResult.ResponseData);
-        Assert.NotNull(licenseResult.License);
-        Assert.True(DateTime.Parse(licenseResult.License.LicenseExpires) > DateTime.Now);
+        var license = licenseResult.ResponseData?.Data as License;
+        Assert.NotNull(license);
+        Assert.True(DateTime.Parse(license.LicenseExpires) > DateTime.Now);
     }
     
     [Fact]

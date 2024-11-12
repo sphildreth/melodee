@@ -8,14 +8,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj"/>
-    <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
+    <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Ardalis.GuardClauses"/>
     <PackageReference Include="Dapper"/>
     <PackageReference Include="Microsoft.Data.Sqlite.Core"/>
-    <PackageReference Include="System.Linq.Dynamic.Core" />
+    <PackageReference Include="System.Linq.Dynamic.Core"/>
   </ItemGroup>
 
 </Project>

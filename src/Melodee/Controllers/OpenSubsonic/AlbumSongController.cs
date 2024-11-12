@@ -1,16 +1,17 @@
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
+using Melodee.Common.Serialization;
+using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class AlbumSongController(OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class AlbumSongController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
 
     //getAlbumList
-    //getAlbumList2
     //getRandomSongs
     //getSongsByGenre
     //getNowPlaying
@@ -24,5 +25,5 @@ public class AlbumSongController(OpenSubsonicApiService openSubsonicApiService) 
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getAlbumList2.view")]
     public async Task<IActionResult> GetAlbumList2(GetAlbumListRequest getAlbumListRequest, CancellationToken cancellationToken = default)
-        => new JsonResult(await openSubsonicApiService.GetAlbumList2Async(getAlbumListRequest, ApiRequest, cancellationToken).ConfigureAwait(false));
+        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumList2Async(getAlbumListRequest, ApiRequest, cancellationToken).ConfigureAwait(false))!);
 }

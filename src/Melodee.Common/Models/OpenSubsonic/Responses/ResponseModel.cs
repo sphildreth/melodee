@@ -1,13 +1,14 @@
 using System.Text.Json.Serialization;
 
-// ReSharper disable InconsistentNaming
-
 namespace Melodee.Common.Models.OpenSubsonic.Responses;
 
-public record ResponseModel<T>
+public record ResponseModel
 {
-    [JsonIgnore] public bool IsSuccess { get; init; }
+    public bool IsSuccess { get; init; }
 
-    [JsonPropertyName("subsonic-response")]
-    public required T ResponseData { get; init; }
+    /// <summary>
+    /// This is the '"subsonic-response"' level object returned to API consumers.
+    /// </summary>
+    [JsonPropertyName("subsonic-response")] 
+    public required ApiResponse ResponseData { get; init; }
 }

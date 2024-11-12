@@ -8,7 +8,6 @@ namespace Melodee.Common.Models;
 ///     This is a representation of a single MediaAudioIdentifier (like 'Duration') and its value.
 /// </summary>
 /// <typeparam name="T">Data type of MediaAudioIdentifier.</typeparam>
-[Serializable]
 public sealed record MediaAudio<T>
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]

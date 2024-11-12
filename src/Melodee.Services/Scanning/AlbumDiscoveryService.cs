@@ -13,11 +13,10 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 
-
 namespace Melodee.Services.Scanning;
 
 /// <summary>
-/// Service that returns Albums found from scanning media.
+///     Service that returns Albums found from scanning media.
 /// </summary>
 public sealed class AlbumDiscoveryService(
     ILogger logger,
@@ -27,8 +26,8 @@ public sealed class AlbumDiscoveryService(
     ISerializer serializer)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private bool _initialized;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+    private bool _initialized;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {

@@ -3,7 +3,6 @@ using NodaTime;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
-[Serializable]
 public sealed record AlbumList2
 {
     public required string Id { get; init; }
@@ -32,11 +31,6 @@ public sealed record AlbumList2
     public required string Artist { get; init; }
 
     public required int Year { get; init; }
-
-    [JsonIgnore]
-    public string? GenresRaw { get; init; }
     
-    public string[]? Genres => GenresRaw?.Split('|');
-
     public string? Genre { get; init; }
 }

@@ -4,7 +4,6 @@ using Melodee.Common.Models.Extensions;
 
 namespace Melodee.Plugins.MetaData.Directory.Models;
 
-[Serializable]
 public sealed record CueSheet
 {
     public bool IsValid => !string.IsNullOrWhiteSpace(MediaFileSystemFileInfo.Name) && 

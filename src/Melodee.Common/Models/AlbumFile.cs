@@ -3,7 +3,6 @@ using Melodee.Common.Enums;
 
 namespace Melodee.Common.Models;
 
-[Serializable]
 public sealed record AlbumFile
 {
     public long AlbumUniqueId { get; set; }

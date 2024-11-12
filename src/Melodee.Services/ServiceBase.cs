@@ -15,8 +15,8 @@ public abstract class ServiceBase(
 {
     public const string CacheName = "melodee";
     protected static TimeSpan DefaultCacheDuration = TimeSpan.FromDays(1);
-    
-    protected static MetaTagIdentifier[] ContributorMetaTagIdentifiers => new []
+
+    protected static MetaTagIdentifier[] ContributorMetaTagIdentifiers => new[]
     {
         MetaTagIdentifier.Artist,
         MetaTagIdentifier.Composer,
@@ -30,7 +30,7 @@ public abstract class ServiceBase(
         MetaTagIdentifier.OriginalArtist,
         MetaTagIdentifier.OriginalLyricist,
         MetaTagIdentifier.Producer
-    };  
+    };
 
     protected ILogger Logger { get; } = logger;
     protected ICacheManager CacheManager { get; } = cacheManager;

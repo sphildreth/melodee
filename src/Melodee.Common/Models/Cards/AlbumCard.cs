@@ -3,7 +3,6 @@ using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.Cards;
 
-[Serializable]
 public record AlbumCard
 {
     public bool IsValid { get; init; }

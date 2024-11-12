@@ -4,10 +4,7 @@ namespace Melodee.Common.Models.OpenSubsonic.Requests;
 ///     Setup from Query/Post parameters for the Subsonic request.
 /// </summary>
 /// <param name="Username">(u) The username.</param>
-/// <param name="Version">
-///     (v) The protocol version implemented by the client, i.e., the version of the
-///     subsonic-rest-api.xsd schema used
-/// </param>
+/// <param name="Version">(v) The protocol version implemented by the client, i.e., the version of the subsonic-rest-api.xsd schema used</param>
 /// <param name="Format">(f) Request data to be returned in this format.</param>
 /// <param name="ApiKey">An API key used for authentication</param>
 /// <param name="Password">(p) The password, either in clear text or hex-encoded with a “enc:” prefix.</param>

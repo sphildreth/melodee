@@ -5,7 +5,6 @@ using Melodee.Common.Filtering;
 
 namespace Melodee.Common.Models;
 
-[Serializable]
 public sealed record PagedRequest
 {
     private const int DefaultPageSize = 100;

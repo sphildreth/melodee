@@ -10,7 +10,6 @@ namespace Melodee.Common.Models;
 /// <summary>
 ///     This is a representation of a Album (a published collection of Songs) including all known MetaData.
 /// </summary>
-[Serializable]
 public sealed record Album
 {
     public const string JsonFileName = "melodee.json";

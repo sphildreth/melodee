@@ -5,7 +5,6 @@ using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models;
 
-[Serializable]
 public record OperationResult<T>
 {
     private List<Exception> _errors = [];

@@ -5,7 +5,7 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// </summary>
 public record Genre
 {
-    public string Value { get; init; }
+    public required string Value { get; init; }
     
     public int SongCount { get; init; }
     

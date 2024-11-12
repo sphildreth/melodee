@@ -1,4 +1,5 @@
-﻿using Melodee.Common.Extensions;
+﻿using Humanizer;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Tests.Extensions;
 
@@ -203,5 +204,26 @@ public class StringExtensionsTests
     {
         Assert.Equal(shouldBe, input.ToNormalizedString());
     }
+    
+    
+    [Theory]
+    [InlineData(null, null)]    
+    [InlineData("", null)]
+    [InlineData("736573616d65", "sesame")]
+    [InlineData("736F6D657468696E675F6C6F6E675F235F2B215F776974685F2E782D642A5F77656972645F63686172616374657273", "something_long_#_+!_with_.x-d*_weird_characters")]
+    public void ValidateHexDecoding(string? input, string? shouldBe)
+    {
+        Assert.Equal(shouldBe, input?.FromHexString());
+    }    
+    
+    [Theory]
+    [InlineData(null, null)]    
+    [InlineData("", null)]
+    [InlineData("sesame", "736573616D65")]
+    [InlineData("something_long_#_+!_with_.x-d*_weird_characters", "736F6D657468696E675F6C6F6E675F235F2B215F776974685F2E782D642A5F77656972645F63686172616374657273")]
+    public void ValidateHexEncoding(string? input, string? shouldBe)
+    {
+        Assert.Equal(shouldBe, input?.ToHexString());
+    }     
 
 }

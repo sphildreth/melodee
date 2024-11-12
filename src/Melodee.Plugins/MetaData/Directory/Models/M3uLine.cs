@@ -2,7 +2,6 @@ using Melodee.Common.Models;
 
 namespace Melodee.Plugins.MetaData.Directory.Models;
 
-[Serializable]
 public sealed record M3ULine
 {
     public bool IsValid { get; init; }

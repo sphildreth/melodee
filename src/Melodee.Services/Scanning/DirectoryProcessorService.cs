@@ -44,19 +44,19 @@ public sealed class DirectoryProcessorService(
 {
     private readonly LibraryService _libraryService = libraryService;
     private readonly MediaEditService _mediaEditService = mediaEditService;
-    private bool _initialized;
+    private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private IEnumerable<IConversionPlugin> _conversionPlugins = [];
     private IEnumerable<IDirectoryPlugin> _directoryPlugins = [];
 
-    private IScriptPlugin _preDiscoveryScript = new NullScript();
+    private string _directoryStaging = null!;
+    private bool _initialized;
     private IScriptPlugin _postDiscoveryScript = new NullScript();
-    private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
+
+    private IScriptPlugin _preDiscoveryScript = new NullScript();
 
     private IEnumerable<ISongPlugin> _songPlugins = [];
     private bool _stopProcessingTriggered;
-
-    private string _directoryStaging = null!;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
@@ -64,6 +64,7 @@ public sealed class DirectoryProcessorService(
         {
             return;
         }
+
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
 
         _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
@@ -451,7 +452,7 @@ public sealed class DirectoryProcessorService(
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
-                            File.Copy(oldImageFileName, newImageFileName, true);                            
+                            File.Copy(oldImageFileName, newImageFileName, true);
                             if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                             {
                                 File.Delete(image.FileInfo!.FullOriginalName(directoryInfoToProcess));
@@ -470,7 +471,7 @@ public sealed class DirectoryProcessorService(
 
                             var oldSongFilename = song.File.FullOriginalName(directoryInfoToProcess);
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
-                            if(!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
+                            if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                             {
                                 File.Copy(oldSongFilename, newSongFileName, true);
                                 if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))

@@ -6,7 +6,6 @@ using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
-[Serializable]
 public sealed record Song
 {
     public long AlbumUniqueId 

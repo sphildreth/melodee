@@ -1,6 +1,5 @@
 namespace Melodee.Plugins.MetaData.Directory.Models;
 
-[Serializable]
 public sealed record CueIndex
 {
     public required int SongNumber { get; init; }

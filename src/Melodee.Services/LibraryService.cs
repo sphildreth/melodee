@@ -57,7 +57,7 @@ public class LibraryService(
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
-        var id = await CacheManager.GetAsync<int?>(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
+        var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -146,7 +146,7 @@ public class LibraryService(
                 return new MelodeeModels.OperationResult<Library?>("Invalid Library Id")
                 {
                     Data = null,
-                    Type = MelodeeModels.OperationResponseType.Error,
+                    Type = MelodeeModels.OperationResponseType.Error
                 };
             }
 
@@ -192,7 +192,7 @@ public class LibraryService(
 
     public async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        int librariesCount = 0;
+        var librariesCount = 0;
         Library[] libraries = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -243,7 +243,7 @@ public class LibraryService(
     {
         // TODO Musicbrainz Db for metadata update job
 
-        bool result = false;
+        var result = false;
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
 
         if (albums.Any(x => !x.IsValid(configuration.Configuration)))
@@ -253,9 +253,10 @@ public class LibraryService(
                 Data = false
             };
         }
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);            
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
             foreach (var album in albums)
             {
                 var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);
@@ -287,7 +288,7 @@ public class LibraryService(
                             Name = artistName,
                             NameNormalized = artistName.ToNormalizedString() ?? artistName,
                             SongCount = album.Songs?.Count() ?? 0,
-                            SortName = artistName.CleanString(doPutTheAtEnd: true)
+                            SortName = artistName.CleanString(true)
                         };
                         await scopedContext.Artists.AddAsync(dbArtist, cancellationToken).ConfigureAwait(false);
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -323,7 +324,7 @@ public class LibraryService(
                             OriginalReleaseDate = album.OriginalAlbumYear() == null ? null : new LocalDate(album.OriginalAlbumYear()!.Value, 1, 1),
                             ReleaseDate = new LocalDate(album.AlbumYear() ?? throw new Exception("Album year is required."), 1, 1),
                             SongCount = SafeParser.ToNumber<short>(album.Songs?.Count() ?? 0),
-                            SortName = albumTitle.CleanString(doPutTheAtEnd: true)
+                            SortName = albumTitle.CleanString(true)
                         };
                         await scopedContext.Albums.AddAsync(dbAlbum, cancellationToken).ConfigureAwait(false);
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -370,14 +371,14 @@ public class LibraryService(
                                 SortOrder = song.SortOrder,
                                 Title = songTitle,
                                 TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
-                                TitleSort = songTitle.CleanString(doPutTheAtEnd: true),
+                                TitleSort = songTitle.CleanString(true),
                                 SongNumber = song.SongNumber()
                             });
                         }
 
                         await scopedContext.Songs.AddRangeAsync(dbSongsToAdd, cancellationToken).ConfigureAwait(false);
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                        
+
                         var dbContributorsToAdd = new List<Contributor>();
                         foreach (var song in album.Songs!)
                         {
@@ -391,6 +392,7 @@ public class LibraryService(
                                     dbContributorsToAdd.Add(contributorForTag);
                                 }
                             }
+
                             foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.InvariantCultureIgnoreCase)) ?? [])
                             {
                                 var role = tmclTag.Value.ToString().Substring(6).Trim();
@@ -416,19 +418,18 @@ public class LibraryService(
                         result = true;
                     }
                 }
+
                 var libraryAlbumPath = Path.Combine(library.Path, albumDirectory);
                 if (!Directory.Exists(libraryAlbumPath))
                 {
                     Directory.CreateDirectory(libraryAlbumPath);
                 }
-                else
-                {
-                    // if data album exists for model album if so determine which is better quality
-                }
 
+                // if data album exists for model album if so determine which is better quality
                 var doMove = SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary]);
                 MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, doMove ? null : MelodeeModels.Album.JsonFileName);
             }
+
             return new MelodeeModels.OperationResult<bool>
             {
                 Data = result
@@ -488,7 +489,7 @@ public class LibraryService(
                 return new MelodeeModels.OperationResult<LibraryScanHistory?>("Invalid Library Id")
                 {
                     Data = null,
-                    Type = MelodeeModels.OperationResponseType.Error,
+                    Type = MelodeeModels.OperationResponseType.Error
                 };
             }
 

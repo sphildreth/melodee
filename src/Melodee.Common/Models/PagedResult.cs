@@ -1,6 +1,5 @@
 namespace Melodee.Common.Models;
 
-[Serializable]
 public sealed record PagedResult<T> : OperationResult<IEnumerable<T>> where T : notnull
 {
     public PagedResult(IEnumerable<string>? messages = null)

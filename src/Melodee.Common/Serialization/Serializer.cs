@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Melodee.Common.Serialization.Convertors;
 using Serilog;
+using Serilog.Core;
 
 namespace Melodee.Common.Serialization;
 
@@ -18,7 +20,7 @@ public sealed class Serializer(ILogger logger) : ISerializer
 
         try
         {
-            return JsonSerializer.Serialize(o);
+            return JsonSerializer.Serialize(o, _jsonSerializerOptions);
         }
         catch (Exception ex)
         {
@@ -32,7 +34,8 @@ public sealed class Serializer(ILogger logger) : ISerializer
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new OpenSubsonicResponseModelConvertor() }
     };
     
     public TOut? Deserialize<TOut>(byte[]? bytes)

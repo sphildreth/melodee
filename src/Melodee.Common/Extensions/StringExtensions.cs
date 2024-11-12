@@ -643,6 +643,35 @@ public static partial class StringExtensions
         return result;
     }
     
+    public static string? ToHexString(this string? input)
+    {
+        if (input.Nullify() == null)
+        {
+            return null;
+        }
+        var sb = new StringBuilder();
+        var bytes = Encoding.UTF8.GetBytes(input!);
+        foreach (var t in bytes)
+        {
+            sb.Append(t.ToString("X2"));
+        }
+        return sb.ToString();
+    }
+
+    public static string? FromHexString(this string? input)
+    {
+        if (input.Nullify() == null)
+        {
+            return null;
+        }
+        var bytes = new byte[input!.Length / 2];
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            bytes[i] = Convert.ToByte(input.Substring(i * 2, 2), 16);
+        }
+        return Encoding.UTF8.GetString(bytes);
+    }    
+    
     private static string? RemoveAccents(this string? value)
     {
         if (SafeParser.IsNull(value))

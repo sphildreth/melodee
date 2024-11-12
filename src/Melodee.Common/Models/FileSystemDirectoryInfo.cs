@@ -6,7 +6,6 @@ namespace Melodee.Common.Models;
 /// <summary>
 ///     This is a representation of a "file" directory.
 /// </summary>
-[Serializable]
 public sealed record FileSystemDirectoryInfo
 {
     public long UniqueId => SafeParser.Hash(Path);

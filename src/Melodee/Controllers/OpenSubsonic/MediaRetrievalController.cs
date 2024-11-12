@@ -12,13 +12,14 @@ public class MediaRetrievalController(OpenSubsonicApiService openSubsonicApiServ
     //getLyrics
     //hls
     //stream
-   
+
     /// <summary>
     /// Returns a cover art image.
     /// </summary>
+    /// <param name="apiId">Composite ID of type:apikey</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getCoverArt.view")]
-    public async Task<IActionResult> GetCoverArt(Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetCoverArt(string apiId, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

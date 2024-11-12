@@ -1,20 +1,16 @@
 using Ardalis.GuardClauses;
 using Dapper;
-using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
-using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Utility;
 using Melodee.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
-using Serilog.Data;
-using SixLabors.ImageSharp;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -34,7 +30,7 @@ public sealed class UserService(
     private const string CacheKeyDetailByEmailAddressKeyTemplate = "urn:user:emailaddress:{0}";
     private const string CacheKeyDetailByUsernameTemplate = "urn:user:username:{0}";
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
-    
+
     public async Task<MelodeeModels.PagedResult<User>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int usersCount;
@@ -42,19 +38,20 @@ public sealed class UserService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
-            var dbConn = scopedContext.Database.GetDbConnection();            
+            var dbConn = scopedContext.Database.GetDbConnection();
             var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Users\"");
             usersCount = await dbConn
                 .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
-                .ConfigureAwait(false);            
+                .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Users\"");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 if (dbConn is SqliteConnection)
                 {
-                    listSql = $"{listSqlParts.Item1 } ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                    listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
                 }
+
                 users = (await dbConn
                     .QueryAsync<User>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
@@ -125,7 +122,7 @@ public sealed class UserService(
             {
                 Data = null
             }
-            : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);        
+            : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MelodeeModels.OperationResult<User?>> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
@@ -147,9 +144,9 @@ public sealed class UserService(
             {
                 Data = null
             }
-            : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);       
-    }    
-    
+            : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
@@ -158,21 +155,18 @@ public sealed class UserService(
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                return await scopedContext
-                    .Users
-                    .AsNoTracking()
-                    .Where(x => x.ApiKey == apiKey)
-                    .Select(x => x.Id)
-                    .FirstOrDefaultAsync(cancellationToken)
+                var dbConn = scopedContext.Database.GetDbConnection();
+                return await dbConn
+                    .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"ApiKey\" = @ApiKey;", new { ApiKey = apiKey })
                     .ConfigureAwait(false);
             }
         }, cancellationToken).ConfigureAwait(false);
-        return id < 1
+        return id == null
             ? new MelodeeModels.OperationResult<User?>
             {
                 Data = null
             }
-            : await GetAsync(id, cancellationToken).ConfigureAwait(false);          
+            : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MelodeeModels.OperationResult<User?>> GetAsync(int id, CancellationToken cancellationToken = default)
@@ -218,6 +212,7 @@ public sealed class UserService(
                 Type = MelodeeModels.OperationResponseType.NotFound
             };
         }
+
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
         if (user.Data.PasswordEncrypted != user.Data.Encrypt(password!, configuration))
         {
@@ -230,20 +225,16 @@ public sealed class UserService(
 
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
-        _ = Task.Run(async () =>
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var dbUser = await scopedContext
-                    .Users
-                    .SingleAsync(x => x.Email == emailAddress, cancellationToken)
-                    .ConfigureAwait(false);
-                dbUser.LastActivityAt = now;
-                dbUser.LastLoginAt = now;
-                await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                ClearCache(dbUser.EmailNormalized, dbUser.ApiKey, dbUser.Id, dbUser.UserNameNormalized);
-            }
-        }, cancellationToken);
+            await scopedContext.Users
+                .Where(x => x.Id == user.Data.Id)
+                .ExecuteUpdateAsync(setters =>
+                    setters.SetProperty(x => x.LastActivityAt, now)
+                        .SetProperty(x => x.LastLoginAt, now), cancellationToken)
+                .ConfigureAwait(false);
+            ClearCache(user.Data.EmailNormalized, user.Data.ApiKey, user.Data.Id, user.Data.UserNameNormalized);
+        }
 
         // Sets return object so consumer sees new value, actual update to DB happens in another non-blocking thread.
         user.Data.LastActivityAt = now;
@@ -307,9 +298,9 @@ public sealed class UserService(
                     .ExecuteUpdateAsync(x => x.SetProperty(u => u.IsAdmin, true), cancellationToken)
                     .ConfigureAwait(false);
             }
-            
+
             ClearCache(newUser.EmailNormalized, newUser.ApiKey, newUser.Id, newUser.UserNameNormalized);
-            
+
             return GetByEmailAddressAsync(emailAddress, cancellationToken).Result;
         }
     }
@@ -408,10 +399,10 @@ public sealed class UserService(
         {
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(id));
         }
-        
+
         if (username != null)
         {
             CacheManager.Remove(CacheKeyDetailByUsernameTemplate.FormatSmart(username));
-        }        
+        }
     }
 }

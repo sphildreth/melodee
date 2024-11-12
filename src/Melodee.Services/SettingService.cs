@@ -39,13 +39,13 @@ public sealed class SettingService(
 
     public async Task<MelodeeModels.PagedResult<Setting>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        int settingsCount = 0;
+        var settingsCount = 0;
         Setting[] settings = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             try
             {
-                var orderBy = pagedRequest.OrderByValue();                
+                var orderBy = pagedRequest.OrderByValue();
                 var dbConn = scopedContext.Database.GetDbConnection();
                 var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Settings\"");
                 settingsCount = await dbConn
@@ -57,8 +57,9 @@ public sealed class SettingService(
                     var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                     if (dbConn is SqliteConnection)
                     {
-                        listSql = $"{listSqlParts.Item1 } ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                        listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
                     }
+
                     settings = (await dbConn
                         .QueryAsync<Setting>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();
@@ -129,7 +130,7 @@ public sealed class SettingService(
             Type = MelodeeModels.OperationResponseType.Error
         };
     }
-    
+
     public async Task<IMelodeeConfiguration> GetMelodeeConfigurationAsync(CancellationToken cancellationToken = default)
     {
         return new MelodeeConfiguration(await GetAllSettingsAsync(cancellationToken));
