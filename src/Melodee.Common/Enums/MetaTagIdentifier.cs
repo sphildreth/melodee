@@ -54,6 +54,11 @@ public enum MetaTagIdentifier
     [Description("[TALB]")] Album,
 
     /// <summary>
+    /// Disc / Set Subtitle (for multi-disc sets) [TSST] 
+    /// </summary>
+    [Description("[TSST]")] DiscSetSubtitle,
+    
+    /// <summary>
     ///     The ‘Title/Songname/Content description’ frame is the actual name of the piece [TT2, TIT2]
     /// </summary>
     [Description("[TT2, TIT2]")] Title,

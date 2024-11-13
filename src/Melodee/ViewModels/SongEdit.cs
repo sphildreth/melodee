@@ -7,7 +7,7 @@ public sealed class SongEdit
 {
     public bool IsSelected { get; set; }
     
-    [RequiredGreaterThanZero(ErrorMessage = "Song disc number (TSST) is required and must be greater than zero.")]
+    [RequiredGreaterThanZero(ErrorMessage = "Song disc number (TPOS) is required and must be greater than zero.")]
     public int DiscNumber { get; set; }
     
     [RequiredGreaterThanZero(ErrorMessage = "Song Number is required and must be greater than zero.")]

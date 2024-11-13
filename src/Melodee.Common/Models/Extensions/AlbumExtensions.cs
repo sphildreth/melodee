@@ -192,6 +192,11 @@ public static class AlbumExtensions
         return album.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(album.Artist()?.ToNormalizedString() ?? Guid.NewGuid().ToString());
     }
 
+    public static string? DiscSubtitle(this Album album, short discNumber)
+    {
+        return album.Songs?.Select(x => x.MetaTagValue<string?>(MetaTagIdentifier.DiscSetSubtitle)).FirstOrDefault(x => x.Nullify() == null);
+    }
+    
     public static string? ArtistSort(this Album album)
     {
         return album.MetaTagValue<string?>(MetaTagIdentifier.SortAlbumArtist);

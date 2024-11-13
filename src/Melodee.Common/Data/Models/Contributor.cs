@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Contants;
 using Melodee.Common.Data.Validators;
+using Melodee.Common.Enums;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Data.Models;
 
@@ -23,11 +26,21 @@ public class Contributor : DataModelBase
     /// <summary>
     ///     This is the artist who did the contribution, not necessarily the song or album artist.
     /// </summary>
+    public int? ArtistId { get; set; }
+
+    public Artist? Artist { get; set; } = null!;
+
+    /// <summary>
+    /// This is populated when no artist is found (or not an artist, like Publisher and Production)
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
+    public string? ContributorName { get; set; }
+    
     [RequiredGreaterThanZero]
-    public int ArtistId { get; set; }
+    public int MetaTagIdentifier { get; set; }
 
-    public Artist Artist { get; set; } = null!;
-
+    [NotMapped] public MetaTagIdentifier MetaTagIdentifierValue => SafeParser.ToEnum<MetaTagIdentifier>(MetaTagIdentifier);
+    
     /// <summary>
     ///     This is not set when it's an Album level contribution.
     /// </summary>
@@ -42,4 +55,8 @@ public class Contributor : DataModelBase
     public required int AlbumId { get; set; }
 
     public Album Album { get; set; } = null!;
+
+    public int ContributorType { get; set; }
+
+    [NotMapped] public ContributorType TypeValue => SafeParser.ToEnum<ContributorType>(ContributorType);
 }
