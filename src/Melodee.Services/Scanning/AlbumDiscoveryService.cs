@@ -224,7 +224,7 @@ public sealed class AlbumDiscoveryService(
         };
     }
 
-    private async Task<OperationResult<IEnumerable<Album>>> AllMelodeeAlbumDataFilesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<IEnumerable<Album>>> AllMelodeeAlbumDataFilesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
