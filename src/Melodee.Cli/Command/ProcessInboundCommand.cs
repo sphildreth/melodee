@@ -67,7 +67,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                     dbFactory),
                 new AlbumService(Log.Logger,
                     cacheManager,
-                    dbFactory), serializer);
+                    dbFactory));
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var inboundLibrary = (await libraryService.GetInboundLibraryAsync().ConfigureAwait(false)).Data;

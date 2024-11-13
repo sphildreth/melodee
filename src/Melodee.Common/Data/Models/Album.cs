@@ -4,16 +4,22 @@ using Melodee.Common.Data.Contants;
 using Melodee.Common.Data.Validators;
 using Melodee.Common.Enums;
 using Melodee.Common.Utility;
+using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
+[Index(nameof(LibraryId))]
 public sealed class Album : NamedMetaDataModelBase
 {
     [RequiredGreaterThanZero] public int ArtistId { get; set; }
 
     public Artist Artist { get; set; } = null!;
+    
+    [RequiredGreaterThanZero] public int LibraryId { get; set; }
+    
+    public Library Library { get; set; } = null!;
 
     [RequiredGreaterThanZero] public long MediaUniqueId { get; set; }
 

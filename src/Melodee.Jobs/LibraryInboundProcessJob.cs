@@ -13,7 +13,7 @@ namespace Melodee.Jobs;
 /// Processes inbound directory for media and puts processed into staging directory.
 /// </summary>
 [DisallowConcurrentExecution]
-public sealed class InboundDirectoryProcessJob(
+public sealed class LibraryInboundProcessJob(
     ILogger logger,
     SettingService settingService,
     LibraryService libraryService,

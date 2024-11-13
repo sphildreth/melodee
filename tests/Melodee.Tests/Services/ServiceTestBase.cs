@@ -108,7 +108,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected LibraryService GetLibraryService()
     {
-        return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService(), GetArtistService(), GetAlbumService(), Serializer);
+        return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService(), GetArtistService(), GetAlbumService());
     }
 
     protected UserService GetUserService()

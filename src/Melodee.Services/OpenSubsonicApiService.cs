@@ -31,6 +31,8 @@ public class OpenSubsonicApiService(
     AlbumService albumService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
+    public const char ImageApiIdSeparator = '_';
+    
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
     /// <summary>
@@ -141,7 +143,7 @@ public class OpenSubsonicApiService(
                                 a."Name" as "Album",
                                 a."Name" as "Title",
                                 a."Name" as "Name",
-                                'album:' || cast(a."ApiKey" as varchar(50)) as "CoverArt",
+                                'album_' || cast(a."ApiKey" as varchar(50)) as "CoverArt",
                                 a."SongCount",
                                 a."CreatedAt" as "CreatedRaw",
                                 a."Duration"/1000 as "Duration",
@@ -264,6 +266,73 @@ public class OpenSubsonicApiService(
                 DataDetailPropertyName = "genre"
             }
         };
+    }
+
+    /// <summary>
+    /// Returns a cover art image.
+    /// </summary>
+    public async Task<ResponseModel> GetCoverArt(string apiId, int? size, ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        var apiIdParts = apiId.Split(ImageApiIdSeparator);
+        if (apiIdParts.Length != 2)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData with
+                {
+                    Error = Error.InvalidApiKeyError
+                }
+            };
+        }
+        var albumResponse = await albumService.GetByApiKeyAsync(SafeParser.ToGuid(apiIdParts[1])!.Value, cancellationToken);
+        if (!albumResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData with
+                {
+                    Error = Error.InvalidApiKeyError
+                }
+            };
+        }
+        byte[]? coverBytes = null;
+
+        var sql = """
+                  select l."Path" || a."Directory"
+                  from "Albums" a 
+                  left join "Libraries" l on (a."Id" = a."LibraryId")
+                  where a."ApiKey" = @apiKey
+                  limit 1;
+                  """;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var pathToAlbum = dbConn.QuerySingle<string>(sql, new { productID = 1 });
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,            
+            ResponseData = authResponse.ResponseData with
+            {
+                Data = coverBytes,
+                DataPropertyName = string.Empty,
+                DataDetailPropertyName = string.Empty
+            }
+        };
+        
     }
 
     /// <summary>

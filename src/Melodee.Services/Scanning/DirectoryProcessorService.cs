@@ -815,7 +815,7 @@ public sealed class DirectoryProcessorService(
                                 },
                                 new()
                                 {
-                                    Identifier = MetaTagIdentifier.DiscTotal, Value = song.MediaNumber(), SortOrder = 4
+                                    Identifier = MetaTagIdentifier.DiscTotal, Value = song.MediaTotalNumber(), SortOrder = 4
                                 },
                                 new()
                                 {

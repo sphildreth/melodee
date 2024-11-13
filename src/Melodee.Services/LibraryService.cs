@@ -26,8 +26,7 @@ public class LibraryService(
     IDbContextFactory<MelodeeDbContext> contextFactory,
     SettingService settingService,
     ArtistService artistService,
-    AlbumService albumService,
-    ISerializer serializer)
+    AlbumService albumService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
@@ -317,6 +316,7 @@ public class LibraryService(
                             Duration = album.TotalDuration(),
                             Genres = album.Genre() == null ? null : album.Genre()!.Split('/'),
                             IsCompilation = album.IsVariousArtistTypeAlbum(),
+                            LibraryId = library.Id,                            
                             MediaUniqueId = album.UniqueId,
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                             Name = albumTitle,
@@ -363,7 +363,6 @@ public class LibraryService(
                                 FileName = songFileInfo.Name,
                                 FileSize = songFileInfo.Length,
                                 Genres = album.Genre() == null ? null : song.Genre()!.Split('/'),
-                                LibraryId = library.Id,
                                 Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics) ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics),
                                 MediaUniqueId = song.UniqueId,
                                 PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle),
@@ -395,7 +394,7 @@ public class LibraryService(
 
                             foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.InvariantCultureIgnoreCase)) ?? [])
                             {
-                                var role = tmclTag.Value.ToString().Substring(6).Trim();
+                                var role = tmclTag!.Value!.ToString()!.Substring(6).Trim();
                                 var contributorForTag = await CreateContributorForSongAndTag(song, tmclTag.Identifier, dbArtist.Id, dbAlbum.Id, dbSongId, now, role, cancellationToken);
                                 if (contributorForTag != null)
                                 {

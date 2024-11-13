@@ -258,7 +258,22 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             // Set SortOrder necessary for processors
             var tagCount = tags.Count;
             tags.ForEach(x => x.SortOrder = tagCount);
-            tags.First(x => x.Identifier == MetaTagIdentifier.Album).SortOrder = 1;
+            
+            var albumTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
+            var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+            if (albumTag == null || artistTag == null)
+            {
+                return new OperationResult<Common.Models.Song>("Song is invalid, missing Album and/or Artist tags.")
+                {
+                    Data = new Common.Models.Song
+                    {
+                        CrcHash = string.Empty,
+                        File = fileSystemFileInfo
+                    },
+                    Type = OperationResponseType.ValidationFailure
+                };
+            }
+            tags.First(x => x.Identifier == MetaTagIdentifier.Album).SortOrder = 1;            
             tags.First(x => x.Identifier == MetaTagIdentifier.Artist).SortOrder = 2;
             
             // Ensure that AlbumArtist is set, if has fragments will get cleaned up by MetaTag Processor

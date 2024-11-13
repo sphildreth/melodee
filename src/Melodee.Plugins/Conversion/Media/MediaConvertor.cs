@@ -45,7 +45,8 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
         {
             return new OperationResult<FileSystemFileInfo>($"Configuration value '{SettingRegistry.ConversionEnabled}' has disabled media conversion.")
             {
-                Data = fileSystemInfo
+                Data = fileSystemInfo,
+                Type = OperationResponseType.NotImplementedOrDisabled
             };
         }
         if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo)))

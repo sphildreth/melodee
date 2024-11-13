@@ -67,7 +67,7 @@ public class OpenSubsonicApiServiceTests : ServiceTestBase
             });
             await context.SaveChangesAsync();
         }
-        var authResult = await GetOpenSubsonicApiService().AuthenticateSubsonicApiAsync(GetApiRequest(username, salt, HashHelper.CreateMd5($"{password}{salt}")));
+        var authResult = await GetOpenSubsonicApiService().AuthenticateSubsonicApiAsync(GetApiRequest(username, salt, HashHelper.CreateMd5($"{password}{salt}") ?? string.Empty));
         Assert.NotNull(authResult);
         Assert.True(authResult.IsSuccess);
         Assert.NotNull(authResult.ResponseData);

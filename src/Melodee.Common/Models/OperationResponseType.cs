@@ -14,5 +14,8 @@ public enum OperationResponseType
 
     Ok = 200,
 
-    ValidationFailure = 400
+    ValidationFailure = 400,
+    
+    NotImplementedOrDisabled = 501
+    
 }
