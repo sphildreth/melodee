@@ -32,7 +32,7 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
         var minimumValidAlbumYear = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ValidationMinimumAlbumYear]);
         if (yearValue < minimumValidAlbumYear)
         {
-            yearValue = directoryInfo.FullName().TryToGetYearFromString() ?? fileSystemFileInfo.FullName(directoryInfo).TryToGetYearFromString() ?? 0;
+            yearValue = directoryInfo.FullName().TryToGetYearFromString() ?? fileSystemFileInfo.FullPath.TryToGetYearFromString() ?? 0;
             if (yearValue < minimumValidAlbumYear && SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue]))
             {
                 yearValue = DateTime.UtcNow.Year;

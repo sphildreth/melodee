@@ -13,7 +13,7 @@ public sealed record CueSheet
                            Tags.Count(x => x.Identifier == MetaTagIdentifier.AlbumArtist) == 1 &&
                            Tags.Count(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear) == 1 &&
                            SongIndexes.Any() && 
-                           MediaFileSystemFileInfo.Exists(FileSystemDirectoryInfo);
+                           MediaFileSystemFileInfo.Exists();
 
     /// <summary>
     /// This is the media file that is to be split up for the CUE file.

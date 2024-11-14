@@ -191,7 +191,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+        return fileSystemInfo.Extension().DoStringsMatch(HandlesExtension);
     }
 
     private static async Task<SfvLine[]> GetModelsFromSfvFile(FileSystemDirectoryInfo directoryInfo, string filePath)
@@ -245,6 +245,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
             var crc = lineFromFile.Substring(lastSpace + 1);
             var fileSystemInfoFile = new FileSystemFileInfo
             {
+                FullPath = string.Empty,
                 Name = filename,
                 Size = 0
             };
@@ -261,7 +262,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                 fileSystemInfoFile = new FileInfo(Path.Combine(dirName ?? string.Empty, filename)).ToFileSystemInfo();
             }
 
-            var isCrcHashAccurate = IsCrCHashAccurate(fileSystemInfoFile.FullName(directoryInfo), crc);
+            var isCrcHashAccurate = IsCrCHashAccurate(fileSystemInfoFile.FullPath, crc);
             return new SfvLine
             {
                 IsValid = !string.IsNullOrWhiteSpace(filePath) && isCrcHashAccurate,

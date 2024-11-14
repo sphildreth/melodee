@@ -448,14 +448,14 @@ public sealed class DirectoryProcessorService(
 
                     album.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
                     {
-                        var oldImageFileName = image.FileInfo!.FullOriginalName(directoryInfoToProcess);
+                        var oldImageFileName = image.FileInfo!.FullPath;
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
                             File.Copy(oldImageFileName, newImageFileName, true);
                             if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                             {
-                                File.Delete(image.FileInfo!.FullOriginalName(directoryInfoToProcess));
+                                File.Delete(image.FileInfo!.FullPath);
                             }
                         }
                     });
@@ -469,7 +469,7 @@ public sealed class DirectoryProcessorService(
                                 break;
                             }
 
-                            var oldSongFilename = song.File.FullOriginalName(directoryInfoToProcess);
+                            var oldSongFilename = song.File.FullPath;
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
                             if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                             {
@@ -708,9 +708,10 @@ public sealed class DirectoryProcessorService(
                         CrcHash = Crc32.Calculate(fileInfo),
                         FileInfo = new FileSystemFileInfo
                         {
+                            FullPath = fileInfo.FullName,
                             Name = $"{(index + 1).ToStringPadLeft(2)}-{pictureIdentifier}.jpg",
                             Size = fileInfoFileSystemInfo.Size,
-                            OriginalName = fileInfo.Name
+                            FullPathOriginalName = fileInfo.Name
                         },
                         PictureIdentifier = pictureIdentifier,
                         Width = imageInfo.Width,

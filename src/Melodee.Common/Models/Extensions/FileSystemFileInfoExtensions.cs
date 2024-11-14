@@ -4,25 +4,15 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemFileInfoExtensions
 {
-    public static FileInfo ToFileInfo(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo) => new(fileSystemFileInfo.FullName(directoryInfo));
-    
-    public static string FullName(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo)
+    public static FileInfo ToFileInfo(this FileSystemFileInfo fileSystemFileInfo) => new(fileSystemFileInfo.FullPath);
+
+    public static bool Exists(this FileSystemFileInfo fileSystemFileInfo)
     {
-        return Path.Combine(directoryInfo.Path, fileSystemFileInfo.Name);
+        return File.Exists(fileSystemFileInfo.FullPath);
     }
 
-    public static string FullOriginalName(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo)
+    public static string Extension(this FileSystemFileInfo fileSystemFileInfo)
     {
-        return Path.Combine(directoryInfo.Path, fileSystemFileInfo.OriginalName ?? fileSystemFileInfo.Name);
-    }
-
-    public static bool Exists(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo)
-    {
-        return File.Exists(fileSystemFileInfo.FullName(directoryInfo));
-    }
-
-    public static string Extension(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo)
-    {
-        return Path.GetExtension(fileSystemFileInfo.FullName(directoryInfo));
+        return Path.GetExtension(fileSystemFileInfo.FullPath);
     }
 }

@@ -45,6 +45,8 @@ public class Contributor : DataModelBase
     ///     This is not set when it's an Album level contribution.
     /// </summary>
     public int? SongId { get; set; }
+    
+    [NotMapped] public long SongUniqueId { get; set; }
 
     public Song? Song { get; set; }
 

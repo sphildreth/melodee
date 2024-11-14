@@ -52,6 +52,7 @@ public class AlbumExtensionTests
                     CrcHash = Crc32.Calculate(new FileInfo(@"/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3")),
                     File = new FileSystemFileInfo
                     {
+                        FullPath = "melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3",
                         Name = "03-holy_truth-flako_el_dark_cowboy.mp3\"",
                         Size = 12343
                     },

@@ -25,7 +25,7 @@ public class ImageConversionTests
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullPath);
             Assert.True(convertedFileInfo.Exists);
         }
     }
@@ -48,7 +48,7 @@ public class ImageConversionTests
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullPath);
             Assert.True(convertedFileInfo.Exists);
         }
     }
@@ -71,7 +71,7 @@ public class ImageConversionTests
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullPath);
             Assert.True(convertedFileInfo.Exists);
         }
     }
@@ -94,7 +94,7 @@ public class ImageConversionTests
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullPath);
             Assert.True(convertedFileInfo.Exists);
         }
     }
@@ -117,7 +117,7 @@ public class ImageConversionTests
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullPath);
             Assert.True(convertedFileInfo.Exists);
         }
     }

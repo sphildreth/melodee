@@ -171,7 +171,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+        return fileSystemInfo.Extension().DoStringsMatch(HandlesExtension);
     }
 
     private static async Task<M3ULine[]> GetModelsFromM3UFile(string filePath)
@@ -219,6 +219,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
 
                 var fileSystemInfoFile = new FileSystemFileInfo
                 {
+                    FullPath = string.Empty,
                     Name = lineFromFile,
                     Size = 0
                 };
@@ -237,7 +238,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
 
                 return new M3ULine
                 {
-                    IsValid = !string.IsNullOrWhiteSpace(filePath) && fileSystemInfoFile.Exists(directoryInfo),
+                    IsValid = !string.IsNullOrWhiteSpace(filePath) && fileSystemInfoFile.Exists(),
                     FileSystemFileInfo = fileSystemInfoFile,
                     AlbumArist = albumArtist.Replace("_", " ").CleanString(true),
                     SongNumber = SafeParser.ToNumber<int>(parts[0]),

@@ -379,7 +379,7 @@ public class OpenSubsonicApiService(
             };
         }
 
-        await schedule.TriggerJob(JobKeyRegistry.LibraryInboundProcessJobKey, cancellationToken);
+        await schedule.TriggerJob(JobKeyRegistry.LibraryProcessJobJobKey, cancellationToken);
         
         return new ResponseModel
         {
@@ -405,14 +405,13 @@ public class OpenSubsonicApiService(
         }
         
         var executingJobs = await schedule.GetCurrentlyExecutingJobs(cancellationToken);
-        var libraryProcessJob = executingJobs.FirstOrDefault(x => Equals(x.JobDetail.Key, JobKeyRegistry.LibraryInboundProcessJobKey));
+        var libraryProcessJob = executingJobs.FirstOrDefault(x => Equals(x.JobDetail.Key, JobKeyRegistry.LibraryProcessJobJobKey));
 
         var data = new ScanStatus(false, 0);
         if (libraryProcessJob != null)
         {
             var dataMap = libraryProcessJob.JobDetail.JobDataMap;
-            var jobDataMapLibraryScanHistory =(LibraryScanHistory)dataMap.Get(nameof(LibraryScanHistory));
-            data = new ScanStatus(jobDataMapLibraryScanHistory.ScanStatus == Common.Enums.ScanStatus.InProcess, jobDataMapLibraryScanHistory.Count);
+            data = new ScanStatus(dataMap.GetString(JobMapNameRegistry.ScanStatus) == Common.Enums.ScanStatus.InProcess.ToString(), dataMap.GetIntValue(JobMapNameRegistry.Count));
         }
         return new ResponseModel
         {

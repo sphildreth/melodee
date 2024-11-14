@@ -21,6 +21,7 @@ public class SongTitleMetaTagProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
+            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, tag, []);
@@ -44,6 +45,7 @@ public class SongTitleMetaTagProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
+            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, tag, []);
@@ -67,6 +69,7 @@ public class SongTitleMetaTagProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
+            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, tag, []);
@@ -90,6 +93,7 @@ public class SongTitleMetaTagProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
+            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, tag, []);

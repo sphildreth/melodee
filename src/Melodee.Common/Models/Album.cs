@@ -78,7 +78,7 @@ public sealed record Album
         var cover = Images.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
         if (cover != null && Directory != null)
         {
-            var imageBytes = await File.ReadAllBytesAsync(cover.FileInfo?.FullName(Directory) ?? string.Empty, cancellationToken);
+            var imageBytes = await File.ReadAllBytesAsync(cover.FileInfo?.FullPath ?? string.Empty, cancellationToken);
             return $"data:image/jpeg;base64,{ Convert.ToBase64String(imageBytes)}";   
         }
         return null;

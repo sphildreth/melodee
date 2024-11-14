@@ -49,7 +49,7 @@ public sealed class AlbumDiscoveryService(
         CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data.FirstOrDefault(x => x.UniqueId == uniqueId);
+        var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data?.FirstOrDefault(x => x.UniqueId == uniqueId);
         if (result == null)
         {
             Log.Error("Unable to find Album by id[{UniqueId}]", uniqueId);
@@ -75,7 +75,7 @@ public sealed class AlbumDiscoveryService(
         var dataForDirectoryInfoResult = await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
         if (dataForDirectoryInfoResult.IsSuccess)
         {
-            albums.AddRange(dataForDirectoryInfoResult.Data);
+            albums.AddRange(dataForDirectoryInfoResult.Data!);
         }
 
         foreach (var childDir in dirInfo.EnumerateDirectories("*.*", SearchOption.AllDirectories))
@@ -93,7 +93,7 @@ public sealed class AlbumDiscoveryService(
 
             if (dataForChildDirResult.IsSuccess)
             {
-                foreach (var r in dataForChildDirResult.Data)
+                foreach (var r in dataForChildDirResult.Data!)
                 {
                     if (albums.All(x => x.UniqueId != r.UniqueId))
                     {
@@ -224,7 +224,7 @@ public sealed class AlbumDiscoveryService(
         };
     }
 
-    public async Task<OperationResult<IEnumerable<Album>>> AllMelodeeAlbumDataFilesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<IEnumerable<Album>?>> AllMelodeeAlbumDataFilesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
@@ -272,10 +272,10 @@ public sealed class AlbumDiscoveryService(
             errors.Add(e);
         }
 
-        return new OperationResult<IEnumerable<Album>>(messages)
+        return new OperationResult<IEnumerable<Album>?>(messages)
         {
             Errors = errors,
-            Data = albums.ToArray()
+            Data = albums.Count == 0 ? null : albums.ToArray()
         };
     }
 }

@@ -111,7 +111,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+        return fileSystemInfo.Extension().DoStringsMatch(HandlesExtension);
     }
 
     private static (KeyValuePair<string, object?>, string?) ParseLine(string line, char splitChar)
@@ -235,6 +235,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                     File = new FileSystemFileInfo
                     {
                         Name = string.Empty,
+                        FullPath = string.Empty,
                         Size = 0
                     },
                     SortOrder = songNumber

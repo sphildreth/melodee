@@ -7,11 +7,12 @@ public static class FileInfoExtensions
 {
     public static FileSystemFileInfo ToFileSystemInfo(this FileInfo fileInfo)
     {
-        return new FileSystemFileInfo()
+        return new FileSystemFileInfo
         {
+            FullPath = fileInfo.FullName,
             Name = fileInfo.Name,
             Size = fileInfo.Exists ? fileInfo.Length : 0,
-            OriginalName = fileInfo.Name
+            FullPathOriginalName = fileInfo.Name
         };
     }
 }

@@ -20,7 +20,7 @@ public static class CueSheetExtensions
 
     public static Album ToAlbum(this CueSheet cueSheet, FileSystemDirectoryInfo directoryInfo)
     {
-        var fileInfo = new FileInfo(cueSheet.MediaFileSystemFileInfo.FullName(directoryInfo));
+        var fileInfo = new FileInfo(cueSheet.MediaFileSystemFileInfo.FullPath);
         return new Album
         {
             Files = new[]

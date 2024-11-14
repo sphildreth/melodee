@@ -1,7 +1,10 @@
+using System.ComponentModel;
 using Asp.Versioning;
 using Blazored.SessionStorage;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
+using Melodee.Common.Enums;
 using Melodee.Common.Serialization;
 using Melodee.Components;
 using Melodee.Jobs;
@@ -14,6 +17,7 @@ using Melodee.Utils;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Npgsql;
 using Quartz;
 using Quartz.AspNetCore;
@@ -89,16 +93,19 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(opts => opts
         .ForJob(JobKeyRegistry.LibraryInboundProcessJobKey)
         .WithIdentity("LibraryInboundProcessJob-trigger")
+        .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
+        .UsingJobData(JobMapNameRegistry.Count, 0)
         .WithCronSchedule("0 0/10 * * * ?")
     );
     
-    // jobKey = new JobKey(nameof(LibraryProcessJob));
-    // q.AddJob<LibraryProcessJob>(opts => opts.WithIdentity(jobKey));
-    // q.AddTrigger(opts => opts
-    //     .ForJob(jobKey)
-    //     .WithIdentity("LibraryProcessJob-trigger")
-    //     .WithCronSchedule("0 0/10 * * * ?")
-    // );    
+    q.AddJob<LibraryProcessJob>(opts => opts.WithIdentity(JobKeyRegistry.LibraryProcessJobJobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(JobKeyRegistry.LibraryProcessJobJobKey)
+        .WithIdentity("LibraryProcessJob-trigger")
+        .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
+        .UsingJobData(JobMapNameRegistry.Count, 0)        
+        .WithCronSchedule("0 0 * * * ?")
+    );    
     
 });
 builder.Services.AddSingleton<IScheduler>(provider =>

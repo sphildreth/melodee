@@ -28,12 +28,12 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo))
+        if (!IsEnabled || !fileSystemInfo.Exists())
         {
             return false;
         }
 
-        return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
+        return FileHelper.IsFileMediaType(fileSystemInfo.Extension());
     }
 
     public async Task<OperationResult<Common.Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
@@ -46,9 +46,9 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
 
             try
             {
-                if (fileSystemInfo.Exists(directoryInfo))
+                if (fileSystemInfo.Exists())
                 {
-                    var fullname = fileSystemInfo.FullName(directoryInfo);
+                    var fullname = fileSystemInfo.FullPath;
                     if (ID3v1Tag.DoesTagExist(fullname))
                     {
                         var id3V1 = new ID3v1Tag(fullname);
@@ -143,7 +143,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
 
             var song = new Common.Models.Song
             {
-                CrcHash = Crc32.Calculate(new FileInfo(fileSystemInfo.FullName(directoryInfo))),
+                CrcHash = Crc32.Calculate(new FileInfo(fileSystemInfo.FullPath)),
                 File = fileSystemInfo,
                 Images = images,
                 Tags = metaTagsProcessorResult.Data,

@@ -118,8 +118,8 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                         {
                             var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
                             var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
-                            await FFMpegArguments.FromFileInput(cueModel.MediaFileSystemFileInfo.FullName(fileSystemDirectoryInfo))
-                                .OutputToFile(song.File.FullName(fileSystemDirectoryInfo), true, options =>
+                            await FFMpegArguments.FromFileInput(cueModel.MediaFileSystemFileInfo.FullPath)
+                                .OutputToFile(song.File.FullPath, true, options =>
                                 {
                                     var seekTs = new TimeSpan(0, index.Minutes, index.Seconds);
                                     options.Seek(seekTs);
@@ -205,7 +205,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+        return fileSystemInfo.Extension().DoStringsMatch(HandlesExtension);
     }
 
     public static async Task<Models.CueSheet?> ParseFileAsync(string filePath, Dictionary<string, object?> configuration)
@@ -422,18 +422,20 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                         //song.MediaTotalNumber()
                         var totalMediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscTotal)?.Value as int? ?? 1;
                         songTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
+                        var songFileName = SongExtensions.SongFileName(
+                            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
+                            songNumber,
+                            songTitle,
+                            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
+                            mediaNumber,
+                            totalMediaNumber);
                         songs.Add(new Common.Models.Song
                         {
                             CrcHash = Crc32.Calculate(fileInfo),
                             File = new FileSystemFileInfo
                             {
-                                Name = SongExtensions.SongFileName(
-                                    SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
-                                    songNumber,
-                                    songTitle,
-                                    SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),                                    
-                                    mediaNumber,
-                                    totalMediaNumber),
+                                FullPath = songFileName,
+                                Name = Path.GetFileName(songFileName),
                                 Size = 0
                             },
                             Tags = songTags.ToArray(),
@@ -457,18 +459,20 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
         {
             var mediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 1;
             var totalMediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscTotal)?.Value as int? ?? 1;
+            var songFileName = SongExtensions.SongFileName(
+                SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
+                songNumber,
+                songTitle,
+                SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
+                mediaNumber,
+                totalMediaNumber);            
             songs.Add(new Common.Models.Song
             {
                 CrcHash = Crc32.Calculate(fileInfo),
                 File = new FileSystemFileInfo
                 {
-                    Name = SongExtensions.SongFileName(
-                        SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
-                        songNumber,
-                        songTitle,
-                        SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),                                    
-                        mediaNumber,
-                        totalMediaNumber),                    
+                    FullPath = songFileName,
+                    Name = Path.GetFileName(songFileName),                    
                     Size = 0
                 },
                 Tags = songTags.ToArray()
