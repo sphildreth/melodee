@@ -2,6 +2,7 @@ using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -13,8 +14,10 @@ using Melodee.Common.Utility;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using Quartz;
 using Serilog;
 using License = Melodee.Common.Models.OpenSubsonic.License;
+using Playlist = Melodee.Common.Models.OpenSubsonic.Playlist;
 
 namespace Melodee.Services;
 
@@ -28,7 +31,8 @@ public class OpenSubsonicApiService(
     SettingService settingService,
     UserService userService,
     ArtistService artistService,
-    AlbumService albumService)
+    AlbumService albumService,
+    IScheduler schedule)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     public const char ImageApiIdSeparator = '_';
@@ -345,7 +349,7 @@ public class OpenSubsonicApiService(
         {
             UserInfo = BlankUserInfo,
             IsSuccess = true,
-            ResponseData = await NewApiResponse(true, string.Empty, null)
+            ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
         };
         var data = new List<OpenSubsonicExtension>
         {
@@ -362,6 +366,64 @@ public class OpenSubsonicApiService(
             }
         };
     }
+
+    public async Task<ResponseModel> StartScanAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        await schedule.TriggerJob(JobKeyRegistry.LibraryInboundProcessJobKey, cancellationToken);
+        
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            ResponseData = authResponse.ResponseData with
+            {
+                Data = new ScanStatus(true, 0),
+                DataPropertyName = "scanStatus"
+            }
+        };        
+    }
+    
+    public async Task<object> GetScanStatusAsync(ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+        
+        var executingJobs = await schedule.GetCurrentlyExecutingJobs(cancellationToken);
+        var libraryProcessJob = executingJobs.FirstOrDefault(x => Equals(x.JobDetail.Key, JobKeyRegistry.LibraryInboundProcessJobKey));
+
+        var data = new ScanStatus(false, 0);
+        if (libraryProcessJob != null)
+        {
+            var dataMap = libraryProcessJob.JobDetail.JobDataMap;
+            var jobDataMapLibraryScanHistory =(LibraryScanHistory)dataMap.Get(nameof(LibraryScanHistory));
+            data = new ScanStatus(jobDataMapLibraryScanHistory.ScanStatus == Common.Enums.ScanStatus.InProcess, jobDataMapLibraryScanHistory.Count);
+        }
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            ResponseData = authResponse.ResponseData with
+            {
+                Data = data,
+                DataPropertyName = "scanStatus"
+            }
+        };         
+    }    
 
     public async Task<ResponseModel> AuthenticateSubsonicApiAsync(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
     {
@@ -381,7 +443,7 @@ public class OpenSubsonicApiService(
         var user = await userService.GetByUsernameAsync(apiApiRequest.Username, cancellationToken).ConfigureAwait(false);
         try
         {
-            if (!user.IsSuccess || user.Data.IsLocked)
+            if (!user.IsSuccess || (user.Data?.IsLocked ?? false))
             {
                 Logger.Warning("Locked user [{Username}] attempted to authenticate with [{Client}]", apiApiRequest.Username, apiApiRequest.ApiRequestPlayer);
             }
@@ -458,4 +520,6 @@ public class OpenSubsonicApiService(
             DataPropertyName = dataPropertyName
         };
     }
+
+
 }

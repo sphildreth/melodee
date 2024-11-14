@@ -6,8 +6,7 @@ namespace Melodee.Jobs;
 
 public class MusicBrainzUpdateDatabaseJob(
     ILogger logger,
-    SettingService settingService,
-    LibraryService libraryService) : JobBase(logger, settingService)
+    SettingService settingService) : JobBase(logger, settingService)
 {
     public override Task Execute(IJobExecutionContext context)
     {

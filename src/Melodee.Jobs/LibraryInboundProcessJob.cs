@@ -1,4 +1,5 @@
 using Melodee.Common.Data.Models;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Services;
@@ -19,6 +20,7 @@ public sealed class LibraryInboundProcessJob(
     LibraryService libraryService,
     DirectoryProcessorService directoryProcessorService) : JobBase(logger, settingService)
 {
+    
     public override async Task Execute(IJobExecutionContext context)
     {
         var inboundLibrary = (await libraryService.GetInboundLibraryAsync(context.CancellationToken).ConfigureAwait(false)).Data;
@@ -33,9 +35,13 @@ public sealed class LibraryInboundProcessJob(
             Logger.Debug($"Inbound library does not need scanning. Directory last scanned [{ inboundLibrary.LastScanAt }], Directory last write [{ inboundLibrary.LastWriteTime()}]");
             return;
         }
-
+        
+        var dataMap = context.JobDetail.JobDataMap;
+        var jobDataMap = (LibraryScanHistory)dataMap.Get(nameof(LibraryScanHistory));        
+        
         try
         {
+            jobDataMap.ScanStatus = ScanStatus.InProcess;
             await directoryProcessorService.InitializeAsync(null, context.CancellationToken).ConfigureAwait(false);        
             var result = await directoryProcessorService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
@@ -47,6 +53,10 @@ public sealed class LibraryInboundProcessJob(
             {
                 Logger.Warning("Failed to Scan inbound library.");
             }
+            jobDataMap.ScanStatus = ScanStatus.Idle;
+            jobDataMap.FoundAlbumsCount = result.Data.NewAlbumsCount;
+            jobDataMap.FoundArtistsCount = result.Data.NewArtistsCount;
+            jobDataMap.FoundSongsCount = result.Data.NewSongsCount;
             await libraryService.CreateLibraryScanHistory(inboundLibrary, new LibraryScanHistory
             {
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),

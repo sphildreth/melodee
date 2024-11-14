@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Blazored.SessionStorage;
+using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Serialization;
 using Melodee.Components;
@@ -83,21 +84,21 @@ builder.Services.AddQuartz(q =>
 {
     q.UseTimeZoneConverter();
     
-    var jobKey = new JobKey(nameof(LibraryInboundProcessJob));
-    q.AddJob<LibraryInboundProcessJob>(opts => opts.WithIdentity(jobKey));
+
+    q.AddJob<LibraryInboundProcessJob>(opts => opts.WithIdentity(JobKeyRegistry.LibraryInboundProcessJobKey));
     q.AddTrigger(opts => opts
-        .ForJob(jobKey)
+        .ForJob(JobKeyRegistry.LibraryInboundProcessJobKey)
         .WithIdentity("LibraryInboundProcessJob-trigger")
         .WithCronSchedule("0 0/10 * * * ?")
     );
     
-    jobKey = new JobKey(nameof(LibraryProcessJob));
-    q.AddJob<LibraryProcessJob>(opts => opts.WithIdentity(jobKey));
-    q.AddTrigger(opts => opts
-        .ForJob(jobKey)
-        .WithIdentity("LibraryProcessJob-trigger")
-        .WithCronSchedule("0 0/10 * * * ?")
-    );    
+    // jobKey = new JobKey(nameof(LibraryProcessJob));
+    // q.AddJob<LibraryProcessJob>(opts => opts.WithIdentity(jobKey));
+    // q.AddTrigger(opts => opts
+    //     .ForJob(jobKey)
+    //     .WithIdentity("LibraryProcessJob-trigger")
+    //     .WithCronSchedule("0 0/10 * * * ?")
+    // );    
     
 });
 builder.Services.AddSingleton<IScheduler>(provider =>

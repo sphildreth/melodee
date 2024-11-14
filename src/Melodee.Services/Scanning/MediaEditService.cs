@@ -759,8 +759,7 @@ public sealed class MediaEditService(
                 var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, selectedAlbumId, cancellationToken);
                 var albumStagingDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, album.ToDirectoryName()));
                 var albumLibraryDirInfo = new DirectoryInfo(Path.Combine(_directoryLibrary, album.ToDirectoryName()));
-                var doMove = SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary]);
-                MoveDirectory(albumStagingDirInfo.FullName, albumLibraryDirInfo.FullName, doMove ? null : Album.JsonFileName);
+                MoveDirectory(albumStagingDirInfo.FullName, albumLibraryDirInfo.FullName, null);
             }
 
             DirectoryStagingFileSystemDirectoryInfo.DeleteAllEmptyDirectories();

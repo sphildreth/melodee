@@ -30,6 +30,7 @@ public static class SettingRegistry
     public const string PluginEnabledSimpleFileVerification = "plugin.simpleFileVerification.enabled";
     public const string ProcessingAlbumTitleRemovals = "processing.albumTitleRemovals";
     public const string ProcessingArtistNameReplacements = "processing.artistNameReplacements";
+    public const string ProcessingBatchSize = "processing.processingBatchSize";
     public const string ProcessingConvertedExtension = "processing.convertedExtension";
     public const string ProcessingDoContinueOnDirectoryProcessingErrors = "processing.doContinueOnDirectoryProcessingErrors";
     public const string ProcessingDoDeleteOriginal = "processing.doDeleteOriginal";
@@ -41,7 +42,6 @@ public static class SettingRegistry
     public const string ProcessingMaximumAlbumDirectoryNameLength = "processing.maximumAlbumDirectoryNameLength";
     public const string ProcessingMaximumArtistDirectoryNameLength = "processing.maximumArtistDirectoryNameLength";
     public const string ProcessingMaximumProcessingCount = "processing.maximumProcessingCount";
-    public const string ProcessingMoveMelodeeJsonDataFileToLibrary = "processing.moveMelodeeJsonDataFileToLibrary";
     public const string ProcessingProcessedExtension = "processing.processedExtension";
     public const string ProcessingSkippedExtension = "processing.skippedExtension";
     public const string ProcessingSongTitleRemovals = "processing.songTitleRemovals";

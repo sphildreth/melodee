@@ -121,14 +121,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
-                    Id = 5,
-                    Key = SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary,
-                    Comment = "When true then move the Melodee.json data file, created during staging, when moving Albums into Library - otherwise delete.",
-                    Value = "true",
-                    CreatedAt = now
-                },
-                new Setting
-                {
                     Id = 6,
                     Key = SettingRegistry.UserInterfaceToastAutoCloseTime,
                     Comment = "Amount of time to display a Toast then auto-close (in milliseconds.)",
@@ -502,7 +494,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "OpenSubsonic email to use in License responses.",
                     Value = "noreply@localhost.lan",
                     CreatedAt = now
-                }              
+                },
+                new Setting
+                {
+                    Id = 53,
+                    Key = SettingRegistry.ProcessingBatchSize,
+                    Comment = "Processing batching size, set to 0 for infinite.",
+                    Value = "500",
+                    CreatedAt = now
+                }                 
             );
         });
 

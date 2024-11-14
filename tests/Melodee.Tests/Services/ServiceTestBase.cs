@@ -10,6 +10,7 @@ using Melodee.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Quartz;
 using Serilog;
 
 namespace Melodee.Tests.Services;
@@ -93,7 +94,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetSettingService(),
             GetUserService(),
             GetArtistService(),
-            GetAlbumService());
+            GetAlbumService(),
+            new Mock<IScheduler>().Object);
     }
 
     protected ArtistService GetArtistService()
@@ -108,7 +110,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected LibraryService GetLibraryService()
     {
-        return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService(), GetArtistService(), GetAlbumService());
+        return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService());
     }
 
     protected UserService GetUserService()

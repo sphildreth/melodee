@@ -24,9 +24,7 @@ public class LibraryService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService,
-    ArtistService artistService,
-    AlbumService albumService)
+    SettingService settingService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
@@ -259,8 +257,7 @@ public class LibraryService(
                 Directory.CreateDirectory(libraryAlbumPath);
             }
             // TODO if data album exists for model album if so determine which is better quality
-            var doMove = SafeParser.ToBoolean(configuration.Configuration[SettingRegistry.ProcessingMoveMelodeeJsonDataFileToLibrary]);
-            MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, doMove ? null : MelodeeModels.Album.JsonFileName);
+            MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, null);
         }
         return new MelodeeModels.OperationResult<bool>
         {

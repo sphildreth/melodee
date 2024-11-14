@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Validators;
+using Melodee.Common.Enums;
 using NodaTime;
 
 namespace Melodee.Common.Data.Models;
@@ -29,4 +30,11 @@ public class LibraryScanHistory
     [RequiredGreaterThanZero] public double DurationInMs { get; set; }
 
     [NotMapped] public Duration DurationInMillisecondsValue => Duration.FromMilliseconds(DurationInMs);
+    
+    [NotMapped] public ScanStatus ScanStatus { get; set; }
+    
+    /// <summary>
+    ///  	Scanned item count
+    /// </summary>
+    [NotMapped] public int Count => FoundArtistsCount + FoundAlbumsCount + FoundSongsCount;
 }
