@@ -87,9 +87,17 @@ builder.Services.AddQuartz(q =>
     q.AddJob<LibraryInboundProcessJob>(opts => opts.WithIdentity(jobKey));
     q.AddTrigger(opts => opts
         .ForJob(jobKey)
-        .WithIdentity("MediaScanJob-trigger")
+        .WithIdentity("LibraryInboundProcessJob-trigger")
         .WithCronSchedule("0 0/10 * * * ?")
     );
+    
+    jobKey = new JobKey(nameof(LibraryProcessJob));
+    q.AddJob<LibraryProcessJob>(opts => opts.WithIdentity(jobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("LibraryProcessJob-trigger")
+        .WithCronSchedule("0 0/10 * * * ?")
+    );    
     
 });
 builder.Services.AddSingleton<IScheduler>(provider =>
