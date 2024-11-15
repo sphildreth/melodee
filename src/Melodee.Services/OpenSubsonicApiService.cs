@@ -408,10 +408,20 @@ public class OpenSubsonicApiService(
         var libraryProcessJob = executingJobs.FirstOrDefault(x => Equals(x.JobDetail.Key, JobKeyRegistry.LibraryProcessJobJobKey));
 
         var data = new ScanStatus(false, 0);
-        if (libraryProcessJob != null)
+        try
         {
-            var dataMap = libraryProcessJob.JobDetail.JobDataMap;
-            data = new ScanStatus(dataMap.GetString(JobMapNameRegistry.ScanStatus) == Common.Enums.ScanStatus.InProcess.ToString(), dataMap.GetIntValue(JobMapNameRegistry.Count));
+            if (libraryProcessJob != null)
+            {
+                var dataMap = libraryProcessJob.JobDetail.JobDataMap;
+                if (dataMap.ContainsKey(JobMapNameRegistry.ScanStatus) && dataMap.ContainsKey(JobMapNameRegistry.Count))
+                {
+                    data = new ScanStatus(dataMap.GetString(JobMapNameRegistry.ScanStatus) == Common.Enums.ScanStatus.InProcess.ToString(), dataMap.GetIntValue(JobMapNameRegistry.Count));
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Attempting to get Scan Status");
         }
         return new ResponseModel
         {

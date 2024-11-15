@@ -841,6 +841,7 @@ public sealed class DirectoryProcessorService(
                                 Images = songsGroupedByAlbum.Where(x => x.Images != null)
                                     .SelectMany(x => x.Images!)
                                     .DistinctBy(x => x.CrcHash).ToArray(),
+                                Directory = fileSystemDirectoryInfo,
                                 OriginalDirectory = fileSystemDirectoryInfo,
                                 Tags = newAlbumTags,
                                 Songs = songsGroupedByAlbum.OrderBy(x => x.SortOrder).ToArray(),

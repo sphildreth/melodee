@@ -4,6 +4,7 @@ using System.Text.Json;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Utility;
 using SerilogTimings;
 
@@ -95,26 +96,58 @@ public static class AlbumExtensions
     {
         if (album.Tags?.Count() == 0)
         {
+            Trace.WriteLine("Melodee file has no tags.");
             return false;
         }
 
         if (album.Songs?.Count() == 0)
         {
+            Trace.WriteLine("Melodee file has no songs.");
             return false;
         }
-
+        
         if (album.Songs?.Any(x => !x.IsValid(configuration)) ?? false)
         {
+            Trace.WriteLine("Melodee file has no valid songs.");
             return false;
         }
 
+        var songsGroupedByMediaNumber = album.Songs?.GroupBy(x => x.MediaNumber());
+        var songsGroupedByMediaNumberAndSongNumber = songsGroupedByMediaNumber?.SelectMany(x => x).GroupBy(x => x.SongNumber());
+        if (songsGroupedByMediaNumberAndSongNumber?.Where(x => x.Count() > 1)?.Any() ?? false)
+        {
+            Trace.WriteLine("Melodee file has media and/or song numbers that are duplicated.");
+            return false;
+        }
+        
         var artist = album.Artist().Nullify();
+        if (artist == null)
+        {
+            Trace.WriteLine("Melodee file artist name is invalid.");
+            return false;
+        }
+        
         var albumTitle = album.AlbumTitle().Nullify();
-        return album.UniqueId > 0 &&
-               artist != null &&
-               albumTitle != null &&
-               album.Status is AlbumStatus.Ok or AlbumStatus.New &&
-               album.HasValidAlbumYear(configuration); 
+        if (albumTitle == null)
+        {
+            Trace.WriteLine("Melodee file album title is invalid.");
+            return false;
+        }
+
+        if (album.UniqueId < 1)
+        {
+            Trace.WriteLine("Melodee file album unique id is invalid.");
+            return false;
+        }
+
+        if (!album.HasValidAlbumYear(configuration))
+        {
+            Trace.WriteLine("Melodee file album year is invalid.");
+            return false;
+        }
+        
+        return album.Status is AlbumStatus.Ok or AlbumStatus.New;
+
     }
     
     public static string ToMelodeeJsonName(this Album album, bool? isForAlbumDirectory = null)
@@ -256,6 +289,15 @@ public static class AlbumExtensions
                     discTotal = SafeParser.ToNumber<short?>(discTotalToParse);
                 }
             }
+            else
+            {
+                discTotal = album.Songs?.FirstOrDefault(x => x.MediaTotalNumber() > 0)?.MediaTotalNumber() ?? 0;
+            }
+        }
+
+        if (discTotal == null || discTotal < 1 && (album.Songs?.Any() ?? false))
+        {
+            return SafeParser.ToNumber<short>(album.Songs?.GroupBy(x => x.MediaNumber()).Count());
         }
         return discTotal ?? 0;
     }

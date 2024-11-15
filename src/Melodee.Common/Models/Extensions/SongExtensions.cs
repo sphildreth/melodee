@@ -34,7 +34,13 @@ public static class SongExtensions
                 vv = vv.ToString() ?? string.Empty;
             }
 
-            var converter = TypeDescriptor.GetConverter(typeof(T?));
+            var tType = typeof(T?);
+            
+            var converter = TypeDescriptor.GetConverter(tType);
+            if (tType == typeof(short) || tType == typeof(short?))
+            {
+                return (T?)converter.ConvertFrom(short.Parse(vv.ToString() ?? string.Empty));
+            }
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)
@@ -185,7 +191,7 @@ public static class SongExtensions
     public static short MediaTotalNumber(this Song song)
     {
         return song.MetaTagValue<short?>(MetaTagIdentifier.DiscTotal) ??
-               song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumberTotal) ?? 0;
+               song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumberTotal) ?? 1;
     }
 
     public static bool IsValid(this Song song, Dictionary<string, object?> configuration)

@@ -114,7 +114,7 @@ public sealed record Album
 
     public override string ToString()
     {
-        return $"UniqueId [{UniqueId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+        return $"UniqueId [{UniqueId}] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
     public Album Merge(Album otherAlbum)
