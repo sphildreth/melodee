@@ -147,17 +147,9 @@ public sealed class MediaEditService(
         CheckInitialized();
 
         var serialized = serializer.Serialize(album);
-        var albumDirectoryName = album.ToDirectoryName();
-        if (albumDirectoryName.Nullify() != null)
-        {
-            var albumStagingDirInfo = new DirectoryInfo(Path.Combine(directoryInfo.FullName(), albumDirectoryName));
-            var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
-            await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
-        }
-        else
-        {
-            Log.Warning("[{Album}] has invalid Directory Name [{AlbumDirectoryName}]", album.ToString(), albumDirectoryName);
-        }
+        var albumStagingDirInfo = new DirectoryInfo(directoryInfo.FullName());
+        var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
+        await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
     }
 
     public async Task<OperationResult<bool>> RemoveUnwantedTextFromAlbumTitle(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
