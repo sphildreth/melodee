@@ -1,7 +1,7 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Data.Models;
 
-namespace Melodee.Services;
+namespace Melodee.Services.Interfaces;
 
 public interface ISettingService
 {

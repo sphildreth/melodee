@@ -45,6 +45,9 @@ public static class SettingRegistry
     public const string ScriptingEnabled = "scripting.enabled";
     public const string ScriptingPostDiscoveryScript = "scripting.postDiscoveryScript";
     public const string ScriptingPreDiscoveryScript = "scripting.preDiscoveryScript";
+    public const string SearchEngineEnabledBingImage = "searchEngine.bingImage.enabled";
+    public const string SearchEngineApiKeyBingImage = "searchEngine.bingImage.apiKey";
+    public const string SearchEngineUserAgent = "searchEngine.userAgent";
     public const string OpenSubsonicServerLicenseEmail = "scripting.openSubsonicServerLicenseEmail";
     public const string OpenSubsonicServerSupportedVersion = "scripting.openSubsonicServerSupportedVersion";
     public const string OpenSubsonicServerType = "scripting.openSubsonicServerType";

@@ -77,7 +77,9 @@ public sealed record Album
         {
             return null;
         }
-        var cover = Images.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
+
+        var cover = Images.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front) ?? Images.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.SecondaryFront);
+        
         if (cover != null && Directory != null)
         {
             var imageBytes = await File.ReadAllBytesAsync(cover.FileInfo?.FullPath ?? string.Empty, cancellationToken);

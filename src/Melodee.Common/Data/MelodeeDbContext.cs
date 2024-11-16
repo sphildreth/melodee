@@ -494,7 +494,31 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Processing batching size.",
                     Value = "500",
                     CreatedAt = now
-                }                 
+                },
+                new Setting
+                {
+                    Id = 60,
+                    Key = SettingRegistry.SearchEngineEnabledBingImage,
+                    Comment = "Use Bing search engine to find images for albums and artists.",
+                    Value = "false",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 61,
+                    Key = SettingRegistry.SearchEngineApiKeyBingImage,
+                    Comment = "Bing search ApiKey (Ocp-Apim-Subscription-Key), leave blank to disable.",
+                    Value = "",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 62,
+                    Key = SettingRegistry.SearchEngineUserAgent,
+                    Comment = "User agent to send with Search engine requests.",
+                    Value = "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0",
+                    CreatedAt = now
+                }                
             );
         });
 

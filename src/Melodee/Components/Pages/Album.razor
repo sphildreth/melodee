@@ -1,5 +1,6 @@
 ﻿@page "/album/{libraryApiKey:guid}/{uniqueId:long}/{returnUrl}"
-@using SmartFormat
+@using System.Security.Principal
+@using Melodee.Common.Models.SearchEngines
 
 @inject AlbumDiscoveryService AlbumsDiscoverer
 @inject DefaultImages DefaultImages
@@ -11,6 +12,7 @@
 @inject NavigationManager NavManager
 @inject Serilog.ILogger Logger
 @inject ISettingService SettingService
+
 
 <PageTitle>Album Detail</PageTitle>
 
@@ -45,6 +47,7 @@
         <Content>
             <RibbonItem Name="ChangeCoverImage" IconSize="IconSize.x5" IconColor="IconColor.Secondary" IconName="IconName.FileImage">Change</RibbonItem>
             <RibbonItem Name="DeleteAlbumImages" IconSize="IconSize.x5" IconColor="IconColor.Danger" IconName="IconName.Trash2">Remove</RibbonItem>
+            <RibbonItem Name="SearchForAlbumImage" IconSize="IconSize.x5" IconColor="IconColor.Primary" IconName="IconName.Search">Search</RibbonItem>
         </Content>
     </RibbonTab>
 </Ribbon>
@@ -303,7 +306,9 @@
 </div>
 
 <ConfirmDialog @ref="_confirmDialog" />
-<Modal @ref="_changeAlbumImageModal" Title="Change album image" />
+<Modal @ref="_changeAlbumImageModal" Title="Change album image" IsVerticallyCentered="true" />
+<Modal @ref="_albumCoverSearchModal" Title="Search for album image" IsVerticallyCentered="true" />
+
 
 @code {
     private string? _albumCoverBase64;
@@ -321,6 +326,8 @@
     private ConfirmDialog _confirmDialog = default!;
 
     private Modal _changeAlbumImageModal = default!;
+
+    private Modal _albumCoverSearchModal = default!;
 
     private AlbumEdit _albumEdit = new AlbumEdit
     {
@@ -375,6 +382,10 @@
                     await ReProcess();
                     break;
 
+                case "SearchForAlbumImage":
+                    await SearchForAlbumImage();
+                    break;
+
                 case "SaveAlbum":
                     await SaveAlbum();
                     break;
@@ -396,6 +407,20 @@
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
+    }
+
+    private async Task SearchForAlbumImage()
+    {
+        await _albumCoverSearchModal.ShowAsync<AlbumCoverSearch>(title: "Searching for album cover", parameters: new Dictionary<string, object>
+        {
+            { "Album", _album },
+            { "OnUpdateCallback", EventCallback.Factory.Create<ImageSearchResult>(this, SaveImageSearchResult) }
+        });
+    }
+
+    private async Task SaveImageSearchResult(ImageSearchResult selectedImageSearchResult)
+    {
+        throw new IdentityNotMappedException();
     }
 
     private async Task MoveAlbumToLibrary()

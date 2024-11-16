@@ -1,0 +1,61 @@
+@using Melodee.Common.Models.SearchEngines
+@inject ImageSearchEngineService ImageSearchEngineService
+@inject IHttpClientFactory HttpClientFactory
+@inject ISettingService SettingService
+
+<div class="album-cover-search-container">
+
+    <div class="form">
+        <div class="form-group">
+            <div class="mb-2">
+                <InputText @bind-Value="_query" class="form-control" @oninput="DoSearch"/>
+            </div>
+        </div>
+    </div>
+
+    <div class="cover-search-image-container">
+        @foreach (var result in _results)
+        {
+            <img @onclick="() => _selectedResult = result" class="rounded-top cover-search-image" src="@result.ThumbnailUrl" alt="@result.Title" />
+        }
+    </div>
+    <Button Color="ButtonColor.Secondary" @onclick="() => SelectOrCancelClicked(false)">Cancel</Button>
+    <Button Color="ButtonColor.Primary" @onclick="() => SelectOrCancelClicked(true)">Select</Button>
+</div>
+
+@code {
+    private int _maxResults = 10;
+    private string? _query = null;
+    private ImageSearchResult[] _results = [];
+    private ImageSearchResult? _selectedResult;
+
+    [Parameter] public Common.Models.Album Album { get; set; } = default!;
+
+    [Parameter] public EventCallback<ImageSearchResult> OnUpdateCallback { get; set; }
+
+    private Task OnRibbonItemClick(RibbonItemEventArgs arg)
+    {
+        throw new NotImplementedException();
+    }
+
+    private async Task DoSearch()
+    {
+        _results = (await ImageSearchEngineService.DoSearch(HttpClientFactory, _query ?? string.Empty, _maxResults))?.Data ?? [];
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _maxResults = (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
+        _query = $"{Album.Artist()} {Album.AlbumTitle()} {Album.AlbumYear()}";
+        await DoSearch();
+    }
+
+    private async Task SelectOrCancelClicked(bool clickedSelected)
+    {
+        if (OnUpdateCallback.HasDelegate)
+        {
+            await OnUpdateCallback.InvokeAsync(_selectedResult);
+        }
+    }
+
+}

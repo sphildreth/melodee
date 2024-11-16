@@ -1,0 +1,11 @@
+.cover-search-image {
+  max-width: 80px;
+  max-height: 80px;
+  float: left;
+}
+
+.cover-search-image-container {
+  max-height: 500px;
+  overflow: auto;
+  border: 1px solid lightgray;
+}

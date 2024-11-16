@@ -13,6 +13,7 @@ using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
+using Melodee.Services.SearchEngines;
 using Melodee.Utils;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -55,6 +56,8 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>
 builder.Services.AddScoped<CookieStorageAccessor>();
 builder.Services.AddCascadingAuthenticationState();
 
+builder.Services.AddHttpClient();
+
 builder.Services
     .AddSingleton<ISerializer, Serializer>()
     .AddSingleton<ICacheManager>(opt
@@ -77,7 +80,8 @@ builder.Services
     .AddScoped<MediaEditService>()
     .AddScoped<DirectoryProcessorService>()
     .AddScoped<ImageConversionService>()
-    .AddScoped<OpenSubsonicApiService>();
+    .AddScoped<OpenSubsonicApiService>()
+    .AddScoped<ImageSearchEngineService>();
     
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();

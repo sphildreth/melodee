@@ -1,4 +1,5 @@
 using Melodee.Services;
+using Melodee.Services.Interfaces;
 using Quartz;
 using Serilog;
 

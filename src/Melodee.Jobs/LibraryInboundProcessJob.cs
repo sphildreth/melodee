@@ -4,6 +4,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Services;
+using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using NodaTime;
 using Quartz;

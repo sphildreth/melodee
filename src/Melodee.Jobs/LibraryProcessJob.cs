@@ -13,6 +13,7 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Services;
+using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
