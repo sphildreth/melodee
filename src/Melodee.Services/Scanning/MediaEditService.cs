@@ -101,40 +101,38 @@ public sealed class MediaEditService(
         
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRenumberSongs]))
         {
-            await RenumberSongs(directoryInfo, [albumId], cancellationToken);
+            albumId = (await RenumberSongs(directoryInfo, albumId, cancellationToken)).Data.Item2;
         }
 
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongArtist]))
         {
-            await RemoveFeaturingArtistsFromSongsArtist(directoryInfo, albumId, cancellationToken);
+            albumId = (await RemoveFeaturingArtistsFromSongsArtist(directoryInfo, albumId, cancellationToken)).Data.Item2;
         }
 
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle]))
         {
-            await RemoveFeaturingArtistsFromSongTitle(directoryInfo, albumId, cancellationToken);
+            albumId = (await RemoveFeaturingArtistsFromSongTitle(directoryInfo, albumId, cancellationToken)).Data.Item2;
         }
 
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoReplaceSongsArtistSeparators]))
         {
-            await ReplaceAllSongArtistSeparators(directoryInfo, [albumId], cancellationToken);
+            albumId = (await ReplaceAllSongArtistSeparators(directoryInfo, albumId, cancellationToken)).Data.Item2;
         }
 
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoSetYearToCurrentIfInvalid]))
         {
-            await SetYearToCurrent(directoryInfo, [albumId], cancellationToken);
+            albumId = (await SetYearToCurrent(directoryInfo, albumId, cancellationToken)).Data.Item2;
         }
 
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromAlbumTitle]))
         {
-            await RemoveUnwantedTextFromAlbumTitle(directoryInfo, albumId, cancellationToken);
+            albumId = (await RemoveUnwantedTextFromAlbumTitle(directoryInfo, albumId, cancellationToken)).Data.Item2;
         }
 
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromSongTitles]))
         {
             await RemoveUnwantedTextFromSongTitles(directoryInfo, albumId, cancellationToken);
         }
-
-
         var validationResult = _albumValidator.ValidateAlbum(album);
         album.Status = validationResult.Data.AlbumStatus;
         album.Modified = DateTimeOffset.UtcNow;
@@ -142,7 +140,7 @@ public sealed class MediaEditService(
         return validationResult;
     }
 
-    private async Task SaveAlbum(FileSystemDirectoryInfo directoryInfo, Album album, CancellationToken cancellationToken = default)
+    private async Task<long> SaveAlbum(FileSystemDirectoryInfo directoryInfo, Album album, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
@@ -150,21 +148,23 @@ public sealed class MediaEditService(
         var albumStagingDirInfo = new DirectoryInfo(directoryInfo.FullName());
         var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
         await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
+        return album.UniqueId;
     }
 
-    public async Task<OperationResult<bool>> RemoveUnwantedTextFromAlbumTitle(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<(bool, long)>> RemoveUnwantedTextFromAlbumTitle(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
         if (albumId < 1)
         {
-            return new OperationResult<bool>
+            return new OperationResult<(bool, long)>
             {
-                Data = false
+                Data = (false, albumId)
             };
         }
 
         var result = false;
+        var newAlbumId = albumId;
         try
         {
             var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
@@ -181,7 +181,7 @@ public sealed class MediaEditService(
                         await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
                     }
 
-                    await SaveAlbum(directoryInfo, album, cancellationToken);
+                    newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
                 }
             }
         }
@@ -190,25 +190,26 @@ public sealed class MediaEditService(
             Log.Error(ex, "Remove unwanted text from album title.");
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<(bool, long)>
         {
-            Data = result
+            Data = (result,newAlbumId)
         };
     }
 
-    public async Task<OperationResult<bool>> RemoveUnwantedTextFromSongTitles(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<(bool, long)>> RemoveUnwantedTextFromSongTitles(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
         if (albumId < 1)
         {
-            return new OperationResult<bool>
+            return new OperationResult<(bool, long)>
             {
-                Data = false
+                Data = (false, albumId)
             };
         }
 
         var result = false;
+        var newAlbumId = albumId;
         try
         {
             var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
@@ -229,7 +230,7 @@ public sealed class MediaEditService(
 
                 if (modified)
                 {
-                    await SaveAlbum(directoryInfo, album, cancellationToken);
+                    albumId = await SaveAlbum(directoryInfo, album, cancellationToken);
                 }
             }
         }
@@ -238,26 +239,27 @@ public sealed class MediaEditService(
             Log.Error(ex, "Removing unwanted text from song titles.");
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<(bool, long)>
         {
-            Data = result
+            Data = (result, newAlbumId)
         };
     }
 
 
-    public async Task<OperationResult<bool>> RemoveFeaturingArtistsFromSongTitle(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<(bool, long)>> RemoveFeaturingArtistsFromSongTitle(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
         if (albumId < 1)
         {
-            return new OperationResult<bool>
+            return new OperationResult<(bool, long)>
             {
-                Data = false
+                Data = (false, albumId)
             };
         }
 
         var result = false;
+        var newAlbumId = albumId;
         try
         {
             var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
@@ -276,7 +278,7 @@ public sealed class MediaEditService(
                     }
                 }
 
-                await SaveAlbum(directoryInfo, album, cancellationToken);
+                newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -284,25 +286,26 @@ public sealed class MediaEditService(
             Log.Error(ex, "Remove featuring Artists from Songs Artist.");
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<(bool, long)>
         {
-            Data = result
+            Data = (result, newAlbumId)
         };
     }
 
-    public async Task<OperationResult<bool>> RemoveFeaturingArtistsFromSongsArtist(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<(bool, long)>> RemoveFeaturingArtistsFromSongsArtist(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
         if (albumId < 1)
         {
-            return new OperationResult<bool>
+            return new OperationResult<(bool, long)>
             {
-                Data = false
+                Data = (false, albumId)
             };
         }
 
         var result = false;
+        var newAlbumId = albumId;
         try
         {
             var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
@@ -319,16 +322,16 @@ public sealed class MediaEditService(
                 }
             }
 
-            await SaveAlbum(directoryInfo, album, cancellationToken);
+            newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Remove featuring Artists from Songs Artist.");
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<(bool, long)>
         {
-            Data = result
+            Data = (result, newAlbumId)
         };
     }
 
@@ -372,36 +375,26 @@ public sealed class MediaEditService(
         };
     }
 
-    public async Task<OperationResult<bool>> SetYearToCurrent(FileSystemDirectoryInfo directoryInfo, long[] albumIds, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<(bool, long)>> SetYearToCurrent(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
-        if (albumIds.Length == 0)
-        {
-            return new OperationResult<bool>
-            {
-                Data = false
-            };
-        }
-
         var result = false;
+        var newAlbumId = albumId;
         try
         {
             var year = DateTime.Now.Year;
-            foreach (var selectedAlbumId in albumIds)
+            var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
+            if (album.IsValid(_configuration.Configuration).Item1)
             {
-                var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, selectedAlbumId, cancellationToken);
-                if (album.IsValid(_configuration.Configuration).Item1)
+                album.SetTagValue(MetaTagIdentifier.OrigAlbumYear, year);
+                foreach (var song in album.Songs ?? [])
                 {
-                    album.SetTagValue(MetaTagIdentifier.OrigAlbumYear, year);
-                    foreach (var song in album.Songs ?? [])
-                    {
-                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.OrigAlbumYear, year);
-                        await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
-                    }
-
-                    await SaveAlbum(directoryInfo, album, cancellationToken);
+                    album.SetSongTagValue(song.SongId, MetaTagIdentifier.OrigAlbumYear, year);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
                 }
+
+                newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -409,9 +402,9 @@ public sealed class MediaEditService(
             Log.Error(ex, "Set Year to current year.");
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<(bool, long)>
         {
-            Data = result
+            Data = (result, newAlbumId)
         };
     }
 
@@ -499,93 +492,75 @@ public sealed class MediaEditService(
         };
     }
 
-    public async Task<OperationResult<bool>> ReplaceAllSongArtistSeparators(FileSystemDirectoryInfo directoryInfo, long[] albumIds, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<(bool, long)>> ReplaceAllSongArtistSeparators(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
-        if (albumIds.Length == 0)
-        {
-            return new OperationResult<bool>
-            {
-                Data = false
-            };
-        }
-
         var result = false;
+        var newAlbumId = albumId;
         try
         {
-            foreach (var selectedAlbumId in albumIds)
+            var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
+            foreach (var song in album.Songs?.Where(x => x.SongArtist().Nullify() != null) ?? [])
             {
-                var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, selectedAlbumId, cancellationToken);
-                foreach (var song in album.Songs?.Where(x => x.SongArtist().Nullify() != null) ?? [])
+                var oldSongArtist = song.SongArtist();
+                var newSongArtist = MetaTagsProcessor.ReplaceSongArtistSeparators(oldSongArtist);
+                if (!string.Equals(oldSongArtist, newSongArtist, StringComparison.OrdinalIgnoreCase))
                 {
-                    var oldSongArtist = song.SongArtist();
-                    var newSongArtist = MetaTagsProcessor.ReplaceSongArtistSeparators(oldSongArtist);
-                    if (!string.Equals(oldSongArtist, newSongArtist, StringComparison.OrdinalIgnoreCase))
-                    {
-                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.AlbumArtist, null);
-                        await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
-                    }
+                    album.SetSongTagValue(song.SongId, MetaTagIdentifier.AlbumArtist, null);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
                 }
-
-                await SaveAlbum(directoryInfo, album, cancellationToken);
             }
+
+            newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Replace all Song Artist separators.");
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<(bool, long)>
         {
-            Data = result
+            Data = (result, newAlbumId)
         };
     }
 
-    public async Task<OperationResult<bool>> RenumberSongs(FileSystemDirectoryInfo directoryInfo, long[] albumIds, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<(bool, long)>> RenumberSongs(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
-        if (albumIds.Length == 0)
-        {
-            return new OperationResult<bool>
-            {
-                Data = false
-            };
-        }
-
         var result = false;
+        var newAlbumId = albumId;
         try
         {
-            foreach (var selectedAlbumId in albumIds)
+            var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
+            var numberOfMedias = album.MediaCountValue();
+            var mediaLooper = 0;
+            while (mediaLooper <= numberOfMedias)
             {
-                var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, selectedAlbumId, cancellationToken);
-                var numberOfMedias = album.MediaCountValue();
-                var mediaLooper = 0;
-                while (mediaLooper <= numberOfMedias)
+                var looper = mediaLooper;
+                foreach (var dd in album.Songs?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i = i + 1 }) ?? [])
                 {
-                    var looper = mediaLooper;
-                    foreach (var dd in album.Songs?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i = i + 1 }) ?? [])
-                    {
-                        album.SetSongTagValue(dd.x.SongId, MetaTagIdentifier.TrackNumber, dd.i);
-                        await _editSongPlugin.UpdateSongAsync(album.Directory!, dd.x, cancellationToken);
-                    }
-
-                    mediaLooper++;
+                    album.SetSongTagValue(dd.x.SongId, MetaTagIdentifier.TrackNumber, dd.i);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, dd.x, cancellationToken);
                 }
 
-                await SaveAlbum(directoryInfo, album, cancellationToken);
-                result = true;
+                mediaLooper++;
             }
+
+            newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
+            result = true;
+            
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Renumbering Songs.");
         }
 
-        return new OperationResult<bool>
+        return new OperationResult<(bool, long)>
         {
-            Data = result
+            Data = (result, newAlbumId)
+            
         };
     }
 
