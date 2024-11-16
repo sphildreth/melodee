@@ -6,11 +6,11 @@ namespace Melodee.Jobs;
 
 public abstract class JobBase(
     ILogger logger,
-    SettingService settingService) : IJob
+    ISettingService settingService) : IJob
 {
     protected ILogger Logger { get; } = logger;
 
-    protected SettingService SettingService { get; } = settingService;
+    protected ISettingService SettingService { get; } = settingService;
     
     public abstract Task Execute(IJobExecutionContext context);
 }

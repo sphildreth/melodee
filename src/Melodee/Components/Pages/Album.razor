@@ -5,12 +5,12 @@
 @inject DefaultImages DefaultImages
 @inject DirectoryProcessorService DirectoryProcessorService
 @inject ISerializer Serializer
-@inject LibraryService LibraryService
+@inject ILibraryService LibraryService
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject MediaEditService MediaEditService
 @inject NavigationManager NavManager
 @inject Serilog.ILogger Logger
-@inject SettingService SettingService
+@inject ISettingService SettingService
 
 <PageTitle>Album Detail</PageTitle>
 
@@ -59,6 +59,9 @@
                 <img alt="@_albumEdit.Artist" class="cover-image m-1" src="@_albumCoverBase64"/>
             </div>
             <div class="col-9">
+
+                @* TODO do something about original artist maybe show in red or "old value" or somethting, see "Black Folk - Black Folk Don't Die" turns into "Black Folk - Don't Die"  *@
+
                 <EditForm EditContext="_editFormEditContext" class="form-login mt-2" FormName="AlbumEdit">
                     <DataAnnotationsValidator/>
                     <div class="form-group">

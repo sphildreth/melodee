@@ -36,13 +36,13 @@ public sealed class DirectoryProcessorService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService,
-    LibraryService libraryService,
+    ISettingService settingService,
+    ILibraryService libraryService,
     ISerializer serializer,
     MediaEditService mediaEditService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private readonly LibraryService _libraryService = libraryService;
+    private readonly ILibraryService _libraryService = libraryService;
     private readonly MediaEditService _mediaEditService = mediaEditService;
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
@@ -67,7 +67,7 @@ public sealed class DirectoryProcessorService(
 
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
 
-        _directoryStaging = configuration?.GetValue<string?>(SettingRegistry.DirectoryStaging) ?? (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
+        _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
 
         _songPlugins = new[]
         {

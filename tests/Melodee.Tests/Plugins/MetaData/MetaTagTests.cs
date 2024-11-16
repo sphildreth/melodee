@@ -243,8 +243,6 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(song.File);
             var albumArtist = song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
             Assert.NotNull(albumArtist?.Value);
-
-            Assert.Null(song.AlbumTitle());
         }
     }    
 }

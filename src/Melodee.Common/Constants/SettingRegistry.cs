@@ -7,9 +7,6 @@ public static class SettingRegistry
     public const string ConversionEnabled = "conversion.enabled";
     public const string ConversionSamplingRate = "conversion.samplingRate";
     public const string ConversionVbrLevel = "conversion.vbrLevel";
-    public const string DirectoryInbound = "directory.inbound";
-    public const string DirectoryLibrary = "directory.library";
-    public const string DirectoryStaging = "directory.staging";    
     public const string DefaultsPageSize = "defaults.pagesize";
     public const string EncryptionPrivateKey = "encryption.privateKey";
     public const string FilteringLessThanDuration = "filtering.lessThanDuration";
@@ -35,7 +32,6 @@ public static class SettingRegistry
     public const string ProcessingDoContinueOnDirectoryProcessingErrors = "processing.doContinueOnDirectoryProcessingErrors";
     public const string ProcessingDoDeleteOriginal = "processing.doDeleteOriginal";
     public const string ProcessingDoLoadEmbeddedImages = "processing.doLoadEmbeddedImages";
-    public const string ProcessingDoMoveMelodeeDataFileToStagingDirectory = "processing.doMoveMelodeeDataFileToStagingDirectory";
     public const string ProcessingDoOverrideExistingMelodeeDataFiles = "processing.doOverrideExistingMelodeeDataFiles";
     public const string ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue = "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue";
     public const string ProcessingIgnoredArticles = "processing.ignoredArticles";

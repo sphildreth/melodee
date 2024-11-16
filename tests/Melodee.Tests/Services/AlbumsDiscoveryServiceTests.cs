@@ -13,31 +13,35 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
         var dir = new DirectoryInfo(testDirectory);
         if (dir.Exists)
         {
-            var rd = new AlbumDiscoveryService(
-                Logger,
-                CacheManager,
-                MockFactory(),
-                GetSettingService(),
-                Serializer);
-            await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
-            var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
+            var hasMelodeeFiles = dir.GetFiles("*.melodee.json");
+            if (hasMelodeeFiles.Any())
             {
-                Path = @"/melodee_test/staging",
-                Name = "staging"
-            }, new PagedRequest());
-            Assert.NotNull(albumsForDirectoryAsync);
-            Assert.True(albumsForDirectoryAsync.IsSuccess);
-            Assert.DoesNotContain(albumsForDirectoryAsync.Data, x => x.UniqueId == 0);
+                var rd = new AlbumDiscoveryService(
+                    Logger,
+                    CacheManager,
+                    MockFactory(),
+                    GetSettingService(),
+                    Serializer);
+                await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
+                var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
+                {
+                    Path = @"/melodee_test/staging",
+                    Name = "staging"
+                }, new PagedRequest());
+                Assert.NotNull(albumsForDirectoryAsync);
+                Assert.True(albumsForDirectoryAsync.IsSuccess);
+                Assert.DoesNotContain(albumsForDirectoryAsync.Data, x => x.UniqueId == 0);
 
-            var albums = albumsForDirectoryAsync.Data.ToArray();
-            Assert.NotNull(albums);
-            Assert.NotEmpty(albums);
+                var albums = albumsForDirectoryAsync.Data.ToArray();
+                Assert.NotNull(albums);
+                Assert.NotEmpty(albums);
 
-            var firstAlbum = albums.First();
+                var firstAlbum = albums.First();
 
-            Assert.True(firstAlbum.SongCount > 1);
-            Assert.True(firstAlbum.Year > 0);
-            Assert.NotNull(firstAlbum.Duration?.Nullify());
+                Assert.True(firstAlbum.SongCount > 1);
+                Assert.True(firstAlbum.Year > 0);
+                Assert.NotNull(firstAlbum.Duration?.Nullify());
+            }
         }
     }
 

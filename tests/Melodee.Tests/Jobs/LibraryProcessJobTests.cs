@@ -1,3 +1,4 @@
+using Melodee.Common.Constants;
 using Melodee.Jobs;
 using Melodee.Services;
 using Melodee.Services.Scanning;
@@ -41,7 +42,8 @@ public class LibraryProcessJobTests : ServiceTestBase
                     Serializer)));
         
         var mockJobExecutionContext = new Mock<IJobExecutionContext>();
-        // TODO add CancellationToken
+        mockJobExecutionContext.Setup(f => f.CancellationToken).Returns(CancellationToken.None);
+        mockJobExecutionContext.Setup(f => f.JobDetail).Returns(new JobDetailImpl(nameof(LibraryProcessJob), typeof(LibraryProcessJob)));
         await job.Execute(mockJobExecutionContext.Object);
 
     }

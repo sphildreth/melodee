@@ -68,10 +68,10 @@ builder.Services
         $"data:image/png;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/avatar.png"))}",
         $"data:image/jpeg;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/album.jpg"))}"))
     .AddScoped<LocalStorageService>()
-    .AddScoped<SettingService>()
+    .AddScoped<ISettingService, SettingService>()
     .AddScoped<ArtistService>()
     .AddScoped<AlbumService>()
-    .AddScoped<LibraryService>()
+    .AddScoped<ILibraryService, LibraryService>()
     .AddScoped<UserService>()
     .AddScoped<AlbumDiscoveryService>()
     .AddScoped<MediaEditService>()

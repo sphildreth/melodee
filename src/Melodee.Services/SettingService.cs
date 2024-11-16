@@ -21,7 +21,7 @@ public sealed class SettingService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory)
-    : ServiceBase(logger, cacheManager, contextFactory)
+    : ServiceBase(logger, cacheManager, contextFactory), ISettingService
 {
     private const string CacheKeyDetailTemplate = "urn:setting:{0}";
 

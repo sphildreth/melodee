@@ -28,7 +28,7 @@ public class OpenSubsonicApiService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService,
+    ISettingService settingService,
     UserService userService,
     ArtistService artistService,
     AlbumService albumService,

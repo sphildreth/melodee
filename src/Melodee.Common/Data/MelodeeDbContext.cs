@@ -393,14 +393,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
-                    Id = 40,
-                    Key = SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory,
-                    Comment = "When true then move Album Melodee json files to the Staging directory.",
-                    Value = "true",
-                    CreatedAt = now
-                },
-                new Setting
-                {
                     Id = 41,
                     Key = SettingRegistry.ScriptingEnabled,
                     Comment = "Is scripting enabled.",
@@ -499,7 +491,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 53,
                     Key = SettingRegistry.ProcessingBatchSize,
-                    Comment = "Processing batching size, set to 0 for infinite.",
+                    Comment = "Processing batching size.",
                     Value = "500",
                     CreatedAt = now
                 }                 

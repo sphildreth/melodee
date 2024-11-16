@@ -20,12 +20,12 @@ using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Services;
 
-public class LibraryService(
+public sealed class LibraryService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService)
-    : ServiceBase(logger, cacheManager, contextFactory)
+    ISettingService settingService)
+    : ServiceBase(logger, cacheManager, contextFactory), ILibraryService
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
     private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
@@ -120,7 +120,7 @@ public class LibraryService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = $"SELECT * FROM \"Libraries\" WHERE \"Type\" = {type};";
+            var sql = $"SELECT * FROM \"Libraries\" WHERE \"Type\" = {type} ORDER BY \"SortOrder\" LIMIT 1;";
             return await dbConn
                 .QuerySingleOrDefaultAsync<Library?>(sql)
                 .ConfigureAwait(false);

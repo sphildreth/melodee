@@ -108,9 +108,16 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return new AlbumService(Logger, CacheManager, MockFactory());
     }
 
-    protected LibraryService GetLibraryService()
+    protected ILibraryService GetLibraryService()
     {
-        return new LibraryService(Logger, CacheManager, MockFactory(), GetSettingService());
+        var mock = new Mock<ILibraryService>();
+        mock.Setup(f
+            => f.ListAsync(It.IsAny<PagedRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestLibraries());
+        mock.Setup(f
+            => f.GetLibraryAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestLibrary());
+        mock.Setup(f
+            => f.GetStagingLibraryAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestStagingLibrary());         
+        return mock.Object;        
     }
 
     protected UserService GetUserService()
@@ -118,9 +125,12 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return new UserService(Logger, CacheManager, MockFactory(), GetSettingService());
     }
 
-    protected SettingService GetSettingService()
+    protected ISettingService GetSettingService()
     {
-        return new SettingService(Logger, CacheManager, MockFactory());
+       var mock = new Mock<ISettingService>();
+       mock.Setup(f
+           => f.GetMelodeeConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
+       return mock.Object;
     }
 
     protected static void AssertResultIsSuccessful<T>(PagedResult<T> result) where T : notnull

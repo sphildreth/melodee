@@ -17,8 +17,8 @@ namespace Melodee.Jobs;
 [DisallowConcurrentExecution]
 public sealed class LibraryInboundProcessJob(
     ILogger logger,
-    SettingService settingService,
-    LibraryService libraryService,
+    ISettingService settingService,
+    ILibraryService libraryService,
     DirectoryProcessorService directoryProcessorService) : JobBase(logger, settingService)
 {
     
