@@ -148,7 +148,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                                 .BorderColor(Color.Yellow));
                     }
 
-                    isValid = nfoParserResult.IsValid(config.Configuration);
+                    isValid = nfoParserResult.IsValid(config.Configuration).Item1;
                 }
                 catch (Exception e)
                 {

@@ -52,7 +52,7 @@ public sealed class AlbumDiscoveryService(
         var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data?.FirstOrDefault(x => x.UniqueId == uniqueId);
         if (result == null)
         {
-            Log.Error("Unable to find Album by id [{UniqueId}]", uniqueId);
+            Log.Error("Unable to find Album by id [{UniqueId}] in [{DirectoryName}]", uniqueId, fileSystemDirectoryInfo.FullName());
             return new Album
             {
                 ViaPlugins = [],
@@ -258,7 +258,7 @@ public sealed class AlbumDiscoveryService(
             Duration = x.Duration(),
             MelodeeDataFileName = Path.Combine(x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(), Album.JsonFileName),
             ImageBytes = await x.CoverImageBytesAsync(),
-            IsValid = x.IsValid(_configuration.Configuration),
+            IsValid = x.IsValid(_configuration.Configuration).Item1,
             Title = x.AlbumTitle(),
             Year = x.AlbumYear(),
             SongCount = x.SongTotalValue(),

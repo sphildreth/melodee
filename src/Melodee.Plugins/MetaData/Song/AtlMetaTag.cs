@@ -207,12 +207,10 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
 
                         if (fileAtl.EmbeddedPictures.Any() && SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoLoadEmbeddedImages]))
                         {
-                            var albumId = SafeParser.Hash(
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString() ?? string.Empty,
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)?.Value?.ToString() ??
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingYear)?.Value?.ToString() ??
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.RecordingDateOrYear)?.Value?.ToString() ?? string.Empty,
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value?.ToString() ?? string.Empty);
+                            var albumId = Album.GenerateUniqueId(
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString(),
+                                SafeParser.ToNumber<int?>(tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)?.Value),
+                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value?.ToString());
                             var pictureIndex = 0;
                             foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
                             {

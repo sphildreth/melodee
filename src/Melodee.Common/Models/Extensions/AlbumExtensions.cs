@@ -91,63 +91,58 @@ public static class AlbumExtensions
 
         return d;
     }
-
-    public static bool IsValid(this Album album, Dictionary<string, object?> configuration)
+    
+    public static (bool, string?) IsValid(this Album album, Dictionary<string, object?> configuration)
     {
         if (album.Tags?.Count() == 0)
         {
-            Trace.WriteLine("Melodee file has no tags.");
-            return false;
+            return (false, "Melodee file has no tags.");
         }
 
         if (album.Songs?.Count() == 0)
         {
-            Trace.WriteLine("Melodee file has no songs.");
-            return false;
+            return (false, "Melodee file has no songs.");
         }
         
         if (album.Songs?.Any(x => !x.IsValid(configuration)) ?? false)
         {
-            Trace.WriteLine("Melodee file has no valid songs.");
-            return false;
+            return (false, "Melodee file has no valid songs.");
         }
 
         var songsGroupedByMediaNumber = album.Songs?.GroupBy(x => x.MediaNumber());
         var songsGroupedByMediaNumberAndSongNumber = songsGroupedByMediaNumber?.SelectMany(x => x).GroupBy(x => x.SongNumber());
         if (songsGroupedByMediaNumberAndSongNumber?.Where(x => x.Count() > 1)?.Any() ?? false)
         {
-            Trace.WriteLine("Melodee file has media and/or song numbers that are duplicated.");
-            return false;
+            return (false, "Melodee file has media and/or song numbers that are duplicated.");
         }
         
         var artist = album.Artist().Nullify();
         if (artist == null)
         {
-            Trace.WriteLine("Melodee file artist name is invalid.");
-            return false;
+            return (false, "Melodee file artist name is invalid.");
         }
         
         var albumTitle = album.AlbumTitle().Nullify();
         if (albumTitle == null)
         {
-            Trace.WriteLine("Melodee file album title is invalid.");
-            return false;
+            return (false, "Melodee file album title is invalid.");
         }
 
         if (album.UniqueId < 1)
         {
-            Trace.WriteLine("Melodee file album unique id is invalid.");
-            return false;
+            return (false, "Melodee file album unique id is invalid.");
         }
 
         if (!album.HasValidAlbumYear(configuration))
         {
-            Trace.WriteLine("Melodee file album year is invalid.");
-            return false;
+            return (false,"Melodee file album year is invalid.");
         }
-        
-        return album.Status is AlbumStatus.Ok or AlbumStatus.New;
 
+        if (album.Status is AlbumStatus.Ok or AlbumStatus.New)
+        {
+            return (true, null);
+        }
+        return (false, $"Album Status is [{album.Status.ToString()}]");
     }
     
     public static string ToMelodeeJsonName(this Album album, bool? isForAlbumDirectory = null)

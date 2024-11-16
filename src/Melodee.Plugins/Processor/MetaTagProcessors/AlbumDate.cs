@@ -29,7 +29,6 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
-        //var yearDateValue = SafeParser.ToDateTime(tagValue ?? string.Empty);
         var yearValue = SafeParser.ToNumber<int>(tagValue ?? string.Empty);
         if (DateTime.TryParse(tagValue?.ToString() ?? string.Empty, out var dateParseResult))
         {

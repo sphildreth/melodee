@@ -60,7 +60,6 @@ public static class FileSystemDirectoryInfoExtensions
                 return fileInfoForExtension.ToFileSystemInfo();
             }
         }
-
         return null;
     }
 

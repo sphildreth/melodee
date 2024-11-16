@@ -60,7 +60,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
             {
                 var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
 
-                if (nfoAlbum.IsValid(Configuration))
+                if (nfoAlbum.IsValid(Configuration).Item1)
                 {
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
                     if (File.Exists(stagingAlbumDataName))
@@ -350,7 +350,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
             Status = AlbumStatus.NotSet,
             SortOrder = 0
         };
-        result.Status = result.IsValid(Configuration) ? AlbumStatus.NeedsAttention : AlbumStatus.Ok;
+        result.Status = result.IsValid(Configuration).Item1 ? AlbumStatus.NeedsAttention : AlbumStatus.Ok;
         return result;
     }
 

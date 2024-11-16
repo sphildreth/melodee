@@ -14,7 +14,9 @@ public sealed record Album
 {
     public const string JsonFileName = "melodee.json";
 
-    public long UniqueId => SafeParser.Hash(this.Artist(), this.AlbumYear().ToString(), this.AlbumTitle());
+    public static long GenerateUniqueId(string? artist, int? albumYear, string? albumTitle) => SafeParser.Hash(artist, albumYear.ToString(),albumTitle);
+
+    public long UniqueId => GenerateUniqueId(this.Artist(), this.AlbumYear(), this.AlbumTitle());
 
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
     

@@ -476,7 +476,7 @@
 
         if (confirmation)
         {
-            var result = await MediaEditService.DoMagic(_album!.UniqueId);
+            var result = await MediaEditService.DoMagic(_album.Directory, _album!.UniqueId);
             if (result.IsSuccess)
             {
                 NavManager.ReloadPage();

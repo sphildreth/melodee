@@ -107,7 +107,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
     private bool IsValid(Album album)
     {
         var result = true;
-        if (!album.IsValid(_configuration))
+        if (!album.IsValid(_configuration).Item1)
         {
             if (album.UniqueId < 0)
             {

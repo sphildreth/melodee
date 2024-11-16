@@ -519,22 +519,16 @@ public sealed class DirectoryProcessorService(
                     var jsonName = album.ToMelodeeJsonName(true);
                     if (jsonName.Nullify() != null)
                     {
-                        if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory))
-                        {
-                            await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
-                            File.Delete(albumKvp.Value);
-                        }
-
+                        await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
                         if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                         {
                             File.Delete(albumKvp.Value);
                         }
-
                         if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
                             {
-                                await _mediaEditService.DoMagic(album.UniqueId, cancellationToken);
+                                await _mediaEditService.DoMagic(album.Directory, album.UniqueId, cancellationToken);
                             }
                         }
 
@@ -679,13 +673,17 @@ public sealed class DirectoryProcessorService(
             var fileInfo = new FileInfo(imageFile);
             if (album.IsFileForAlbum(fileInfo) && !AlbumValidator.IsImageAProofType(imageFile))
             {
-                if (ImageHelper.IsAlbumImage(fileInfo) ||
+                var isAlbumImage = fileInfo.Name.Contains(album.Artist(), StringComparison.InvariantCultureIgnoreCase) && fileInfo.Name.Contains(album.AlbumTitle(), StringComparison.InvariantCultureIgnoreCase);
+                var isArtistImage = fileInfo.Name.Contains(album.Artist(), StringComparison.InvariantCultureIgnoreCase) && !fileInfo.Name.Contains(album.AlbumTitle(), StringComparison.InvariantCultureIgnoreCase);;
+                if (isAlbumImage || 
+                    isArtistImage ||
+                    ImageHelper.IsAlbumImage(fileInfo) ||
                     ImageHelper.IsArtistImage(fileInfo) ||
                     ImageHelper.IsArtistSecondaryImage(fileInfo) ||
                     ImageHelper.IsAlbumSecondaryImage(fileInfo))
                 {
                     var pictureIdentifier = PictureIdentifier.NotSet;
-                    if (ImageHelper.IsAlbumImage(fileInfo))
+                    if (ImageHelper.IsAlbumImage(fileInfo) || isAlbumImage)
                     {
                         pictureIdentifier = PictureIdentifier.Front;
                     }
@@ -693,7 +691,7 @@ public sealed class DirectoryProcessorService(
                     {
                         pictureIdentifier = PictureIdentifier.SecondaryFront;
                     }
-                    else if (ImageHelper.IsArtistImage(fileInfo))
+                    else if (ImageHelper.IsArtistImage(fileInfo) || isArtistImage)
                     {
                         pictureIdentifier = PictureIdentifier.Band;
                     }

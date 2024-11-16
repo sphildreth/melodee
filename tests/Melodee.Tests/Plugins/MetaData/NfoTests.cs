@@ -16,7 +16,7 @@ public class NfoTests
             var nfo = new Nfo(TestsBase.NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
-            Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()));
+            Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()).Item1);
         }
     }
 
@@ -34,7 +34,7 @@ public class NfoTests
             Assert.NotNull(nfoParserResult);
             Assert.NotNull(nfoParserResult.Songs);
             Assert.True(nfoParserResult.MediaCountValue() > 0);
-            Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()));
+            Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()).Item1);
 
             Assert.DoesNotContain(nfoParserResult.Songs, x => x.Title() != null && x.Title()!.Contains("..."));
         }

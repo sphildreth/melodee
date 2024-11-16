@@ -147,7 +147,7 @@ public class LibraryProcessJob(
                             }
                         }
 
-                        if (!melodeeFile.IsValid(configuration.Configuration))
+                        if (!melodeeFile.IsValid(configuration.Configuration).Item1)
                         {
                             Logger.Warning("[{JobName}] Invalid Melodee file [{Status}]", nameof(LibraryProcessJob), melodeeFile.ToString());
                             continue;

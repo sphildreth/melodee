@@ -241,9 +241,9 @@ public class LibraryService(
         var result = false;
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
 
-        if (albums.Any(x => !x.IsValid(configuration.Configuration)))
+        if (albums.Any(x => !x.IsValid(configuration.Configuration).Item1))
         {
-            return new MelodeeModels.OperationResult<bool>(albums.Where(x => !x.IsValid(configuration.Configuration)).Select(x => $"Album [{x}] is invalid."))
+            return new MelodeeModels.OperationResult<bool>(albums.Where(x => !x.IsValid(configuration.Configuration).Item1).Select(x => $"Album [{x}] is invalid."))
             {
                 Data = false
             };
