@@ -52,7 +52,7 @@ public sealed record Album
 
     public int SortOrder { get; set; }
 
-    public string SortValue
+    public string SortOrderValue
     {
         get
         {

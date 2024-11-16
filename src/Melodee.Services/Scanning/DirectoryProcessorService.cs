@@ -417,7 +417,6 @@ public sealed class DirectoryProcessorService(
                                 {
                                     break;
                                 }
-
                                 song.File.Name = song.ToSongFileName(_configuration.Configuration);
                             }
                         }
@@ -457,6 +456,7 @@ public sealed class DirectoryProcessorService(
                             {
                                 File.Delete(image.FileInfo!.FullPath);
                             }
+                            image.FileInfo!.FullPath = newImageFileName;
                         }
                     });
 
@@ -485,6 +485,7 @@ public sealed class DirectoryProcessorService(
                                         Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
                                     }
                                 }
+                                song.File.FullPath = newSongFileName;
                             }
                         }
 

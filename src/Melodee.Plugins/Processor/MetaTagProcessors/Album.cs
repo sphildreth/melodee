@@ -79,8 +79,11 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
             var albumArtistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
             if (albumArtistTag?.Value != null)
             {
+                // If the artist name is in the album title, but not a self-titled album, then remove the artist name from the title.                
                 var artistValue = albumArtistTag.Value as string ?? string.Empty;
-                if (!string.IsNullOrWhiteSpace(artistValue) && (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
+                if (!string.IsNullOrWhiteSpace(artistValue) && 
+                    !string.Equals(newAlbumTitle, artistValue, StringComparison.OrdinalIgnoreCase) && 
+                    (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
                     newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false).ToTitleCase()?.CleanString();
                 }

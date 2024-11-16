@@ -77,6 +77,31 @@ public sealed class MediaEditService(
             };
         }
 
+        var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, albumId, cancellationToken);
+        if (album.IsValid(_configuration.Configuration))
+        {
+            Logger.Warning("Album is invalid.");
+            return new OperationResult<ValidationResult>
+            {
+                Data = new ValidationResult
+                {
+                    AlbumStatus = AlbumStatus.NeedsAttention
+                }
+            };
+        }
+
+        if (!(album.Directory?.Exists() ?? false))
+        {
+            Logger.Warning("Album directory is invalid.");
+            return new OperationResult<ValidationResult>
+            {
+                Data = new ValidationResult
+                {
+                    AlbumStatus = AlbumStatus.NeedsAttention
+                }
+            };
+        }
+        
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRenumberSongs]))
         {
             await RenumberSongs([albumId], cancellationToken);
@@ -112,7 +137,7 @@ public sealed class MediaEditService(
             await RemoveUnwantedTextFromSongTitles(albumId, cancellationToken);
         }
 
-        var album = await albumDiscoveryService.AlbumByUniqueIdAsync(DirectoryStagingFileSystemDirectoryInfo, albumId, cancellationToken);
+
         var validationResult = _albumValidator.ValidateAlbum(album);
         album.Status = validationResult.Data.AlbumStatus;
         album.Modified = DateTimeOffset.UtcNow;

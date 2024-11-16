@@ -72,7 +72,7 @@
             var restoredFromState = await AuthService.GetStateFromTokenAsync();
             if (restoredFromState && isLoginUrl)
             {
-                NavigationManager.NavigateTo("/");
+                NavigationManager.NavigateTo("/", true);
             }
             else if (restoredFromState)
             {

@@ -14,6 +14,7 @@ public static class Program
         {
             config.AddBranch<ProcessInboundSettings>("processor", add => { add.AddCommand<ProcessInboundCommand>("process"); });
             config.AddBranch<ParseSettings>("parser", add => { add.AddCommand<ParseCommand>("parse"); });
+            config.AddBranch<ShowTagsSettings>("tags", add => { add.AddCommand<ShowTagsCommand>("show"); });
         });
 
         //:musical_note:

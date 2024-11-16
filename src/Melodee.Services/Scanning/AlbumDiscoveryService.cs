@@ -52,7 +52,7 @@ public sealed class AlbumDiscoveryService(
         var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data?.FirstOrDefault(x => x.UniqueId == uniqueId);
         if (result == null)
         {
-            Log.Error("Unable to find Album by id[{UniqueId}]", uniqueId);
+            Log.Error("Unable to find Album by id [{UniqueId}]", uniqueId);
             return new Album
             {
                 ViaPlugins = [],
@@ -181,13 +181,64 @@ public sealed class AlbumDiscoveryService(
             }
         }
 
+        switch (pagedRequest.OrderByValue("SortOrder"))
+        {
+            case "\"Artist\" ASC":
+                albums = albums.OrderBy(x => x.Artist()).ToList();
+                break;
+            
+            case "\"Artist\" DESC":
+                albums = albums.OrderByDescending(x => x.Artist()).ToList();
+                break;            
+            
+            case "\"Title\" ASC":
+                albums = albums.OrderBy(x => x.AlbumTitle()).ToList();
+                break;
+            
+            case "\"Title\" DESC":
+                albums = albums.OrderByDescending(x => x.AlbumTitle()).ToList();
+                break;            
+            
+            case "\"Year\" ASC":
+                albums = albums.OrderBy(x => x.AlbumYear()).ToList();
+                break;
+            
+            case "\"Year\" DESC":
+                albums = albums.OrderByDescending(x => x.AlbumYear()).ToList();
+                break;            
+            
+            case "\"Duration\" ASC":
+                albums = albums.OrderBy(x => x.Duration()).ToList();
+                break;
+            
+            case "\"Duration\" DESC":
+                albums = albums.OrderByDescending(x => x.Duration()).ToList();
+                break;            
+            
+            case "\"Status\" ASC":
+                albums = albums.OrderBy(x => x.Status).ToList();
+                break;     
+            
+            case "\"Status\" DESC":
+                albums = albums.OrderByDescending(x => x.Status).ToList();
+                break;              
+            
+            case "\"SongCount\" ASC":
+                albums = albums.OrderBy(x => x.SongTotalValue()).ToList();
+                break;
+            
+            case "\"SongCount\" DESC":
+                albums = albums.OrderByDescending(x => x.SongTotalValue()).ToList();
+                break;            
+        }
+
+
         var albumsCount = albums.Count;
         return new PagedResult<Album>
         {
             TotalCount = albumsCount,
             TotalPages = (albumsCount + pagedRequest.PageSizeValue - 1) / pagedRequest.PageSizeValue,
             Data = (albums ?? [])
-                .OrderBy(x => x.SortValue)
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.PageSizeValue)
         };
@@ -220,7 +271,7 @@ public sealed class AlbumDiscoveryService(
         {
             TotalCount = albumsForDirectoryInfo.TotalCount,
             TotalPages = albumsForDirectoryInfo.TotalPages,
-            Data = d.OrderByDescending(x => x.Created).ToArray()
+            Data = d
         };
     }
 

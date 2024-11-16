@@ -83,6 +83,7 @@ public static partial class StringExtensions
         {
             return null;
         }
+        
 
         return input.Trim();
     }

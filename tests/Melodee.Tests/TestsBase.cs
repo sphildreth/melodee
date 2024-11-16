@@ -34,7 +34,7 @@ public abstract class TestsBase
             { SettingRegistry.DirectoryLibrary, "/melodee_test/library/" },
             { SettingRegistry.EncryptionPrivateKey, "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y"},
             { SettingRegistry.ProcessingDoDeleteOriginal, "false" },
-            { SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory, "true" },
+            { SettingRegistry.ProcessingDoMoveMelodeeDataFileToStagingDirectory, "false" },
             { SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength, 255 },
             { SettingRegistry.ProcessingMaximumArtistDirectoryNameLength, 255 },
             { SettingRegistry.ProcessingSongTitleRemovals, "[';', '(Remaster)', 'Remaster']" },

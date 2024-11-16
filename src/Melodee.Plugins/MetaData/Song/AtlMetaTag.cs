@@ -9,6 +9,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song.Extensions;
 using Melodee.Plugins.Processor;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -351,6 +352,14 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
         if (song.Tags?.Any() ?? false)
         {
             var songFileName = song.File.FullPath;
+            if (!File.Exists(songFileName))
+            {
+                Log.Error(new Exception($"File not found [{songFileName}]"),"[{PlugInName}] UpdateSongAsync called File [{FileName}] does not exist", nameof(AtlMetaTag), songFileName);
+                return new OperationResult<bool>
+                {
+                    Data = false
+                };
+            }
             using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Updating [{FileName}]", DisplayName, songFileName))
             {
                 try

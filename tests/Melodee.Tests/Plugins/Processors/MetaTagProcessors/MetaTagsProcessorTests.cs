@@ -257,6 +257,8 @@ public class MetaTagsProcessorTests : TestsBase
     [InlineData("Ariana Grande", "Ariana Grande : Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande", "Ariana Grande.Eternal Sunshine", "Eternal Sunshine")]
     [InlineData("Ariana Grande", "Ariana Grande . Eternal Sunshine", "Eternal Sunshine")]
+    // Self-titled album
+    [InlineData("Da Artist", "Da Artist (DELUXE)", "Da Artist")]
     public async Task ValidateAlbumTitleDoesntContainAlbumArtist(string? albumArtist, string? albumTitle, string? shouldBe)
     {
         var processor = new MetaTagsProcessor(NewPluginsConfiguration(), Serializer);

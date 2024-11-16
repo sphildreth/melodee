@@ -212,10 +212,39 @@ public class MetaTagTests : TestsBase
 
             Assert.NotNull(Song.Tags);
             Assert.NotNull(Song.File);
-            var AlbumArtist = Song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
-            Assert.NotNull(AlbumArtist?.Value);
-            var SongArtists = Song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
-            Assert.NotNull(SongArtists?.Value);
+            var albumArtist = Song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
+            Assert.NotNull(albumArtist?.Value);
+            var songArtists = Song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+            Assert.NotNull(songArtists?.Value);
         }
     }
+    
+    [Fact]
+    public async Task ValidateSongWithSelfTitledArtristAsync()
+    {
+        var testFile = @"/melodee_test/tests/songFromSelfTitledAlbum.mp3";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/melodee_test/tests/",
+                Name = "tests"
+            };
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
+            var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(tagResult);
+            Assert.True(tagResult.IsSuccess);
+            Assert.NotNull(tagResult.Data);
+
+            var song = tagResult.Data;
+
+            Assert.NotNull(song.Tags);
+            Assert.NotNull(song.File);
+            var albumArtist = song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
+            Assert.NotNull(albumArtist?.Value);
+
+            Assert.Null(song.AlbumTitle());
+        }
+    }    
 }
