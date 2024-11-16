@@ -1,3 +1,4 @@
+using System.Globalization;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -22,13 +23,18 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
-        return metaTagIdentifier == MetaTagIdentifier.AlbumDate;
+        return metaTagIdentifier is MetaTagIdentifier.AlbumDate or MetaTagIdentifier.OrigAlbumDate or MetaTagIdentifier.RecordingDateOrYear;
     }
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
+        //var yearDateValue = SafeParser.ToDateTime(tagValue ?? string.Empty);
         var yearValue = SafeParser.ToNumber<int>(tagValue ?? string.Empty);
+        if (DateTime.TryParse(tagValue?.ToString() ?? string.Empty, out var dateParseResult))
+        {
+            yearValue = dateParseResult.Year;
+        }
         var minimumValidAlbumYear = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ValidationMinimumAlbumYear]);
         if (yearValue < minimumValidAlbumYear)
         {

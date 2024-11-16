@@ -77,12 +77,13 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
                 var onlyTags = new Dictionary<string, object?>();
                 foreach (var tag in settings.OnlyTags!.Split(','))
                 {
-                    var value = tagResult.Data.Tags.FirstOrDefault(x => x.Identifier.GetEnumDescriptionValue().Contains(tag, StringComparison.InvariantCultureIgnoreCase))?.Value;
-                    onlyTags.TryAdd(tag, value);
+                    var t = tag.ToNormalizedString() ?? string.Empty;
+                    var value = tagResult.Data.Tags.FirstOrDefault(x => x.IdentifierDescription.ToNormalizedString()?.Contains(t, StringComparison.InvariantCultureIgnoreCase) ?? false)?.Value;
+                    onlyTags.TryAdd(t, value);
                 }
                 AnsiConsole.Write(
                     new Panel(new JsonText(serializer.Serialize(onlyTags) ?? string.Empty))
-                        .Header("File Info")
+                        .Header("Only Tags")
                         .Collapse()
                         .RoundedBorder()
                         .BorderColor(Color.Yellow));
