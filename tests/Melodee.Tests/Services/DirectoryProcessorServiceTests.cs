@@ -13,22 +13,23 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             Log.Logger,
             CacheManager,
             MockFactory(),
-            GetSettingService(),
-            GetLibraryService(),
+            MockSettingService(),
+            MockLibraryService(),
             Serializer,
             new MediaEditService(
                 Log.Logger,
                 CacheManager,
                 MockFactory(),
-                GetSettingService(),
-                GetLibraryService(),
+                MockSettingService(),
+                MockLibraryService(),
                 new AlbumDiscoveryService(
                     Log.Logger,
                     CacheManager,
                     MockFactory(),
-                    GetSettingService(),
+                    MockSettingService(),
                     Serializer),
-                Serializer)
+                Serializer,
+                MockHttpClientFactory())
         );
     }
 

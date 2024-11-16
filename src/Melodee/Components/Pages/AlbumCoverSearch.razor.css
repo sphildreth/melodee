@@ -1,11 +1,23 @@
 .cover-search-image {
   max-width: 80px;
   max-height: 80px;
-  float: left;
+  margin: 3px;
 }
 
-.cover-search-image-container {
+.cover-search-images-container {
   max-height: 500px;
   overflow: auto;
   border: 1px solid lightgray;
+}
+
+.cover-search-image-container {
+  margin: 2px;
+  width: 85px;
+  height: 85px;
+  float: left;
+}
+
+.cover-search-image-container.selected {
+  background-color: red;
+  color: red;
 }

@@ -21,7 +21,7 @@ public class ImageSearchEngineService(
     IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public async Task<OperationResult<ImageSearchResult[]>> DoSearch(IHttpClientFactory httpClientFactory, string query, int maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(IHttpClientFactory httpClientFactory, string query, int maxResults, CancellationToken token = default)
     {
         var configuration = await settingService.GetMelodeeConfigurationAsync(token);
 

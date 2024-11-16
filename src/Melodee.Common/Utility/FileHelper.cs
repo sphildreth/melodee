@@ -29,6 +29,7 @@ public static class FileHelper
         "bmp",
         "gif",
         "jfif",
+        "image", // This is a temporary file extension used when downloading images and converting
         "jpeg",
         "jpg",
         "png",

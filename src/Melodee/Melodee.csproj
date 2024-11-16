@@ -23,6 +23,7 @@
       <PackageReference Include="Serilog.Sinks.Console" />
       <PackageReference Include="Serilog.Sinks.File" />      
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" />      
+      <PackageReference Include="System.Reactive" />      
     </ItemGroup>
 
     <ItemGroup>

@@ -20,7 +20,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
                     Logger,
                     CacheManager,
                     MockFactory(),
-                    GetSettingService(),
+                    MockSettingService(),
                     Serializer);
                 await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
                 var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
@@ -57,7 +57,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
                 Logger,
                 CacheManager,
                 MockFactory(),
-                GetSettingService(),
+                MockSettingService(),
                 Serializer);
             await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo

@@ -518,7 +518,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "User agent to send with Search engine requests.",
                     Value = "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0",
                     CreatedAt = now
-                }                
+                },
+                new Setting
+                {
+                    Id = 63,
+                    Key = SettingRegistry.SearchEngineDefaultPageSize,
+                    Comment = "Default page size when performing a search engine search.",
+                    Value = "20",
+                    CreatedAt = now
+                }
             );
         });
 

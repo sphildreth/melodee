@@ -52,11 +52,8 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
             var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));
             await File.WriteAllBytesAsync(newName, convertedBytes, cancellationToken);
-            fileInfo = new FileInfo(newName);
-            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
-            {
-                fileInfo.Delete();
-            }
+            fileInfo.Delete();
+            fileInfo = new FileInfo(newName);            
         }
 
         return new OperationResult<FileSystemFileInfo>

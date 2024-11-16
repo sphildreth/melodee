@@ -17,12 +17,12 @@ public class LibraryProcessJobTests : ServiceTestBase
         var albumDiscoveryService = new AlbumDiscoveryService(Logger,
             CacheManager,
             MockFactory(),
-            GetSettingService(),
+            MockSettingService(),
             Serializer);
         
         var job = new LibraryProcessJob(Logger,
-            GetSettingService(),
-            GetLibraryService(),
+            MockSettingService(),
+            MockLibraryService(),
             Serializer,
             MockFactory(),
             GetArtistService(),
@@ -30,16 +30,16 @@ public class LibraryProcessJobTests : ServiceTestBase
             new DirectoryProcessorService(Logger,
                 CacheManager,
                 MockFactory(),
-                GetSettingService(),
-                GetLibraryService(),
+                MockSettingService(),
+                MockLibraryService(),
                 Serializer,
                 new MediaEditService(Logger,
                     CacheManager,
                     MockFactory(),
-                    GetSettingService(),
-                    GetLibraryService(),
+                    MockSettingService(),
+                    MockLibraryService(),
                     albumDiscoveryService,
-                    Serializer)));
+                    Serializer, MockHttpClientFactory())));
         
         var mockJobExecutionContext = new Mock<IJobExecutionContext>();
         mockJobExecutionContext.Setup(f => f.CancellationToken).Returns(CancellationToken.None);

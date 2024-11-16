@@ -19,7 +19,7 @@
 <Toasts class="p-3" Messages="_messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.TopRight"/>
 
 <div class="album-edit-container container">
-<p class="font-monospace fs-6">@(_albumFullPath ?? "Loading...")</p>
+<p class="font-monospace fs-6"><Badge Color="AlbumBadgeColor()">@(_album?.Status.ToString())</Badge> @(_albumFullPath ?? "Loading...")</p>
 <Ribbon OnClick="OnRibbonItemClick">
     <RibbonTab Title="Actions" Active="true">
         <Content>
@@ -414,13 +414,34 @@
         await _albumCoverSearchModal.ShowAsync<AlbumCoverSearch>(title: "Searching for album cover", parameters: new Dictionary<string, object>
         {
             { "Album", _album },
-            { "OnUpdateCallback", EventCallback.Factory.Create<ImageSearchResult>(this, SaveImageSearchResult) }
+            { "OnUpdateCallback", EventCallback.Factory.Create<ImageSearchResult?>(this, SaveImageSearchResult) }
         });
     }
 
-    private async Task SaveImageSearchResult(ImageSearchResult selectedImageSearchResult)
+    private async Task SaveImageSearchResult(ImageSearchResult? selectedImageSearchResult)
     {
-        throw new IdentityNotMappedException();
+        if (selectedImageSearchResult == null)
+        {
+            await _albumCoverSearchModal.HideAsync();
+            return;
+        }
+        var saveResult = await MediaEditService.SaveImageUrlAsCoverAsync(_album.Directory, _album.UniqueId, selectedImageSearchResult.MediaUrl, selectedImageSearchResult.DoDeleteExistingCoverImages);
+        if (saveResult.IsSuccess)
+        {
+            NavManager.Refresh(true);
+        }
+        else
+        {
+            _messages.Add(
+                new ToastMessage
+                {
+                    Type = ToastType.Danger,
+                    Title = $"Error saving image for album!",
+                    Message = string.Join("<br />", saveResult.Messages) + "<br />" + string.Join("<br />", saveResult.Errors.ToString())
+                });
+        }
+        await _albumCoverSearchModal.HideAsync();
+        return;
     }
 
     private async Task MoveAlbumToLibrary()
@@ -636,6 +657,7 @@
     {
         var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
         await AlbumsDiscoverer.InitializeAsync();
+        await MediaEditService.InitializeAsync();
         _album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), UniqueId);
         _albumEdit = new AlbumEdit
         {
@@ -759,6 +781,22 @@
 
     private IconColor InfoTabIconColor()
         => _issues.Any(x => x.Severity == ValidationResultMessageSeverity.Critical) ? IconColor.Danger : IconColor.Warning;
+
+    private BadgeColor AlbumBadgeColor()
+    {
+        if (_album != null)
+        {
+            switch (_album.Status)
+            {
+                case AlbumStatus.Ok:
+                    return BadgeColor.Success;
+
+                case AlbumStatus.New:
+                    return BadgeColor.Info;
+            }
+        }
+        return BadgeColor.Warning;
+    }
 
     private BadgeColor InfoTabBadgeColor()
         => _issues.Any(x => x.Severity == ValidationResultMessageSeverity.Critical) ? BadgeColor.Danger : BadgeColor.Warning;

@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Net;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
@@ -10,6 +11,7 @@ using Melodee.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Moq.Protected;
 using Quartz;
 using Serilog;
 
@@ -91,7 +93,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             Logger,
             CacheManager,
             MockFactory(),
-            GetSettingService(),
+            MockSettingService(),
             GetUserService(),
             GetArtistService(),
             GetAlbumService(),
@@ -108,7 +110,26 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return new AlbumService(Logger, CacheManager, MockFactory());
     }
 
-    protected ILibraryService GetLibraryService()
+    protected IHttpClientFactory MockHttpClientFactory()
+    {
+        var clientHandlerMock = new Mock<DelegatingHandler>();
+        clientHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK))
+            .Verifiable();
+        clientHandlerMock.As<IDisposable>().Setup(s => s.Dispose());
+
+        var httpClient = new HttpClient(clientHandlerMock.Object);
+
+        var clientFactoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        clientFactoryMock.Setup(cf => cf.CreateClient()).Returns(httpClient).Verifiable();
+
+        clientFactoryMock.Verify(cf => cf.CreateClient());
+        clientHandlerMock.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+        return clientFactoryMock.Object;
+    }
+
+    protected ILibraryService MockLibraryService()
     {
         var mock = new Mock<ILibraryService>();
         mock.Setup(f
@@ -122,10 +143,10 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected UserService GetUserService()
     {
-        return new UserService(Logger, CacheManager, MockFactory(), GetSettingService());
+        return new UserService(Logger, CacheManager, MockFactory(), MockSettingService());
     }
 
-    protected ISettingService GetSettingService()
+    protected ISettingService MockSettingService()
     {
        var mock = new Mock<ISettingService>();
        mock.Setup(f

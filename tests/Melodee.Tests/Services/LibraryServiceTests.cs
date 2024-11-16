@@ -8,7 +8,7 @@ public sealed class LibraryServiceTests : ServiceTestBase
     [Fact]
     public async Task ListLibrariesAsync()
     {
-        var listResult = await GetLibraryService().ListAsync(new PagedRequest());
+        var listResult = await MockLibraryService().ListAsync(new PagedRequest());
         AssertResultIsSuccessful(listResult);
         Assert.Contains(listResult.Data, x => x.Type == (int)LibraryType.Library);
         Assert.Equal(1, listResult.TotalPages);

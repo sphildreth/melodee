@@ -13,6 +13,7 @@
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="FluentValidation" Version="11.10.0" />
     <PackageVersion Include="Hashids.net" Version="1.7.0" />
+    <PackageVersion Include="HtmlAgilityPack" Version="1.11.71" />
     <PackageVersion Include="IdSharp.Common" Version="1.0.1" />
     <PackageVersion Include="IdSharp.Tagging" Version="1.0.0-rc3" />
     <PackageVersion Include="K4os.Hash.xxHash" Version="1.0.8" />
@@ -58,6 +59,7 @@
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.2.0" />
     <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.4.8" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
+    <PackageVersion Include="System.Reactive" Version="6.0.1" />
     <PackageVersion Include="Toolbelt.Blazor.HotKeys2" Version="5.1.0" />
     <PackageVersion Include="Xamarin.UITest" Version="4.3.4" />
     <PackageVersion Include="xunit" Version="2.9.2" />

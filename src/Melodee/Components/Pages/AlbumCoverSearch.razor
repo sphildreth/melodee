@@ -1,3 +1,5 @@
+@using System.Reactive.Linq
+@using System.Reactive.Subjects
 @using Melodee.Common.Models.SearchEngines
 @inject ImageSearchEngineService ImageSearchEngineService
 @inject IHttpClientFactory HttpClientFactory
@@ -7,53 +9,77 @@
 
     <div class="form">
         <div class="form-group">
+            <label>Delete any cover images for album</label>
             <div class="mb-2">
-                <InputText @bind-Value="_query" class="form-control" @oninput="DoSearch"/>
+                <InputCheckbox @bind-Value="_doDeleteExistingCoverImages" class="form-control"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="mb-2">
+                <InputText @bind-Value="_query" class="form-control" @onkeyup="DoSearch"/>
             </div>
         </div>
     </div>
 
-    <div class="cover-search-image-container">
+    <div class="cover-search-images-container">
+        @if (_loading)
+        {
+            <Spinner/>
+        }
         @foreach (var result in _results)
         {
-            <img @onclick="() => _selectedResult = result" class="rounded-top cover-search-image" src="@result.ThumbnailUrl" alt="@result.Title" />
+            <div class="@(_selectedResult == result ? "selected" : string.Empty) cover-search-image-container">
+                <img @onclick="() => _selectedResult = result" class="rounded cover-search-image" src="@result.ThumbnailUrl" alt="@result.Title"/>
+            </div>
         }
     </div>
-    <Button Color="ButtonColor.Secondary" @onclick="() => SelectOrCancelClicked(false)">Cancel</Button>
-    <Button Color="ButtonColor.Primary" @onclick="() => SelectOrCancelClicked(true)">Select</Button>
+    <div class="mt-2">
+        <Button Color="ButtonColor.Secondary" @onclick="() => SelectOrCancelClicked(false)">Cancel</Button>
+        <Button Color="ButtonColor.Primary" @onclick="() => SelectOrCancelClicked(true)">Select</Button>
+    </div>
 </div>
 
 @code {
+    private bool _loading;
     private int _maxResults = 10;
-    private string? _query = null;
+    private readonly Subject<string?> _searchEvents = new Subject<string?>();
+    private string? _query;
+    private bool _doDeleteExistingCoverImages = true;
     private ImageSearchResult[] _results = [];
     private ImageSearchResult? _selectedResult;
 
     [Parameter] public Common.Models.Album Album { get; set; } = default!;
 
-    [Parameter] public EventCallback<ImageSearchResult> OnUpdateCallback { get; set; }
+    [Parameter] public EventCallback<ImageSearchResult?> OnUpdateCallback { get; set; }
 
-    private Task OnRibbonItemClick(RibbonItemEventArgs arg)
+    private void DoSearch()
     {
-        throw new NotImplementedException();
-    }
-
-    private async Task DoSearch()
-    {
-        _results = (await ImageSearchEngineService.DoSearch(HttpClientFactory, _query ?? string.Empty, _maxResults))?.Data ?? [];
+       _searchEvents.OnNext(_query);
     }
 
     protected override async Task OnInitializedAsync()
     {
-        _maxResults = (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
-        _query = $"{Album.Artist()} {Album.AlbumTitle()} {Album.AlbumYear()}";
-        await DoSearch();
+        _loading = true;
+        _maxResults = (await SettingService.GetValueAsync<int?>(SettingRegistry.SearchEngineDefaultPageSize)).Data ?? (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
+        _query = $"album cover {Album.Artist()} {Album.AlbumTitle()}";
+        _searchEvents.Throttle(TimeSpan.FromMilliseconds(800)).Subscribe(async (text) =>
+        {
+            _results = (await ImageSearchEngineService.DoSearchAsync(HttpClientFactory, _query ?? text ?? string.Empty, _maxResults)).Data;
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        });
+        _searchEvents.OnNext(_query);
     }
 
     private async Task SelectOrCancelClicked(bool clickedSelected)
     {
-        if (OnUpdateCallback.HasDelegate)
+        if (!clickedSelected)
         {
+            await OnUpdateCallback.InvokeAsync(null);
+        }
+        if (OnUpdateCallback.HasDelegate && _selectedResult != null)
+        {
+            _selectedResult.DoDeleteExistingCoverImages = _doDeleteExistingCoverImages;
             await OnUpdateCallback.InvokeAsync(_selectedResult);
         }
     }

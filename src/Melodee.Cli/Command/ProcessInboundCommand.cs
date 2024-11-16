@@ -51,7 +51,8 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-
+        services.AddHttpClient();
+        
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -101,7 +102,9 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                         dbFactory,
                         settingService,
                         serializer),
-                    serializer)
+                    serializer,
+                    scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
+                    )
             );
             var dirInfo = new DirectoryInfo(settings.Inbound);
             if (!dirInfo.Exists)
