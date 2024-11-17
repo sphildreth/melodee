@@ -26,7 +26,7 @@ public class MediaConvertorTests
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new FileInfo(convertorResult.Data.FullPath);
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
         }
     }

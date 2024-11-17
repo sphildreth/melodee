@@ -4,20 +4,25 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Utility;
 using Melodee.Services.Interfaces;
+using Melodee.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Quartz;
 using Serilog;
+using SmartFormat;
 using License = Melodee.Common.Models.OpenSubsonic.License;
 using Playlist = Melodee.Common.Models.OpenSubsonic.Playlist;
+using ScanStatus = Melodee.Common.Models.OpenSubsonic.ScanStatus;
 
 namespace Melodee.Services;
 
@@ -32,6 +37,7 @@ public class OpenSubsonicApiService(
     UserService userService,
     ArtistService artistService,
     AlbumService albumService,
+    AlbumDiscoveryService albumDiscoveryService,
     IScheduler schedule)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -299,7 +305,9 @@ public class OpenSubsonicApiService(
                 }
             };
         }
-        var albumResponse = await albumService.GetByApiKeyAsync(SafeParser.ToGuid(apiIdParts[1])!.Value, cancellationToken);
+
+        var apiKey = SafeParser.ToGuid(SafeParser.ToGuid(apiIdParts[1])!.Value) ?? Guid.Empty;
+        var albumResponse = await albumService.GetByApiKeyAsync(apiKey, cancellationToken);
         if (!albumResponse.IsSuccess)
         {
             return new ResponseModel
@@ -316,14 +324,36 @@ public class OpenSubsonicApiService(
         var sql = """
                   select l."Path" || a."Directory"
                   from "Albums" a 
-                  left join "Libraries" l on (a."Id" = a."LibraryId")
-                  where a."ApiKey" = @apiKey
+                  left join "Libraries" l on (l."Id" = a."LibraryId")
+                  where a."ApiKey" = '{0}'
                   limit 1;
                   """;
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
-            var pathToAlbum = dbConn.QuerySingle<string>(sql, new { productID = 1 });
+            var pathToAlbum = dbConn.ExecuteScalar<string>(sql.FormatSmart(apiKey.ToString())) ?? string.Empty;
+            await albumDiscoveryService.InitializeAsync(await Configuration.Value, cancellationToken);
+            var melodeeFile = (await albumDiscoveryService
+                    .AllMelodeeAlbumDataFilesForDirectoryAsync(new FileSystemDirectoryInfo
+                    {
+                        Path = pathToAlbum,
+                        Name = pathToAlbum
+                    }, cancellationToken)
+                    .ConfigureAwait(false))
+                .Data?
+                .FirstOrDefault();
+            if (melodeeFile != null)
+            {
+                var image = melodeeFile?
+                    .Images?
+                    .Where(x => x.PictureIdentifier == PictureIdentifier.Front)
+                    .OrderBy(x => x.SortOrder)
+                    .FirstOrDefault();
+                if (image != null)
+                {
+                    coverBytes = await File.ReadAllBytesAsync(image.FileInfo.FullName(melodeeFile.Directory), cancellationToken).ConfigureAwait(false);
+                }
+            }
         }
 
         return new ResponseModel

@@ -17,7 +17,7 @@ public sealed record FileSystemDirectoryInfo
     /// <summary>
     ///     Full path to Directory
     /// </summary>
-    public required string Path { get; init; }
+    public required string Path { get; set; }
 
     public required string Name { get; init; }
 

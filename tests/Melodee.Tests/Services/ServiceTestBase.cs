@@ -8,6 +8,7 @@ using Melodee.Common.Serialization;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
+using Melodee.Services.Scanning;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -97,6 +98,12 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetUserService(),
             GetArtistService(),
             GetAlbumService(),
+            new AlbumDiscoveryService(
+                Logger, 
+                CacheManager, 
+                MockFactory(), 
+                MockSettingService(), 
+                Serializer),
             new Mock<IScheduler>().Object);
     }
 
@@ -149,8 +156,9 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected ISettingService MockSettingService()
     {
        var mock = new Mock<ISettingService>();
-       mock.Setup(f
-           => f.GetMelodeeConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
+       mock.Setup(f => f.GetMelodeeConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
+       mock.Setup(f => f.GetAllSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewConfiguration());
+
        return mock.Object;
     }
 

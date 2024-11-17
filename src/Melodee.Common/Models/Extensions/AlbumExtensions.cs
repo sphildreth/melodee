@@ -517,11 +517,11 @@ public static class AlbumExtensions
                 }
 
                 var dirDirectoryInfo = dir.ToDirectorySystemInfo();
-                if (image.FileInfo != null && image.FileInfo.Exists())
+                if (image.FileInfo != null && image.FileInfo.Exists(dirDirectoryInfo))
                 {
                     using (Operation.Time("Reading bytes for Album [{AlbumId}]", album.UniqueId))
                     {
-                        return await File.ReadAllBytesAsync(image.FileInfo.FullPath);
+                        return await File.ReadAllBytesAsync(image.FileInfo.FullName(dirDirectoryInfo));
                     }
                 }
 

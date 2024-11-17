@@ -9,9 +9,11 @@
 
     <div class="form">
         <div class="form-group">
-            <label>Delete any cover images for album</label>
+
             <div class="mb-2">
-                <InputCheckbox @bind-Value="_doDeleteExistingCoverImages" class="form-control"/>
+                <label>Delete any cover images for album
+                    <input type="checkbox" @bind="_doDeleteExistingCoverImages"/>
+                </label>
             </div>
         </div>
         <div class="form-group">

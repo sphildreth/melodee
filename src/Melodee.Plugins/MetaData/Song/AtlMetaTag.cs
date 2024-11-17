@@ -36,12 +36,12 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists())
+        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo))
         {
             return false;
         }
 
-        return FileHelper.IsFileMediaType(fileSystemInfo.Extension());
+        return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
     public async Task<OperationResult<Common.Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
@@ -54,9 +54,9 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
 
             try
             {
-                if (fileSystemFileInfo.Exists())
+                if (fileSystemFileInfo.Exists(directoryInfo))
                 {
-                    var fileAtl = new ATL.Track(fileSystemFileInfo.FullPath);
+                    var fileAtl = new ATL.Track(fileSystemFileInfo.FullName(directoryInfo));
                     if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
                     {
                         var atlDictionary = fileAtl.ToDictionary();
@@ -86,7 +86,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                         IMediaAnalysis? ffProbeMediaAnalysis = null;
                         try
                         {
-                            ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullPath, cancellationToken: cancellationToken);
+                            ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
 
                             if (ffProbeMediaAnalysis.PrimaryAudioStream != null)
                             {
@@ -302,7 +302,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
 
             var song = new Common.Models.Song
             {
-                CrcHash = Crc32.Calculate(new FileInfo(fileSystemFileInfo.FullPath)),
+                CrcHash = Crc32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
                 File = fileSystemFileInfo,
                 Images = images,
                 Tags = metaTagsProcessorResult.Data,
@@ -321,7 +321,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
         var result = false;
         if (song.Tags?.Any() ?? false)
         {
-            var songFileName = song.File.FullPath;
+            var songFileName = song.File.FullName(directoryInfo);
             using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Removing images from [{FileName}]", DisplayName, songFileName))
             {
                 try
@@ -349,7 +349,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
         var result = false;
         if (song.Tags?.Any() ?? false)
         {
-            var songFileName = song.File.FullPath;
+            var songFileName = song.File.FullName(directoryInfo);
             if (!File.Exists(songFileName))
             {
                 Log.Error(new Exception($"File not found [{songFileName}]"),"[{PlugInName}] UpdateSongAsync called File [{FileName}] does not exist", nameof(AtlMetaTag), songFileName);
@@ -378,11 +378,11 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     if (song.Images?.Any() ?? false)
                     {
                         var coverImage = song.Images.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
-                        if (coverImage != null && (coverImage.FileInfo?.Exists() ?? false))
+                        if (coverImage != null && (coverImage.FileInfo?.Exists(directoryInfo) ?? false))
                         {
                             fileAtl.EmbeddedPictures.Clear();
                             fileAtl.EmbeddedPictures.Add(PictureInfo.fromBinaryData(
-                                await File.ReadAllBytesAsync(coverImage.FileInfo!.FullPath, cancellationToken),
+                                await File.ReadAllBytesAsync(coverImage.FileInfo!.FullName(directoryInfo), cancellationToken),
                                 PictureInfo.PIC_TYPE.Front));
                         }
                     }

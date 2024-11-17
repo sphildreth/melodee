@@ -42,7 +42,6 @@ public class AlbumValidatorTests
                     CrcHash = "TestValue",
                     File = new FileSystemFileInfo
                     {
-                        FullPath = string.Empty,
                         Name = string.Empty,
                         Size = 12345
                     },

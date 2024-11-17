@@ -21,6 +21,11 @@ public class MediaRetrievalController(OpenSubsonicApiService openSubsonicApiServ
     [HttpGet("/rest/getCoverArt.view")]
     public async Task<IActionResult> GetCoverArt(string apiId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var coverArtResult = await openSubsonicApiService.GetCoverArt(apiId, null, ApiRequest, cancellationToken);
+        if (coverArtResult.IsSuccess)
+        {
+            return new FileContentResult(coverArtResult.ResponseData.Data as byte[], "application/octet-stream");
+        }
+        return new NotFoundResult();
     }
 }

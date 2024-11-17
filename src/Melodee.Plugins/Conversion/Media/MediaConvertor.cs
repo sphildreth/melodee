@@ -32,11 +32,11 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists() || !MelodeeConfiguration.GetValue<bool>(SettingRegistry.ConversionEnabled))
+        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo) || !MelodeeConfiguration.GetValue<bool>(SettingRegistry.ConversionEnabled))
         {
             return false;
         }
-        return FileHelper.IsFileMediaType(fileSystemInfo.Extension());
+        return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
     public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
@@ -49,7 +49,7 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                 Type = OperationResponseType.NotImplementedOrDisabled
             };
         }
-        if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension()))
+        if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo)))
         {
             return new OperationResult<FileSystemFileInfo>
             {
@@ -61,10 +61,10 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
             };
         }
 
-        var fileInfo = new FileInfo(fileSystemInfo.FullPath);
+        var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
         if (fileInfo.Exists && SafeParser.ToBoolean(Configuration[SettingRegistry.ConversionEnabled]))
         {
-            var fileAtl = new Track(fileSystemInfo.FullPath);
+            var fileAtl = new Track(fileSystemInfo.FullName(directoryInfo));
             if (ShouldMediaSongBeConverted(fileAtl))
             {
                 using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))

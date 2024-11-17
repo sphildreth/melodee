@@ -1,3 +1,4 @@
+using System.Text;
 using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Constants;
@@ -24,7 +25,8 @@ public sealed class LibraryService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    ISettingService settingService)
+    ISettingService settingService,
+    ISerializer serializer)
     : ServiceBase(logger, cacheManager, contextFactory), ILibraryService
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
@@ -258,6 +260,11 @@ public sealed class LibraryService(
             }
             // TODO if data album exists for model album if so determine which is better quality
             MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, null);
+            var melodeeFileName = Path.Combine(libraryAlbumPath, $"melodee.json");
+            var melodeeFile = serializer.Deserialize<Common.Models.Album>(melodeeFileName);
+            melodeeFile!.Directory!.Path = libraryAlbumPath;
+            var utf8Bytes = Encoding.UTF8.GetBytes(serializer.Serialize(melodeeFile)!);
+            await File.WriteAllBytesAsync(melodeeFileName,utf8Bytes , cancellationToken);
         }
         return new MelodeeModels.OperationResult<bool>
         {

@@ -9,10 +9,9 @@ public static class FileInfoExtensions
     {
         return new FileSystemFileInfo
         {
-            FullPath = fileInfo.FullName,
             Name = fileInfo.Name,
             Size = fileInfo.Exists ? fileInfo.Length : 0,
-            FullPathOriginalName = fileInfo.Name
+            OriginalName = fileInfo.Name
         };
     }
 }

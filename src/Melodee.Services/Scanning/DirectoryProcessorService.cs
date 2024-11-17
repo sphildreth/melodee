@@ -447,16 +447,16 @@ public sealed class DirectoryProcessorService(
 
                     album.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
                     {
-                        var oldImageFileName = image.FileInfo!.FullPath;
+                        var oldImageFileName = image.FileInfo!.FullName(albumKvp.Key.Directory);
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
                             File.Copy(oldImageFileName, newImageFileName, true);
                             if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                             {
-                                File.Delete(image.FileInfo!.FullPath);
+                                File.Delete(image.FileInfo!.FullName(albumKvp.Key.Directory));
                             }
-                            image.FileInfo!.FullPath = newImageFileName;
+                            image.FileInfo!.Name = Path.GetFileName(newImageFileName);
                         }
                     });
 
@@ -469,7 +469,7 @@ public sealed class DirectoryProcessorService(
                                 break;
                             }
 
-                            var oldSongFilename = song.File.FullPath;
+                            var oldSongFilename = song.File.FullName(albumKvp.Key.Directory);
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
                             if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                             {
@@ -485,7 +485,8 @@ public sealed class DirectoryProcessorService(
                                         Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
                                     }
                                 }
-                                song.File.FullPath = newSongFileName;
+
+                                song.File.Name = Path.GetFileName(newSongFileName);
                             }
                         }
 
@@ -707,10 +708,9 @@ public sealed class DirectoryProcessorService(
                         CrcHash = Crc32.Calculate(fileInfo),
                         FileInfo = new FileSystemFileInfo
                         {
-                            FullPath = fileInfo.FullName,
                             Name = $"{(index + 1).ToStringPadLeft(2)}-{pictureIdentifier}.jpg",
                             Size = fileInfoFileSystemInfo.Size,
-                            FullPathOriginalName = fileInfo.Name
+                            OriginalName = fileInfo.Name
                         },
                         PictureIdentifier = pictureIdentifier,
                         Width = imageInfo.Width,

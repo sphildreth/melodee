@@ -24,17 +24,17 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists())
+        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo))
         {
             return false;
         }
 
-        return FileHelper.IsFileImageType(fileSystemInfo.Extension());
+        return FileHelper.IsFileImageType(fileSystemInfo.Extension(directoryInfo));
     }
 
     public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        if (!FileHelper.IsFileImageType(fileSystemInfo.Extension()))
+        if (!FileHelper.IsFileImageType(fileSystemInfo.Extension(directoryInfo)))
         {
             return new OperationResult<FileSystemFileInfo>
             {
@@ -46,7 +46,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             };
         }
 
-        var fileInfo = new FileInfo(fileSystemInfo.FullPath);
+        var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
         if (fileInfo.Exists && !string.Equals(".jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
         {
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");

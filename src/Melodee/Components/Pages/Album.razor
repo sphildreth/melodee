@@ -679,7 +679,7 @@
             {
                 DiscNumber = x.MediaNumber() < 1 ? 1 : x.MediaNumber(),
                 Duration = x.DurationTimeShort(),
-                FullFileName = x.File.FullPath,
+                FullFileName = x.File.FullName(_album.Directory),
                 IsSelected = x.SortOrder == 1,
                 PartTitles = x.SubTitle(),
                 SongArtist = x.SongArtist(),

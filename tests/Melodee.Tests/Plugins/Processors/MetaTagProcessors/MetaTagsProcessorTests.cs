@@ -22,7 +22,6 @@ public class MetaTagsProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
-            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, new[]
@@ -78,7 +77,6 @@ public class MetaTagsProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
-            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, new[]
@@ -160,7 +158,6 @@ public class MetaTagsProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
-            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, new[]
@@ -210,7 +207,6 @@ public class MetaTagsProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
-            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, new[]
@@ -268,7 +264,6 @@ public class MetaTagsProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
-            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, new[]
@@ -301,7 +296,6 @@ public class MetaTagsProcessorTests : TestsBase
             Name = string.Empty
         }, new FileSystemFileInfo
         {
-            FullPath = string.Empty, 
             Name = string.Empty,
             Size = 0
         }, new[]

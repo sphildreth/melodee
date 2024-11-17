@@ -74,25 +74,9 @@ public sealed class MediaEditService(
             {
                 var imageBytes = await httpClientFactory.BytesForImageUrlAsync(_configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, imageUrl, cancellationToken);
                 if (imageBytes != null)
-                {
-                    var imageConvertor = new ImageConvertor(_configuration);
-                    var numberOfExistingFrontImages = album.Images?.Count(x => x.PictureIdentifier == PictureIdentifier.Front) ?? 0;
-                    var tempFilename = Path.Combine(album.Directory.FullName(), deleteAllCoverImages ? $"01-Front.image" : $"{numberOfExistingFrontImages + 1}-Front.image");
-                    var tempFileInfo = new FileInfo(tempFilename).ToFileSystemInfo();
-                    await File.WriteAllBytesAsync(tempFileInfo.FullPath, imageBytes, cancellationToken);
-                    var imageConversionResult = await imageConvertor.ProcessFileAsync(
-                        album.Directory,
-                        tempFileInfo,
-                        cancellationToken);
-                    var imageFileInfo = imageConversionResult.Data;
-                    imageBytes = await File.ReadAllBytesAsync(imageFileInfo.FullPath, cancellationToken);
-                    var albumImages = album.Images?.ToList() ?? [];                
-                    var existingCoverImage = albumImages.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
-                    if (existingCoverImage?.FileInfo != null)
-                    {
-                        File.Delete(existingCoverImage.FileInfo.FullPath);
-                        albumImages.RemoveAll(x => x == existingCoverImage);
-                    }
+                {   
+                    var albumImages = album.Images?.ToList() ?? [];
+                    
                     if (deleteAllCoverImages)
                     {
                         albumImages.RemoveAll(x => x.PictureIdentifier is (PictureIdentifier.Front or PictureIdentifier.SecondaryFront or PictureIdentifier.NotSet));
@@ -109,11 +93,29 @@ public sealed class MediaEditService(
                                 }
                             }
                         }
+                    }                    
+                    var imageConvertor = new ImageConvertor(_configuration);
+                    var numberOfExistingFrontImages = album.Images?.Count(x => x.PictureIdentifier == PictureIdentifier.Front) ?? 0;
+                    var tempFilename = Path.Combine(album.Directory.FullName(), deleteAllCoverImages ? $"01-Front.image" : $"{numberOfExistingFrontImages + 1}-Front.image");
+                    var tempFileInfo = new FileInfo(tempFilename).ToFileSystemInfo();
+                    await File.WriteAllBytesAsync(tempFileInfo.FullName(directoryInfo), imageBytes, cancellationToken);
+                    var imageConversionResult = await imageConvertor.ProcessFileAsync(
+                        album.Directory,
+                        tempFileInfo,
+                        cancellationToken);
+                    var imageFileInfo = imageConversionResult.Data;
+                    imageBytes = await File.ReadAllBytesAsync(imageFileInfo.FullName(directoryInfo), cancellationToken);
+               
+                    var existingCoverImage = albumImages.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
+                    if (existingCoverImage?.FileInfo != null)
+                    {
+                        File.Delete(existingCoverImage.FileInfo.FullName(directoryInfo));
+                        albumImages.RemoveAll(x => x == existingCoverImage);
                     }
                     var imageInfo = Image.Load(imageBytes);
                     albumImages.Add(new ImageInfo
                     {
-                        CrcHash = Crc32.Calculate(imageFileInfo.ToFileInfo()),
+                        CrcHash = Crc32.Calculate(imageFileInfo.ToFileInfo(directoryInfo)),
                         FileInfo = imageFileInfo,
                         Height = imageInfo.Height,
                         PictureIdentifier = PictureIdentifier.Front,

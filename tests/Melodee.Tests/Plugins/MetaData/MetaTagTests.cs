@@ -28,7 +28,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data);
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
-            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullPath);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
         }
     }
@@ -52,7 +52,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data);
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
-            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullPath);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
         }
     }
@@ -77,7 +77,7 @@ public class MetaTagTests : TestsBase
             Assert.False(tagResult.Data.IsValid(NewConfiguration()));
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
-            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullPath);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
         }
     }
 
@@ -100,7 +100,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data);
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
-            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullPath);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
 
             var newAlbumValue = Guid.NewGuid().ToString();
@@ -127,7 +127,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data);
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
-            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullPath);
+            Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.AlbumTitle()?.Nullify());
             Assert.Equal(newAlbumValue, tagResult.Data.AlbumTitle());
         }
@@ -155,7 +155,7 @@ public class MetaTagTests : TestsBase
 
             Assert.NotNull(Song.Tags);
             Assert.NotNull(Song.File);
-            Assert.Equal(fileInfo.FullName, Song.File.FullPath);
+            Assert.Equal(fileInfo.FullName, Song.File.FullName(dirInfo));
             Assert.NotNull(Song.Title()?.Nullify());
             Assert.False(Song.TitleHasUnwantedText());
             Assert.True(Song.Duration() > 0);
@@ -184,7 +184,7 @@ public class MetaTagTests : TestsBase
 
             Assert.NotNull(Song.Tags);
             Assert.NotNull(Song.File);
-            Assert.Equal(fileInfo.FullName, Song.File.FullPath);
+            Assert.Equal(fileInfo.FullName, Song.File.FullName(dirInfo));
             Assert.NotNull(Song.Title()?.Nullify());
             Assert.NotEmpty(Song.ToSongFileName(NewConfiguration()));
         }

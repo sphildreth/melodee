@@ -118,8 +118,8 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                         {
                             var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
                             var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
-                            await FFMpegArguments.FromFileInput(cueModel.MediaFileSystemFileInfo.FullPath)
-                                .OutputToFile(song.File.FullPath, true, options =>
+                            await FFMpegArguments.FromFileInput(cueModel.MediaFileSystemFileInfo.FullName(fileSystemDirectoryInfo))
+                                .OutputToFile(song.File.FullName(fileSystemDirectoryInfo), true, options =>
                                 {
                                     var seekTs = new TimeSpan(0, index.Minutes, index.Seconds);
                                     options.Seek(seekTs);
@@ -205,7 +205,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        return fileSystemInfo.Extension().DoStringsMatch(HandlesExtension);
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
     }
 
     public static async Task<Models.CueSheet?> ParseFileAsync(string filePath, Dictionary<string, object?> configuration)
@@ -434,7 +434,6 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                             CrcHash = Crc32.Calculate(fileInfo),
                             File = new FileSystemFileInfo
                             {
-                                FullPath = songFileName,
                                 Name = Path.GetFileName(songFileName),
                                 Size = 0
                             },
@@ -471,7 +470,6 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                 CrcHash = Crc32.Calculate(fileInfo),
                 File = new FileSystemFileInfo
                 {
-                    FullPath = songFileName,
                     Name = Path.GetFileName(songFileName),                    
                     Size = 0
                 },

@@ -62,7 +62,8 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
-                settingService);
+                settingService,
+                serializer);
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var inboundLibrary = (await libraryService.GetInboundLibraryAsync().ConfigureAwait(false)).Data;

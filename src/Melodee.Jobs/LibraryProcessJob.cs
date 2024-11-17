@@ -73,7 +73,7 @@ public class LibraryProcessJob(
 
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(context.CancellationToken).ConfigureAwait(false))
         {
-            var defaultNeverScannedDate = Instant.MinValue;
+            var defaultNeverScannedDate = Instant.FromDateTimeUtc(DateTime.MinValue.ToUniversalTime());
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
             var stagingLibrary = await libraryService.GetStagingLibraryAsync(context.CancellationToken).ConfigureAwait(false);
             if (!stagingLibrary.IsSuccess)
@@ -106,7 +106,7 @@ public class LibraryProcessJob(
                 var dirs = new DirectoryInfo(library.Path).GetDirectories("*", SearchOption.AllDirectories);
                 var lastScanAt = library.LastScanAt ?? defaultNeverScannedDate;
                 // Get a list of modified directories in the Library; remember a library directory should only contain a single album in Melodee
-                foreach (var dir in dirs.Where(d => d.LastWriteTime <= lastScanAt.ToDateTimeUtc() && d.Name.Length > 3).ToArray())
+                foreach (var dir in dirs.Where(d => d.LastWriteTime >= lastScanAt.ToDateTimeUtc() && d.Name.Length > 3).ToArray())
                 {
                     try
                     {
@@ -355,7 +355,7 @@ public class LibraryProcessJob(
                             var songTitle = song.Title();
                             if (songTitle.Nullify() == null)
                             {
-                                Logger.Warning("[{JobName}] unable to add song [{SongName}] Song is missing Title.", nameof(LibraryProcessJob), song.File.FullPath);
+                                Logger.Warning("[{JobName}] unable to add song [{SongName}] Song is missing Title.", nameof(LibraryProcessJob), song.File.FullName(melodeeFile.Directory));
                                 continue;
                             }
 
@@ -366,10 +366,16 @@ public class LibraryProcessJob(
 
                             if (dbSong == null)
                             {
+                                var albumDiscId = dbAlbum.Discs.FirstOrDefault(x => x.DiscNumber == song.MediaNumber())?.Id;
+                                if (albumDiscId == null)
+                                {
+                                    Logger.Warning("[{JobName}] Album [{Album}] has missing song disc media [{SongMediaNumber}].", nameof(LibraryProcessJob), dbAlbum, song.MediaNumber());
+                                    continue;   
+                                }
                                 var titleNormalized = songTitle!.ToNormalizedString() ?? songTitle!;
                                 dbSongsToAdd.Add(new dbModels.Song
                                 {
-                                    AlbumDiscId = dbAlbum.Discs.First(x => x.DiscNumber == song.MediaNumber()).Id,
+                                    AlbumDiscId = albumDiscId!.Value,
                                     BitDepth = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value),
                                     BitRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value),
                                     BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
