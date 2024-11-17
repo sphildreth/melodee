@@ -30,139 +30,145 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var m3UFiles = fileSystemDirectoryInfo.FileInfosForExtension(HandlesExtension).ToArray();
-
-        if (m3UFiles.Length == 0)
-        {
-            return new OperationResult<int>("Skipping validation. No M3U file for Album.")
-            {
-                Data = -1
-            };
-        }
-
         var processedFiles = 0;
 
-        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-        FileSystemDirectoryInfo? parentDirectory = null;
-        if (dirInfo.Parent != null)
+        try
         {
-            parentDirectory = new FileSystemDirectoryInfo
+            var m3UFiles = fileSystemDirectoryInfo.FileInfosForExtension(HandlesExtension).ToArray();
+
+            if (m3UFiles.Length == 0)
             {
-                Path = dirInfo.Parent.FullName,
-                Name = dirInfo.Parent.Name
-            };
-        }
-
-        var songPlugin = songPlugins.First();
-        foreach (var m3UFile in m3UFiles)
-        {
-            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, m3UFile.Name))
+                return new OperationResult<int>("Skipping validation. No M3U file for Album.")
+                {
+                    Data = -1
+                };
+            }
+            var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+            FileSystemDirectoryInfo? parentDirectory = null;
+            if (dirInfo.Parent != null)
             {
-                var models = await GetModelsFromM3UFile(m3UFile.FullName);
-
-                var songs = new List<Common.Models.Song>();
-                await Parallel.ForEachAsync(models, cancellationToken, async (model, tt) =>
+                parentDirectory = new FileSystemDirectoryInfo
                 {
-                    var songResult = await songPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
-                    if (songResult.IsSuccess)
-                    {
-                        songs.Add(songResult.Data);
-                    }
-                });
-                if (songs.Count > 0)
+                    Path = dirInfo.Parent.FullName,
+                    Name = dirInfo.Parent.Name
+                };
+            }
+
+            var songPlugin = songPlugins.First();
+            foreach (var m3UFile in m3UFiles)
+            {
+                using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, m3UFile.Name))
                 {
-                    var firstSong = songs.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
-                    var songTotal = firstSong.SongTotalNumber();
-                    if (songTotal < 1)
-                    {
-                        if (models.Length == songs.Count)
-                        {
-                            songTotal = models.Length;
-                        }
-                    }
+                    var models = await GetModelsFromM3UFile(m3UFile.FullName);
 
-                    var newAlbumTags = new List<MetaTag<object?>>
+                    var songs = new List<Common.Models.Song>();
+                    await Parallel.ForEachAsync(models, cancellationToken, async (model, tt) =>
                     {
-                        new() { Identifier = MetaTagIdentifier.Album, Value = firstSong.AlbumTitle(), SortOrder = 1 },
-                        new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = firstSong.AlbumArtist(), SortOrder = 2 },
-                        new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstSong.MediaNumber(), SortOrder = 4 },
-                        new() { Identifier = MetaTagIdentifier.OrigAlbumYear, Value = firstSong.AlbumYear(), SortOrder = 100 },
-                        new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
-                    };
-                    var genres = songs
-                        .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                        .Where(x => x.Identifier == MetaTagIdentifier.Genre)
-                        .ToArray();
-                    if (genres.Length != 0)
-                    {
-                        newAlbumTags.AddRange(genres
-                            .GroupBy(x => x.Value)
-                            .Select((genre, i) => new MetaTag<object?>
-                            {
-                                Identifier = MetaTagIdentifier.Genre,
-                                Value = genre.Key,
-                                SortOrder = 5 + i
-                            }));
-                    }
-
-                    var m3UAlbum = new Album
-                    {
-                        Files = new[]
+                        var songResult = await songPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
+                        if (songResult.IsSuccess)
                         {
-                            new AlbumFile
-                            {
-                                AlbumFileType = AlbumFileType.MetaData,
-                                ProcessedByPlugin = DisplayName,
-                                FileSystemFileInfo = m3UFile.ToFileSystemInfo()
-                            }
-                        },
-                        OriginalDirectory = new FileSystemDirectoryInfo
-                        {
-                            ParentId = parentDirectory?.UniqueId ?? 0,
-                            Path = fileSystemDirectoryInfo.Path,
-                            Name = fileSystemDirectoryInfo.Name,
-                            TotalItemsFound = songs.Count,
-                            MusicFilesFound = songs.Count,
-                            MusicMetaDataFilesFound = 1
-                        },
-                        Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
-                        Tags = newAlbumTags,
-                        Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
-                        ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
-                    };
-                    m3UAlbum.Status = albumValidator.ValidateAlbum(m3UAlbum)?.Data.AlbumStatus ?? AlbumStatus.NeedsAttention;
-                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
-                    if (File.Exists(stagingAlbumDataName))
-                    {
-                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
-                        {
-                            File.Delete(stagingAlbumDataName);
+                            songs.Add(songResult.Data);
                         }
-                        else
+                    });
+                    if (songs.Count > 0)
+                    {
+                        var firstSong = songs.OrderBy(x => x.SortOrder).First(x => x.Tags != null);
+                        var songTotal = firstSong.SongTotalNumber();
+                        if (songTotal < 1)
                         {
-                            var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                            if (existingAlbum != null)
+                            if (models.Length == songs.Count)
                             {
-                                m3UAlbum = m3UAlbum.Merge(existingAlbum);
+                                songTotal = models.Length;
                             }
                         }
-                    }
 
-                    var serialized = JsonSerializer.Serialize(m3UAlbum);
-                    await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                    if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
-                    {
-                        m3UFile.Delete();
-                        Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
-                    }
+                        var newAlbumTags = new List<MetaTag<object?>>
+                        {
+                            new() { Identifier = MetaTagIdentifier.Album, Value = firstSong.AlbumTitle(), SortOrder = 1 },
+                            new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = firstSong.AlbumArtist(), SortOrder = 2 },
+                            new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstSong.MediaNumber(), SortOrder = 4 },
+                            new() { Identifier = MetaTagIdentifier.OrigAlbumYear, Value = firstSong.AlbumYear(), SortOrder = 100 },
+                            new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
+                        };
+                        var genres = songs
+                            .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
+                            .Where(x => x.Identifier == MetaTagIdentifier.Genre)
+                            .ToArray();
+                        if (genres.Length != 0)
+                        {
+                            newAlbumTags.AddRange(genres
+                                .GroupBy(x => x.Value)
+                                .Select((genre, i) => new MetaTag<object?>
+                                {
+                                    Identifier = MetaTagIdentifier.Genre,
+                                    Value = genre.Key,
+                                    SortOrder = 5 + i
+                                }));
+                        }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, m3UAlbum.ToMelodeeJsonName());
-                    processedFiles++;
+                        var m3UAlbum = new Album
+                        {
+                            Directory = fileSystemDirectoryInfo,
+                            Files = new[]
+                            {
+                                new AlbumFile
+                                {
+                                    AlbumFileType = AlbumFileType.MetaData,
+                                    ProcessedByPlugin = DisplayName,
+                                    FileSystemFileInfo = m3UFile.ToFileSystemInfo()
+                                }
+                            },
+                            OriginalDirectory = new FileSystemDirectoryInfo
+                            {
+                                ParentId = parentDirectory?.UniqueId ?? 0,
+                                Path = fileSystemDirectoryInfo.Path,
+                                Name = fileSystemDirectoryInfo.Name,
+                                TotalItemsFound = songs.Count,
+                                MusicFilesFound = songs.Count,
+                                MusicMetaDataFilesFound = 1
+                            },
+                            Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
+                            Tags = newAlbumTags,
+                            Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
+                            ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
+                        };
+                        m3UAlbum.Status = albumValidator.ValidateAlbum(m3UAlbum)?.Data.AlbumStatus ?? AlbumStatus.NeedsAttention;
+                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
+                        if (File.Exists(stagingAlbumDataName))
+                        {
+                            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
+                            {
+                                File.Delete(stagingAlbumDataName);
+                            }
+                            else
+                            {
+                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                                if (existingAlbum != null)
+                                {
+                                    m3UAlbum = m3UAlbum.Merge(existingAlbum);
+                                }
+                            }
+                        }
+
+                        var serialized = JsonSerializer.Serialize(m3UAlbum);
+                        await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
+                        {
+                            m3UFile.Delete();
+                            Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
+                        }
+
+                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, m3UAlbum.ToMelodeeJsonName());
+                        processedFiles++;
+                    }
                 }
             }
         }
-
-        StopProcessing = processedFiles > 0;
+        catch (Exception e)
+        {
+            Log.Error(e, "[{Name}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
+            StopProcessing = true;
+        }
         return new OperationResult<int>
         {
             Data = processedFiles

@@ -55,6 +55,7 @@ public sealed class AlbumDiscoveryService(
             Log.Error("Unable to find Album by id [{UniqueId}] in [{DirectoryName}]", uniqueId, fileSystemDirectoryInfo.FullName());
             return new Album
             {
+                Directory = fileSystemDirectoryInfo,
                 ViaPlugins = [],
                 OriginalDirectory = fileSystemDirectoryInfo
             };
@@ -257,7 +258,7 @@ public sealed class AlbumDiscoveryService(
             Created = x.Created,
             Duration = x.Duration(),
             MelodeeDataFileName = Path.Combine(x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(), Album.JsonFileName),
-            ImageBytes = await x.CoverImageBytesAsync(),
+            ImageBytes = await x.CoverImageBytesAsync(cancellationToken: cancellationToken),
             IsValid = x.IsValid(_configuration.Configuration).Item1,
             Title = x.AlbumTitle(),
             Year = x.AlbumYear(),

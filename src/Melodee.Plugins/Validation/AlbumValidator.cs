@@ -54,7 +54,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             AlbumTitleDoesNotHaveUnwantedText(album) &&
             IsAlbumYearValid(album) &&
             DoMediaTotalMatchMediaNumbers(album) &&
-            DoesSongTotalMatchSongCount(album)
+            DoesSongTotalMatchSongCount(album) && 
+            DoesAlbumHaveCoverImage(album) && 
+            AlbumDoesNotHaveProofImages(album)
            )
         {
             returnStatus = AlbumStatus.Ok;
@@ -68,6 +70,37 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 AlbumStatus = returnStatus
             }
         };
+    }
+
+    private bool AlbumDoesNotHaveProofImages(Album album)
+    {
+        if (album.Images?.Any() ?? false)
+        {
+            if (album.Images.Any(x => IsImageAProofType(x.FileInfo?.Name) || IsImageAProofType(x.OriginalFilename)))
+            {
+                _validationMessages.Add(new ValidationResultMessage
+                {
+                    Message = $"Album has proof images.",
+                    Severity = ValidationResultMessageSeverity.Critical
+                });
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private bool DoesAlbumHaveCoverImage(Album album)
+    {
+        var result = album.CoverImage() != null;
+        if (!result)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = $"Album does not have cover image.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });
+        }
+        return result;
     }
 
     private bool DoesSongTotalMatchSongCount(Album album)

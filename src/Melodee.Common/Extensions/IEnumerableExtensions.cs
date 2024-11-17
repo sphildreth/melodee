@@ -25,7 +25,7 @@ public static class EnumerableExtensions
             .ToList();
     }    
     
-    public static void Each<T>(this IEnumerable<T> ie, Action<T, int> action)
+    public static void ForEach<T>(this IEnumerable<T> ie, Action<T, int> action)
     {
         var i = 0;
         foreach (var e in ie)

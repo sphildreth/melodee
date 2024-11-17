@@ -49,6 +49,9 @@ public abstract class TestsBase
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
         return new PagedResult<Library>
         {
+            CurrentPage = 1,            
+            TotalCount = 3,
+            TotalPages = 1,
             Data =
             [
                 new Library

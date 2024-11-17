@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Utility;
 
@@ -67,6 +68,14 @@ public static class ImageHelper
         if (fileInfo == null)
         {
             return false;
+        }
+
+        if (albumName != null)
+        {
+            if ((fileInfo.Name.ToNormalizedString() ?? string.Empty).Contains(albumName.ToNormalizedString() ?? string.Empty))
+            {
+                return true;
+            }
         }
 
         return Regex.IsMatch(fileInfo.Name,

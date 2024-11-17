@@ -9,7 +9,6 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song.Extensions;
 using Melodee.Plugins.Processor;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -25,7 +24,6 @@ namespace Melodee.Plugins.MetaData.Song;
 /// </summary>
 public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, IMelodeeConfiguration configuration) : MetaDataBase(configuration), ISongPlugin
 {
-    private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
 
     public override string DisplayName => nameof(AtlMetaTag);
@@ -56,7 +54,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             {
                 if (fileSystemFileInfo.Exists(directoryInfo))
                 {
-                    var fileAtl = new ATL.Track(fileSystemFileInfo.FullName(directoryInfo));
+                    var fileAtl = new Track(fileSystemFileInfo.FullName(directoryInfo));
                     if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
                     {
                         var atlDictionary = fileAtl.ToDictionary();
@@ -286,7 +284,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 });
             }
 
-            var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
+            var metaTagsProcessorResult = await metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
             if (!metaTagsProcessorResult.IsSuccess)
             {
                 return new OperationResult<Common.Models.Song>(metaTagsProcessorResult.Messages)
@@ -326,7 +324,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             {
                 try
                 {
-                    var fileAtl = new ATL.Track(songFileName);
+                    var fileAtl = new Track(songFileName);
                     fileAtl.EmbeddedPictures.Clear();
                     result = await fileAtl.SaveAsync();
                 }
@@ -362,7 +360,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             {
                 try
                 {
-                    var fileAtl = new ATL.Track(songFileName)
+                    var fileAtl = new Track(songFileName)
                     {
                         Album = song.AlbumTitle(),
                         AlbumArtist = song.AlbumArtist(),
@@ -492,7 +490,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
     }
 
 
-    private static bool IsAtlTrackForMp3(ATL.Track track)
+    private static bool IsAtlTrackForMp3(Track track)
     {
         if (track.AudioFormat?.ShortName == null)
         {

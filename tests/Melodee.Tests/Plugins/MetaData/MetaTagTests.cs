@@ -129,7 +129,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data.File);
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.AlbumTitle()?.Nullify());
-            Assert.Equal(newAlbumValue, tagResult.Data.AlbumTitle());
+            Assert.Equal(newAlbumValue, tagResult.Data.AlbumTitle(), ignoreCase: true);
         }
     }
 

@@ -10,6 +10,7 @@ public sealed class ImageHelperTests
     [InlineData("band.txt", false)]
     [InlineData("Something With Bob.jpg", false)]
     [InlineData("logo.jpg", false)]
+    [InlineData("00-quantic--dancing_while_falling_(deluxe_edition)-web-2024-oma.jpg", false)]    
     [InlineData("Band.jpg", true)]
     [InlineData("Band_1.jpg", true)]
     [InlineData("Band01.jpg", true)]
@@ -19,4 +20,13 @@ public sealed class ImageHelperTests
     {
         Assert.Equal(ImageHelper.IsArtistImage(new FileInfo(fileName)), shouldBe);
     }
+
+    [Theory]
+    [InlineData("logo.jpg", null, false)]
+    [InlineData("00-quantic.jpg", null, false)]    
+    [InlineData("00-quantic.jpg", "Dancing While Falling", false)]
+    [InlineData("front.jpg", null, true)]
+    [InlineData("cover.jpg", null, true)]
+    [InlineData("00-quantic--dancing_while_falling_(deluxe_edition)-web-2024-oma.jpg", "Dancing While Falling", true)]
+    public void FileIsCoverImage(string fileName, string? albumName, bool expected) => Assert.Equal(expected, ImageHelper.IsAlbumImage(new FileInfo(fileName), albumName));
 }

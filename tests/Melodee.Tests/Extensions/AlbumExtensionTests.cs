@@ -11,6 +11,11 @@ public class AlbumExtensionTests
     {
         return new Album
         {
+            Directory = new FileSystemDirectoryInfo
+            {
+                Path = @"/melodee_test/inbound/00-k 2024",
+                Name = "00-k 2024"
+            },
             ViaPlugins = [],
             OriginalDirectory = new FileSystemDirectoryInfo
             {

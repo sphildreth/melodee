@@ -23,6 +23,7 @@ public static class CueSheetExtensions
         var fileInfo = new FileInfo(cueSheet.MediaFileSystemFileInfo.FullName(directoryInfo));
         return new Album
         {
+            Directory = directoryInfo,
             Files = new[]
             {
                 cueSheet.ToAlbumFile()

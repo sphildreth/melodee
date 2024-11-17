@@ -501,34 +501,44 @@ public static class AlbumExtensions
         var songTotalDuration = album.Songs?.Sum(x => x.Duration()) ?? 0;
         return songTotalDuration > 0 ? new TimeInfo(SafeParser.ToNumber<decimal>(songTotalDuration)).ToFullFormattedString() : "--:--";
     }
-
-    public static async Task<byte[]?> CoverImageBytesAsync(this Album album)
+    
+    /// <summary>
+    /// Return a FileInfo for the first Cover image for the album.
+    /// </summary>
+    /// <returns>Null if not found otherwise a FileInfo with full path to the cover image.</returns>
+    public static FileInfo? CoverImage(this Album album)
     {
-        if (album.Images?.Any() == true)
+        if (!album.Images?.Any() ?? false)
         {
-            var image = album.Images?.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
-            if (image != null)
-            {
-                var dir = new DirectoryInfo(album.Directory?.Path ?? string.Empty);
-                if (!dir.Exists)
-                {
-                    Trace.WriteLine($"Unable to find Directory for Album [{album}]");
-                    return null;
-                }
-
-                var dirDirectoryInfo = dir.ToDirectorySystemInfo();
-                if (image.FileInfo != null && image.FileInfo.Exists(dirDirectoryInfo))
-                {
-                    using (Operation.Time("Reading bytes for Album [{AlbumId}]", album.UniqueId))
-                    {
-                        return await File.ReadAllBytesAsync(image.FileInfo.FullName(dirDirectoryInfo));
-                    }
-                }
-
-                Trace.WriteLine($"Unable to find Image File [{image}] for Album [{album}]");
-            }
+            return null;
         }
+        var coverImage = album.Images?.OrderBy(x => x.SortOrder).FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
+        if (coverImage?.FileInfo != null && album.Directory != null)
+        {
+            var result = new FileInfo(coverImage.FileInfo.FullName(album.Directory));
+            return result.Exists ? result : null;
+        }
+        return null;
+    }
+    
+    public static async Task<string?> CoverImageBase64Async(this Album album, CancellationToken cancellationToken = default)
+    {
+        var cover = album.CoverImage();
+        if (cover != null)
+        {
+            var imageBytes = await File.ReadAllBytesAsync(cover.FullName, cancellationToken);
+            return $"data:image/jpeg;base64,{ Convert.ToBase64String(imageBytes)}";   
+        }
+        return null;
+    }     
 
+    public static async Task<byte[]?> CoverImageBytesAsync(this Album album, CancellationToken cancellationToken = default)
+    {
+        var coverImage = album.CoverImage();
+        if (coverImage != null)
+        {
+            return await File.ReadAllBytesAsync(coverImage.FullName, cancellationToken);
+        }
         return null;
     }
 }

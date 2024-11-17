@@ -57,6 +57,7 @@ public sealed class DirectoryProcessorService(
 
     private IEnumerable<ISongPlugin> _songPlugins = [];
     private bool _stopProcessingTriggered;
+    private int _maxAlbumProcessingCount = 0;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
@@ -67,6 +68,8 @@ public sealed class DirectoryProcessorService(
 
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
 
+        _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
+        
         _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
 
         _songPlugins = new[]
@@ -133,6 +136,8 @@ public sealed class DirectoryProcessorService(
         var processingMessages = new List<string>();
         var processingErrors = new List<Exception>();
         var numberOfAlbumJsonFilesProcessed = 0;
+        var numberOfValidAlbumsProcessed = 0;
+
         var conversionPluginsProcessedFileCount = 0;
         var directoryPluginProcessedFileCount = 0;
         var numberOfAlbumFilesProcessed = 0;
@@ -140,7 +145,7 @@ public sealed class DirectoryProcessorService(
         var artistsUniqueIdsSeen = new List<long>();
         var albumsUniqueIdsSeen = new List<long>();
         var songsUniqueIdsSeen = new List<long>();
-
+        
         var result = new DirectoryProcessorResult
         {
             NumberOfConversionPluginsProcessed = 0,
@@ -216,7 +221,7 @@ public sealed class DirectoryProcessorService(
             LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Found [{0}] directories to process", null, directoriesToProcess.Count);
         }
 
-        foreach (var directoryInfoToProcess in directoriesToProcess.Take(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value)))
+        foreach (var directoryInfoToProcess in directoriesToProcess)
         {
             try
             {
@@ -286,16 +291,19 @@ public sealed class DirectoryProcessorService(
                         processingErrors.AddRange(pluginResult.Errors);
                         if (plugin.StopProcessing)
                         {
+                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
                             break;
                         }
 
                         continue;
                     }
-
-                    directoryPluginProcessedFileCount += pluginResult.Data;
-
+                    if (pluginResult.Data > 0)
+                    {
+                        directoryPluginProcessedFileCount += pluginResult.Data;    
+                    }
                     if (plugin.StopProcessing)
                     {
+                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);                        
                         break;
                     }
                 }
@@ -353,7 +361,13 @@ public sealed class DirectoryProcessorService(
                         }
 
                         await File.WriteAllTextAsync(albumDataName, serialized, cancellationToken);
+                        
                         numberOfAlbumJsonFilesProcessed++;
+                        
+                        if (numberOfAlbumJsonFilesProcessed > _maxAlbumProcessingCount)
+                        {
+                            break;
+                        }                        
                     }
                 }
 
@@ -361,15 +375,13 @@ public sealed class DirectoryProcessorService(
                 albumJsonFiles = directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName).ToArray();
                 if (!albumJsonFiles.Any())
                 {
-                    return new OperationResult<DirectoryProcessorResult>($"No Albums found in given directory [{directoryInfoToProcess}]")
-                    {
-                        Data = result
-                    };
+                    processingMessages.Add($"No Albums found in directory [{directoryInfoToProcess}]");
+                    continue;
                 }
 
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
                 var albumAndJsonFile = new Dictionary<Album, string>();
-                foreach (var albumJsonFile in albumJsonFiles)
+                foreach (var albumJsonFile in albumJsonFiles.Take(_maxAlbumProcessingCount))
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                     {
@@ -410,7 +422,7 @@ public sealed class DirectoryProcessorService(
                         {
                             // Set SongNumber to invalid range if SongNumber is missing
                             var maximumSongNumber = _configuration.GetValue<int>(SettingRegistry.ValidationMaximumSongNumber);
-                            album.Songs.Where(x => x.SongNumber() < 1).Each((x, i) => { album.SetSongTagValue(x.SongId, MetaTagIdentifier.TrackNumber, maximumSongNumber + i + 1); });
+                            album.Songs.Where(x => x.SongNumber() < 1).ForEach((x, i) => { album.SetSongTagValue(x.SongId, MetaTagIdentifier.TrackNumber, maximumSongNumber + i + 1); });
                             foreach (var song in album.Songs)
                             {
                                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -445,9 +457,9 @@ public sealed class DirectoryProcessorService(
                         albumDirInfo.Create();
                     }
 
-                    album.Images?.Where(x => x.FileInfo != null).Each((image, index) =>
+                    album.Images?.Where(x => x.FileInfo != null).ForEach((image, index) =>
                     {
-                        var oldImageFileName = image.FileInfo!.FullName(albumKvp.Key.Directory);
+                        var oldImageFileName = Path.Combine(albumKvp.Key.Directory.FullName(), image.FileInfo.OriginalName);
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
@@ -469,7 +481,7 @@ public sealed class DirectoryProcessorService(
                                 break;
                             }
 
-                            var oldSongFilename = song.File.FullName(albumKvp.Key.Directory);
+                            var oldSongFilename = Path.Combine(albumKvp.Key.Directory.FullName(), song.File.OriginalName);
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
                             if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                             {
@@ -542,6 +554,17 @@ public sealed class DirectoryProcessorService(
                     {
                         processingMessages.Add($"Unable to determine JsonName for Album [{album}]");
                     }
+
+                    if (album.IsValid(_configuration.Configuration).Item1)
+                    {
+                        numberOfValidAlbumsProcessed++;
+                        if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
+                        {
+                            Log.Information("[{Nam}] \ud83d\uded1 Stopped processing directory [{DirName}], processing.maximumProcessingCount is set to [{Number}]", nameof(DirectoryProcessorService), fileSystemDirectoryInfo, _maxAlbumProcessingCount);
+                            _stopProcessingTriggered = true;
+                            break;
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -591,10 +614,11 @@ public sealed class DirectoryProcessorService(
         fileSystemDirectoryInfo.DeleteAllEmptyDirectories();
         LogAndRaiseEvent(LogEventLevel.Information, "Processing Complete!");
 
-        processingMessages.Add($"Directory Plugin(s) process count [{directoryPluginProcessedFileCount}]");
+        processingMessages.Add($" Directory Plugin(s) process count [{directoryPluginProcessedFileCount}]");
         processingMessages.Add($"Conversion Plugin(s) process count [{conversionPluginsProcessedFileCount}]");
-        processingMessages.Add($"Song Plugin(s) process count [{numberOfAlbumFilesProcessed}]");
-        processingMessages.Add($"Album process count [{numberOfAlbumJsonFilesProcessed}]");
+        processingMessages.Add($"      Song Plugin(s) process count [{numberOfAlbumFilesProcessed}]");
+        processingMessages.Add($"         Album (all) process count [{numberOfAlbumJsonFilesProcessed}]");
+        processingMessages.Add($"       Album (valid) process count [{numberOfValidAlbumsProcessed}]");
 
         return new OperationResult<DirectoryProcessorResult>(processingMessages)
         {
@@ -627,11 +651,6 @@ public sealed class DirectoryProcessorService(
     /// </summary>
     public event EventHandler<FileSystemDirectoryInfo>? OnDirectoryProcessed;
 
-    public void StopProcessing()
-    {
-        _stopProcessingTriggered = true;
-    }
-
     private void LogAndRaiseEvent(LogEventLevel logLevel, string messageTemplate, Exception? exception = null, params object[] args)
     {
         if (exception != null)
@@ -662,8 +681,8 @@ public sealed class DirectoryProcessorService(
     private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly);
-        var index = 0;
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).Order().ToArray();
+        var index = 1;
         foreach (var imageFile in imageFiles)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -708,14 +727,14 @@ public sealed class DirectoryProcessorService(
                         CrcHash = Crc32.Calculate(fileInfo),
                         FileInfo = new FileSystemFileInfo
                         {
-                            Name = $"{(index + 1).ToStringPadLeft(2)}-{pictureIdentifier}.jpg",
+                            Name = $"{index.ToStringPadLeft(2)}-{pictureIdentifier}.jpg",
                             Size = fileInfoFileSystemInfo.Size,
                             OriginalName = fileInfo.Name
                         },
                         PictureIdentifier = pictureIdentifier,
                         Width = imageInfo.Width,
                         Height = imageInfo.Height,
-                        SortOrder = 0
+                        SortOrder = index
                     });
                 }
 
@@ -846,9 +865,8 @@ public sealed class DirectoryProcessorService(
                                 Songs = songsGroupedByAlbum.OrderBy(x => x.SortOrder).ToArray(),
                                 ViaPlugins = viaPlugins.Distinct().ToArray()
                             });
-                            if (albums.Count > _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value))
+                            if (albums.Count(x => x.IsValid(_configuration.Configuration).Item1) > _maxAlbumProcessingCount)
                             {
-                                _stopProcessingTriggered = true;
                                 break;
                             }
                         }

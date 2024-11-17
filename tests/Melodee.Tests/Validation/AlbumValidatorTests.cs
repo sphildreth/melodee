@@ -10,6 +10,11 @@ public class AlbumValidatorTests
     private static Album TestAlbum
         => new()
         {
+            Directory = new FileSystemDirectoryInfo
+            {
+                Path = string.Empty,
+                Name = string.Empty
+            },
             ViaPlugins = [nameof(AtlMetaTag)],
             OriginalDirectory = new FileSystemDirectoryInfo
             {
@@ -228,6 +233,7 @@ public class AlbumValidatorTests
         });
         var Album = new Album
         {
+            Directory = testAlbum.Directory,
             Tags = AlbumTags,
             Songs = testAlbum.Songs,
             ViaPlugins = testAlbum.ViaPlugins,
@@ -252,6 +258,7 @@ public class AlbumValidatorTests
         });
         var Album = new Album
         {
+            Directory = testAlbum.Directory,
             Tags = AlbumTags,
             Songs = testAlbum.Songs,
             ViaPlugins = testAlbum.ViaPlugins,
@@ -276,6 +283,7 @@ public class AlbumValidatorTests
         });
         var Album = new Album
         {
+            Directory = testAlbum.Directory,
             Tags = AlbumTags,
             Songs = testAlbum.Songs,
             ViaPlugins = testAlbum.ViaPlugins,

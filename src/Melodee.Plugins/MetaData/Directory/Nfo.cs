@@ -43,66 +43,72 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
 
         var processedFiles = 0;
 
-        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-        FileSystemDirectoryInfo? parentDirectory = null;
-        if (dirInfo.Parent != null)
+        try
         {
-            parentDirectory = new FileSystemDirectoryInfo
+            var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+            FileSystemDirectoryInfo? parentDirectory = null;
+            if (dirInfo.Parent != null)
             {
-                Path = dirInfo.Parent.FullName,
-                Name = dirInfo.Parent.Name
-            };
-        }
-
-        foreach (var nfoFile in nfoFiles)
-        {
-            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
-            {
-                var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
-
-                if (nfoAlbum.IsValid(Configuration).Item1)
+                parentDirectory = new FileSystemDirectoryInfo
                 {
-                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
-                    if (File.Exists(stagingAlbumDataName))
+                    Path = dirInfo.Parent.FullName,
+                    Name = dirInfo.Parent.Name
+                };
+            }
+
+            foreach (var nfoFile in nfoFiles)
+            {
+                using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
+                {
+                    var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
+
+                    if (nfoAlbum.IsValid(Configuration).Item1)
                     {
-                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
+                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
+                        if (File.Exists(stagingAlbumDataName))
                         {
-                            File.Delete(stagingAlbumDataName);
-                        }
-                        else
-                        {
-                            var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                            if (existingAlbum != null)
+                            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
                             {
-                                nfoAlbum = nfoAlbum.Merge(existingAlbum);
+                                File.Delete(stagingAlbumDataName);
+                            }
+                            else
+                            {
+                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                                if (existingAlbum != null)
+                                {
+                                    nfoAlbum = nfoAlbum.Merge(existingAlbum);
+                                }
                             }
                         }
+
+                        var serialized = JsonSerializer.Serialize(nfoAlbum);
+                        await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
+                        {
+                            nfoFile.Delete();
+                            Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
+                        }
+                    }
+                    else
+                    {
+                        Log.Warning("Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", nfoFile.Name, nfoAlbum.Artist(), nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
+                        {
+                            nfoFile.Delete();
+                            Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
+                        }
                     }
 
-                    var serialized = JsonSerializer.Serialize(nfoAlbum);
-                    await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                    if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
-                    {
-                        nfoFile.Delete();
-                        Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
-                    }
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, nfoAlbum.ToMelodeeJsonName());
+                    processedFiles++;
                 }
-                else
-                {
-                    Log.Warning("Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", nfoFile.Name, nfoAlbum.Artist(), nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
-                    if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
-                    {
-                        nfoFile.Delete();
-                        Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
-                    }
-                }
-
-                Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, nfoAlbum.ToMelodeeJsonName());
-                processedFiles++;
             }
         }
-
-        StopProcessing = processedFiles > 0;
+        catch (Exception e)
+        {
+            Log.Error(e, "[{Name}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
+            StopProcessing = true;
+        }
         return new OperationResult<int>
         {
             Data = processedFiles
@@ -327,6 +333,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
 
         var result = new Album
         {
+            Directory = parentDirectoryInfo,
             Files = new[]
             {
                 new AlbumFile

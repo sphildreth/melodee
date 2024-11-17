@@ -76,8 +76,9 @@ public static class FileSystemDirectoryInfoExtensions
         }
         var result = new List<FileSystemDirectoryInfo>();
         var modifiedSinceValue = modifiedSince?.ToDateTimeUtc() ?? DateTime.MinValue;
-        result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption) where dir.LastWriteTimeUtc >= modifiedSinceValue && dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)) select dir.ToDirectorySystemInfo());
-        if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => x.LastWriteTimeUtc >= modifiedSinceValue && FileHelper.IsFileMediaType(x.Extension)))
+        result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption).OrderBy(x => x.LastWriteTimeUtc) where dir.LastWriteTimeUtc >= modifiedSinceValue && dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)) select dir.ToDirectorySystemInfo());
+        if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
+            .Any(x => x.LastWriteTimeUtc >= modifiedSinceValue && FileHelper.IsFileMediaType(x.Extension)))
         {
             result.Add(fileSystemDirectoryInfo);
         }

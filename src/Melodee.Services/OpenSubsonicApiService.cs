@@ -342,17 +342,10 @@ public class OpenSubsonicApiService(
                     .ConfigureAwait(false))
                 .Data?
                 .FirstOrDefault();
-            if (melodeeFile != null)
+            var image = melodeeFile?.CoverImage();
+            if (image != null)
             {
-                var image = melodeeFile?
-                    .Images?
-                    .Where(x => x.PictureIdentifier == PictureIdentifier.Front)
-                    .OrderBy(x => x.SortOrder)
-                    .FirstOrDefault();
-                if (image != null)
-                {
-                    coverBytes = await File.ReadAllBytesAsync(image.FileInfo.FullName(melodeeFile.Directory), cancellationToken).ConfigureAwait(false);
-                }
+                coverBytes = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
             }
         }
 

@@ -32,7 +32,10 @@ public sealed record Album
     /// </summary>
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
 
-    public FileSystemDirectoryInfo? Directory { get; set; }
+    /// <summary>
+    ///     This is the directory that is holding the melodee.json file. At creation this is likely equal to Original but when moved into another library folder this gets updated and Original does not.
+    /// </summary>
+    public required FileSystemDirectoryInfo Directory { get; set; }
     
     /// <summary>
     /// The full path to the melodee.json file.
@@ -71,22 +74,7 @@ public sealed record Album
     
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
-    public async Task<string?> CoverImageBase64Async(CancellationToken cancellationToken = default)
-    {
-        if (Images == null || !Images.Any())
-        {
-            return null;
-        }
 
-        var cover = Images.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front) ?? Images.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.SecondaryFront);
-        
-        if (cover != null && Directory != null && (cover.FileInfo?.Exists(Directory) ?? false))
-        {
-            var imageBytes = await File.ReadAllBytesAsync(cover.FileInfo?.FullName(Directory) ?? string.Empty, cancellationToken);
-            return $"data:image/jpeg;base64,{ Convert.ToBase64String(imageBytes)}";   
-        }
-        return null;
-    }    
     
     public Album MergeSongs(IEnumerable<Song> pluginResultData)
     {
@@ -189,6 +177,7 @@ public sealed record Album
 
         return new Album
         {
+            Directory = Directory,
             Files = files.ToArray(),
             Images = images.ToArray(),
             ValidationMessages = messages.Distinct().ToArray(),

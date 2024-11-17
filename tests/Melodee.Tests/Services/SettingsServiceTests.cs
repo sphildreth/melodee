@@ -4,6 +4,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.Models;
+using Melodee.Services;
 
 namespace Melodee.Tests.Services;
 
@@ -12,7 +13,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     [Fact]
     public async Task ListAsync()
     {
-        var service = MockSettingService();
+        var service = new SettingService(Logger, CacheManager, MockFactory());
         var listResult = await service.ListAsync(new PagedRequest
         {
             PageSize = 1000
@@ -25,7 +26,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     [Fact]
     public async Task ListWithFilterOnIdValueEqualsAsync()
     {
-        var service = MockSettingService();
+        var service = new SettingService(Logger, CacheManager, MockFactory());
         var idValue = 0;
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
@@ -49,7 +50,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     [Fact]
     public async Task ListWithFilterOnKeyValueEqualsAsync()
     {
-        var service = MockSettingService();
+        var service = new SettingService(Logger, CacheManager, MockFactory());
         var listResult = await service.ListAsync(new PagedRequest
         {
             FilterBy = new[]
@@ -67,7 +68,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     [Fact]
     public async Task ListWithFilterLikeAsync()
     {
-        var service = MockSettingService();
+        var service = new SettingService(Logger, CacheManager, MockFactory());
         var listResult = await service.ListAsync(new PagedRequest
         {
             FilterBy = new[]
@@ -85,7 +86,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     [Fact]
     public async Task ListWithSortAsync()
     {
-        var service = MockSettingService();
+        var service = new SettingService(Logger, CacheManager, MockFactory());
         var listResult = await service.ListAsync(new PagedRequest
         {
             OrderBy = new Dictionary<string, string>
@@ -116,7 +117,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetSettingByKeyAndValueAsync()
     {
-        var service = MockSettingService();
+        var service = new SettingService(Logger, CacheManager, MockFactory());
         var getResult = await service.GetAsync(SettingRegistry.ValidationMaximumSongNumber);
         AssertResultIsSuccessful(getResult);
 
@@ -151,7 +152,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetAllSettingsAsync()
     {
-        var service = MockSettingService();
+        var service = new SettingService(Logger, CacheManager, MockFactory());
         var listResult = await service.GetAllSettingsAsync();
         Assert.NotEmpty(listResult);
         Assert.Contains(listResult, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
@@ -162,7 +163,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     public async Task GetSettingWithFunc()
     {
         var shouldBeValueInt = 99;
-        var service = MockSettingService();
+        var service = new SettingService(Logger, CacheManager, MockFactory());
         var configuration = await service.GetMelodeeConfigurationAsync();
         Assert.NotEmpty(configuration.Configuration);
 
