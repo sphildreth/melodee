@@ -58,6 +58,7 @@ public sealed class DirectoryProcessorService(
     private IEnumerable<ISongPlugin> _songPlugins = [];
     private bool _stopProcessingTriggered;
     private int _maxAlbumProcessingCount = 0;
+    private short _maxImageCount = 0;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
@@ -69,6 +70,7 @@ public sealed class DirectoryProcessorService(
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
 
         _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
+        _maxImageCount = _configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages, value => value < 1 ? SafeParser.ToNumber<short>(short.MaxValue.ToString().Length) : SafeParser.ToNumber<short>(value.ToString().Length));
         
         _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
 
@@ -402,7 +404,7 @@ public sealed class DirectoryProcessorService(
                         }
 
                         var albumImages = new List<ImageInfo>();
-                        var foundAlbumImages = (await FindImagesForAlbum(album, cancellationToken)).ToArray();
+                        var foundAlbumImages = (await FindImagesForAlbum(album, _maxImageCount, cancellationToken)).ToArray();
                         if (foundAlbumImages.Length != 0)
                         {
                             foreach (var foundAlbumImage in foundAlbumImages)
@@ -459,9 +461,9 @@ public sealed class DirectoryProcessorService(
                         albumDirInfo.Create();
                     }
 
-                    album.Images?.Where(x => x.FileInfo != null).ForEach((image, index) =>
+                    album.Images?.Where(x => x.FileInfo?.OriginalName != null).ForEach((image, index) =>
                     {
-                        var oldImageFileName = Path.Combine(albumKvp.Key.Directory.FullName(), image.FileInfo.OriginalName);
+                        var oldImageFileName = Path.Combine(albumKvp.Key.Directory.FullName(), image.FileInfo!.OriginalName!);
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
@@ -476,14 +478,14 @@ public sealed class DirectoryProcessorService(
 
                     if (album.Songs != null)
                     {
-                        foreach (var song in album.Songs)
+                        foreach (var song in album.Songs.Where(x => x.File.OriginalName != null))
                         {
                             if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                             {
                                 break;
                             }
 
-                            var oldSongFilename = Path.Combine(albumKvp.Key.Directory.FullName(), song.File.OriginalName);
+                            var oldSongFilename = Path.Combine(albumKvp.Key.Directory.FullName(), song.File.OriginalName!);
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
                             if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                             {
@@ -676,7 +678,7 @@ public sealed class DirectoryProcessorService(
         OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
     }
 
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, CancellationToken cancellationToken = default)
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).Order().ToArray();
@@ -718,6 +720,8 @@ public sealed class DirectoryProcessorService(
                         pictureIdentifier = PictureIdentifier.BandSecondary;
                     }
 
+                    // TODO use ImageConvertor plugin to handle SettingRegistry.ImagingMaximumImageSize and other Image options
+                    
                     var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
                     var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
                     imageInfos.Add(new ImageInfo
@@ -725,7 +729,7 @@ public sealed class DirectoryProcessorService(
                         CrcHash = Crc32.Calculate(fileInfo),
                         FileInfo = new FileSystemFileInfo
                         {
-                            Name = $"{index.ToStringPadLeft(2)}-{pictureIdentifier}.jpg",
+                            Name = $"{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
                             Size = fileInfoFileSystemInfo.Size,
                             OriginalName = fileInfo.Name
                         },

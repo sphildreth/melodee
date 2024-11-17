@@ -56,6 +56,8 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             fileInfo = new FileInfo(newName);            
         }
 
+        // TODO resize if needed based on SettingRegistry.ImagingMaximumImageSize
+        
         return new OperationResult<FileSystemFileInfo>
         {
             Data = fileInfo.ToFileSystemInfo()

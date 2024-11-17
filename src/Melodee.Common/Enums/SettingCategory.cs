@@ -4,6 +4,14 @@ public enum SettingCategory
 {
     General = 0,
     
+    Api,
+    
+    Conversion,
+    
+    Formatting,
+    
+    Imaging,
+    
     Magic,
 
     MediaConvertor,
@@ -11,6 +19,8 @@ public enum SettingCategory
     PluginProcess,
     
     Scripting,
+    
+    SearchEngine,
     
     Validation
 }

@@ -13,6 +13,10 @@ public static class SettingRegistry
     public const string FilteringLessThanSongCount = "filtering.lessThanSongCount";
     public const string FormattingDateTimeDisplayActivityFormat = "formatting.dateTimeDisplayActivityFormat";
     public const string FormattingDateTimeDisplayFormatShort = "formatting.dateTimeDisplayFormatShort";
+    public const string ImagingDoLoadEmbeddedImages = "processing.doLoadEmbeddedImages";    
+    public const string ImagingMaximumNumberOfAlbumImages = "imaging.maximumNumberOfAlbumImages";
+    public const string ImagingMaximumNumberOfArtistImages = "imaging.maximumNumberOfArtistImages";
+    public const string ImagingMaximumImageSize = "imaging.imagingMaximumImageSize";
     public const string MagicDoRemoveFeaturingArtistFromSongArtist = "magic.doRemoveFeaturingArtistFromSongArtist";
     public const string MagicDoRemoveFeaturingArtistFromSongTitle = "magic.doRemoveFeaturingArtistFromSongTitle";
     public const string MagicDoRemoveUnwantedTextFromAlbumTitle = "magic.doRemoveUnwantedTextFromAlbumTitle";
@@ -31,7 +35,6 @@ public static class SettingRegistry
     public const string ProcessingConvertedExtension = "processing.convertedExtension";
     public const string ProcessingDoContinueOnDirectoryProcessingErrors = "processing.doContinueOnDirectoryProcessingErrors";
     public const string ProcessingDoDeleteOriginal = "processing.doDeleteOriginal";
-    public const string ProcessingDoLoadEmbeddedImages = "processing.doLoadEmbeddedImages";
     public const string ProcessingDoOverrideExistingMelodeeDataFiles = "processing.doOverrideExistingMelodeeDataFiles";
     public const string ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue = "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue";
     public const string ProcessingIgnoredArticles = "processing.ignoredArticles";

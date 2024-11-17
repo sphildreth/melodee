@@ -130,6 +130,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 7,
+                    Category = (int)SettingCategory.Formatting,
                     Key = SettingRegistry.FormattingDateTimeDisplayFormatShort,
                     Comment = "Short Format to use when displaying full dates.",
                     Value = "yyyyMMdd HH:mm",
@@ -138,6 +139,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 8,
+                    Category = (int)SettingCategory.Formatting,
                     Key = SettingRegistry.FormattingDateTimeDisplayActivityFormat,
                     Comment = "Format to use when displaying activity related dates (e.g. processing messages)",
                     Value = MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault,
@@ -154,6 +156,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 10,
+                    Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicEnabled,
                     Comment = "Is Magic processing enabled.",
                     Value = "true",
@@ -162,6 +165,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 11,
+                    Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicDoRenumberSongs,
                     Comment = "Renumber songs when doing magic processing.",
                     Value = "true",
@@ -170,6 +174,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 12,
+                    Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicDoRemoveFeaturingArtistFromSongArtist,
                     Comment = "Remove featured artists from song artist when doing magic.",
                     Value = "true",
@@ -178,6 +183,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 13,
+                    Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle,
                     Comment = "Remove featured artists from song title when doing magic.",
                     Value = "true",
@@ -186,6 +192,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 14,
+                    Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicDoReplaceSongsArtistSeparators,
                     Comment = "Replace song artist separators with standard ID3 separator ('/') when doing magic.",
                     Value = "true",
@@ -194,6 +201,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 15,
+                    Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicDoSetYearToCurrentIfInvalid,
                     Comment = "Set the song year to current year if invalid or missing when doing magic.",
                     Value = "true",
@@ -202,6 +210,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 16,
+                    Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicDoRemoveUnwantedTextFromAlbumTitle,
                     Comment = "Remove unwanted text from album title when doing magic.",
                     Value = "true",
@@ -210,6 +219,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 17,
+                    Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicDoRemoveUnwantedTextFromSongTitles,
                     Comment = "Remove unwanted text from song titles when doing magic.",
                     Value = "true",
@@ -218,6 +228,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 18,
+                    Category = (int)SettingCategory.Conversion,
                     Key = SettingRegistry.ConversionEnabled,
                     Comment = "Enable Melodee to convert non-mp3 media files during processing.",
                     Value = "true",
@@ -226,6 +237,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 19,
+                    Category = (int)SettingCategory.Conversion,
                     Key = SettingRegistry.ConversionBitrate,
                     Comment = "Bitrate to convert non-mp3 media files during processing.",
                     Value = "384",
@@ -234,6 +246,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 20,
+                    Category = (int)SettingCategory.Conversion,
                     Key = SettingRegistry.ConversionVbrLevel,
                     Comment = "Vbr to convert non-mp3 media files during processing.",
                     Value = "4",
@@ -242,6 +255,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 21,
+                    Category = (int)SettingCategory.Conversion,
                     Key = SettingRegistry.ConversionSamplingRate,
                     Comment = "Sampling rate to convert non-mp3 media files during processing.",
                     Value = "48000",
@@ -250,6 +264,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 22,
+                    Category = (int)SettingCategory.PluginProcess,
                     Key = SettingRegistry.PluginEnabledCueSheet,
                     Comment = "Process of CueSheet files during processing.",
                     Value = "true",
@@ -258,6 +273,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 23,
+                    Category = (int)SettingCategory.PluginProcess,
                     Key = SettingRegistry.PluginEnabledM3u,
                     Comment = "Process of M3U files during processing.",
                     Value = "true",
@@ -266,6 +282,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 24,
+                    Category = (int)SettingCategory.PluginProcess,
                     Key = SettingRegistry.PluginEnabledNfo,
                     Comment = "Process of NFO files during processing.",
                     Value = "true",
@@ -274,6 +291,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 25,
+                    Category = (int)SettingCategory.PluginProcess,
                     Key = SettingRegistry.PluginEnabledSimpleFileVerification,
                     Comment = "Process of Simple File Verification (SFV) files during processing.",
                     Value = "true",
@@ -338,7 +356,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 33,
-                    Key = SettingRegistry.ProcessingDoLoadEmbeddedImages,
+                    Category = (int)SettingCategory.Imaging,
+                    Key = SettingRegistry.ImagingDoLoadEmbeddedImages,
                     Comment = "Include any embedded images from media files into the Melodee data file.",
                     Value = "true",
                     CreatedAt = now
@@ -418,6 +437,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 44,
+                    Category = (int)SettingCategory.Validation,
                     Key = SettingRegistry.ValidationMaximumMediaNumber,
                     Comment = "The maximum value a media number can have for an album. The length of this is used for formatting song names.",
                     Value = "999",
@@ -426,6 +446,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 45,
+                    Category = (int)SettingCategory.Validation,
                     Key = SettingRegistry.ValidationMaximumSongNumber,
                     Comment = "The maximum value a song number can have for an album. The length of this is used for formatting song names.",
                     Value = "9999",
@@ -434,6 +455,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 46,
+                    Category = (int)SettingCategory.Validation,
                     Key = SettingRegistry.ValidationMinimumAlbumYear,
                     Comment = "Minimum allowed year for an album.",
                     Value = "1860",
@@ -442,6 +464,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 47,
+                    Category = (int)SettingCategory.Validation,
                     Key = SettingRegistry.ValidationMaximumAlbumYear,
                     Comment = "Maximum allowed year for an album.",
                     Value = "2150",
@@ -458,6 +481,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 49,
+                    Category = (int)SettingCategory.Api,
                     Key = SettingRegistry.OpenSubsonicServerSupportedVersion,
                     Comment = "OpenSubsonic server supported Subsonic API version.",
                     Value = "1.16.1",
@@ -466,6 +490,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 50,
+                    Category = (int)SettingCategory.Api,
                     Key = SettingRegistry.OpenSubsonicServerType,
                     Comment = "OpenSubsonic server name.",
                     Value = "Melodee",
@@ -474,6 +499,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 51,
+                    Category = (int)SettingCategory.Api,
                     Key = SettingRegistry.OpenSubsonicServerVersion,
                     Comment = "OpenSubsonic server actual version. [Ex: 1.2.3 (beta)]",
                     Value = "1.0.1 (beta)",
@@ -482,6 +508,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 52,
+                    Category = (int)SettingCategory.Api,
                     Key = SettingRegistry.OpenSubsonicServerLicenseEmail,
                     Comment = "OpenSubsonic email to use in License responses.",
                     Value = "noreply@localhost.lan",
@@ -498,6 +525,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 60,
+                    Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineEnabledBingImage,
                     Comment = "Use Bing search engine to find images for albums and artists.",
                     Value = "false",
@@ -506,6 +534,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 61,
+                    Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineApiKeyBingImage,
                     Comment = "Bing search ApiKey (Ocp-Apim-Subscription-Key), leave blank to disable.",
                     Value = "",
@@ -514,6 +543,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 62,
+                    Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineUserAgent,
                     Comment = "User agent to send with Search engine requests.",
                     Value = "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0",
@@ -522,11 +552,39 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 63,
+                    Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineDefaultPageSize,
                     Comment = "Default page size when performing a search engine search.",
                     Value = "20",
                     CreatedAt = now
-                }
+                },
+                new Setting
+                {
+                    Id = 70,
+                    Category = (int)SettingCategory.Imaging,
+                    Key = SettingRegistry.ImagingMaximumImageSize,
+                    Comment = "Maximum image size allowed (WidthxHeight) for any image, if larger than will be resized to this image.",
+                    Value = "1600x1600",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 71,
+                    Category = (int)SettingCategory.Imaging,
+                    Key = SettingRegistry.ImagingMaximumNumberOfAlbumImages,
+                    Comment = "Maximum allowed number of images for an album, this includes all image types (Front, Rear, etc.), set to zero for infinite.",
+                    Value = "25",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 72,
+                    Category = (int)SettingCategory.Imaging,
+                    Key = SettingRegistry.ImagingMaximumNumberOfArtistImages,
+                    Comment = "Maximum allowed number of images for an artist, set to zero for infinite.",
+                    Value = "25",
+                    CreatedAt = now
+                }                
             );
         });
 

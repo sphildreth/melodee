@@ -7,7 +7,7 @@ namespace Melodee.Tests.Validation;
 
 public class AlbumValidatorTests
 {
-    private static Album TestAlbum
+    public static Album TestAlbum
         => new()
         {
             Directory = new FileSystemDirectoryInfo
