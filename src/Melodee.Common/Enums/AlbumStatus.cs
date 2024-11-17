@@ -17,5 +17,5 @@ public enum AlbumStatus
     /// <summary>
     /// Needs some attention as it has issues and is not 'Ok'.
     /// </summary>
-    NeedsAttention
+    Invalid
 }

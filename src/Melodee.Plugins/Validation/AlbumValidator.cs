@@ -35,7 +35,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             {
                 Data = new ValidationResult
                 {
-                    AlbumStatus = AlbumStatus.NeedsAttention
+                    AlbumStatus = AlbumStatus.Invalid
                 }
             };
         }
@@ -43,31 +43,25 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
         var returnStatus = album.Status;
 
-        // Validations should return true if ok
-        if (IsValid(album) &&
-            AreAllSongNumbersValid(album) &&
-            AreSongsUniquelyNumbered(album) &&
-            AreMediaNumbersValid(album) &&
-            DoAllSongsHaveSameAlbumArtist(album) &&
-            AllSongTitlesDoNotHaveUnwantedText(album) &&
-            AlbumArtistDoesNotHaveUnwantedText(album) &&
-            AlbumTitleDoesNotHaveUnwantedText(album) &&
-            IsAlbumYearValid(album) &&
-            DoMediaTotalMatchMediaNumbers(album) &&
-            DoesSongTotalMatchSongCount(album) && 
-            DoesAlbumHaveCoverImage(album) && 
-            AlbumDoesNotHaveProofImages(album)
-           )
-        {
-            returnStatus = AlbumStatus.Ok;
-        }
-
+        IsValid(album);
+        AreAllSongNumbersValid(album);
+        AreSongsUniquelyNumbered(album);
+        AreMediaNumbersValid(album);
+        DoAllSongsHaveSameAlbumArtist(album);
+        AllSongTitlesDoNotHaveUnwantedText(album);
+        AlbumArtistDoesNotHaveUnwantedText(album);
+        AlbumTitleDoesNotHaveUnwantedText(album);
+        DoMediaTotalMatchMediaNumbers(album);
+        DoesSongTotalMatchSongCount(album);
+        DoesAlbumHaveCoverImage(album);
+        AlbumDoesNotHaveProofImages(album);
+        
         return new OperationResult<ValidationResult>
         {
             Data = new ValidationResult
             {
                 Messages = _validationMessages,
-                AlbumStatus = returnStatus
+                AlbumStatus = returnStatus != AlbumStatus.Invalid && !_validationMessages.Any() ? AlbumStatus.Ok : AlbumStatus.Invalid,
             }
         };
     }
@@ -140,45 +134,15 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
     private bool IsValid(Album album)
     {
         var result = true;
-        if (!album.IsValid(_configuration).Item1)
+        var validationCheck = album.IsValid(_configuration);
+        if (!validationCheck.Item1)
         {
-            if (album.UniqueId < 0)
+            _validationMessages.Add(new ValidationResultMessage
             {
-                _validationMessages.Add(new ValidationResultMessage
-                {
-                    Message = $"Album has invalid Unique ID: {album.UniqueId}",
-                    Severity = ValidationResultMessageSeverity.Critical
-                });
-                result = false;
-            }
-            if (album.Artist().Nullify() == null)
-            {
-                _validationMessages.Add(new ValidationResultMessage
-                {
-                    Message = $"Album has invalid Artist [{album.Artist()}]",
-                    Severity = ValidationResultMessageSeverity.Critical
-                });
-                result = false;
-            }
-            if (album.AlbumTitle().Nullify() == null)
-            {
-                _validationMessages.Add(new ValidationResultMessage
-                {
-                    Message = $"Album has invalid Album Title: {album.AlbumTitle()}",
-                    Severity = ValidationResultMessageSeverity.Critical
-                });
-                result = false;
-            }
-
-            if (!album.HasValidAlbumYear(_configuration))
-            {
-                _validationMessages.Add(new ValidationResultMessage
-                {
-                    Message = $"Album has invalid Album Year: {album.AlbumYear()}",
-                    Severity = ValidationResultMessageSeverity.Critical
-                });
-                result = false;
-            }
+                Message = validationCheck.Item2 ?? "Album is invalid.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });            
+            result = false;            
         }
         return result;
     }
@@ -380,21 +344,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = $"Album Song numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
-        }
-        return result;
-    }
-
-    private bool IsAlbumYearValid(Album album)
-    {
-        var result = album.HasValidAlbumYear(_configuration);
-        if (!result)
-        {
-            _validationMessages.Add(new ValidationResultMessage
-            {
-                Message = $"Album year is invalid.",
-                Severity = ValidationResultMessageSeverity.Critical
-            });
-            
         }
         return result;
     }

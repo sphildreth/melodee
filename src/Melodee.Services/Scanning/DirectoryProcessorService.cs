@@ -148,13 +148,15 @@ public sealed class DirectoryProcessorService(
         
         var result = new DirectoryProcessorResult
         {
-            NumberOfConversionPluginsProcessed = 0,
-            NumberOfDirectoryPluginProcessed = 0,
-            NumberOfAlbumFilesProcessed = 0,
-            NewArtistsCount = 0,
+            DurationInMs = 0,
             NewAlbumsCount = 0,
+            NewArtistsCount = 0,
             NewSongsCount = 0,
-            DurationInMs = 0
+            NumberOfAlbumFilesProcessed = 0,
+            NumberOfConversionPluginsProcessed = 0,
+            NumberOfConversionPluginsProcessedFileCount = 0,
+            NumberOfDirectoryPluginProcessed = 0,
+            NumberOfValidAlbumsProcessed = 0,
         };
 
         var startTicks = Stopwatch.GetTimestamp();
@@ -520,7 +522,7 @@ public sealed class DirectoryProcessorService(
                                 }
                             }
 
-                            album.Status = AlbumStatus.NeedsAttention;
+                            album.Status = AlbumStatus.Invalid;
                         }
                     }
 
@@ -614,12 +616,6 @@ public sealed class DirectoryProcessorService(
         fileSystemDirectoryInfo.DeleteAllEmptyDirectories();
         LogAndRaiseEvent(LogEventLevel.Information, "Processing Complete!");
 
-        processingMessages.Add($" Directory Plugin(s) process count [{directoryPluginProcessedFileCount}]");
-        processingMessages.Add($"Conversion Plugin(s) process count [{conversionPluginsProcessedFileCount}]");
-        processingMessages.Add($"      Song Plugin(s) process count [{numberOfAlbumFilesProcessed}]");
-        processingMessages.Add($"         Album (all) process count [{numberOfAlbumJsonFilesProcessed}]");
-        processingMessages.Add($"       Album (valid) process count [{numberOfValidAlbumsProcessed}]");
-
         return new OperationResult<DirectoryProcessorResult>(processingMessages)
         {
             Errors = processingErrors.ToArray(),
@@ -631,7 +627,9 @@ public sealed class DirectoryProcessorService(
                 NewSongsCount = songsUniqueIdsSeen.Distinct().Count(),
                 NumberOfAlbumFilesProcessed = numberOfAlbumJsonFilesProcessed,
                 NumberOfConversionPluginsProcessed = numberOfAlbumFilesProcessed,
-                NumberOfDirectoryPluginProcessed = directoryPluginProcessedFileCount
+                NumberOfConversionPluginsProcessedFileCount = conversionPluginsProcessedFileCount,
+                NumberOfDirectoryPluginProcessed = directoryPluginProcessedFileCount,
+                NumberOfValidAlbumsProcessed = numberOfValidAlbumsProcessed
             }
         };
     }

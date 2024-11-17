@@ -51,7 +51,7 @@ public sealed record Album
     public IEnumerable<ValidationResultMessage> ValidationMessages { get; set; } = [];
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public AlbumStatus Status { get; set; } = AlbumStatus.NeedsAttention;
+    public AlbumStatus Status { get; set; } = AlbumStatus.Invalid;
 
     public IEnumerable<AlbumFile> Files { get; set; } = [];
 

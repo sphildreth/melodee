@@ -356,7 +356,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
             Status = AlbumStatus.NotSet,
             SortOrder = 0
         };
-        result.Status = result.IsValid(Configuration).Item1 ? AlbumStatus.NeedsAttention : AlbumStatus.Ok;
+        result.Status = result.IsValid(Configuration).Item1 ? AlbumStatus.Invalid : AlbumStatus.Ok;
         return result;
     }
 

@@ -124,7 +124,7 @@ public sealed class AlbumDiscoveryService(
                     break;
 
                 case AlbumResultFilter.Incomplete:
-                    albums = albums.Where(x => x.Status == AlbumStatus.NeedsAttention).ToList();
+                    albums = albums.Where(x => x.Status == AlbumStatus.Invalid).ToList();
                     break;
 
                 case AlbumResultFilter.LessThanConfiguredSongs:
@@ -133,7 +133,7 @@ public sealed class AlbumDiscoveryService(
                     break;
 
                 case AlbumResultFilter.NeedsAttention:
-                    albums = albums.Where(x => x.Status == AlbumStatus.NeedsAttention).ToList();
+                    albums = albums.Where(x => x.Status == AlbumStatus.Invalid).ToList();
                     break;
 
                 case AlbumResultFilter.New:

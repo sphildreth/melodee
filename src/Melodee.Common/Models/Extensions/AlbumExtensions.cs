@@ -96,46 +96,46 @@ public static class AlbumExtensions
     {
         if (album.Tags?.Count() == 0)
         {
-            return (false, "Melodee file has no tags.");
+            return (false, "Album has no tags.");
         }
 
         if (album.Songs?.Count() == 0)
         {
-            return (false, "Melodee file has no songs.");
+            return (false, "Album has no songs.");
         }
         
         if (album.Songs?.Any(x => !x.IsValid(configuration)) ?? false)
         {
-            return (false, "Melodee file has no valid songs.");
+            return (false, "Album has no valid songs.");
         }
 
         var songsGroupedByMediaNumber = album.Songs?.GroupBy(x => x.MediaNumber());
         var songsGroupedByMediaNumberAndSongNumber = songsGroupedByMediaNumber?.SelectMany(x => x).GroupBy(x => x.SongNumber());
         if (songsGroupedByMediaNumberAndSongNumber?.Where(x => x.Count() > 1)?.Any() ?? false)
         {
-            return (false, "Melodee file has media and/or song numbers that are duplicated.");
+            return (false, "Album has media and/or song numbers that are duplicated.");
         }
         
         var artist = album.Artist().Nullify();
         if (artist == null)
         {
-            return (false, "Melodee file artist name is invalid.");
+            return (false, "Album artist name is invalid.");
         }
         
         var albumTitle = album.AlbumTitle().Nullify();
         if (albumTitle == null)
         {
-            return (false, "Melodee file album title is invalid.");
+            return (false, "Album title is invalid.");
         }
 
         if (album.UniqueId < 1)
         {
-            return (false, "Melodee file album unique id is invalid.");
+            return (false, "Album unique id is invalid.");
         }
 
         if (!album.HasValidAlbumYear(configuration))
         {
-            return (false,"Melodee file album year is invalid.");
+            return (false,"Album year is invalid.");
         }
 
         if (album.Status is AlbumStatus.Ok or AlbumStatus.New)
@@ -245,6 +245,7 @@ public static class AlbumExtensions
     {
         return album.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??
+               album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
     }
     
@@ -513,7 +514,7 @@ public static class AlbumExtensions
             return null;
         }
         var coverImage = album.Images?.OrderBy(x => x.SortOrder).FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
-        if (coverImage?.FileInfo != null && album.Directory != null)
+        if (coverImage?.FileInfo != null)
         {
             var result = new FileInfo(coverImage.FileInfo.FullName(album.Directory));
             return result.Exists ? result : null;

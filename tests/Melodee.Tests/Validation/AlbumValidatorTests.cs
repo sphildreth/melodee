@@ -12,8 +12,8 @@ public class AlbumValidatorTests
         {
             Directory = new FileSystemDirectoryInfo
             {
-                Path = string.Empty,
-                Name = string.Empty
+                Path = "/melodee_test/tests/",
+                Name = "tests"
             },
             ViaPlugins = [nameof(AtlMetaTag)],
             OriginalDirectory = new FileSystemDirectoryInfo
@@ -22,6 +22,19 @@ public class AlbumValidatorTests
                 Name = string.Empty
             },
             Status = AlbumStatus.Ok,
+            Images = new []
+            {
+                new ImageInfo
+                {
+                    CrcHash = "12345",
+                    FileInfo = new FileSystemFileInfo
+                    {
+                        Name = "2020591499-01-Front.jpg",
+                        Size = 12345,
+                    },
+                    PictureIdentifier = PictureIdentifier.Front
+                }
+            },
             Tags = new[]
             {
                 new MetaTag<object?>
@@ -222,78 +235,97 @@ public class AlbumValidatorTests
     }
 
     [Fact]
-    public void ValidateAlbumWithMissingArtist()
+    public void ValidateAlbumWithNoCoverImage()
     {
         var testAlbum = TestAlbum;
-        var AlbumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
-        AlbumTags.Remove(new MetaTag<object?>
-        {
-            Identifier = MetaTagIdentifier.AlbumArtist,
-            Value = "Billy Joel"
-        });
-        var Album = new Album
+        var album = new Album
         {
             Directory = testAlbum.Directory,
-            Tags = AlbumTags,
+            Tags = testAlbum.Tags,
             Songs = testAlbum.Songs,
             ViaPlugins = testAlbum.ViaPlugins,
             OriginalDirectory = testAlbum.OriginalDirectory
         };
 
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
-        var validationResult = validator.ValidateAlbum(Album);
+        var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(AlbumStatus.NeedsAttention, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+    }
+    
+    [Fact]
+    public void ValidateAlbumWithMissingArtist()
+    {
+        var testAlbum = TestAlbum;
+        var albumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
+        albumTags.Remove(new MetaTag<object?>
+        {
+            Identifier = MetaTagIdentifier.AlbumArtist,
+            Value = "Billy Joel"
+        });
+        var album = new Album
+        {
+            Directory = testAlbum.Directory,
+            Tags = albumTags,
+            Songs = testAlbum.Songs,
+            ViaPlugins = testAlbum.ViaPlugins,
+            OriginalDirectory = testAlbum.OriginalDirectory
+        };
+
+        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
+        var validationResult = validator.ValidateAlbum(album);
+        Assert.True(validationResult.IsSuccess);
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
     }
 
     [Fact]
     public void ValidateAlbumWithInvalidYear()
     {
         var testAlbum = TestAlbum;
-        var AlbumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
-        AlbumTags.Remove(new MetaTag<object?>
+        var albumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
+        albumTags.Remove(new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.RecordingYear,
             Value = "1971"
         });
-        var Album = new Album
+        var album = new Album
         {
             Directory = testAlbum.Directory,
-            Tags = AlbumTags,
+            Tags = albumTags,
             Songs = testAlbum.Songs,
             ViaPlugins = testAlbum.ViaPlugins,
             OriginalDirectory = testAlbum.OriginalDirectory
         };
 
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
-        var validationResult = validator.ValidateAlbum(Album);
+        var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(AlbumStatus.NeedsAttention, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
     }
 
     [Fact]
     public void ValidateAlbumWithMissingTitle()
     {
         var testAlbum = TestAlbum;
-        var AlbumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
-        AlbumTags.Remove(new MetaTag<object?>
+        var albumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
+        albumTags.Remove(new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Album,
             Value = "Cold Spring Harbor"
         });
-        var Album = new Album
+        var album = new Album
         {
             Directory = testAlbum.Directory,
-            Tags = AlbumTags,
+            Tags = albumTags,
             Songs = testAlbum.Songs,
             ViaPlugins = testAlbum.ViaPlugins,
             OriginalDirectory = testAlbum.OriginalDirectory
         };
 
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
-        var validationResult = validator.ValidateAlbum(Album);
+        var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(AlbumStatus.NeedsAttention, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
     }
 
     [Theory]

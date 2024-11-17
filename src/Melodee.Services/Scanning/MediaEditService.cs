@@ -166,7 +166,7 @@ public sealed class MediaEditService(
             {
                 Data = new ValidationResult
                 {
-                    AlbumStatus = AlbumStatus.NeedsAttention
+                    AlbumStatus = AlbumStatus.Invalid
                 }
             };
         }
@@ -178,7 +178,7 @@ public sealed class MediaEditService(
             {
                 Data = new ValidationResult
                 {
-                    AlbumStatus = AlbumStatus.NeedsAttention
+                    AlbumStatus = AlbumStatus.Invalid
                 }
             };
         }

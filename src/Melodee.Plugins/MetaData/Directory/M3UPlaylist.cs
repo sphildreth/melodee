@@ -132,7 +132,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
                             Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                         };
-                        m3UAlbum.Status = albumValidator.ValidateAlbum(m3UAlbum)?.Data.AlbumStatus ?? AlbumStatus.NeedsAttention;
+                        m3UAlbum.Status = albumValidator.ValidateAlbum(m3UAlbum)?.Data.AlbumStatus ?? AlbumStatus.Invalid;
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
                         if (File.Exists(stagingAlbumDataName))
                         {
