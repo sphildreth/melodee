@@ -300,7 +300,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 28,
                     Key = SettingRegistry.ProcessingDoDeleteOriginal,
                     Comment = "Delete original files when processing. When false a copy if made, else original is deleted after processed.",
-                    Value = "true",
+                    Value = "false",
                     CreatedAt = now
                 },
                 new Setting
