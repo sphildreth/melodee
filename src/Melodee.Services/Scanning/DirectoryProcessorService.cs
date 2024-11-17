@@ -461,9 +461,14 @@ public sealed class DirectoryProcessorService(
                         albumDirInfo.Create();
                     }
 
-                    album.Images?.Where(x => x.FileInfo?.OriginalName != null).ForEach((image, index) =>
+                    foreach(var (image, index) in album.Images?.Where(x => x.FileInfo?.OriginalName != null).Select((image, index) => (image, index)) ?? [])
                     {
                         var oldImageFileName = Path.Combine(albumKvp.Key.Directory.FullName(), image.FileInfo!.OriginalName!);
+                        if (!File.Exists(oldImageFileName))
+                        {
+                            Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);
+                            continue;
+                        }                        
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
@@ -474,7 +479,7 @@ public sealed class DirectoryProcessorService(
                             }
                             image.FileInfo!.Name = Path.GetFileName(newImageFileName);
                         }
-                    });
+                    };
 
                     if (album.Songs != null)
                     {
@@ -486,6 +491,11 @@ public sealed class DirectoryProcessorService(
                             }
 
                             var oldSongFilename = Path.Combine(albumKvp.Key.Directory.FullName(), song.File.OriginalName!);
+                            if (!File.Exists(oldSongFilename))
+                            {
+                                Logger.Warning("Unable to find song by original name [{OriginalName}]", oldSongFilename);
+                                continue;
+                            }
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
                             if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                             {
