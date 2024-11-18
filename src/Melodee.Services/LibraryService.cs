@@ -258,10 +258,12 @@ public sealed class LibraryService(
             {
                 Directory.CreateDirectory(libraryAlbumPath);
             }
+            
             // TODO if data album exists for model album if so determine which is better quality
+            
             MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, null);
             var melodeeFileName = Path.Combine(libraryAlbumPath, $"melodee.json");
-            var melodeeFile = serializer.Deserialize<Common.Models.Album>(melodeeFileName);
+            var melodeeFile = serializer.Deserialize<Common.Models.Album>(await File.ReadAllBytesAsync(melodeeFileName, cancellationToken));
             melodeeFile!.Directory!.Path = libraryAlbumPath;
             var utf8Bytes = Encoding.UTF8.GetBytes(serializer.Serialize(melodeeFile)!);
             await File.WriteAllBytesAsync(melodeeFileName,utf8Bytes , cancellationToken);

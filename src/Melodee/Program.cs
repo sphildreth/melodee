@@ -92,7 +92,6 @@ builder.Services.AddQuartz(q =>
 {
     q.UseTimeZoneConverter();
     
-
     q.AddJob<LibraryInboundProcessJob>(opts => opts.WithIdentity(JobKeyRegistry.LibraryInboundProcessJobKey));
     q.AddTrigger(opts => opts
         .ForJob(JobKeyRegistry.LibraryInboundProcessJobKey)

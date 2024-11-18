@@ -133,7 +133,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Formatting,
                     Key = SettingRegistry.FormattingDateTimeDisplayFormatShort,
                     Comment = "Short Format to use when displaying full dates.",
-                    Value = "yyyyMMdd HH:mm",
+                    Value = "yyyyMMdd HH\\:mm",
                     CreatedAt = now
                 },
                 new Setting

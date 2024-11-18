@@ -12,7 +12,7 @@ namespace Melodee.Common.Configuration;
 /// <param name="Configuration">Initial configuration from database.</param>
 public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : IMelodeeConfiguration
 {
-    public static string FormattingDateTimeDisplayActivityFormatDefault = "HH:mm:ss.fff";
+    public static string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
     
     public void SetSetting<T>(string key, T? value) => Configuration[key] = value;
 
