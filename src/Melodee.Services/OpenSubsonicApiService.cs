@@ -2,9 +2,7 @@ using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
-using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
@@ -42,11 +40,13 @@ public class OpenSubsonicApiService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     public const char ImageApiIdSeparator = '_';
-    
+
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
+    private UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty);
+
     /// <summary>
-    /// Get details about the software license.
+    ///     Get details about the software license.
     /// </summary>
     public async Task<ResponseModel> GetLicense(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
     {
@@ -67,7 +67,7 @@ public class OpenSubsonicApiService(
     }
 
     /// <summary>
-    /// Returns all playlists a user is allowed to play.
+    ///     Returns all playlists a user is allowed to play.
     /// </summary>
     public async Task<ResponseModel> GetPlaylists(ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
@@ -94,12 +94,12 @@ public class OpenSubsonicApiService(
                     { "UserId", authResponse.UserInfo.Id }
                 };
                 sql = """
-                    SELECT *
-                    FROM "Playlists"
-                    where "UserId" = @userId
-                    or "IsPublic" is true
-                    ORDER BY "SortOrder";
-                    """;
+                      SELECT *
+                      FROM "Playlists"
+                      where "UserId" = @userId
+                      or "IsPublic" is true
+                      ORDER BY "SortOrder";
+                      """;
                 data = (await dbConn
                     .QueryAsync<Playlist>(sql, sqlParameters)
                     .ConfigureAwait(false)).ToArray();
@@ -120,11 +120,11 @@ public class OpenSubsonicApiService(
                 DataPropertyName = "playlists",
                 DataDetailPropertyName = "playlist"
             }
-        };        
+        };
     }
-    
+
     /// <summary>
-    /// Returns a list of random, newest, highest rated etc. albums.
+    ///     Returns a list of random, newest, highest rated etc. albums.
     /// </summary>
     public async Task<ResponseModel> GetAlbumList2Async(GetAlbumListRequest albumListRequest, ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
@@ -218,7 +218,7 @@ public class OpenSubsonicApiService(
     }
 
     /// <summary>
-    /// Returns all genres.
+    ///     Returns all genres.
     /// </summary>
     public async Task<ResponseModel> GetGenresAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
@@ -268,7 +268,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = authResponse.UserInfo,            
+            UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
                 Data = data,
@@ -279,7 +279,7 @@ public class OpenSubsonicApiService(
     }
 
     /// <summary>
-    /// Returns a cover art image.
+    ///     Returns a cover art image.
     /// </summary>
     public async Task<ResponseModel> GetCoverArt(string apiId, int? size, ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
@@ -319,6 +319,7 @@ public class OpenSubsonicApiService(
                 }
             };
         }
+
         byte[]? coverBytes = null;
 
         var sql = """
@@ -352,7 +353,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             IsSuccess = coverBytes != null,
-            UserInfo = authResponse.UserInfo,            
+            UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
                 Data = coverBytes,
@@ -360,12 +361,11 @@ public class OpenSubsonicApiService(
                 DataDetailPropertyName = string.Empty
             }
         };
-        
     }
 
     /// <summary>
-    /// List the OpenSubsonic extensions supported by this server.
-    /// <remarks>Unlike all other APIs getOpenSubsonicExtensions must be publicly accessible.</remarks>
+    ///     List the OpenSubsonic extensions supported by this server.
+    ///     <remarks>Unlike all other APIs getOpenSubsonicExtensions must be publicly accessible.</remarks>
     /// </summary>
     public async Task<ResponseModel> GetOpenSubsonicExtensions(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
     {
@@ -377,8 +377,8 @@ public class OpenSubsonicApiService(
         };
         var data = new List<OpenSubsonicExtension>
         {
-            new OpenSubsonicExtension("template", [1, 2]),
-            new OpenSubsonicExtension("transcodeOffset", [1])
+            new("template", [1, 2]),
+            new("transcodeOffset", [1])
         };
         return new ResponseModel
         {
@@ -404,7 +404,7 @@ public class OpenSubsonicApiService(
         }
 
         await schedule.TriggerJob(JobKeyRegistry.LibraryProcessJobJobKey, cancellationToken);
-        
+
         return new ResponseModel
         {
             UserInfo = BlankUserInfo,
@@ -413,9 +413,9 @@ public class OpenSubsonicApiService(
                 Data = new ScanStatus(true, 0),
                 DataPropertyName = "scanStatus"
             }
-        };        
+        };
     }
-    
+
     public async Task<object> GetScanStatusAsync(ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -427,7 +427,7 @@ public class OpenSubsonicApiService(
                 ResponseData = authResponse.ResponseData
             };
         }
-        
+
         var executingJobs = await schedule.GetCurrentlyExecutingJobs(cancellationToken);
         var libraryProcessJob = executingJobs.FirstOrDefault(x => Equals(x.JobDetail.Key, JobKeyRegistry.LibraryProcessJobJobKey));
 
@@ -447,6 +447,7 @@ public class OpenSubsonicApiService(
         {
             Logger.Error(e, "Attempting to get Scan Status");
         }
+
         return new ResponseModel
         {
             UserInfo = BlankUserInfo,
@@ -455,8 +456,8 @@ public class OpenSubsonicApiService(
                 Data = data,
                 DataPropertyName = "scanStatus"
             }
-        };         
-    }    
+        };
+    }
 
     public async Task<ResponseModel> AuthenticateSubsonicApiAsync(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
     {
@@ -531,8 +532,6 @@ public class OpenSubsonicApiService(
         };
     }
 
-    private UserInfo BlankUserInfo => new UserInfo(0, Guid.Empty, string.Empty, string.Empty);
-    
     private Task<ApiResponse> DefaultApiResponse()
     {
         return NewApiResponse(true, string.Empty, string.Empty);
@@ -553,6 +552,4 @@ public class OpenSubsonicApiService(
             DataPropertyName = dataPropertyName
         };
     }
-
-
 }

@@ -37,7 +37,7 @@ public sealed class MediaEditService(
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private string _directoryLibrary = null!;
-    
+
     private ISongPlugin _editSongPlugin = new NullSongPlugin();
     private bool _initialized;
 
@@ -65,18 +65,17 @@ public sealed class MediaEditService(
     public async Task<OperationResult<Album?>> SaveImageUrlAsCoverAsync(FileSystemDirectoryInfo directoryInfo, long albumId, string imageUrl, bool deleteAllCoverImages, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        
+
         var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
         if (album.Directory != null)
         {
-
             try
             {
                 var imageBytes = await httpClientFactory.BytesForImageUrlAsync(_configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, imageUrl, cancellationToken);
                 if (imageBytes != null)
-                {   
+                {
                     var albumImages = album.Images?.ToList() ?? [];
-                    
+
                     if (deleteAllCoverImages)
                     {
                         albumImages.RemoveAll(x => x.PictureIdentifier is (PictureIdentifier.Front or PictureIdentifier.SecondaryFront or PictureIdentifier.NotSet));
@@ -93,10 +92,11 @@ public sealed class MediaEditService(
                                 }
                             }
                         }
-                    }                    
+                    }
+
                     var imageConvertor = new ImageConvertor(_configuration);
                     var numberOfExistingFrontImages = album.Images?.Count(x => x.PictureIdentifier == PictureIdentifier.Front) ?? 0;
-                    var tempFilename = Path.Combine(album.Directory.FullName(), deleteAllCoverImages ? $"01-Front.image" : $"{numberOfExistingFrontImages + 1}-Front.image");
+                    var tempFilename = Path.Combine(album.Directory.FullName(), deleteAllCoverImages ? "01-Front.image" : $"{numberOfExistingFrontImages + 1}-Front.image");
                     var tempFileInfo = new FileInfo(tempFilename).ToFileSystemInfo();
                     await File.WriteAllBytesAsync(tempFileInfo.FullName(directoryInfo), imageBytes, cancellationToken);
                     var imageConversionResult = await imageConvertor.ProcessFileAsync(
@@ -105,13 +105,14 @@ public sealed class MediaEditService(
                         cancellationToken);
                     var imageFileInfo = imageConversionResult.Data;
                     imageBytes = await File.ReadAllBytesAsync(imageFileInfo.FullName(directoryInfo), cancellationToken);
-               
+
                     var existingCoverImage = albumImages.FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
                     if (existingCoverImage?.FileInfo != null)
                     {
                         File.Delete(existingCoverImage.FileInfo.FullName(directoryInfo));
                         albumImages.RemoveAll(x => x == existingCoverImage);
                     }
+
                     var imageInfo = Image.Load(imageBytes);
                     albumImages.Add(new ImageInfo
                     {
@@ -120,12 +121,13 @@ public sealed class MediaEditService(
                         Height = imageInfo.Height,
                         PictureIdentifier = PictureIdentifier.Front,
                         SortOrder = deleteAllCoverImages ? 1 : albumImages.Max(x => x.SortOrder) + 1,
-                        Width = imageInfo.Width,
+                        Width = imageInfo.Width
                     });
                     album.Images = albumImages.ToArray();
                 }
+
                 var newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
-                return new OperationResult<Album?>()
+                return new OperationResult<Album?>
                 {
                     Data = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, newAlbumId, cancellationToken)
                 };
@@ -182,7 +184,7 @@ public sealed class MediaEditService(
                 }
             };
         }
-        
+
         if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRenumberSongs]))
         {
             albumId = (await RenumberSongs(directoryInfo, albumId, cancellationToken)).Data.Item2;
@@ -217,6 +219,7 @@ public sealed class MediaEditService(
         {
             await RemoveUnwantedTextFromSongTitles(directoryInfo, albumId, cancellationToken);
         }
+
         var validationResult = _albumValidator.ValidateAlbum(album);
         album.Status = validationResult.Data.AlbumStatus;
         album.Modified = DateTimeOffset.UtcNow;
@@ -276,7 +279,7 @@ public sealed class MediaEditService(
 
         return new OperationResult<(bool, long)>
         {
-            Data = (result,newAlbumId)
+            Data = (result, newAlbumId)
         };
     }
 
@@ -311,6 +314,7 @@ public sealed class MediaEditService(
                         modified = true;
                     }
                 }
+
                 if (modified)
                 {
                     newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
@@ -633,7 +637,6 @@ public sealed class MediaEditService(
 
             newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
             result = true;
-            
         }
         catch (Exception ex)
         {
@@ -643,7 +646,6 @@ public sealed class MediaEditService(
         return new OperationResult<(bool, long)>
         {
             Data = (result, newAlbumId)
-            
         };
     }
 

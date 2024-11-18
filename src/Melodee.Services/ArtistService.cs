@@ -103,6 +103,14 @@ public class ArtistService(
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
+    public void ClearCache(Artist artist)
+    {
+        CacheManager.Remove(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(artist.MediaUniqueId));
+        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.ApiKey));
+        CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.NameNormalized));
+        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Id));
+    }
+    
     public async Task<MelodeeModels.OperationResult<Artist?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, mediaUniqueId, nameof(mediaUniqueId));

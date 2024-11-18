@@ -11,11 +11,25 @@ namespace Melodee.Common.Data.Models;
 
 [Serializable]
 [Index(nameof(LibraryId))]
-public sealed class Album : NamedMetaDataModelBase
+[Index(nameof(ArtistId), nameof(Name), IsUnique = true)]
+[Index(nameof(ArtistId),nameof(NameNormalized), IsUnique = true)]
+[Index(nameof(ArtistId), nameof(SortName), IsUnique = true)]
+public sealed class Album : MetaDataModelBase
 {
     [RequiredGreaterThanZero] public int ArtistId { get; set; }
 
     public Artist Artist { get; set; } = null!;
+    
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    [Required]
+    public required string Name { get; set; }
+
+    [Required]
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    public required string NameNormalized { get; set; }
+
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    public string? SortName { get; set; }    
     
     [RequiredGreaterThanZero] public int LibraryId { get; set; }
     

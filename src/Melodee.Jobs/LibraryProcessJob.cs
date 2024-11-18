@@ -69,6 +69,11 @@ public class LibraryProcessJob(
         await albumDiscoveryService.InitializeAsync(configuration, context.CancellationToken).ConfigureAwait(false);
         await directoryProcessorService.InitializeAsync(configuration, context.CancellationToken).ConfigureAwait(false);
 
+        ISongPlugin[] songPlugins =
+        [
+            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), configuration)
+        ];        
+        
         var dataMap = context.JobDetail.JobDataMap;
 
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(context.CancellationToken).ConfigureAwait(false))
@@ -139,7 +144,13 @@ public class LibraryProcessJob(
                             .FirstOrDefault();
                         if (melodeeFile == null)
                         {
-                            melodeeFile = (await directoryProcessorService.AllAlbumsForDirectoryAsync(dirFileSystemDirectoryInfo, context.CancellationToken).ConfigureAwait(false)).Data.Item1.FirstOrDefault();
+                            
+                            melodeeFile = (await directoryProcessorService.AllAlbumsForDirectoryAsync(
+                                    dirFileSystemDirectoryInfo,
+                                    songPlugins.ToArray(),
+                                    configuration,
+                                    context.CancellationToken)
+                                .ConfigureAwait(false)).Data.Item1.FirstOrDefault();
                             if (melodeeFile == null)
                             {
                                 Logger.Warning("[{JobName}] Unable to find Melodee file for directory [{DirName}]", nameof(LibraryProcessJob), dirFileSystemDirectoryInfo);
@@ -174,7 +185,7 @@ public class LibraryProcessJob(
                             .Albums
                             .Include(x => x.Artist)
                             .Include(x => x.Discs).ThenInclude(x => x.Songs)
-                            .FirstOrDefaultAsync(a => a.LibraryId == library.Id && a.Directory == dir.Name, context.CancellationToken)
+                            .FirstOrDefaultAsync(a => a.LibraryId == library.Id && a.MediaUniqueId == melodeeFile.UniqueId, context.CancellationToken)
                             .ConfigureAwait(false);
                         if (dbAlbum != null && foundSongsMetaTagResults.Count == 0)
                         {

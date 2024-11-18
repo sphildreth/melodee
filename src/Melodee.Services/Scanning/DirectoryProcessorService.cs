@@ -51,14 +51,14 @@ public sealed class DirectoryProcessorService(
 
     private string _directoryStaging = null!;
     private bool _initialized;
+    private int _maxAlbumProcessingCount;
+    private short _maxImageCount;
     private IScriptPlugin _postDiscoveryScript = new NullScript();
 
     private IScriptPlugin _preDiscoveryScript = new NullScript();
 
     private IEnumerable<ISongPlugin> _songPlugins = [];
     private bool _stopProcessingTriggered;
-    private int _maxAlbumProcessingCount = 0;
-    private short _maxImageCount = 0;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
@@ -71,7 +71,7 @@ public sealed class DirectoryProcessorService(
 
         _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         _maxImageCount = _configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages, value => value < 1 ? SafeParser.ToNumber<short>(short.MaxValue.ToString().Length) : SafeParser.ToNumber<short>(value.ToString().Length));
-        
+
         _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
 
         _songPlugins = new[]
@@ -147,7 +147,7 @@ public sealed class DirectoryProcessorService(
         var artistsUniqueIdsSeen = new List<long>();
         var albumsUniqueIdsSeen = new List<long>();
         var songsUniqueIdsSeen = new List<long>();
-        
+
         var result = new DirectoryProcessorResult
         {
             DurationInMs = 0,
@@ -158,7 +158,7 @@ public sealed class DirectoryProcessorService(
             NumberOfConversionPluginsProcessed = 0,
             NumberOfConversionPluginsProcessedFileCount = 0,
             NumberOfDirectoryPluginProcessed = 0,
-            NumberOfValidAlbumsProcessed = 0,
+            NumberOfValidAlbumsProcessed = 0
         };
 
         var startTicks = Stopwatch.GetTimestamp();
@@ -301,13 +301,15 @@ public sealed class DirectoryProcessorService(
 
                         continue;
                     }
+
                     if (pluginResult.Data > 0)
                     {
-                        directoryPluginProcessedFileCount += pluginResult.Data;    
+                        directoryPluginProcessedFileCount += pluginResult.Data;
                     }
+
                     if (plugin.StopProcessing)
                     {
-                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);                        
+                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
                         break;
                     }
                 }
@@ -316,7 +318,11 @@ public sealed class DirectoryProcessorService(
                 var albumJsonFiles = directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName);
                 if (!albumJsonFiles.Any())
                 {
-                    var albumsForDirectory = await AllAlbumsForDirectoryAsync(directoryInfoToProcess, cancellationToken);
+                    var albumsForDirectory = await AllAlbumsForDirectoryAsync(
+                        directoryInfoToProcess,
+                        _songPlugins.ToArray(),
+                        _configuration,
+                        cancellationToken);
                     if (!albumsForDirectory.IsSuccess)
                     {
                         return new OperationResult<DirectoryProcessorResult>(albumsForDirectory.Messages)
@@ -365,13 +371,13 @@ public sealed class DirectoryProcessorService(
                         }
 
                         await File.WriteAllTextAsync(albumDataName, serialized, cancellationToken);
-                        
+
                         numberOfAlbumJsonFilesProcessed++;
-                        
+
                         if (numberOfAlbumJsonFilesProcessed > _maxAlbumProcessingCount)
                         {
                             break;
-                        }                        
+                        }
                     }
                 }
 
@@ -433,6 +439,7 @@ public sealed class DirectoryProcessorService(
                                 {
                                     break;
                                 }
+
                                 song.File.Name = song.ToSongFileName(_configuration.Configuration);
                             }
                         }
@@ -461,14 +468,15 @@ public sealed class DirectoryProcessorService(
                         albumDirInfo.Create();
                     }
 
-                    foreach(var (image, index) in album.Images?.Where(x => x.FileInfo?.OriginalName != null).Select((image, index) => (image, index)) ?? [])
+                    foreach (var (image, index) in album.Images?.Where(x => x.FileInfo?.OriginalName != null).Select((image, index) => (image, index)) ?? [])
                     {
                         var oldImageFileName = Path.Combine(albumKvp.Key.Directory.FullName(), image.FileInfo!.OriginalName!);
                         if (!File.Exists(oldImageFileName))
                         {
                             Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);
                             continue;
-                        }                        
+                        }
+
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
@@ -477,9 +485,12 @@ public sealed class DirectoryProcessorService(
                             {
                                 File.Delete(image.FileInfo!.FullName(albumKvp.Key.Directory));
                             }
+
                             image.FileInfo!.Name = Path.GetFileName(newImageFileName);
                         }
-                    };
+                    }
+
+                    ;
 
                     if (album.Songs != null)
                     {
@@ -496,6 +507,7 @@ public sealed class DirectoryProcessorService(
                                 Logger.Warning("Unable to find song by original name [{OriginalName}]", oldSongFilename);
                                 continue;
                             }
+
                             var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
                             if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                             {
@@ -548,6 +560,7 @@ public sealed class DirectoryProcessorService(
                         {
                             File.Delete(albumKvp.Value);
                         }
+
                         if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
@@ -569,10 +582,10 @@ public sealed class DirectoryProcessorService(
                     if (album.Status == AlbumStatus.Ok)
                     {
                         numberOfValidAlbumsProcessed++;
-                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83c\udf89 Found valid album [{fileSystemDirectoryInfo}]", null);
+                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83c\udf89 Found valid album [{fileSystemDirectoryInfo}]");
                         if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
                         {
-                            LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]", null);
+                            LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
                             _stopProcessingTriggered = true;
                             break;
                         }
@@ -704,11 +717,12 @@ public sealed class DirectoryProcessorService(
                 var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);
                 var artistNormalized = album.Artist().ToNormalizedString() ?? album.Artist() ?? string.Empty;
                 var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;
-                var isAlbumImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) && 
+                var isAlbumImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) &&
                                    fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
-                var isArtistImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) && 
-                                    !fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);;
-                if (isAlbumImage || 
+                var isArtistImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) &&
+                                    !fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
+                ;
+                if (isAlbumImage ||
                     isArtistImage ||
                     ImageHelper.IsAlbumImage(fileInfo) ||
                     ImageHelper.IsArtistImage(fileInfo) ||
@@ -732,6 +746,7 @@ public sealed class DirectoryProcessorService(
                     {
                         pictureIdentifier = PictureIdentifier.BandSecondary;
                     }
+
                     var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
                     var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
                     imageInfos.Add(new ImageInfo
@@ -758,141 +773,4 @@ public sealed class DirectoryProcessorService(
         return imageInfos;
     }
 
-    public async Task<OperationResult<(IEnumerable<Album>, int)>> AllAlbumsForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
-    {
-        var albums = new List<Album>();
-        var messages = new List<string>();
-        var viaPlugins = new List<string>();
-        var songs = new List<Song>();
-
-        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-        if (dirInfo.Exists)
-        {
-            using (Operation.At(LogEventLevel.Debug).Time("AllAlbumsForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
-            {
-                foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
-                {
-                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                    {
-                        break;
-                    }
-
-                    var fsi = fileSystemInfo.ToFileSystemInfo();
-                    foreach (var plugin in _songPlugins.OrderBy(x => x.SortOrder))
-                    {
-                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                        {
-                            break;
-                        }
-
-                        if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
-                        {
-                            using (Operation.At(LogEventLevel.Debug).Time("File [{File}] Plugin [{Plugin}]",
-                                       fileSystemInfo.Name, plugin.DisplayName))
-                            {
-                                var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
-                                if (pluginResult.IsSuccess)
-                                {
-                                    songs.Add(pluginResult.Data);
-                                    viaPlugins.Add(plugin.DisplayName);
-                                }
-
-                                messages.AddRange(pluginResult.Messages);
-                            }
-                        }
-
-                        if (plugin.StopProcessing)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.AlbumUniqueId))
-                {
-                    foreach (var song in songsGroupedByAlbum)
-                    {
-                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                        {
-                            break;
-                        }
-
-                        var foundAlbum = albums.FirstOrDefault(x => x.UniqueId == songsGroupedByAlbum.Key);
-                        if (foundAlbum != null)
-                        {
-                            albums.Remove(foundAlbum);
-                            albums.Add(foundAlbum.MergeSongs([song]));
-                        }
-                        else
-                        {
-                            var songTotal = song.SongTotalNumber();
-                            if (songTotal < 1)
-                            {
-                                songTotal = songsGroupedByAlbum.Count();
-                            }
-
-                            var newAlbumTags = new List<MetaTag<object?>>
-                            {
-                                new()
-                                {
-                                    Identifier = MetaTagIdentifier.Album, Value = song.AlbumTitle(), SortOrder = 1
-                                },
-                                new()
-                                {
-                                    Identifier = MetaTagIdentifier.AlbumArtist, Value = song.AlbumArtist(), SortOrder = 2
-                                },
-                                new()
-                                {
-                                    Identifier = MetaTagIdentifier.DiscNumber, Value = song.MediaNumber(), SortOrder = 4
-                                },
-                                new()
-                                {
-                                    Identifier = MetaTagIdentifier.DiscTotal, Value = song.MediaTotalNumber(), SortOrder = 4
-                                },
-                                new()
-                                {
-                                    Identifier = MetaTagIdentifier.OrigAlbumYear, Value = song.AlbumYear(),
-                                    SortOrder = 100
-                                },
-                                new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
-                            };
-                            var genres = songsGroupedByAlbum
-                                .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
-                                .Where(x => x.Identifier == MetaTagIdentifier.Genre);
-                            newAlbumTags.AddRange(genres
-                                .GroupBy(x => x.Value)
-                                .Select((genre, i) => new MetaTag<object?>
-                                {
-                                    Identifier = MetaTagIdentifier.Genre,
-                                    Value = genre.Key,
-                                    SortOrder = 5 + i
-                                }));
-                            var newAlbum = new Album
-                            {
-                                Images = songsGroupedByAlbum.Where(x => x.Images != null)
-                                    .SelectMany(x => x.Images!)
-                                    .DistinctBy(x => x.CrcHash).ToArray(),
-                                Directory = fileSystemDirectoryInfo,
-                                OriginalDirectory = fileSystemDirectoryInfo,
-                                Tags = newAlbumTags,
-                                Songs = songsGroupedByAlbum.OrderBy(x => x.SortOrder).ToArray(),
-                                ViaPlugins = viaPlugins.Distinct().ToArray()
-                            };
-                            newAlbum.Status = newAlbum.IsValid(_configuration.Configuration).Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
-                            albums.Add(newAlbum);
-                            if (albums.Count(x => x.Status == AlbumStatus.Ok ) > _maxAlbumProcessingCount)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return new OperationResult<(IEnumerable<Album>, int)>(messages)
-        {
-            Data = (albums, songs.Count)
-        };
-    }
 }

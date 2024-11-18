@@ -1,4 +1,3 @@
-using System.Security.Principal;
 using System.Text;
 using Ardalis.GuardClauses;
 using Dapper;
@@ -10,14 +9,17 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
-using Melodee.Common.Utility;
+using Melodee.Plugins.MetaData.Song;
+using Melodee.Plugins.Processor;
 using Melodee.Services.Interfaces;
+using Melodee.Services.Models;
 using Melodee.Services.Scanning;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using SmartFormat;
+using SQLitePCL;
 using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Services;
@@ -116,18 +118,6 @@ public sealed class LibraryService(
         {
             Data = result
         };
-    }
-
-    private async Task<Library?> LibraryByType(int type, CancellationToken cancellationToken = default)
-    {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = $"SELECT * FROM \"Libraries\" WHERE \"Type\" = {type} ORDER BY \"SortOrder\" LIMIT 1;";
-            return await dbConn
-                .QuerySingleOrDefaultAsync<Library?>(sql)
-                .ConfigureAwait(false);
-        }
     }
 
     public async Task<MelodeeModels.OperationResult<Library?>> PurgeLibraryAsync(int libraryId, CancellationToken cancellationToken = default)
@@ -232,27 +222,6 @@ public sealed class LibraryService(
         };
     }
 
-    private void ClearCache()
-    {
-        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Inbound));
-        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Library));
-        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Staging));
-    }
-
-    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(string fromLibraryName, string toLibraryName, Func<MelodeeModels.Album, bool> condition, bool verboseSet, CancellationToken cancellationToken = default)
-    {
-        // TODO 
-        
-        // Ensure the libraries are found
-        
-        // Get all the albums in the given library and test function those that are true move to the toLibrary
-        
-        // If the given library has a job setup, trigger that job.
-        
-        
-        throw new NotImplementedException();
-    }
-
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
         var result = false;
@@ -265,6 +234,8 @@ public sealed class LibraryService(
                 Data = false
             };
         }
+
+        var movedCount = 0;
         foreach (var album in albums)
         {
             var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);
@@ -273,23 +244,33 @@ public sealed class LibraryService(
             {
                 Directory.CreateDirectory(libraryAlbumPath);
             }
-            
+
             // TODO if data album exists for model album if so determine which is better quality
-            
+
             MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, null);
-            var melodeeFileName = Path.Combine(libraryAlbumPath, $"melodee.json");
-            var melodeeFile = serializer.Deserialize<Common.Models.Album>(await File.ReadAllBytesAsync(melodeeFileName, cancellationToken));
+            var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
+            var melodeeFile = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(melodeeFileName, cancellationToken));
             melodeeFile!.Directory!.Path = libraryAlbumPath;
             var utf8Bytes = Encoding.UTF8.GetBytes(serializer.Serialize(melodeeFile)!);
-            await File.WriteAllBytesAsync(melodeeFileName,utf8Bytes , cancellationToken);
+            await File.WriteAllBytesAsync(melodeeFileName, utf8Bytes, cancellationToken);
+
+            movedCount++;
+            
+            OnProcessingProgressEvent?.Invoke(this,
+                new ProcessingEvent(ProcessingEventType.Processing,
+                    nameof(MoveAlbumsFromLibraryToLibrary),
+                    albums.Count(),
+                    movedCount,
+                    $"Processing [{album}]"
+                ));
         }
+
         return new MelodeeModels.OperationResult<bool>
         {
-            Data = result
+            Data = movedCount > 0
         };
     }
 
-    
 
     public async Task<MelodeeModels.OperationResult<LibraryScanHistory?>> CreateLibraryScanHistory(Library library, LibraryScanHistory libraryScanHistory, CancellationToken cancellationToken = default)
     {
@@ -352,5 +333,119 @@ public sealed class LibraryService(
                 Data = newLibraryScanHistory
             };
         }
+    }
+
+    public event EventHandler<ProcessingEvent>? OnProcessingProgressEvent;
+
+    private async Task<Library?> LibraryByType(int type, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = $"SELECT * FROM \"Libraries\" WHERE \"Type\" = {type} ORDER BY \"SortOrder\" LIMIT 1;";
+            return await dbConn
+                .QuerySingleOrDefaultAsync<Library?>(sql)
+                .ConfigureAwait(false);
+        }
+    }
+
+    private void ClearCache()
+    {
+        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Inbound));
+        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Library));
+        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Staging));
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(string fromLibraryName, string toLibraryName, Func<MelodeeModels.Album, bool> condition, bool verboseSet, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrEmpty(fromLibraryName, nameof(fromLibraryName));
+        Guard.Against.NullOrEmpty(fromLibraryName, nameof(toLibraryName));
+
+        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
+        var fromLibrary = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == fromLibraryName.ToNormalizedString());
+        if (fromLibrary == null)
+        {
+            return new MelodeeModels.OperationResult<bool>("Invalid From library Name")
+            {
+                Data = false
+            };
+        }
+
+        if (fromLibrary.IsLocked)
+        {
+            return new MelodeeModels.OperationResult<bool>("From library is locked.")
+            {
+                Data = false
+            };
+        }
+
+        var toLibrary = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == toLibraryName.ToNormalizedString());
+        if (toLibrary == null)
+        {
+            return new MelodeeModels.OperationResult<bool>("Invalid To library Name")
+            {
+                Data = false
+            };
+        }
+
+        if (toLibrary.TypeValue != LibraryType.Library)
+        {
+            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this move process requires a library type of 'Library' ({ (int)LibraryType.Library }).")
+            {
+                Data = false
+            };
+        }
+
+        if (toLibrary.IsLocked)
+        {
+            return new MelodeeModels.OperationResult<bool>("To library is locked.")
+            {
+                Data = false
+            };
+        }
+
+        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        ISongPlugin[] songPlugins =
+        [
+            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), configuration)
+        ];
+        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);        
+        var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
+        var albumsToMove = new List<MelodeeModels.Album>();
+        foreach (var albumFile in albumsForFromLibrary)
+        {
+            var album = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(albumFile, cancellationToken));
+            if (album?.Status == AlbumStatus.Ok && condition(album))
+            {
+                albumsToMove.Add(album);
+            }
+            if (albumsToMove.Count >= maxAlbumProcessingCount)
+            {
+                break;
+            }
+        }
+        var numberOfAlbumsToMove = albumsToMove.Count();
+        var result = false;
+        OnProcessingProgressEvent?.Invoke(this,
+            new ProcessingEvent(ProcessingEventType.Start,
+                nameof(MoveAlbumsFromLibraryToLibrary),
+                numberOfAlbumsToMove,
+                0,
+                "Starting processing"
+            ));
+
+        result = (await MoveAlbumsToLibrary(toLibrary, albumsToMove.ToArray(), cancellationToken).ConfigureAwait(false)).IsSuccess;
+
+        OnProcessingProgressEvent?.Invoke(this,
+            new ProcessingEvent(ProcessingEventType.Stop,
+                nameof(MoveAlbumsFromLibraryToLibrary),
+                numberOfAlbumsToMove,
+                numberOfAlbumsToMove,
+                "Completed processing"
+            ));      
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
     }
 }

@@ -562,32 +562,35 @@
 
     private async Task ReProcess()
     {
-        var startTicks = Stopwatch.GetTimestamp();
+        // TODO this is borked
+        throw new NotImplementedException();
 
-        await DirectoryProcessorService.InitializeAsync();
-
-        var result = await DirectoryProcessorService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
-        {
-            Path = _album!.Directory!.FullName(),
-            Name = _album!.Directory!.Name
-        }, null);
-
-        if (result.IsSuccess)
-        {
-            var message = "ℹ️ Re-Processed directory [{DirectoryName}] in [{ElapsedTime}]";
-            Logger.Debug(message, _album!.Directory!.FullName(), Stopwatch.GetElapsedTime(startTicks));
-            NavManager.ReloadPage();
-        }
-        else
-        {
-            _messages.Add(
-                new ToastMessage
-                {
-                    Type = ToastType.Danger,
-                    Title = $"Error re-processing album",
-                    Message = string.Join("<br />", result.Messages) + "<br />" + string.Join("<br />", result.Errors.ToString())
-                });
-        }
+        // var startTicks = Stopwatch.GetTimestamp();
+        //
+        // await DirectoryProcessorService.InitializeAsync();
+        //
+        // var result = await DirectoryProcessorService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+        // {
+        //     Path = _album!.Directory!.FullName(),
+        //     Name = _album!.Directory!.Name
+        // }, null);
+        //
+        // if (result.IsSuccess)
+        // {
+        //     var message = "ℹ️ Re-Processed directory [{DirectoryName}] in [{ElapsedTime}]";
+        //     Logger.Debug(message, _album!.Directory!.FullName(), Stopwatch.GetElapsedTime(startTicks));
+        //     NavManager.ReloadPage();
+        // }
+        // else
+        // {
+        //     _messages.Add(
+        //         new ToastMessage
+        //         {
+        //             Type = ToastType.Danger,
+        //             Title = $"Error re-processing album",
+        //             Message = string.Join("<br />", result.Messages) + "<br />" + string.Join("<br />", result.Errors.ToString())
+        //         });
+        // }
     }
 
     private async Task SaveAlbum()

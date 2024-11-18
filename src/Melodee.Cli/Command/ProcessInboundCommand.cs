@@ -54,6 +54,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
+
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,

@@ -12,13 +12,14 @@ public static class HttpClientFactoryExtensions
         {
             return null;
         }
+
         try
         {
             var client = httpclientFactory.CreateClient();
             var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Add("User-Agent", userAgent);
             var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            if(response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
             }

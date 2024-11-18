@@ -11,7 +11,7 @@ using Serilog;
 namespace Melodee.Services.SearchEngines;
 
 /// <summary>
-/// Uses enabled Image Search plugins to get images for query.
+///     Uses enabled Image Search plugins to get images for query.
 /// </summary>
 public class ImageSearchEngineService(
     ILogger logger,
@@ -41,6 +41,7 @@ public class ImageSearchEngineService(
                 result.AddRange(searchResult.Data ?? []);
             }
         }
+
         return new OperationResult<ImageSearchResult[]>
         {
             Data = result.ToArray()

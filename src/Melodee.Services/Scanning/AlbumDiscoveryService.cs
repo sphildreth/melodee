@@ -187,50 +187,50 @@ public sealed class AlbumDiscoveryService(
             case "\"Artist\" ASC":
                 albums = albums.OrderBy(x => x.Artist()).ToList();
                 break;
-            
+
             case "\"Artist\" DESC":
                 albums = albums.OrderByDescending(x => x.Artist()).ToList();
-                break;            
-            
+                break;
+
             case "\"Title\" ASC":
                 albums = albums.OrderBy(x => x.AlbumTitle()).ToList();
                 break;
-            
+
             case "\"Title\" DESC":
                 albums = albums.OrderByDescending(x => x.AlbumTitle()).ToList();
-                break;            
-            
+                break;
+
             case "\"Year\" ASC":
                 albums = albums.OrderBy(x => x.AlbumYear()).ToList();
                 break;
-            
+
             case "\"Year\" DESC":
                 albums = albums.OrderByDescending(x => x.AlbumYear()).ToList();
-                break;            
-            
+                break;
+
             case "\"Duration\" ASC":
                 albums = albums.OrderBy(x => x.Duration()).ToList();
                 break;
-            
+
             case "\"Duration\" DESC":
                 albums = albums.OrderByDescending(x => x.Duration()).ToList();
-                break;            
-            
+                break;
+
             case "\"Status\" ASC":
                 albums = albums.OrderBy(x => x.Status).ToList();
-                break;     
-            
+                break;
+
             case "\"Status\" DESC":
                 albums = albums.OrderByDescending(x => x.Status).ToList();
-                break;              
-            
+                break;
+
             case "\"SongCount\" ASC":
                 albums = albums.OrderBy(x => x.SongTotalValue()).ToList();
                 break;
-            
+
             case "\"SongCount\" DESC":
                 albums = albums.OrderByDescending(x => x.SongTotalValue()).ToList();
-                break;            
+                break;
         }
 
 
@@ -258,7 +258,7 @@ public sealed class AlbumDiscoveryService(
             Created = x.Created,
             Duration = x.Duration(),
             MelodeeDataFileName = Path.Combine(x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(), Album.JsonFileName),
-            ImageBytes = await x.CoverImageBytesAsync(cancellationToken: cancellationToken),
+            ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
             IsValid = x.IsValid(_configuration.Configuration).Item1,
             Title = x.AlbumTitle(),
             Year = x.AlbumYear(),

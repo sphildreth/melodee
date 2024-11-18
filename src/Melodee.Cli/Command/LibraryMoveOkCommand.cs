@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Melodee.Cli.Command;
@@ -45,11 +46,42 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSetting>
                 settingService,
                 serializer);
 
+            libraryService.OnProcessingProgressEvent += (sender, e) =>
+            {
+                switch (e.Type)
+                {
+                    case ProcessingEventType.Start:
+                        if (e.Max == 0)
+                        {
+                            AnsiConsole.MarkupLine($"[yellow]No albums found.[/]");
+                        }
+                        else
+                        {
+                            AnsiConsole.MarkupLine($"[blue]| {e.Max} albums to move.[/]");
+                        }
+                        break;
+                            
+                    case ProcessingEventType.Processing:
+                        if (e.Max > 0 && e.Current % 10 == 0)
+                        {
+                            AnsiConsole.MarkupLine($"[blue]- moved {e.Current} albums.[/]");
+                        }
+                        break;
+                    
+                    case ProcessingEventType.Stop:
+                        if (e.Max > 0)
+                        {
+                            AnsiConsole.MarkupLine($"[green]= completed moving albums.[/]");
+                        }
+                        break;
+                }
+            };
+            
             var result = await libraryService.MoveAlbumsFromLibraryToLibrary(settings.LibraryName,
                     settings.ToLibraryName,
                     b => b.Status == AlbumStatus.Ok,
                     settings.Verbose)
-                .ConfigureAwait(false);
+                .ConfigureAwait(false);          
 
             return result.IsSuccess ? 0 : 1;
         }

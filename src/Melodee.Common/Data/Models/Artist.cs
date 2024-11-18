@@ -4,14 +4,29 @@ using Melodee.Common.Data.Contants;
 using Melodee.Common.Data.Validators;
 using Melodee.Common.Enums;
 using Melodee.Common.Utility;
+using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
-public class Artist : NamedMetaDataModelBase
+[Index(nameof(Name), IsUnique = true)]
+[Index(nameof(NameNormalized))]
+[Index(nameof(SortName))]
+public sealed class Artist : MetaDataModelBase
 {
     [RequiredGreaterThanZero] public long MediaUniqueId { get; set; }
 
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    [Required]
+    public required string Name { get; set; }
+
+    [Required]
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    public required string NameNormalized { get; set; }
+
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    public string? SortName { get; set; }    
+    
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? RealName { get; set; }
 

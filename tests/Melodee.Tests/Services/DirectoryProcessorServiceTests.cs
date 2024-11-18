@@ -1,5 +1,7 @@
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Plugins.MetaData.Song;
+using Melodee.Plugins.Processor;
 using Melodee.Services.Scanning;
 using Serilog;
 
@@ -104,7 +106,15 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             var config = TestsBase.NewPluginsConfiguration();
             var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
-            var allAlbums = await processor.AllAlbumsForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
+            ISongPlugin[] songPlugins =
+            [
+                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config)
+            ];            
+            var allAlbums = await processor.AllAlbumsForDirectoryAsync(
+                dirInfo.ToDirectorySystemInfo(),
+                songPlugins.ToArray(),
+                config
+            );
             Assert.NotNull(allAlbums);
             Assert.True(allAlbums.IsSuccess);
             Assert.Equal(3, allAlbums.Data.Item1.Count());
@@ -161,10 +171,18 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             {
                 file.Delete();
             }
-
+            var config = TestsBase.NewPluginsConfiguration();
+            ISongPlugin[] songPlugins =
+            [
+                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config)
+            ]; 
             var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
-            var allAlbums = await processor.AllAlbumsForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
+            var allAlbums = await processor.AllAlbumsForDirectoryAsync(
+                dirInfo.ToDirectorySystemInfo(),
+                songPlugins.ToArray(),
+                config
+            );
             Assert.NotNull(allAlbums);
             Assert.True(allAlbums.IsSuccess);
             Assert.Single(allAlbums.Data.Item1);
@@ -191,7 +209,16 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
 
             var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
-            var allAlbums = await processor.AllAlbumsForDirectoryAsync(dirInfo.ToDirectorySystemInfo());
+            var config = TestsBase.NewPluginsConfiguration();
+            ISongPlugin[] songPlugins =
+            [
+                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config)
+            ];             
+            var allAlbums = await processor.AllAlbumsForDirectoryAsync(
+                dirInfo.ToDirectorySystemInfo(),
+                songPlugins.ToArray(),
+                config
+            );
             Assert.NotNull(allAlbums);
             Assert.True(allAlbums.IsSuccess);
             Assert.Single(allAlbums.Data.Item1);
