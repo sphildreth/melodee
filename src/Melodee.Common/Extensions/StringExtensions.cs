@@ -281,8 +281,7 @@ public static partial class StringExtensions
         {
             return input;
         }
-
-        result = NullAndUnicodeRegex().Replace(result, string.Empty);
+        result = NullAndUnicodeRegex().Replace(result.Replace("\u0026", "&"), string.Empty);
         return WeirdTickAndMoreThanSingleSpacesRegex().Replace(result.Replace("’", "'"), " ").Trim();
     }
 

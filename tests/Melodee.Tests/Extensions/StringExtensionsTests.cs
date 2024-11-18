@@ -31,6 +31,7 @@ public class StringExtensionsTests
     [InlineData(" Bob    And    Nancy   ", "Bob And Nancy")]
     [InlineData("\\0 Goofy (C)\\x00 Doofies\u2400\\u0000", "Goofy (C) Doofies")]
     [InlineData("With", "With")]
+    [InlineData("Show Me \u0026 Wrong", "Show Me & Wrong")]
     public void CleanString(string input, string shouldBe)
     {
         Assert.Equal(shouldBe, input.CleanString());
