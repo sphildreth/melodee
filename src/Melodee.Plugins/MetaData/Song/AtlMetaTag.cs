@@ -360,11 +360,13 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             {
                 try
                 {
+                    var doDeleteComment = MelodeeConfiguration.GetValue<bool?>(SettingRegistry.ProcessingDoDeleteComments) ?? true;
                     var fileAtl = new Track(songFileName)
                     {
                         Album = song.AlbumTitle(),
                         AlbumArtist = song.AlbumArtist(),
                         Artist = song.SongArtist(),
+                        Comment = doDeleteComment ? null : song.Comment(),
                         DiscNumber = song.MediaNumber(),
                         DiscTotal = song.MediaTotalNumber(),
                         Genre = song.Genre(),

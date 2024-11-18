@@ -584,7 +584,17 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Maximum allowed number of images for an artist, set to zero for infinite.",
                     Value = "25",
                     CreatedAt = now
-                }                
+                },
+                new Setting
+                {
+                    Id = 73,
+                    Category = (int)SettingCategory.PluginProcess,
+                    Key = SettingRegistry.ProcessingDoDeleteComments,
+                    Comment = "If true then all comments will be removed from media files.",
+                    Value = "true",
+                    CreatedAt = now
+                }                 
+                
             );
         });
 

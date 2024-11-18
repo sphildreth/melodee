@@ -17,7 +17,6 @@ public sealed partial class MetaTagsProcessor(IMelodeeConfiguration configuratio
         new Album(configuration.Configuration, serializer),
         new AlbumArtist(configuration.Configuration, serializer),
         new Artist(configuration.Configuration, serializer),
-        new Comment(configuration.Configuration, serializer),
         new AlbumDate(configuration.Configuration, serializer),
         new SongTitle(configuration.Configuration, serializer)
     };

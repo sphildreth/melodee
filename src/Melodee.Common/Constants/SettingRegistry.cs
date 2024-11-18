@@ -36,6 +36,7 @@ public static class SettingRegistry
     public const string ProcessingDoContinueOnDirectoryProcessingErrors = "processing.doContinueOnDirectoryProcessingErrors";
     public const string ProcessingDoDeleteOriginal = "processing.doDeleteOriginal";
     public const string ProcessingDoOverrideExistingMelodeeDataFiles = "processing.doOverrideExistingMelodeeDataFiles";
+    public const string ProcessingDoDeleteComments = "processing.doDeleteComments";
     public const string ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue = "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue";
     public const string ProcessingIgnoredArticles = "processing.ignoredArticles";
     public const string ProcessingMaximumAlbumDirectoryNameLength = "processing.maximumAlbumDirectoryNameLength";

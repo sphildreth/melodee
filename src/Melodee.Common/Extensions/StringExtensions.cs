@@ -79,7 +79,7 @@ public static partial class StringExtensions
 
     public static string? Nullify(this string? input)
     {
-        if (string.IsNullOrEmpty(input) || string.IsNullOrWhiteSpace(input))
+        if (string.IsNullOrWhiteSpace(input))
         {
             return null;
         }
@@ -258,11 +258,16 @@ public static partial class StringExtensions
             }
         }
         return input;
-    }    
+    }
 
-    public static string? CleanString(this string input, bool? doPutTheAtEnd = false, bool? doTitleCase = true)
+    /// <summary>
+    /// Return the cleaned version of the string without changing chase or manipulating the "THE" part.
+    /// </summary>
+    public static string? CleanStringAsIs(this string input) => CleanString(input, false, false);
+
+    public static string? CleanString(this string? input, bool? doPutTheAtEnd = false, bool? doTitleCase = true)
     {
-        if (string.IsNullOrEmpty(input) || string.IsNullOrWhiteSpace(input))
+        if (string.IsNullOrWhiteSpace(input))
         {
             return null;
         }
@@ -276,7 +281,9 @@ public static partial class StringExtensions
         {
             return input;
         }
-        return Regex.Replace(result.Replace("’", "'"), @"\s+", " ").Trim();
+
+        result = NullAndUnicodeRegex().Replace(result, string.Empty);
+        return WeirdTickAndMoreThanSingleSpacesRegex().Replace(result.Replace("’", "'"), " ").Trim();
     }
 
     public static bool ContainsUnicodeCharacter(this string input)
@@ -362,7 +369,7 @@ public static partial class StringExtensions
         {
             return null;
         }
-        var v = input?.TrimAndNullify();
+        var v = input?.CleanStringAsIs();
         if (string.IsNullOrWhiteSpace(v))
         {
             return null;
@@ -696,5 +703,9 @@ public static partial class StringExtensions
     public static partial Regex ReplaceDuplicatePipeCharacters();
 
     [GeneratedRegex("\t+|\r+|\\s+|\r+|@+")]
-    public static partial Regex ReplaceWithCharacter();    
+    public static partial Regex ReplaceWithCharacter();
+    [GeneratedRegex(@"([\\]+.?[0-9]+)|([^\u0000-\u007F]+)")]
+    private static partial Regex NullAndUnicodeRegex();
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WeirdTickAndMoreThanSingleSpacesRegex();
 }

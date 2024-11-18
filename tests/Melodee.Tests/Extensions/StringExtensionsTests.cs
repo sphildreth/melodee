@@ -29,6 +29,7 @@ public class StringExtensionsTests
     [InlineData("Bob And Nancy, wITH sTEVE", "Bob And Nancy, With Steve")]
     [InlineData(" Bob    And    Nancy", "Bob And Nancy")]
     [InlineData(" Bob    And    Nancy   ", "Bob And Nancy")]
+    [InlineData("\\0 Goofy (C)\\x00 Doofies\u2400\\u0000", "Goofy (C) Doofies")]
     [InlineData("With", "With")]
     public void CleanString(string input, string shouldBe)
     {
@@ -200,6 +201,7 @@ public class StringExtensionsTests
     [InlineData("Bob Jones ", "BOBJONES")]
     [InlineData("Bob JONEs ", "BOBJONES")]
     [InlineData("Bob JONEs and The 'secret' five!", "BOBJONESANDTHESECRETFIVE")]
+    [InlineData("\\0 Goofy (C)\\x00 Doofies\u2400\\u0000", "GOOFYCDOOFIES")]
     public void ValidateNormalizedString(string? input, string? shouldBe)
     {
         Assert.Equal(shouldBe, input.ToNormalizedString());

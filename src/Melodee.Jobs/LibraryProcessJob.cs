@@ -107,7 +107,7 @@ public class LibraryProcessJob(
                 }
 
                 var libraryProcessStartTicks = Stopwatch.GetTimestamp();
-                var libraryFileSystemDirectoryInfo = library.ToFileSystemDirectoryInfo();
+                library.ToFileSystemDirectoryInfo();
                 var dirs = new DirectoryInfo(library.Path).GetDirectories("*", SearchOption.AllDirectories);
                 var lastScanAt = library.LastScanAt ?? defaultNeverScannedDate;
                 // Get a list of modified directories in the Library; remember a library directory should only contain a single album in Melodee
@@ -168,7 +168,7 @@ public class LibraryProcessJob(
                         var foundSongsMetaTagResults = new List<Song>();
                         foreach (var mediaFile in mediaFiles)
                         {
-                            var songMetaTagResult = await mediaFilePlugin.ProcessFileAsync(mediaFile.Directory.ToDirectorySystemInfo(), mediaFile.ToFileSystemInfo(), context.CancellationToken).ConfigureAwait(false);
+                            var songMetaTagResult = await mediaFilePlugin.ProcessFileAsync(mediaFile.Directory!.ToDirectorySystemInfo(), mediaFile.ToFileSystemInfo(), context.CancellationToken).ConfigureAwait(false);
                             if (!songMetaTagResult.IsSuccess)
                             {
                                 messagesForJobRun.AddRange(songMetaTagResult.Messages);
@@ -214,7 +214,7 @@ public class LibraryProcessJob(
 
                         var mediaCountValue = melodeeFile.MediaCountValue() < 1 ? 1 : melodeeFile.MediaCountValue();
                         var firstSongGroupedByArtist = foundSongsMetaTagResults.GroupBy(x => x.AlbumArtist()).FirstOrDefault()?.FirstOrDefault();
-                        var artistName = melodeeFile.Artist() ?? firstSongGroupedByArtist?.AlbumArtist() ?? throw new Exception("Album artist is required.");
+                        var artistName = melodeeFile.Artist()?.CleanStringAsIs() ?? firstSongGroupedByArtist?.AlbumArtist()?.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                         var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
                         var dbArtistResult = await artistService.GetByMediaUniqueId(melodeeFile.ArtistUniqueId(), context.CancellationToken).ConfigureAwait(false);
                         if (!dbArtistResult.IsSuccess)
@@ -248,7 +248,7 @@ public class LibraryProcessJob(
                             continue;
                         }
 
-                        var albumTitle = melodeeFile.AlbumTitle() ?? throw new Exception("Album title is required.");
+                        var albumTitle = melodeeFile.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
                         var albumDirectory = melodeeFile.AlbumDirectoryName(configuration.Configuration);
                         var dbAlbumDiscsToAdd = new List<dbModels.AlbumDisc>();
                         if (dbAlbum == null)
@@ -286,7 +286,6 @@ public class LibraryProcessJob(
                                     SongCount = SafeParser.ToNumber<short>(melodeeFile.Songs?.Where(x => x.MediaNumber() == i).Count() ?? 0)
                                 });
                             }
-
                             await scopedContext.AlbumDiscs.AddRangeAsync(dbAlbumDiscsToAdd, context.CancellationToken).ConfigureAwait(false);
                             await scopedContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
                             dbAlbumDiscsToAdd.Clear();
@@ -337,7 +336,7 @@ public class LibraryProcessJob(
                                     {
                                         AlbumId = dbAlbum.Id,
                                         DiscNumber = mediaFileMediaNumber,
-                                        Title = melodeeFile.DiscSubtitle(mediaFileMediaNumber),
+                                        Title = melodeeFile.DiscSubtitle(mediaFileMediaNumber)?.CleanStringAsIs(),
                                         SongCount = SafeParser.ToNumber<short>(melodeeFile.Songs?.Where(x => x.MediaNumber() == mediaFileMediaNumber).Count() ?? 0)
                                     });
                                 }
@@ -363,7 +362,7 @@ public class LibraryProcessJob(
 
                             var mediaFile = mediaFiles.First(x => x.Name == song.File.Name);
                             var mediaFileHash = CRC32.Calculate(mediaFile);
-                            var songTitle = song.Title();
+                            var songTitle = song.Title()?.CleanStringAsIs();
                             if (songTitle.Nullify() == null)
                             {
                                 Logger.Warning("[{JobName}] unable to add song [{SongName}] Song is missing Title.", nameof(LibraryProcessJob), song.File.FullName(melodeeFile.Directory));
@@ -386,7 +385,7 @@ public class LibraryProcessJob(
                                 var titleNormalized = songTitle!.ToNormalizedString() ?? songTitle!;
                                 dbSongsToAdd.Add(new dbModels.Song
                                 {
-                                    AlbumDiscId = albumDiscId!.Value,
+                                    AlbumDiscId = albumDiscId.Value,
                                     BitDepth = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value),
                                     BitRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value),
                                     BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
@@ -397,9 +396,9 @@ public class LibraryProcessJob(
                                     FileName = mediaFile.Name,
                                     FileSize = mediaFile.Length,
                                     Genres = dbAlbum.Genres?.Length < 1 ? null : song.Genre()!.Split('/'),
-                                    Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics) ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics),
+                                    Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
                                     MediaUniqueId = song.UniqueId,
-                                    PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle),
+                                    PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
                                     SamplingRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value),
                                     SortOrder = song.SortOrder,
                                     Title = songTitle!,
@@ -433,9 +432,9 @@ public class LibraryProcessJob(
                                 dbSong.FileSize = mediaFile.Length;
                                 dbSong.Genres = dbAlbum.Genres?.Length < 1 ? null : song.Genre()!.Split('/');
                                 dbSong.LastUpdatedAt = now;
-                                dbSong.Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics) ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics);
+                                dbSong.Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs();
                                 dbSong.MediaUniqueId = song.UniqueId;
-                                dbSong.PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle);
+                                dbSong.PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs();
                                 dbSong.SamplingRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value);
                                 dbSong.SongNumber = song.SongNumber();
                                 dbSong.SortOrder = song.SortOrder;
@@ -475,13 +474,14 @@ public class LibraryProcessJob(
                                         else
                                         {
                                             // update db contributor
-                                            if (!dbContributor.IsLocked)
+                                            var updatedRole = songContributor.Role.CleanStringAsIs();
+                                            if (updatedRole != null && !dbContributor.IsLocked)
                                             {
                                                 dbContributor.ArtistId = songContributor.ArtistId;
                                                 dbContributor.ContributorName = songContributor.ContributorName;
                                                 dbContributor.LastUpdatedAt = now;
-                                                dbContributor.Role = songContributor.Role;
-                                                dbContributor.SubRole = songContributor.SubRole;
+                                                dbContributor.Role = updatedRole;
+                                                dbContributor.SubRole = songContributor.SubRole?.CleanStringAsIs();
                                             }
                                         }
                                     }
@@ -691,14 +691,13 @@ public class LibraryProcessJob(
         var tagValue = song.MetaTagValue<string?>(tag);
         if (tagValue != null)
         {
-            var isContributorNameSet = contributorName.Nullify() != null;
+            var isContributorNameSet = contributorName.Nullify()?.CleanStringAsIs() != null;
             var artist = isContributorNameSet ? null : await artistService.GetByNameNormalized(tagValue, cancellationToken).ConfigureAwait(false);
             if ((artist?.IsSuccess ?? false) || isContributorNameSet)
             {
                 var artistContributorId = artist?.Data?.Id;
                 if (artistContributorId != dbArtist || isContributorNameSet)
                 {
-                    var roleValue = role ?? tag.GetEnumDescriptionValue();
                     return new dbModels.Contributor
                     {
                         AlbumId = dbAlbumId,
@@ -707,10 +706,10 @@ public class LibraryProcessJob(
                         ContributorType = DetermineContributorType(tag),
                         CreatedAt = now,
                         MetaTagIdentifier = SafeParser.ToNumber<int>(tag),
-                        Role = roleValue,
+                        Role = role?.CleanStringAsIs() ?? tag.GetEnumDescriptionValue(),
                         SongUniqueId = song.UniqueId,
                         SongId = dbSongId,
-                        SubRole = subRole,
+                        SubRole = subRole?.CleanStringAsIs(),
                     };
                 }
             }

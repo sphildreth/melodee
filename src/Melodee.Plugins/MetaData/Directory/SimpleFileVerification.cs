@@ -290,7 +290,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
 
     private static bool IsCrCHashAccurate(string filename, string crcHash)
     {
-        if (string.IsNullOrWhiteSpace(filename) || string.IsNullOrWhiteSpace(crcHash))
+        if (string.IsNullOrWhiteSpace(crcHash))
         {
             return false;
         }

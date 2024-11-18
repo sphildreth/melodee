@@ -83,6 +83,11 @@ public static class SongExtensions
         return d;
     }
 
+    public static string? Comment(this Song song)
+    {
+        return song.MetaTagValue<string?>(MetaTagIdentifier.Comment); 
+    }
+    
     public static string? SongArtist(this Song song)
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.Artist);

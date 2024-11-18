@@ -17,7 +17,7 @@ public static class FileSystemDirectoryInfoExtensions
     public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var p = fileSystemDirectoryInfo.Path;
-        if (p.Last() == Path.DirectorySeparatorChar)
+        if (p.LastOrDefault() == Path.DirectorySeparatorChar)
         {
             p = p[..^1];
         }
