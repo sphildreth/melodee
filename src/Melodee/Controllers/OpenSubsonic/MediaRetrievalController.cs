@@ -24,7 +24,7 @@ public class MediaRetrievalController(OpenSubsonicApiService openSubsonicApiServ
         var coverArtResult = await openSubsonicApiService.GetCoverArt(apiId, null, ApiRequest, cancellationToken);
         if (coverArtResult.IsSuccess)
         {
-            return new FileContentResult(coverArtResult.ResponseData.Data as byte[], "application/octet-stream");
+            return new FileContentResult(coverArtResult.ResponseData.Data as byte[], "image/jpeg");
         }
         return new NotFoundResult();
     }

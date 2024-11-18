@@ -157,7 +157,7 @@ public class LibraryProcessJob(
                         var foundSongsMetaTagResults = new List<Song>();
                         foreach (var mediaFile in mediaFiles)
                         {
-                            var songMetaTagResult = await mediaFilePlugin.ProcessFileAsync(libraryFileSystemDirectoryInfo, mediaFile.ToFileSystemInfo(), context.CancellationToken).ConfigureAwait(false);
+                            var songMetaTagResult = await mediaFilePlugin.ProcessFileAsync(mediaFile.Directory.ToDirectorySystemInfo(), mediaFile.ToFileSystemInfo(), context.CancellationToken).ConfigureAwait(false);
                             if (!songMetaTagResult.IsSuccess)
                             {
                                 messagesForJobRun.AddRange(songMetaTagResult.Messages);

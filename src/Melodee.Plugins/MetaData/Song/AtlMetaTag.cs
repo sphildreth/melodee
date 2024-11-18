@@ -260,7 +260,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
             if (albumTag == null || artistTag == null)
             {
-                return new OperationResult<Common.Models.Song>("Song is invalid, missing Album and/or Artist tags.")
+                return new OperationResult<Common.Models.Song>($"Song [{ fileSystemFileInfo.Name }] is invalid, missing Album and/or Artist tags.")
                 {
                     Data = new Common.Models.Song
                     {

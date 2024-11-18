@@ -351,6 +351,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
+            IsSuccess = coverBytes != null,
             UserInfo = authResponse.UserInfo,            
             ResponseData = authResponse.ResponseData with
             {
