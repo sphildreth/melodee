@@ -7,6 +7,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
@@ -155,7 +156,16 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                         Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                         ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                     };
-                    sfvAlbum.Status = _albumValidator.ValidateAlbum(sfvAlbum)?.Data?.AlbumStatus ?? AlbumStatus.Invalid;
+                    var isValidCheck = sfvAlbum.IsValid(Configuration);
+                    if (!isValidCheck.Item1)
+                    {
+                        sfvAlbum.ValidationMessages = sfvAlbum.ValidationMessages.Append(new ValidationResultMessage
+                        {
+                            Message = isValidCheck.Item2 ?? "Album failed validation.",
+                            Severity = ValidationResultMessageSeverity.Critical
+                        });
+                    }
+                    sfvAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Invalid : AlbumStatus.Ok;
 
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName());
                     if (File.Exists(stagingAlbumDataName))

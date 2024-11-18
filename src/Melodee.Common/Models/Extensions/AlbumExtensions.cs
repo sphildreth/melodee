@@ -77,6 +77,10 @@ public static class AlbumExtensions
             }
 
             var converter = TypeDescriptor.GetConverter(typeof(T?));
+            if (typeof(T?) == typeof(short?))
+            {
+                return SafeParser.ToNumber<T?>(vv.ToString());
+            }
             if (vv is JsonElement)
             {
                 vv = vv.ToString() ?? string.Empty;

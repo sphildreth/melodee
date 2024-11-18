@@ -51,7 +51,7 @@ public sealed record Album
     public IEnumerable<ValidationResultMessage> ValidationMessages { get; set; } = [];
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public AlbumStatus Status { get; set; } = AlbumStatus.Invalid;
+    public AlbumStatus Status { get; set; } = AlbumStatus.New;
 
     public IEnumerable<AlbumFile> Files { get; set; } = [];
 
@@ -185,7 +185,7 @@ public sealed record Album
             OriginalDirectory = OriginalDirectory,
             Songs = (Songs ?? Array.Empty<Song>()).ToArray(),
             SortOrder = SortOrder,
-            Status = AlbumStatus.NotSet,
+            Status = AlbumStatus.New,
             Tags = tags,
             ViaPlugins = viaPlugins
         };

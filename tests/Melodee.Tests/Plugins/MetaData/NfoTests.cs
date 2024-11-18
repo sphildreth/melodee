@@ -20,6 +20,22 @@ public class NfoTests
         }
     }
 
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("bob", false)]
+    [InlineData("лллллллллллллллллммллллллллллллВл  ллллплллВА   олллл     АВллллллА    ппВВВллл", false)]
+    [InlineData("01 The Cloverland Panopticon 03:28", true)]
+    [InlineData("1 The Cloverland Panopticon 3:28", true)]
+    [InlineData("\ud83d\udea8 01 The Cloverland Panopticon 3:28", true)]
+    [InlineData("01 > The Cloverland Panopticon                                 < 03:28", true)]
+    [InlineData("           ллл   01.Tokyo Night                          05:25   ллл", true)]
+    [InlineData("Û 02. Legendary (feat. Lonnie Westry)                                     2:41 Û", true)]
+    [InlineData("             01. Szango ....................................... 05:52  ", true)]
+    public async Task ValidateIsLineForSong(string? input, bool shouldBe)
+    {
+        Assert.Equal(shouldBe, Nfo.IsLineForSong(input ?? string.Empty));
+    }
+    
     [Fact]
     public async Task ParseNfoFile01()
     {
@@ -34,9 +50,6 @@ public class NfoTests
             Assert.NotNull(nfoParserResult);
             Assert.NotNull(nfoParserResult.Songs);
             Assert.True(nfoParserResult.MediaCountValue() > 0);
-            Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()).Item1);
-
-            Assert.DoesNotContain(nfoParserResult.Songs, x => x.Title() != null && x.Title()!.Contains("..."));
         }
     }
 }

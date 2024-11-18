@@ -520,7 +520,6 @@ public sealed class DirectoryProcessorService(
                             album.Songs!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
                         {
                             var albumDirectorySystemInfo = albumDirInfo.ToDirectorySystemInfo();
-                            // Set the value then change to NeedsAttention
                             foreach (var songPlugin in _songPlugins)
                             {
                                 foreach (var song in album.Songs)
@@ -533,8 +532,6 @@ public sealed class DirectoryProcessorService(
                                     await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken);
                                 }
                             }
-
-                            album.Status = AlbumStatus.Invalid;
                         }
                     }
 
@@ -569,12 +566,13 @@ public sealed class DirectoryProcessorService(
                         processingMessages.Add($"Unable to determine JsonName for Album [{album}]");
                     }
 
-                    if (album.IsValid(_configuration.Configuration).Item1)
+                    if (album.Status == AlbumStatus.Ok)
                     {
                         numberOfValidAlbumsProcessed++;
+                        LogAndRaiseEvent(LogEventLevel.Debug, "\ud83c\udf89 Found valid album [{DirName}]", null, fileSystemDirectoryInfo);
                         if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
                         {
-                            Log.Information("[{Nam}] \ud83d\uded1 Stopped processing directory [{DirName}], processing.maximumProcessingCount is set to [{Number}]", nameof(DirectoryProcessorService), fileSystemDirectoryInfo, _maxAlbumProcessingCount);
+                            LogAndRaiseEvent(LogEventLevel.Information, "[{Nam}] \ud83d\uded1 Stopped processing directory [{DirName}], processing.maximumProcessingCount is set to [{Number}]", null, nameof(DirectoryProcessorService), fileSystemDirectoryInfo, _maxAlbumProcessingCount);
                             _stopProcessingTriggered = true;
                             break;
                         }
@@ -703,8 +701,13 @@ public sealed class DirectoryProcessorService(
             var fileInfo = new FileInfo(imageFile);
             if (album.IsFileForAlbum(fileInfo) && !AlbumValidator.IsImageAProofType(imageFile))
             {
-                var isAlbumImage = fileInfo.Name.Contains(album.Artist(), StringComparison.InvariantCultureIgnoreCase) && fileInfo.Name.Contains(album.AlbumTitle(), StringComparison.InvariantCultureIgnoreCase);
-                var isArtistImage = fileInfo.Name.Contains(album.Artist(), StringComparison.InvariantCultureIgnoreCase) && !fileInfo.Name.Contains(album.AlbumTitle(), StringComparison.InvariantCultureIgnoreCase);;
+                var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);
+                var artistNormalized = album.Artist().ToNormalizedString() ?? album.Artist() ?? string.Empty;
+                var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;
+                var isAlbumImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) && 
+                                   fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
+                var isArtistImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) && 
+                                    !fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);;
                 if (isAlbumImage || 
                     isArtistImage ||
                     ImageHelper.IsAlbumImage(fileInfo) ||
@@ -721,7 +724,7 @@ public sealed class DirectoryProcessorService(
                     {
                         pictureIdentifier = PictureIdentifier.SecondaryFront;
                     }
-                    else if (ImageHelper.IsArtistImage(fileInfo) || isArtistImage)
+                    else if (ImageHelper.IsArtistImage(fileInfo) || (isArtistImage && !isAlbumImage))
                     {
                         pictureIdentifier = PictureIdentifier.Band;
                     }
@@ -729,9 +732,6 @@ public sealed class DirectoryProcessorService(
                     {
                         pictureIdentifier = PictureIdentifier.BandSecondary;
                     }
-
-                    // TODO use ImageConvertor plugin to handle SettingRegistry.ImagingMaximumImageSize and other Image options
-                    
                     var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
                     var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
                     imageInfos.Add(new ImageInfo
@@ -743,6 +743,7 @@ public sealed class DirectoryProcessorService(
                             Size = fileInfoFileSystemInfo.Size,
                             OriginalName = fileInfo.Name
                         },
+                        OriginalFilename = fileInfo.Name,
                         PictureIdentifier = pictureIdentifier,
                         Width = imageInfo.Width,
                         Height = imageInfo.Height,
@@ -866,7 +867,7 @@ public sealed class DirectoryProcessorService(
                                     Value = genre.Key,
                                     SortOrder = 5 + i
                                 }));
-                            albums.Add(new Album
+                            var newAlbum = new Album
                             {
                                 Images = songsGroupedByAlbum.Where(x => x.Images != null)
                                     .SelectMany(x => x.Images!)
@@ -876,8 +877,10 @@ public sealed class DirectoryProcessorService(
                                 Tags = newAlbumTags,
                                 Songs = songsGroupedByAlbum.OrderBy(x => x.SortOrder).ToArray(),
                                 ViaPlugins = viaPlugins.Distinct().ToArray()
-                            });
-                            if (albums.Count(x => x.IsValid(_configuration.Configuration).Item1) > _maxAlbumProcessingCount)
+                            };
+                            newAlbum.Status = newAlbum.IsValid(_configuration.Configuration).Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
+                            albums.Add(newAlbum);
+                            if (albums.Count(x => x.Status == AlbumStatus.Ok ) > _maxAlbumProcessingCount)
                             {
                                 break;
                             }

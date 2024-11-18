@@ -6,6 +6,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace Melodee.Plugins.Conversion.Image;
 
@@ -51,19 +52,37 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         {
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
             var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));
+            var maxSize = configuration.GetValue<string?>(SettingRegistry.ImagingMaximumImageSize);
+            if (maxSize != null)
+            {
+                convertedBytes = ResizeImageIfNeeded(convertedBytes, SafeParser.ToNumber<int>(maxSize.Split('x')[0]), SafeParser.ToNumber<int>(maxSize.Split('x')[1]));
+            }            
             await File.WriteAllBytesAsync(newName, convertedBytes, cancellationToken);
             fileInfo.Delete();
             fileInfo = new FileInfo(newName);            
         }
 
-        // TODO resize if needed based on SettingRegistry.ImagingMaximumImageSize
-        
         return new OperationResult<FileSystemFileInfo>
         {
             Data = fileInfo.ToFileSystemInfo()
         };
     }
 
+    private static byte[] ResizeImageIfNeeded(ReadOnlySpan<byte> imageBytes, int maxWidth, int maxHeight)
+    {
+        using var outStream = new MemoryStream();
+        using (var image = SixLabors.ImageSharp.Image.Load(imageBytes))
+        {
+            if (image.Width > maxWidth || image.Height > maxHeight)
+            {
+                image.Mutate(x => x.Resize(maxWidth, maxHeight));
+            }
+            image.SaveAsJpeg(outStream);
+        }
+
+        return outStream.ToArray();
+    }
+    
     private static byte[] ConvertToJpegFormatViaSixLabors(ReadOnlySpan<byte> imageBytes)
     {
         using var outStream = new MemoryStream();
@@ -71,7 +90,6 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         {
             image.SaveAsJpeg(outStream);
         }
-
         return outStream.ToArray();
     }
 }

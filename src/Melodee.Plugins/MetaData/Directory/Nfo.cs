@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using FluentValidation;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
@@ -7,6 +8,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
 using Serilog;
 using Serilog.Events;
@@ -190,10 +192,10 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
 
     // ReSharper enable StringLiteralTypo
 
-    private static bool IsLineForSong(string line)
+    public static bool IsLineForSong(string line)
     {
         var l = line.ToAlphanumericName().Nullify();
-        return !string.IsNullOrWhiteSpace(l) && IsLineForSongRegex().IsMatch(line);
+        return !string.IsNullOrWhiteSpace(l) && IsLineForSongRegex().IsMatch(l);
     }
 
     public async Task<Album> AlbumForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo, CancellationToken cancellationToken = default)
@@ -331,6 +333,21 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
             }
         }
 
+        if(songs.Any() && albumTags.All(x => x.Identifier != MetaTagIdentifier.DiscTotal))
+        {
+            var discTotalTags = songs
+                .Where(x => x.Tags != null)
+                .SelectMany(x => x.Tags!)
+                .Where(x => x.Identifier == MetaTagIdentifier.DiscTotal)
+                .ToArray();
+             var maxSongDiscTotal = discTotalTags.Length != 0 ? discTotalTags.Max(x => SafeParser.ToNumber<short>(x.Value)) : 0;
+            albumTags.Add(new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.DiscTotal,
+                Value = maxSongDiscTotal == 0 ? 1 : maxSongDiscTotal
+            });
+        }
+        
         var result = new Album
         {
             Directory = parentDirectoryInfo,
@@ -351,16 +368,24 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                 Name = fileInfo.Directory?.Name ?? string.Empty
             },
             Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
-            Tags = albumTags,
+            Tags = albumTags.ToArray(),
             Songs = songs,
-            Status = AlbumStatus.NotSet,
             SortOrder = 0
         };
-        result.Status = result.IsValid(Configuration).Item1 ? AlbumStatus.Invalid : AlbumStatus.Ok;
+        var isValidCheck = result.IsValid(Configuration);
+        if (!isValidCheck.Item1)
+        {
+            result.ValidationMessages = result.ValidationMessages.Append(new ValidationResultMessage
+            {
+                Message = isValidCheck.Item2 ?? "Album failed validation.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });
+        }
+        result.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
         return result;
     }
 
-    [GeneratedRegex(@"[0-9]+\.+(.*)[0-9]{2}\:[0-9]{2}")]
+    [GeneratedRegex(@"[0-9]+[a-z]+[0-9]{3,4}")]
     private static partial Regex IsLineForSongRegex();
 
     [GeneratedRegex(@"\.{2,}")]

@@ -563,7 +563,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 70,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingMaximumImageSize,
-                    Comment = "Maximum image size allowed (WidthxHeight) for any image, if larger than will be resized to this image.",
+                    Comment = "Maximum image size allowed (WidthxHeight) for any image, if larger than will be resized to this image, leave blank to disable.",
                     Value = "1600x1600",
                     CreatedAt = now
                 },

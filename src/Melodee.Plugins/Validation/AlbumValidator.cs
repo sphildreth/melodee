@@ -41,9 +41,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         }
         _validationMessages.Clear();
 
-        var returnStatus = album.Status;
-
-        IsValid(album);
         AreAllSongNumbersValid(album);
         AreSongsUniquelyNumbered(album);
         AreMediaNumbersValid(album);
@@ -55,13 +52,18 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         DoesSongTotalMatchSongCount(album);
         DoesAlbumHaveCoverImage(album);
         AlbumDoesNotHaveProofImages(album);
+
+        if (_validationMessages.Count == 0)
+        {
+            IsValid(album);
+        }
         
         return new OperationResult<ValidationResult>
         {
             Data = new ValidationResult
             {
                 Messages = _validationMessages,
-                AlbumStatus = returnStatus != AlbumStatus.Invalid && !_validationMessages.Any() ? AlbumStatus.Ok : AlbumStatus.Invalid,
+                AlbumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid,
             }
         };
     }

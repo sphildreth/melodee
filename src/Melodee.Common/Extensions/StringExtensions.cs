@@ -385,7 +385,6 @@ public static partial class StringExtensions
         {
             return input;
         }
-
         input = input.ToLower()
             .Replace("$", "s")
             .Replace("%", "per");

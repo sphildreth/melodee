@@ -161,7 +161,7 @@ public sealed class MediaEditService(
         var albumValidResult = album.IsValid(_configuration.Configuration);
         if (!albumValidResult.Item1)
         {
-            Logger.Warning($"Album is invalid [{albumValidResult.Item2}].");
+            Logger.Warning($"Album [{album}] is invalid [{albumValidResult.Item2}]");
             return new OperationResult<ValidationResult>
             {
                 Data = new ValidationResult

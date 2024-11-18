@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -6,6 +7,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
@@ -132,7 +134,16 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
                             Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                         };
-                        m3UAlbum.Status = albumValidator.ValidateAlbum(m3UAlbum)?.Data.AlbumStatus ?? AlbumStatus.Invalid;
+                        var isValidCheck = m3UAlbum.IsValid(Configuration);
+                        if (!isValidCheck.Item1)
+                        {
+                            m3UAlbum.ValidationMessages = m3UAlbum.ValidationMessages.Append(new ValidationResultMessage
+                            {
+                                Message = isValidCheck.Item2 ?? "Album failed validation.",
+                                Severity = ValidationResultMessageSeverity.Critical
+                            });
+                        }
+                        m3UAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Invalid : AlbumStatus.Ok;                        
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
                         if (File.Exists(stagingAlbumDataName))
                         {
