@@ -143,21 +143,14 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
                                 Severity = ValidationResultMessageSeverity.Critical
                             });
                         }
-                        m3UAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Invalid : AlbumStatus.Ok;                        
+                        m3UAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;                        
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
+                            var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                            if (existingAlbum != null)
                             {
-                                File.Delete(stagingAlbumDataName);
-                            }
-                            else
-                            {
-                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                                if (existingAlbum != null)
-                                {
-                                    m3UAlbum = m3UAlbum.Merge(existingAlbum);
-                                }
+                                m3UAlbum = m3UAlbum.Merge(existingAlbum);
                             }
                         }
 
@@ -169,7 +162,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
                             Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
                         }
 
-                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, m3UAlbum.ToMelodeeJsonName());
+                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, m3UAlbum.ToMelodeeJsonName(), m3UAlbum.Status.ToString());
                         processedFiles++;
                     }
                 }

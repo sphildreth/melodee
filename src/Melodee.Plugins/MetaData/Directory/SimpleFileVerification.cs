@@ -165,25 +165,17 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                             Severity = ValidationResultMessageSeverity.Critical
                         });
                     }
-                    sfvAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Invalid : AlbumStatus.Ok;
+                    sfvAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
 
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName());
                     if (File.Exists(stagingAlbumDataName))
                     {
-                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
+                        var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                        if (existingAlbum != null)
                         {
-                            File.Delete(stagingAlbumDataName);
-                        }
-                        else
-                        {
-                            var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                            if (existingAlbum != null)
-                            {
-                                sfvAlbum = sfvAlbum.Merge(existingAlbum);
-                            }
+                            sfvAlbum = sfvAlbum.Merge(existingAlbum);
                         }
                     }
-
                     var serialized = JsonSerializer.Serialize(sfvAlbum);
                     await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
                     if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
@@ -192,7 +184,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                         Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, sfvAlbum.ToMelodeeJsonName());
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, sfvAlbum.ToMelodeeJsonName(), sfvAlbum.Status.ToString());
                     processedFiles++;
                 }
             }

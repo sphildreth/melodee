@@ -10,6 +10,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Directory.Models.Extensions;
@@ -165,21 +166,23 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                                 Log.Debug($"\ud83d\ude9b Renamed CUE Media file [{cueFileMediaFile.Name}] => [{ Path.GetFileName(movedCueFileMediaFileFileName)}]");                           
                             }
                             fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.HandlesExtension);
-                        
+                            var isValidCheck = cueAlbum.IsValid(Configuration);
+                            if (!isValidCheck.Item1)
+                            {
+                                cueAlbum.ValidationMessages = cueAlbum.ValidationMessages.Append(new ValidationResultMessage
+                                {
+                                    Message = isValidCheck.Item2 ?? "Album failed validation.",
+                                    Severity = ValidationResultMessageSeverity.Critical
+                                });
+                            }
+                            cueAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;  
                             var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueAlbum.ToMelodeeJsonName());
                             if (File.Exists(stagingAlbumDataName))
                             {
-                                if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
+                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                                if (existingAlbum != null)
                                 {
-                                    File.Delete(stagingAlbumDataName);
-                                }
-                                else
-                                {
-                                    var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                                    if (existingAlbum != null)
-                                    {
-                                        cueAlbum = cueAlbum.Merge(existingAlbum);
-                                    }
+                                    cueAlbum = cueAlbum.Merge(existingAlbum);
                                 }
                             }
 

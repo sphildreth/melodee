@@ -64,22 +64,26 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                 {
                     var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
 
-                    if (nfoAlbum.IsValid(Configuration).Item1)
+                    var isValidCheck = nfoAlbum.IsValid(Configuration);
+                    if (!isValidCheck.Item1)
+                    {
+                        nfoAlbum.ValidationMessages = nfoAlbum.ValidationMessages.Append(new ValidationResultMessage
+                        {
+                            Message = isValidCheck.Item2 ?? "Album failed validation.",
+                            Severity = ValidationResultMessageSeverity.Critical
+                        });
+                    }
+                    nfoAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;                    
+                    
+                    if (nfoAlbum.Status == AlbumStatus.Ok)
                     {
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))
+                            var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                            if (existingAlbum != null)
                             {
-                                File.Delete(stagingAlbumDataName);
-                            }
-                            else
-                            {
-                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                                if (existingAlbum != null)
-                                {
-                                    nfoAlbum = nfoAlbum.Merge(existingAlbum);
-                                }
+                                nfoAlbum = nfoAlbum.Merge(existingAlbum);
                             }
                         }
 
@@ -101,7 +105,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                         }
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, nfoAlbum.ToMelodeeJsonName());
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, nfoAlbum.ToMelodeeJsonName(), nfoAlbum.Status.ToString());
                     processedFiles++;
                 }
             }

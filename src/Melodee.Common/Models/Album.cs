@@ -175,6 +175,9 @@ public sealed record Album
 
         messages.AddRange(otherAlbum.ValidationMessages);
 
+        var isAlbumOk = Status == AlbumStatus.Ok && otherAlbum.Status == AlbumStatus.Ok;
+        var isAlbumInvalid = Status == AlbumStatus.Invalid || otherAlbum.Status == AlbumStatus.Invalid;
+        
         return new Album
         {
             Directory = Directory,
@@ -185,7 +188,7 @@ public sealed record Album
             OriginalDirectory = OriginalDirectory,
             Songs = (Songs ?? Array.Empty<Song>()).ToArray(),
             SortOrder = SortOrder,
-            Status = AlbumStatus.New,
+            Status = isAlbumOk ? AlbumStatus.Ok : isAlbumInvalid ? AlbumStatus.Invalid : AlbumStatus.New,
             Tags = tags,
             ViaPlugins = viaPlugins
         };
