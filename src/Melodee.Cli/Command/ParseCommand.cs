@@ -5,7 +5,6 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
-using Melodee.Plugins;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
@@ -31,18 +30,18 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             .AddJsonFile("appsettings.json")
             .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
             .Build();
-        
+
         Log.Logger = new LoggerConfiguration()
             .ReadFrom.Configuration(configuration)
             .CreateLogger();
 
         var serializer = new Serializer(Log.Logger);
         var cacheManager = new MemoryCacheManager(Log.Logger, TimeSpan.FromDays(1), serializer);
-        
+
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())

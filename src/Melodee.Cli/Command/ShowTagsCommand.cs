@@ -1,16 +1,12 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
-using Melodee.Plugins;
-using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
-using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Microsoft.EntityFrameworkCore;
@@ -58,17 +54,17 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
             {
                 throw new Exception($"Media file [{settings.Filename}] does not exist.");
             }
-            
+
             if (fileInfo.Directory == null)
             {
                 throw new Exception($"Media file directory [{settings.Filename}] does not exist.");
-            }            
+            }
 
             var startTicks = Stopwatch.GetTimestamp();
             Log.Debug("\ud83d\udcdc Processing File [{MediaFilename}]", settings.Filename);
 
             var isValid = false;
-            
+
             var metaTag = new AtlMetaTag(new MetaTagsProcessor(config, serializer), config);
             var tagResult = await metaTag.ProcessFileAsync(fileInfo.Directory!.ToDirectorySystemInfo(), FileSystemInfoExtensions.ToFileSystemInfo(fileInfo));
 
@@ -81,13 +77,15 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
                     var value = tagResult.Data?.Tags?.FirstOrDefault(x => x.IdentifierDescription.ToNormalizedString()?.Contains(t, StringComparison.InvariantCultureIgnoreCase) ?? false)?.Value;
                     onlyTags.TryAdd(t, value);
                 }
+
                 AnsiConsole.Write(
                     new Panel(new JsonText(serializer.Serialize(onlyTags) ?? string.Empty))
                         .Header("Only Tags")
                         .Collapse()
                         .RoundedBorder()
                         .BorderColor(Color.Yellow));
-            } else if (settings.Verbose)
+            }
+            else if (settings.Verbose)
             {
                 AnsiConsole.Write(
                     new Panel(new JsonText(serializer.Serialize(tagResult) ?? string.Empty))
@@ -95,8 +93,8 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
                         .Collapse()
                         .RoundedBorder()
                         .BorderColor(Color.Yellow));
-            }            
-            
+            }
+
             return isValid ? 0 : 1;
         }
     }

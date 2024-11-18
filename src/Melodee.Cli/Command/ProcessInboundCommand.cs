@@ -6,17 +6,12 @@ using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
-using Melodee.Plugins.MetaData.Song;
-using Melodee.Plugins.Processor;
-using Melodee.Plugins.Scripting;
-using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using NodaTime;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -52,7 +47,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddHttpClient();
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -67,10 +62,10 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var inboundLibrary = (await libraryService.GetInboundLibraryAsync().ConfigureAwait(false)).Data;
-            
+
             var directoryInbound = inboundLibrary.Path;
-            var directoryStaging = (await libraryService.GetStagingLibraryAsync().ConfigureAwait(false)).Data!.Path;  
-            
+            var directoryStaging = (await libraryService.GetStagingLibraryAsync().ConfigureAwait(false)).Data!.Path;
+
             var grid = new Grid()
                 .AddColumn(new GridColumn().NoWrap().PadRight(4))
                 .AddColumn()
@@ -105,7 +100,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                         serializer),
                     serializer,
                     scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
-                    )
+                )
             );
             var dirInfo = new DirectoryInfo(settings.Inbound);
             if (!dirInfo.Exists)
@@ -118,7 +113,7 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
             Log.Debug("\ud83d\udcc1 Processing directory [{Inbound}]", settings.Inbound);
 
             await processor.InitializeAsync();
-            
+
             var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = dirInfo.FullName,

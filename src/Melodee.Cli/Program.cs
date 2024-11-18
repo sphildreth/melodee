@@ -12,6 +12,7 @@ public static class Program
 
         app.Configure(config =>
         {
+            config.AddBranch<LibraryMoveOkSetting>("library", add => { add.AddCommand<LibraryMoveOkCommand>("moveok"); });            
             config.AddBranch<ProcessInboundSettings>("processor", add => { add.AddCommand<ProcessInboundCommand>("process"); });
             config.AddBranch<ParseSettings>("parser", add => { add.AddCommand<ParseCommand>("parse"); });
             config.AddBranch<ShowTagsSettings>("tags", add => { add.AddCommand<ShowTagsCommand>("show"); });

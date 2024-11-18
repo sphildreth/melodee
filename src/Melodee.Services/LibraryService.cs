@@ -1,3 +1,4 @@
+using System.Security.Principal;
 using System.Text;
 using Ardalis.GuardClauses;
 using Dapper;
@@ -236,6 +237,20 @@ public sealed class LibraryService(
         CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Inbound));
         CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Library));
         CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Staging));
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(string fromLibraryName, string toLibraryName, Func<MelodeeModels.Album, bool> condition, bool verboseSet, CancellationToken cancellationToken = default)
+    {
+        // TODO 
+        
+        // Ensure the libraries are found
+        
+        // Get all the albums in the given library and test function those that are true move to the toLibrary
+        
+        // If the given library has a job setup, trigger that job.
+        
+        
+        throw new NotImplementedException();
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
