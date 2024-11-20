@@ -56,6 +56,7 @@ public abstract class TestsBase
             [
                 new Library
                 {
+                    Id = 1,
                     Name = "Inbound",
                     Path = "/melodee_test/inbound",
                     Type = SafeParser.ToNumber<int>(LibraryType.Inbound),
@@ -63,6 +64,7 @@ public abstract class TestsBase
                 },
                 new Library
                 {
+                    Id = 2,
                     Name = "Library",
                     Path = "/melodee_test/library",
                     Type = SafeParser.ToNumber<int>(LibraryType.Library),
@@ -70,6 +72,7 @@ public abstract class TestsBase
                 },
                 new Library
                 {
+                    Id = 3,
                     Name = "Staging",
                     Path = "/melodee_test/staging",
                     Type = SafeParser.ToNumber<int>(LibraryType.Staging),

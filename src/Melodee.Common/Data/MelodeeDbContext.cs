@@ -614,4 +614,10 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
         //     .HasIndex(u => u.Email)
         //     .HasMethod("GIN");
     }
+    
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.EnableSensitiveDataLogging();
+    }
+    
 }

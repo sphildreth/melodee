@@ -56,7 +56,7 @@ public class AlbumService(
             Data = albums
         };
     }
-
+    
     public async Task<MelodeeModels.OperationResult<Album?>> GetByArtistIdAndNameNormalized(int artistId, string nameNormalized, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(nameNormalized, nameof(nameNormalized));

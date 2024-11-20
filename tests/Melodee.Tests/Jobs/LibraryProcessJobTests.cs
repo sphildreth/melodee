@@ -1,5 +1,8 @@
 using Melodee.Common.Constants;
+using Melodee.Common.Data.Models;
+using Melodee.Common.Enums;
 using Melodee.Common.Models;
+using Melodee.Common.Utility;
 using Melodee.Jobs;
 using Melodee.Services;
 using Melodee.Services.Scanning;
@@ -20,13 +23,14 @@ public class LibraryProcessJobTests : ServiceTestBase
             MockFactory(),
             MockSettingService(),
             Serializer);
-        
+
         var job = new LibraryProcessJob(Logger,
             MockSettingService(),
             MockLibraryService(),
             Serializer,
             MockFactory(),
             GetArtistService(),
+            GetAlbumService(),
             albumDiscoveryService,
             new DirectoryProcessorService(Logger,
                 CacheManager,
