@@ -49,7 +49,11 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             try
             {
-                return SafeParser.ChangeType<T>(setting);
+                if (setting is null)
+                {
+                    return defaultValue;
+                }
+                return SafeParser.ChangeType<T?>(setting);
             }
             catch (Exception e)
             {

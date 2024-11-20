@@ -1,4 +1,5 @@
 using Melodee.Common.Constants;
+using Melodee.Common.Models;
 using Melodee.Jobs;
 using Melodee.Services;
 using Melodee.Services.Scanning;
@@ -44,7 +45,33 @@ public class LibraryProcessJobTests : ServiceTestBase
         var mockJobExecutionContext = new Mock<IJobExecutionContext>();
         mockJobExecutionContext.Setup(f => f.CancellationToken).Returns(CancellationToken.None);
         mockJobExecutionContext.Setup(f => f.JobDetail).Returns(new JobDetailImpl(nameof(LibraryProcessJob), typeof(LibraryProcessJob)));
+
+        var startMessageReceived = false;
+        var endMessageReceived = false;
+        job.OnProcessingEvent += (sender, args) =>
+        {
+            switch (args.Type)
+            {
+                case ProcessingEventType.Start:
+                    startMessageReceived = true;
+                    break;
+                
+                case ProcessingEventType.Stop:
+                    endMessageReceived = true;
+                    break;
+            }
+            
+        };
         await job.Execute(mockJobExecutionContext.Object);
+        
+        var listResult = await GetArtistService().ListAsync(new PagedRequest());
+        AssertResultIsSuccessful(listResult);
+        Assert.NotEmpty(listResult.Data);
+        Assert.True(listResult.TotalPages > 0);
+        Assert.True(listResult.TotalCount > 0);
+
+        Assert.True(startMessageReceived);
+        Assert.True(endMessageReceived);
 
     }
 }

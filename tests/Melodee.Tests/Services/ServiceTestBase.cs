@@ -11,12 +11,46 @@ using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Moq;
 using Moq.Protected;
 using Quartz;
 using Serilog;
+using Serilog.Configuration;
+using Serilog.Events;
+using Serilog.Core;
 
 namespace Melodee.Tests.Services;
+
+public class ConsoleLogSink : ILogEventSink
+{
+    private readonly IFormatProvider _formatProvider;
+
+    public ConsoleLogSink(IFormatProvider formatProvider)
+    {
+        _formatProvider = formatProvider;
+    }
+
+    public void Emit(LogEvent logEvent)
+    {
+        var message = logEvent.RenderMessage(_formatProvider);
+        if (logEvent.Exception != null)
+        {
+            message += $"\n{logEvent.Exception}";
+        }
+        Console.WriteLine(DateTimeOffset.Now.ToString() + " "  + message);
+    }
+}
+
+public static class ConsoleLogSinkExtensions
+{
+    public static LoggerConfiguration ConsoleLogSink(
+        this LoggerSinkConfiguration loggerConfiguration,
+        IFormatProvider formatProvider = null)
+    {
+        return loggerConfiguration.Sink(new ConsoleLogSink(formatProvider));
+    }
+}
 
 public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 {
@@ -26,7 +60,10 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected ServiceTestBase()
     {
-        Logger = new Mock<ILogger>().Object;
+        Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.ConsoleLogSink()
+            .CreateLogger();
         Serializer = new Serializer(Logger);
         CacheManager = new FakeCacheManager(Logger, TimeSpan.FromDays(1), Serializer);
 
@@ -119,21 +156,30 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected IHttpClientFactory MockHttpClientFactory()
     {
-        var clientHandlerMock = new Mock<DelegatingHandler>();
-        clientHandlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK))
-            .Verifiable();
-        clientHandlerMock.As<IDisposable>().Setup(s => s.Dispose());
+        // var clientHandlerMock = new Mock<HttpHandlerStubDelegate>();
+        // clientHandlerMock.Protected()
+        //     .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+        //     .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK))
+        //     .Verifiable();
+        // clientHandlerMock.As<IDisposable>().Setup(s => s.Dispose());
+        //
+        // var httpClient = new HttpClient(clientHandlerMock.Object);
 
-        var httpClient = new HttpClient(clientHandlerMock.Object);
-
-        var clientFactoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
-        clientFactoryMock.Setup(cf => cf.CreateClient()).Returns(httpClient).Verifiable();
-
-        clientFactoryMock.Verify(cf => cf.CreateClient());
-        clientHandlerMock.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
-        return clientFactoryMock.Object;
+        // var clientFactoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        // clientFactoryMock.Setup(cf => cf.CreateClient(It.IsAny<string>())).Returns(httpClient).Verifiable();
+        //
+        // clientFactoryMock.Verify(cf => cf.CreateClient());
+        // clientHandlerMock.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+        // return clientFactoryMock.Object;
+        
+        var clientHandlerStub = new HttpHandlerStubDelegate((request, cancellationToken) => {
+            var response = new HttpResponseMessage() { StatusCode = HttpStatusCode.OK };
+            return Task.FromResult(response);
+        });
+        var factoryMock = new Mock<IHttpClientFactory>();
+        factoryMock.Setup(m => m.CreateClient(It.IsAny<string>()))
+            .Returns(() => new HttpClient(clientHandlerStub));      
+        return factoryMock.Object;
     }
 
     protected ILibraryService MockLibraryService()

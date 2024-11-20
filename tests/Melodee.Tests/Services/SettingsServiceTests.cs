@@ -80,8 +80,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
         AssertResultIsSuccessful(listResult);
         Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ConversionBitrate);
         Assert.Equal(1, listResult.TotalCount);
-        Assert.Equal(1, listResult.TotalPages);
-    }
+        Assert.Equal(1, listResult.TotalPages); }
 
     [Fact]
     public async Task ListWithSortAsync()
@@ -147,6 +146,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
         MelodeeConfiguration.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueBool);
         Assert.Equal(shouldBeValueBool, settings[SettingRegistry.ValidationMaximumSongNumber]);
         Assert.True(MelodeeConfiguration.IsTrue(settings, SettingRegistry.ValidationMaximumSongNumber));
+
     }
 
     [Fact]
@@ -166,6 +166,9 @@ public sealed class SettingsServiceTests : ServiceTestBase
         var service = new SettingService(Logger, CacheManager, MockFactory());
         var configuration = await service.GetMelodeeConfigurationAsync();
         Assert.NotEmpty(configuration.Configuration);
+        
+        var maxSongsToProcess = configuration.GetValue<int?>(SettingRegistry.ProcessingMaximumProcessingCount) ?? 0;
+        Assert.Equal(0, maxSongsToProcess);
 
         configuration.SetSetting(SettingRegistry.ProcessingMaximumProcessingCount, shouldBeValueInt);
         var getIntValueResult = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount);
