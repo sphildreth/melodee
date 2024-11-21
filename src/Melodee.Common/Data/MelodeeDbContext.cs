@@ -2,6 +2,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
+using Microsoft.CodeAnalysis.Host;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
@@ -517,9 +518,9 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Setting
                 {
                     Id = 53,
-                    Key = SettingRegistry.ProcessingBatchSize,
-                    Comment = "Processing batching size.",
-                    Value = "500",
+                    Key = SettingRegistry.DefaultsBatchSize,
+                    Comment = $"Processing batching size. Allowed range is between [{MelodeeConfiguration.BatchSizeDefault}] and [{MelodeeConfiguration.BatchSizeMaximum}]. ",
+                    Value = "250",
                     CreatedAt = now
                 },
                 new Setting

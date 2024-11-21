@@ -14,9 +14,29 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
 {
     public static string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
     
+    public static int BatchSizeDefault = 250;
+    
+    public static int BatchSizeMaximum = 1000;
+    
     public void SetSetting<T>(string key, T? value) => Configuration[key] = value;
 
     public T? GetValue<T>(string key, Func<T?, T?>? returnValue = null) => returnValue == null ? GetSettingValue<T>(Configuration, key) : returnValue(GetSettingValue<T>(Configuration, key));
+
+    public int BatchProcessingSize()
+    {
+        return GetValue<int?>(SettingRegistry.DefaultsBatchSize, i =>
+        {
+            if (i is null or < 1)
+            {
+                return MelodeeConfiguration.BatchSizeDefault;
+            }
+            if (i < MelodeeConfiguration.BatchSizeMaximum)
+            {
+                return MelodeeConfiguration.BatchSizeMaximum;
+            }
+            return MelodeeConfiguration.BatchSizeDefault;
+        }) ?? MelodeeConfiguration.BatchSizeDefault;
+    }
     
     /// <summary>
     /// This return all known settings in the SettingsRegistry with the option to set up given values.

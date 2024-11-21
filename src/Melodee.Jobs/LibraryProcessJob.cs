@@ -55,6 +55,8 @@ public class LibraryProcessJob(
     private IMelodeeConfiguration _configuration;
     private int _batchSize;
     private int _maxSongsToProcess;
+    private readonly List<int> _dbArtistsIdsModifiedOrUpdated = new List<int>();
+    private readonly List<int> _dbAlbumIdsModifiedOrUpdated = new List<int>();
 
     /// <summary>
     ///     This is raised when a Log event happens to return activity to caller.
@@ -80,7 +82,7 @@ public class LibraryProcessJob(
         _totalSongsInserted = 0;
         _totalSongsUpdated = 0;
         _maxSongsToProcess = _configuration.GetValue<int?>(SettingRegistry.ProcessingMaximumProcessingCount) ?? 0;
-        _batchSize = _configuration.GetValue<int?>(SettingRegistry.ProcessingBatchSize) ?? 1000;
+        _batchSize = _configuration.BatchProcessingSize();
         var messagesForJobRun = new List<string>();
         var exceptionsForJobRun = new List<Exception>();
 
@@ -201,76 +203,73 @@ public class LibraryProcessJob(
                         {
                             Logger.Error(e, "[{JobName}] Error processing directory [{Dir}]", nameof(LibraryProcessJob), processingDirectory);
                         }
+                        
+                        var batchCount = (_dbAlbumIdsModifiedOrUpdated.Count + _batchSize - 1) / _batchSize;                        
+                        var dbConn = scopedContext.Database.GetDbConnection();
+                        for (var updateCountBatch = 1; updateCountBatch <= batchCount; updateCountBatch++)
+                        {
+                            var skipValue = updateCountBatch * _batchSize;
+                            var joinedDbIds = string.Join(',', _dbAlbumIdsModifiedOrUpdated.Skip(skipValue).Take(_batchSize));
 
-                        // // Delete any songs not found in directory but in database
-                        // var orphanedDbSongs = (from a in dbAlbum.Discs.SelectMany(x => x.Songs)
-                        //     join f in mediaFiles on a.FileName equals f.Name into af
-                        //     from f in af.DefaultIfEmpty()
-                        //     where f == null
-                        //     select a.Id).ToArray();
-                        // if (orphanedDbSongs.Length > 0)
-                        // {
-                        //     await scopedContext.Songs.Where(x => orphanedDbSongs.Contains(x.Id)).ExecuteDeleteAsync(context.CancellationToken).ConfigureAwait(false);
-                        // }
-                        //
-                        // await scopedContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
-                        //
-                        // var joinedDbAlbumIdsModifiedOrUpdated = string.Join(',', dbAlbumIdsModifiedOrUpdated);
-                        // var batchCount = (dbAlbumIdsModifiedOrUpdated.Count + batchSize - 1) / batchSize;                        
-                        // var dbConn = scopedContext.Database.GetDbConnection();
-                        // for (var batch = 1; batch < batchCount; batch++)
-                        // {
-                        //     var skipValue = batch * batchSize;
-                        //     var sql = """
-                        //               with albumCounts as (
-                        //               	select "ArtistId" as id, COUNT(*) as count
-                        //               	from "Albums"
-                        //               	group by "ArtistId"
-                        //               )
-                        //               UPDATE "Artists"
-                        //               set "AlbumCount" = c.count, "LastUpdatedAt" = NOW()
-                        //               from albumCounts c
-                        //               where c.id = "Artists"."Id"
-                        //               and c.id in ({0});
-                        //               """;
-                        //     await dbConn
-                        //         .ExecuteAsync(sql.FormatSmart(joinedDbAlbumIdsModifiedOrUpdated.Skip(skipValue).Take(batchSize)), context.CancellationToken)
-                        //         .ConfigureAwait(false);
-                        //
-                        //     sql = """
-                        //           with songCounts as (
-                        //           	select a."ArtistId" as id, COUNT(s.*) as count
-                        //           	from "Songs" s
-                        //           	left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                        //           	left join "Albums" a on (ad."AlbumId" = a."Id")
-                        //           	group by a."ArtistId"
-                        //           )
-                        //           UPDATE "Artists"
-                        //           set "SongCount" = c.count, "LastUpdatedAt" = NOW()
-                        //           from songCounts c
-                        //           where c.id = "Artists"."Id"
-                        //           and c.id in ({0});
-                        //           """;
-                        //     await dbConn
-                        //         .ExecuteAsync(sql.FormatSmart(joinedDbAlbumIdsModifiedOrUpdated.Skip(skipValue).Take(batchSize)), context.CancellationToken)
-                        //         .ConfigureAwait(false);
-                        //
-                        //     sql = """
-                        //           with performerSongCounts as (
-                        //           	select c."ArtistId" as id, COUNT(*) as count
-                        //           	from "Contributors" c 
-                        //           	group by c."ArtistId"
-                        //           )
-                        //           UPDATE "Artists"
-                        //           set "SongCount" = c.count, "LastUpdatedAt" = NOW()
-                        //           from performerSongCounts c
-                        //           where c.id = "Artists"."Id"
-                        //           and c.id in ({0});
-                        //           """;
-                        //     await dbConn
-                        //         .ExecuteAsync(sql.FormatSmart(joinedDbAlbumIdsModifiedOrUpdated.Skip(skipValue).Take(batchSize)), context.CancellationToken)
-                        //         .ConfigureAwait(false);
-                        // }                    
+                            var sql = """
+                                      with albumCounts as (
+                                      	select "ArtistId" as id, COUNT(*) as count
+                                      	FROM "Albums"
+                                      	WHERE "LibraryId" = {0}
+                                      	group by a."ArtistId"
+                                      )
+                                      UPDATE "Artists"
+                                      SET "AlbumCount" = c.count, "LastUpdatedAt" = NOW()
+                                      from albumCounts c
+                                      WHERE "LibraryId" = {0}
+                                      AND c.id = "Artists"."Id"
+                                      AND c.id in ({1});
+                                      """;
+                            await dbConn
+                                .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
+                                .ConfigureAwait(false);
+                        
+                            sql = """
+                                  with songCounts as (
+                                  	select a."ArtistId" as id, COUNT(s.*) as count
+                                  	FROM "Songs" s
+                                  	left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                  	left join "Albums" a on (ad."AlbumId" = a."Id")
+                                  	WHERE a."LibraryId" = {0}
+                                  	group by a."ArtistId"
+                                  )
+                                  UPDATE "Artists"
+                                  SET "SongCount" = c.count, "LastUpdatedAt" = NOW()
+                                  from songCounts c
+                                  WHERE "LibraryId" = {0}
+                                  AND c.id = "Artists"."Id"
+                                  AND c.id in ({1});
+                                  """;
+                            await dbConn
+                                .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
+                                .ConfigureAwait(false);
+                        
+                            sql = """
+                                  with performerSongCounts as (
+                                  	select c."ArtistId" as id, COUNT(*) as count
+                                  	from "Contributors" c 
+                                  	left join "Songs" s on (c."SongId" = s."Id")
+                                    left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                    left join "Albums" a on (ad."AlbumId" = a."Id")
+                                    WHERE a."LibraryId" = {0}
+                                  	group by c."ArtistId"
+                                  )
+                                  UPDATE "Artists"
+                                  set "SongCount" = c.count, "LastUpdatedAt" = NOW()
+                                  from performerSongCounts c
+                                  where "LibraryId" = {0}
+                                  where c.id = "Artists"."Id"
+                                  and c.id in ({1});
+                                  """;
+                            await dbConn
+                                .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
+                                .ConfigureAwait(false);
+                        }                    
                     }
                 }
 
@@ -323,6 +322,7 @@ public class LibraryProcessJob(
     /// </summary>
     private async Task ProcessAlbumsAsync(dbModels.Library library, List<Album> melodeeFilesForDirectory, CancellationToken cancellationToken)
     {
+        _dbAlbumIdsModifiedOrUpdated.Clear();
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbAlbumsToAdd = new List<dbModels.Album>();
@@ -461,6 +461,7 @@ public class LibraryProcessJob(
                                 TitleSort = songTitle!.CleanString(true),
                                 SongNumber = song.SongNumber()
                             });
+                            _totalSongsInserted++;
                         }
                     }
                     dbAlbumsToAdd.Add(newAlbum);
@@ -479,6 +480,7 @@ public class LibraryProcessJob(
                     Logger.Error(e, "Unable to insert albums into db.");
                 }
                 _totalAlbumsInserted += dbAlbumsToAdd.Count;
+                _dbAlbumIdsModifiedOrUpdated.AddRange(dbAlbumsToAdd.Select(x => x.Id));
                 UpdateDataMap();
             }
 
@@ -550,6 +552,7 @@ public class LibraryProcessJob(
                 dbAlbum.SortName = albumTitle.CleanString(true);
                 
                 // TODO handle media disc changes (add a new one, removed one, etc.)
+                _dbAlbumIdsModifiedOrUpdated.Add(dbAlbum.Id);
             }
 
             if (albumsToUpdate.Any())
@@ -558,6 +561,20 @@ public class LibraryProcessJob(
                 _totalAlbumsUpdated += albumsToUpdate.Length;
                 UpdateDataMap();
             }
+
+            // TODO
+            // // Delete any songs not found in directory but in database
+            // var orphanedDbSongs = (from a in dbAlbum.Discs.SelectMany(x => x.Songs)
+            //     join f in mediaFiles on a.FileName equals f.Name into af
+            //     from f in af.DefaultIfEmpty()
+            //     where f == null
+            //     select a.Id).ToArray();
+            // if (orphanedDbSongs.Length > 0)
+            // {
+            //     await scopedContext.Songs.Where(x => orphanedDbSongs.Contains(x.Id)).ExecuteDeleteAsync(context.CancellationToken).ConfigureAwait(false);
+            // }
+            //             
+            // await scopedContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);            
         }
     }
 
@@ -578,6 +595,7 @@ public class LibraryProcessJob(
     /// </summary>
     private async Task ProcessArtistsAsync(dbModels.Library library, List<Album> melodeeFilesForDirectory, CancellationToken cancellationToken)
     {
+        _dbArtistsIdsModifiedOrUpdated.Clear();
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var artists = melodeeFilesForDirectory
@@ -621,6 +639,7 @@ public class LibraryProcessJob(
                 await scopedContext.Artists.AddRangeAsync(dbArtistsToAdd, cancellationToken).ConfigureAwait(false);
                 await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 _totalArtistsInserted += dbArtistsToAdd.Count;
+                _dbArtistsIdsModifiedOrUpdated.AddRange(dbArtistsToAdd.Select(x => x.Id));
                 UpdateDataMap();
             }
 
@@ -648,6 +667,7 @@ public class LibraryProcessJob(
                 dbArtist.NameNormalized = artist.NormalizedName;
                 dbArtist.SortName = artist.SortName;
                 dbArtist.LastUpdatedAt = _now;
+                _dbArtistsIdsModifiedOrUpdated.Add(dbArtist.Id);
             }
 
             if (artistsToUpdate.Any())
