@@ -2,6 +2,9 @@
 
 public static class EnumerableExtensions
 {
+    public static string ToCsv<T>(this IEnumerable<T> source)
+        => string.Join(',', source);
+    
     public static string ToDelimitedList<T>(this IEnumerable<T> source, char delimiter = '|')
     {
         if (source == null)

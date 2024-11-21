@@ -11,9 +11,11 @@ using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Utility;
+using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Win32.SafeHandles;
 using NodaTime;
 using Quartz;
 using Serilog;
@@ -44,6 +46,12 @@ public class OpenSubsonicApiService(
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
     private UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty);
+
+    private Guid? ApiKeyFromId(string id)
+    {
+        var apiIdParts = id.Nullify() == null ? [] : id.Split(ImageApiIdSeparator);
+        return SafeParser.ToGuid(SafeParser.ToGuid(apiIdParts[1])!.Value);
+    }
 
     /// <summary>
     ///     Get details about the software license.
@@ -217,6 +225,81 @@ public class OpenSubsonicApiService(
         };
     }
 
+    public async Task<ResponseModel> GetAlbumAsync(Guid apiKey, ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+        
+        var albumResponse = await albumService.GetByApiKeyAsync(apiKey, cancellationToken);
+        if (!albumResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData with
+                {
+                    Error = Error.InvalidApiKeyError
+                }
+            };
+        }
+
+        var album = albumResponse.Data!;
+        var userAlbum = await userService.UserAlbumAsync(apiRequest.Username, apiKey, cancellationToken);
+        var userSongsForAlbum = await userService.UserSongsForAlbumAsync(apiRequest.Username, apiKey, cancellationToken) ?? [];
+        var data = new AlbumId3WithSongs
+        {
+            AlbumDate = album.ReleaseDate.ToItemDate(),
+            AlbumTypes = [], // TODO
+            Artist = album.Artist.Name,
+            ArtistId = album.Artist.ApiKey.ToString(),
+            Artists = [], // TODO
+            CoverArt =$"album_{ album.ApiKey}",
+            Created = album.CreatedAt.ToString(),
+            DiscTitles = album.Discs.Select(x => new DiscTitle(x.DiscNumber, x.Title ?? string.Empty)).ToArray(),            
+            DisplayArtist = album.Artist.Name,
+            Duration = SafeParser.ToNumber<int>(album.Duration / 1000),
+            Genre = album.Genres?.ToCsv(),
+            Genres = [], // TODO
+            Id = album.ApiKey.ToString(),
+            IsCompilation = album.IsCompilation,
+            Moods = [], // TODO
+            MusicBrainzId = null,
+            Name = album.Name,
+            OriginalAlbumDate  = album.OriginalReleaseDate?.ToItemDate() ?? album.ReleaseDate.ToItemDate(),
+            Parent = album.ApiKey.ToString(),
+            PlayCount = album.PlayedCount,
+            Played = album.LastPlayedAt.ToString(),
+            RecordLabels = [], // TODO
+            Song = album.Discs.SelectMany(x => x.Songs)
+                .Select(x => x.ToChild(album, userSongsForAlbum.FirstOrDefault(us => us.SongId == x.Id)))
+                .ToArray(),            
+            SongCount = album.SongCount ?? 0,
+            SortName = album.SortName,
+            Starred =  userAlbum?.LastUpdatedAt?.ToString(),
+            Title = album.Name,
+            UserRating = userAlbum?.Rating,
+            Year = album.ReleaseDate.Year
+            
+        };
+        
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            ResponseData = authResponse.ResponseData with
+            {
+                Data = data,
+                DataPropertyName = "album"
+            }
+        };        
+    }
+    
     /// <summary>
     ///     Returns all genres.
     /// </summary>
@@ -292,10 +375,9 @@ public class OpenSubsonicApiService(
                 ResponseData = authResponse.ResponseData
             };
         }
-        
 
-        var apiIdParts = apiId.Nullify() == null ? [] : apiId.Split(ImageApiIdSeparator);
-        if (apiIdParts.Length != 2)
+        var apiKey = ApiKeyFromId(apiId);
+        if (apiKey == null)
         {
             return new ResponseModel
             {
@@ -306,9 +388,7 @@ public class OpenSubsonicApiService(
                 }
             };
         }
-
-        var apiKey = SafeParser.ToGuid(SafeParser.ToGuid(apiIdParts[1])!.Value) ?? Guid.Empty;
-        var albumResponse = await albumService.GetByApiKeyAsync(apiKey, cancellationToken);
+        var albumResponse = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken);
         if (!albumResponse.IsSuccess)
         {
             return new ResponseModel

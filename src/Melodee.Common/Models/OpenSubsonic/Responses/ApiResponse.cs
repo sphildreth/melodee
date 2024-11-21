@@ -10,9 +10,9 @@ public record ApiResponse
     public required string DataPropertyName { get; init; }
     
     /// <summary>
-    /// Used for the type of element in the collection of data to return, e.g. "album"
+    /// Used for the type of element in the collection of data to return, e.g. "album". Leave null to omit.
     /// </summary>
-    public required string DataDetailPropertyName { get; init; }
+    public string? DataDetailPropertyName { get; init; }
     
     public required string Status { get; init; }
     

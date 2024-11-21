@@ -53,7 +53,7 @@ public record AlbumId3WithSongs
     public string? ArtistId { get; init; }
 
     /// <summary></summary>
-    public int SongCount { get; init; }
+    public short SongCount { get; init; }
 
     /// <summary></summary>
     public string? Played { get; init; }
@@ -103,4 +103,6 @@ public record AlbumId3WithSongs
 
     /// <summary></summary>
     public Child[]? Song { get; init; }
+
+    public required string Parent { get; set; }
 }

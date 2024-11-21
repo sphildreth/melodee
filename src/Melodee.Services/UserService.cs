@@ -405,4 +405,43 @@ public sealed class UserService(
             CacheManager.Remove(CacheKeyDetailByUsernameTemplate.FormatSmart(username));
         }
     }
+
+    public async Task<UserAlbum?> UserAlbumAsync(string? userName, Guid albumApiKey, CancellationToken cancellationToken)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var sql = """
+                      select ua.*
+                      from "UserAlbums" ua 
+                      left join "Users" u on (ua."UserId" = u."Id")
+                      left join "Albums" a on (ua."AlbumId" = a."Id")
+                      where u."UserNameNormalized" = @userName
+                      and a."ApiKey" = @albumApiKey;
+                      """;
+            var dbConn = scopedContext.Database.GetDbConnection();
+            return await dbConn.QuerySingleOrDefaultAsync<UserAlbum?>(sql, new { userName = userName.ToNormalizedString(), albumApiKey })
+                .ConfigureAwait(false);
+        }
+    }
+    
+    public async Task<UserSong[]?> UserSongsForAlbumAsync(string? userName, Guid albumApiKey, CancellationToken cancellationToken)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var sql = """
+                      select us.*
+                      from "UserSongs" us 
+                      left join "Users" u on (us."UserId" = u."Id")
+                      left join "Songs" s on (us."SongId" = s."Id")
+                      left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                      left join "Albums" a on (ad."AlbumId" = a."Id")
+                      where u."UserNameNormalized" = @userName
+                      and a."ApiKey" = @albumApiKey;
+                      """;
+            var dbConn = scopedContext.Database.GetDbConnection();
+            return (await dbConn.QueryAsync<UserSong>(sql, new { userName = userName.ToNormalizedString(), albumApiKey })
+                .ConfigureAwait(false))
+                .ToArray();
+        }
+    }    
 }

@@ -30,7 +30,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
             {
                 return MelodeeConfiguration.BatchSizeDefault;
             }
-            if (i < MelodeeConfiguration.BatchSizeMaximum)
+            if (i > MelodeeConfiguration.BatchSizeMaximum)
             {
                 return MelodeeConfiguration.BatchSizeMaximum;
             }

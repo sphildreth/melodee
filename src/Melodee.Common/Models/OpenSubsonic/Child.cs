@@ -54,7 +54,7 @@ public record Child(
     int? Song,
     int? Year,
     string? CoverArt,
-    int? Size,
+    long? Size,
     string? ContentType,
     string? Suffix,
     string? Starred,

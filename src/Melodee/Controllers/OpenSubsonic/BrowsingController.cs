@@ -36,4 +36,15 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet("/rest/getGenres.view")]
     public async Task<IActionResult> GetGenres(CancellationToken cancellationToken = default)
         => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetGenresAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+
+    /// <summary>
+    /// Returns details for an album, including a list of songs. This method organizes music according to ID3 tags..
+    /// </summary>
+    /// <param name="id">ApiKey for the Album</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/getAlbum.view")]
+    public async Task<IActionResult> GetAlbum(Guid id, CancellationToken cancellationToken = default)
+        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+
+    
 }

@@ -16,12 +16,12 @@ public class MediaRetrievalController(OpenSubsonicApiService openSubsonicApiServ
     /// <summary>
     /// Returns a cover art image.
     /// </summary>
-    /// <param name="apiId">Composite ID of type:apikey</param>
+    /// <param name="id">Composite ID of type:apikey</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getCoverArt.view")]
-    public async Task<IActionResult> GetCoverArt(string apiId, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetCoverArt(string id, CancellationToken cancellationToken = default)
     {
-        var coverArtResult = await openSubsonicApiService.GetCoverArt(apiId, null, ApiRequest, cancellationToken);
+        var coverArtResult = await openSubsonicApiService.GetCoverArt(id, null, ApiRequest, cancellationToken);
         if (coverArtResult.IsSuccess)
         {
             return new FileContentResult(coverArtResult.ResponseData.Data as byte[], "image/jpeg");

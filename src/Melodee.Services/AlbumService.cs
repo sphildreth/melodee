@@ -117,6 +117,7 @@ public class AlbumService(
             {
                 return await scopedContext
                     .Albums
+                    .Include(x => x.Artist)
                     .Include(x => x.Discs)
                     .ThenInclude(x => x.Songs)
                     .ThenInclude(x => x.Contributors)
