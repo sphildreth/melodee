@@ -292,8 +292,9 @@ public class OpenSubsonicApiService(
                 ResponseData = authResponse.ResponseData
             };
         }
+        
 
-        var apiIdParts = apiId.Split(ImageApiIdSeparator);
+        var apiIdParts = apiId.Nullify() == null ? [] : apiId.Split(ImageApiIdSeparator);
         if (apiIdParts.Length != 2)
         {
             return new ResponseModel
@@ -322,32 +323,40 @@ public class OpenSubsonicApiService(
 
         byte[]? coverBytes = null;
 
-        var sql = """
-                  select l."Path" || a."Directory"
-                  from "Albums" a 
-                  left join "Libraries" l on (l."Id" = a."LibraryId")
-                  where a."ApiKey" = '{0}'
-                  limit 1;
-                  """;
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        try
         {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var pathToAlbum = dbConn.ExecuteScalar<string>(sql.FormatSmart(apiKey.ToString())) ?? string.Empty;
-            await albumDiscoveryService.InitializeAsync(await Configuration.Value, cancellationToken);
-            var melodeeFile = (await albumDiscoveryService
-                    .AllMelodeeAlbumDataFilesForDirectoryAsync(new FileSystemDirectoryInfo
-                    {
-                        Path = pathToAlbum,
-                        Name = pathToAlbum
-                    }, cancellationToken)
-                    .ConfigureAwait(false))
-                .Data?
-                .FirstOrDefault();
-            var image = melodeeFile?.CoverImage();
-            if (image != null)
+            var sql = """
+                      select l."Path" || a."Directory"
+                      from "Albums" a 
+                      left join "Libraries" l on (l."Id" = a."LibraryId")
+                      where a."ApiKey" = '{0}'
+                      limit 1;
+                      """;
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                coverBytes = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
+                var dbConn = scopedContext.Database.GetDbConnection();
+                var pathToAlbum = dbConn.ExecuteScalar<string>(sql.FormatSmart(apiKey.ToString())) ?? string.Empty;
+                await albumDiscoveryService.InitializeAsync(await Configuration.Value, cancellationToken);
+                var melodeeFile = (await albumDiscoveryService
+                        .AllMelodeeAlbumDataFilesForDirectoryAsync(new FileSystemDirectoryInfo
+                        {
+                            Path = pathToAlbum,
+                            Name = pathToAlbum
+                        }, cancellationToken)
+                        .ConfigureAwait(false))
+                    .Data?
+                    .FirstOrDefault();
+                var image = melodeeFile?.CoverImage();
+                if (image != null)
+                {
+                    coverBytes = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
+                }
             }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to get cover image for album [{AlbumId}]", apiId);
+
         }
 
         return new ResponseModel
