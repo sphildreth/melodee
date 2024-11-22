@@ -1,11 +1,9 @@
 using System.Diagnostics;
-using System.Linq.Dynamic.Core;
 using Dapper;
 using IdSharp.Common.Utils;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -29,7 +27,7 @@ using dbModels = Melodee.Common.Data.Models;
 namespace Melodee.Jobs;
 
 /// <summary>
-/// Process non staging and inbound libraries and update database with updated metadata.
+///     Process non staging and inbound libraries and update database with updated metadata.
 /// </summary>
 [DisallowConcurrentExecution]
 public class LibraryProcessJob(
@@ -43,20 +41,36 @@ public class LibraryProcessJob(
     AlbumDiscoveryService albumDiscoveryService,
     DirectoryProcessorService directoryProcessorService) : JobBase(logger, settingService)
 {
+    private readonly List<int> _dbAlbumIdsModifiedOrUpdated = new();
+    private readonly List<int> _dbArtistsIdsModifiedOrUpdated = new();
+    private int _batchSize;
+    private IMelodeeConfiguration _configuration;
+    private JobDataMap _dataMap;
+    private int _maxSongsToProcess;
+    private AtlMetaTag _mediaFilePlugin;
+    private Instant _now;
     private int _totalAlbumsInserted;
     private int _totalAlbumsUpdated;
     private int _totalArtistsInserted;
     private int _totalArtistsUpdated;
     private int _totalSongsInserted;
     private int _totalSongsUpdated;
-    private AtlMetaTag _mediaFilePlugin;
-    private Instant _now;
-    private JobDataMap _dataMap;
-    private IMelodeeConfiguration _configuration;
-    private int _batchSize;
-    private int _maxSongsToProcess;
-    private readonly List<int> _dbArtistsIdsModifiedOrUpdated = new List<int>();
-    private readonly List<int> _dbAlbumIdsModifiedOrUpdated = new List<int>();
+
+    private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
+    [
+        MetaTagIdentifier.Artist,
+        MetaTagIdentifier.Composer,
+        MetaTagIdentifier.Conductor,
+        MetaTagIdentifier.Engineer,
+        MetaTagIdentifier.InterpretedRemixedOrOtherwiseModifiedBy,
+        MetaTagIdentifier.Lyricist,
+        MetaTagIdentifier.MixDj,
+        MetaTagIdentifier.MixEngineer,
+        MetaTagIdentifier.MusicianCredit,
+        MetaTagIdentifier.OriginalArtist,
+        MetaTagIdentifier.OriginalLyricist,
+        MetaTagIdentifier.Producer
+    ];
 
     /// <summary>
     ///     This is raised when a Log event happens to return activity to caller.
@@ -118,7 +132,7 @@ public class LibraryProcessJob(
                 nameof(LibraryProcessJob),
                 librariesToProcess.Count(),
                 0,
-                $"Started library processing libraries."));
+                "Started library processing libraries."));
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(context.CancellationToken).ConfigureAwait(false))
         {
             foreach (var library in librariesToProcess)
@@ -148,7 +162,7 @@ public class LibraryProcessJob(
                 // Get a list of modified directories in the Library; remember a library directory should only contain a single album in Melodee
                 var allDirsForLibrary = dirs.Where(d => d.LastWriteTime >= lastScanAt.ToDateTimeUtc() && d.Name.Length > 3).ToArray();
                 var batches = (allDirsForLibrary.Length + _batchSize - 1) / _batchSize;
-                for (int batch = 0; batch < batches; batch++)
+                for (var batch = 0; batch < batches; batch++)
                 {
                     foreach (var dir in allDirsForLibrary.Skip(_batchSize * batch).Take(_batchSize))
                     {
@@ -272,6 +286,7 @@ public class LibraryProcessJob(
                         .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
                         .ConfigureAwait(false);
                 }
+
                 var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id).ConfigureAwait(false);
                 dbLibrary.LastScanAt = _now;
                 dbLibrary.LastUpdatedAt = _now;
@@ -280,9 +295,9 @@ public class LibraryProcessJob(
                     LibraryId = dbLibrary.Id,
                     CreatedAt = _now,
                     DurationInMs = Stopwatch.GetElapsedTime(libraryProcessStartTicks).TotalMilliseconds,
-                    FoundAlbumsCount = (_totalAlbumsInserted + _totalAlbumsUpdated),
+                    FoundAlbumsCount = _totalAlbumsInserted + _totalAlbumsUpdated,
                     FoundArtistsCount = _totalArtistsInserted,
-                    FoundSongsCount = (_totalSongsInserted + _totalSongsUpdated)
+                    FoundSongsCount = _totalSongsInserted + _totalSongsUpdated
                 };
                 scopedContext.LibraryScanHistories.Add(newLibraryScanHistory);
                 await scopedContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
@@ -314,7 +329,7 @@ public class LibraryProcessJob(
     }
 
     /// <summary>
-    /// For all albums with songs, add/update the db albums
+    ///     For all albums with songs, add/update the db albums
     /// </summary>
     private async Task ProcessAlbumsAsync(dbModels.Library library, List<Album> melodeeFilesForDirectory, CancellationToken cancellationToken)
     {
@@ -599,7 +614,7 @@ public class LibraryProcessJob(
     }
 
     /// <summary>
-    /// For given albums, add/update the db album and db song artists.
+    ///     For given albums, add/update the db album and db song artists.
     /// </summary>
     private async Task ProcessArtistsAsync(dbModels.Library library, List<Album> melodeeFilesForDirectory, CancellationToken cancellationToken)
     {
@@ -758,7 +773,7 @@ public class LibraryProcessJob(
                         Role = role?.CleanStringAsIs() ?? tag.GetEnumDescriptionValue(),
                         SongUniqueId = song.UniqueId,
                         SongId = dbSongId,
-                        SubRole = subRole?.CleanStringAsIs(),
+                        SubRole = subRole?.CleanStringAsIs()
                     };
                 }
             }
@@ -802,20 +817,4 @@ public class LibraryProcessJob(
 
         return SafeParser.ToNumber<int>(ContributorType.NotSet);
     }
-
-    private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
-    [
-        MetaTagIdentifier.Artist,
-        MetaTagIdentifier.Composer,
-        MetaTagIdentifier.Conductor,
-        MetaTagIdentifier.Engineer,
-        MetaTagIdentifier.InterpretedRemixedOrOtherwiseModifiedBy,
-        MetaTagIdentifier.Lyricist,
-        MetaTagIdentifier.MixDj,
-        MetaTagIdentifier.MixEngineer,
-        MetaTagIdentifier.MusicianCredit,
-        MetaTagIdentifier.OriginalArtist,
-        MetaTagIdentifier.OriginalLyricist,
-        MetaTagIdentifier.Producer
-    ];
 }

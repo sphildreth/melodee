@@ -1,11 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -15,14 +12,12 @@ using Melodee.Common.Models.OpenSubsonic.DTO;
 using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
-using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
 using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
-using Microsoft.Win32.SafeHandles;
 using NodaTime;
 using Quartz;
 using Serilog;
@@ -235,7 +230,7 @@ public class OpenSubsonicApiService(
             }
         };
     }
-    
+
     public async Task<ResponseModel> GetSongAsync(Guid apiKey, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -247,7 +242,7 @@ public class OpenSubsonicApiService(
                 ResponseData = authResponse.ResponseData
             };
         }
-        
+
         var songResponse = await songService.GetByApiKeyAsync(apiKey, cancellationToken);
         if (!songResponse.IsSuccess)
         {
@@ -260,13 +255,14 @@ public class OpenSubsonicApiService(
                 }
             };
         }
+
         var userSong = await userService.UserSongAsync(apiRequest.Username, apiKey, cancellationToken);
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
-                Data = songResponse.Data.ToChild(songResponse.Data.AlbumDisc.Album, userSong ),
+                Data = songResponse.Data.ToChild(songResponse.Data.AlbumDisc.Album, userSong),
                 DataPropertyName = "song"
             }
         };
@@ -422,10 +418,10 @@ public class OpenSubsonicApiService(
             };
         }
 
-        byte[] coverBytes = defaultImages.AlbumCoverBytes;
+        var coverBytes = defaultImages.AlbumCoverBytes;
 
         // TODO cache images?
-        
+
         try
         {
             var apiKey = ApiKeyFromId(apiId);
@@ -858,15 +854,16 @@ public class OpenSubsonicApiService(
 
         var result = false;
 
-        if (submission ?? false)
+        // If not provided then default to this is a "submission" versus a "now playing" notification.
+        if (submission ?? true)
         {
-            await scrobbleService.Scrobble(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);    
+            await scrobbleService.Scrobble(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
         }
         else
         {
             await scrobbleService.NowPlaying(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
         }
-        
+
 
         return new ResponseModel
         {
@@ -877,7 +874,7 @@ public class OpenSubsonicApiService(
     }
 
     /// <summary>
-    /// Get bytes for song with support for chunking from request header values.
+    ///     Get bytes for song with support for chunking from request header values.
     /// </summary>
     public async Task<StreamResponse> StreamAsync(StreamRequest request, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
@@ -887,7 +884,7 @@ public class OpenSubsonicApiService(
         {
             if (string.Equals(range, "bytes=0-", StringComparison.OrdinalIgnoreCase))
             {
-               long.TryParse(range, out rangeBegin);
+                long.TryParse(range, out rangeBegin);
             }
             else
             {
@@ -899,7 +896,7 @@ public class OpenSubsonicApiService(
                 }
             }
         }
-        
+
         var sql = """
                   select l."Path" || a."Directory" || '/' || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration", s."ContentType"
                   from "Songs" s 
@@ -911,7 +908,7 @@ public class OpenSubsonicApiService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
-            var songStreamInfo = dbConn.QuerySingleOrDefault<SongStreamInfo>(sql, new { apiKey = request.Id});
+            var songStreamInfo = dbConn.QuerySingleOrDefault<SongStreamInfo>(sql, new { apiKey = request.Id });
             if (!(songStreamInfo?.TrackFileInfo.Exists ?? false))
             {
                 return new StreamResponse
@@ -921,11 +918,12 @@ public class OpenSubsonicApiService(
                     []
                 );
             }
+
             rangeEnd = rangeEnd == 0 ? songStreamInfo.FileSize : rangeEnd;
 
             var bytesToRead = (int)(rangeEnd - rangeBegin) + 1;
             var trackBytes = new byte[bytesToRead];
-            
+
             using (var fs = songStreamInfo.TrackFileInfo.OpenRead())
             {
                 try
@@ -938,7 +936,7 @@ public class OpenSubsonicApiService(
                     Logger.Error(ex, "Reading song [{SongInfo}]", songStreamInfo);
                 }
             }
-            
+
             return new StreamResponse
             (
                 new Dictionary<string, StringValues>
@@ -955,7 +953,5 @@ public class OpenSubsonicApiService(
                 trackBytes
             );
         }
-
     }
-
 }

@@ -21,7 +21,7 @@ public class SongService(
     private const string CacheKeyDetailByMediaUniqueIdTemplate = "urn:song:mediauniqueid:{0}";
     private const string CacheKeyDetailByNameNormalizedTemplate = "urn:song:namenormalized:{0}";
     private const string CacheKeyDetailTemplate = "urn:song:{0}";
-    
+
     public async Task<MelodeeModels.PagedResult<Song>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int albumCount;
@@ -55,8 +55,8 @@ public class SongService(
             TotalPages = pagedRequest.TotalPages(albumCount),
             Data = songs
         };
-    }    
-    
+    }
+
     public async Task<MelodeeModels.OperationResult<Song?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, mediaUniqueId, nameof(mediaUniqueId));
@@ -81,7 +81,7 @@ public class SongService(
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Song?>> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
@@ -93,7 +93,7 @@ public class SongService(
                 return await scopedContext
                     .Songs
                     .Include(x => x.Contributors).ThenInclude(x => x.Artist)
-                    .Include(x => x.AlbumDisc).ThenInclude(x=> x.Album).ThenInclude(x => x.Artist)
+                    .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                     .ConfigureAwait(false);
@@ -103,8 +103,8 @@ public class SongService(
         {
             Data = result
         };
-    }    
-    
+    }
+
     public async Task<MelodeeModels.OperationResult<Song?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));

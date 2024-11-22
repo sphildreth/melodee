@@ -1,17 +1,13 @@
 using Dapper;
-using Hqub.Lastfm;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models;
-using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-
 using Serilog;
 
 namespace Melodee.Services;
@@ -28,7 +24,7 @@ public class ScrobbleService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
-    
+
     private bool _initialized;
 
     private IScrobbler[] _scrobblers = [];
@@ -37,7 +33,7 @@ public class ScrobbleService(
     {
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(cancellationToken).ConfigureAwait(false);
 
-        _scrobblers = 
+        _scrobblers =
         [
             new MelodeeScrobbler(_configuration)
             {
@@ -48,7 +44,7 @@ public class ScrobbleService(
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.ScrobblingLastFmEnabled)
             }
         ];
-        
+
         _initialized = true;
     }
 
@@ -61,11 +57,13 @@ public class ScrobbleService(
     }
 
     /// <summary>
-    /// Returns the actively playing songs and user infos.
+    ///     Returns the actively playing songs and user infos.
     /// </summary>
     public Task<OperationResult<NowPlayingInfo[]>> GetNowPlaying(CancellationToken cancellationToken = default)
-        => nowPlayingRepository.GetNowPlayingAsync(cancellationToken);
-    
+    {
+        return nowPlayingRepository.GetNowPlayingAsync(cancellationToken);
+    }
+
     public async Task<OperationResult<bool>> NowPlaying(UserInfo user, Guid id, double? time, CancellationToken cancellationToken = default)
     {
         var databaseSongScrobbleInfo = await DatabaseSongScrobbleInfoForSongApiKey(id, cancellationToken).ConfigureAwait(false);
@@ -91,24 +89,23 @@ public class ScrobbleService(
             Data = true
         };
     }
-    
+
     public async Task<OperationResult<bool>> Scrobble(UserInfo user, Guid songId, double? time, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
         var result = false;
-        
+
         var songIds = await DatabaseSongIdsInfoForSongApiKey(songId, cancellationToken).ConfigureAwait(false);
         if (songIds != null)
         {
-            
             // TODO what about Contributors? 
-            
+
 
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbConn = scopedContext.Database.GetDbConnection();
-                
+
                 var sql = """
                           update "Artists" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now(), "LastPlayedAt" = Now()
                           where "Id" = @artistId;
@@ -116,7 +113,7 @@ public class ScrobbleService(
                           where "Id" = @albumId;
                           update "Songs" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now(), "LastPlayedAt" = Now()
                           where "Id" = @songId;
-                          """;                
+                          """;
                 await dbConn.ExecuteAsync(sql, new { artistId = songIds.AlbumArtistId, albumId = songIds.AlbumId, songId = songIds.SongId }).ConfigureAwait(false);
 
                 await artistService.ClearCacheAsync(songIds.AlbumArtistId, cancellationToken).ConfigureAwait(false);
@@ -143,5 +140,5 @@ public class ScrobbleService(
         {
             Data = result
         };
-    }    
+    }
 }

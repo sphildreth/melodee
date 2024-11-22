@@ -1,4 +1,3 @@
-using Melodee.Services;
 using Melodee.Services.Interfaces;
 using Quartz;
 using Serilog;
@@ -12,6 +11,6 @@ public abstract class JobBase(
     protected ILogger Logger { get; } = logger;
 
     protected ISettingService SettingService { get; } = settingService;
-    
+
     public abstract Task Execute(IJobExecutionContext context);
 }

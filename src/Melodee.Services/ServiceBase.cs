@@ -45,13 +45,11 @@ public abstract class ServiceBase(
             return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongIdsInfo>(sql, new { apiKeyId }).ConfigureAwait(false);
         }
     }
-    
+
     protected async Task<DatabaseSongScrobbleInfo?> DatabaseSongScrobbleInfoForSongApiKey(Guid apiKeyId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-           
-            
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
                       select a."ApiKey" as SongApiKey, aa."Name" as ArtistName, a."Name" as AlbumTitle, now() as TimePlayed, 
@@ -64,8 +62,8 @@ public abstract class ServiceBase(
                       """;
             return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongScrobbleInfo>(sql, new { apiKeyId }).ConfigureAwait(false);
         }
-    }    
-    
+    }
+
     public async Task<OperationResult<(IEnumerable<Album>, int)>> AllAlbumsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         ISongPlugin[] songPlugins,
@@ -78,7 +76,7 @@ public abstract class ServiceBase(
         var songs = new List<Song>();
 
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
-        
+
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
@@ -208,8 +206,8 @@ public abstract class ServiceBase(
         {
             Data = (albums, songs.Count)
         };
-    }    
-    
+    }
+
     protected virtual OperationResult<(bool, IEnumerable<ValidationResult>?)> ValidateModel<T>(T? dataToValidate)
     {
         if (dataToValidate != null)

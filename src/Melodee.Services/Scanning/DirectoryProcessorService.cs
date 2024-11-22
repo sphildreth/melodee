@@ -772,5 +772,4 @@ public sealed class DirectoryProcessorService(
 
         return imageInfos;
     }
-
 }

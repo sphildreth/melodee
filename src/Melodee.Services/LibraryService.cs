@@ -19,7 +19,6 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using SmartFormat;
-using SQLitePCL;
 using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Services;
@@ -255,7 +254,7 @@ public sealed class LibraryService(
             await File.WriteAllBytesAsync(melodeeFileName, utf8Bytes, cancellationToken);
 
             movedCount++;
-            
+
             OnProcessingProgressEvent?.Invoke(this,
                 new ProcessingEvent(ProcessingEventType.Processing,
                     nameof(MoveAlbumsFromLibraryToLibrary),
@@ -390,7 +389,7 @@ public sealed class LibraryService(
 
         if (toLibrary.TypeValue != LibraryType.Library)
         {
-            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this move process requires a library type of 'Library' ({ (int)LibraryType.Library }).")
+            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this move process requires a library type of 'Library' ({(int)LibraryType.Library}).")
             {
                 Data = false
             };
@@ -409,7 +408,7 @@ public sealed class LibraryService(
         [
             new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), configuration)
         ];
-        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);        
+        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
         var albumsToMove = new List<MelodeeModels.Album>();
         foreach (var albumFile in albumsForFromLibrary)
@@ -419,11 +418,13 @@ public sealed class LibraryService(
             {
                 albumsToMove.Add(album);
             }
+
             if (albumsToMove.Count >= maxAlbumProcessingCount)
             {
                 break;
             }
         }
+
         var numberOfAlbumsToMove = albumsToMove.Count();
         var result = false;
         OnProcessingProgressEvent?.Invoke(this,
@@ -442,7 +443,7 @@ public sealed class LibraryService(
                 numberOfAlbumsToMove,
                 numberOfAlbumsToMove,
                 "Completed processing"
-            ));      
+            ));
         return new MelodeeModels.OperationResult<bool>
         {
             Data = result

@@ -110,7 +110,7 @@ public class ArtistService(
         CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.NameNormalized));
         CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Id));
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Artist?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, mediaUniqueId, nameof(mediaUniqueId));

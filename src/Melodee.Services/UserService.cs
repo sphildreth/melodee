@@ -423,7 +423,7 @@ public sealed class UserService(
                 .ConfigureAwait(false);
         }
     }
-    
+
     public async Task<UserSong?> UserSongAsync(string? userName, Guid songApiKey, CancellationToken cancellationToken)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -440,8 +440,8 @@ public sealed class UserService(
             return await dbConn.QuerySingleOrDefaultAsync<UserSong?>(sql, new { userName = userName.ToNormalizedString(), songApiKey })
                 .ConfigureAwait(false);
         }
-    }    
-    
+    }
+
     public async Task<UserSong[]?> UserSongsForAlbumAsync(string? userName, Guid albumApiKey, CancellationToken cancellationToken)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -458,8 +458,8 @@ public sealed class UserService(
                       """;
             var dbConn = scopedContext.Database.GetDbConnection();
             return (await dbConn.QueryAsync<UserSong>(sql, new { userName = userName.ToNormalizedString(), albumApiKey })
-                .ConfigureAwait(false))
+                    .ConfigureAwait(false))
                 .ToArray();
         }
-    }    
+    }
 }

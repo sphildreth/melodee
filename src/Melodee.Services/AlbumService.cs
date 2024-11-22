@@ -33,7 +33,7 @@ public class AlbumService(
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id));
         }
     }
-    
+
     public async Task<MelodeeModels.PagedResult<Album>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int albumCount;
@@ -68,7 +68,7 @@ public class AlbumService(
             Data = albums
         };
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Album?>> GetByArtistIdAndNameNormalized(int artistId, string nameNormalized, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(nameNormalized, nameof(nameNormalized));

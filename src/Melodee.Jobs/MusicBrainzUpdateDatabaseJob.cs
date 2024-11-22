@@ -1,4 +1,3 @@
-using Melodee.Services;
 using Melodee.Services.Interfaces;
 using Quartz;
 using Serilog;
@@ -12,7 +11,7 @@ public class MusicBrainzUpdateDatabaseJob(
     public override Task Execute(IJobExecutionContext context)
     {
         // TODO Musicbrainz Db for metadata update job
-        
+
         throw new NotImplementedException();
     }
 }
