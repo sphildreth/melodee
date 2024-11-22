@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Primitives;
+
 namespace Melodee.Common.Models.OpenSubsonic.Responses;
 
-public record StreamResponse(byte[] Bytes, double Duration);
+public sealed record StreamResponse(IDictionary<string, StringValues> ResponseHeaders, bool IsSuccess, byte[] Bytes);

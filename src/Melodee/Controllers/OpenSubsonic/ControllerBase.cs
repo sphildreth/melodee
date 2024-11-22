@@ -53,6 +53,7 @@ public abstract class ControllerBase : Controller
     {
         ApiRequest = new ApiRequest
         (
+            context.HttpContext.Request.Headers.ToDictionary(a => a.Key, a => a.Value),
             context.HttpContext.Request.Query["u"].FirstOrDefault(),
             context.HttpContext.Request.Query["v"].FirstOrDefault(),
             context.HttpContext.Request.Query["f"].FirstOrDefault(),

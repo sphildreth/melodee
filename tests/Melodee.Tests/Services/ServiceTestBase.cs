@@ -12,6 +12,7 @@ using Melodee.Services.Scanning;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Primitives;
 using Moq;
 using Moq.Protected;
 using Quartz;
@@ -112,7 +113,9 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected ApiRequest GetApiRequest(string username, string salt, string password)
     {
-        return new ApiRequest(username,
+        return new ApiRequest(
+            new Dictionary<string, StringValues>(),
+            username,
             "1.16.1",
             "json",
             null,
@@ -131,6 +134,12 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             Logger,
             CacheManager,
             MockFactory(),
+            new DefaultImages
+            {
+                AlbumCoverBytes = [],
+                ArtistBytes = [],
+                UserAvatarBytes = []
+            },
             MockSettingService(),
             GetUserService(),
             GetArtistService(),

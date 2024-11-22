@@ -5,6 +5,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
+using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Components;
 using Melodee.Jobs;
@@ -67,9 +68,12 @@ builder.Services
                 0,
                 0),
             opt.GetRequiredService<ISerializer>()))
-    .AddSingleton<DefaultImages>(_ => new DefaultImages(
-        $"data:image/png;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/avatar.png"))}",
-        $"data:image/jpeg;base64,{Convert.ToBase64String(File.ReadAllBytes("wwwroot/images/album.jpg"))}"))
+    .AddSingleton<DefaultImages>(_ => new DefaultImages
+        {
+            UserAvatarBytes = File.ReadAllBytes("wwwroot/images/avatar.png"),
+            AlbumCoverBytes = File.ReadAllBytes("wwwroot/images/album.jpg"),
+            ArtistBytes = File.ReadAllBytes("wwwroot/images/artist.jpg")
+        })
     .AddScoped<LocalStorageService>()
     .AddScoped<ISettingService, SettingService>()
     .AddScoped<ArtistService>()

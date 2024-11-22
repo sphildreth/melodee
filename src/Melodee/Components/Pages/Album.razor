@@ -694,7 +694,7 @@
         _selectedDisc = _albumEdit.Discs.FirstOrDefault() ?? new DiscEdit();
         _editFormEditContext = new(_albumEdit);
         _albumFullPath = _album.Directory?.FullName();
-        _albumCoverBase64 = await _album.CoverImageBase64Async() ?? DefaultImages.AlbumCover;
+        _albumCoverBase64 = await _album.CoverImageBase64Async() ?? DefaultImages.AlbumCoverBase64;
         _info = [];
         _maximumTrackNumberLength = SafeParser.ToNumber<short>((await SettingService.GetValueAsync(SettingRegistry.ValidationMaximumSongNumber, 1000)).Data.ToString().Length);
         _maximumMediaNumberLength = SafeParser.ToNumber<short>((await SettingService.GetValueAsync(SettingRegistry.ValidationMaximumMediaNumber, 500)).Data.ToString().Length);
