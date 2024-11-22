@@ -57,6 +57,10 @@ public static class SettingRegistry
     public const string SearchEngineDefaultPageSize = "searchEngine.defaultPageSize";
     public const string SearchEngineEnabledBingImage = "searchEngine.bingImage.enabled";
     public const string SearchEngineUserAgent = "searchEngine.userAgent";
+    public const string TranscodingDefault = "transcoding.default";
+    public const string TranscodingCommandMp3 = "transcoding.command.mp3";
+    public const string TranscodingCommandOpus = "transcoding.command.opus";
+    public const string TranscodingCommandAac = "transcoding.command.aac";
     public const string UserInterfaceToastAutoCloseTime = "userinterface.toastAutoCloseTime";
     public const string ValidationMaximumAlbumYear = "validation.maximumAlbumYear";
     public const string ValidationMaximumMediaNumber = "validation.maximumMediaNumber";

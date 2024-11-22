@@ -1,6 +1,3 @@
-using Ardalis.GuardClauses;
-using Melodee.Common.Models.OpenSubsonic.Requests;
-using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Serialization;
 using Melodee.Results;
 using Melodee.Services;
@@ -10,14 +7,12 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class BrowsingController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
-    
     //getAlbumInfo
     //getAlbumInfo2
     //getArtist
     //getArtistInfo
     //getArtistInfo2
     //getArtists
-    //getGenres
     //getIndexes // To browse using file structure 
     //getMusicDirectory // To browse using file structure 
     //getMusicFolders
@@ -27,23 +22,25 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     //getTopSongs
     //getVideoInfo
     //getVideos
-   
+
     /// <summary>
-    /// Returns all genres.
+    ///     Returns all genres.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getGenres.view")]
     public async Task<IActionResult> GetGenres(CancellationToken cancellationToken = default)
-        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetGenresAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetGenresAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }
 
     /// <summary>
-    /// Returns details for an album, including a list of songs. This method organizes music according to ID3 tags..
+    ///     Returns details for an album, including a list of songs. This method organizes music according to ID3 tags..
     /// </summary>
     /// <param name="id">ApiKey for the Album</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getAlbum.view")]
     public async Task<IActionResult> GetAlbum(Guid id, CancellationToken cancellationToken = default)
-        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-
-    
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }
 }

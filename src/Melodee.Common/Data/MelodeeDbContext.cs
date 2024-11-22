@@ -1,6 +1,7 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Enums;
 using Microsoft.CodeAnalysis.Host;
 using Microsoft.EntityFrameworkCore;
@@ -594,7 +595,43 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "If true then all comments will be removed from media files.",
                     Value = "true",
                     CreatedAt = now
-                }                 
+                },
+                new Setting
+                {
+                    Id = 74,
+                    Category = (int)SettingCategory.Transcoding,
+                    Key = SettingRegistry.TranscodingDefault,
+                    Comment = "Default format for transcoding.",
+                    Value = "raw",
+                    CreatedAt = now
+                },                
+                new Setting
+                {
+                    Id = 75,
+                    Category = (int)SettingCategory.Transcoding,
+                    Key = SettingRegistry.TranscodingCommandMp3,
+                    Comment = "Default command to transcode MP3 for streaming.",
+                    Value = $"{{ 'format': '{ TranscodingFormat.Mp3.ToString()}', 'bitrate: 192, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -f mp3 -' }}",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 76,
+                    Category = (int)SettingCategory.Transcoding,
+                    Key = SettingRegistry.TranscodingCommandOpus,
+                    Comment = "Default command to transcode using libopus for streaming.",
+                    Value = $"{{ 'format': '{ TranscodingFormat.Opus.ToString()}', 'bitrate: 128, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a libopus -f opus -' }}",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 77,
+                    Category = (int)SettingCategory.Transcoding,
+                    Key = SettingRegistry.TranscodingCommandAac,
+                    Comment = "Default command to transcode to aac for streaming.",
+                    Value = $"{{ 'format': '{ TranscodingFormat.Aac.ToString()}', 'bitrate: 256, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a aac -f adts -' }}",
+                    CreatedAt = now
+                }                  
                 
             );
         });

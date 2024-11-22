@@ -22,5 +22,7 @@ public enum SettingCategory
     
     SearchEngine,
     
+    Transcoding,
+    
     Validation
 }

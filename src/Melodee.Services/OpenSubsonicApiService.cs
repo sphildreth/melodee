@@ -470,7 +470,11 @@ public class OpenSubsonicApiService(
         };
         var data = new List<OpenSubsonicExtension>
         {
+            // This is a template extension that allows servers to do marvelous stuff and clients to use that stuff.
             new("template", [1, 2]),
+            // add support for synchronized lyrics, multiple languages, and retrieval by song ID
+            new("songLyrics", [1]),
+            // Add support for start offset for transcoding.
             new("transcodeOffset", [1])
         };
         return new ResponseModel
@@ -807,5 +811,37 @@ public class OpenSubsonicApiService(
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
         };
+    }
+
+    public async Task<ResponseModel> ScrobbleAsync(string id, double? time, bool? submission, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+        
+        var result = false;
+        
+        // TODO scrobble
+        
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
+        };        
+    }
+
+    /// <summary>
+    /// Returns binary data on success, or an XML document on error (in which case the HTTP content type will start with “text/xml”).
+    /// </summary>
+    public async Task<StreamResponse> StreamAsync(StreamRequest request, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
     }
 }
