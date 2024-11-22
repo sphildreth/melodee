@@ -21,6 +21,11 @@ public class PlayQueue : DataModelBase
 
     public Song Song { get; set; } = null!;
     
+    /// <summary>
+    /// This is to flag if this que is the currently playing song.
+    /// </summary>
+    public bool IsCurrentSong { get; set; }
+    
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string ChangedBy { get; set; }

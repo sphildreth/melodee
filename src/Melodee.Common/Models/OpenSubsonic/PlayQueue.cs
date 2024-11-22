@@ -13,7 +13,7 @@ public sealed record PlayQueue
     
     public required string Changed { get; init; }
     
-    public required double Username { get; init; }
+    public required string Username { get; init; }
     
     public Child[]? Entry { get; init; }
     
