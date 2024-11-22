@@ -10,6 +10,8 @@ using Melodee.Common.Serialization;
 using Melodee.Components;
 using Melodee.Jobs;
 using Melodee.Plugins.Conversion.Image;
+using Melodee.Plugins.Scripting;
+using Melodee.Plugins.Scrobbling;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
@@ -74,11 +76,13 @@ builder.Services
             AlbumCoverBytes = File.ReadAllBytes("wwwroot/images/album.jpg"),
             ArtistBytes = File.ReadAllBytes("wwwroot/images/artist.jpg")
         })
+    .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddScoped<LocalStorageService>()
     .AddScoped<ISettingService, SettingService>()
     .AddScoped<ArtistService>()
     .AddScoped<AlbumService>()
     .AddScoped<SongService>()
+    .AddScoped<ScrobbleService>()
     .AddScoped<ILibraryService, LibraryService>()
     .AddScoped<UserService>()
     .AddScoped<AlbumDiscoveryService>()

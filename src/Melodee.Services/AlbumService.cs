@@ -22,6 +22,18 @@ public class AlbumService(
     private const string CacheKeyDetailByNameNormalizedTemplate = "urn:album:namenormalized:{0}";
     private const string CacheKeyDetailTemplate = "urn:album:{0}";
 
+    public async Task ClearCacheAsync(int albumId, CancellationToken cancellationToken = default)
+    {
+        var album = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);
+        if (album?.Data != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey));
+            CacheManager.Remove(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(album.Data.MediaUniqueId));
+            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.MediaUniqueId));
+            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id));
+        }
+    }
+    
     public async Task<MelodeeModels.PagedResult<Album>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int albumCount;

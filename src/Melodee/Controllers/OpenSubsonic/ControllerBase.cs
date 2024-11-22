@@ -1,5 +1,6 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic.Requests;
+using Melodee.Common.Models.Scrobbling;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -61,7 +62,7 @@ public abstract class ControllerBase : Controller
             context.HttpContext.Request.Query["p"].FirstOrDefault(),
             context.HttpContext.Request.Query["t"].FirstOrDefault(),
             context.HttpContext.Request.Query["s"].FirstOrDefault(),
-            new ApiRequestPlayer
+            new UserPlayer
             (
                 context.HttpContext.Request.Headers["User-Agent"].ToString(),
                 context.HttpContext.Request.Query["c"].FirstOrDefault(),

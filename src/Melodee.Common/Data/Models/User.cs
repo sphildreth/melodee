@@ -79,8 +79,6 @@ public class User : DataModelBase
 
     public ICollection<PlayQueue> PlayQues { get; set; } = new List<PlayQueue>();
 
-    public ICollection<Scrobble> Scrobbles { get; set; } = new List<Scrobble>();
-
     public ICollection<Share> Shares { get; set; } = new List<Share>();
 
     public ICollection<UserAlbum> UserAlbums { get; set; } = new List<UserAlbum>();

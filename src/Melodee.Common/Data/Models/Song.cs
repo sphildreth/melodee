@@ -106,7 +106,5 @@ public class Song : MetaDataModelBase
 
     public ICollection<PlayQueue> PlayQues { get; set; } = new List<PlayQueue>();
 
-    public ICollection<Scrobble> Scrobbles { get; set; } = new List<Scrobble>();
-
     public ICollection<UserSong> UserSongs { get; set; } = new List<UserSong>();
 }

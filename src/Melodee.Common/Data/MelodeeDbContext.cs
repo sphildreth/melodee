@@ -37,8 +37,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
 
     public DbSet<Setting> Settings { get; set; }
 
-    public DbSet<Scrobble> Scrobbles { get; set; }
-
     public DbSet<Share> Shares { get; set; }
 
     public DbSet<Song> Songs { get; set; }
@@ -631,7 +629,34 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Default command to transcode to aac for streaming.",
                     Value = $"{{ 'format': '{ TranscodingFormat.Aac.ToString()}', 'bitrate: 256, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a aac -f adts -' }}",
                     CreatedAt = now
-                }                  
+                },
+                new Setting
+                {
+                    Id = 78,
+                    Category = (int)SettingCategory.Scrobbling,
+                    Key = SettingRegistry.ScrobblingEnabled,
+                    Comment = "Is scrobbling enabled.",
+                    Value = "false",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 79,
+                    Category = (int)SettingCategory.Scrobbling,
+                    Key = SettingRegistry.ScrobblingLastFmEnabled,
+                    Comment = "Is scrobbling to Last.fm enabled.",
+                    Value = "false",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 80,
+                    Category = (int)SettingCategory.Scrobbling,
+                    Key = SettingRegistry.ScrobblingLastFmApiKey,
+                    Comment = "ApiKey used to scrobble to last FM. See https://www.last.fm/api/authentication for more details.",
+                    Value = "",
+                    CreatedAt = now
+                }                 
                 
             );
         });

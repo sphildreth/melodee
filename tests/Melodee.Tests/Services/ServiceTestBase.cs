@@ -4,7 +4,9 @@ using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
+using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
+using Melodee.Plugins.Scrobbling;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
@@ -122,7 +124,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             null,
             password,
             salt,
-            new ApiRequestPlayer(null,
+            new UserPlayer(null,
                 null,
                 null,
                 null));
@@ -151,7 +153,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
                 MockFactory(), 
                 MockSettingService(), 
                 Serializer),
-            new Mock<IScheduler>().Object);
+            new Mock<IScheduler>().Object,
+            GetScrobbleService());
     }
 
     protected ArtistService GetArtistService()
@@ -167,7 +170,25 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected SongService GetSongService()
     {
         return new SongService(Logger, CacheManager, MockFactory());
-    }    
+    }
+
+    protected INowPlayingRepository GetNowPlayingRepository()
+    {
+        return new NowPlayingInMemoryRepository();
+    }
+    
+    protected ScrobbleService GetScrobbleService()
+    {
+        return new ScrobbleService(
+            Logger,
+            CacheManager,
+            MockFactory(),
+            MockSettingService(),
+            GetNowPlayingRepository(),
+            GetArtistService(),
+            GetAlbumService(),
+            GetSongService());
+    }
 
     protected IHttpClientFactory MockHttpClientFactory()
     {

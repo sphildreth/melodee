@@ -15,6 +15,7 @@ using Melodee.Common.Models.OpenSubsonic.DTO;
 using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
+using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
 using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
@@ -47,10 +48,11 @@ public class OpenSubsonicApiService(
     AlbumService albumService,
     SongService songService,
     AlbumDiscoveryService albumDiscoveryService,
-    IScheduler schedule)
+    IScheduler schedule,
+    ScrobbleService scrobbleService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public const char ImageApiIdSeparator = '_';
+    private const char ImageApiIdSeparator = '_';
 
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
@@ -309,7 +311,7 @@ public class OpenSubsonicApiService(
             Created = album.CreatedAt.ToString(),
             DiscTitles = album.Discs.Select(x => new DiscTitle(x.DiscNumber, x.Title ?? string.Empty)).ToArray(),
             DisplayArtist = album.Artist.Name,
-            Duration = SafeParser.ToNumber<int>(album.Duration / 1000),
+            Duration = album.Duration.ToSeconds(),
             Genre = album.Genres?.ToCsv(),
             Genres = [], // TODO
             Id = album.ApiKey.ToString(),
@@ -842,7 +844,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> ScrobbleAsync(string id, double? time, bool? submission, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> ScrobbleAsync(Guid id, double? time, bool? submission, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -856,7 +858,15 @@ public class OpenSubsonicApiService(
 
         var result = false;
 
-        // TODO scrobble
+        if (submission ?? false)
+        {
+            await scrobbleService.Scrobble(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);    
+        }
+        else
+        {
+            await scrobbleService.NowPlaying(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
+        }
+        
 
         return new ResponseModel
         {

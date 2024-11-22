@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Crc32.NET" />
     <PackageReference Include="FFMpegCore" />
+    <PackageReference Include="Hqub.Last.fm" />
     <PackageReference Include="IdSharp.Common" />
     <PackageReference Include="IdSharp.Tagging" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />

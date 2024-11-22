@@ -22,6 +22,8 @@ public enum SettingCategory
     
     SearchEngine,
     
+    Scrobbling,
+    
     Transcoding,
     
     Validation

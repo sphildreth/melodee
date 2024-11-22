@@ -161,4 +161,16 @@ public class ArtistService(
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
+
+    public async Task ClearCacheAsync(int artistId, CancellationToken cancellationToken)
+    {
+        var artist = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
+        if (artist?.Data != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.Data.ApiKey));
+            CacheManager.Remove(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(artist.Data.MediaUniqueId));
+            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.Data.MediaUniqueId));
+            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Data.Id));
+        }
+    }
 }

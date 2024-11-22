@@ -128,5 +128,17 @@ public class SongService(
         }
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
-    }    
+    }
+
+    public async Task ClearCacheAsync(int songId, CancellationToken cancellationToken)
+    {
+        var song = await GetAsync(songId, cancellationToken).ConfigureAwait(false);
+        if (song?.Data != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(song.Data.ApiKey));
+            CacheManager.Remove(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(song.Data.MediaUniqueId));
+            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(song.Data.MediaUniqueId));
+            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(song.Data.Id));
+        }
+    }
 }

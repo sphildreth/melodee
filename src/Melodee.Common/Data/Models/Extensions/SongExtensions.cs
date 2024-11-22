@@ -1,3 +1,4 @@
+using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Utility;
 
@@ -22,7 +23,7 @@ public static class SongExtensions
             "audio/mpeg", // TODO this should be the right type for the song media, what if no conversion and flac
             Path.GetExtension(song.FileName),
             userSong?.IsStarred ?? false ? userSong.LastUpdatedAt.ToString() : null,
-            SafeParser.ToNumber<int>(song.Duration / 1000),
+            song.Duration.ToSeconds(),
             song.BitRate,
             song.BitDepth,
             song.SamplingRate,

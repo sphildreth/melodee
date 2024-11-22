@@ -22,6 +22,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
 
     public override void ClearRegion(string region)
     {
+        // TODO this should support regions, perhaps a ConcurrentDictionary of MemoryCache with Key being region
         Clear();
     }
 

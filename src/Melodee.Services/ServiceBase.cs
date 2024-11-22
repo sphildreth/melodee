@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
@@ -26,6 +28,44 @@ public abstract class ServiceBase(
     protected ICacheManager CacheManager { get; } = cacheManager;
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = contextFactory;
 
+    protected async Task<DatabaseSongIdsInfo?> DatabaseSongIdsInfoForSongApiKey(Guid apiKeyId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      select s."Id" as SongId, s."ApiKey" as SongApiKey, ad."Id" as AlbumDiscId, 
+                             a."Id" as "AlbumId", a."ApiKey" as AlbumApiKey, aa."Id" as AlbumArtistId, aa."ApiKey" as AlbumArtistApiKey
+                      from "Songs" s 
+                      left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                      left join "Albums" a on (ad."AlbumId" = a."Id")
+                      left join "Artists" aa on (a."ArtistId" = aa."Id")
+                      where s."ApiKey" = @apiKeyId;
+                      """;
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongIdsInfo>(sql, new { apiKeyId }).ConfigureAwait(false);
+        }
+    }
+    
+    protected async Task<DatabaseSongScrobbleInfo?> DatabaseSongScrobbleInfoForSongApiKey(Guid apiKeyId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+           
+            
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      select a."ApiKey" as SongApiKey, aa."Name" as ArtistName, a."Name" as AlbumTitle, now() as TimePlayed, 
+                             s."Title" as "SongTitle", s."Duration" as SongDuration, s."MusicBrainzId" as SongMusicBrainzId, s."SongNumber" as SongNumber
+                      from "Songs" s 
+                      left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                      left join "Albums" a on (ad."AlbumId" = a."Id")
+                      left join "Artists" aa on (a."ArtistId" = aa."Id")
+                      where s."ApiKey" = @apiKeyId;
+                      """;
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongScrobbleInfo>(sql, new { apiKeyId }).ConfigureAwait(false);
+        }
+    }    
+    
     public async Task<OperationResult<(IEnumerable<Album>, int)>> AllAlbumsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         ISongPlugin[] songPlugins,

@@ -57,6 +57,9 @@ public static class SettingRegistry
     public const string SearchEngineDefaultPageSize = "searchEngine.defaultPageSize";
     public const string SearchEngineEnabledBingImage = "searchEngine.bingImage.enabled";
     public const string SearchEngineUserAgent = "searchEngine.userAgent";
+    public const string ScrobblingEnabled = "scrobbling.enabled";
+    public const string ScrobblingLastFmEnabled = "scrobbling.lastFm.Enabled";
+    public const string ScrobblingLastFmApiKey = "scrobbling.lastFm.apikey";
     public const string TranscodingDefault = "transcoding.default";
     public const string TranscodingCommandMp3 = "transcoding.command.mp3";
     public const string TranscodingCommandOpus = "transcoding.command.opus";
