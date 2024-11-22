@@ -13,6 +13,9 @@ public class Playlist : DataModelBase
     [Required]
     public required string Name { get; set; }
 
+    /// <summary>
+    /// This is plain text and served to OpenSubsonic clients.
+    /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? Comment { get; set; }
 

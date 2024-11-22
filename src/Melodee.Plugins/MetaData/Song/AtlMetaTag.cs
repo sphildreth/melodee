@@ -55,7 +55,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 if (fileSystemFileInfo.Exists(directoryInfo))
                 {
                     var fileAtl = new Track(fileSystemFileInfo.FullName(directoryInfo));
-                    if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForMp3(fileAtl))
+                    if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForAudioFile(fileAtl))
                     {
                         var atlDictionary = fileAtl.ToDictionary();
 
@@ -492,7 +492,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
     }
 
 
-    private static bool IsAtlTrackForMp3(Track track)
+    private static bool IsAtlTrackForAudioFile(Track track)
     {
         if (track.AudioFormat?.ShortName == null)
         {

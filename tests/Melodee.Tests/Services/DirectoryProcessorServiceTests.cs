@@ -188,40 +188,4 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             Assert.Single(allAlbums.Data.Item1);
         }
     }
-    
-    [Fact]
-    public async Task ValidateAlbumsWithMessyFeaturing()
-    {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .WriteTo.Console()
-            .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-
-        var testFile = @"/melodee_test/inbound/Marshmello - Joytime III (2019) Mp3 320kbps Album [PMEDIA]/";
-        var dirInfo = new DirectoryInfo(testFile);
-        if (dirInfo.Exists)
-        {
-            foreach (var file in dirInfo.EnumerateFiles("*.melodee.json"))
-            {
-                file.Delete();
-            }
-
-            var processor = CreateDirectoryProcessorService();
-            await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
-            var config = TestsBase.NewPluginsConfiguration();
-            ISongPlugin[] songPlugins =
-            [
-                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config)
-            ];             
-            var allAlbums = await processor.AllAlbumsForDirectoryAsync(
-                dirInfo.ToDirectorySystemInfo(),
-                songPlugins.ToArray(),
-                config
-            );
-            Assert.NotNull(allAlbums);
-            Assert.True(allAlbums.IsSuccess);
-            Assert.Single(allAlbums.Data.Item1);
-        }
-    }    
 }

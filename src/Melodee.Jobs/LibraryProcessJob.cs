@@ -444,6 +444,7 @@ public class LibraryProcessJob(
                                 BitRate = SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value),
                                 BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
                                 ChannelCount = SafeParser.ToNumber<int?>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.Channels)?.Value),
+                                ContentType = song.ContentType(),
                                 CreatedAt = _now,
                                 Duration = song.Duration() ?? throw new Exception("Song duration is required."),
                                 FileHash = mediaFileHash,

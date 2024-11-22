@@ -37,7 +37,26 @@ public class Song : MetaDataModelBase
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string[]? Genres { get; set; }    
+    
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
+    public string[]? Moods { get; set; }
 
+    /// <summary>
+    /// This is plain text and served to OpenSubsonic clients.
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxInputLength)]
+    public string? Comment { get; set; }
+    
+    /// <summary>
+    /// The track replay gain value. (In Db)
+    /// </summary>
+    public double? ReplayGain { get; set; }
+    
+    /// <summary>
+    /// The track peak value. (Must be positive)
+    /// </summary>
+    public double? ReplayPeak { get; set; }
+    
     [RequiredGreaterThanZero] public required int SongNumber { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
@@ -72,6 +91,10 @@ public class Song : MetaDataModelBase
     [RequiredGreaterThanZero] public required int BitDepth { get; set; }
 
     [RequiredGreaterThanZero] public required int BPM { get; set; }
+    
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    [Required]
+    public required string ContentType { get; set; }
 
     public int? ChannelCount { get; set; }
 

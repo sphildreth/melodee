@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Melodee.Common.Data.Contants;
 using Melodee.Common.Data.Validators;
 
 namespace Melodee.Common.Data.Models;
@@ -19,6 +20,10 @@ public class PlayQueue : DataModelBase
     public Guid SongApiKey { get; set; }
 
     public Song Song { get; set; } = null!;
+    
+    [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
+    [Required]
+    public required string ChangedBy { get; set; }
 
-    [Required] public decimal Position { get; set; }
+    [Required] public double Position { get; set; }
 }

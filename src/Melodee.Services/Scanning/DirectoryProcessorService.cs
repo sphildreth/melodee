@@ -440,7 +440,7 @@ public sealed class DirectoryProcessorService(
                                     break;
                                 }
 
-                                song.File.Name = song.ToSongFileName(_configuration.Configuration);
+                                song.File.Name = song.ToSongFileName(album.Directory, _configuration.Configuration);
                             }
                         }
 

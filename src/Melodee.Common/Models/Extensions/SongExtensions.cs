@@ -263,8 +263,12 @@ public static class SongExtensions
 
         return false;
     }
+    
+    public static string ContentType(this Song song) => MimeTypes.GetMimeType(song.File.Name);
 
-    public static string SongFileName(int maximumSongNumber, int songNumber, string? songTitle, int maximumMediaNumber, int mediaNumber, int totalMediaNumber)
+    public static string FileExtension(this Song song) => Path.GetExtension(song.File.Name);
+
+    public static string SongFileName(FileInfo fileInfo, int maximumSongNumber, int songNumber, string? songTitle, int maximumMediaNumber, int mediaNumber, int totalMediaNumber)
     {
         if (songNumber < 1)
         {
@@ -304,14 +308,13 @@ public static class SongExtensions
                 .RemoveStartsWith($"{songNumberValue}-")
                 .ToTitleCase(false);
         }
-
-        // TODO this wont work if using FLAC/APE/OGG (not mp3)
-        return $"{disc}{songNumberValue} {fileNameFromTitle}.mp3";
+        return $"{disc}{songNumberValue} {fileNameFromTitle}{fileInfo.Extension}";
     }
-
-    public static string ToSongFileName(this Song song, Dictionary<string, object?> configuration)
+    
+    public static string ToSongFileName(this Song song, FileSystemDirectoryInfo directoryInfo, Dictionary<string, object?> configuration)
     {
         return SongFileName(
+            song.File.ToFileInfo(directoryInfo),
             SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
             song.SongNumber(),
             song.Title(),

@@ -1,7 +1,9 @@
+using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -22,6 +24,7 @@ using Serilog;
 using SmartFormat;
 using License = Melodee.Common.Models.OpenSubsonic.License;
 using Playlist = Melodee.Common.Models.OpenSubsonic.Playlist;
+using PlayQueue = Melodee.Common.Models.OpenSubsonic.PlayQueue;
 using ScanStatus = Melodee.Common.Models.OpenSubsonic.ScanStatus;
 
 namespace Melodee.Services;
@@ -548,11 +551,11 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> AuthenticateSubsonicApiAsync(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> AuthenticateSubsonicApiAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
-        if (apiApiRequest.Username?.Nullify() == null ||
-            (apiApiRequest.Password?.Nullify() == null &&
-             apiApiRequest.Token?.Nullify() == null))
+        if (apiRequest.Username?.Nullify() == null ||
+            (apiRequest.Password?.Nullify() == null &&
+             apiRequest.Token?.Nullify() == null))
         {
             return new ResponseModel
             {
@@ -563,29 +566,29 @@ public class OpenSubsonicApiService(
         }
 
         var result = false;
-        var user = await userService.GetByUsernameAsync(apiApiRequest.Username, cancellationToken).ConfigureAwait(false);
+        var user = await userService.GetByUsernameAsync(apiRequest.Username, cancellationToken).ConfigureAwait(false);
         try
         {
             if (!user.IsSuccess || (user.Data?.IsLocked ?? false))
             {
-                Logger.Warning("Locked user [{Username}] attempted to authenticate with [{Client}]", apiApiRequest.Username, apiApiRequest.ApiRequestPlayer);
+                Logger.Warning("Locked user [{Username}] attempted to authenticate with [{Client}]", apiRequest.Username, apiRequest.ApiRequestPlayer);
             }
             else
             {
                 bool isAuthenticated;
-                var authUsingToken = apiApiRequest.Token?.Nullify() != null;
+                var authUsingToken = apiRequest.Token?.Nullify() != null;
                 var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
                 var usersPassword = user.Data.Decrypt(user.Data.PasswordEncrypted, configuration);
-                var apiRequestPassword = apiApiRequest.Password;
-                if (apiApiRequest.Password?.StartsWith("enc:", StringComparison.Ordinal) ?? false)
+                var apiRequestPassword = apiRequest.Password;
+                if (apiRequest.Password?.StartsWith("enc:", StringComparison.Ordinal) ?? false)
                 {
                     apiRequestPassword = apiRequestPassword?[4..].FromHexString();
                 }
 
                 if (authUsingToken)
                 {
-                    var userMd5 = HashHelper.CreateMd5($"{usersPassword}{apiApiRequest.Salt}");
-                    isAuthenticated = string.Equals(userMd5, apiApiRequest.Token, StringComparison.InvariantCultureIgnoreCase);
+                    var userMd5 = HashHelper.CreateMd5($"{usersPassword}{apiRequest.Salt}");
+                    isAuthenticated = string.Equals(userMd5, apiRequest.Token, StringComparison.InvariantCultureIgnoreCase);
                 }
                 else
                 {
@@ -610,7 +613,7 @@ public class OpenSubsonicApiService(
         }
         catch (Exception e)
         {
-            Logger.Error(e, "Error authenticating user, request [{ApiRequest}]", apiApiRequest);
+            Logger.Error(e, "Error authenticating user, request [{ApiRequest}]", apiRequest);
         }
 
         return new ResponseModel
@@ -639,6 +642,143 @@ public class OpenSubsonicApiService(
             Data = data,
             DataDetailPropertyName = dataDetailPropertyName,
             DataPropertyName = dataPropertyName
+        };
+    }
+
+    public async Task<ResponseModel> GetPlayQueueAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        var data = new List<PlayQueue>();
+        
+        
+        
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            ResponseData = authResponse.ResponseData with
+            {
+                Data = data,
+                DataPropertyName = "plqyQueue"
+            }
+        };        
+        
+    }
+    
+    public async Task<ResponseModel> SavePlayQueue(Guid[]? apiKey, Guid? current, double? position, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        var result = false;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            // If the apikey is blank then remove any current saved que
+            if (apiKey == null)
+            {
+                var sql = """
+                          delete from "PlayQues" pq
+                          using "Users" u, "Songs" s
+                          where pq."UserId" = u."Id"
+                          and pq."SongId" = s."Id"
+                          and u."UserNameNormalized" = @userNameNormalized
+                          and s."ApiKey" = @apiKey
+                          """;
+	            var dbConn = scopedContext.Database.GetDbConnection();
+                await dbConn.ExecuteAsync(sql, new { apiKey, userNameNormalized = apiRequest.Username.ToNormalizedString() }).ConfigureAwait(false);
+                result = true;
+            }
+            else
+            {
+                
+                // var songId = await scopedContext
+                //     .Songs
+                //     .Where(x => x.ApiKey == apiKey)
+                //     .Select(x => x.Id)
+                //     .FirstOrDefaultAsync(cancellationToken)
+                //     .ConfigureAwait(false);
+                // if (songId < 1)
+                // {
+                //     return new ResponseModel
+                //     {
+                //         UserInfo = BlankUserInfo,
+                //         ResponseData = authResponse.ResponseData with
+                //         {
+                //             Error = Error.InvalidApiKeyError
+                //         }
+                //     };
+                // }
+                // var user = await userService.GetByUsernameAsync(apiRequest.Username, cancellationToken).ConfigureAwait(false);
+                // var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+                // var sql = """
+                //           merge into "PlayQues" pc
+                //           using (select "UserId", "SongId" from "PlayQues") as pq
+                //           on (pq."UserId" = @userId and pq."SongId" = @songId)
+                //           when not matched then 
+                //           	insert ("UserId", "SongId", "SongApiKey", "Position", "CreatedAt")
+                //           	values (@userId, @songId, @songApiKey, @position, @createdAt)
+                //           when matched then
+                //           	update set "Position" = @position, "LastUpdatedAt" = @lastUpdatedAt;
+                //           """;
+                // var dbConn = scopedContext.Database.GetDbConnection();
+                // await dbConn.ExecuteAsync(sql, new
+                // {
+                //     userId = user.Data!.Id,
+                //     songId,
+                //     position,
+                //     songApiKey = apiKey,
+                //     createdAt = now,
+                //     lastUpdatedAt = now
+                //     
+                // }).ConfigureAwait(false);
+                // result = true;
+            }
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
+        };
+    }
+
+    public async Task<ResponseModel> CreateUserAsync(CreateUserRequest request, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        var result = false;
+        
+        // TODO
+        
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
         };
     }
 }

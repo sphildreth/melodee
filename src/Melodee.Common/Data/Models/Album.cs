@@ -72,6 +72,25 @@ public sealed class Album : MetaDataModelBase
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string[]? Genres { get; set; }
+    
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
+    public string[]? Moods { get; set; }
+    
+    /// <summary>
+    /// This is plain text and served to OpenSubsonic clients.
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxInputLength)]
+    public string? Comment { get; set; }    
+    
+    /// <summary>
+    /// The album replay gain value. (In Db)
+    /// </summary>
+    public double? ReplayGain { get; set; }
+    
+    /// <summary>
+    /// The album peak value. (Must be positive)
+    /// </summary>
+    public double? ReplayPeak { get; set; }    
 
     /// <summary>
     ///     The directory that holds the files for the Album. This is inside of a library path directory.

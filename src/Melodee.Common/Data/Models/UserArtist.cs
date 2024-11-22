@@ -1,5 +1,6 @@
 using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
@@ -16,6 +17,8 @@ public class UserArtist : DataModelBase
     public Artist Artist { get; set; } = null!;
 
     public bool IsStarred { get; set; }
+    
+    public Instant? StarredAt { get; set; }
 
     public int Rating { get; set; }
 }

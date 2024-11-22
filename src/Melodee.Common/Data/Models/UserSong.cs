@@ -22,6 +22,8 @@ public class UserSong : DataModelBase
     [Required] public required Instant LastPlayedAt { get; set; }
 
     public bool IsStarred { get; set; }
+    
+    public Instant? StarredAt { get; set; }
 
     public int Rating { get; set; }
 }

@@ -11,7 +11,6 @@ namespace Melodee.Controllers.OpenSubsonic;
 public class BrowsingController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
     
-    //getAlbum
     //getAlbumInfo
     //getAlbumInfo2
     //getArtist

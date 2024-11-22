@@ -432,6 +432,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                         var totalMediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscTotal)?.Value as int? ?? 1;
                         songTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
                         var songFileName = SongExtensions.SongFileName(
+                            fileInfo,
                             SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
                             songNumber,
                             songTitle,
@@ -468,6 +469,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
             var mediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 1;
             var totalMediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscTotal)?.Value as int? ?? 1;
             var songFileName = SongExtensions.SongFileName(
+                fileInfo,
                 SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
                 songNumber,
                 songTitle,
