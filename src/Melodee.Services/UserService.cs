@@ -424,6 +424,24 @@ public sealed class UserService(
         }
     }
     
+    public async Task<UserSong?> UserSongAsync(string? userName, Guid songApiKey, CancellationToken cancellationToken)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var sql = """
+                      select us.*
+                      from "UserSongs" us 
+                      left join "Users" u on (us."UserId" = u."Id")
+                      left join "Songs" s on (us."SongId" = s."Id")
+                      where u."UserNameNormalized" = @userName
+                      and s."ApiKey" = @songApiKey;
+                      """;
+            var dbConn = scopedContext.Database.GetDbConnection();
+            return await dbConn.QuerySingleOrDefaultAsync<UserSong?>(sql, new { userName = userName.ToNormalizedString(), songApiKey })
+                .ConfigureAwait(false);
+        }
+    }    
+    
     public async Task<UserSong[]?> UserSongsForAlbumAsync(string? userName, Guid albumApiKey, CancellationToken cancellationToken)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))

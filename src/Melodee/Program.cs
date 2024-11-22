@@ -78,6 +78,7 @@ builder.Services
     .AddScoped<ISettingService, SettingService>()
     .AddScoped<ArtistService>()
     .AddScoped<AlbumService>()
+    .AddScoped<SongService>()
     .AddScoped<ILibraryService, LibraryService>()
     .AddScoped<UserService>()
     .AddScoped<AlbumDiscoveryService>()

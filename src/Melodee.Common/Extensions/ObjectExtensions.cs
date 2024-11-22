@@ -9,6 +9,8 @@ public static class ObjectExtensions
     public static bool IsEnumerable(this object obj)
         => obj is IEnumerable;    
     
+    
+    
     public static IDictionary<string, object?> ToDictionary(this object source, BindingFlags bindingAttr = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
     {
         var result = new Dictionary<string, object?>();

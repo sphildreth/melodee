@@ -144,6 +144,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetUserService(),
             GetArtistService(),
             GetAlbumService(),
+            GetSongService(),
             new AlbumDiscoveryService(
                 Logger, 
                 CacheManager, 
@@ -162,6 +163,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         return new AlbumService(Logger, CacheManager, MockFactory());
     }
+    
+    protected SongService GetSongService()
+    {
+        return new SongService(Logger, CacheManager, MockFactory());
+    }    
 
     protected IHttpClientFactory MockHttpClientFactory()
     {

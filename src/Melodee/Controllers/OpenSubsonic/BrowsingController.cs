@@ -24,6 +24,17 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     //getVideos
 
     /// <summary>
+    ///     Returns details for a song.
+    /// </summary>
+    /// <param name="id">The song id.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/getSong.view")]
+    public async Task<IActionResult> GetSong(Guid id, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetSongAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }    
+
+    /// <summary>
     ///     Returns all genres.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>

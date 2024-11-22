@@ -2,6 +2,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 
@@ -28,6 +29,9 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data);
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
+            var bitRate = tagResult.Data.MediaAudios.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate);
+            Assert.NotNull(bitRate);
+            Assert.True(SafeParser.ToNumber<int>(bitRate.Value) > 0);
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
         }

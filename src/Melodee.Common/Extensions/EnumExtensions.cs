@@ -30,4 +30,12 @@ public static class EnumExtensions
             .Cast<Enum>()
             .ToDictionary(t => (int)(object)t, t => t.ToString());
     }
+    
+    public static Dictionary<int, string> ToNormalizedDictionary(this Enum enumValue)
+    {
+        var enumType = enumValue.GetType();
+        return Enum.GetValues(enumType)
+            .Cast<Enum>()
+            .ToDictionary(t => (int)(object)t, t => t.ToString().ToNormalizedString() ?? t.ToString());
+    }    
 }

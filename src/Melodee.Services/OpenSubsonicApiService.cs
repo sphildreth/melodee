@@ -45,6 +45,7 @@ public class OpenSubsonicApiService(
     UserService userService,
     ArtistService artistService,
     AlbumService albumService,
+    SongService songService,
     AlbumDiscoveryService albumDiscoveryService,
     IScheduler schedule)
     : ServiceBase(logger, cacheManager, contextFactory)
@@ -229,6 +230,42 @@ public class OpenSubsonicApiService(
                 Data = data,
                 DataPropertyName = "albumList2",
                 DataDetailPropertyName = "album"
+            }
+        };
+    }
+    
+    public async Task<ResponseModel> GetSongAsync(Guid apiKey, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+        
+        var songResponse = await songService.GetByApiKeyAsync(apiKey, cancellationToken);
+        if (!songResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData with
+                {
+                    Error = Error.InvalidApiKeyError
+                }
+            };
+        }
+        var userSong = await userService.UserSongAsync(apiRequest.Username, apiKey, cancellationToken);
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            ResponseData = authResponse.ResponseData with
+            {
+                Data = songResponse.Data.ToChild(songResponse.Data.AlbumDisc.Album, userSong ),
+                DataPropertyName = "song"
             }
         };
     }
@@ -872,7 +909,7 @@ public class OpenSubsonicApiService(
         }
         
         var sql = """
-                  select l."Path" || a."Directory" || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration", s."ContentType"
+                  select l."Path" || a."Directory" || '/' || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration", s."ContentType"
                   from "Songs" s 
                   left join "AlbumDiscs" ad on (ad."Id" = s."AlbumDiscId")
                   left join "Albums" a on (a."Id" = ad."AlbumId")
@@ -917,8 +954,8 @@ public class OpenSubsonicApiService(
                     { "Accept-Ranges", "bytes" },
                     { "Cache-Control", "no-store, must-revalidate, no-cache, max-age=0" },
                     { "Content-Duration", songStreamInfo.Duration.ToString(CultureInfo.InvariantCulture) },
-                    { "Content-Length", trackBytes.ToString() },
-                    { "Content-Range", $"bytes {rangeBegin}-{rangeEnd}/{trackBytes}" },
+                    { "Content-Length", trackBytes.Length.ToString() },
+                    { "Content-Range", $"bytes {rangeBegin}-{rangeEnd}/{trackBytes.Length}" },
                     { "Content-Type", songStreamInfo.ContentType },
                     { "Expires", "Mon, 01 Jan 1990 00:00:00 GMT" }
                 },
@@ -928,4 +965,5 @@ public class OpenSubsonicApiService(
         }
 
     }
+
 }

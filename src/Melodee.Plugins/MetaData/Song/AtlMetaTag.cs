@@ -57,9 +57,9 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     var fileAtl = new Track(fileSystemFileInfo.FullName(directoryInfo));
                     if (!fileAtl.MetadataFormats.Any(x => x.ID < 0) && IsAtlTrackForAudioFile(fileAtl))
                     {
-                        var atlDictionary = fileAtl.ToDictionary();
+                        var atlDictionary = fileAtl.ToDictionary().ToDictionary(x => x.Key.ToNormalizedString() ?? x.Key, x => x.Value);
 
-                        var metaAudioIdentifierDictionary = MediaAudioIdentifier.NotSet.ToDictionary();
+                        var metaAudioIdentifierDictionary = MediaAudioIdentifier.NotSet.ToNormalizedDictionary();
                         foreach (var metaTagIdentifier in metaAudioIdentifierDictionary)
                         {
                             if (atlDictionary.TryGetValue(metaTagIdentifier.Value, out var v))
@@ -147,7 +147,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                             });
                         }
 
-                        var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToDictionary();
+                        var metaTagIdentifierDictionary = MetaTagIdentifier.NotSet.ToNormalizedDictionary();
                         foreach (var metaTagIdentifier in metaTagIdentifierDictionary)
                         {
                             if (atlDictionary.TryGetValue(metaTagIdentifier.Value, out var v))
