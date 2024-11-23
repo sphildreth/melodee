@@ -12,9 +12,17 @@ public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
     {
         if (Storage.ContainsKey(nowPlaying.UniqueId))
         {
-            Storage.TryRemove(nowPlaying.UniqueId, out _);
+            Storage.TryRemove(nowPlaying.UniqueId, out NowPlayingInfo existing);
+            if (existing != null)
+            {
+                existing.Scrobble.LastScrobbledAt = nowPlaying.Scrobble.LastScrobbledAt;
+                Storage.TryAdd(existing.UniqueId, existing);    
+            }
         }
-        Storage.TryAdd(nowPlaying.UniqueId, nowPlaying);
+        else
+        {
+            Storage.TryAdd(nowPlaying.UniqueId, nowPlaying);
+        }
         return Task.CompletedTask;
     }
 

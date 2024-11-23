@@ -8,6 +8,7 @@ using Melodee.Common.Models.Scrobbling;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
 
 namespace Melodee.Services;
@@ -64,7 +65,7 @@ public class ScrobbleService(
         return nowPlayingRepository.GetNowPlayingAsync(cancellationToken);
     }
 
-    public async Task<OperationResult<bool>> NowPlaying(UserInfo user, Guid id, double? time, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> NowPlaying(UserInfo user, Guid id, double? time, string playerName, CancellationToken cancellationToken = default)
     {
         var databaseSongScrobbleInfo = await DatabaseSongScrobbleInfoForSongApiKey(id, cancellationToken).ConfigureAwait(false);
         if (databaseSongScrobbleInfo != null)
@@ -79,8 +80,11 @@ public class ScrobbleService(
                 databaseSongScrobbleInfo.SongDuration.ToSeconds(),
                 databaseSongScrobbleInfo.SongMusicBrainzId,
                 databaseSongScrobbleInfo.SongNumber,
-                null
+                null,
+                Instant.FromDateTimeUtc(DateTime.UtcNow),
+                playerName
             );
+            scrobble.LastScrobbledAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
             await nowPlayingRepository.AddOrUpdateNowPlayingAsync(new NowPlayingInfo(user, scrobble), cancellationToken).ConfigureAwait(false);
         }
 

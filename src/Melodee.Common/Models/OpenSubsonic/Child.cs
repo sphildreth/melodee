@@ -85,5 +85,10 @@ public record Child(
     Contributor[]? Contributors,
     string? DisplayComposer,
     string[]? Moods,
-    ReplayGain? ReplayGain
+    ReplayGain? ReplayGain,
+    string? Username = null,
+    int? MinutesAgo = null,
+    int? PlayerId = null,
+    string? PlayerName = null
 );
+

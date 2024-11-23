@@ -883,7 +883,7 @@ public class OpenSubsonicApiService(
         }
         else
         {
-            await scrobbleService.NowPlaying(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
+            await scrobbleService.NowPlaying(authResponse.UserInfo, id, time, apiRequest.ApiRequestPlayer?.Client ?? string.Empty, cancellationToken).ConfigureAwait(false);
         }
 
 
@@ -994,7 +994,8 @@ public class OpenSubsonicApiService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var nowPlayingSongApiKeys = nowPlaying.Data.Select(x => x.Scrobble.SongApiKey).ToList();
-            var nowPlayingSongs = await (from s in scopedContext.Songs.Include(x => x.AlbumDisc)
+            var nowPlayingSongs = await (from s in scopedContext
+                        .Songs.Include(x => x.AlbumDisc)
                     where nowPlayingSongApiKeys.Contains(s.ApiKey)
                     select s)
                 .AsNoTrackingWithIdentityResolution()
@@ -1002,7 +1003,7 @@ public class OpenSubsonicApiService(
                 .ConfigureAwait(false);
             var nowPlayingSongIds = nowPlayingSongs.Select(x => x.Id).ToArray();
             var nowPlayingAlbumIds = nowPlayingSongs.Select(x => x.AlbumDisc).Select(x => x.AlbumId).Distinct().ToArray();
-            var nowPlayingSongsAlbums = await (from a in scopedContext.Albums
+            var nowPlayingSongsAlbums = await (from a in scopedContext.Albums.Include(x => x.Artist)
                     where nowPlayingAlbumIds.Contains(a.Id)
                     select a)
                 .AsNoTrackingWithIdentityResolution()
@@ -1020,11 +1021,11 @@ public class OpenSubsonicApiService(
             {
                 var album = nowPlayingSongsAlbums.First(x => x.Id == nowPlayingSong.AlbumDisc.AlbumId);
                 var userSong = nowPlayingUserSongs.FirstOrDefault(x => x.SongId == nowPlayingSong.Id);
-                data.Add(nowPlayingSong.ToChild(album, userSong));
+                var nowPlayingSongUniqueId = SafeParser.Hash(authResponse.UserInfo.ApiKey.ToString(), nowPlayingSong.ApiKey.ToString());
+                data.Add(nowPlayingSong.ToChild(album, userSong, nowPlaying.Data.FirstOrDefault(x => x.UniqueId == nowPlayingSongUniqueId)));
             }
         }
-
-
+        
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
@@ -1067,10 +1068,10 @@ public class OpenSubsonicApiService(
                     { "query", request.QueryValue },
                     { "artistOffset", request.ArtistOffset ?? 0},
                     { "artistCount", request.ArtistCount ?? defaultPageSize },
-                    { "albumOffset", request.AlbumCount ?? 0},
-                    { "albumCount", request.AlbumOffset ?? defaultPageSize },
-                    { "songOffset", request.SongCount ?? 0},
-                    { "songCount", request.SongOffset ?? defaultPageSize }                    
+                    { "albumOffset", request.AlbumOffset ?? 0},
+                    { "albumCount", request.AlbumCount ?? defaultPageSize },
+                    { "songOffset", request.SongOffset ?? 0},
+                    { "songCount", request.SongCount ?? defaultPageSize }                    
                 };
                 var sql = """
                           select "ApiKey"::varchar as "Id", "Name", 'artist_' || "ApiKey" as "CoverArt", "AlbumCount"
@@ -1112,7 +1113,12 @@ public class OpenSubsonicApiService(
                       """;
                 songs = (await dbConn
                     .QueryAsync<SongSearchResult>(sql, sqlParameters)
-                    .ConfigureAwait(false)).ToArray();                 
+                    .ConfigureAwait(false)).ToArray();
+
+                if (albums.Length == 0 && songs.Length == 0 && artists.Length == 0)
+                {
+                    Logger.Information("! No result for query [{Query}] Normalized [{QueryNormalized}]", request.QueryValue, request.QueryNormalizedValue );
+                }
             }
         }
         

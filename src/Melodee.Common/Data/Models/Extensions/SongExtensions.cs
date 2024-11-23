@@ -1,12 +1,13 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
+using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
 public static class SongExtensions
 {
-    public static Child ToChild(this Song song, Album album, UserSong? userSong)
+    public static Child ToChild(this Song song, Album album, UserSong? userSong, NowPlayingInfo? nowPlayingInfo = null)
     {
         Contributor? albumArtist = null;
 
@@ -50,7 +51,11 @@ public static class SongExtensions
             [], // TODO
             null, //TODO
             [], // TODO
-            null //TODO
+            null, //TODO,
+            nowPlayingInfo?.User.UserName,
+            nowPlayingInfo?.Scrobble.MinutesAgo,
+            0,
+            nowPlayingInfo?.Scrobble.PlayerName
         );
 
     }

@@ -1,3 +1,5 @@
+using NodaTime;
+
 namespace Melodee.Common.Models.Scrobbling;
 
 /// <summary>
@@ -14,12 +16,20 @@ namespace Melodee.Common.Models.Scrobbling;
 /// <param name="SongArtist">The album artist - if this differs from the song artist.</param>
 public record ScrobbleInfo(
     Guid SongApiKey,
-    string SongTitle,    
+    string SongTitle,
     string ArtistName,
-    bool IsRandomizedScrobble,    
-    string? AlbumTitle, 
+    bool IsRandomizedScrobble,
+    string? AlbumTitle,
     int? SongDuration,
     string? SongMusicBrainzId,
     int? SongNumber,
-    string? SongArtist
-    );
+    string? SongArtist,
+    Instant CreatedAt,
+    string PlayerName
+)
+{
+    public Instant LastScrobbledAt { get; set; }
+    
+    public int MinutesAgo => (LastScrobbledAt - CreatedAt).Minutes;
+}
+
