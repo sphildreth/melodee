@@ -16,8 +16,8 @@ namespace Melodee.Common.Models.OpenSubsonic;
 public record Artist(
     string Id,
     string Name,
-    string? CoverArt,
-    int? AlbumCount,
+    string CoverArt,
+    int AlbumCount,
     int? UserRating,
     string? ArtistImageUrl,
     string? Starred,

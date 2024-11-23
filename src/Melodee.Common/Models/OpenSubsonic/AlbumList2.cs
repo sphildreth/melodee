@@ -32,6 +32,13 @@ public sealed record AlbumList2
 
     public required int Year { get; init; }
     
+    public int? UserStarredCount { get; init; }
+
+    public bool Starred { get; init; }
+    
+    public int? UserRating { get; init; }
+    
     public string? Genre { get; init; }
+    
     public string[]? Genres => Genre?.Split('|').Select(x => x.Trim()).ToArray();
 }

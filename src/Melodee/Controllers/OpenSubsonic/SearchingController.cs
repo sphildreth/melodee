@@ -1,11 +1,27 @@
+using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Serialization;
+using Melodee.Results;
 using Melodee.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
 public class SearchingController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
+    // Deprecated says to use search2
     //search
+    
+    // By file structure, versus ID tags
     //search2
-    //search3
+
+
+    /// <summary>
+    ///     Returns albums, artists and songs matching the given search criteria. Supports paging through the result.
+    /// </summary>
+    /// <param name="request">Search request options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/search3.view")]
+    public async Task<IActionResult> Scrobble(SearchRequest request, CancellationToken cancellationToken = default) 
+        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SearchAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    
 }

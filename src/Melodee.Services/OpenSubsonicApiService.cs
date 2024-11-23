@@ -12,7 +12,9 @@ using Melodee.Common.Models.OpenSubsonic.DTO;
 using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
+using Melodee.Common.Models.OpenSubsonic.Searching;
 using Melodee.Common.Utility;
+using Melodee.Plugins.Scrobbling;
 using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
@@ -175,7 +177,8 @@ public class OpenSubsonicApiService(
                                 cast(aa."ApiKey" as varchar(50)) as "ArtistId",
                                 aa."Name" as "Artist",
                                 DATE_PART('year', a."ReleaseDate"::date) as "Year",
-                                unnest(a."Genres") as "Genre"
+                                unnest(a."Genres") as "Genre",
+                                (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount"
                                 FROM "Albums" a 
                                 LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
                                 """;
@@ -188,22 +191,41 @@ public class OpenSubsonicApiService(
                         break;
 
                     case ListType.Newest:
+                        whereSQL = "ORDER BY a.\"CreatedAt\" DESC";
                         break;
+                    
                     case ListType.Highest:
+                        whereSQL = "ORDER BY a.\"CalculatedRating\" DESC";
                         break;
+                    
                     case ListType.Frequent:
+                        whereSQL = "ORDER BY a.\"PlayedCount\" DESC";
                         break;
+                    
                     case ListType.Recent:
+                        whereSQL = "ORDER BY a.\"LastPlayedAt\" DESC";
                         break;
+                    
                     case ListType.AlphabeticalByName:
+                        whereSQL = "ORDER BY a.\"SortName\"";
                         break;
+                    
                     case ListType.AlphabeticalByArtist:
+                        whereSQL = "ORDER BY aa.\"SortName\"";
                         break;
+                    
                     case ListType.Starred:
+                        whereSQL = "ORDER BY aa.\"UserStarredCount\" DESC";
                         break;
+                    
                     case ListType.ByYear:
+                        // TODO fromYear and ToYear optional filtering
+                        whereSQL = "ORDER BY \"Year\" DESC";
                         break;
+                    
                     case ListType.ByGenre:
+                        // TODO filter by given Genre
+                        whereSQL = "ORDER BY \"Genre\" DESC";
                         break;
                 }
 
@@ -953,5 +975,100 @@ public class OpenSubsonicApiService(
                 trackBytes
             );
         }
+    }
+
+    public async Task<ResponseModel> GetNowPlayingAsync(ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        var nowPlaying = await scrobbleService.GetNowPlaying(cancellationToken).ConfigureAwait(false);
+        var data = new List<Child>();
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var nowPlayingSongApiKeys = nowPlaying.Data.Select(x => x.Scrobble.SongApiKey).ToList();
+            var nowPlayingSongs = await (from s in scopedContext.Songs.Include(x => x.AlbumDisc)
+                    where nowPlayingSongApiKeys.Contains(s.ApiKey)
+                    select s)
+                .AsNoTrackingWithIdentityResolution()
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
+            var nowPlayingSongIds = nowPlayingSongs.Select(x => x.Id).ToArray();
+            var nowPlayingAlbumIds = nowPlayingSongs.Select(x => x.AlbumDisc).Select(x => x.AlbumId).Distinct().ToArray();
+            var nowPlayingSongsAlbums = await (from a in scopedContext.Albums
+                    where nowPlayingAlbumIds.Contains(a.Id)
+                    select a)
+                .AsNoTrackingWithIdentityResolution()
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
+            var nowPlayingUserSongs = await (from us in scopedContext.UserSongs
+                    where us.UserId == authResponse.UserInfo.Id
+                    where nowPlayingSongIds.Contains(us.Id)
+                    select us)
+                .AsNoTrackingWithIdentityResolution()
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            foreach (var nowPlayingSong in nowPlayingSongs)
+            {
+                var album = nowPlayingSongsAlbums.First(x => x.Id == nowPlayingSong.AlbumDisc.AlbumId);
+                var userSong = nowPlayingUserSongs.FirstOrDefault(x => x.SongId == nowPlayingSong.Id);
+                data.Add(nowPlayingSong.ToChild(album, userSong));
+            }
+        }
+
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            IsSuccess = true,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data,
+                DataPropertyName = "nowPlaying",
+                DataDetailPropertyName = "entry"
+            }
+        };
+    }
+
+    public async Task<ResponseModel> SearchAsync(SearchRequest request, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+        
+        var artists = new List<Artist>();
+        var albums = new List<AlbumSearchResult>();
+        var songs = new List<Child>();
+        
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            IsSuccess = true,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = new
+                {
+                    Artist = artists, 
+                    Album = albums,
+                    Song = songs
+                },
+                DataPropertyName = "searchResult3",
+                DataDetailPropertyName = "artist"
+            }
+        };        
     }
 }

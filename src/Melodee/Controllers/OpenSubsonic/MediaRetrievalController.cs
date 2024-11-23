@@ -2,7 +2,6 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Serialization;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
@@ -23,11 +22,13 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getCoverArt.view")]
     public async Task<IActionResult> GetCoverArt(string id, CancellationToken cancellationToken = default)
-        => new FileContentResult((byte[])(await openSubsonicApiService.GetCoverArt(id,
+    {
+        return new FileContentResult((byte[])(await openSubsonicApiService.GetCoverArt(id,
                 null,
                 ApiRequest,
                 cancellationToken)).ResponseData.Data!,
             "image/jpeg");
+    }
 
 
     /// <summary>
@@ -45,6 +46,7 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
             {
                 Response.Headers[responseHeader.Key] = responseHeader.Value;
             }
+
             await Response.Body
                 .WriteAsync(streamResult.Bytes.AsMemory(0, streamResult.Bytes.Length), cancellationToken)
                 .ConfigureAwait(false);
@@ -53,7 +55,7 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
 
         //Returns binary data on success, or an XML document on error (in which case the HTTP content type will start with “text/xml”).
         // TODO figure out XML details for error result
-        
+
         throw new NotImplementedException();
     }
 }

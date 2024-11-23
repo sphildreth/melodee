@@ -8,12 +8,21 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class AlbumSongController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
+    // These are by file structure, versus ID tags
     //getAlbumList
+    //getStarred
+    
     //getRandomSongs
     //getSongsByGenre
-    //getNowPlaying
-    //getStarred
     //getStarred2
+
+    /// <summary>
+    ///     Returns what is currently being played by all users.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/getNowPlaying.view")]
+    public async Task<IActionResult> GetNowPlaying(CancellationToken cancellationToken = default) 
+        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetNowPlayingAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
 
     /// <summary>
     ///     Returns a list of random, newest, highest rated etc. albums.
@@ -21,8 +30,6 @@ public class AlbumSongController(ISerializer serializer, OpenSubsonicApiService 
     /// <param name="getAlbumListRequest">Request model</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getAlbumList2.view")]
-    public async Task<IActionResult> GetAlbumList2(GetAlbumListRequest getAlbumListRequest, CancellationToken cancellationToken = default)
-    {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumList2Async(getAlbumListRequest, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }
+    public async Task<IActionResult> GetAlbumList2(GetAlbumListRequest getAlbumListRequest, CancellationToken cancellationToken = default) 
+        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumList2Async(getAlbumListRequest, ApiRequest, cancellationToken).ConfigureAwait(false))!);
 }
