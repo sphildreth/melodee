@@ -1,33 +1,49 @@
+using System.Text.Json.Serialization;
+using NodaTime;
+
 namespace Melodee.Common.Models.OpenSubsonic.Searching;
 
-public record SongSearchResult();
+public record SongSearchResult
+{
+    public string Type { get; } = "music";
 
-
-// public record RootObject(
-//     Song song
-// );
-
-// public record Song(
-//     string _id,
-//     string _parent,
-//     string _title,
-//     string _album,
-//     string _artist,
-//     string _isDir,
-//     string _coverArt,
-//     string _created,
-//     string _duration,
-//     string _bitRate,
-//     string _track,
-//     string _year,
-//     string _genre,
-//     string _size,
-//     string _suffix,
-//     string _contentType,
-//     string _isVideo,
-//     string _path,
-//     string _albumId,
-//     string _artistId,
-//     string _type
-// );
+    public bool IsDir { get; } = false;
+    
+    public required string Id { get; init; }
+    
+    public required  string Parent { get; init; }
+    
+    public required string Title { get; init; }
+    
+    public required string Album { get; init; }
+    
+    public required string Artist { get; init; }
+    
+    public required string CoverArt { get; init; }
+    
+    [JsonIgnore]
+    public Instant CreatedAt { get; init; }    
+    
+    public string Created => CreatedAt.ToString();
+    
+    public int Duration { get; init; }
+    
+    public int Bitrate { get; init; }
+    
+    public int Track { get; init; }
+    
+    public int Year { get; init; }
+    
+    public required string Genre { get; init; }
+    
+    public required string Suffix { get; init; }
+    
+    public required string ContentType { get; init; }
+    
+    public required string Path { get; init; }
+    
+    public required string AlbumId { get; init; }
+    
+    public required string ArtistId { get; init; }
+}
 

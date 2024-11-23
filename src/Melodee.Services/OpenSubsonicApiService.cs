@@ -1050,9 +1050,71 @@ public class OpenSubsonicApiService(
             };
         }
         
-        var artists = new List<Artist>();
-        var albums = new List<AlbumSearchResult>();
-        var songs = new List<Child>();
+        ArtistSearchResult[] artists = [];
+        AlbumSearchResult[] albums = [];
+        SongSearchResult[] songs = [];
+
+        if (request.QueryValue.Nullify() != null)
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();
+                var defaultPageSize = (await Configuration.Value).GetValue<short>(SettingRegistry.DefaultsPageSize);
+                var sqlParameters = new Dictionary<string, object>
+                {
+                    { "userId", authResponse.UserInfo.Id },
+                    { "normalizedQuery", request.QueryNormalizedValue },
+                    { "query", request.QueryValue },
+                    { "artistOffset", request.ArtistOffset ?? 0},
+                    { "artistCount", request.ArtistCount ?? defaultPageSize },
+                    { "albumOffset", request.AlbumCount ?? 0},
+                    { "albumCount", request.AlbumOffset ?? defaultPageSize },
+                    { "songOffset", request.SongCount ?? 0},
+                    { "songCount", request.SongOffset ?? defaultPageSize }                    
+                };
+                var sql = """
+                          select "ApiKey"::varchar as "Id", "Name", 'artist_' || "ApiKey" as "CoverArt", "AlbumCount"
+                          from "Artists" a
+                          where a."NameNormalized" like @normalizedQuery
+                          or a."AlternateNames" like @query
+                          ORDER BY a."SortName" OFFSET @artistOffset ROWS FETCH NEXT @artistCount ROWS ONLY;
+                          """;
+                artists = (await dbConn
+                    .QueryAsync<ArtistSearchResult>(sql, sqlParameters)
+                    .ConfigureAwait(false)).ToArray();
+                
+                sql = """
+                          select a."ApiKey"::varchar as "Id", a."Name", 'album_' || a."ApiKey"::varchar as "CoverArt", a."SongCount", a."CreatedAt", 
+                                 a."Duration" as "DurationMs", aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
+                          from "Albums" a
+                          left join "Artists" aa on (a."ArtistId" = aa."Id")
+                          where a."NameNormalized"  like @normalizedQuery
+                          or a."AlternateNames" like @query
+                          ORDER BY a."SortName" OFFSET @albumOffset ROWS FETCH NEXT @albumCount ROWS ONLY;
+                          """;
+                albums = (await dbConn
+                    .QueryAsync<AlbumSearchResult>(sql, sqlParameters)
+                    .ConfigureAwait(false)).ToArray();    
+                
+                sql = """
+                      select s."ApiKey"::varchar as "Id", a."ApiKey"::varchar as Parent, s."Title", a."Name" as Album, aa."Name" as "Artist", 'song_' || s."ApiKey"::varchar as "CoverArt", 
+                             a."SongCount", s."CreatedAt", s."Duration" as "DurationMs", s."BitRate", s."SongNumber" as "Track", 
+                             DATE_PART('year', a."ReleaseDate"::date) as "Year", unnest(a."Genres") as "Genre", s."FileSize" as "Size", 
+                             s."ContentType", a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", a."ApiKey"::varchar as "AlbumId", 
+                             aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
+                      from "Songs" s
+                      left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                      left join "Albums" a on (ad."AlbumId" = a."Id")
+                      left join "Artists" aa on (a."ArtistId" = aa."Id")
+                      where s."TitleNormalized"  like @normalizedQuery
+                      or s."AlternateNames" like @query
+                      ORDER BY a."SortName" OFFSET @songOffset ROWS FETCH NEXT @songCount ROWS ONLY;
+                      """;
+                songs = (await dbConn
+                    .QueryAsync<SongSearchResult>(sql, sqlParameters)
+                    .ConfigureAwait(false)).ToArray();                 
+            }
+        }
         
         return new ResponseModel
         {
@@ -1066,8 +1128,7 @@ public class OpenSubsonicApiService(
                     Album = albums,
                     Song = songs
                 },
-                DataPropertyName = "searchResult3",
-                DataDetailPropertyName = "artist"
+                DataPropertyName = "searchResult3"
             }
         };        
     }

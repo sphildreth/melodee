@@ -1,3 +1,5 @@
+using Melodee.Common.Extensions;
+
 namespace Melodee.Common.Models.OpenSubsonic.Requests;
 
 /// <summary>
@@ -11,8 +13,7 @@ namespace Melodee.Common.Models.OpenSubsonic.Requests;
 /// <param name="SongCount">Maximum number of songs to return.</param>
 /// <param name="SongOffset">Search result offset for songs. Used for paging.</param>
 /// <param name="MusicFolderId">Only return results from music folder with the given ID. </param>
-public record SearchRequest
-(
+public record SearchRequest(
     string Query,
     int? ArtistCount,
     int? ArtistOffset,
@@ -21,4 +22,9 @@ public record SearchRequest
     int? SongCount,
     int? SongOffset,
     string? MusicFolderId
-);
+)
+{
+    public string QueryValue => Query.Nullify() == null ? string.Empty : $"%{Query}%";
+
+    public string QueryNormalizedValue => Query.Nullify() == null ? string.Empty : $"%{QueryValue.ToNormalizedString()}%";
+}
