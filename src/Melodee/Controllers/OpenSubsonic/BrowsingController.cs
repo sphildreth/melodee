@@ -31,15 +31,16 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     public async Task<IActionResult> GetIndexes(CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetMusicFolders(ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }     
-    
+    }
+
     /// <summary>
     ///     Returns an indexed structure of all artists.
     /// </summary>
-    /// <param name="id">A string which uniquely identifies the music folder. Obtained by calls to getIndexes or getMusicDirectory.</param>
+    /// <param name="musicFolderId">If specified, only return artists in the music folder with the given ID. See getMusicFolders.</param> 
+    /// <param name="ifModifiedSince">If specified, only return a result if the artist collection has changed since the given time (in milliseconds since 1 Jan 1970).</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getIndexes.view")]
-    public async Task<IActionResult> GetIndexes(Guid? musicFolderId, bool? ifModifiedSince, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetIndexes(Guid? musicFolderId, long? ifModifiedSince, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync(musicFolderId, ifModifiedSince, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }     

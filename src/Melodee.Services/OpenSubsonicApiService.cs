@@ -1,5 +1,4 @@
 using System.Globalization;
-using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -198,36 +197,36 @@ public class OpenSubsonicApiService(
                     case ListType.Newest:
                         whereSql = "ORDER BY a.\"CreatedAt\" DESC";
                         break;
-                    
+
                     case ListType.Highest:
                         whereSql = "ORDER BY a.\"CalculatedRating\" DESC";
                         break;
-                    
+
                     case ListType.Frequent:
                         whereSql = "ORDER BY a.\"PlayedCount\" DESC";
                         break;
-                    
+
                     case ListType.Recent:
                         whereSql = "ORDER BY a.\"LastPlayedAt\" DESC";
                         break;
-                    
+
                     case ListType.AlphabeticalByName:
                         whereSql = "ORDER BY a.\"SortName\"";
                         break;
-                    
+
                     case ListType.AlphabeticalByArtist:
                         whereSql = "ORDER BY aa.\"SortName\"";
                         break;
-                    
+
                     case ListType.Starred:
                         whereSql = "ORDER BY aa.\"UserStarredCount\" DESC";
                         break;
-                    
+
                     case ListType.ByYear:
                         // TODO fromYear and ToYear optional filtering
                         whereSql = "ORDER BY \"Year\" DESC";
                         break;
-                    
+
                     case ListType.ByGenre:
                         // TODO filter by given Genre
                         whereSql = "ORDER BY \"Genre\" DESC";
@@ -429,13 +428,12 @@ public class OpenSubsonicApiService(
             }
         };
     }
-    
+
     /// <summary>
-    /// Returns the avatar (personal image) for a user.
+    ///     Returns the avatar (personal image) for a user.
     /// </summary>
     public async Task<ResponseModel> GetAvatarAsync(string username, object o, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
-        
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
@@ -451,7 +449,7 @@ public class OpenSubsonicApiService(
         // TODO cache images?
 
         try
-        { 
+        {
             var userLibraryResult = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
             if (userLibraryResult.IsSuccess)
             {
@@ -478,7 +476,7 @@ public class OpenSubsonicApiService(
                 DataDetailPropertyName = string.Empty
             }
         };
-    }    
+    }
 
     /// <summary>
     ///     Returns a cover art image.
@@ -683,7 +681,7 @@ public class OpenSubsonicApiService(
                 {
                     bool isAuthenticated;
                     var authUsingToken = apiRequest.Token?.Nullify() != null;
-                    var usersPassword = user.Data.Decrypt(user.Data.PasswordEncrypted, (await Configuration.Value));
+                    var usersPassword = user.Data.Decrypt(user.Data.PasswordEncrypted, await Configuration.Value);
                     var apiRequestPassword = apiRequest.Password;
                     if (apiRequest.Password?.StartsWith("enc:", StringComparison.Ordinal) ?? false)
                     {
@@ -937,8 +935,8 @@ public class OpenSubsonicApiService(
         }
 
         var result = false;
-        await scrobbleService.InitializeAsync((await Configuration.Value), cancellationToken).ConfigureAwait(false);
-        
+        await scrobbleService.InitializeAsync(await Configuration.Value, cancellationToken).ConfigureAwait(false);
+
         // If not provided then default to this is a "submission" versus a "now playing" notification.
         if (submission ?? true)
         {
@@ -1011,8 +1009,9 @@ public class OpenSubsonicApiService(
             {
                 bytesToRead = (int)songStreamInfo.FileSize;
             }
+
             var trackBytes = new byte[bytesToRead];
-            
+
 
             await using (var fs = songStreamInfo.TrackFileInfo.OpenRead())
             {
@@ -1093,7 +1092,7 @@ public class OpenSubsonicApiService(
                 data.Add(nowPlayingSong.ToChild(album, userSong, nowPlaying.Data.FirstOrDefault(x => x.UniqueId == nowPlayingSongUniqueId)));
             }
         }
-        
+
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
@@ -1118,7 +1117,7 @@ public class OpenSubsonicApiService(
                 ResponseData = authResponse.ResponseData
             };
         }
-        
+
         ArtistSearchResult[] artists = [];
         AlbumSearchResult[] albums = [];
         SongSearchResult[] songs = [];
@@ -1134,12 +1133,12 @@ public class OpenSubsonicApiService(
                     { "userId", authResponse.UserInfo.Id },
                     { "normalizedQuery", request.QueryNormalizedValue },
                     { "query", request.QueryValue },
-                    { "artistOffset", request.ArtistOffset ?? 0},
+                    { "artistOffset", request.ArtistOffset ?? 0 },
                     { "artistCount", request.ArtistCount ?? defaultPageSize },
-                    { "albumOffset", request.AlbumOffset ?? 0},
+                    { "albumOffset", request.AlbumOffset ?? 0 },
                     { "albumCount", request.AlbumCount ?? defaultPageSize },
-                    { "songOffset", request.SongOffset ?? 0},
-                    { "songCount", request.SongCount ?? defaultPageSize }                    
+                    { "songOffset", request.SongOffset ?? 0 },
+                    { "songCount", request.SongCount ?? defaultPageSize }
                 };
                 var sql = """
                           select "ApiKey"::varchar as "Id", "Name", 'artist_' || "ApiKey" as "CoverArt", "AlbumCount"
@@ -1151,20 +1150,20 @@ public class OpenSubsonicApiService(
                 artists = (await dbConn
                     .QueryAsync<ArtistSearchResult>(sql, sqlParameters)
                     .ConfigureAwait(false)).ToArray();
-                
+
                 sql = """
-                          select a."ApiKey"::varchar as "Id", a."Name", 'album_' || a."ApiKey"::varchar as "CoverArt", a."SongCount", a."CreatedAt", 
-                                 a."Duration" as "DurationMs", aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
-                          from "Albums" a
-                          left join "Artists" aa on (a."ArtistId" = aa."Id")
-                          where a."NameNormalized"  like @normalizedQuery
-                          or a."AlternateNames" like @query
-                          ORDER BY a."SortName" OFFSET @albumOffset ROWS FETCH NEXT @albumCount ROWS ONLY;
-                          """;
+                      select a."ApiKey"::varchar as "Id", a."Name", 'album_' || a."ApiKey"::varchar as "CoverArt", a."SongCount", a."CreatedAt", 
+                             a."Duration" as "DurationMs", aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
+                      from "Albums" a
+                      left join "Artists" aa on (a."ArtistId" = aa."Id")
+                      where a."NameNormalized"  like @normalizedQuery
+                      or a."AlternateNames" like @query
+                      ORDER BY a."SortName" OFFSET @albumOffset ROWS FETCH NEXT @albumCount ROWS ONLY;
+                      """;
                 albums = (await dbConn
                     .QueryAsync<AlbumSearchResult>(sql, sqlParameters)
-                    .ConfigureAwait(false)).ToArray();    
-                
+                    .ConfigureAwait(false)).ToArray();
+
                 sql = """
                       select s."ApiKey"::varchar as "Id", a."ApiKey"::varchar as Parent, s."Title", a."Name" as Album, aa."Name" as "Artist", 'song_' || s."ApiKey"::varchar as "CoverArt", 
                              a."SongCount", s."CreatedAt", s."Duration" as "DurationMs", s."BitRate", s."SongNumber" as "Track", 
@@ -1185,11 +1184,11 @@ public class OpenSubsonicApiService(
 
                 if (albums.Length == 0 && songs.Length == 0 && artists.Length == 0)
                 {
-                    Logger.Information("! No result for query [{Query}] Normalized [{QueryNormalized}]", request.QueryValue, request.QueryNormalizedValue );
+                    Logger.Information("! No result for query [{Query}] Normalized [{QueryNormalized}]", request.QueryValue, request.QueryNormalizedValue);
                 }
             }
         }
-        
+
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
@@ -1198,13 +1197,13 @@ public class OpenSubsonicApiService(
             {
                 Data = new
                 {
-                    Artist = artists, 
+                    Artist = artists,
                     Album = albums,
                     Song = songs
                 },
                 DataPropertyName = "searchResult3"
             }
-        };        
+        };
     }
 
 
@@ -1221,7 +1220,7 @@ public class OpenSubsonicApiService(
         }
 
         throw new NotImplementedException();
-        
+
         // return new ResponseModel
         // {
         //     UserInfo = authResponse.UserInfo,
@@ -1234,7 +1233,7 @@ public class OpenSubsonicApiService(
         // };        
     }
 
-    public async Task<ResponseModel> GetIndexesAsync(Guid? musicFolderId, bool? ifModifiedSince, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> GetIndexesAsync(Guid? musicFolderId, long? ifModifiedSince, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -1246,17 +1245,40 @@ public class OpenSubsonicApiService(
             };
         }
 
+        var indexLimit = (await Configuration.Value).GetValue<short>(SettingRegistry.OpenSubsonicIndexesArtistLimit);
+        if (indexLimit == 0)
+        {
+            indexLimit = short.MaxValue;
+        }
+
         Indexes? data = null;
+        var libraryId = 0;
+        var lastModifed = string.Empty;
+        if (musicFolderId.HasValue)
+        {
+            var libraryResult = await libraryService.ListAsync(new PagedRequest(), cancellationToken).ConfigureAwait(false);
+            var library = libraryResult.Data?.Where(x => x.ApiKey == musicFolderId.Value).FirstOrDefault();
+            libraryId = library?.Id ?? 0;
+            lastModifed = library?.LastUpdatedAt.ToString() ?? string.Empty;
+        }
+
+        // TODO looks like these are values removed from sortname when sorting
+        // see https://github.com/navidrome/navidrome/blob/9ae898d071e32cf56261f3b13a639fd01092c201/utils/str/sanitize_strings.go#L52
+        var ignoredArticles = (await Configuration.Value).GetValue<string>(SettingRegistry.ProcessingIgnoredArticles) ?? string.Empty;
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
-                      select "ApiKey", LEFT("SortName", 1), "Name", 'artist_' || "ApiKey" as "CoverArt", "CalculatedRating"
-                      from "Artists" 
-                      order by "SortOrder", "SortName";
+                      select a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", a."CalculatedRating", a."AlbumCount", ua."Rating" as "UserRating"
+                      from "Artists" a
+                      join "Albums" a2 on (a."Id" = a2."ArtistId")
+                      left join "UserArtists" ua on (a."Id" = ua."ArtistId" and ua."UserId" = @userId)
+                      where ((@libraryId = 0) or (@libraryId > 0 and a2."LibraryId" = @libraryId))
+                      and (EXTRACT(EPOCH from a."LastUpdatedAt") >= 0)
+                      order by a."SortOrder", a."SortName"
                       """;
-            var indexes = await dbConn.QueryAsync<DatabaseArtistIndexInfo>(sql).ConfigureAwait(false);
+            var indexes = await dbConn.QueryAsync<DatabaseArtistIndexInfo>(sql, new { libraryId, modifiedSince = ifModifiedSince ?? 0, userId = authResponse.UserInfo.Id }).ConfigureAwait(false);
 
             var artists = new List<ArtistIndex>();
             foreach (var grouped in indexes.GroupBy(x => x.Index))
@@ -1264,11 +1286,13 @@ public class OpenSubsonicApiService(
                 var aa = new List<Artist>();
                 foreach (var info in grouped)
                 {
-                    aa.Add(new Artist(info.ApiKey, info.Name, info.CoverArt));
+                    aa.Add(new Artist(info.ApiKey, info.Name, info.AlbumCount, info.UserRatingValue, info.CalculatedRating, info.CoverArt, "Url"));
                 }
-                artists.Add(new ArtistIndex(grouped.Key, aa);   
+
+                artists.Add(new ArtistIndex(grouped.Key, aa.Take(indexLimit).ToArray()));
             }
 
+            data = new Indexes(ignoredArticles, lastModifed, [], artists.ToArray(), []);
         }
 
         return new ResponseModel
@@ -1280,11 +1304,11 @@ public class OpenSubsonicApiService(
                 Data = data,
                 DataPropertyName = "indexes"
             }
-        }; 
+        };
     }
 
     /// <summary>
-    /// Returns all configured top-level music folders.
+    ///     Returns all configured top-level music folders.
     /// </summary>
     public async Task<ResponseModel> GetMusicFolders(ApiRequest apiRequest, CancellationToken cancellationToken)
     {
@@ -1298,8 +1322,8 @@ public class OpenSubsonicApiService(
             };
         }
 
-        NamedInfo[] data = []; 
-        
+        NamedInfo[] data = [];
+
         var libraryResult = await libraryService.ListAsync(new PagedRequest(), cancellationToken).ConfigureAwait(false);
         if (libraryResult.IsSuccess)
         {
@@ -1316,6 +1340,6 @@ public class OpenSubsonicApiService(
                 DataPropertyName = "musicFolders",
                 DataDetailPropertyName = "musicFolder"
             }
-        }; 
+        };
     }
 }

@@ -1,13 +1,11 @@
-using Melodee.Common.Configuration;
 using Melodee.Common.Models;
-
 
 namespace Melodee.Plugins.Scripting;
 
 /// <summary>
 ///     Do nothing script used when no script is desired or configured.
 /// </summary>
-public sealed class NullScript() : IScriptPlugin
+public sealed class NullScript : IScriptPlugin
 {
     public string Id => "1C4F80FF-C226-4C5B-A53A-B12331534725";
 

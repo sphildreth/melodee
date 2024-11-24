@@ -58,7 +58,7 @@ public abstract class ControllerBase : Controller
             context.HttpContext.Request.Query["u"].FirstOrDefault(),
             context.HttpContext.Request.Query["v"].FirstOrDefault(),
             context.HttpContext.Request.Query["f"].FirstOrDefault(),
-            context.HttpContext.Request.Query["id"].FirstOrDefault(),
+            context.HttpContext.Request.Query["apiKey"].FirstOrDefault(),
             context.HttpContext.Request.Query["p"].FirstOrDefault(),
             context.HttpContext.Request.Query["t"].FirstOrDefault(),
             context.HttpContext.Request.Query["s"].FirstOrDefault(),

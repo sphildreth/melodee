@@ -1,12 +1,10 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using FluentValidation;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
@@ -27,7 +25,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
 
     public override string DisplayName => nameof(Nfo);
 
-    public override bool IsEnabled { get; set; } = false;
+    public override bool IsEnabled { get; set; }
 
     public override int SortOrder { get; } = 3;
 
@@ -73,8 +71,9 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                             Severity = ValidationResultMessageSeverity.Critical
                         });
                     }
-                    nfoAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;                    
-                    
+
+                    nfoAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
+
                     if (nfoAlbum.Status == AlbumStatus.Ok)
                     {
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
@@ -115,6 +114,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
             Log.Error(e, "[{Name}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
             StopProcessing = true;
         }
+
         return new OperationResult<int>
         {
             Data = processedFiles
@@ -141,7 +141,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                 if (parts.Length > 1)
                 {
                     key = parts[0].ToAlphanumericName(false, false).ToTitleCase(false).Nullify() ?? string.Empty;
-                    result = ReplaceMultiplePeriodsRegex().Replace(parts[1].ToAlphanumericName(false, false)?.ToTitleCase(false)?.Nullify() ?? string.Empty, string.Empty);
+                    result = ReplaceMultiplePeriodsRegex().Replace(parts[1].ToAlphanumericName(false, false).ToTitleCase(false)?.Nullify() ?? string.Empty, string.Empty);
                     rawValue = parts[1].Nullify();
                 }
             }
@@ -166,32 +166,32 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
     } // ReSharper disable StringLiteralTypo
     private static bool IsLineForAlbumArtist(string line)
     {
-        return IsLineForMatches(new[] { "artist", "albumartist" }, line);
+        return IsLineForMatches(["artist", "albumartist"], line);
     }
 
     private static bool IsLineForAlbumDate(string line)
     {
-        return IsLineForMatches(new[] { "retaildate", "reldate", "ripdate" }, line);
+        return IsLineForMatches(["retaildate", "reldate", "ripdate"], line);
     }
 
     private static bool IsLineForAlbumTitle(string line)
     {
-        return IsLineForMatches(new[] { "title" }, line);
+        return IsLineForMatches(["title"], line);
     }
 
     private static bool IsLineForSongTotal(string line)
     {
-        return IsLineForMatches(new[] { "Songs" }, line);
+        return IsLineForMatches(["Songs"], line);
     }
 
     private static bool IsLineForLength(string line)
     {
-        return IsLineForMatches(new[] { "length", "runtime" }, line);
+        return IsLineForMatches(["length", "runtime"], line);
     }
 
     private static bool IsLineForPublisher(string line)
     {
-        return IsLineForMatches(new[] { "label", "publisher" }, line);
+        return IsLineForMatches(["label", "publisher"], line);
     }
 
     // ReSharper enable StringLiteralTypo
@@ -226,8 +226,8 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                 songs.Add(new Common.Models.Song
                 {
                     CrcHash = Crc32.Calculate(fileInfo),
-                    Tags = new[]
-                    {
+                    Tags =
+                    [
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.TrackNumber,
@@ -243,7 +243,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                             Identifier = MetaTagIdentifier.Length,
                             Value = songDuration
                         }
-                    },
+                    ],
                     File = new FileSystemFileInfo
                     {
                         Name = string.Empty,
@@ -337,34 +337,38 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
             }
         }
 
-        if(songs.Any() && albumTags.All(x => x.Identifier != MetaTagIdentifier.DiscTotal))
+        if (songs.Any() && albumTags.All(x => x.Identifier != MetaTagIdentifier.DiscTotal))
         {
             var discTotalTags = songs
                 .Where(x => x.Tags != null)
                 .SelectMany(x => x.Tags!)
                 .Where(x => x.Identifier == MetaTagIdentifier.DiscTotal)
                 .ToArray();
-             var maxSongDiscTotal = discTotalTags.Length != 0 ? discTotalTags.Max(x => SafeParser.ToNumber<short>(x.Value)) : 0;
+            var maxSongDiscTotal = discTotalTags.Length != 0 ? discTotalTags.Max(x => SafeParser.ToNumber<short>(x.Value)) : 0;
             albumTags.Add(new MetaTag<object?>
             {
                 Identifier = MetaTagIdentifier.DiscTotal,
                 Value = maxSongDiscTotal == 0 ? 1 : maxSongDiscTotal
             });
         }
-        
+
         var result = new Album
         {
-            Directory = parentDirectoryInfo,
-            Files = new[]
+            Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ?? new FileSystemDirectoryInfo
             {
+                Path = fileInfo.Directory?.FullName ?? string.Empty,
+                Name = fileInfo.Directory?.Name ?? string.Empty
+            },
+            Files =
+            [
                 new AlbumFile
                 {
                     AlbumFileType = AlbumFileType.MetaData,
                     ProcessedByPlugin = DisplayName,
                     FileSystemFileInfo = fileInfo.ToFileSystemInfo()
                 }
-            },
-            ViaPlugins = new[] { nameof(Nfo) },
+            ],
+            ViaPlugins = [nameof(Nfo)],
             OriginalDirectory = new FileSystemDirectoryInfo
             {
                 ParentId = parentDirectoryInfo?.UniqueId ?? 0,
@@ -385,6 +389,7 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }
+
         result.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
         return result;
     }

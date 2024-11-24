@@ -1,7 +1,9 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
-public record Error(short Code, string Message)
+public record Error(short Code, string Message, string? HelpUrl = null)
 {
+    public static Error GenericError(string? message) => new(0, message ?? "An error has occured.");
+    
     public static Error RequiredParameterMissingError => new(10, "Required parameter is missing.");
 
     public static Error IncompatibleSubsonicVersion => new(20, "Incompatible Subsonic REST protocol version. Client must upgrade.");

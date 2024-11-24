@@ -5,13 +5,14 @@ namespace Melodee.Plugins.MetaData.Song;
 public class NullSongPlugin : ISongPlugin
 {
     public string Id => "DF5B8F59-D5AF-478E-A5AE-4A275841B3AA";
-    
+
     public string DisplayName => nameof(NullSongPlugin);
-    
+
     public bool IsEnabled { get; set; } = false;
-    
+
     public int SortOrder => 0;
     public bool StopProcessing { get; }
+
     public bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
         throw new NotImplementedException();

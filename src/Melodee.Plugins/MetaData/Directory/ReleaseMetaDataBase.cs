@@ -1,5 +1,3 @@
-
-
 using Melodee.Common.Configuration;
 
 namespace Melodee.Plugins.MetaData.Directory;

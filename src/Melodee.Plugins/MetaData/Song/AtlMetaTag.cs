@@ -13,7 +13,6 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 using SixLabors.ImageSharp;
-
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
 namespace Melodee.Plugins.MetaData.Song;
@@ -200,6 +199,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                             {
                                 tags.Remove(existing);
                             }
+
                             tags.Add(additionalTag);
                         }
 
@@ -241,7 +241,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             {
                 Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
             }
-            
+
             // Ensure that OrigAlbumYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
             if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigAlbumYear))
             {
@@ -251,16 +251,16 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     Value = 0
                 });
             }
-            
+
             // Set SortOrder necessary for processors
             var tagCount = tags.Count;
             tags.ForEach(x => x.SortOrder = tagCount);
-            
+
             var albumTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
             var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
             if (albumTag == null || artistTag == null)
             {
-                return new OperationResult<Common.Models.Song>($"Song [{ fileSystemFileInfo.Name }] is invalid, missing Album and/or Artist tags.")
+                return new OperationResult<Common.Models.Song>($"Song [{fileSystemFileInfo.Name}] is invalid, missing Album and/or Artist tags.")
                 {
                     Data = new Common.Models.Song
                     {
@@ -270,9 +270,10 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                     Type = OperationResponseType.ValidationFailure
                 };
             }
-            tags.First(x => x.Identifier == MetaTagIdentifier.Album).SortOrder = 1;            
+
+            tags.First(x => x.Identifier == MetaTagIdentifier.Album).SortOrder = 1;
             tags.First(x => x.Identifier == MetaTagIdentifier.Artist).SortOrder = 2;
-            
+
             // Ensure that AlbumArtist is set, if has fragments will get cleaned up by MetaTag Processor
             if (tags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
             {
@@ -303,8 +304,8 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 CrcHash = Crc32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
                 File = fileSystemFileInfo,
                 Images = images,
-                Tags = metaTagsProcessorResult.Data,
-                MediaAudios = mediaAudios,
+                Tags = metaTagsProcessorResult.Data.DistinctBy(x => x.Identifier).ToArray(),
+                MediaAudios = mediaAudios.DistinctBy(x => x.Identifier).ToArray(),
                 SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
             };
             return new OperationResult<Common.Models.Song>
@@ -312,34 +313,6 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 Data = song
             };
         }
-    }
-
-    public async Task<OperationResult<bool>> RemoveImagesAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
-    {
-        var result = false;
-        if (song.Tags?.Any() ?? false)
-        {
-            var songFileName = song.File.FullName(directoryInfo);
-            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Removing images from [{FileName}]", DisplayName, songFileName))
-            {
-                try
-                {
-                    var fileAtl = new Track(songFileName);
-                    fileAtl.EmbeddedPictures.Clear();
-                    result = await fileAtl.SaveAsync();
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
-                }
-            }
-        }
-
-        return new OperationResult<bool>
-        {
-            Data = result
-        };
-        
     }
 
     public async Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
@@ -350,12 +323,13 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
             var songFileName = song.File.FullName(directoryInfo);
             if (!File.Exists(songFileName))
             {
-                Log.Error(new Exception($"File not found [{songFileName}]"),"[{PlugInName}] UpdateSongAsync called File [{FileName}] does not exist", nameof(AtlMetaTag), songFileName);
+                Log.Error(new Exception($"File not found [{songFileName}]"), "[{PlugInName}] UpdateSongAsync called File [{FileName}] does not exist", nameof(AtlMetaTag), songFileName);
                 return new OperationResult<bool>
                 {
                     Data = false
                 };
             }
+
             using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Updating [{FileName}]", DisplayName, songFileName))
             {
                 try
@@ -406,6 +380,33 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
         };
     }
 
+    public async Task<OperationResult<bool>> RemoveImagesAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
+    {
+        var result = false;
+        if (song.Tags?.Any() ?? false)
+        {
+            var songFileName = song.File.FullName(directoryInfo);
+            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Removing images from [{FileName}]", DisplayName, songFileName))
+            {
+                try
+                {
+                    var fileAtl = new Track(songFileName);
+                    fileAtl.EmbeddedPictures.Clear();
+                    result = await fileAtl.SaveAsync();
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
+                }
+            }
+        }
+
+        return new OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+
     private IEnumerable<MetaTag<object?>> MetaTagsForTagDictionary(Dictionary<string, string> tagsDictionary)
     {
         var result = new List<MetaTag<object?>>();
@@ -432,6 +433,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                             });
                         }
                     }
+
                     break;
 
                 case "LENGTH":

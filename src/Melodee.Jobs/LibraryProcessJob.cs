@@ -27,7 +27,8 @@ using dbModels = Melodee.Common.Data.Models;
 namespace Melodee.Jobs;
 
 /// <summary>
-///     Process non staging and inbound libraries and update database with updated metadata.
+///     Process non staging and inbound libraries and update database with updated metadata found in existing melodee data
+///     files.
 /// </summary>
 [DisallowConcurrentExecution]
 public class LibraryProcessJob(
@@ -466,6 +467,7 @@ public class LibraryProcessJob(
                                 FileName = mediaFile.Name,
                                 FileSize = mediaFile.Length,
                                 Genres = melodeeFile.Genre()?.Length < 1 ? null : song.Genre()!.Split('/'),
+                                IsVbr = SafeParser.ToNumber<bool>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.IsVbr)?.Value),
                                 Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
                                 MediaUniqueId = song.UniqueId,
                                 PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),

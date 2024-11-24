@@ -5,7 +5,6 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData;
@@ -36,6 +35,7 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
         {
             return false;
         }
+
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
@@ -49,6 +49,7 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                 Type = OperationResponseType.NotImplementedOrDisabled
             };
         }
+
         if (!FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo)))
         {
             return new OperationResult<FileSystemFileInfo>
@@ -93,9 +94,9 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                         }
                         else if (convertedRenamedExtension.Nullify() != null)
                         {
-                            var movedFileName = Path.Combine(songFileInfo.DirectoryName!, $"{songFileInfo.Name}.{ convertedRenamedExtension }");
+                            var movedFileName = Path.Combine(songFileInfo.DirectoryName!, $"{songFileInfo.Name}.{convertedRenamedExtension}");
                             songFileInfo.MoveTo(movedFileName);
-                            Log.Debug($"\ud83d\ude9b Renamed converted file [{songFileInfo.Name}] => [{ Path.GetFileName(movedFileName)}]");
+                            Log.Debug($"\ud83d\ude9b Renamed converted file [{songFileInfo.Name}] => [{Path.GetFileName(movedFileName)}]");
                         }
                     }
                     else

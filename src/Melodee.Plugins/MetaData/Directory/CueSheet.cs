@@ -8,7 +8,6 @@ using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
@@ -157,14 +156,15 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                             }
                             else if (convertedExtension.Nullify() != null)
                             {
-                                var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{ convertedExtension }");
+                                var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{convertedExtension}");
                                 cueFile.MoveTo(movedFileName);
-                                Log.Debug($"\ud83d\ude9b Renamed CUE file [{cueFile.Name}] => [{ Path.GetFileName(movedFileName)}]");
-                                var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));                            
-                                var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{ convertedExtension }");
+                                Log.Debug($"\ud83d\ude9b Renamed CUE file [{cueFile.Name}] => [{Path.GetFileName(movedFileName)}]");
+                                var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
+                                var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{convertedExtension}");
                                 cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
-                                Log.Debug($"\ud83d\ude9b Renamed CUE Media file [{cueFileMediaFile.Name}] => [{ Path.GetFileName(movedCueFileMediaFileFileName)}]");                           
+                                Log.Debug($"\ud83d\ude9b Renamed CUE Media file [{cueFileMediaFile.Name}] => [{Path.GetFileName(movedCueFileMediaFileFileName)}]");
                             }
+
                             fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.HandlesExtension);
                             var isValidCheck = cueAlbum.IsValid(Configuration);
                             if (!isValidCheck.Item1)
@@ -175,7 +175,8 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                                     Severity = ValidationResultMessageSeverity.Critical
                                 });
                             }
-                            cueAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;  
+
+                            cueAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
                             var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueAlbum.ToMelodeeJsonName());
                             if (File.Exists(stagingAlbumDataName))
                             {
@@ -206,6 +207,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
             Log.Error(e, "[{Name}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
             StopProcessing = true;
         }
+
         return new OperationResult<int>
         {
             Data = processedFiles
@@ -416,7 +418,7 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                         songTags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Title,
-                            Value = kp.Value.Nullify(),
+                            Value = kp.Value.Nullify()
                         });
                     }
 
@@ -475,13 +477,13 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                 songTitle,
                 SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
                 mediaNumber,
-                totalMediaNumber);            
+                totalMediaNumber);
             songs.Add(new Common.Models.Song
             {
                 CrcHash = Crc32.Calculate(fileInfo),
                 File = new FileSystemFileInfo
                 {
-                    Name = Path.GetFileName(songFileName),                    
+                    Name = Path.GetFileName(songFileName),
                     Size = 0
                 },
                 Tags = songTags.ToArray()

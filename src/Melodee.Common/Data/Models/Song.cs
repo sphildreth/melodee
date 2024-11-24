@@ -97,6 +97,8 @@ public class Song : MetaDataModelBase
     public required string ContentType { get; set; }
 
     public int? ChannelCount { get; set; }
+    
+    public bool IsVbr { get; set; }
 
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 

@@ -5,14 +5,12 @@ using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Validation;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -25,9 +23,9 @@ namespace Melodee.Plugins.MetaData.Directory;
 public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "SFV";
+    private readonly IAlbumValidator _albumValidator = albumValidator;
 
     private readonly IEnumerable<ISongPlugin> _songPlugins = songPlugins;
-    private readonly IAlbumValidator _albumValidator = albumValidator;
     public override string Id => "6C253D42-F176-4A58-A895-C54BEB1F8A5C";
 
     public override string DisplayName => nameof(SimpleFileVerification);
@@ -52,6 +50,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                     Data = -1
                 };
             }
+
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
             FileSystemDirectoryInfo? parentDirectory = null;
             if (dirInfo.Parent != null)
@@ -165,6 +164,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                             Severity = ValidationResultMessageSeverity.Critical
                         });
                     }
+
                     sfvAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
 
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName());
@@ -176,6 +176,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                             sfvAlbum = sfvAlbum.Merge(existingAlbum);
                         }
                     }
+
                     var serialized = JsonSerializer.Serialize(sfvAlbum);
                     await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
                     if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
@@ -194,6 +195,7 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
             Log.Error(e, "[{Name}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
             StopProcessing = true;
         }
+
         return new OperationResult<int>
         {
             Data = processedFiles

@@ -11,18 +11,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Crc32.NET" />
-    <PackageReference Include="FFMpegCore" />
-    <PackageReference Include="Hqub.Last.fm" />
-    <PackageReference Include="IdSharp.Common" />
-    <PackageReference Include="IdSharp.Tagging" />
-    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
-    <PackageReference Include="Microsoft.Extensions.Http" />
-    <PackageReference Include="Serilog" />
-    <PackageReference Include="Serilog.Sinks.Console" />
-    <PackageReference Include="Serilog.Sinks.File" />
-    <PackageReference Include="SixLabors.ImageSharp" />
-    <PackageReference Include="SmartFormat" />
+    <PackageReference Include="Crc32.NET"/>
+    <PackageReference Include="FFMpegCore"/>
+    <PackageReference Include="Hqub.Last.fm"/>
+    <PackageReference Include="IdSharp.Common"/>
+    <PackageReference Include="IdSharp.Tagging"/>
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities"/>
+    <PackageReference Include="Microsoft.Extensions.Http"/>
+    <PackageReference Include="Serilog"/>
+    <PackageReference Include="Serilog.Sinks.Console"/>
+    <PackageReference Include="Serilog.Sinks.File"/>
+    <PackageReference Include="SixLabors.ImageSharp"/>
+    <PackageReference Include="SmartFormat"/>
   </ItemGroup>
 
   <ItemGroup>

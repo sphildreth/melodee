@@ -5,7 +5,6 @@ using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
@@ -39,6 +38,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 }
             };
         }
+
         _validationMessages.Clear();
 
         AreAllSongNumbersValid(album);
@@ -57,13 +57,13 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             IsValid(album);
         }
-        
+
         return new OperationResult<ValidationResult>
         {
             Data = new ValidationResult
             {
                 Messages = _validationMessages,
-                AlbumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid,
+                AlbumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid
             }
         };
     }
@@ -76,12 +76,13 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             {
                 _validationMessages.Add(new ValidationResultMessage
                 {
-                    Message = $"Album has proof images.",
+                    Message = "Album has proof images.",
                     Severity = ValidationResultMessageSeverity.Critical
                 });
                 return false;
             }
         }
+
         return true;
     }
 
@@ -92,10 +93,11 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Album does not have cover image.",
+                Message = "Album does not have cover image.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }
+
         return result;
     }
 
@@ -109,11 +111,12 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Album Song total value does not match Song count.",
+                Message = "Album Song total value does not match Song count.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }
-        return result; 
+
+        return result;
     }
 
     private bool DoMediaTotalMatchMediaNumbers(Album album)
@@ -130,7 +133,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }
-        return result;        
+
+        return result;
     }
 
     private bool IsValid(Album album)
@@ -143,12 +147,13 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             {
                 Message = validationCheck.Item2 ?? "Album is invalid.",
                 Severity = ValidationResultMessageSeverity.Critical
-            });            
-            result = false;            
+            });
+            result = false;
         }
+
         return result;
     }
-    
+
     private bool AreSongsUniquelyNumbered(Album album)
     {
         var songs = album.Songs?.ToArray() ?? [];
@@ -156,6 +161,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             return false;
         }
+
         var result = true;
         foreach (var mediaSongs in songs.GroupBy(x => x.MediaNumber()))
         {
@@ -165,11 +171,12 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 result = false;
             }
         }
+
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Album has Songs with invalid Song number.",
+                Message = "Album has Songs with invalid Song number.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }
@@ -207,7 +214,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Songs do not all have the same album artist.",
+                Message = "Songs do not all have the same album artist.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }
@@ -222,7 +229,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Album artist has unwanted text.",
+                Message = "Album artist has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
@@ -237,7 +244,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Album title has unwanted text.",
+                Message = "Album title has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
         }
@@ -259,11 +266,12 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             var maxMediaNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumMediaNumber]);
             var minMediaNumber = 1;
-            if (mediaNumbers.Any(x => x > maxMediaNumber) || 
+            if (mediaNumbers.Any(x => x > maxMediaNumber) ||
                 mediaNumbers.Any(x => x < minMediaNumber))
             {
                 result = false;
             }
+
             result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
         }
 
@@ -271,7 +279,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Album media numbers are invalid.",
+                Message = "Album media numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }
@@ -295,11 +303,12 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             {
                 if (SongHasUnwantedText(album.AlbumTitle(), song.Title(), song.SongNumber()))
                 {
-                    messageResult.Append($"[{ song }]");
+                    messageResult.Append($"[{song}]");
                     result = false;
                 }
             }
         }
+
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -338,15 +347,17 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             result = false;
         }
+
         result = result && Enumerable.Range(0, songNumbers.Length).All(i => songNumbers[i] == songNumbers[0] + i);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Album Song numbers are invalid.",
+                Message = "Album Song numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }
+
         return result;
     }
 
@@ -366,9 +377,10 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             return null;
         }
+
         return ReplaceSongArtistSeparatorsRegex().Replace(songArtist!, "/").Trim();
-    }    
-    
+    }
+
     public static bool AlbumTitleHasUnwantedText(string? albumTitle)
     {
         return string.IsNullOrWhiteSpace(albumTitle) || UnwantedAlbumTitleTextRegex.IsMatch(albumTitle);
@@ -380,17 +392,19 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             return null;
         }
+
         return UnwantedAlbumTitleTextRegex.Replace(title!, string.Empty).Trim();
-    }    
-    
+    }
+
     public static string? RemoveUnwantedTextFromSongTitle(string? title)
     {
         if (title?.CleanString().Nullify() == null)
         {
             return null;
         }
+
         return UnwantedSongTitleTextRegex.Replace(title.CleanString(doTitleCase: false)!, string.Empty).Trim();
-    }       
+    }
 
     public static bool SongHasUnwantedText(string? albumTitle, string? songTitle, int? songNumber)
     {
@@ -431,5 +445,4 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]
     private static partial Regex ReplaceSongArtistSeparatorsRegex();
-
 }

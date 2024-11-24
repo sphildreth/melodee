@@ -1,7 +1,6 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Models;
-
 using Melodee.Common.Utility;
 using Serilog;
 

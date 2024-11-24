@@ -1,10 +1,7 @@
-using ATL;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Models;
-
 using Melodee.Common.Utility;
-using Microsoft.Win32.SafeHandles;
 using Serilog;
 
 namespace Melodee.Plugins.Scripting;

@@ -6,6 +6,7 @@ namespace Melodee.Plugins.Scrobbling;
 
 public class NullScrobbler : IScrobbler
 {
+    public bool StopProcessing { get; } = false;
     public string Id => "EAA0D3F2-62EC-4553-B4BD-3DF8DC8A4547";
 
     public string DisplayName => nameof(NullScrobbler);
@@ -14,8 +15,6 @@ public class NullScrobbler : IScrobbler
 
     public int SortOrder { get; } = 0;
 
-    public bool StopProcessing { get; } = false;
-    
     public Task<OperationResult<bool>> NowPlaying(User user, ScrobbleInfo scrobble, CancellationToken token = default)
     {
         return Task.FromResult(new OperationResult<bool>

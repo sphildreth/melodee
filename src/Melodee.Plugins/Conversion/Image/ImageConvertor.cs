@@ -52,14 +52,15 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         {
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
             var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));
-            var maxSize = configuration.GetValue<string?>(SettingRegistry.ImagingMaximumImageSize);
+            var maxSize = MelodeeConfiguration.GetValue<string?>(SettingRegistry.ImagingMaximumImageSize);
             if (maxSize != null)
             {
                 convertedBytes = ResizeImageIfNeeded(convertedBytes, SafeParser.ToNumber<int>(maxSize.Split('x')[0]), SafeParser.ToNumber<int>(maxSize.Split('x')[1]));
-            }            
+            }
+
             await File.WriteAllBytesAsync(newName, convertedBytes, cancellationToken);
             fileInfo.Delete();
-            fileInfo = new FileInfo(newName);            
+            fileInfo = new FileInfo(newName);
         }
 
         return new OperationResult<FileSystemFileInfo>
@@ -77,12 +78,13 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             {
                 image.Mutate(x => x.Resize(maxWidth, maxHeight));
             }
+
             image.SaveAsJpeg(outStream);
         }
 
         return outStream.ToArray();
     }
-    
+
     private static byte[] ConvertToJpegFormatViaSixLabors(ReadOnlySpan<byte> imageBytes)
     {
         using var outStream = new MemoryStream();
@@ -90,6 +92,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         {
             image.SaveAsJpeg(outStream);
         }
+
         return outStream.ToArray();
     }
 }

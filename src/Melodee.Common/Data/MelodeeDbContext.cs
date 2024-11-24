@@ -375,7 +375,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 34,
                     Key = SettingRegistry.ProcessingMaximumProcessingCount,
-                    Comment = "The maximum number of files to process, set to zero for infinite.",
+                    Comment = "The maximum number of files to process, set to zero for unlimited.",
                     Value = "0",
                     CreatedAt = now
                 },
@@ -581,7 +581,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 71,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingMaximumNumberOfAlbumImages,
-                    Comment = "Maximum allowed number of images for an album, this includes all image types (Front, Rear, etc.), set to zero for infinite.",
+                    Comment = "Maximum allowed number of images for an album, this includes all image types (Front, Rear, etc.), set to zero for unlimited.",
                     Value = "25",
                     CreatedAt = now
                 },
@@ -590,7 +590,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 72,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingMaximumNumberOfArtistImages,
-                    Comment = "Maximum allowed number of images for an artist, set to zero for infinite.",
+                    Comment = "Maximum allowed number of images for an artist, set to zero for unlimited.",
                     Value = "25",
                     CreatedAt = now
                 },
@@ -665,8 +665,16 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "ApiKey used to scrobble to last FM. See https://www.last.fm/api/authentication for more details.",
                     Value = "",
                     CreatedAt = now
-                }                 
-                
+                },
+                new Setting
+                {
+                    Id = 81,
+                    Category = (int)SettingCategory.Api,
+                    Key = SettingRegistry.OpenSubsonicIndexesArtistLimit,
+                    Comment = "Limit the number of artists to include in an indexes request, set to zero for 32k per index (really not recommended with tens of thousands of artists and mobile clients timeout downloading indexes, a user can find an artist by search)",
+                    Value = "1000",
+                    CreatedAt = now
+                }
             );
         });
 

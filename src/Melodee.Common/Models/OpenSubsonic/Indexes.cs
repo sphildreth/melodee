@@ -15,6 +15,6 @@ public sealed record Indexes(
     string IgnoredArticles,
     string LastModified,
     NamedInfo[] ShortCut,
-    ArtistIndex Index,
+    ArtistIndex[] Index,
     Child[] Child
 );

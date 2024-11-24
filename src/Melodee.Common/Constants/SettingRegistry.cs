@@ -27,9 +27,10 @@ public static class SettingRegistry
     public const string MagicDoSetYearToCurrentIfInvalid = "magic.doSetYearToCurrentIfInvalid";
     public const string MagicEnabled = "magic.enabled";
     public const string OpenSubsonicServerLicenseEmail = "openSubsonicServer.openSubsonicServerLicenseEmail";
-    public const string OpenSubsonicServerSupportedVersion = "openSubsonicServer.openSubsonicServerSupportedVersion";
-    public const string OpenSubsonicServerType = "openSubsonicServer.openSubsonicServerType";
-    public const string OpenSubsonicServerVersion = "openSubsonicServer.openSubsonicServerVersion";
+    public const string OpenSubsonicServerSupportedVersion = "openSubsonicServer.openSubsonic.serverSupportedVersion";
+    public const string OpenSubsonicServerType = "openSubsonicServer.openSubsonicServer.type";
+    public const string OpenSubsonicServerVersion = "openSubsonicServer.openSubsonicServer.version";
+    public const string OpenSubsonicIndexesArtistLimit = "openSubsonicServer.openSubsonicServer.index.artistLimit";
     public const string PluginEnabledCueSheet = "plugin.cueSheet.enabled";
     public const string PluginEnabledM3u = "plugin.m3u.enabled";
     public const string PluginEnabledNfo = "plugin.nfo.enabled";

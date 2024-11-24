@@ -15,8 +15,8 @@ public record DirectoryProcessorResult
     public required int NewSongsCount { get; init; }
 
     public required double DurationInMs { get; init; }
-    
+
     public required int NumberOfValidAlbumsProcessed { get; init; }
-    
+
     public required int NumberOfConversionPluginsProcessedFileCount { get; init; }
 }

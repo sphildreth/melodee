@@ -1,4 +1,3 @@
-using System.Globalization;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -34,6 +33,7 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
         {
             yearValue = dateParseResult.Year;
         }
+
         var minimumValidAlbumYear = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ValidationMinimumAlbumYear]);
         if (yearValue < minimumValidAlbumYear)
         {

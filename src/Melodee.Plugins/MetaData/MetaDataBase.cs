@@ -1,13 +1,12 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Models;
 
-
 namespace Melodee.Plugins.MetaData;
 
 public abstract class MetaDataBase(IMelodeeConfiguration configuration)
 {
     protected IMelodeeConfiguration MelodeeConfiguration { get; } = configuration;
-    
+
     protected Dictionary<string, object?> Configuration { get; } = configuration.Configuration;
 
     public abstract string Id { get; }

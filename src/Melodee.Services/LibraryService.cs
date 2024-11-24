@@ -53,7 +53,7 @@ public sealed class LibraryService(
             Data = result
         };
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Library>> GetUserImagesLibraryAsync(CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.UserImages;
@@ -71,7 +71,7 @@ public sealed class LibraryService(
         {
             Data = result
         };
-    }    
+    }
 
     public async Task<MelodeeModels.OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {

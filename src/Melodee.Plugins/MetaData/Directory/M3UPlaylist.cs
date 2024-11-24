@@ -1,11 +1,9 @@
-using System.Buffers;
 using System.Text.Json;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
 using Melodee.Common.Utility;
@@ -45,6 +43,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
                     Data = -1
                 };
             }
+
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
             FileSystemDirectoryInfo? parentDirectory = null;
             if (dirInfo.Parent != null)
@@ -143,7 +142,8 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
                                 Severity = ValidationResultMessageSeverity.Critical
                             });
                         }
-                        m3UAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;                        
+
+                        m3UAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
                         if (File.Exists(stagingAlbumDataName))
                         {
@@ -173,6 +173,7 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
             Log.Error(e, "[{Name}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
             StopProcessing = true;
         }
+
         return new OperationResult<int>
         {
             Data = processedFiles

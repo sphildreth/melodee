@@ -6,13 +6,13 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
-using NodaTime;
 using Scrobble = Hqub.Lastfm.Entities.Scrobble;
 
 namespace Melodee.Plugins.Scrobbling;
 
 public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
 {
+    public bool StopProcessing { get; } = false;
     public string Id => "7ADF8A80-433C-487A-8359-20FD473F20BB";
 
     public string DisplayName => nameof(LastFmScrobbler);
@@ -20,8 +20,6 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
     public bool IsEnabled { get; set; } = false;
 
     public int SortOrder { get; } = 0;
-
-    public bool StopProcessing { get; } = false;
 
     public async Task<OperationResult<bool>> NowPlaying(User user, ScrobbleInfo scrobble, CancellationToken token = default)
     {
