@@ -1,3 +1,4 @@
+using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
@@ -7,19 +8,23 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class SongExtensions
 {
+    public static string ToCoverArtId(this Song song) => song.ToApiKey();
+    
+    public static string ToApiKey(this Song song) => $"song{OpenSubsonicServer.ApiIdSeparator }{song.ApiKey}";
+    
     public static Child ToChild(this Song song, Album album, UserSong? userSong, NowPlayingInfo? nowPlayingInfo = null)
     {
         Contributor? albumArtist = null;
 
-        return new Child(song.ApiKey.ToString(),
-            album.ApiKey.ToString(),
+        return new Child(song.ToApiKey(),
+            album.ToApiKey(),
             false,
             song.Title,
             album.Name,
             albumArtist == null ? album.Artist.Name : albumArtist.Artist!.Name,
             song.SongNumber,
             album.ReleaseDate.Year,
-            $"album_{album.ApiKey}",
+            song.ToCoverArtId(),
             song.FileSize,
             "audio/mpeg", // TODO this should be the right type for the song media, what if no conversion and flac
             Path.GetExtension(song.FileName),

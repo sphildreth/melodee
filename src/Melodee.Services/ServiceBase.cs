@@ -28,7 +28,7 @@ public abstract class ServiceBase(
     protected ICacheManager CacheManager { get; } = cacheManager;
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = contextFactory;
 
-    protected async Task<DatabaseArtistIndexInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
+    protected async Task<DatabaseDirectoryInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -39,9 +39,41 @@ public abstract class ServiceBase(
                       left join "UserArtists" ua on (a."Id" = ua."ArtistId" and ua."UserId" = @userId)
                       where a."ApiKey" = @apiKeyId;
                       """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseArtistIndexInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false);
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false);
         }
     }    
+    
+    protected async Task<DatabaseDirectoryInfo?> DatabaseAlbumInfoForAlbumApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'album_' || a."ApiKey" as "CoverArt", a."CalculatedRating", 0 as "AlbumCount", a."PlayedCount" as "PlayCount", a."LastPlayedAt" as "Played", ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
+                      from "Albums" a
+                      left join "UserAlbums" ua on (a."Id" = ua."AlbumId" and ua."UserId" = @userId)
+                      where a."ApiKey" = @apiKeyId;
+                      """;
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false);
+        }
+    }      
+    
+    protected async Task<DatabaseDirectoryInfo[]?> DatabaseSongInfosForAlbumApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      select s."Id", s."ApiKey", LEFT(s."TitleSort", 1) as "Index", s."Title" as "Name", 'song_' || s."ApiKey" as "CoverArt", s."CalculatedRating", 0 as "AlbumCount", s."PlayedCount" as "PlayCount", s."LastPlayedAt" as "Played", us."StarredAt" as "UserStarred", us."Rating" as "UserRating"
+                      from "Songs" s
+                      join "AlbumDiscs" ad on (ad."Id" = s."AlbumDiscId")
+                      join "Albums" a on (ad."AlbumId" = a."Id") 
+                      left join "UserSongs" us on (s."Id" = us."SongId" and us."UserId" = @userId)
+                      where a."ApiKey" = @apiKeyId;
+                      """;
+            return (await dbConn.QueryAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false))?.ToArray();
+        }
+    }        
     
     protected async Task<DatabaseSongIdsInfo?> DatabaseSongIdsInfoForSongApiKey(Guid apiKeyId, CancellationToken cancellationToken = default)
     {

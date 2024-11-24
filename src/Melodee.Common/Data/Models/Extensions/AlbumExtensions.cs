@@ -1,3 +1,4 @@
+using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
@@ -6,19 +7,23 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class AlbumExtensions
 {
+    public static string ToCoverArtId(this Album album) => album.ToApiKey();
+    
+    public static string ToApiKey(this Album album) => $"album{OpenSubsonicServer.ApiIdSeparator }{album.ApiKey}";
+    
     public static Child ToChild(this Album album, UserAlbum? userAlbum, NowPlayingInfo? nowPlayingInfo = null)
     {
         Contributor? albumArtist = null;
 
-        return new Child(album.ApiKey.ToString(),
-            album.ApiKey.ToString(),
+        return new Child(album.ToApiKey(),
+            album.Artist.ToApiKey(),
             true,
             album.Name,
             album.Name,
             albumArtist == null ? album.Artist.Name : albumArtist.Artist!.Name,
             null,
             album.ReleaseDate.Year,
-            $"album_{album.ApiKey}",
+            album.ToCoverArtId(),
             null,
             null,
         null,

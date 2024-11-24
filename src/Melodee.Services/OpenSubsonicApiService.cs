@@ -54,13 +54,11 @@ public class OpenSubsonicApiService(
     ILibraryService libraryService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private const char ApiIdSeparator = '_';
-
-    public static bool IsApiIdForArtist(string? id) => id.Nullify() != null && (id?.StartsWith($"artist{ApiIdSeparator}") ?? false);
+    public static bool IsApiIdForArtist(string? id) => id.Nullify() != null && (id?.StartsWith($"artist{Common.Data.Contants.OpenSubsonicServer.ApiIdSeparator}") ?? false);
     
-    public static bool IsApiIdForAlbum(string? id) => id.Nullify() != null && (id?.StartsWith($"album{ApiIdSeparator}") ?? false);
+    public static bool IsApiIdForAlbum(string? id) => id.Nullify() != null && (id?.StartsWith($"album{Common.Data.Contants.OpenSubsonicServer.ApiIdSeparator}") ?? false);
     
-    public static bool IsApiIdForSong(string? id) => id.Nullify() != null && (id?.StartsWith($"song{ApiIdSeparator}") ?? false);
+    public static bool IsApiIdForSong(string? id) => id.Nullify() != null && (id?.StartsWith($"song{Common.Data.Contants.OpenSubsonicServer.ApiIdSeparator}") ?? false);
 
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
@@ -68,7 +66,7 @@ public class OpenSubsonicApiService(
 
     private Guid? ApiKeyFromId(string id)
     {
-        var apiIdParts = id.Nullify() == null ? [] : id.Split(ApiIdSeparator);
+        var apiIdParts = id.Nullify() == null ? [] : id.Split(Common.Data.Contants.OpenSubsonicServer.ApiIdSeparator);
         return SafeParser.ToGuid(SafeParser.ToGuid(apiIdParts[1])!.Value);
     }
 
@@ -1245,7 +1243,7 @@ public class OpenSubsonicApiService(
                         .Where(x => x.ArtistId == artistInfo.Id)
                         .ToArrayAsync(cancellationToken)
                         .ConfigureAwait(false);
-                    data = new Directory(artistInfo.ApiKey,
+                    data = new Directory(artistInfo.CoverArt,
                         null,
                         artistInfo.Name,
                         artistInfo.UserStarred.ToString(),
@@ -1257,9 +1255,36 @@ public class OpenSubsonicApiService(
                 }
             }
         }
-        else if (IsApiIdForAlbum(apiId))
+        else if (IsApiIdForAlbum(apiId) && apiKey != null)
         {
-            // get all songs for the album
+            var albumInfo = await DatabaseAlbumInfoForAlbumApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken);
+            if (albumInfo != null)
+            {
+                var albumSongInfos = await DatabaseSongInfosForAlbumApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken);
+                if (albumSongInfos != null)
+                {
+                    await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        var songIds = albumSongInfos.Select(x => x.Id).ToArray();
+                        var albumSongs = await scopedContext
+                            .Songs
+                            .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                            .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
+                            .Where(x => songIds.Contains(x.Id))
+                            .ToArrayAsync(cancellationToken)
+                            .ConfigureAwait(false);
+                        data = new Directory(albumInfo.CoverArt,
+                            albumInfo.CoverArt,
+                            albumInfo.Name,
+                            albumInfo.UserStarred.ToString(),
+                            albumInfo.UserRating,
+                            albumInfo.CalculatedRating,
+                            albumInfo.PlayCount,
+                            albumInfo.Played.ToString(),
+                            albumSongs?.Select(x => x.ToChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault(), null)).ToArray() ?? []);
+                    }
+                }
+            }
         }
 
         return new ResponseModel
@@ -1319,7 +1344,7 @@ public class OpenSubsonicApiService(
                       and (EXTRACT(EPOCH from a."LastUpdatedAt") >= 0)
                       order by a."SortOrder", a."SortName"
                       """;
-            var indexes = await dbConn.QueryAsync<DatabaseArtistIndexInfo>(sql, new { libraryId, modifiedSince = ifModifiedSince ?? 0, userId = authResponse.UserInfo.Id }).ConfigureAwait(false);
+            var indexes = await dbConn.QueryAsync<DatabaseDirectoryInfo>(sql, new { libraryId, modifiedSince = ifModifiedSince ?? 0, userId = authResponse.UserInfo.Id }).ConfigureAwait(false);
 
             var artists = new List<ArtistIndex>();
             foreach (var grouped in indexes.GroupBy(x => x.Index))
@@ -1327,7 +1352,7 @@ public class OpenSubsonicApiService(
                 var aa = new List<Artist>();
                 foreach (var info in grouped)
                 {
-                    aa.Add(new Artist(info.ApiKey, info.Name, info.AlbumCount, info.UserRatingValue, info.CalculatedRating, info.CoverArt, "Url"));
+                    aa.Add(new Artist(info.CoverArt, info.Name, info.AlbumCount, info.UserRatingValue, info.CalculatedRating, info.CoverArt, "Url"));
                 }
 
                 artists.Add(new ArtistIndex(grouped.Key, aa.Take(indexLimit).ToArray()));

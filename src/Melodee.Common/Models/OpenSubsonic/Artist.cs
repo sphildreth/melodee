@@ -3,7 +3,7 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// <summary>
 /// Artist record used in list and index operations.
 /// </summary>
-/// <param name="Id">Artist id</param>
+/// <param name="Id">Artist ApiKey</param>
 /// <param name="Name">Artist name</param>
 /// <param name="UserRating">Artist rating [1-5]</param>
 /// <param name="AverageRating">Artist average rating [1.0-5.0]</param>
@@ -12,7 +12,7 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// <param name="ArtistImageUrl">Artist image url</param>
 public record Artist
 (
-    Guid Id,
+    string Id,
     string Name,
     int AlbumCount,    
     int UserRating,
