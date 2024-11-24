@@ -36,7 +36,7 @@ public static class AlbumExtensions
             album.ApiKey.ToString(),
             album.Artist.ApiKey.ToString(),
             "music",
-            "song",
+            "album",
             false,
             null,
             null,

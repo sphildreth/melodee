@@ -1228,12 +1228,11 @@ public class OpenSubsonicApiService(
             };
         }
 
-        Common.Models.OpenSubsonic.Directory? data = null;
+        Directory? data = null;
         
         var apiKey = ApiKeyFromId(apiId);
         if (IsApiIdForArtist(apiId) && apiKey != null)
         {
-            // get all albums for artist    
             var artistInfo = await DatabaseArtistInfoForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken);
             if (artistInfo != null)
             {
@@ -1243,7 +1242,9 @@ public class OpenSubsonicApiService(
                         .Albums
                         .Include(x => x.Artist)
                         .Include(x => x.UserAlbums.Where(ua => ua.UserId == authResponse.UserInfo.Id))
-                        .Where(x => x.ArtistId == artistInfo.Id).ToArrayAsync(cancellationToken).ConfigureAwait(false);
+                        .Where(x => x.ArtistId == artistInfo.Id)
+                        .ToArrayAsync(cancellationToken)
+                        .ConfigureAwait(false);
                     data = new Directory(artistInfo.ApiKey,
                         null,
                         artistInfo.Name,
@@ -1253,7 +1254,6 @@ public class OpenSubsonicApiService(
                         artistInfo.PlayCount,
                         artistInfo.Played.ToString(),
                         artistAlbums?.Select(x => x.ToChild(x.UserAlbums.FirstOrDefault(),null)).ToArray() ?? []);
-
                 }
             }
         }
