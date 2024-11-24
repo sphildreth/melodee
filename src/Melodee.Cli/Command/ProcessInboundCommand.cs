@@ -3,6 +3,7 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
@@ -60,11 +61,15 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                 dbFactory,
                 settingService,
                 serializer);
+            
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
-            var inboundLibrary = (await libraryService.GetInboundLibraryAsync().ConfigureAwait(false)).Data;
+            var libraryToProcess = (await libraryService.ListAsync(new PagedRequest())).Data?.FirstOrDefault(x => x.Name == settings.LibraryName);
+            if (libraryToProcess == null)
+            {
+                throw new Exception($"Library with name [{settings.LibraryName}] not found."); }
 
-            var directoryInbound = inboundLibrary.Path;
+            var directoryInbound = libraryToProcess.Path;
             var directoryStaging = (await libraryService.GetStagingLibraryAsync().ConfigureAwait(false)).Data!.Path;
 
             var grid = new Grid()
@@ -103,25 +108,21 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                     scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
                 )
             );
-            var dirInfo = new DirectoryInfo(settings.Inbound);
+            var dirInfo = new DirectoryInfo(libraryToProcess.Path);
             if (!dirInfo.Exists)
             {
-                throw new Exception($"Directory [{settings.Inbound}] does not exist.");
+                throw new Exception($"Directory [{libraryToProcess.Path}] does not exist.");
             }
 
             var startTicks = Stopwatch.GetTimestamp();
 
-            Log.Debug("\ud83d\udcc1 Processing directory [{Inbound}]", settings.Inbound);
+            Log.Debug("\ud83d\udcc1 Processing library [{Inbound}]", libraryToProcess);
 
             await processor.InitializeAsync();
 
-            var result = await processor.ProcessDirectoryAsync(new FileSystemDirectoryInfo
-            {
-                Path = dirInfo.FullName,
-                Name = dirInfo.Name
-            }, settings.ForceMode ? null : inboundLibrary.LastScanAt);
+            var result = await processor.ProcessDirectoryAsync(libraryToProcess.ToFileSystemDirectoryInfo(), settings.ForceMode ? null : libraryToProcess.LastScanAt);
 
-            Log.Debug("ℹ️ Processed directory [{Inbound}] in [{ElapsedTime}]", settings.Inbound, Stopwatch.GetElapsedTime(startTicks));
+            Log.Debug("ℹ️ Processed library [{Inbound}] in [{ElapsedTime}]", libraryToProcess, Stopwatch.GetElapsedTime(startTicks));
 
             if (settings.Verbose)
             {

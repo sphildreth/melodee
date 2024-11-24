@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Tests.Validation;
 using Moq;
@@ -30,5 +31,8 @@ public class SerializerTests
         Assert.NotNull(deserialized);
         Assert.Equal(album.UniqueId, deserialized.UniqueId);
         Assert.Equal(album.Status, deserialized.Status);
+        Assert.NotNull(deserialized.Songs);
+
+        Assert.Equal(AlbumValidatorTests.ShouldBeBitRate, deserialized.Songs?.FirstOrDefault()?.BitRate());
     }
 }

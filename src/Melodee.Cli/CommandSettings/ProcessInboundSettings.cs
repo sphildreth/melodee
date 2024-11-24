@@ -7,17 +7,12 @@ namespace Melodee.Cli.CommandSettings;
 
 public class ProcessInboundSettings : Spectre.Console.Cli.CommandSettings
 {
-    [Description("The inbound directory holding music files to process.")]
-    [CommandArgument(0, "[INBOUND]")]
+    [Description("Name of library to process.")] 
+    [CommandArgument(0, "[LIBRARY]")] 
     [Required]
-    public string Inbound { get; set; } = string.Empty;
-
-    [Description("The staging directory to place processed files into.")]
-    [CommandArgument(0, "[STAGING]")]
-    [Required]
-    public string Staging { get; set; } = string.Empty;
-
-    [Description("Copy or move files from inbound. If set then processed files are not deleted.")]
+    public string LibraryName { get; set; } = string.Empty;
+ 
+    [Description("Copy or move files from library. If set then processed files are not deleted.")]
     [CommandOption("--copy")]
     [DefaultValue(true)]
     public bool CopyMode { get; init; }
@@ -40,16 +35,10 @@ public class ProcessInboundSettings : Spectre.Console.Cli.CommandSettings
 
     public override ValidationResult Validate()
     {
-        if (string.IsNullOrEmpty(Inbound))
+        if (string.IsNullOrEmpty(LibraryName))
         {
-            return ValidationResult.Error("Inbound directory is required");
+            return ValidationResult.Error("Library name is required");
         }
-
-        if (string.IsNullOrEmpty(Staging))
-        {
-            return ValidationResult.Error("Staging directory is required");
-        }
-
         return ValidationResult.Success();
     }
 }

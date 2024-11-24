@@ -7,6 +7,8 @@ namespace Melodee.Tests.Validation;
 
 public class AlbumValidatorTests
 {
+    public const int ShouldBeBitRate = 320;
+    
     public static Album TestAlbum
         => new()
         {
@@ -62,6 +64,14 @@ public class AlbumValidatorTests
                     {
                         Name = string.Empty,
                         Size = 12345
+                    },
+                    MediaAudios = new [] 
+                    {
+                          new MediaAudio<object?>
+                          {
+                              Identifier = MediaAudioIdentifier.BitRate,
+                              Value = ShouldBeBitRate
+                          }  
                     },
                     Tags = new[]
                     {

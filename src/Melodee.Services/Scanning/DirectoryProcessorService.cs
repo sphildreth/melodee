@@ -353,7 +353,15 @@ public sealed class DirectoryProcessorService(
                             }
                             else
                             {
-                                var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(albumDataName, cancellationToken));
+                                Album? existingAlbum = null;
+                                try
+                                {
+                                    existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(albumDataName, cancellationToken));
+                                }
+                                catch (Exception e)
+                                {
+                                    LogAndRaiseEvent(LogEventLevel.Error, "Error Deserialize melodee json file {0}]", e, albumDataName);
+                                }
                                 if (existingAlbum != null)
                                 {
                                     mergedAlbum = mergedAlbum.Merge(existingAlbum);
@@ -400,7 +408,15 @@ public sealed class DirectoryProcessorService(
 
                     try
                     {
-                        var album = serializer.Deserialize<Album>(await File.ReadAllTextAsync(albumJsonFile.FullName, cancellationToken));
+                        Album? album = null;
+                        try
+                        {
+                            album = serializer.Deserialize<Album>(await File.ReadAllTextAsync(albumJsonFile.FullName, cancellationToken));
+                        }
+                        catch (Exception e)
+                        {
+                            LogAndRaiseEvent(LogEventLevel.Error, "Error Deserialize melodee json file {0}]", e, albumJsonFile.FullName);
+                        }
                         if (album == null)
                         {
                             return new OperationResult<DirectoryProcessorResult>($"Invalid Album json file [{albumJsonFile.FullName}]")

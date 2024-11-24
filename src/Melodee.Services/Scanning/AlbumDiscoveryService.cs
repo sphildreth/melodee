@@ -264,7 +264,7 @@ public sealed class AlbumDiscoveryService(
             Year = x.AlbumYear(),
             SongCount = x.SongTotalValue(),
             AlbumStatus = x.Status,
-            ViaPlugins = x.ViaPlugins,
+            ViaPlugins = x.ViaPlugins.ToArray(),
             UniqueId = x.UniqueId
         });
         var d = await Task.WhenAll(data);

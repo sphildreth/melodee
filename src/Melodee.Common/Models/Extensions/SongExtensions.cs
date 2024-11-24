@@ -199,6 +199,16 @@ public static class SongExtensions
                song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumberTotal) ?? 1;
     }
 
+    public static int BitRate(this Song song) => SafeParser.ToNumber<int>(song?.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value);
+
+    public static int BitDepth(this Song song) => SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value);
+    
+    public static int? ChannelCount(this Song song) => SafeParser.ToNumber<int?>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.Channels)?.Value);
+
+    public static bool IsVbr(this Song song) => SafeParser.ToNumber<bool>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.IsVbr)?.Value);
+
+    public static int SamplingRate(this Song song) => SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value);
+    
     public static bool IsValid(this Song song, Dictionary<string, object?> configuration)
     {
         if (song.Tags?.Count() == 0)

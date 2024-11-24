@@ -13,11 +13,8 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     //getArtistInfo
     //getArtistInfo2
     //getArtists
-    //getIndexes // To browse using file structure 
-    //getMusicDirectory // To browse using file structure 
     //getSimilarSongs
     //getSimilarSongs2
-    //getSong
     //getTopSongs
     //getVideoInfo
     //getVideos

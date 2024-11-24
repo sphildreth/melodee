@@ -21,7 +21,7 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/scrobble.view")]
-    public async Task<IActionResult> ScrobbleAsync(Guid id, double? time, bool? submission, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ScrobbleAsync(string[] id, double[]? time, bool? submission, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ScrobbleAsync(id, time, submission, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }

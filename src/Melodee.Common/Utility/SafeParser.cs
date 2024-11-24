@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using HashidsNet;
 using Melodee.Common.Data.Contants;
@@ -248,6 +249,10 @@ public static class SafeParser
 
         try
         {
+            if (input is JsonElement)
+            {
+                return ChangeType<T>(input?.ToString());
+            }
             return ChangeType<T>(input);
         }
         catch

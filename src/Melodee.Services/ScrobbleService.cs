@@ -105,7 +105,6 @@ public class ScrobbleService(
         {
             // TODO what about Contributors? 
 
-
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbConn = scopedContext.Database.GetDbConnection();

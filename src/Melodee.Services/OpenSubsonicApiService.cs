@@ -927,7 +927,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> ScrobbleAsync(Guid id, double? time, bool? submission, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> ScrobbleAsync(string[] ids, double[]? times, bool? submission, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -942,15 +942,17 @@ public class OpenSubsonicApiService(
         var result = false;
         await scrobbleService.InitializeAsync(await Configuration.Value, cancellationToken).ConfigureAwait(false);
 
-        // If not provided then default to this is a "submission" versus a "now playing" notification.
-        if (submission ?? true)
-        {
-            await scrobbleService.Scrobble(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
-        }
-        else
-        {
-            await scrobbleService.NowPlaying(authResponse.UserInfo, id, time, apiRequest.ApiRequestPlayer?.Client ?? string.Empty, cancellationToken).ConfigureAwait(false);
-        }
+        Console.WriteLine($"** Scrobble: submission [{submission}] ids [{string.Join(",", ids)}] times [{string.Join(",", times ?? [])}] Request [{apiRequest}]");
+        
+        // // If not provided then default to this is a "submission" versus a "now playing" notification.
+        // if (submission ?? true)
+        // {
+        //     await scrobbleService.Scrobble(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
+        // }
+        // else
+        // {
+        //     await scrobbleService.NowPlaying(authResponse.UserInfo, id, time, apiRequest.ApiRequestPlayer?.Client ?? string.Empty, cancellationToken).ConfigureAwait(false);
+        // }
 
 
         return new ResponseModel
