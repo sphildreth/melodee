@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
@@ -6,6 +5,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
+using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
@@ -16,7 +16,7 @@ using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Directory;
 
-public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class M3UPlaylist(ISerializer serializer, IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "M3U";
 
@@ -147,14 +147,14 @@ public sealed class M3UPlaylist(IEnumerable<ISongPlugin> songPlugins, IAlbumVali
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                            var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
                             if (existingAlbum != null)
                             {
                                 m3UAlbum = m3UAlbum.Merge(existingAlbum);
                             }
                         }
 
-                        var serialized = JsonSerializer.Serialize(m3UAlbum);
+                        var serialized = serializer.Serialize(m3UAlbum);
                         await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {

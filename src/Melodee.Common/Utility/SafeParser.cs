@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using HashidsNet;
 using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
-using Melodee.Common.Serialization;
 
 namespace Melodee.Common.Utility;
 
@@ -251,7 +250,7 @@ public static class SafeParser
         {
             if (input is JsonElement)
             {
-                return ChangeType<T>(input?.ToString());
+                return ChangeType<T>(input.ToString());
             }
             return ChangeType<T>(input);
         }

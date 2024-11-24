@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
@@ -7,6 +6,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
+using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
@@ -20,7 +20,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     Processes Simple Verification Files (SFV) and gets files (Songs) and files CRC for Album.
 /// </summary>
-public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "SFV";
     private readonly IAlbumValidator _albumValidator = albumValidator;
@@ -170,14 +170,14 @@ public sealed class SimpleFileVerification(IEnumerable<ISongPlugin> songPlugins,
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName());
                     if (File.Exists(stagingAlbumDataName))
                     {
-                        var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                        var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
                         if (existingAlbum != null)
                         {
                             sfvAlbum = sfvAlbum.Merge(existingAlbum);
                         }
                     }
 
-                    var serialized = JsonSerializer.Serialize(sfvAlbum);
+                    var serialized = serializer.Serialize(sfvAlbum);
                     await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
                     if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                     {

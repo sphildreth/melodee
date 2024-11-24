@@ -232,60 +232,51 @@ public class LibraryProcessJob(
                     var joinedDbIds = string.Join(',', _dbAlbumIdsModifiedOrUpdated.Skip(skipValue).Take(_batchSize));
 
                     var sql = """
-                              with albumCounts as (
-                              	select "ArtistId" as id, COUNT(*) as count
-                              	FROM "Albums"
-                              	WHERE "LibraryId" = {0}
-                              	group by "ArtistId"
-                              )
-                              UPDATE "Artists"
-                              SET "AlbumCount" = c.count, "LastUpdatedAt" = NOW()
-                              from albumCounts c
-                              WHERE c.id = "Artists"."Id"
-                              AND c.id in ({1});
+                              UPDATE "Artists" a
+                              SET "AlbumCount" = (select COUNT(*) from "Albums" where "ArtistId" = a."Id"), "LastUpdatedAt" = NOW()
+                              where "AlbumCount" <> (select COUNT(*) from "Albums" where "ArtistId" = a."Id");
+                                                             
+                              UPDATE "Artists" a
+                              SET "SongCount" = (
+                              	select COUNT(s.*)
+                              	from "Songs" s 
+                                	left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                	left join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                              	where aa."ArtistId" = a."Id"
+                              ), "LastUpdatedAt" = NOW()
+                              where "SongCount" <> (
+                              	select COUNT(s.*)
+                              	from "Songs" s 
+                                	left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                	left join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                              	where aa."ArtistId" = a."Id"
+                              );
                               """;
                     await dbConn
-                        .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
+                        .ExecuteAsync(sql, context.CancellationToken)
                         .ConfigureAwait(false);
 
-                    sql = """
-                          with songCounts as (
-                          	select a."ArtistId" as id, COUNT(s.*) as count
-                          	FROM "Songs" s
-                          	left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                          	left join "Albums" a on (ad."AlbumId" = a."Id")
-                          	WHERE a."LibraryId" = {0}
-                          	group by a."ArtistId"
-                          )
-                          UPDATE "Artists"
-                          SET "SongCount" = c.count, "LastUpdatedAt" = NOW()
-                          from songCounts c
-                          WHERE c.id = "Artists"."Id"
-                          AND c.id in ({1});
-                          """;
-                    await dbConn
-                        .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
-                        .ConfigureAwait(false);
-
-                    sql = """
-                          with performerSongCounts as (
-                          	select c."ArtistId" as id, COUNT(*) as count
-                          	from "Contributors" c 
-                          	left join "Songs" s on (c."SongId" = s."Id")
-                            left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                            left join "Albums" a on (ad."AlbumId" = a."Id")
-                            WHERE a."LibraryId" = {0}
-                          	group by c."ArtistId"
-                          )
-                          UPDATE "Artists"
-                          set "SongCount" = c.count, "LastUpdatedAt" = NOW()
-                          from performerSongCounts c
-                          where c.id = "Artists"."Id"
-                          and c.id in ({1});
-                          """;
-                    await dbConn
-                        .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
-                        .ConfigureAwait(false);
+                    // TODO Contributors
+                    
+                    // sql = """
+                    //       with performerSongCounts as (
+                    //       	select c."ArtistId" as id, COUNT(*) as count
+                    //       	from "Contributors" c 
+                    //       	left join "Songs" s on (c."SongId" = s."Id")
+                    //         left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                    //         left join "Albums" a on (ad."AlbumId" = a."Id")
+                    //         WHERE a."LibraryId" = {0}
+                    //       	group by c."ArtistId"
+                    //       )
+                    //       UPDATE "Artists"
+                    //       set "SongCount" = c.count, "LastUpdatedAt" = NOW()
+                    //       from performerSongCounts c
+                    //       where c.id = "Artists"."Id"
+                    //       and c.id in ({1});
+                    //       """;
+                    // await dbConn
+                    //     .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
+                    //     .ConfigureAwait(false);
                 }
 
                 var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id).ConfigureAwait(false);

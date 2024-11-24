@@ -34,7 +34,7 @@ public class CUETests : TestsBase
                 .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
-            var cueSheet = new CueSheet(
+            var cueSheet = new CueSheet(Serializer,
                 new[]
                 {
                     new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())

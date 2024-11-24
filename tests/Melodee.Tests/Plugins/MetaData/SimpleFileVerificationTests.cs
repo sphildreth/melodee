@@ -16,7 +16,7 @@ public class SimpleFileVerificationTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var sfv = new SimpleFileVerification(
+            var sfv = new SimpleFileVerification(Serializer,
                 new[]
                 {
                     new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())
@@ -39,7 +39,7 @@ public class SimpleFileVerificationTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var sfv = new SimpleFileVerification(
+            var sfv = new SimpleFileVerification(Serializer,
                 new[]
                 {
                     new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())
@@ -62,7 +62,7 @@ public class SimpleFileVerificationTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var sfv = new SimpleFileVerification(
+            var sfv = new SimpleFileVerification(Serializer,
                 new[]
                 {
                     new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())

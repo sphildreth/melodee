@@ -146,8 +146,7 @@ public abstract class ServiceBase(
 
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
-                            using (Operation.At(LogEventLevel.Debug).Time("File [{File}] Plugin [{Plugin}]",
-                                       fileSystemInfo.Name, plugin.DisplayName))
+                            using (Operation.At(LogEventLevel.Debug).Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
                             {
                                 var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                                 if (pluginResult.IsSuccess)

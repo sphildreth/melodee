@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
@@ -65,7 +64,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
 
             var isValid = false;
 
-            var sfv = new SimpleFileVerification(
+            var sfv = new SimpleFileVerification(serializer,
                 new[]
                 {
                     new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
@@ -81,7 +80,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                     if (settings.Verbose)
                     {
                         AnsiConsole.Write(
-                            new Panel(new JsonText(JsonSerializer.Serialize(svfResult)))
+                            new Panel(new JsonText(serializer.Serialize(svfResult)))
                                 .Header("Parse Result")
                                 .Collapse()
                                 .RoundedBorder()
@@ -96,7 +95,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 }
             }
 
-            var m3u = new M3UPlaylist(
+            var m3u = new M3UPlaylist(serializer,
                 new[]
                 {
                     new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
@@ -113,7 +112,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                     if (settings.Verbose)
                     {
                         AnsiConsole.Write(
-                            new Panel(new JsonText(JsonSerializer.Serialize(svfResult)))
+                            new Panel(new JsonText(serializer.Serialize(svfResult)))
                                 .Header("Parse Result")
                                 .Collapse()
                                 .RoundedBorder()
@@ -128,7 +127,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 }
             }
 
-            var nfo = new Nfo(config);
+            var nfo = new Nfo(serializer,config);
             if (nfo.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try
@@ -140,7 +139,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                     if (settings.Verbose)
                     {
                         AnsiConsole.Write(
-                            new Panel(new JsonText(JsonSerializer.Serialize(nfoParserResult)))
+                            new Panel(new JsonText(serializer.Serialize(nfoParserResult)))
                                 .Header("Parse Result")
                                 .Collapse()
                                 .RoundedBorder()

@@ -12,7 +12,7 @@ public sealed record FileSystemDirectoryInfo
 
     [JsonIgnore] public bool ShowInTree => MusicFilesFound > 0;
 
-    public long ParentId { get; init; }
+    public long? ParentId { get; init; }
 
     /// <summary>
     ///     Full path to Directory

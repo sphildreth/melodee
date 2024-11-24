@@ -25,7 +25,7 @@ public sealed record Album
     /// <summary>
     ///     What plugins were utilized in discovering this Album.
     /// </summary>
-    public required IEnumerable<string> ViaPlugins { get; set; }
+    public IEnumerable<string>? ViaPlugins { get; set; }
 
     /// <summary>
     ///     This is the directory where the Album was created, it will not be the "Staging" or "Library" directory where the Album is moved to once processed.

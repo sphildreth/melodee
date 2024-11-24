@@ -42,8 +42,6 @@ public sealed class DirectoryProcessorService(
     MediaEditService mediaEditService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private readonly ILibraryService _libraryService = libraryService;
-    private readonly MediaEditService _mediaEditService = mediaEditService;
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private IEnumerable<IConversionPlugin> _conversionPlugins = [];
@@ -57,7 +55,7 @@ public sealed class DirectoryProcessorService(
 
     private IScriptPlugin _preDiscoveryScript = new NullScript();
 
-    private IEnumerable<ISongPlugin> _songPlugins = [];
+    private ISongPlugin[] _songPlugins = [];
     private bool _stopProcessingTriggered;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
@@ -72,40 +70,40 @@ public sealed class DirectoryProcessorService(
         _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         _maxImageCount = _configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages, value => value < 1 ? SafeParser.ToNumber<short>(short.MaxValue.ToString().Length) : SafeParser.ToNumber<short>(value.ToString().Length));
 
-        _directoryStaging = (await _libraryService.GetStagingLibraryAsync(token)).Data.Path;
+        _directoryStaging = (await libraryService.GetStagingLibraryAsync(token)).Data.Path;
 
-        _songPlugins = new[]
-        {
+        _songPlugins =
+        [
             new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
-        };
+        ];
 
-        _conversionPlugins = new IConversionPlugin[]
-        {
+        _conversionPlugins =
+        [
             new ImageConvertor(_configuration),
             new MediaConvertor(_configuration)
-        };
+        ];
 
         _albumValidator = new AlbumValidator(_configuration);
 
-        _directoryPlugins = new IDirectoryPlugin[]
-        {
-            new CueSheet(_songPlugins, _configuration)
+        _directoryPlugins =
+        [
+            new CueSheet(serializer, _songPlugins, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledCueSheet)
             },
-            new SimpleFileVerification(_songPlugins, _albumValidator, _configuration)
+            new SimpleFileVerification(serializer,_songPlugins, _albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledSimpleFileVerification)
             },
-            new M3UPlaylist(_songPlugins, _albumValidator, _configuration)
+            new M3UPlaylist(serializer,_songPlugins, _albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledM3u)
             },
-            new Nfo(_configuration)
+            new Nfo(serializer,_configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledNfo)
             }
-        };
+        ];
         var preDiscoveryScript = _configuration.GetValue<string>(SettingRegistry.ScriptingPreDiscoveryScript).Nullify();
         if (preDiscoveryScript != null)
         {
@@ -118,7 +116,7 @@ public sealed class DirectoryProcessorService(
             _postDiscoveryScript = new PostDiscoveryScript(_configuration);
         }
 
-        await _mediaEditService.InitializeAsync(configuration, token).ConfigureAwait(false);
+        await mediaEditService.InitializeAsync(configuration, token).ConfigureAwait(false);
 
         _initialized = true;
     }
@@ -169,10 +167,10 @@ public sealed class DirectoryProcessorService(
         {
             return new OperationResult<DirectoryProcessorResult>
             {
-                Errors = new[]
-                {
+                Errors =
+                [
                     new Exception($"Directory [{fileSystemDirectoryInfo}] not found.")
-                },
+                ],
                 Data = result
             };
         }
@@ -182,10 +180,10 @@ public sealed class DirectoryProcessorService(
         {
             return new OperationResult<DirectoryProcessorResult>
             {
-                Errors = new[]
-                {
+                Errors =
+                [
                     new Exception($"Staging Directory [{_directoryStaging}] not found.")
-                },
+                ],
                 Data = result
             };
         }
@@ -506,8 +504,6 @@ public sealed class DirectoryProcessorService(
                         }
                     }
 
-                    ;
-
                     if (album.Songs != null)
                     {
                         foreach (var song in album.Songs.Where(x => x.File.OriginalName != null))
@@ -581,7 +577,7 @@ public sealed class DirectoryProcessorService(
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
                             {
-                                await _mediaEditService.DoMagic(album.Directory, album.UniqueId, cancellationToken);
+                                await mediaEditService.DoMagic(album.Directory, album.UniqueId, cancellationToken);
                             }
                         }
 
@@ -692,7 +688,7 @@ public sealed class DirectoryProcessorService(
     {
         if (exception != null)
         {
-            Log.Write(logLevel, messageTemplate, exception);
+            Log.Error(exception, messageTemplate, args);
         }
         else
         {
@@ -737,7 +733,6 @@ public sealed class DirectoryProcessorService(
                                    fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
                 var isArtistImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) &&
                                     !fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
-                ;
                 if (isAlbumImage ||
                     isArtistImage ||
                     ImageHelper.IsAlbumImage(fileInfo) ||

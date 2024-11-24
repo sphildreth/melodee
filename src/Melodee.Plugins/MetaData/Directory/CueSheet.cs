@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using ATL.CatalogDataReaders;
 using FFMpegCore;
 using FFMpegCore.Enums;
@@ -10,6 +9,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
+using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Directory.Models.Extensions;
@@ -23,7 +23,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     If a CUE file is found then split out the MP3 into Songs.
 /// </summary>
-public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> songPlugins, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     private const string HandlesExtension = "CUE";
 
@@ -180,14 +180,14 @@ public sealed class CueSheet(IEnumerable<ISongPlugin> songPlugins, IMelodeeConfi
                             var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueAlbum.ToMelodeeJsonName());
                             if (File.Exists(stagingAlbumDataName))
                             {
-                                var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                                var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
                                 if (existingAlbum != null)
                                 {
                                     cueAlbum = cueAlbum.Merge(existingAlbum);
                                 }
                             }
 
-                            var serialized = JsonSerializer.Serialize(cueAlbum);
+                            var serialized = serializer.Serialize(cueAlbum);
                             await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
                             if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                             {

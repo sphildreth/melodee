@@ -4,7 +4,7 @@ using Melodee.Plugins.MetaData.Directory;
 
 namespace Melodee.Tests.Plugins.MetaData;
 
-public class NfoTests
+public class NfoTests : TestsBase
 {
     [Fact]
     public async Task ParseNfoFile()
@@ -13,7 +13,7 @@ public class NfoTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(TestsBase.NewPluginsConfiguration());
+            var nfo = new Nfo(Serializer, TestsBase.NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()).Item1);
@@ -45,7 +45,7 @@ public class NfoTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(TestsBase.NewPluginsConfiguration());
+            var nfo = new Nfo(Serializer, TestsBase.NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.NotNull(nfoParserResult.Songs);

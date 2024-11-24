@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -7,6 +6,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
+using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Serilog;
 using Serilog.Events;
@@ -17,7 +17,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     Processes NFO and gets tags and Songs for Album.
 /// </summary>
-public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
 
@@ -79,14 +79,14 @@ public sealed partial class Nfo(IMelodeeConfiguration configuration) : AlbumMeta
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            var existingAlbum = JsonSerializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                            var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
                             if (existingAlbum != null)
                             {
                                 nfoAlbum = nfoAlbum.Merge(existingAlbum);
                             }
                         }
 
-                        var serialized = JsonSerializer.Serialize(nfoAlbum);
+                        var serialized = serializer.Serialize(nfoAlbum);
                         await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
