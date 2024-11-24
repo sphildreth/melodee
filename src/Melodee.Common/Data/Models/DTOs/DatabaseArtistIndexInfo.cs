@@ -1,9 +1,23 @@
+using System.Text.Json.Serialization;
+using NodaTime;
+
 namespace Melodee.Common.Data.Models.DTOs;
 
 /// <summary>
 /// Used to populate Artist index "GetIndexes" response.
 /// </summary>
-public record DatabaseArtistIndexInfo(Guid ApiKey, string Index, string Name, string CoverArt, decimal CalculatedRating, int AlbumCount, int? UserRating)
+public record DatabaseArtistIndexInfo(
+    int Id,
+    Guid ApiKey,
+    string Index,
+    string Name,
+    string CoverArt,
+    decimal CalculatedRating,
+    int AlbumCount,
+    int PlayCount,
+    Instant? Played,
+    Instant? UserStarred,
+    int? UserRating)
 {
     public int UserRatingValue => UserRating ?? 0;
 }

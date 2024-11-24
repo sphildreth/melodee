@@ -11,8 +11,10 @@ public class SystemController(ISerializer serializer, OpenSubsonicApiService ope
     ///     List the OpenSubsonic extensions supported by this server.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/getOpenSubsonicExtensions.view")]
-    public async Task<IActionResult> GetOpenSubsonicExtensions(CancellationToken cancellationToken = default)
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getOpenSubsonicExtensions.view")]
+    public async Task<IActionResult> GetOpenSubsonicExtensionsAsync(CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetOpenSubsonicExtensionsAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
@@ -22,7 +24,9 @@ public class SystemController(ISerializer serializer, OpenSubsonicApiService ope
     ///     Return system ping response
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/ping.view")]
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/ping.view")]
     public async Task<IActionResult> Ping(CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.AuthenticateSubsonicApiAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
@@ -32,8 +36,10 @@ public class SystemController(ISerializer serializer, OpenSubsonicApiService ope
     ///     Get details about the software license.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/getLicense.view")]
-    public async Task<IActionResult> GetLicense(CancellationToken cancellationToken = default)
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getLicense.view")]
+    public async Task<IActionResult> GetLicenseAsync(CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetLicenseAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }

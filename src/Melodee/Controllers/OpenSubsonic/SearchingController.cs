@@ -10,7 +10,7 @@ public class SearchingController(ISerializer serializer, OpenSubsonicApiService 
 {
     // Deprecated says to use search2
     //search
-    
+
     // By file structure, versus ID tags
     //search2
 
@@ -20,8 +20,11 @@ public class SearchingController(ISerializer serializer, OpenSubsonicApiService 
     /// </summary>
     /// <param name="request">Search request options</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/search3.view")]
-    public async Task<IActionResult> Scrobble(SearchRequest request, CancellationToken cancellationToken = default) 
-        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SearchAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/search3.view")]
+    public async Task<IActionResult> SearchAsync(SearchRequest request, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SearchAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }
 }

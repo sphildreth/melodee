@@ -28,6 +28,21 @@ public abstract class ServiceBase(
     protected ICacheManager CacheManager { get; } = cacheManager;
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = contextFactory;
 
+    protected async Task<DatabaseArtistIndexInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", a."LastPlayedAt" as "Played", ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
+                      from "Artists" a
+                      left join "UserArtists" ua on (a."Id" = ua."ArtistId" and ua."UserId" = @userId)
+                      where a."ApiKey" = @apiKeyId;
+                      """;
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseArtistIndexInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false);
+        }
+    }    
+    
     protected async Task<DatabaseSongIdsInfo?> DatabaseSongIdsInfoForSongApiKey(Guid apiKeyId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))

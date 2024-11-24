@@ -18,7 +18,11 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     /// <param name="time">The time (in milliseconds since 1 Jan 1970) at which the song was listened to.</param>
     /// <param name="submission">Whether this is a “submission” or a “now playing” notification.</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/scrobble.view")]
-    public async Task<IActionResult> Scrobble(Guid id, double? time, bool? submission, CancellationToken cancellationToken = default) 
-        => new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ScrobbleAsync(id, time, submission, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/scrobble.view")]
+    public async Task<IActionResult> ScrobbleAsync(Guid id, double? time, bool? submission, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ScrobbleAsync(id, time, submission, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }
 }

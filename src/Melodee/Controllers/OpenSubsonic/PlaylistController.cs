@@ -16,8 +16,10 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     ///     Returns all playlists a user is allowed to play.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/getPlaylists.view")]
-    public async Task<IActionResult> GetGenres(CancellationToken cancellationToken = default)
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getPlaylists.view")]
+    public async Task<IActionResult> GetPlaylistsAsync(CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetPlaylistsAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }

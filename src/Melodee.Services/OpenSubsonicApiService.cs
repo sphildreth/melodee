@@ -27,6 +27,7 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 using SmartFormat;
+using Directory = Melodee.Common.Models.OpenSubsonic.Directory;
 using License = Melodee.Common.Models.OpenSubsonic.License;
 using Playlist = Melodee.Common.Models.OpenSubsonic.Playlist;
 using PlayQueue = Melodee.Common.Models.OpenSubsonic.PlayQueue;
@@ -53,15 +54,21 @@ public class OpenSubsonicApiService(
     ILibraryService libraryService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private const char ImageApiIdSeparator = '_';
+    private const char ApiIdSeparator = '_';
+
+    public static bool IsApiIdForArtist(string? id) => id.Nullify() != null && (id?.StartsWith($"artist{ApiIdSeparator}") ?? false);
+    
+    public static bool IsApiIdForAlbum(string? id) => id.Nullify() != null && (id?.StartsWith($"album{ApiIdSeparator}") ?? false);
+    
+    public static bool IsApiIdForSong(string? id) => id.Nullify() != null && (id?.StartsWith($"song{ApiIdSeparator}") ?? false);
 
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
-    private UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty);
+    public UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty);
 
     private Guid? ApiKeyFromId(string id)
     {
-        var apiIdParts = id.Nullify() == null ? [] : id.Split(ImageApiIdSeparator);
+        var apiIdParts = id.Nullify() == null ? [] : id.Split(ApiIdSeparator);
         return SafeParser.ToGuid(SafeParser.ToGuid(apiIdParts[1])!.Value);
     }
 
@@ -567,8 +574,10 @@ public class OpenSubsonicApiService(
         };
         var data = new List<OpenSubsonicExtension>
         {
-            // This is a template extension that allows servers to do marvelous stuff and clients to use that stuff.
-            new("template", [1, 2]),
+            // Add support for POST request to the API (application/x-www-form-urlencoded).
+            new("apiKeyAuthentication", [1]),   
+            // Add support for POST request to the API (application/x-www-form-urlencoded).
+            new("formPost", [1]),            
             // add support for synchronized lyrics, multiple languages, and retrieval by song ID
             new("songLyrics", [1]),
             // Add support for start offset for transcoding.
@@ -738,7 +747,7 @@ public class OpenSubsonicApiService(
         return NewApiResponse(true, string.Empty, string.Empty);
     }
 
-    private async Task<ApiResponse> NewApiResponse(bool isOk, string dataPropertyName, string dataDetailPropertyName, Error? error = null, object? data = null)
+    public async Task<ApiResponse> NewApiResponse(bool isOk, string dataPropertyName, string dataDetailPropertyName, Error? error = null, object? data = null)
     {
         return new ApiResponse
         {
@@ -900,19 +909,17 @@ public class OpenSubsonicApiService(
 
     public async Task<ResponseModel> CreateUserAsync(CreateUserRequest request, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
-        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
-        if (!authResponse.IsSuccess)
+        var registerResult = await userService.RegisterAsync(request.Username, request.Email, request.Password, cancellationToken).ConfigureAwait(false);
+        var result = registerResult.IsSuccess;        
+        if (!result)
         {
             return new ResponseModel
             {
                 UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
+                IsSuccess = result,
+                ResponseData = await NewApiResponse(result, string.Empty, string.Empty, new Error(10, "User creation failed."))
             };
         }
-
-        var result = false;
-
-        // TODO
 
         return new ResponseModel
         {
@@ -963,7 +970,8 @@ public class OpenSubsonicApiService(
     {
         long rangeBegin = 0;
         long rangeEnd = 0;
-        if (apiRequest.RequestHeaders?.TryGetValue("Range", out var range) is true)
+        var range = apiRequest.RequestHeaders.FirstOrDefault(x => x.Key == "Range")?.Value;
+        if (range.Nullify() != null)
         {
             if (string.Equals(range, "bytes=0-", StringComparison.OrdinalIgnoreCase))
             {
@@ -994,6 +1002,7 @@ public class OpenSubsonicApiService(
             var songStreamInfo = dbConn.QuerySingleOrDefault<SongStreamInfo>(sql, new { apiKey = request.Id });
             if (!(songStreamInfo?.TrackFileInfo.Exists ?? false))
             {
+                Logger.Warning("[{ServiceName}] Stream request for song that was not found. User [{ApiRequest}] Request [{Request}]", nameof(OpenSubsonicApiService), apiRequest.ToString(), request.ToString() );
                 return new StreamResponse
                 (
                     new Dictionary<string, StringValues>([]),
@@ -1207,7 +1216,7 @@ public class OpenSubsonicApiService(
     }
 
 
-    public async Task<ResponseModel> GetMusicDirectoryAsync(string id, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> GetMusicDirectoryAsync(string apiId, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -1219,18 +1228,50 @@ public class OpenSubsonicApiService(
             };
         }
 
-        throw new NotImplementedException();
+        Common.Models.OpenSubsonic.Directory? data = null;
+        
+        var apiKey = ApiKeyFromId(apiId);
+        if (IsApiIdForArtist(apiId) && apiKey != null)
+        {
+            // get all albums for artist    
+            var artistInfo = await DatabaseArtistInfoForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken);
+            if (artistInfo != null)
+            {
+                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    var artistAlbums = await scopedContext
+                        .Albums
+                        .Include(x => x.Artist)
+                        .Include(x => x.UserAlbums.Where(ua => ua.UserId == authResponse.UserInfo.Id))
+                        .Where(x => x.ArtistId == artistInfo.Id).ToArrayAsync(cancellationToken).ConfigureAwait(false);
+                    data = new Directory(artistInfo.ApiKey,
+                        null,
+                        artistInfo.Name,
+                        artistInfo.UserStarred.ToString(),
+                        artistInfo.UserRating,
+                        artistInfo.CalculatedRating ,
+                        artistInfo.PlayCount,
+                        artistInfo.Played.ToString(),
+                        artistAlbums?.Select(x => x.ToChild(x.UserAlbums.FirstOrDefault(),null)).ToArray() ?? []);
 
-        // return new ResponseModel
-        // {
-        //     UserInfo = authResponse.UserInfo,
-        //     IsSuccess = true,
-        //     ResponseData = await DefaultApiResponse() with
-        //     {
-        //         Data = data,
-        //         DataPropertyName = "directory"
-        //     }
-        // };        
+                }
+            }
+        }
+        else if (IsApiIdForAlbum(apiId))
+        {
+            // get all songs for the album
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            IsSuccess = true,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data,
+                DataPropertyName = "directory"
+            }
+        };        
     }
 
     public async Task<ResponseModel> GetIndexesAsync(Guid? musicFolderId, long? ifModifiedSince, ApiRequest apiRequest, CancellationToken cancellationToken)
@@ -1270,7 +1311,7 @@ public class OpenSubsonicApiService(
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
-                      select a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", a."CalculatedRating", a."AlbumCount", ua."Rating" as "UserRating"
+                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", a."LastPlayedAt" as "Played", ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
                       from "Artists" a
                       join "Albums" a2 on (a."Id" = a2."ArtistId")
                       left join "UserArtists" ua on (a."Id" = ua."ArtistId" and ua."UserId" = @userId)

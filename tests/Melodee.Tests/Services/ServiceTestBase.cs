@@ -116,7 +116,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected ApiRequest GetApiRequest(string username, string salt, string password)
     {
         return new ApiRequest(
-            new Dictionary<string, StringValues>(),
+            [],
             username,
             "1.16.1",
             "json",

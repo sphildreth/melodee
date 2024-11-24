@@ -15,8 +15,10 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     ///     Returns the state of the play queue for this user.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/getPlayQueue.view")]
-    public async Task<IActionResult> SavePlayQueue(CancellationToken cancellationToken = default)
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getPlayQueue.view")]
+    public async Task<IActionResult> GetPlayQueueAsync(CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetPlayQueueAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
@@ -31,8 +33,10 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     /// <param name="position">The position in milliseconds within the currently playing song.</param>
     /// <param name="current">The ID of the current playing song.</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/savePlayQueue.view")]
-    public async Task<IActionResult> SavePlayQueue(Guid[]? id, Guid? current, double? position, CancellationToken cancellationToken = default)
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/savePlayQueue.view")]
+    public async Task<IActionResult> SavePlayQueueAsync(Guid[]? id, Guid? current, double? position, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SavePlayQueueAsync(id, current, position, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }

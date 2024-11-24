@@ -46,16 +46,18 @@ public class OpenSubsonicResponseModelConvertor : JsonConverter<ResponseModel>
             {
                 writer.WritePropertyName(value.ResponseData.DataDetailPropertyName);
             }
-            writer.WriteRawValue(JsonSerializer.Serialize(value.ResponseData.Data, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            }));
+            writer.WriteRawValue(JsonSerializer.Serialize(value.ResponseData.Data, Serializer.JsonSerializerOptions));
         }
 
         if (hasDetailPropertyName)
         {
             writer.WriteEndObject();
+        }
+
+        if (value.ResponseData.Error != null)
+        {
+            writer.WritePropertyName("error");
+            writer.WriteRawValue(JsonSerializer.Serialize(value.ResponseData.Error, Serializer.JsonSerializerOptions));          
         }
 
         writer.WriteEndObject();

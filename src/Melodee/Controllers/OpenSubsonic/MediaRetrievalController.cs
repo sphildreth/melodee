@@ -1,5 +1,9 @@
+using System.Net;
+using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Requests;
+using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Serialization;
+using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +14,7 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     //download
     //getCaptions
     //getLyrics
+    //getLyricsBySongId //https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
     //hls
     //stream
 
@@ -18,7 +23,9 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     /// </summary>
     /// <param name="username">The user in question.. 	</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/getAvatar.view")]
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getAvatar.view")]
     public async Task<IActionResult> GetAvatarAsync(string username, CancellationToken cancellationToken = default)
     {
         return new FileContentResult((byte[])(await openSubsonicApiService.GetAvatarAsync(username,
@@ -26,14 +33,16 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
                 ApiRequest,
                 cancellationToken)).ResponseData.Data!,
             "image/png");
-    }    
-    
+    }
+
     /// <summary>
     ///     Returns a cover art image.
     /// </summary>
     /// <param name="id">Composite ID of type:apikey</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/getCoverArt.view")]
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getCoverArt.view")]
     public async Task<IActionResult> GetCoverArtAsync(string id, CancellationToken cancellationToken = default)
     {
         return new FileContentResult((byte[])(await openSubsonicApiService.GetCoverArtAsync(id,
@@ -49,8 +58,10 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     /// </summary>
     /// <param name="request">Stream model for parameters for streaming.</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/stream.view")]
-    public async Task<IActionResult> Stream(StreamRequest request, CancellationToken cancellationToken = default)
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/stream.view")]
+    public async Task<IActionResult> StreamAsync(StreamRequest request, CancellationToken cancellationToken = default)
     {
         var streamResult = await openSubsonicApiService.StreamAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false);
         if (streamResult.IsSuccess)
@@ -65,10 +76,16 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
                 .ConfigureAwait(false);
             return new EmptyResult();
         }
-
-        //Returns binary data on success, or an XML document on error (in which case the HTTP content type will start with “text/xml”).
-        // TODO figure out XML details for error result
-
-        throw new NotImplementedException();
+        Response.StatusCode = (int)HttpStatusCode.NotFound;
+        return new JsonStringResult(serializer.Serialize(new ResponseModel
+        {
+            UserInfo = openSubsonicApiService.BlankUserInfo,
+            IsSuccess = false,
+            ResponseData = await openSubsonicApiService.NewApiResponse(
+                false,
+                string.Empty,
+                string.Empty,
+                Error.DataNotFoundError)
+        })!);
     }
 }

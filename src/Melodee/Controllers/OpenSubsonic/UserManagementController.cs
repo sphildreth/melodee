@@ -19,8 +19,10 @@ public class UserManagementController(ISerializer serializer, OpenSubsonicApiSer
     /// </summary>
     /// <param name="request">Populated model from Query parameters.</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    [HttpGet("/rest/createUser.view")]
-    public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken = default)
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/createUser.view")]
+    public async Task<IActionResult> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.CreateUserAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }

@@ -111,12 +111,15 @@ public sealed class UserService(
         var emailAddressNormalized = emailAddress.ToNormalizedString() ?? emailAddress;
         var id = await CacheManager.GetAsync(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddressNormalized), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] GetByEmailAddressAsync [{EmailAddress}]", nameof(UserService), emailAddress))
             {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                return await dbConn
-                    .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"EmailNormalized\" = @Email;", new { Email = emailAddressNormalized })
-                    .ConfigureAwait(false);
+                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    var dbConn = scopedContext.Database.GetDbConnection();
+                    return await dbConn
+                        .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"EmailNormalized\" = @Email;", new { Email = emailAddressNormalized })
+                        .ConfigureAwait(false);
+                }
             }
         }, cancellationToken).ConfigureAwait(false);
         return id == null
@@ -133,7 +136,7 @@ public sealed class UserService(
         var usernameNormalized = username.ToNormalizedString() ?? username;
         var id = await CacheManager.GetAsync(CacheKeyDetailByUsernameTemplate.FormatSmart(usernameNormalized), async () =>
         {
-            using (Operation.At(LogEventLevel.Debug).Time("GetByUsernameAsync [{username}]", username))
+            using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] GetByUsernameAsync [{Username}]", nameof(UserService), username))
             {
                 await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
                 {
@@ -180,7 +183,7 @@ public sealed class UserService(
 
         var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
         {
-            using (Operation.At(LogEventLevel.Debug).Time("GetAsync [{id}]", id))
+            using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] GetAsync [{id}]", nameof(UserService), id))
             {
                 await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
                 {

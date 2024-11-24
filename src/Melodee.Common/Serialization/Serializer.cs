@@ -20,7 +20,7 @@ public sealed class Serializer(ILogger logger) : ISerializer
 
         try
         {
-            return JsonSerializer.Serialize(o, _jsonSerializerOptions);
+            return JsonSerializer.Serialize(o, JsonSerializerOptions);
         }
         catch (Exception ex)
         {
@@ -32,9 +32,10 @@ public sealed class Serializer(ILogger logger) : ISerializer
     public TOut? Deserialize<TOut>(string? s)
         => Deserialize<TOut>(Encoding.UTF8.GetBytes(s ?? string.Empty));
 
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    public static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters = { new OpenSubsonicResponseModelConvertor() }
     };
     
@@ -47,7 +48,7 @@ public sealed class Serializer(ILogger logger) : ISerializer
 
         try
         {
-            return JsonSerializer.Deserialize<TOut>(bytes, _jsonSerializerOptions);
+            return JsonSerializer.Deserialize<TOut>(bytes, JsonSerializerOptions);
         }
         catch (Exception ex)
         {
