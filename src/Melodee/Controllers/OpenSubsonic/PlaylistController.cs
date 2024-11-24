@@ -19,6 +19,6 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet("/rest/getPlaylists.view")]
     public async Task<IActionResult> GetGenres(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetPlaylists(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetPlaylistsAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
 }

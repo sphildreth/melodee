@@ -1,27 +1,23 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
-///     An artist from ID3 tags.
+/// Artist record used in list and index operations.
 /// </summary>
-/// <param name="Id">The id of the artist</param>
-/// <param name="Name">The artist name.</param>
+/// <param name="Id">Artist id</param>
+/// <param name="Name">Artist name</param>
+/// <param name="ArtistImageUrl">Artist image url</param>
 /// <param name="CoverArt">A covertArt id.</param>
-/// <param name="AlbumCount">Artist album count.</param>
-/// <param name="UserRating">User rating.</param>
-/// <param name="ArtistImageUrl">An url to an external image source.</param>
-/// <param name="Starred">Date the artist was starred. [ISO 8601]</param>
-/// <param name="MusicBrainzId">The artist MusicBrainzID.</param>
-/// <param name="SortName">The artist sort name.</param>
-/// <param name="Roles">The list of all roles this artist have in the library.</param>
-public record Artist(
+/// <param name="AlbumCount">Artist album count</param>
+/// <param name="UserRating">Artist rating [1-5]</param>
+/// <param name="AverageRating">Artist average rating [1.0-5.0]</param>
+public record Artist
+(
     string Id,
     string Name,
-    string CoverArt,
+    string? ArtistImageUrl,
+    string? CoverArt,
     int AlbumCount,
     int? UserRating,
-    string? ArtistImageUrl,
-    string? Starred,
-    string? MusicBrainzId,
-    string? SortName,
-    string[]? Roles
+    decimal? AverageRating
 );
+

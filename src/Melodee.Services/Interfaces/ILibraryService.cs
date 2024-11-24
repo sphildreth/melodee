@@ -8,6 +8,8 @@ public interface ILibraryService
 {
     Task<OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default);
 
+    Task<OperationResult<Library>> GetUserImagesLibraryAsync(CancellationToken cancellationToken = default);
+
     Task<OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default);
 
     Task<OperationResult<Library?>> GetAsync(int id, CancellationToken cancellationToken = default);

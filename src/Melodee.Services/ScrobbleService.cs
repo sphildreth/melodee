@@ -111,11 +111,11 @@ public class ScrobbleService(
                 var dbConn = scopedContext.Database.GetDbConnection();
 
                 var sql = """
-                          update "Artists" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now(), "LastPlayedAt" = Now()
+                          update "Artists" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
                           where "Id" = @artistId;
-                          update "Albums" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now(), "LastPlayedAt" = Now()
+                          update "Albums" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
                           where "Id" = @albumId;
-                          update "Songs" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now(), "LastPlayedAt" = Now()
+                          update "Songs" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
                           where "Id" = @songId;
                           """;
                 await dbConn.ExecuteAsync(sql, new { artistId = songIds.AlbumArtistId, albumId = songIds.AlbumId, songId = songIds.SongId }).ConfigureAwait(false);

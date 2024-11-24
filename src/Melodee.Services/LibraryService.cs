@@ -53,6 +53,25 @@ public sealed class LibraryService(
             Data = result
         };
     }
+    
+    public async Task<MelodeeModels.OperationResult<Library>> GetUserImagesLibraryAsync(CancellationToken cancellationToken = default)
+    {
+        const int libraryType = (int)LibraryType.UserImages;
+        var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
+        {
+            var library = await LibraryByType(libraryType, cancellationToken);
+            if (library == null)
+            {
+                throw new Exception("User Images library not found. A Library record must be setup with a type of '4' (UserImages).");
+            }
+
+            return library;
+        }, cancellationToken).ConfigureAwait(false);
+        return new MelodeeModels.OperationResult<Library>
+        {
+            Data = result
+        };
+    }    
 
     public async Task<MelodeeModels.OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {

@@ -154,7 +154,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
                 MockSettingService(), 
                 Serializer),
             new Mock<IScheduler>().Object,
-            GetScrobbleService());
+            GetScrobbleService(),
+            GetLibraryService());
     }
 
     protected ArtistService GetArtistService()
@@ -175,6 +176,18 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected INowPlayingRepository GetNowPlayingRepository()
     {
         return new NowPlayingInMemoryRepository();
+    }
+
+    protected LibraryService GetLibraryService()
+    {
+        return new LibraryService
+        (
+            Logger,
+            CacheManager,
+            MockFactory(),
+            MockSettingService(),
+            Serializer
+        );
     }
     
     protected ScrobbleService GetScrobbleService()

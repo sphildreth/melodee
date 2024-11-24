@@ -8,5 +8,7 @@ public enum LibraryType
     
     Staging,
     
-    Library
+    Library,
+    
+    UserImages
 }

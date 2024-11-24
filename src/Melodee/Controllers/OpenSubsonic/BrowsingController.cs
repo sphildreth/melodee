@@ -22,6 +22,38 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     //getTopSongs
     //getVideoInfo
     //getVideos
+    
+    /// <summary>
+    ///     Returns all configured top-level music folders.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/getMusicFolders.view")]
+    public async Task<IActionResult> GetIndexes(CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetMusicFolders(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }     
+    
+    /// <summary>
+    ///     Returns an indexed structure of all artists.
+    /// </summary>
+    /// <param name="id">A string which uniquely identifies the music folder. Obtained by calls to getIndexes or getMusicDirectory.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/getIndexes.view")]
+    public async Task<IActionResult> GetIndexes(Guid? musicFolderId, bool? ifModifiedSince, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync(musicFolderId, ifModifiedSince, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }     
+
+    /// <summary>
+    ///     Returns a listing of all files in a music directory. Typically used to get list of albums for an artist, or list of songs for an album.
+    /// </summary>
+    /// <param name="id">A string which uniquely identifies the music folder. Obtained by calls to getIndexes or getMusicDirectory.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/getMusicDirectory.view")]
+    public async Task<IActionResult> GetMusicDirectory(string id, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetMusicDirectoryAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }    
 
     /// <summary>
     ///     Returns details for a song.

@@ -71,7 +71,7 @@ public record AlbumId3WithSongs
     public Genre[]? Genres { get; init; }
 
     /// <summary></summary>
-    public Artist[]? Artists { get; init; }
+    public ArtistID3[]? Artists { get; init; }
 
     /// <summary></summary>
     public string? DisplayArtist { get; init; }

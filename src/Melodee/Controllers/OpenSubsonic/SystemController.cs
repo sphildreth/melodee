@@ -14,7 +14,7 @@ public class SystemController(ISerializer serializer, OpenSubsonicApiService ope
     [HttpGet("/rest/getOpenSubsonicExtensions.view")]
     public async Task<IActionResult> GetOpenSubsonicExtensions(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetOpenSubsonicExtensions(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetOpenSubsonicExtensionsAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
 
 
@@ -35,6 +35,6 @@ public class SystemController(ISerializer serializer, OpenSubsonicApiService ope
     [HttpGet("/rest/getLicense.view")]
     public async Task<IActionResult> GetLicense(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetLicense(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetLicenseAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
 }

@@ -1,9 +1,12 @@
 using System.Globalization;
+using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
@@ -14,7 +17,6 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.OpenSubsonic.Searching;
 using Melodee.Common.Utility;
-using Melodee.Plugins.Scrobbling;
 using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
@@ -23,6 +25,8 @@ using Microsoft.Extensions.Primitives;
 using NodaTime;
 using Quartz;
 using Serilog;
+using Serilog.Events;
+using SerilogTimings;
 using SmartFormat;
 using License = Melodee.Common.Models.OpenSubsonic.License;
 using Playlist = Melodee.Common.Models.OpenSubsonic.Playlist;
@@ -46,7 +50,8 @@ public class OpenSubsonicApiService(
     SongService songService,
     AlbumDiscoveryService albumDiscoveryService,
     IScheduler schedule,
-    ScrobbleService scrobbleService)
+    ScrobbleService scrobbleService,
+    ILibraryService libraryService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const char ImageApiIdSeparator = '_';
@@ -64,7 +69,7 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Get details about the software license.
     /// </summary>
-    public async Task<ResponseModel> GetLicense(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> GetLicenseAsync(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
     {
         return new ResponseModel
         {
@@ -85,7 +90,7 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Returns all playlists a user is allowed to play.
     /// </summary>
-    public async Task<ResponseModel> GetPlaylists(ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> GetPlaylistsAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -182,54 +187,54 @@ public class OpenSubsonicApiService(
                                 FROM "Albums" a 
                                 LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
                                 """;
-                var whereSQL = string.Empty;
-                var limitSQL = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
+                var whereSql = string.Empty;
+                var limitSql = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
                 switch (albumListRequest.Type)
                 {
                     case ListType.Random:
-                        whereSQL = "ORDER BY RANDOM()";
+                        whereSql = "ORDER BY RANDOM()";
                         break;
 
                     case ListType.Newest:
-                        whereSQL = "ORDER BY a.\"CreatedAt\" DESC";
+                        whereSql = "ORDER BY a.\"CreatedAt\" DESC";
                         break;
                     
                     case ListType.Highest:
-                        whereSQL = "ORDER BY a.\"CalculatedRating\" DESC";
+                        whereSql = "ORDER BY a.\"CalculatedRating\" DESC";
                         break;
                     
                     case ListType.Frequent:
-                        whereSQL = "ORDER BY a.\"PlayedCount\" DESC";
+                        whereSql = "ORDER BY a.\"PlayedCount\" DESC";
                         break;
                     
                     case ListType.Recent:
-                        whereSQL = "ORDER BY a.\"LastPlayedAt\" DESC";
+                        whereSql = "ORDER BY a.\"LastPlayedAt\" DESC";
                         break;
                     
                     case ListType.AlphabeticalByName:
-                        whereSQL = "ORDER BY a.\"SortName\"";
+                        whereSql = "ORDER BY a.\"SortName\"";
                         break;
                     
                     case ListType.AlphabeticalByArtist:
-                        whereSQL = "ORDER BY aa.\"SortName\"";
+                        whereSql = "ORDER BY aa.\"SortName\"";
                         break;
                     
                     case ListType.Starred:
-                        whereSQL = "ORDER BY aa.\"UserStarredCount\" DESC";
+                        whereSql = "ORDER BY aa.\"UserStarredCount\" DESC";
                         break;
                     
                     case ListType.ByYear:
                         // TODO fromYear and ToYear optional filtering
-                        whereSQL = "ORDER BY \"Year\" DESC";
+                        whereSql = "ORDER BY \"Year\" DESC";
                         break;
                     
                     case ListType.ByGenre:
                         // TODO filter by given Genre
-                        whereSQL = "ORDER BY \"Genre\" DESC";
+                        whereSql = "ORDER BY \"Genre\" DESC";
                         break;
                 }
 
-                sql = $"{selectSql} {whereSQL} {limitSQL}";
+                sql = $"{selectSql} {whereSql} {limitSql}";
                 data = (await dbConn
                     .QueryAsync<AlbumList2>(sql, sqlParameters)
                     .ConfigureAwait(false)).ToArray();
@@ -424,11 +429,61 @@ public class OpenSubsonicApiService(
             }
         };
     }
+    
+    /// <summary>
+    /// Returns the avatar (personal image) for a user.
+    /// </summary>
+    public async Task<ResponseModel> GetAvatarAsync(string username, object o, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        var avatarBytes = defaultImages.UserAvatarBytes;
+
+        // TODO cache images?
+
+        try
+        { 
+            var userLibraryResult = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
+            if (userLibraryResult.IsSuccess)
+            {
+                var userAvatarFilename = authResponse.UserInfo.ToAvatarFilename(userLibraryResult.Data.Path);
+                if (File.Exists(userAvatarFilename))
+                {
+                    avatarBytes = await File.ReadAllBytesAsync(userAvatarFilename, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to get avatar for user [{Username}]", username);
+        }
+
+        return new ResponseModel
+        {
+            IsSuccess = true,
+            UserInfo = authResponse.UserInfo,
+            ResponseData = authResponse.ResponseData with
+            {
+                Data = avatarBytes,
+                DataPropertyName = string.Empty,
+                DataDetailPropertyName = string.Empty
+            }
+        };
+    }    
 
     /// <summary>
     ///     Returns a cover art image.
     /// </summary>
-    public async Task<ResponseModel> GetCoverArt(string apiId, int? size, ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> GetCoverArtAsync(string apiId, int? size, ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -504,7 +559,7 @@ public class OpenSubsonicApiService(
     ///     List the OpenSubsonic extensions supported by this server.
     ///     <remarks>Unlike all other APIs getOpenSubsonicExtensions must be publicly accessible.</remarks>
     /// </summary>
-    public async Task<ResponseModel> GetOpenSubsonicExtensions(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> GetOpenSubsonicExtensionsAsync(ApiRequest apiApiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = new ResponseModel
         {
@@ -614,63 +669,70 @@ public class OpenSubsonicApiService(
             };
         }
 
-        var result = false;
-        var user = await userService.GetByUsernameAsync(apiRequest.Username, cancellationToken).ConfigureAwait(false);
-        try
+        using (Operation.At(LogEventLevel.Debug).Time("AuthenticateSubsonicApiAsync: username [{Username}]", apiRequest.Username))
         {
-            if (!user.IsSuccess || (user.Data?.IsLocked ?? false))
+            var result = false;
+            var user = await userService.GetByUsernameAsync(apiRequest.Username, cancellationToken).ConfigureAwait(false);
+            try
             {
-                Logger.Warning("Locked user [{Username}] attempted to authenticate with [{Client}]", apiRequest.Username, apiRequest.ApiRequestPlayer);
-            }
-            else
-            {
-                bool isAuthenticated;
-                var authUsingToken = apiRequest.Token?.Nullify() != null;
-                var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
-                var usersPassword = user.Data.Decrypt(user.Data.PasswordEncrypted, configuration);
-                var apiRequestPassword = apiRequest.Password;
-                if (apiRequest.Password?.StartsWith("enc:", StringComparison.Ordinal) ?? false)
+                if (!user.IsSuccess || (user.Data?.IsLocked ?? false))
                 {
-                    apiRequestPassword = apiRequestPassword?[4..].FromHexString();
-                }
-
-                if (authUsingToken)
-                {
-                    var userMd5 = HashHelper.CreateMd5($"{usersPassword}{apiRequest.Salt}");
-                    isAuthenticated = string.Equals(userMd5, apiRequest.Token, StringComparison.InvariantCultureIgnoreCase);
+                    Logger.Warning("Locked user [{Username}] attempted to authenticate with [{Client}]", apiRequest.Username, apiRequest.ApiRequestPlayer);
                 }
                 else
                 {
-                    isAuthenticated = usersPassword == apiRequestPassword;
-                }
-
-                if (isAuthenticated)
-                {
-                    var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-                    await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken))
+                    bool isAuthenticated;
+                    var authUsingToken = apiRequest.Token?.Nullify() != null;
+                    var usersPassword = user.Data.Decrypt(user.Data.PasswordEncrypted, (await Configuration.Value));
+                    var apiRequestPassword = apiRequest.Password;
+                    if (apiRequest.Password?.StartsWith("enc:", StringComparison.Ordinal) ?? false)
                     {
-                        await scopedContext.Users
-                            .Where(x => x.Id == user.Data.Id)
-                            .ExecuteUpdateAsync(setters =>
-                                setters.SetProperty(x => x.LastActivityAt, now)
-                                    .SetProperty(x => x.LastLoginAt, now), cancellationToken).ConfigureAwait(false);
+                        apiRequestPassword = apiRequestPassword?[4..].FromHexString();
                     }
 
-                    result = true;
+                    if (authUsingToken)
+                    {
+                        var userMd5 = HashHelper.CreateMd5($"{usersPassword}{apiRequest.Salt}");
+                        isAuthenticated = string.Equals(userMd5, apiRequest.Token, StringComparison.InvariantCultureIgnoreCase);
+                    }
+                    else
+                    {
+                        isAuthenticated = usersPassword == apiRequestPassword;
+                    }
+
+                    if (isAuthenticated)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            using (Operation.At(LogEventLevel.Debug).Time("AuthenticateSubsonicApiAsync: username [{Username}] : update timestamps", apiRequest.Username))
+                            {
+                                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+                                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken))
+                                {
+                                    await scopedContext.Users
+                                        .Where(x => x.Id == user.Data.Id)
+                                        .ExecuteUpdateAsync(setters =>
+                                            setters.SetProperty(x => x.LastActivityAt, now)
+                                                .SetProperty(x => x.LastLoginAt, now), cancellationToken).ConfigureAwait(false);
+                                }
+                            }
+                        }, cancellationToken);
+                        result = true;
+                    }
                 }
             }
-        }
-        catch (Exception e)
-        {
-            Logger.Error(e, "Error authenticating user, request [{ApiRequest}]", apiRequest);
-        }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error authenticating user, request [{ApiRequest}]", apiRequest);
+            }
 
-        return new ResponseModel
-        {
-            UserInfo = user.Data?.ToUserInfo() ?? BlankUserInfo,
-            IsSuccess = result,
-            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
-        };
+            return new ResponseModel
+            {
+                UserInfo = user.Data?.ToUserInfo() ?? BlankUserInfo,
+                IsSuccess = result,
+                ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
+            };
+        }
     }
 
     private Task<ApiResponse> DefaultApiResponse()
@@ -738,7 +800,7 @@ public class OpenSubsonicApiService(
         }
     }
 
-    public async Task<ResponseModel> SavePlayQueue(Guid[]? apiKeys, Guid? current, double? position, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> SavePlayQueueAsync(Guid[]? apiKeys, Guid? current, double? position, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -875,7 +937,8 @@ public class OpenSubsonicApiService(
         }
 
         var result = false;
-
+        await scrobbleService.InitializeAsync((await Configuration.Value), cancellationToken).ConfigureAwait(false);
+        
         // If not provided then default to this is a "submission" versus a "now playing" notification.
         if (submission ?? true)
         {
@@ -944,14 +1007,19 @@ public class OpenSubsonicApiService(
             rangeEnd = rangeEnd == 0 ? songStreamInfo.FileSize : rangeEnd;
 
             var bytesToRead = (int)(rangeEnd - rangeBegin) + 1;
+            if (bytesToRead > songStreamInfo.FileSize)
+            {
+                bytesToRead = (int)songStreamInfo.FileSize;
+            }
             var trackBytes = new byte[bytesToRead];
+            
 
-            using (var fs = songStreamInfo.TrackFileInfo.OpenRead())
+            await using (var fs = songStreamInfo.TrackFileInfo.OpenRead())
             {
                 try
                 {
                     fs.Seek(rangeBegin, SeekOrigin.Begin);
-                    var r = await fs.ReadAsync(trackBytes.AsMemory(0, bytesToRead), cancellationToken);
+                    await fs.ReadAsync(trackBytes.AsMemory(0, bytesToRead), cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -1137,5 +1205,117 @@ public class OpenSubsonicApiService(
                 DataPropertyName = "searchResult3"
             }
         };        
+    }
+
+
+    public async Task<ResponseModel> GetMusicDirectoryAsync(string id, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        throw new NotImplementedException();
+        
+        // return new ResponseModel
+        // {
+        //     UserInfo = authResponse.UserInfo,
+        //     IsSuccess = true,
+        //     ResponseData = await DefaultApiResponse() with
+        //     {
+        //         Data = data,
+        //         DataPropertyName = "directory"
+        //     }
+        // };        
+    }
+
+    public async Task<ResponseModel> GetIndexesAsync(Guid? musicFolderId, bool? ifModifiedSince, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        Indexes? data = null;
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      select "ApiKey", LEFT("SortName", 1), "Name", 'artist_' || "ApiKey" as "CoverArt", "CalculatedRating"
+                      from "Artists" 
+                      order by "SortOrder", "SortName";
+                      """;
+            var indexes = await dbConn.QueryAsync<DatabaseArtistIndexInfo>(sql).ConfigureAwait(false);
+
+            var artists = new List<ArtistIndex>();
+            foreach (var grouped in indexes.GroupBy(x => x.Index))
+            {
+                var aa = new List<Artist>();
+                foreach (var info in grouped)
+                {
+                    aa.Add(new Artist(info.ApiKey, info.Name, info.CoverArt));
+                }
+                artists.Add(new ArtistIndex(grouped.Key, aa);   
+            }
+
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            IsSuccess = true,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data,
+                DataPropertyName = "indexes"
+            }
+        }; 
+    }
+
+    /// <summary>
+    /// Returns all configured top-level music folders.
+    /// </summary>
+    public async Task<ResponseModel> GetMusicFolders(ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        NamedInfo[] data = []; 
+        
+        var libraryResult = await libraryService.ListAsync(new PagedRequest(), cancellationToken).ConfigureAwait(false);
+        if (libraryResult.IsSuccess)
+        {
+            data = libraryResult.Data.Where(x => x.TypeValue == LibraryType.Library).Select(x => new NamedInfo(x.ApiKey, x.Name)).ToArray();
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            IsSuccess = true,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data,
+                DataPropertyName = "musicFolders",
+                DataDetailPropertyName = "musicFolder"
+            }
+        }; 
     }
 }

@@ -70,6 +70,7 @@ public abstract class ControllerBase : Controller
                 GetRequestIp(context.HttpContext)
             )
         );
+        Console.WriteLine($"-*-> {ApiRequest.ApiRequestPlayer}");
         return base.OnActionExecutionAsync(context, next);
     }
 }

@@ -11,6 +11,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
+using Serilog.Events;
+using SerilogTimings;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -131,12 +133,15 @@ public sealed class UserService(
         var usernameNormalized = username.ToNormalizedString() ?? username;
         var id = await CacheManager.GetAsync(CacheKeyDetailByUsernameTemplate.FormatSmart(usernameNormalized), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            using (Operation.At(LogEventLevel.Debug).Time("GetByUsernameAsync [{username}]", username))
             {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                return await dbConn
-                    .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"UserNameNormalized\" = @Username;", new { Username = usernameNormalized })
-                    .ConfigureAwait(false);
+                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    var dbConn = scopedContext.Database.GetDbConnection();
+                    return await dbConn
+                        .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"UserNameNormalized\" = @Username;", new { Username = usernameNormalized })
+                        .ConfigureAwait(false);
+                }
             }
         }, cancellationToken).ConfigureAwait(false);
         return id == null
@@ -175,13 +180,16 @@ public sealed class UserService(
 
         var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            using (Operation.At(LogEventLevel.Debug).Time("GetAsync [{id}]", id))
             {
-                return await scopedContext
-                    .Users
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-                    .ConfigureAwait(false);
+                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    return await scopedContext
+                        .Users
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+                        .ConfigureAwait(false);
+                }
             }
         }, cancellationToken).ConfigureAwait(false);
         return new MelodeeModels.OperationResult<User?>

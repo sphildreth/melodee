@@ -4,7 +4,7 @@ namespace Melodee.Common.Models.OpenSubsonic;
 ///     A contributor artist for a song or an album.
 /// </summary>
 /// <param name="Role">The contributor role.</param>
-/// <param name="Artist">
+/// <param name="ArtistId3">
 ///     The subRole for roles that may require it. Ex: The instrument for the performer role
 ///     (TMCL/performer tags). Note: For consistency between different tag formats, the TIPL sub roles should be directly
 ///     exposed in the role field.
@@ -15,6 +15,6 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// </param>
 public record Contributor(
     string Role,
-    Artist Artist,
+    ArtistID3 ArtistId3,
     string? SubRole
 );

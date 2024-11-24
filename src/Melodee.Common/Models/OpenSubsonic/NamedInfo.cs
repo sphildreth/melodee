@@ -1,10 +1,10 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
 public record NamedInfo(
-    string Id,
+    Guid Id,
     string Name,
-    string? SmallImageUrl,
-    string? MediumImageUrl,
-    string? LargeImageUrl,
-    int? SongCount,
-    int? AlbumCount) : InfoBase(SmallImageUrl, MediumImageUrl, LargeImageUrl);
+    string? SmallImageUrl = null,
+    string? MediumImageUrl = null,
+    string? LargeImageUrl= null,
+    int? SongCount = null,
+    int? AlbumCount = null) : InfoBase(SmallImageUrl, MediumImageUrl, LargeImageUrl);

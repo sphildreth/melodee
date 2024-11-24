@@ -8,22 +8,35 @@ namespace Melodee.Controllers.OpenSubsonic;
 public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
     //download
-    //getAvatar
     //getCaptions
-    //getCoverArt
     //getLyrics
     //hls
     //stream
 
+    /// <summary>
+    ///     Returns the avatar (personal image) for a user.
+    /// </summary>
+    /// <param name="username">The user in question.. 	</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("/rest/getAvatar.view")]
+    public async Task<IActionResult> GetAvatarAsync(string username, CancellationToken cancellationToken = default)
+    {
+        return new FileContentResult((byte[])(await openSubsonicApiService.GetAvatarAsync(username,
+                null,
+                ApiRequest,
+                cancellationToken)).ResponseData.Data!,
+            "image/png");
+    }    
+    
     /// <summary>
     ///     Returns a cover art image.
     /// </summary>
     /// <param name="id">Composite ID of type:apikey</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("/rest/getCoverArt.view")]
-    public async Task<IActionResult> GetCoverArt(string id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetCoverArtAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new FileContentResult((byte[])(await openSubsonicApiService.GetCoverArt(id,
+        return new FileContentResult((byte[])(await openSubsonicApiService.GetCoverArtAsync(id,
                 null,
                 ApiRequest,
                 cancellationToken)).ResponseData.Data!,

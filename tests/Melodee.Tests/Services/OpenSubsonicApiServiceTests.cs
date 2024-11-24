@@ -36,7 +36,7 @@ public class OpenSubsonicApiServiceTests : ServiceTestBase
             });
             await context.SaveChangesAsync();
         }
-        var licenseResult = await GetOpenSubsonicApiService().GetLicense(GetApiRequest(username, "123456", password));
+        var licenseResult = await GetOpenSubsonicApiService().GetLicenseAsync(GetApiRequest(username, "123456", password));
         Assert.NotNull(licenseResult);
         Assert.True(licenseResult.IsSuccess);
         Assert.NotNull(licenseResult.ResponseData);
