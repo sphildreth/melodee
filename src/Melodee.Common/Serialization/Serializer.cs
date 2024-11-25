@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Melodee.Common.Serialization.Convertors;
 using Serilog;
-using Serilog.Core;
 
 namespace Melodee.Common.Serialization;
 

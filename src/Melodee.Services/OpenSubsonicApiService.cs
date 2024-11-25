@@ -562,7 +562,7 @@ public class OpenSubsonicApiService(
                                     Path = pathToAlbum
                                 };
                                 var imagesForFolder = albumDirInfo.AllFileImageTypeFileInfos();
-                                var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, "01-front.jpg", StringComparison.OrdinalIgnoreCase));
+                                var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, $" { ImageInfo.ImageFilePrefix }01-front.jpg", StringComparison.OrdinalIgnoreCase));
                                 if (firstFrontImage != null)
                                 {
                                     coverBytes = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);

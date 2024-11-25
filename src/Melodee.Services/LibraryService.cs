@@ -1,6 +1,7 @@
 using System.Text;
 using Ardalis.GuardClauses;
 using Dapper;
+using IdSharp.Common.Utils;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
@@ -9,6 +10,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Services.Interfaces;
@@ -262,21 +264,70 @@ public sealed class LibraryService(
             {
                 Directory.CreateDirectory(libraryAlbumPath);
             }
-
-            //TODO if data album exists for model album if so determine which is better quality
-
+            else
+            {
+                //TODO if data album exists for model album if so determine which is better quality
+                Logger.Warning("Existing directory found. Skipping album moving.");
+                continue;
+            }
             MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, null);
             var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
-            var melodeeFile = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(melodeeFileName, cancellationToken));
+            var melodeeFile = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFileName, cancellationToken));
             melodeeFile!.Directory!.Path = libraryAlbumPath;
-            var utf8Bytes = Encoding.UTF8.GetBytes(serializer.Serialize(melodeeFile)!);
-            await File.WriteAllBytesAsync(melodeeFileName, utf8Bytes, cancellationToken);
+            if (album.Artist.Images?.Any() ?? false)
+            {
+                var artistDirectoryParent = Directory.GetParent(libraryAlbumPath)?.FullName;
+                if (artistDirectoryParent != null)
+                {
+                    var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
+                    var artistDirectoryInfo = new DirectoryInfo(artistDirectoryParent).ToDirectorySystemInfo();
+                    var existingArtistImages = artistDirectoryInfo.AllFileImageTypeFileInfos().Where(x => ImageHelper.IsArtistImage(x) || ImageHelper.IsArtistSecondaryImage(x)).ToArray();
+                    if (existingArtistImages.Length == 0)
+                    {
+                        // If there are no artist images just move artist images from album folder
+                        foreach (var image in album.Artist.Images)
+                        {
+                            if (image.FileInfo != null)
+                            {
+                                var fullName = Path.Combine(artistDirectoryParent, image.FileInfo.Name);
+                                File.Move(image.FileInfo.FullName(libraryAlbumDirectoryInfo), fullName);
+                                Logger.Information("[{ServiceName}] moved artist image [{ImageName}]", nameof(LibraryService), fullName);
+                                movedCount++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var nextArtistImageNumber = existingArtistImages.Length + 1;
+                        var existingArtistImagesCrc32s = existingArtistImages.Select(Crc32.Calculate).ToArray();
+                        foreach (var image in album.Artist.Images.ToArray())
+                        {
+                            if (image.FileInfo != null)
+                            {
+                                // If there are artist images, check CRC and see if duplicate, delete any duplicate found in album folder
+                                if (existingArtistImagesCrc32s.Contains(CRC32.Calculate(image.FileInfo.ToFileInfo(artistDirectoryInfo))))
+                                {
+                                    var fullName = Path.Combine(libraryAlbumPath, image.FileInfo.Name); 
+                                    File.Delete(fullName);
+                                    Logger.Information("[{ServiceName}] deleted duplicate artist image [{ImageName}]", nameof(LibraryService), fullName);
+                                }
+                                else
+                                {
+                                    var fullName = Path.Combine(artistDirectoryParent, $"{MelodeeModels.ImageInfo.ImageFilePrefix}{nextArtistImageNumber}-Band.jpg");
+                                    File.Move(image.FileInfo.FullName(libraryAlbumDirectoryInfo), fullName);
+                                    Logger.Information("[{ServiceName}] renumbered and moved artist image [{ImageName}]", nameof(LibraryService), fullName);                                    
+                                    nextArtistImageNumber++;
+                                    movedCount++;
+                                }
 
-            //TODO handle any artist images in album folder
-            // If there are no artist images just move artist images from album folder up one folder
-            // If there are artist images, check CRC and see if duplicate, delete any duplicate found in album folder
-            // If there are artist images, renumber and move non duplicates, update artist imagecount
-            
+                            }
+                        }
+                    }
+                }
+                melodeeFile.Artist = melodeeFile.Artist with { Images = null };
+            }
+            await File.WriteAllTextAsync(melodeeFileName, serializer.Serialize(melodeeFile), cancellationToken);
+
             movedCount++;
 
             OnProcessingProgressEvent?.Invoke(this,
