@@ -196,7 +196,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             result = false;
         }
 
-        var albumArtist = album.Artist();
+        var albumArtist = album.Artist.Name;
         if (string.IsNullOrWhiteSpace(albumArtist))
         {
             result = false;
@@ -224,7 +224,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
     private bool AlbumArtistDoesNotHaveUnwantedText(Album album)
     {
-        var result = !StringHasFeaturingFragments(album.Artist());
+        var result = !StringHasFeaturingFragments(album.Artist.Name);
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage

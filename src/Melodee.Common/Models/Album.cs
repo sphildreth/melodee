@@ -21,7 +21,7 @@ public sealed record Album
 
     public static long GenerateUniqueId(string? artist, int? albumYear, string? albumTitle) => SafeParser.Hash(artist, albumYear.ToString(),albumTitle);
 
-    public long UniqueId => GenerateUniqueId(this.Artist(), this.AlbumYear(), this.AlbumTitle());
+    public long UniqueId => GenerateUniqueId(this.Artist.UniqueId().ToString(), this.AlbumYear(), this.AlbumTitle());
 
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
     
@@ -75,7 +75,7 @@ public sealed record Album
         }
     }
     
-    public string UniqueIdSummary => $"{this.Artist()} : {this.AlbumYear()} : {this.AlbumTitle()}";
+    public string UniqueIdSummary => $"{this.Artist.UniqueId()} : {this.AlbumYear()} : {this.AlbumTitle()}";
     
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 

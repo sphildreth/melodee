@@ -57,6 +57,11 @@ public sealed class Artist : MetaDataModelBase
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? Biography { get; set; }
+    
+    /// <summary>
+    /// Be able to query for artists that need images.
+    /// </summary>
+    public int? ImageCount { get; set; }
 
     public int MetaDataStatus { get; set; } = SafeParser.ToNumber<int>(MetaDataModelStatus.ReadyToProcess);
 

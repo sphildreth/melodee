@@ -23,13 +23,13 @@ public static class AlbumExtensions
         var genre = songs.Select(x => x.Genre().Nullify()).Distinct().ToArray();
         if (genre.Length > 0)
         {
-            if (genre.Any(x => x.IsSoundSongAristValue() || x.IsVariousArtistValue() || x.IsCastRecording()))
+            if (genre.Any(x => album.Artist.IsSoundSongArist() || album.Artist.IsVariousArtist() || album.Artist.IsCastRecording()))
             {
                 return true;
             }
         }
 
-        return album.Artist().IsVariousArtistValue() || album.Artist().IsSoundSongAristValue() || album.Artist().IsCastRecording();
+        return album.Artist.IsVariousArtist() || album.Artist.IsSoundSongArist() || album.Artist.IsCastRecording();
     }
 
     public static bool HasSongArtists(this Album album)
@@ -125,12 +125,6 @@ public static class AlbumExtensions
             return (false, "Album has media and/or song numbers that are duplicated.");
         }
         
-        var artist = album.Artist().Nullify();
-        if (artist == null)
-        {
-            return (false, "Album artist name is invalid.");
-        }
-        
         var albumTitle = album.AlbumTitle().Nullify();
         if (albumTitle == null)
         {
@@ -160,7 +154,7 @@ public static class AlbumExtensions
         {
             return string.Empty;
         }
-        var artist = album.Artist()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
+        var artist = album.Artist.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
         var albumTitle = album.AlbumTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Title not set on Album.");
         var artistAndAlbumPart = string.Empty;
         if (!(isForAlbumDirectory ?? false))
@@ -177,57 +171,28 @@ public static class AlbumExtensions
         {
             return string.Empty;
         }        
-        var artist = album.Artist()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
+        var artist = album.Artist?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
         var albumTitle = album.AlbumTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Title not set on Album.");
         return $"{artist} - [{album.AlbumYear()}] {albumTitle}".ToFileNameFriendly() ?? throw new Exception($"[{album}] Unable to determine Album Directory name.");
     }
-
     public static AlbumArtistType ArtistType(this Album album)
     {
-        var artist = album.Artist();
-        if (string.IsNullOrWhiteSpace(artist))
-        {
-            return AlbumArtistType.NotSet;
-        }
-
-        if (artist.IsVariousArtistValue())
-        {
-            return AlbumArtistType.VariousArtists;
-        }
-
-        if (album.Genre() == Genres.SoundSong.ToString() || artist.IsSoundSongAristValue())
-        {
-            return AlbumArtistType.SoundSong;
-        }
-
+        var artistName = album.Artist.Name;
         if (album.Songs != null)
         {
-            if (album.Songs.Any(x => string.Equals(x.SongArtist(), artist, StringComparison.OrdinalIgnoreCase)))
+            if (album.Songs.Any(x => string.Equals(x.SongArtist(), artistName, StringComparison.OrdinalIgnoreCase)))
             {
                 return AlbumArtistType.VariousArtists;
             }
 
-            if (album.Songs.Any(x => !string.Equals(x.SongArtist(), artist, StringComparison.OrdinalIgnoreCase)))
+            if (album.Songs.Any(x => !string.Equals(x.SongArtist(), artistName, StringComparison.OrdinalIgnoreCase)))
             {
                 return AlbumArtistType.VariousArtists;
             }
         }
-
-        return AlbumArtistType.ArtistOrBand;
+        return album.ArtistType();
     }
 
-    /// <summary>
-    ///     Return the value set for the Artist Tag.
-    /// </summary>
-    public static string? Artist(this Album album)
-    {
-        return album.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist);
-    }
-
-    // public static long ArtistUniqueId(this Album album)
-    // {
-    //     return album.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(album.Artist()?.ToNormalizedString() ?? Guid.NewGuid().ToString());
-    // }
 
     public static string? DiscSubtitle(this Album album, short discNumber)
     {
@@ -393,7 +358,7 @@ public static class AlbumExtensions
         try
         {
             var albumId = album.UniqueId.ToString();
-            var normalizedArtistName = album.Artist()?.ToAlphanumericName() ?? string.Empty;
+            var normalizedArtistName = album.Artist?.ToAlphanumericName() ?? string.Empty;
             var normalizedTitleName = album.AlbumTitle()?.ToAlphanumericName() ?? string.Empty;
 
             if (normalizedName.StartsWith(albumId) || (normalizedName.Contains(normalizedArtistName) && normalizedName.Contains(normalizedTitleName)))
@@ -456,7 +421,7 @@ public static class AlbumExtensions
 
     // public static string ArtistDirectoryName(this Album album, Dictionary<string, object?> configuration)
     // {
-    //     var artistNameToUse = album.ArtistSort() ?? album.Artist();
+    //     var artistNameToUse = album.ArtistSort() ?? album.Artist;
     //     if (string.IsNullOrWhiteSpace(artistNameToUse))
     //     {
     //         throw new Exception("Neither Artist or ArtistSort tag is set on Album.");

@@ -333,7 +333,7 @@ public class LibraryProcessJob(
             var dbAlbumsToAdd = new List<dbModels.Album>();
             foreach (var melodeeFile in melodeeFilesForDirectory)
             {
-                var artistName = melodeeFile.Artist()?.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
+                var artistName = melodeeFile.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                 var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
                 var dbArtistResult = await artistService.GetByMediaUniqueId(melodeeFile.Artist.UniqueId(), cancellationToken).ConfigureAwait(false);
                 if (!dbArtistResult.IsSuccess)
@@ -504,7 +504,7 @@ public class LibraryProcessJob(
             foreach (var album in albumsToUpdate)
             {
                 var albumDirectory = album.AlbumDirectoryName(_configuration.Configuration);
-                var artistName = album.Artist()?.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
+                var artistName = album.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                 var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
                 var dbArtistResult = await artistService.GetByMediaUniqueId(album.Artist.UniqueId(), cancellationToken).ConfigureAwait(false);
                 if (!dbArtistResult.IsSuccess)

@@ -17,12 +17,6 @@ public static partial class StringExtensions
 
     private static readonly string SongNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
 
-    private static readonly string VariousArtistParseRegex = @"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))";
-
-    private static readonly string SoundSongArtistParseRegex = @"(sound\s*Song[s]*)";
-
-    private static readonly string CastRecordingSongArtistParseRegex = @"(original broadway cast|original cast*)";
-
     public static readonly Regex HasWithFragmentsRegex = new(@"(\s*[\(\[]*with\s+)+", RegexOptions.Compiled);
     
     public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -564,30 +558,7 @@ public static partial class StringExtensions
         return Regex.IsMatch(input, SongNumberParseRegex) ? Regex.Replace(input, SongNumberParseRegex, string.Empty) : input;
     }
 
-    public static bool IsVariousArtistValue(this string? input)
-    {
-        if (input.Nullify() == null)
-        {
-            return false;
-        }
 
-        if (string.Equals(input, "va", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return Regex.IsMatch(input!, VariousArtistParseRegex, RegexOptions.IgnoreCase);
-    }
-
-    public static bool IsCastRecording(this string? input)
-    {
-        return input.Nullify() != null && Regex.IsMatch(input!, CastRecordingSongArtistParseRegex, RegexOptions.IgnoreCase);
-    }
-
-    public static bool IsSoundSongAristValue(this string? input)
-    {
-        return input.Nullify() != null && Regex.IsMatch(input!, SoundSongArtistParseRegex, RegexOptions.IgnoreCase);
-    }
 
     public static bool HasWithFragments(this string? input)
     {

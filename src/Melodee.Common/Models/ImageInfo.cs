@@ -6,7 +6,12 @@ namespace Melodee.Common.Models;
 public sealed record ImageInfo
 {
     /// <summary>
-    ///     May not exist if the image was extracted from tag.
+    /// This is used so the images sort proper in the directory not mixed with the song names.
+    /// </summary>
+    public const string ImageFilePrefix = "i-";
+    
+    /// <summary>
+    ///     May not exist if album image and the image was extracted from tag.
     /// </summary>
     public FileSystemFileInfo? FileInfo { get; init; }
 

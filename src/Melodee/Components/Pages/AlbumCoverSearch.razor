@@ -63,7 +63,7 @@
     {
         _loading = true;
         _maxResults = (await SettingService.GetValueAsync<int?>(SettingRegistry.SearchEngineDefaultPageSize)).Data ?? (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
-        _query = $"album cover {Album.Artist()} {Album.AlbumTitle()}";
+        _query = $"album cover {Album.Artist.Name} {Album.AlbumTitle()}";
         _searchEvents.Throttle(TimeSpan.FromMilliseconds(800)).Subscribe(async (text) =>
         {
             _results = (await ImageSearchEngineService.DoSearchAsync(HttpClientFactory, _query ?? text ?? string.Empty, _maxResults)).Data;

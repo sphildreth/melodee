@@ -664,7 +664,7 @@
         _album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), UniqueId);
         _albumEdit = new AlbumEdit
         {
-            Artist = _album.Artist() ?? string.Empty,
+            Artist = _album.Artist.Name,
             Discs = _album.Songs?.GroupBy(x => x.MediaNumber()).Select(x => new DiscEdit
             {
                 DiscNumber = x.Key < 1 ? 1 : x.Key,

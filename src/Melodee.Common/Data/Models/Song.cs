@@ -57,6 +57,11 @@ public class Song : MetaDataModelBase
     /// </summary>
     public double? ReplayPeak { get; set; }
     
+    /// <summary>
+    /// When a song is released as a single, it can have unique images different from the album image.
+    /// </summary>
+    public int? ImageCount { get; set; }    
+    
     [RequiredGreaterThanZero] public required int SongNumber { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]

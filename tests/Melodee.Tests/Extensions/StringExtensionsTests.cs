@@ -97,45 +97,7 @@ public class StringExtensionsTests
         Assert.Equal(shouldBe, input?.RemoveSongNumberFromString());
     }
 
-    [Theory]
-    [InlineData("Bob Jones", false)]
-    [InlineData("Bob Various", false)]
-    [InlineData("Various Bob", false)]
-    [InlineData("VA", true)]
-    [InlineData("[VA]", true)]
-    [InlineData("various artists", true)]
-    [InlineData("Various Artists", true)]
-    [InlineData("[Various Artists]", true)]
-    [InlineData("VARIOUS ARTISTS", true)]
-    public void ValidateIsVariousArtists(string input, bool shouldBe)
-    {
-        Assert.Equal(shouldBe, input.IsVariousArtistValue());
-    }
-
-    [Theory]
-    [InlineData("Bob Jones", false)]
-    [InlineData("Bob Song", false)]
-    [InlineData("Song Bob", false)]
-    [InlineData("Sound Bob", false)]
-    [InlineData("SoundSongs", true)]
-    [InlineData("Sound Song", true)]
-    [InlineData("Sound Songs", true)]
-    public void ValidateIsSoundSongArtists(string input, bool shouldBe)
-    {
-        Assert.Equal(shouldBe, input.IsSoundSongAristValue());
-    }
-
-    [Theory]
-    [InlineData("Bob Jones", false)]
-    [InlineData("Bob Cast", false)]
-    [InlineData("Song Bob", false)]
-    [InlineData("Sound Bob", false)]
-    [InlineData("Original Cast", true)]
-    [InlineData("Original Broadway Cast", true)]
-    public void ValidateIsCastRecordSongArtists(string input, bool shouldBe)
-    {
-        Assert.Equal(shouldBe, input.IsCastRecording());
-    }
+ 
 
     [Theory]
     [InlineData(null, false)]

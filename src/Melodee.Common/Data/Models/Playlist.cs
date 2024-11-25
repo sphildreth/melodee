@@ -28,6 +28,11 @@ public class Playlist : DataModelBase
     public short? SongCount { get; set; }
 
     public double Duration { get; set; }
+    
+    /// <summary>
+    /// This is true when there is a custom image for the playlist, otherwise serve the default playlist image.
+    /// </summary>
+    public bool HasCustomImage { get; set; }
 
     /// <summary>
     ///     Pipe seperated list. Example 'terrible|sexy|Songs about Love'

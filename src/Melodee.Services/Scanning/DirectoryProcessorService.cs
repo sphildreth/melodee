@@ -727,7 +727,7 @@ public sealed class DirectoryProcessorService(
             if (album.IsFileForAlbum(fileInfo) && !AlbumValidator.IsImageAProofType(imageFile))
             {
                 var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);
-                var artistNormalized = album.Artist().ToNormalizedString() ?? album.Artist() ?? string.Empty;
+                var artistNormalized = album.Artist.NameNormalized;
                 var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;
                 var isAlbumImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) &&
                                    fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
@@ -751,10 +751,12 @@ public sealed class DirectoryProcessorService(
                     }
                     else if (ImageHelper.IsArtistImage(fileInfo) || (isArtistImage && !isAlbumImage))
                     {
+                        // TODO this should be for artist
                         pictureIdentifier = PictureIdentifier.Band;
                     }
                     else if (ImageHelper.IsArtistSecondaryImage(fileInfo))
                     {
+                        // TODO this should be for artist
                         pictureIdentifier = PictureIdentifier.BandSecondary;
                     }
 
@@ -765,7 +767,7 @@ public sealed class DirectoryProcessorService(
                         CrcHash = Crc32.Calculate(fileInfo),
                         FileInfo = new FileSystemFileInfo
                         {
-                            Name = $"{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
+                            Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
                             Size = fileInfoFileSystemInfo.Size,
                             OriginalName = fileInfo.Name
                         },

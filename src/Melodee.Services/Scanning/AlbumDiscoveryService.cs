@@ -2,6 +2,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Cards;
 using Melodee.Common.Models.Extensions;
@@ -109,7 +110,7 @@ public sealed class AlbumDiscoveryService(
         {
             albums = albums.Where(x =>
                 (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)) ||
-                (x.Artist() != null && x.Artist()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase))).ToList();
+                (x.Artist != null && x.Artist.Name.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase))).ToList();
         }
 
         if (pagedRequest.AlbumResultFilter != AlbumResultFilter.All && albums.Count != 0)
@@ -167,7 +168,7 @@ public sealed class AlbumDiscoveryService(
                 switch (filterBy.PropertyName)
                 {
                     case "Artist":
-                        albums = albums.Where(x => x.Artist() != null && x.Artist()!.ToUpperInvariant().Contains(filterBy.Value?.ToString()?.ToUpperInvariant() ?? string.Empty)).ToList();
+                        albums = albums.Where(x => x.Artist.NameNormalized.Contains(filterBy.Value?.ToString()?.ToNormalizedString() ?? string.Empty)).ToList();
                         break;
 
                     case "AlbumStatus":
@@ -186,11 +187,11 @@ public sealed class AlbumDiscoveryService(
         switch (pagedRequest.OrderByValue("SortOrder"))
         {
             case "\"Artist\" ASC":
-                albums = albums.OrderBy(x => x.Artist()).ToList();
+                albums = albums.OrderBy(x => x.Artist.SortName).ToList();
                 break;
 
             case "\"Artist\" DESC":
-                albums = albums.OrderByDescending(x => x.Artist()).ToList();
+                albums = albums.OrderByDescending(x => x.Artist.SortName).ToList();
                 break;
 
             case "\"Title\" ASC":
@@ -255,7 +256,7 @@ public sealed class AlbumDiscoveryService(
         var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
         var data = albumsForDirectoryInfo.Data.Select(async x => new AlbumCard
         {
-            Artist = x.Artist(),
+            Artist = x.Artist.Name,
             Created = x.Created,
             Duration = x.Duration(),
             MelodeeDataFileName = Path.Combine(x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(), Album.JsonFileName),

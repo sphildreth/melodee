@@ -40,6 +40,11 @@ public sealed class Album : MetaDataModelBase
 
     [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);
 
+    /// <summary>
+    /// Be able to query for albums that need images.
+    /// </summary>
+    public int? ImageCount { get; set; }    
+    
     public short AlbumType { get; set; }
 
     [NotMapped] public AlbumType AlbumTypeValue => SafeParser.ToEnum<AlbumType>(AlbumType);

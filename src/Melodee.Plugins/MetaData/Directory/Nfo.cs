@@ -96,7 +96,7 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
                     }
                     else
                     {
-                        Log.Warning("Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", nfoFile.Name, nfoAlbum.Artist(), nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
+                        Log.Warning("Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", nfoFile.Name, nfoAlbum.Artist, nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             nfoFile.Delete();
