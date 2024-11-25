@@ -8,7 +8,7 @@ using Melodee.Common.Utility;
 namespace Melodee.Common.Models;
 
 /// <summary>
-///     This is a representation of a Album (a published collection of Songs) including all known MetaData.
+///     This is a representation of an Album (a published collection of Songs) including all known MetaData.
 /// </summary>
 public sealed record Album
 {
@@ -17,7 +17,7 @@ public sealed record Album
     /// <summary>
     /// Artist for the Album
     /// </summary>
-    public required Artist Artist { get; init; }
+    public Artist Artist { get; set; } = Artist.NewArtistFromName(string.Empty);
 
     public static long GenerateUniqueId(string? artist, int? albumYear, string? albumTitle) => SafeParser.Hash(artist, albumYear.ToString(),albumTitle);
 

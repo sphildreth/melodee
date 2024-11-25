@@ -262,10 +262,7 @@ public abstract class ServiceBase(
                             var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();                            
                             var newAlbum = new Album
                             {
-                                Artist = new Artist(
-                                    artistName ?? throw new Exception($"Invalid artist on { nameof(ServiceBase)}"),
-                                    artistName.ToNormalizedString(),
-                                    null),
+                                Artist = Artist.NewArtistFromName(artistName ?? throw new Exception("Invalid artist name")),
                                 Images = songsGroupedByAlbum.Where(x => x.Images != null)
                                     .SelectMany(x => x.Images!)
                                     .DistinctBy(x => x.CrcHash).ToArray(),

@@ -47,14 +47,14 @@ public static class AlbumExtensions
             null,
             album.SortName,
             album.MusicBrainzId,
-            [], // TODO
-            [], // TODO
+            [], //TODO
+            [], //TODO
             album.Artist.Name,
-            [], // TODO
+            [], //TODO
             album.Artist.Name,
-            [], // TODO
+            [], //TODO
             null, //TODO
-            [], // TODO
+            [], //TODO
             null, //TODO,
             nowPlayingInfo?.User.UserName,
             nowPlayingInfo?.Scrobble.MinutesAgo,

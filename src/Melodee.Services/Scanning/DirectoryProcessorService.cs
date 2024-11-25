@@ -91,15 +91,15 @@ public sealed class DirectoryProcessorService(
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledCueSheet)
             },
-            new SimpleFileVerification(serializer,_songPlugins, _albumValidator, _configuration)
+            new SimpleFileVerification(serializer, _songPlugins, _albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledSimpleFileVerification)
             },
-            new M3UPlaylist(serializer,_songPlugins, _albumValidator, _configuration)
+            new M3UPlaylist(serializer, _songPlugins, _albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledM3u)
             },
-            new Nfo(serializer,_configuration)
+            new Nfo(serializer, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledNfo)
             }
@@ -360,6 +360,7 @@ public sealed class DirectoryProcessorService(
                                 {
                                     LogAndRaiseEvent(LogEventLevel.Error, "Error Deserialize melodee json file {0}]", e, albumDataName);
                                 }
+
                                 if (existingAlbum != null)
                                 {
                                     mergedAlbum = mergedAlbum.Merge(existingAlbum);
@@ -415,6 +416,7 @@ public sealed class DirectoryProcessorService(
                         {
                             LogAndRaiseEvent(LogEventLevel.Error, "Error Deserialize melodee json file {0}]", e, albumJsonFile.FullName);
                         }
+
                         if (album == null)
                         {
                             return new OperationResult<DirectoryProcessorResult>($"Invalid Album json file [{albumJsonFile.FullName}]")
@@ -442,6 +444,27 @@ public sealed class DirectoryProcessorService(
                         }
 
                         album.Images = albumImages.ToArray();
+
+                        var artistImages = new List<ImageInfo>();
+                        var foundArtistImages = (await FindImagesForArtist(album, _maxImageCount, cancellationToken)).ToArray();
+                        if (foundArtistImages.Length != 0)
+                        {
+                            foreach (var foundArtistImage in foundArtistImages)
+                            {
+                                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                                {
+                                    break;
+                                }
+
+                                if (!artistImages.Any(x => x.IsCrcHashMatch(foundArtistImage.CrcHash)))
+                                {
+                                    artistImages.Add(foundArtistImage);
+                                }
+                            }
+                        }
+
+                        album.Artist = new Artist(album.Artist.Name, album.Artist.NameNormalized, album.Artist.SortName, artistImages);
+
                         if (album.Songs != null)
                         {
                             // Set SongNumber to invalid range if SongNumber is missing
@@ -482,7 +505,9 @@ public sealed class DirectoryProcessorService(
                         albumDirInfo.Create();
                     }
 
-                    foreach (var (image, index) in album.Images?.Where(x => x.FileInfo?.OriginalName != null).Select((image, index) => (image, index)) ?? [])
+                    var albumImages = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
+                    var artistImages = album.Artist?.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
+                    foreach (var (image, index) in albumImages.Concat(artistImages).Select((image, index) => (image, index)) ?? [])
                     {
                         var oldImageFileName = Path.Combine(albumKvp.Key.Directory.FullName(), image.FileInfo!.OriginalName!);
                         if (!File.Exists(oldImageFileName))
@@ -490,8 +515,7 @@ public sealed class DirectoryProcessorService(
                             Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);
                             continue;
                         }
-
-                        var newImageFileName = Path.Combine(albumDirInfo.FullName, $"{(index + 1).ToStringPadLeft(2)}-{image.PictureIdentifier}.jpg");
+                        var newImageFileName = Path.Combine(albumDirInfo.FullName, image.FileInfo.Name);
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
                             File.Copy(oldImageFileName, newImageFileName, true);
@@ -711,6 +735,59 @@ public sealed class DirectoryProcessorService(
         OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
     }
 
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
+    {
+        var imageInfos = new List<ImageInfo>();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).Order().ToArray();
+        var index = 1;
+        foreach (var imageFile in imageFiles)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+
+            var fileInfo = new FileInfo(imageFile);
+            var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name);
+            var isArtistImage = fileNameNormalized.Contains(album.Artist.NameNormalized, StringComparison.InvariantCultureIgnoreCase);
+            if (isArtistImage || ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
+            {
+                var pictureIdentifier = PictureIdentifier.NotSet;
+                if (ImageHelper.IsArtistImage(fileInfo))
+                {
+                    pictureIdentifier = PictureIdentifier.Band;
+                }
+                else if (ImageHelper.IsArtistSecondaryImage(fileInfo))
+                {
+                    pictureIdentifier = PictureIdentifier.BandSecondary;
+                }
+                if (pictureIdentifier != PictureIdentifier.NotSet)
+                {
+                    var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
+                    var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
+                    imageInfos.Add(new ImageInfo
+                    {
+                        CrcHash = Crc32.Calculate(fileInfo),
+                        FileInfo = new FileSystemFileInfo
+                        {
+                            Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
+                            Size = fileInfoFileSystemInfo.Size,
+                            OriginalName = fileInfo.Name
+                        },
+                        OriginalFilename = fileInfo.Name,
+                        PictureIdentifier = pictureIdentifier,
+                        Width = imageInfo.Width,
+                        Height = imageInfo.Height,
+                        SortOrder = index
+                    });
+                    index++;
+                }
+            }
+        }
+
+        return imageInfos;
+    }
+
     private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
@@ -731,13 +808,8 @@ public sealed class DirectoryProcessorService(
                 var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;
                 var isAlbumImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) &&
                                    fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
-                var isArtistImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) &&
-                                    !fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
                 if (isAlbumImage ||
-                    isArtistImage ||
                     ImageHelper.IsAlbumImage(fileInfo) ||
-                    ImageHelper.IsArtistImage(fileInfo) ||
-                    ImageHelper.IsArtistSecondaryImage(fileInfo) ||
                     ImageHelper.IsAlbumSecondaryImage(fileInfo))
                 {
                     var pictureIdentifier = PictureIdentifier.NotSet;
@@ -749,37 +821,29 @@ public sealed class DirectoryProcessorService(
                     {
                         pictureIdentifier = PictureIdentifier.SecondaryFront;
                     }
-                    else if (ImageHelper.IsArtistImage(fileInfo) || (isArtistImage && !isAlbumImage))
-                    {
-                        // TODO this should be for artist
-                        pictureIdentifier = PictureIdentifier.Band;
-                    }
-                    else if (ImageHelper.IsArtistSecondaryImage(fileInfo))
-                    {
-                        // TODO this should be for artist
-                        pictureIdentifier = PictureIdentifier.BandSecondary;
-                    }
 
-                    var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
-                    var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
-                    imageInfos.Add(new ImageInfo
+                    if (pictureIdentifier != PictureIdentifier.NotSet)
                     {
-                        CrcHash = Crc32.Calculate(fileInfo),
-                        FileInfo = new FileSystemFileInfo
+                        var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
+                        var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
+                        imageInfos.Add(new ImageInfo
                         {
-                            Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
-                            Size = fileInfoFileSystemInfo.Size,
-                            OriginalName = fileInfo.Name
-                        },
-                        OriginalFilename = fileInfo.Name,
-                        PictureIdentifier = pictureIdentifier,
-                        Width = imageInfo.Width,
-                        Height = imageInfo.Height,
-                        SortOrder = index
-                    });
+                            CrcHash = Crc32.Calculate(fileInfo),
+                            FileInfo = new FileSystemFileInfo
+                            {
+                                Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
+                                Size = fileInfoFileSystemInfo.Size,
+                                OriginalName = fileInfo.Name
+                            },
+                            OriginalFilename = fileInfo.Name,
+                            PictureIdentifier = pictureIdentifier,
+                            Width = imageInfo.Width,
+                            Height = imageInfo.Height,
+                            SortOrder = index
+                        });
+                        index++;
+                    }
                 }
-
-                index++;
             }
         }
 

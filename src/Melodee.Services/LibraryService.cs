@@ -263,7 +263,7 @@ public sealed class LibraryService(
                 Directory.CreateDirectory(libraryAlbumPath);
             }
 
-            // TODO if data album exists for model album if so determine which is better quality
+            //TODO if data album exists for model album if so determine which is better quality
 
             MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, null);
             var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
@@ -272,6 +272,11 @@ public sealed class LibraryService(
             var utf8Bytes = Encoding.UTF8.GetBytes(serializer.Serialize(melodeeFile)!);
             await File.WriteAllBytesAsync(melodeeFileName, utf8Bytes, cancellationToken);
 
+            //TODO handle any artist images in album folder
+            // If there are no artist images just move artist images from album folder up one folder
+            // If there are artist images, check CRC and see if duplicate, delete any duplicate found in album folder
+            // If there are artist images, renumber and move non duplicates, update artist imagecount
+            
             movedCount++;
 
             OnProcessingProgressEvent?.Invoke(this,

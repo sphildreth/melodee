@@ -233,12 +233,12 @@ public class OpenSubsonicApiService(
                         break;
 
                     case ListType.ByYear:
-                        // TODO fromYear and ToYear optional filtering
+                        //TODO fromYear and ToYear optional filtering
                         whereSql = "ORDER BY \"Year\" DESC";
                         break;
 
                     case ListType.ByGenre:
-                        // TODO filter by given Genre
+                        //TODO filter by given Genre
                         whereSql = "ORDER BY \"Genre\" DESC";
                         break;
                 }
@@ -337,27 +337,27 @@ public class OpenSubsonicApiService(
         var data = new AlbumId3WithSongs
         {
             AlbumDate = album.ReleaseDate.ToItemDate(),
-            AlbumTypes = [], // TODO
+            AlbumTypes = [], //TODO
             Artist = album.Artist.Name,
             ArtistId = album.Artist.ToApiKey(),
-            Artists = [], // TODO
+            Artists = [], //TODO
             CoverArt = $"album_{album.ApiKey}",
             Created = album.CreatedAt.ToString(),
             DiscTitles = album.Discs.Select(x => new DiscTitle(x.DiscNumber, x.Title ?? string.Empty)).ToArray(),
             DisplayArtist = album.Artist.Name,
             Duration = album.Duration.ToSeconds(),
             Genre = album.Genres?.ToCsv(),
-            Genres = [], // TODO
+            Genres = [], //TODO
             Id = album.ToApiKey(),
             IsCompilation = album.IsCompilation,
-            Moods = [], // TODO
+            Moods = [], //TODO
             MusicBrainzId = null,
             Name = album.Name,
             OriginalAlbumDate = album.OriginalReleaseDate?.ToItemDate() ?? album.ReleaseDate.ToItemDate(),
             Parent = album.ToApiKey(),
             PlayCount = album.PlayedCount,
             Played = album.LastPlayedAt.ToString(),
-            RecordLabels = [], // TODO
+            RecordLabels = [], //TODO
             Song = album.Discs.SelectMany(x => x.Songs)
                 .Select(x => x.ToChild(album, userSongsForAlbum.FirstOrDefault(us => us.SongId == x.Id)))
                 .ToArray(),
@@ -458,7 +458,7 @@ public class OpenSubsonicApiService(
 
         var avatarBytes = defaultImages.UserAvatarBytes;
 
-        // TODO cache images?
+        //TODO cache images?
 
         try
         {
@@ -507,7 +507,7 @@ public class OpenSubsonicApiService(
 
         var coverBytes = defaultImages.AlbumCoverBytes;
 
-        // TODO cache images?
+        //TODO cache images?
 
         try
         {
@@ -1367,7 +1367,7 @@ public class OpenSubsonicApiService(
             lastModifed = library?.LastUpdatedAt.ToString() ?? string.Empty;
         }
 
-        // TODO looks like these are values removed from sortname when sorting
+        //TODO looks like these are values removed from sortname when sorting
         // see https://github.com/navidrome/navidrome/blob/9ae898d071e32cf56261f3b13a639fd01092c201/utils/str/sanitize_strings.go#L52
         var ignoredArticles = (await Configuration.Value).GetValue<string>(SettingRegistry.ProcessingIgnoredArticles) ?? string.Empty;
 

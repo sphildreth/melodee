@@ -258,7 +258,7 @@ public class LibraryProcessJob(
                         .ExecuteAsync(sql, context.CancellationToken)
                         .ConfigureAwait(false);
 
-                    // TODO Contributors
+                    //TODO Contributors
                     
                     // sql = """
                     //       with performerSongCounts as (
@@ -568,7 +568,7 @@ public class LibraryProcessJob(
                 dbAlbum.NameNormalized = nameNormalized;
                 dbAlbum.SortName = albumTitle.CleanString(true);
 
-                // TODO handle media disc changes (add a new one, removed one, etc.)
+                //TODO handle media disc changes (add a new one, removed one, etc.)
                 _dbAlbumIdsModifiedOrUpdated.Add(dbAlbum.Id);
             }
 
@@ -579,7 +579,7 @@ public class LibraryProcessJob(
                 UpdateDataMap();
             }
 
-            // TODO
+            //TODO
             // // Delete any songs not found in directory but in database
             // var orphanedDbSongs = (from a in dbAlbum.Discs.SelectMany(x => x.Songs)
             //     join f in mediaFiles on a.FileName equals f.Name into af

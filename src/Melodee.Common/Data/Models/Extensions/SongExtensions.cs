@@ -26,7 +26,7 @@ public static class SongExtensions
             album.ReleaseDate.Year,
             song.ToCoverArtId(),
             song.FileSize,
-            "audio/mpeg", // TODO this should be the right type for the song media, what if no conversion and flac
+            "audio/mpeg", //TODO this should be the right type for the song media, what if no conversion and flac
             Path.GetExtension(song.FileName),
             userSong?.IsStarred ?? false ? userSong.LastUpdatedAt.ToString() : null,
             song.Duration.ToSeconds(),
@@ -48,14 +48,14 @@ public static class SongExtensions
             null,
             song.TitleSort,
             song.MusicBrainzId,
-            [], // TODO
-            [], // TODO
+            [], //TODO
+            [], //TODO
             album.Artist.Name,
-            [], // TODO
+            [], //TODO
             album.Artist.Name,
-            [], // TODO
+            [], //TODO
             null, //TODO
-            [], // TODO
+            [], //TODO
             null, //TODO,
             nowPlayingInfo?.User.UserName,
             nowPlayingInfo?.Scrobble.MinutesAgo,
