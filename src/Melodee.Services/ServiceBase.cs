@@ -28,6 +28,38 @@ public abstract class ServiceBase(
     protected ICacheManager CacheManager { get; } = cacheManager;
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = contextFactory;
 
+    protected async Task<Melodee.Common.Models.OpenSubsonic.AlbumList2[]> AlbumListForArtistApiKey(Guid artistApiKey, int userId, CancellationToken cancellationToken)
+    {    
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      SELECT 
+                          cast(a."ApiKey" as varchar(50)) as "Id",
+                          a."Name" as "Album",
+                          a."Name" as "Title",
+                          a."Name" as "Name",
+                          'album_' || cast(a."ApiKey" as varchar(50)) as "CoverArt",
+                          a."SongCount",
+                          a."CreatedAt" as "CreatedRaw",
+                          a."Duration"/1000 as "Duration",
+                          a."PlayedCount",
+                          cast(aa."ApiKey" as varchar(50)) as "ArtistId",
+                          aa."Name" as "Artist",
+                          DATE_PART('year', a."ReleaseDate"::date) as "Year",
+                          unnest(a."Genres") as "Genre",
+                          (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount",
+                          ua."IsStarred" as "Starred",
+                          ua."Rating" as "UserRating"
+                      FROM "Albums" a 
+                      LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
+                      LEFT JOIN "UserArtists" ua on (aa."Id" = ua."ArtistId" and ua."UserId" = @userId)
+                      WHERE aa."ApiKey" = @artistApiKey;
+                      """;
+            return (await dbConn.QueryAsync<Melodee.Common.Models.OpenSubsonic.AlbumList2>(sql, new { userId, artistApiKey }).ConfigureAwait(false)).ToArray();
+        }        
+    }
+    
     protected async Task<DatabaseDirectoryInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))

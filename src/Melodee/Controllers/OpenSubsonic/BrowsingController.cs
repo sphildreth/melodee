@@ -9,7 +9,6 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
 {
     //getAlbumInfo
     //getAlbumInfo2
-    //getArtist
     //getArtistInfo
     //getArtistInfo2
     //getArtists
@@ -18,6 +17,19 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     //getTopSongs
     //getVideoInfo
     //getVideos
+
+    /// <summary>
+    ///     Returns details for an artist.
+    /// </summary>
+    /// <param name="id">The artist ID.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getArtist.view")]
+    public async Task<IActionResult> GetArtistAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetArtistAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }    
 
     /// <summary>
     ///     Returns all configured top-level music folders.
@@ -48,8 +60,24 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [Route("/rest/getIndexes.view")]
     public async Task<IActionResult> GetIndexesAsync(Guid? musicFolderId, long? ifModifiedSince, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync(musicFolderId, ifModifiedSince, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync("indexes", musicFolderId, ifModifiedSince, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
+    
+    /// <summary>
+    ///     Returns all artists.
+    /// </summary>
+    /// <param name="musicFolderId">
+    ///     If specified, only return artists in the music folder with the given ID. See
+    ///     getMusicFolders.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getArtists.view")]
+    public async Task<IActionResult> GetArtistsAsync(Guid? musicFolderId, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync("artists", musicFolderId, null, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }    
 
     /// <summary>
     ///     Returns a listing of all files in a music directory. Typically used to get list of albums for an artist, or list of
@@ -76,7 +104,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getSong.view")]
-    public async Task<IActionResult> GetSongAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetSongAsync(string id, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetSongAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }

@@ -14,8 +14,8 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     /// <summary>
     ///     Registers the local playback of one or more media files.
     /// </summary>
-    /// <param name="id">Song ApiKey to scrobble.</param>
-    /// <param name="time">The time (in milliseconds since 1 Jan 1970) at which the song was listened to.</param>
+    /// <param name="id">Array of Song ApiKeyIds to scrobble.</param>
+    /// <param name="time">The times (in milliseconds since 1 Jan 1970) at which the song was listened to.</param>
     /// <param name="submission">Whether this is a “submission” or a “now playing” notification.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]

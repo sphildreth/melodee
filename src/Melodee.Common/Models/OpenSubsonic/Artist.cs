@@ -15,10 +15,10 @@ public record Artist
     string Id,
     string Name,
     int AlbumCount,    
-    int UserRating,
+    int? UserRating,
     decimal AverageRating,
     string CoverArt,
-    string? ArtistImageUrl = null    
-    
+    string? ArtistImageUrl = null,
+    AlbumList2[]? Album = null
 );
 
