@@ -4,5 +4,5 @@ namespace Melodee.Common.Models.Scrobbling;
 
 public record NowPlayingInfo(UserInfo User, ScrobbleInfo Scrobble)
 {
-    public long UniqueId = SafeParser.Hash(User.ApiKey.ToString(), Scrobble.SongApiKey.ToString());
+    public readonly long UniqueId = SafeParser.Hash(User.ApiKey.ToString(), Scrobble.SongApiKey.ToString());
 }

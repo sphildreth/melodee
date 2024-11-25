@@ -4,9 +4,7 @@ using System.Text.Json;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Utility;
-using SerilogTimings;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -81,6 +79,7 @@ public static class AlbumExtensions
             {
                 return SafeParser.ToNumber<T?>(vv.ToString());
             }
+
             if (vv is JsonElement)
             {
                 vv = vv.ToString() ?? string.Empty;
@@ -95,7 +94,7 @@ public static class AlbumExtensions
 
         return d;
     }
-    
+
     public static (bool, string?) IsValid(this Album album, Dictionary<string, object?> configuration)
     {
         if (album.Tags?.Count() == 0)
@@ -112,7 +111,7 @@ public static class AlbumExtensions
         {
             return (false, "Artist is invalid.");
         }
-        
+
         if (album.Songs?.Any(x => !x.IsValid(configuration)) ?? false)
         {
             return (false, "Album has no valid songs.");
@@ -124,7 +123,7 @@ public static class AlbumExtensions
         {
             return (false, "Album has media and/or song numbers that are duplicated.");
         }
-        
+
         var albumTitle = album.AlbumTitle().Nullify();
         if (albumTitle == null)
         {
@@ -138,22 +137,24 @@ public static class AlbumExtensions
 
         if (!album.HasValidAlbumYear(configuration))
         {
-            return (false,"Album year is invalid.");
+            return (false, "Album year is invalid.");
         }
 
         if (album.Status is AlbumStatus.Ok or AlbumStatus.New)
         {
             return (true, null);
         }
+
         return (false, $"Album Status is [{album.Status.ToString()}]");
     }
-    
+
     public static string ToMelodeeJsonName(this Album album, bool? isForAlbumDirectory = null)
     {
         if (album.UniqueId < 1)
         {
             return string.Empty;
         }
+
         var artist = album.Artist.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
         var albumTitle = album.AlbumTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Title not set on Album.");
         var artistAndAlbumPart = string.Empty;
@@ -170,11 +171,13 @@ public static class AlbumExtensions
         if (album.UniqueId < 1)
         {
             return string.Empty;
-        }        
+        }
+
         var artist = album.Artist?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
         var albumTitle = album.AlbumTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Title not set on Album.");
         return $"{artist} - [{album.AlbumYear()}] {albumTitle}".ToFileNameFriendly() ?? throw new Exception($"[{album}] Unable to determine Album Directory name.");
     }
+
     public static AlbumArtistType ArtistType(this Album album)
     {
         var artistName = album.Artist.Name;
@@ -190,6 +193,7 @@ public static class AlbumExtensions
                 return AlbumArtistType.VariousArtists;
             }
         }
+
         return album.ArtistType();
     }
 
@@ -198,7 +202,7 @@ public static class AlbumExtensions
     {
         return album.Songs?.Select(x => x.MetaTagValue<string?>(MetaTagIdentifier.DiscSetSubtitle)).FirstOrDefault(x => x.Nullify() == null);
     }
-    
+
     public static string? ArtistSort(this Album album)
     {
         return album.MetaTagValue<string?>(MetaTagIdentifier.SortAlbumArtist);
@@ -222,7 +226,7 @@ public static class AlbumExtensions
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
     }
-    
+
     /// <summary>
     ///     Return the value set for the OrigAlbumYear ?? RecordingYear ?? RecordingDateOrYear
     /// </summary>
@@ -231,13 +235,13 @@ public static class AlbumExtensions
         return album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
-    }    
+    }
 
     public static bool HasValidAlbumYear(this Album album, Dictionary<string, object?> configuration)
     {
         var albumYear = album.AlbumYear() ?? 0;
         return albumYear > DateTime.MinValue.Year && albumYear < DateTime.MaxValue.Year &&
-               albumYear >= SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMinimumAlbumYear]) && 
+               albumYear >= SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMinimumAlbumYear]) &&
                albumYear <= SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumAlbumYear]);
     }
 
@@ -265,10 +269,11 @@ public static class AlbumExtensions
             }
         }
 
-        if (discTotal == null || discTotal < 1 && (album.Songs?.Any() ?? false))
+        if (discTotal == null || (discTotal < 1 && (album.Songs?.Any() ?? false)))
         {
             return SafeParser.ToNumber<short>(album.Songs?.GroupBy(x => x.MediaNumber()).Count());
         }
+
         return discTotal ?? 0;
     }
 
@@ -279,6 +284,7 @@ public static class AlbumExtensions
         {
             return songTotalFromAlbum.Value;
         }
+
         var songTotalFromSongNumberTotal = album.MetaTagValue<string>(MetaTagIdentifier.SongNumberTotal);
         if (songTotalFromSongNumberTotal != null)
         {
@@ -287,11 +293,10 @@ public static class AlbumExtensions
             {
                 return SafeParser.ToNumber<int?>(total[1]) ?? 0;
             }
-            else
-            {
-                return SafeParser.ToNumber<int?>(songTotalFromSongNumberTotal) ?? 0;
-            }
+
+            return SafeParser.ToNumber<int?>(songTotalFromSongNumberTotal) ?? 0;
         }
+
         var songTotalFromSongs = album.Songs?.FirstOrDefault(x => x.SongTotalNumber() > 0);
         if (songTotalFromSongs != null)
         {
@@ -388,6 +393,9 @@ public static class AlbumExtensions
         return false;
     }
 
+    /// <summary>
+    ///     Return the path to the Albums folder, this does not include the Artists and Library path.
+    /// </summary>
     public static string AlbumDirectoryName(this Album album, Dictionary<string, object?> configuration)
     {
         var albumTitleValue = album.AlbumTitle();
@@ -416,7 +424,7 @@ public static class AlbumExtensions
             throw new Exception($"Invalid year [{albumDate}] for Album [{album}], Minimum configured value is [{minimumAlbumYear}]");
         }
 
-        return Path.Combine(album.Artist.ToDirectoryName(SafeParser.ToNumber<int>(configuration[SettingRegistry.ProcessingMaximumArtistDirectoryNameLength])), $"[{albumDate}] {albumPathTitle}");
+        return $"[{albumDate}] {albumPathTitle}/";
     }
 
     // public static string ArtistDirectoryName(this Album album, Dictionary<string, object?> configuration)
@@ -476,9 +484,9 @@ public static class AlbumExtensions
         var songTotalDuration = album.Songs?.Sum(x => x.Duration()) ?? 0;
         return songTotalDuration > 0 ? new TimeInfo(SafeParser.ToNumber<decimal>(songTotalDuration)).ToFullFormattedString() : "--:--";
     }
-    
+
     /// <summary>
-    /// Return a FileInfo for the first Cover image for the album.
+    ///     Return a FileInfo for the first Cover image for the album.
     /// </summary>
     /// <returns>Null if not found otherwise a FileInfo with full path to the cover image.</returns>
     public static FileInfo? CoverImage(this Album album)
@@ -487,25 +495,28 @@ public static class AlbumExtensions
         {
             return null;
         }
+
         var coverImage = album.Images?.OrderBy(x => x.SortOrder).FirstOrDefault(x => x.PictureIdentifier == PictureIdentifier.Front);
         if (coverImage?.FileInfo != null)
         {
             var result = new FileInfo(coverImage.FileInfo.FullName(album.Directory));
             return result.Exists ? result : null;
         }
+
         return null;
     }
-    
+
     public static async Task<string?> CoverImageBase64Async(this Album album, CancellationToken cancellationToken = default)
     {
         var cover = album.CoverImage();
         if (cover != null)
         {
             var imageBytes = await File.ReadAllBytesAsync(cover.FullName, cancellationToken);
-            return $"data:image/jpeg;base64,{ Convert.ToBase64String(imageBytes)}";   
+            return $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
         }
+
         return null;
-    }     
+    }
 
     public static async Task<byte[]?> CoverImageBytesAsync(this Album album, CancellationToken cancellationToken = default)
     {
@@ -514,6 +525,7 @@ public static class AlbumExtensions
         {
             return await File.ReadAllBytesAsync(coverImage.FullName, cancellationToken);
         }
+
         return null;
     }
 }

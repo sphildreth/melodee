@@ -5,6 +5,7 @@ using Melodee.Common.Data;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
+using Melodee.Common.Utility;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -83,8 +84,10 @@ public class ScrobbleService(
                 null,
                 Instant.FromDateTimeUtc(DateTime.UtcNow),
                 playerName
-            );
-            scrobble.LastScrobbledAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            )
+            {
+                LastScrobbledAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+            };
             await nowPlayingRepository.AddOrUpdateNowPlayingAsync(new NowPlayingInfo(user, scrobble), cancellationToken).ConfigureAwait(false);
         }
 
@@ -124,17 +127,15 @@ public class ScrobbleService(
                 await songService.ClearCacheAsync(songIds.SongId, cancellationToken).ConfigureAwait(false);
 
                 sql = """
-                      merge into "UserSongs" us
-                      using (select "UserId", "SongId" from "UserSongs" where "UserId" = @userId and "SongId" = @songId) as uss
-                      on uss."UserId" = us."UserId" and uss."SongId" = us."SongId"
-                      when matched then 
-                      	update set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = now()
-                      when not matched then 
-                      	insert ("UserId", "SongId", "PlayedCount", "LastPlayedAt")
-                      	values (@userId, @songId, 1, now());
+                      insert INTO "UserSongs" ("UserId", "SongId", "PlayedCount", "LastPlayedAt", "IsStarred", "Rating", "IsLocked", "SortOrder", "ApiKey", "CreatedAt") 
+                      values (@userId, @songId, 1, now(), false, 0, false, 0, gen_random_uuid(), now())
+                      on CONFLICT("UserId", "SongId") do update
+                        set "PlayedCount" = (select "PlayedCount" + 1 from "UserSongs" where "UserId" = @userId and "SongId" = @songId),
+                            "LastPlayedAt" = now();
                       """;
                 await dbConn.ExecuteAsync(sql, new { userId = user.Id, songId = songIds.SongId }).ConfigureAwait(false);
-
+                await nowPlayingRepository.RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), songId.ToString()), cancellationToken).ConfigureAwait(false);
+                Logger.Information("[{ServiceName}] Scrobbled song [{SongId}] for User [{User}]", nameof(ScrobbleService), user.ToString(), songId.ToString());
                 result = true;
             }
         }

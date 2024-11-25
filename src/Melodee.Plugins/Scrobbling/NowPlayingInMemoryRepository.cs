@@ -8,6 +8,16 @@ public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
 {
     private static readonly ConcurrentDictionary<long, NowPlayingInfo> Storage = new();
 
+
+    public Task RemoveNowPlayingAsync(long uniqueId, CancellationToken token = default)
+    {
+        if (Storage.ContainsKey(uniqueId))
+        {
+            Storage.TryRemove(uniqueId, out var existing);
+        }
+        return Task.CompletedTask;
+    }
+
     public Task AddOrUpdateNowPlayingAsync(NowPlayingInfo nowPlaying, CancellationToken token = default)
     {
         if (Storage.ContainsKey(nowPlaying.UniqueId))

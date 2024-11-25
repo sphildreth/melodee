@@ -60,7 +60,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1,
                     Name = "Inbound",
                     Description = "Files in this directory are scanned and Album information is gathered via processing.",
-                    Path = "/storage/inbound",
+                    Path = "/storage/inbound/",
                     Type = (int)LibraryType.Inbound,
                     CreatedAt = now
                 },
@@ -69,7 +69,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 2,
                     Name = "Staging",
                     Description = "The staging directory to place processed files into (Inbound -> Staging -> Library).",
-                    Path = "/storage/staging",
+                    Path = "/storage/staging/",
                     Type = (int)LibraryType.Staging,
                     CreatedAt = now
                 },
@@ -78,7 +78,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 3,
                     Name = "Library",
                     Description = "The library directory to place processed, reviewed and ready to use music files into.",
-                    Path = "/storage/library",
+                    Path = "/storage/library/",
                     Type = (int)LibraryType.Library,
                     CreatedAt = now
                 },
@@ -87,7 +87,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 4,
                     Name = "User Images",
                     Description = "Library where user images are stored.",
-                    Path = "/storage/images/users",
+                    Path = "/storage/images/users/",
                     Type = (int)LibraryType.UserImages,
                     CreatedAt = now
                 });

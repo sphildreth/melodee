@@ -35,12 +35,13 @@ public static class SongExtensions
             }
 
             var tType = typeof(T?);
-            
+
             var converter = TypeDescriptor.GetConverter(tType);
             if (tType == typeof(short) || tType == typeof(short?))
             {
                 return (T?)converter.ConvertFrom(short.Parse(vv.ToString() ?? string.Empty));
             }
+
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)
@@ -85,14 +86,14 @@ public static class SongExtensions
 
     public static string? Comment(this Song song)
     {
-        return song.MetaTagValue<string?>(MetaTagIdentifier.Comment); 
+        return song.MetaTagValue<string?>(MetaTagIdentifier.Comment);
     }
-    
+
     public static string? SongArtist(this Song song)
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.Artist);
     }
-    
+
     public static long? SongArtistUniqueId(this Song song)
     {
         var songArtist = song.SongArtist().Nullify();
@@ -100,8 +101,9 @@ public static class SongExtensions
         {
             return null;
         }
+
         return SafeParser.Hash(songArtist);
-    }    
+    }
 
     public static string? AlbumArtist(this Song song)
     {
@@ -113,7 +115,7 @@ public static class SongExtensions
         return song.MetaTagValue<string?>(MetaTagIdentifier.Album);
     }
 
-   
+
     public static int? AlbumYear(this Song song)
     {
         return song.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
@@ -156,11 +158,11 @@ public static class SongExtensions
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.Title);
     }
-    
+
     public static string? SubTitle(this Song song)
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.SubTitle);
-    }    
+    }
 
     public static DateTime? AlbumDateValue(this Song song)
     {
@@ -182,11 +184,11 @@ public static class SongExtensions
         var mediaNumber = song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumber) ?? 1;
         return mediaNumber < 1 ? (short)1 : mediaNumber;
     }
-    
+
     public static string? MediaSubTitle(this Song song)
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.SubTitle);
-    }    
+    }
 
     public static string? Genre(this Song song)
     {
@@ -199,16 +201,31 @@ public static class SongExtensions
                song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumberTotal) ?? 1;
     }
 
-    public static int BitRate(this Song song) => SafeParser.ToNumber<int>(song?.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value);
+    public static int BitRate(this Song song)
+    {
+        return SafeParser.ToNumber<int>(song?.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value);
+    }
 
-    public static int BitDepth(this Song song) => SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value);
-    
-    public static int? ChannelCount(this Song song) => SafeParser.ToNumber<int?>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.Channels)?.Value);
+    public static int BitDepth(this Song song)
+    {
+        return SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value);
+    }
 
-    public static bool IsVbr(this Song song) => SafeParser.ToNumber<bool>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.IsVbr)?.Value);
+    public static int? ChannelCount(this Song song)
+    {
+        return SafeParser.ToNumber<int?>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.Channels)?.Value);
+    }
 
-    public static int SamplingRate(this Song song) => SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value);
-    
+    public static bool IsVbr(this Song song)
+    {
+        return SafeParser.ToNumber<bool>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.IsVbr)?.Value);
+    }
+
+    public static int SamplingRate(this Song song)
+    {
+        return SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value);
+    }
+
     public static bool IsValid(this Song song, Dictionary<string, object?> configuration)
     {
         if (song.Tags?.Count() == 0)
@@ -273,10 +290,16 @@ public static class SongExtensions
 
         return false;
     }
-    
-    public static string ContentType(this Song song) => MimeTypes.GetMimeType(song.File.Name);
 
-    public static string FileExtension(this Song song) => Path.GetExtension(song.File.Name);
+    public static string ContentType(this Song song)
+    {
+        return MimeTypes.GetMimeType(song.File.Name);
+    }
+
+    public static string FileExtension(this Song song)
+    {
+        return Path.GetExtension(song.File.Name);
+    }
 
     public static string SongFileName(FileInfo fileInfo, int maximumSongNumber, int songNumber, string? songTitle, int maximumMediaNumber, int mediaNumber, int totalMediaNumber)
     {
@@ -318,9 +341,10 @@ public static class SongExtensions
                 .RemoveStartsWith($"{songNumberValue}-")
                 .ToTitleCase(false);
         }
+
         return $"{disc}{songNumberValue} {fileNameFromTitle}{fileInfo.Extension}";
     }
-    
+
     public static string ToSongFileName(this Song song, FileSystemDirectoryInfo directoryInfo, Dictionary<string, object?> configuration)
     {
         return SongFileName(
@@ -328,7 +352,7 @@ public static class SongExtensions
             SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
             song.SongNumber(),
             song.Title(),
-            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),            
+            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
             song.MediaNumber(),
             song.MediaTotalNumber());
     }

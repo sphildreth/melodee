@@ -15,6 +15,7 @@ public record DatabaseDirectoryInfo(
     int AlbumCount,
     int PlayCount,
     Instant? Played,
+    string? Directory,
     Instant? UserStarred,
     int? UserRating)
 {

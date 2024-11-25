@@ -242,20 +242,35 @@ public class LibraryProcessJob(
                               SET "SongCount" = (
                               	select COUNT(s.*)
                               	from "Songs" s 
-                                	left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                	left join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                              	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                join "Albums" aa on (ad."AlbumId" = aa."Id")	
                               	where aa."ArtistId" = a."Id"
                               ), "LastUpdatedAt" = NOW()
                               where "SongCount" <> (
                               	select COUNT(s.*)
                               	from "Songs" s 
-                                	left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                	left join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                              	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                join "Albums" aa on (ad."AlbumId" = aa."Id")	
                               	where aa."ArtistId" = a."Id"
                               );
+
+                              UPDATE "Libraries" l 
+                              set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
+                                  "AlbumCount" = (select count(aa.*) 
+                                  	from "Albums" aa 
+                                  	join "Artists" a on (a."Id" = aa."ArtistId") 
+                                  	where a."LibraryId" = l."Id"),
+                                  "SongCount" = (select count(s.*) 
+                                  	from "Songs" s
+                                  	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                  	join "Albums" aa on (ad."AlbumId" = aa."Id") 
+                                  	join "Artists" a on (a."Id" = aa."ArtistId") 
+                                  	where a."LibraryId" = l."Id"),
+                              	"LastUpdatedAt" = now()
+                              where l."Id" = @libraryId;
                               """;
                     await dbConn
-                        .ExecuteAsync(sql, context.CancellationToken)
+                        .ExecuteAsync(sql, new { libraryId = library.Id})
                         .ConfigureAwait(false);
 
                     //TODO Contributors
@@ -634,11 +649,6 @@ public class LibraryProcessJob(
                 if (!dbArtistResult.IsSuccess || dbArtist == null)
                 {
                     var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
-                    if (System.IO.Directory.Exists(Path.Combine(library.Path, newArtistDirectory)))
-                    {
-                        Logger.Warning("[{JobName}] unable to process Artist [{Artist}] directory already exists [{ArtistDir}]", nameof(LibraryProcessJob), artist, newArtistDirectory);
-                        continue;
-                    }
                     dbArtistsToAdd.Add(new dbModels.Artist
                     {
                         Directory = newArtistDirectory,
@@ -682,6 +692,18 @@ public class LibraryProcessJob(
                     continue;
                 }
                 var dbArtist = await scopedContext.Artists.FirstAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
+                var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
+                if (!string.Equals(newArtistDirectory, dbArtist.Directory, StringComparison.OrdinalIgnoreCase))
+                {
+                    // directory has changed then; move artist folder
+                    if (System.IO.Directory.Exists(newArtistDirectory))
+                    {
+                        logger.Warning("[{JobName}] Artist [{Artist}] directory [{NewDir}] has changed [{OldDir}] but directory exists. Skipping artist update.", nameof(LibraryProcessJob), newArtistDirectory, dbArtist.Directory);
+                        continue;
+                    }
+                    MediaEditService.MoveDirectory(dbArtist.Directory, newArtistDirectory);
+                    dbArtist.Directory = newArtistDirectory;
+                }
                 dbArtist.MediaUniqueId = artist.UniqueId();
                 dbArtist.Name = artist.Name;
                 dbArtist.NameNormalized = artist.NameNormalized;

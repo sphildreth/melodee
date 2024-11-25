@@ -4,6 +4,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 using NodaTime;
+using Serilog;
 using SearchOption = System.IO.SearchOption;
 
 namespace Melodee.Common.Models.Extensions;
@@ -12,7 +13,10 @@ public static class FileSystemDirectoryInfoExtensions
 {
     private static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|compilation(s*)|live|promo(s*)|demo)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo) => new(fileSystemDirectoryInfo.FullName());
+    public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        return new DirectoryInfo(fileSystemDirectoryInfo.FullName());
+    }
 
     public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
@@ -21,10 +25,12 @@ public static class FileSystemDirectoryInfoExtensions
         {
             p = p[..^1];
         }
-        if (p.EndsWith($"{ Path.DirectorySeparatorChar }{fileSystemDirectoryInfo.Name}"))
+
+        if (p.EndsWith($"{Path.DirectorySeparatorChar}{fileSystemDirectoryInfo.Name}"))
         {
-            return fileSystemDirectoryInfo.Path;     
+            return fileSystemDirectoryInfo.Path;
         }
+
         return Path.Combine(fileSystemDirectoryInfo.Path, fileSystemDirectoryInfo.Name);
     }
 
@@ -35,11 +41,11 @@ public static class FileSystemDirectoryInfoExtensions
             Directory.CreateDirectory(fileSystemDirectoryInfo.FullName());
         }
     }
-    
+
     public static bool Exists(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         return Directory.Exists(fileSystemDirectoryInfo.FullName());
-    }    
+    }
 
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
@@ -65,6 +71,7 @@ public static class FileSystemDirectoryInfoExtensions
                 return fileInfoForExtension.ToFileSystemInfo();
             }
         }
+
         return null;
     }
 
@@ -74,11 +81,13 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return [];
         }
+
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
             return [];
         }
+
         var result = new List<FileSystemDirectoryInfo>();
         var modifiedSinceValue = modifiedSince?.ToDateTimeUtc() ?? DateTime.MinValue;
         result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption).OrderBy(x => x.LastWriteTimeUtc) where dir.LastWriteTimeUtc >= modifiedSinceValue && dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)) select dir.ToDirectorySystemInfo());
@@ -87,11 +96,14 @@ public static class FileSystemDirectoryInfoExtensions
         {
             result.Add(fileSystemDirectoryInfo);
         }
+
         return result;
     }
 
-    public static IEnumerable<FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo) 
-        => fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension));
+    public static IEnumerable<FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension));
+    }
 
     public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null)
     {
@@ -100,6 +112,7 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return [];
         }
+
         return dirInfo.EnumerateFiles(searchPattern ?? "*.*", SearchOption.TopDirectoryOnly);
     }
 
@@ -107,7 +120,7 @@ public static class FileSystemDirectoryInfoExtensions
     {
         DeleteEmptyDirs(fileSystemDirectoryInfo.FullName());
     }
-    
+
     private static void DeleteEmptyDirs(string dir)
     {
         if (string.IsNullOrEmpty(dir))
@@ -120,26 +133,35 @@ public static class FileSystemDirectoryInfoExtensions
             Trace.WriteLine($"Delete Empty Dirs called with a directory that does not exist [{dir}]", TraceLevel.Warning.ToString());
             return;
         }
+
         try
         {
             foreach (var d in Directory.EnumerateDirectories(dir))
             {
                 DeleteEmptyDirs(d);
             }
+
             if (Directory.EnumerateFileSystemEntries(dir).Any())
             {
                 return;
             }
+
             try
             {
                 Directory.Delete(dir);
-                Serilog.Log.Debug("\ud83d\udeae Deleted Empty Directory [{dir}]", dir);                
+                Log.Debug("\ud83d\udeae Deleted Empty Directory [{dir}]", dir);
             }
-            catch (UnauthorizedAccessException) { }
-            catch (DirectoryNotFoundException) { }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (DirectoryNotFoundException)
+            {
+            }
         }
-        catch (UnauthorizedAccessException) { }
-    }      
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
 
     public static void DeleteAllFilesForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
@@ -151,10 +173,14 @@ public static class FileSystemDirectoryInfoExtensions
     }
 
     public static void MarkAllFilesForExtensionsSkipped(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Dictionary<string, object?> configuration, params string[] extensions)
-        => ChangeFileExtensions(fileSystemDirectoryInfo, SafeParser.ToString(configuration[SettingRegistry.ProcessingSkippedExtension]), extensions);
-    
+    {
+        ChangeFileExtensions(fileSystemDirectoryInfo, SafeParser.ToString(configuration[SettingRegistry.ProcessingSkippedExtension]), extensions);
+    }
+
     public static void MarkAllFilesForExtensionsProcessed(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Dictionary<string, object?> configuration, params string[] extensions)
-        => ChangeFileExtensions(fileSystemDirectoryInfo, SafeParser.ToString(configuration[SettingRegistry.ProcessingProcessedExtension]), extensions);
+    {
+        ChangeFileExtensions(fileSystemDirectoryInfo, SafeParser.ToString(configuration[SettingRegistry.ProcessingProcessedExtension]), extensions);
+    }
 
     private static void ChangeFileExtensions(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string newExtension, params string[] extensions)
     {
@@ -162,12 +188,13 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return;
         }
+
         foreach (var extension in extensions)
         {
             var filesToMarkProcessed = fileSystemDirectoryInfo.FileInfosForExtension(extension);
             foreach (var fileToDelete in filesToMarkProcessed)
             {
-                var moveToFileName = Path.Combine(fileToDelete.DirectoryName!, $"{fileToDelete.Name}.{ newExtension }");                
+                var moveToFileName = Path.Combine(fileToDelete.DirectoryName!, $"{fileToDelete.Name}.{newExtension}");
                 fileToDelete.MoveTo(moveToFileName);
             }
         }

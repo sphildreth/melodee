@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -512,15 +513,34 @@ public class OpenSubsonicApiService(
         try
         {
             var apiKey = ApiKeyFromId(apiId);
-            if (IsApiIdForSong(apiId))
+            if (IsApiIdForArtist(apiId))
             {
-                // If it's a song get the album ApiKey and proceed to get Album cover
-                var songInfo = await DatabaseSongIdsInfoForSongApiKey(ApiKeyFromId(apiId) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
-                if (songInfo != null)
+                var artistInfo = await DatabaseArtistInfoForArtistApiKey(apiKey ?? Guid.Empty, authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false);
+                if (artistInfo.Directory != null)
                 {
-                    apiKey = songInfo.AlbumApiKey;
+                    var artistDirectoryInfo =new FileSystemDirectoryInfo
+                    {
+                        Path = artistInfo.Directory, 
+                        Name = artistInfo.Directory
+                    };
+                    var firstArtistImage = artistDirectoryInfo.AllFileImageTypeFileInfos().OrderBy(x => x.Name).FirstOrDefault();
+                    if (firstArtistImage != null)
+                    {
+                        coverBytes = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken).ConfigureAwait(false);
+                    }
                 }
-
+            }
+            else if (IsApiIdForSong(apiId) || IsApiIdForAlbum(apiId))
+            {
+                if (IsApiIdForSong(apiId))
+                {
+                    // If it's a song get the album ApiKey and proceed to get Album cover
+                    var songInfo = await DatabaseSongIdsInfoForSongApiKey(apiKey ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
+                    if (songInfo != null)
+                    {
+                        apiKey = songInfo.AlbumApiKey;
+                    }
+                }
                 if (apiKey != null)
                 {
                     var albumResponse = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken);
@@ -562,7 +582,7 @@ public class OpenSubsonicApiService(
                                     Path = pathToAlbum
                                 };
                                 var imagesForFolder = albumDirInfo.AllFileImageTypeFileInfos();
-                                var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, $" { ImageInfo.ImageFilePrefix }01-front.jpg", StringComparison.OrdinalIgnoreCase));
+                                var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, $" {ImageInfo.ImageFilePrefix }01-front.jpg", StringComparison.OrdinalIgnoreCase));
                                 if (firstFrontImage != null)
                                 {
                                     coverBytes = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
@@ -575,7 +595,7 @@ public class OpenSubsonicApiService(
         }
         catch (Exception e)
         {
-            Logger.Error(e, "Failed to get cover image for album [{AlbumId}]", apiId);
+            Logger.Error(e, "Failed to get cover image for [{ApiId}]", apiId);
         }
 
         return new ResponseModel
@@ -974,22 +994,49 @@ public class OpenSubsonicApiService(
             };
         }
 
+        if (times?.Length > 0 && times.Length != ids.Length)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.GenericError("Wrong number of timestamps."))
+            };
+        }
+        
         var result = false;
         await scrobbleService.InitializeAsync(await Configuration.Value, cancellationToken).ConfigureAwait(false);
 
-        Console.WriteLine($"** Scrobble: submission [{submission}] ids [{string.Join(",", ids)}] times [{string.Join(",", times ?? [])}] Request [{apiRequest}]");
+        // If not provided then default to this is a "submission" versus a "now playing" notification.
+        var isSubmission = submission ?? true;
         
-        // // If not provided then default to this is a "submission" versus a "now playing" notification.
-        // if (submission ?? true)
-        // {
-        //     await scrobbleService.Scrobble(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
-        // }
-        // else
-        // {
-        //     await scrobbleService.NowPlaying(authResponse.UserInfo, id, time, apiRequest.ApiRequestPlayer?.Client ?? string.Empty, cancellationToken).ConfigureAwait(false);
-        // }
-        result = true;
+        Console.WriteLine($"** Scrobble: isSubmission [{isSubmission}] ids [{string.Join(",", ids)}] times [{string.Join(",", times ?? [])}] Request [{apiRequest}]");
 
+        if (!isSubmission)
+        {
+            foreach (var idAndIndex in ids.Select((id, index) => new { id, index }))
+            {
+                await scrobbleService.NowPlaying(authResponse.UserInfo, ApiKeyFromId(idAndIndex.id) ?? Guid.Empty, times?.Length > idAndIndex.index ? times[idAndIndex.index] : null, apiRequest.ApiRequestPlayer?.Client ?? string.Empty, cancellationToken).ConfigureAwait(false);
+            }
+        } 
+        else 
+        {
+            foreach (var idAndIndex in ids.Select((id, index) => new { id, index }))
+            {
+                var id = ApiKeyFromId(idAndIndex.id) ?? Guid.Empty;
+                double? time = times?.Length > idAndIndex.index ? times[idAndIndex.index] : null;
+                var uniqueId = SafeParser.Hash(authResponse.UserInfo.ApiKey.ToString(), id.ToString());
+                var nowPlayingInfo = (await scrobbleService.GetNowPlaying(cancellationToken).ConfigureAwait(false)).Data.FirstOrDefault(x => x.UniqueId == uniqueId);
+                if (nowPlayingInfo != null)
+                {
+                    await scrobbleService.Scrobble(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    Logger.Debug("Scrobble: Ignoring duplicate scrobble submission for [{UniqueId}]", uniqueId);
+                }
+            }
+        }
+        result = true;
         return new ResponseModel
         {
             UserInfo = BlankUserInfo,
@@ -1375,7 +1422,9 @@ public class OpenSubsonicApiService(
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
-                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", a."LastPlayedAt" as "Played", ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
+                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", 
+                             a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", a."LastPlayedAt" as "Played", a."Directory",
+                             ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
                       from "Artists" a
                       join "Albums" a2 on (a."Id" = a2."ArtistId")
                       left join "UserArtists" ua on (a."Id" = ua."ArtistId" and ua."UserId" = @userId)
