@@ -55,6 +55,7 @@ public sealed class AlbumDiscoveryService(
             Log.Error("Unable to find Album by id [{UniqueId}] in [{DirectoryName}]", uniqueId, fileSystemDirectoryInfo.FullName());
             return new Album
             {
+                Artist = new Artist(string.Empty, string.Empty, null),
                 Directory = fileSystemDirectoryInfo,
                 ViaPlugins = [],
                 OriginalDirectory = fileSystemDirectoryInfo

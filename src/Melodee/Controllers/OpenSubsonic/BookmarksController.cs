@@ -36,7 +36,7 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/savePlayQueue.view")]
-    public async Task<IActionResult> SavePlayQueueAsync(Guid[]? id, Guid? current, double? position, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> SavePlayQueueAsync(string[]? id, string? current, double? position, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SavePlayQueueAsync(id, current, position, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }

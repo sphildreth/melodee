@@ -1,7 +1,10 @@
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Validation;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 
 namespace Melodee.Tests.Validation;
 
@@ -12,6 +15,10 @@ public class AlbumValidatorTests
     public static Album TestAlbum
         => new()
         {
+            Artist = new Artist(
+                "Billy Joel",
+                "Billy Joel".ToNormalizedString(),
+                null),
             Directory = new FileSystemDirectoryInfo
             {
                 Path = "/melodee_test/tests/",
@@ -250,6 +257,7 @@ public class AlbumValidatorTests
         var testAlbum = TestAlbum;
         var album = new Album
         {
+            Artist = testAlbum.Artist,
             Directory = testAlbum.Directory,
             Tags = testAlbum.Tags,
             Songs = testAlbum.Songs,
@@ -275,6 +283,7 @@ public class AlbumValidatorTests
         });
         var album = new Album
         {
+            Artist = testAlbum.Artist,
             Directory = testAlbum.Directory,
             Tags = albumTags,
             Songs = testAlbum.Songs,
@@ -300,6 +309,7 @@ public class AlbumValidatorTests
         });
         var album = new Album
         {
+            Artist = testAlbum.Artist,
             Directory = testAlbum.Directory,
             Tags = albumTags,
             Songs = testAlbum.Songs,
@@ -325,6 +335,7 @@ public class AlbumValidatorTests
         });
         var album = new Album
         {
+            Artist = testAlbum.Artist,
             Directory = testAlbum.Directory,
             Tags = albumTags,
             Songs = testAlbum.Songs,

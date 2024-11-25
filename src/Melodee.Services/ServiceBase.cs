@@ -5,8 +5,10 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +37,7 @@ public abstract class ServiceBase(
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
                       SELECT 
-                          cast(a."ApiKey" as varchar(50)) as "Id",
+                          'album_' || cast(a."ApiKey" as varchar(50)) as "Id",
                           a."Name" as "Album",
                           a."Name" as "Title",
                           a."Name" as "Name",
@@ -44,7 +46,7 @@ public abstract class ServiceBase(
                           a."CreatedAt" as "CreatedRaw",
                           a."Duration"/1000 as "Duration",
                           a."PlayedCount",
-                          cast(aa."ApiKey" as varchar(50)) as "ArtistId",
+                          'artist_' || cast(aa."ApiKey" as varchar(50)) as "ArtistId",
                           aa."Name" as "Artist",
                           DATE_PART('year', a."ReleaseDate"::date) as "Year",
                           unnest(a."Genres") as "Genre",
@@ -257,8 +259,13 @@ public abstract class ServiceBase(
                                     Value = genre.Key,
                                     SortOrder = 5 + i
                                 }));
+                            var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();                            
                             var newAlbum = new Album
                             {
+                                Artist = new Artist(
+                                    artistName ?? throw new Exception($"Invalid artist on { nameof(ServiceBase)}"),
+                                    artistName.ToNormalizedString(),
+                                    null),
                                 Images = songsGroupedByAlbum.Where(x => x.Images != null)
                                     .SelectMany(x => x.Images!)
                                     .DistinctBy(x => x.CrcHash).ToArray(),

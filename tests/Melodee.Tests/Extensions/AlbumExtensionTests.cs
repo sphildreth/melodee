@@ -1,4 +1,5 @@
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
@@ -11,6 +12,10 @@ public class AlbumExtensionTests
     {
         return new Album
         {
+            Artist = new Artist(
+                "Holy Truth",
+                "Holy Truth".ToNormalizedString(),
+                null),
             Directory = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/inbound/00-k 2024",
@@ -24,11 +29,6 @@ public class AlbumExtensionTests
             },
             Tags = new[]
             {
-                new MetaTag<object?>
-                {
-                    Identifier = MetaTagIdentifier.UniqueArtistId,
-                    Value = 12345L
-                },
                 new MetaTag<object?>
                 {
                     Identifier = MetaTagIdentifier.AlbumArtist,
@@ -105,10 +105,10 @@ public class AlbumExtensionTests
     [Fact]
     public void ValidateArtistDirectoryName()
     {
-        var artistDirectoryName = NewAlbum().ArtistDirectoryName(TestsBase.NewConfiguration());
+        var artistDirectoryName = NewAlbum().Artist.ToDirectoryName(255);
         Assert.NotNull(artistDirectoryName);
-        Assert.Equal(12345L, NewAlbum().ArtistUniqueId());
-        Assert.Equal(@"H/HO/Holy Truth [12345]", artistDirectoryName);
+        Assert.Equal(142384662, NewAlbum().Artist.UniqueId());
+        Assert.Equal(@"H/HO/Holy Truth [142384662]", artistDirectoryName);
     }
 
     [Fact]
@@ -116,8 +116,8 @@ public class AlbumExtensionTests
     {
         var albumDirectoryName = NewAlbum().AlbumDirectoryName(TestsBase.NewConfiguration());
         Assert.NotNull(albumDirectoryName);
-        Assert.Equal(12345L, NewAlbum().ArtistUniqueId());
-        Assert.Equal(@"H/HO/Holy Truth [12345]/[2024] Fire Proof", albumDirectoryName);
+        Assert.Equal(142384662, NewAlbum().Artist.UniqueId());
+        Assert.Equal(@"H/HO/Holy Truth [142384662]/[2024] Fire Proof", albumDirectoryName);
     }
 
     [Fact]

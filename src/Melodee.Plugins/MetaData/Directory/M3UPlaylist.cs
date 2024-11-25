@@ -109,6 +109,10 @@ public sealed class M3UPlaylist(ISerializer serializer, IEnumerable<ISongPlugin>
 
                         var m3UAlbum = new Album
                         {
+                            Artist = new Artist(
+                                firstSong.AlbumArtist() ?? throw new Exception($"Invalid artist on { nameof(CueSheet) }"),
+                                firstSong.AlbumArtist().ToNormalizedString(),
+                                null),                           
                             Directory = fileSystemDirectoryInfo,
                             Files = new[]
                             {

@@ -13,6 +13,11 @@ namespace Melodee.Common.Models;
 public sealed record Album
 {
     public const string JsonFileName = "melodee.json";
+    
+    /// <summary>
+    /// Artist for the Album
+    /// </summary>
+    public required Artist Artist { get; init; }
 
     public static long GenerateUniqueId(string? artist, int? albumYear, string? albumTitle) => SafeParser.Hash(artist, albumYear.ToString(),albumTitle);
 
@@ -180,6 +185,7 @@ public sealed record Album
         
         return new Album
         {
+            Artist = Artist,
             Directory = Directory,
             Files = files.ToArray(),
             Images = images.ToArray(),

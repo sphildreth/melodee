@@ -10,7 +10,6 @@ using NodaTime;
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
-[Index(nameof(LibraryId))]
 [Index(nameof(ArtistId), nameof(Name), IsUnique = true)]
 [Index(nameof(ArtistId),nameof(NameNormalized), IsUnique = true)]
 [Index(nameof(ArtistId), nameof(SortName), IsUnique = true)]
@@ -30,10 +29,6 @@ public sealed class Album : MetaDataModelBase
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? SortName { get; set; }    
-    
-    [RequiredGreaterThanZero] public int LibraryId { get; set; }
-    
-    public Library Library { get; set; } = null!;
 
     [RequiredGreaterThanZero] public long MediaUniqueId { get; set; }
 
@@ -93,7 +88,7 @@ public sealed class Album : MetaDataModelBase
     public double? ReplayPeak { get; set; }    
 
     /// <summary>
-    ///     The directory that holds the files for the Album. This is inside of a library path directory.
+    ///     The directory that holds the files for the Album. This is inside of an artist path and that is inside a library path directory.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     [Required]

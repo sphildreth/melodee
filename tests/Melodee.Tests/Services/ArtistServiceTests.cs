@@ -1,7 +1,10 @@
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Extensions;
+using Melodee.Common.Utility;
 using NodaTime;
+using Artist = Melodee.Common.Data.Models.Artist;
 
 namespace Melodee.Tests.Services;
 
@@ -12,12 +15,17 @@ public class ArtistServiceTests : ServiceTestBase
     {
         var shouldContainApiKey = Guid.NewGuid();
 
+        var artistName = "Bob Jones";
+        var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString(), artistName.CleanString(doPutTheAtEnd: true));
+        
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
             context.Artists.Add(new Artist
             {
                 ApiKey = shouldContainApiKey,
+                Directory = artist.ToDirectoryName(255),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                LibraryId = 1,
                 Name = "Bob Jones",
                 NameNormalized = "Bob Jones".ToNormalizedString()!
             });
@@ -38,10 +46,15 @@ public class ArtistServiceTests : ServiceTestBase
 
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
+            var artistName = "Bob Jones";
+            var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString(), artistName.CleanString(doPutTheAtEnd: true));
+
             context.Artists.Add(new Artist
             {
                 ApiKey = Guid.NewGuid(),
+                Directory = artist.ToDirectoryName(255),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                LibraryId = 1,
                 Name = "Bob Jones",
                 NameNormalized = "Bob Jones".ToNormalizedString()!,
                 MediaUniqueId = shouldByMediaUniqueId
@@ -49,7 +62,9 @@ public class ArtistServiceTests : ServiceTestBase
             context.Artists.Add(new Artist
             {
                 ApiKey = Guid.NewGuid(),
+                Directory = artist.ToDirectoryName(255),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                LibraryId = 1,
                 Name = "Grace Jones",
                 NameNormalized = "Grace Jones".ToNormalizedString()!,
                 MediaUniqueId = shouldByMediaUniqueId + 1
@@ -66,23 +81,26 @@ public class ArtistServiceTests : ServiceTestBase
     [Fact]
     public async Task GetByNameNormalizedAsync()
     {
-        var name = "Bob Jones";
+        var artistName = "Bob Jones";
+        var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString(), artistName.CleanString(doPutTheAtEnd: true));
 
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
             context.Artists.Add(new Artist
             {
                 ApiKey = Guid.NewGuid(),
+                Directory = artist.ToDirectoryName(255),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
-                Name = name,
-                NameNormalized = name.ToNormalizedString()!
+                LibraryId = 1,
+                Name = artistName,
+                NameNormalized = artistName.ToNormalizedString()!
             });
             await context.SaveChangesAsync();
         }
 
-        var result = await GetArtistService().GetByNameNormalized(name.ToNormalizedString()!);
+        var result = await GetArtistService().GetByNameNormalized(artistName.ToNormalizedString()!);
         AssertResultIsSuccessful(result);
         Assert.NotNull(result.Data);
-        Assert.Equal(name, result.Data.Name);
+        Assert.Equal(artistName, result.Data.Name);
     }
 }

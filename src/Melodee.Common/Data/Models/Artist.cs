@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
+[Index(nameof(LibraryId))]
 [Index(nameof(Name), IsUnique = true)]
 [Index(nameof(NameNormalized))]
 [Index(nameof(SortName))]
@@ -31,6 +32,13 @@ public sealed class Artist : MetaDataModelBase
     public string? RealName { get; set; }
 
     /// <summary>
+    ///     The directory that holds the files for the Artist, including Artist images and albums directories. This is inside a library path directory.
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
+    [Required]
+    public required string Directory { get; set; }    
+    
+    /// <summary>
     ///     Pipe seperated list. Example 'artist|albumartist|composer'
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
@@ -40,6 +48,10 @@ public sealed class Artist : MetaDataModelBase
 
     public int SongCount { get; set; }
 
+    [RequiredGreaterThanZero] public required int LibraryId { get; set; }
+    
+    public Library Library { get; set; } = null!;    
+    
     /// <summary>
     ///     Stored in markdown, will be rendered to HTML or to text depending on consumer.
     /// </summary>

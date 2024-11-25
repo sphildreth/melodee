@@ -6,6 +6,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
@@ -23,6 +24,7 @@ using Serilog;
 using SmartFormat;
 using SearchOption = System.IO.SearchOption;
 using dbModels = Melodee.Common.Data.Models;
+using Directory = Melodee.Common.Models.OpenSubsonic.Directory;
 
 namespace Melodee.Jobs;
 
@@ -333,7 +335,7 @@ public class LibraryProcessJob(
             {
                 var artistName = melodeeFile.Artist()?.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                 var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
-                var dbArtistResult = await artistService.GetByMediaUniqueId(melodeeFile.ArtistUniqueId(), cancellationToken).ConfigureAwait(false);
+                var dbArtistResult = await artistService.GetByMediaUniqueId(melodeeFile.Artist.UniqueId(), cancellationToken).ConfigureAwait(false);
                 if (!dbArtistResult.IsSuccess)
                 {
                     dbArtistResult = await artistService.GetByNameNormalized(artistNormalizedName, cancellationToken).ConfigureAwait(false);
@@ -342,7 +344,7 @@ public class LibraryProcessJob(
                 var dbArtist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
                 if (dbArtist == null)
                 {
-                    Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqeId}].", melodeeFile.ArtistUniqueId(), melodeeFile.UniqueId);
+                    Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqeId}].", melodeeFile.Artist.UniqueId(), melodeeFile.UniqueId);
                     continue;
                 }
 
@@ -370,7 +372,6 @@ public class LibraryProcessJob(
                         Duration = melodeeFile.TotalDuration(),
                         Genres = melodeeFile.Genre() == null ? null : melodeeFile.Genre()!.Split('/'),
                         IsCompilation = melodeeFile.IsVariousArtistTypeAlbum(),
-                        LibraryId = library.Id,
                         MediaUniqueId = melodeeFile.UniqueId,
                         MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                         Name = albumTitle,
@@ -505,7 +506,7 @@ public class LibraryProcessJob(
                 var albumDirectory = album.AlbumDirectoryName(_configuration.Configuration);
                 var artistName = album.Artist()?.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                 var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
-                var dbArtistResult = await artistService.GetByMediaUniqueId(album.ArtistUniqueId(), cancellationToken).ConfigureAwait(false);
+                var dbArtistResult = await artistService.GetByMediaUniqueId(album.Artist.UniqueId(), cancellationToken).ConfigureAwait(false);
                 if (!dbArtistResult.IsSuccess)
                 {
                     dbArtistResult = await artistService.GetByNameNormalized(artistNormalizedName, cancellationToken).ConfigureAwait(false);
@@ -514,7 +515,7 @@ public class LibraryProcessJob(
                 var dbArtist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
                 if (dbArtist == null)
                 {
-                    Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqueId}].", album.ArtistUniqueId(), album.UniqueId);
+                    Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqueId}].", album.Artist.UniqueId(), album.UniqueId);
                     continue;
                 }
 
@@ -534,7 +535,7 @@ public class LibraryProcessJob(
 
                 if (dbAlbumResult.Data == null)
                 {
-                    Logger.Warning("Unable to find album [{AlbumUniqueId}] for artist [{ArtistUniqueId}].", album.UniqueId, album.ArtistUniqueId());
+                    Logger.Warning("Unable to find album [{AlbumUniqueId}] for artist [{ArtistUniqueId}].", album.UniqueId, album.Artist.UniqueId());
                     continue;
                 }
 
@@ -615,36 +616,38 @@ public class LibraryProcessJob(
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var artists = melodeeFilesForDirectory
-                .Select(x => new
-                {
-                    UniqueId = x.ArtistUniqueId(),
-                    Name = x.Artist()?.CleanStringAsIs() ?? string.Empty,
-                    NormalizedName = x.Artist()?.ToNormalizedString() ?? x.Artist()?.CleanStringAsIs() ?? string.Empty,
-                    SortName = x.Artist().CleanString(true) ?? string.Empty
-                })
-                .Where(x => x.Name.Nullify() != null && x.NormalizedName.Nullify() != null && x.SortName.Nullify() != null)
+                .Select(x => x.Artist)
+                .Where(x => x.IsValid())
                 .Distinct()
                 .OrderBy(x => x.Name)
                 .ToArray();
             var dbArtistsToAdd = new List<dbModels.Artist>();
             foreach (var artist in artists)
             {
-                var dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId, cancellationToken).ConfigureAwait(false);
+                var dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId(), cancellationToken).ConfigureAwait(false);
                 if (!dbArtistResult.IsSuccess)
                 {
-                    dbArtistResult = await artistService.GetByNameNormalized(artist.NormalizedName, cancellationToken).ConfigureAwait(false);
+                    dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
                 }
 
                 var dbArtist = dbArtistResult.Data;
                 if (!dbArtistResult.IsSuccess || dbArtist == null)
                 {
+                    var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
+                    if (System.IO.Directory.Exists(Path.Combine(library.Path, newArtistDirectory)))
+                    {
+                        Logger.Warning("[{JobName}] unable to process Artist [{Artist}] directory already exists [{ArtistDir}]", nameof(LibraryProcessJob), artist, newArtistDirectory);
+                        continue;
+                    }
                     dbArtistsToAdd.Add(new dbModels.Artist
                     {
+                        Directory = newArtistDirectory,
                         CreatedAt = _now,
-                        MediaUniqueId = artist.UniqueId,
+                        LibraryId = library.Id,
+                        MediaUniqueId = artist.UniqueId(),
                         MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                         Name = artist.Name,
-                        NameNormalized = artist.NormalizedName,
+                        NameNormalized = artist.NameNormalized,
                         SortName = artist.SortName
                     });
                 }
@@ -660,17 +663,17 @@ public class LibraryProcessJob(
             }
 
             var artistsToUpdate = (from a in artists
-                    join addedArtist in dbArtistsToAdd on a.UniqueId equals addedArtist.MediaUniqueId into aa
+                    join addedArtist in dbArtistsToAdd on a.UniqueId() equals addedArtist.MediaUniqueId into aa
                     from artist in aa.DefaultIfEmpty()
                     where artist is null
                     select a)
                 .ToArray();
             foreach (var artist in artistsToUpdate)
             {
-                var dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId, cancellationToken).ConfigureAwait(false);
+                var dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId(), cancellationToken).ConfigureAwait(false);
                 if (!dbArtistResult.IsSuccess)
                 {
-                    dbArtistResult = await artistService.GetByNameNormalized(artist.NormalizedName, cancellationToken).ConfigureAwait(false);
+                    dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (dbArtistResult.Data!.IsLocked)
@@ -678,11 +681,10 @@ public class LibraryProcessJob(
                     Logger.Warning("[{JobName}] Skipped processing locked artist [{ArtistId}]", nameof(LibraryProcessJob), dbArtistResult.Data);
                     continue;
                 }
-
                 var dbArtist = await scopedContext.Artists.FirstAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
-                dbArtist.MediaUniqueId = artist.UniqueId;
+                dbArtist.MediaUniqueId = artist.UniqueId();
                 dbArtist.Name = artist.Name;
-                dbArtist.NameNormalized = artist.NormalizedName;
+                dbArtist.NameNormalized = artist.NameNormalized;
                 dbArtist.SortName = artist.SortName;
                 dbArtist.LastUpdatedAt = _now;
                 _dbArtistsIdsModifiedOrUpdated.Add(dbArtist.Id);

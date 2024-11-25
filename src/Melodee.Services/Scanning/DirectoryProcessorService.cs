@@ -581,7 +581,7 @@ public sealed class DirectoryProcessorService(
                             }
                         }
 
-                        artistsUniqueIdsSeen.Add(album.ArtistUniqueId());
+                        artistsUniqueIdsSeen.Add(album.Artist.UniqueId());
                         artistsUniqueIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId() ?? 0) ?? []);
                         albumsUniqueIdsSeen.Add(album.UniqueId);
                         songsUniqueIdsSeen.AddRange(album.Songs?.Select(x => x.UniqueId) ?? []);

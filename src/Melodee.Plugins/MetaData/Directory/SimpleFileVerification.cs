@@ -129,8 +129,13 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                             }));
                     }
 
+                    var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
                     var sfvAlbum = new Album
                     {
+                        Artist = new Artist(
+                            artistName ?? throw new Exception($"Invalid artist on { nameof(SimpleFileVerification) }"),
+                            artistName.ToNormalizedString(),
+                            null),
                         Directory = fileSystemDirectoryInfo,
                         Files = new[]
                         {

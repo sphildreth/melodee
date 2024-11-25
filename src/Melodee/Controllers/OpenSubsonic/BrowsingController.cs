@@ -129,7 +129,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getAlbum.view")]
-    public async Task<IActionResult> GetAlbumAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetAlbumAsync(string id, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }

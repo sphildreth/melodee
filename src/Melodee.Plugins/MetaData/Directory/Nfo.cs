@@ -351,9 +351,13 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
                 Value = maxSongDiscTotal == 0 ? 1 : maxSongDiscTotal
             });
         }
-
+        var artistName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
         var result = new Album
         {
+            Artist = new Artist(
+                artistName ?? throw new Exception($"Invalid artist on { nameof(Nfo)}"),
+                artistName.ToNormalizedString(),
+                null),
             Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ?? new FileSystemDirectoryInfo
             {
                 Path = fileInfo.Directory?.FullName ?? string.Empty,

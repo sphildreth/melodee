@@ -501,12 +501,6 @@ public enum MetaTagIdentifier
     [Description("[WAR, WOAR]")] OfficialArtistPerformerWebpage,
 
     /// <summary>
-    ///     Not a ID3 standard, a unique ID given to an artist to prevent exact named artists getting the same library
-    ///     directory.
-    /// </summary>
-    [Description("[UniqueArtistId]")] UniqueArtistId,
-
-    /// <summary>
     ///     Used when parsing CUE Files.
     /// </summary>
     [Description("[SubCodeFlags]")] SubCodeFlags

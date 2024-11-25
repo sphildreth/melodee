@@ -27,6 +27,7 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 using SmartFormat;
+using Artist = Melodee.Common.Models.OpenSubsonic.Artist;
 using Directory = Melodee.Common.Models.OpenSubsonic.Directory;
 using License = Melodee.Common.Models.OpenSubsonic.License;
 using Playlist = Melodee.Common.Models.OpenSubsonic.Playlist;
@@ -64,8 +65,12 @@ public class OpenSubsonicApiService(
 
     public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty);
 
-    private static Guid? ApiKeyFromId(string id)
+    private static Guid? ApiKeyFromId(string? id)
     {
+        if (id == null)
+        {
+            return null;
+        }
         var apiIdParts = id.Nullify() == null ? [] : id.Split(Common.Data.Contants.OpenSubsonicServer.ApiIdSeparator);
         return SafeParser.ToGuid(SafeParser.ToGuid(apiIdParts[1])!.Value);
     }
@@ -174,7 +179,7 @@ public class OpenSubsonicApiService(
                 var sqlParameters = new Dictionary<string, object>();
                 var selectSql = """
                                 SELECT 
-                                cast(a."ApiKey" as varchar(50)) as "Id",
+                                'album_' || cast(a."ApiKey" as varchar(50)) as "Id",
                                 a."Name" as "Album",
                                 a."Name" as "Title",
                                 a."Name" as "Name",
@@ -183,7 +188,7 @@ public class OpenSubsonicApiService(
                                 a."CreatedAt" as "CreatedRaw",
                                 a."Duration"/1000 as "Duration",
                                 a."PlayedCount",
-                                cast(aa."ApiKey" as varchar(50)) as "ArtistId",
+                                'artist_' || cast(aa."ApiKey" as varchar(50)) as "ArtistId",
                                 aa."Name" as "Artist",
                                 DATE_PART('year', a."ReleaseDate"::date) as "Year",
                                 unnest(a."Genres") as "Genre",
@@ -300,7 +305,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> GetAlbumAsync(Guid apiKey, ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> GetAlbumAsync(string apiId, ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -312,6 +317,7 @@ public class OpenSubsonicApiService(
             };
         }
 
+        var apiKey = ApiKeyFromId(apiId).Value;
         var albumResponse = await albumService.GetByApiKeyAsync(apiKey, cancellationToken);
         if (!albumResponse.IsSuccess)
         {
@@ -505,59 +511,62 @@ public class OpenSubsonicApiService(
 
         try
         {
-            var apiKey = ApiKeyFromId(apiId);            
+            var apiKey = ApiKeyFromId(apiId);
             if (IsApiIdForSong(apiId))
             {
+                // If it's a song get the album ApiKey and proceed to get Album cover
                 var songInfo = await DatabaseSongIdsInfoForSongApiKey(ApiKeyFromId(apiId) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
                 if (songInfo != null)
                 {
                     apiKey = songInfo.AlbumApiKey;
                 }
-            }
-            if (apiKey != null)
-            {
-                var albumResponse = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken);
-                if (albumResponse.IsSuccess)
+
+                if (apiKey != null)
                 {
-                    var sql = """
-                              select l."Path" || a."Directory"
-                              from "Albums" a 
-                              left join "Libraries" l on (l."Id" = a."LibraryId")
-                              where a."ApiKey" = '{0}'
-                              limit 1;
-                              """;
-                    await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                    var albumResponse = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken);
+                    if (albumResponse.IsSuccess)
                     {
-                        var dbConn = scopedContext.Database.GetDbConnection();
-                        var pathToAlbum = dbConn.ExecuteScalar<string>(sql.FormatSmart(apiKey.ToString())) ?? string.Empty;
-                        await albumDiscoveryService.InitializeAsync(await Configuration.Value, cancellationToken);
-                        var melodeeFile = (await albumDiscoveryService
-                                .AllMelodeeAlbumDataFilesForDirectoryAsync(new FileSystemDirectoryInfo
+                        var sql = """
+                                  select l."Path" || aa."Directory" || a."Directory"
+                                  from "Albums" a
+                                  join "Artists" aa on (aa."Id" = a."ArtistId")
+                                  join "Libraries" l on (l."Id" = aa."LibraryId")
+                                  where a."ApiKey" = '{0}'
+                                  limit 1;
+                                  """;
+                        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                        {
+                            var dbConn = scopedContext.Database.GetDbConnection();
+                            var pathToAlbum = dbConn.ExecuteScalar<string>(sql.FormatSmart(apiKey.ToString())) ?? string.Empty;
+                            await albumDiscoveryService.InitializeAsync(await Configuration.Value, cancellationToken);
+                            var melodeeFile = (await albumDiscoveryService
+                                    .AllMelodeeAlbumDataFilesForDirectoryAsync(new FileSystemDirectoryInfo
+                                    {
+                                        Path = pathToAlbum,
+                                        Name = pathToAlbum
+                                    }, cancellationToken)
+                                    .ConfigureAwait(false))
+                                .Data?
+                                .FirstOrDefault();
+                            var image = melodeeFile?.CoverImage();
+                            if (image != null)
+                            {
+                                coverBytes = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                Logger.Warning("[{ServiceName}] Album directory is missing Melodee data file [{AlbumPath}]", nameof(OpenSubsonicApiService), pathToAlbum);
+                                var albumDirInfo = new FileSystemDirectoryInfo
                                 {
-                                    Path = pathToAlbum,
-                                    Name = pathToAlbum
-                                }, cancellationToken)
-                                .ConfigureAwait(false))
-                            .Data?
-                            .FirstOrDefault();
-                        var image = melodeeFile?.CoverImage();
-                        if (image != null)
-                        {
-                            coverBytes = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            Logger.Warning("[{ServiceName}] Album directory is missing Melodee data file [{AlbumPath}]", nameof(OpenSubsonicApiService), pathToAlbum);
-                            var albumDirInfo = new FileSystemDirectoryInfo
-                            {
-                                Name = pathToAlbum,
-                                Path = pathToAlbum
-                            };
-                            var imagesForFolder = albumDirInfo.AllFileImageTypeFileInfos();
-                            var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, "01-front.jpg", StringComparison.OrdinalIgnoreCase));
-                            if (firstFrontImage != null)
-                            {
-                                coverBytes = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
+                                    Name = pathToAlbum,
+                                    Path = pathToAlbum
+                                };
+                                var imagesForFolder = albumDirInfo.AllFileImageTypeFileInfos();
+                                var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, "01-front.jpg", StringComparison.OrdinalIgnoreCase));
+                                if (firstFrontImage != null)
+                                {
+                                    coverBytes = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
+                                }
                             }
                         }
                     }
@@ -829,7 +838,7 @@ public class OpenSubsonicApiService(
         }
     }
 
-    public async Task<ResponseModel> SavePlayQueueAsync(Guid[]? apiKeys, Guid? current, double? position, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> SavePlayQueueAsync(string[]? apiIds, string? currentApiId, double? position, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -842,6 +851,8 @@ public class OpenSubsonicApiService(
         }
 
         var result = false;
+        var apiKeys = apiIds?.Select(x => ApiKeyFromId(x)!.Value).ToArray();
+        var current = ApiKeyFromId(currentApiId);
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             // If the apikey is blank then remove any current saved que
@@ -1013,11 +1024,12 @@ public class OpenSubsonicApiService(
         }
 
         var sql = """
-                  select l."Path" || a."Directory" || '/' || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration", s."ContentType"
+                  select l."Path" || aa."Directory" || a."Directory" || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration", s."ContentType"
                   from "Songs" s 
-                  left join "AlbumDiscs" ad on (ad."Id" = s."AlbumDiscId")
-                  left join "Albums" a on (a."Id" = ad."AlbumId")
-                  left join "Libraries" l on (l."Id" = a."LibraryId")
+                  join "AlbumDiscs" ad on (ad."Id" = s."AlbumDiscId")
+                  join "Albums" a on (a."Id" = ad."AlbumId")
+                  join "Artists" aa on (a."ArtistId" = aa."Id")    
+                  join "Libraries" l on (l."Id" = aa."LibraryId")
                   where s."ApiKey" = @apiKey;
                   """;
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -1201,12 +1213,13 @@ public class OpenSubsonicApiService(
                       select s."ApiKey"::varchar as "Id", a."ApiKey"::varchar as Parent, s."Title", a."Name" as Album, aa."Name" as "Artist", 'song_' || s."ApiKey"::varchar as "CoverArt", 
                              a."SongCount", s."CreatedAt", s."Duration" as "DurationMs", s."BitRate", s."SongNumber" as "Track", 
                              DATE_PART('year', a."ReleaseDate"::date) as "Year", unnest(a."Genres") as "Genre", s."FileSize" as "Size", 
-                             s."ContentType", a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", a."ApiKey"::varchar as "AlbumId", 
+                             s."ContentType", l."Path" || aa."Directory" || a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", a."ApiKey"::varchar as "AlbumId", 
                              aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
                       from "Songs" s
-                      left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                      left join "Albums" a on (ad."AlbumId" = a."Id")
-                      left join "Artists" aa on (a."ArtistId" = aa."Id")
+                      join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                      join "Albums" a on (ad."AlbumId" = a."Id")
+                      join "Artists" aa on (a."ArtistId" = aa."Id")
+                      join "Libraries" l on (aa."LibraryId" = l."Id")
                       where s."TitleNormalized"  like @normalizedQuery
                       or s."AlternateNames" like @query
                       ORDER BY a."SortName" OFFSET @songOffset ROWS FETCH NEXT @songCount ROWS ONLY;
@@ -1366,7 +1379,7 @@ public class OpenSubsonicApiService(
                       from "Artists" a
                       join "Albums" a2 on (a."Id" = a2."ArtistId")
                       left join "UserArtists" ua on (a."Id" = ua."ArtistId" and ua."UserId" = @userId)
-                      where ((@libraryId = 0) or (@libraryId > 0 and a2."LibraryId" = @libraryId))
+                      where ((@libraryId = 0) or (@libraryId > 0 and a."LibraryId" = @libraryId))
                       and (EXTRACT(EPOCH from a."LastUpdatedAt") >= 0)
                       order by a."SortOrder", a."SortName"
                       """;

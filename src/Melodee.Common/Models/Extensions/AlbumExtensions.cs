@@ -107,6 +107,11 @@ public static class AlbumExtensions
         {
             return (false, "Album has no songs.");
         }
+
+        if (!album.Artist.IsValid())
+        {
+            return (false, "Artist is invalid.");
+        }
         
         if (album.Songs?.Any(x => !x.IsValid(configuration)) ?? false)
         {
@@ -219,10 +224,10 @@ public static class AlbumExtensions
         return album.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist);
     }
 
-    public static long ArtistUniqueId(this Album album)
-    {
-        return album.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(album.Artist()?.ToNormalizedString() ?? Guid.NewGuid().ToString());
-    }
+    // public static long ArtistUniqueId(this Album album)
+    // {
+    //     return album.MetaTagValue<long?>(MetaTagIdentifier.UniqueArtistId) ?? SafeParser.Hash(album.Artist()?.ToNormalizedString() ?? Guid.NewGuid().ToString());
+    // }
 
     public static string? DiscSubtitle(this Album album, short discNumber)
     {
@@ -446,55 +451,55 @@ public static class AlbumExtensions
             throw new Exception($"Invalid year [{albumDate}] for Album [{album}], Minimum configured value is [{minimumAlbumYear}]");
         }
 
-        return Path.Combine(album.ArtistDirectoryName(configuration), $"[{albumDate}] {albumPathTitle}");
+        return Path.Combine(album.Artist.ToDirectoryName(SafeParser.ToNumber<int>(configuration[SettingRegistry.ProcessingMaximumArtistDirectoryNameLength])), $"[{albumDate}] {albumPathTitle}");
     }
 
-    public static string ArtistDirectoryName(this Album album, Dictionary<string, object?> configuration)
-    {
-        var artistNameToUse = album.ArtistSort() ?? album.Artist();
-        if (string.IsNullOrWhiteSpace(artistNameToUse))
-        {
-            throw new Exception("Neither Artist or ArtistSort tag is set on Album.");
-        }
-
-        var artistDirectory = artistNameToUse.ToAlphanumericName(false, false).ToDirectoryNameFriendly()?.ToTitleCase(false);
-        if (string.IsNullOrEmpty(artistDirectory))
-        {
-            throw new Exception($"Unable to determine artist directory for Album ArtistNameToUse [{artistNameToUse}].");
-        }
-
-        var afUpper = artistDirectory.ToUpper();
-        var fnSubPart1 = afUpper.ToUpper().ToCharArray().Take(1).First();
-        if (!char.IsLetterOrDigit(fnSubPart1))
-        {
-            fnSubPart1 = '#';
-        }
-        else if (char.IsNumber(fnSubPart1))
-        {
-            fnSubPart1 = '0';
-        }
-
-        var fnSubPart2 = afUpper.Length > 2 ? afUpper.Substring(0, 2) : afUpper;
-        if (fnSubPart2.EndsWith(" "))
-        {
-            var pos = 1;
-            while (fnSubPart2.EndsWith(" "))
-            {
-                pos++;
-                fnSubPart2 = fnSubPart2.Substring(0, 1) + afUpper.Substring(pos, 1);
-            }
-        }
-
-        var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
-        var fnIdPart = $" [{album.ArtistUniqueId()}]";
-        var maxFnLength = SafeParser.ToNumber<int>(configuration[SettingRegistry.ProcessingMaximumArtistDirectoryNameLength]) - (fnSubPart.Length + fnIdPart.Length) - 2;
-        if (artistDirectory.Length > maxFnLength)
-        {
-            artistDirectory = artistDirectory.Substring(0, maxFnLength);
-        }
-
-        return Path.Combine(fnSubPart, $"{artistDirectory}{fnIdPart}");
-    }
+    // public static string ArtistDirectoryName(this Album album, Dictionary<string, object?> configuration)
+    // {
+    //     var artistNameToUse = album.ArtistSort() ?? album.Artist();
+    //     if (string.IsNullOrWhiteSpace(artistNameToUse))
+    //     {
+    //         throw new Exception("Neither Artist or ArtistSort tag is set on Album.");
+    //     }
+    //
+    //     var artistDirectory = artistNameToUse.ToAlphanumericName(false, false).ToDirectoryNameFriendly()?.ToTitleCase(false);
+    //     if (string.IsNullOrEmpty(artistDirectory))
+    //     {
+    //         throw new Exception($"Unable to determine artist directory for Album ArtistNameToUse [{artistNameToUse}].");
+    //     }
+    //
+    //     var afUpper = artistDirectory.ToUpper();
+    //     var fnSubPart1 = afUpper.ToUpper().ToCharArray().Take(1).First();
+    //     if (!char.IsLetterOrDigit(fnSubPart1))
+    //     {
+    //         fnSubPart1 = '#';
+    //     }
+    //     else if (char.IsNumber(fnSubPart1))
+    //     {
+    //         fnSubPart1 = '0';
+    //     }
+    //
+    //     var fnSubPart2 = afUpper.Length > 2 ? afUpper.Substring(0, 2) : afUpper;
+    //     if (fnSubPart2.EndsWith(" "))
+    //     {
+    //         var pos = 1;
+    //         while (fnSubPart2.EndsWith(" "))
+    //         {
+    //             pos++;
+    //             fnSubPart2 = fnSubPart2.Substring(0, 1) + afUpper.Substring(pos, 1);
+    //         }
+    //     }
+    //
+    //     var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
+    //     var fnIdPart = $" [{album.ArtistUniqueId()}]";
+    //     var maxFnLength = SafeParser.ToNumber<int>(configuration[SettingRegistry.ProcessingMaximumArtistDirectoryNameLength]) - (fnSubPart.Length + fnIdPart.Length) - 2;
+    //     if (artistDirectory.Length > maxFnLength)
+    //     {
+    //         artistDirectory = artistDirectory.Substring(0, maxFnLength);
+    //     }
+    //
+    //     return Path.Combine(fnSubPart, $"{artistDirectory}{fnIdPart}");
+    // }
 
     public static double TotalDuration(this Album album)
     {

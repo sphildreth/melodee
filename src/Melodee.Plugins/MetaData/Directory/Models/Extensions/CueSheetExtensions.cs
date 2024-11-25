@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Utility;
 using Serilog;
 
 namespace Melodee.Plugins.MetaData.Directory.Models.Extensions;
@@ -23,6 +25,11 @@ public static class CueSheetExtensions
         var fileInfo = new FileInfo(cueSheet.MediaFileSystemFileInfo.FullName(directoryInfo));
         return new Album
         {
+            Artist = new Artist(
+                cueSheet.Artist() ?? throw new Exception($"Invalid artist on { nameof(cueSheet)}"),
+                cueSheet.Artist().ToNormalizedString() ?? cueSheet.Artist()!,
+                cueSheet.Artist().CleanString(doPutTheAtEnd:true),
+                null),
             Directory = directoryInfo,
             Files = new[]
             {
