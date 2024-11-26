@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 using Melodee.Common.Exceptions;
@@ -57,23 +58,25 @@ public record OperationResult<T>
         AddError(error);
     }
 
-    [XmlIgnore] public Dictionary<string, object> AdditionalClientData { get; set; } = new();
+    [XmlIgnore] public Dictionary<string, object>? AdditionalClientData { get; set; }
 
-    [JsonIgnore] [XmlIgnore] public Dictionary<string, object> AdditionalData { get; set; } = new();
+    [IgnoreDataMember] 
+    [JsonIgnore] 
+    [XmlIgnore] 
+    public Dictionary<string, object>? AdditionalData { get; set; }
 
     /// <summary>
     ///     Client friendly exceptions
     /// </summary>
     [JsonPropertyName("errors")]
-    public IEnumerable<MelodeeException> AppExceptions
+    public IEnumerable<MelodeeException>? AppExceptions
     {
         get
         {
-            if (Errors.Any() != true)
+            if (Errors?.Any() != true)
             {
-                return [];
+                return null;
             }
-
             return Errors.Select(x => new MelodeeException(x.Message));
         }
     }
@@ -83,18 +86,19 @@ public record OperationResult<T>
     /// <summary>
     ///     Server side visible exceptions
     /// </summary>
+    [IgnoreDataMember]
     [JsonIgnore]
-    public IEnumerable<Exception> Errors { get; set; } = [];
+    public IEnumerable<Exception>? Errors { get; set; }
 
     public bool IsSuccess => Type == OperationResponseType.Ok &&
-                             !Errors.Any() &&
+                             !(Errors?.Any() ?? false) &&
                              !Data.IsNullOrDefault();
 
     public OperationResponseType Type { get; set; } = OperationResponseType.Ok;
 
-    public IEnumerable<string> Messages => _messages;
+    public IEnumerable<string>? Messages => _messages.Any() ? _messages : null;
 
-    public long OperationTime { get; set; }
+    public long? OperationTime { get; set; }
 
     public void AddError(Exception? exception)
     {

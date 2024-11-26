@@ -3,7 +3,9 @@ using Melodee.Common.Models.SearchEngines;
 
 namespace Melodee.Plugins.SearchEngine;
 
-public interface IArtistSearchEngine : IPlugin
+public interface IArtistSearchEnginePlugin : IPlugin
 {
-    Task<OperationResult<ArtistSearchResult[]>> PerformArtistSearchAsync(string query, int resultsCount);
+    bool StopProcessing { get; }
+    
+    Task<OperationResult<ArtistSearchResult[]?>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default);
 }

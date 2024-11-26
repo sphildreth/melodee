@@ -625,6 +625,8 @@ public class OpenSubsonicApiService(
         };
         var data = new List<OpenSubsonicExtension>
         {
+            // Custom extensions added for Melodee
+            new("melodeeExtensions", [1]),
             // Add support for POST request to the API (application/x-www-form-urlencoded).
             new("apiKeyAuthentication", [1]),   
             // Add support for POST request to the API (application/x-www-form-urlencoded).

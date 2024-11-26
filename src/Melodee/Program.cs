@@ -71,11 +71,11 @@ builder.Services
                 0),
             opt.GetRequiredService<ISerializer>()))
     .AddSingleton<DefaultImages>(_ => new DefaultImages
-        {
-            UserAvatarBytes = File.ReadAllBytes("wwwroot/images/avatar.png"),
-            AlbumCoverBytes = File.ReadAllBytes("wwwroot/images/album.jpg"),
-            ArtistBytes = File.ReadAllBytes("wwwroot/images/artist.jpg")
-        })
+    {
+        UserAvatarBytes = File.ReadAllBytes("wwwroot/images/avatar.png"),
+        AlbumCoverBytes = File.ReadAllBytes("wwwroot/images/album.jpg"),
+        ArtistBytes = File.ReadAllBytes("wwwroot/images/artist.jpg")
+    })
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddScoped<LocalStorageService>()
     .AddScoped<ISettingService, SettingService>()
@@ -90,7 +90,8 @@ builder.Services
     .AddScoped<DirectoryProcessorService>()
     .AddScoped<ImageConversionService>()
     .AddScoped<OpenSubsonicApiService>()
-    .AddScoped<ImageSearchEngineService>();
+    .AddScoped<ImageSearchEngineService>()
+    .AddScoped<ArtistSearchEngineService>();
     
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped<IStorageSessionService, StorageSessionService>();
