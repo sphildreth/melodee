@@ -31,7 +31,7 @@ public class ArtistSearchEngineService(
 
         _artistSearchEnginePlugins =
         [
-           new MelodeeIArtistSearchEnginPlugin(_configuration, ContextFactory)
+           new MelodeeIArtistSearchEnginPlugin(ContextFactory)
         ];
         
         _initialized = true;

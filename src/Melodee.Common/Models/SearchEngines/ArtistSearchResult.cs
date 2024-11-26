@@ -19,11 +19,11 @@ namespace Melodee.Common.Models.SearchEngines;
 public record ArtistSearchResult(
     string FromPlugin,
     long UniqueId,
-    byte Rank,
+    int Rank,
     string Name,
     Guid? ApiKey = null,
     string? SortName = null,
     string? RealName = null,
     string? ImageUrl=null,
     string? MusicBrainzId = null,
-    ReleaseSearchResult[]? Releases = null);
+    AlbumSearchResult[]? Releases = null);
