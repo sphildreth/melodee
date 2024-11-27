@@ -19,6 +19,7 @@ namespace Melodee.Plugins.SearchEngine;
 public sealed class BingImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) : IImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
+    
     public string Id => "7E8863EE-E95F-42F8-A4DE-693D78DC216C";
 
     public string DisplayName => nameof(BingImageSearchEngine);
