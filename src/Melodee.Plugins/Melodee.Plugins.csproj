@@ -33,5 +33,9 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageVersion Update="ServiceStack.OrmLite.Sqlite.Data" Version="8.5.0" />
+  </ItemGroup>
+
 
 </Project>
