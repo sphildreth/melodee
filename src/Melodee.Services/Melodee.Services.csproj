@@ -16,8 +16,6 @@
     <PackageReference Include="Ardalis.GuardClauses"/>
     <PackageReference Include="Dapper"/>
     <PackageReference Include="HtmlAgilityPack"/>
-    <PackageReference Include="ServiceStack" />
-    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Data" />
     <PackageReference Include="SixLabors.ImageSharp"/>
     <PackageReference Include="System.Linq.Dynamic.Core"/>
   </ItemGroup>

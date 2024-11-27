@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Net;
 using Dapper;
+using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
@@ -246,6 +247,13 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected UserService GetUserService()
     {
         return new UserService(Logger, CacheManager, MockFactory(), MockSettingService());
+    }
+
+    protected IMelodeeConfigurationFactory MockConfigurationFactory()
+    {
+        var mock = new Mock<IMelodeeConfigurationFactory>();
+        mock.Setup(f => f.GetConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
+        return mock.Object;
     }
 
     protected ISettingService MockSettingService()

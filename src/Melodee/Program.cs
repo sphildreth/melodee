@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Asp.Versioning;
 using Blazored.SessionStorage;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
@@ -12,6 +13,7 @@ using Melodee.Jobs;
 using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Scrobbling;
+using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
@@ -26,6 +28,8 @@ using Npgsql;
 using Quartz;
 using Quartz.AspNetCore;
 using Serilog;
+using ServiceStack.Data;
+using ServiceStack.OrmLite;
 using ILogger = Serilog.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,7 +46,11 @@ builder.Services.AddControllers();
 builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
 
-   
+builder.Services.AddSingleton<IDbConnectionFactory>(opt => 
+    new OrmLiteConnectionFactory(builder.Configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
+
+
+
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddHttpContextAccessor();
 
@@ -77,6 +85,8 @@ builder.Services
         ArtistBytes = File.ReadAllBytes("wwwroot/images/artist.jpg")
     })
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
+    .AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>()
+    .AddScoped<MusicBrainzRepository>()    
     .AddScoped<LocalStorageService>()
     .AddScoped<ISettingService, SettingService>()
     .AddScoped<ArtistService>()

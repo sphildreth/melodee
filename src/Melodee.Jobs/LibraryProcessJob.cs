@@ -35,14 +35,14 @@ namespace Melodee.Jobs;
 [DisallowConcurrentExecution]
 public class LibraryProcessJob(
     ILogger logger,
-    ISettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,
     ILibraryService libraryService,
     ISerializer serializer,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ArtistService artistService,
     AlbumService albumService,
     AlbumDiscoveryService albumDiscoveryService,
-    DirectoryProcessorService directoryProcessorService) : JobBase(logger, settingService)
+    DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
 {
     private readonly List<int> _dbAlbumIdsModifiedOrUpdated = new();
     private readonly List<int> _dbArtistsIdsModifiedOrUpdated = new();
@@ -83,7 +83,7 @@ public class LibraryProcessJob(
     public override async Task Execute(IJobExecutionContext context)
     {
         var startTicks = Stopwatch.GetTimestamp();
-        _configuration = await SettingService.GetMelodeeConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
+        _configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
         var libraries = await libraryService.ListAsync(new PagedRequest(), context.CancellationToken).ConfigureAwait(false);
         if (!libraries.IsSuccess)
         {

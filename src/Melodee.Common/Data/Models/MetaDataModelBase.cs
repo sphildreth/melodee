@@ -22,7 +22,7 @@ public abstract class MetaDataModelBase : DataModelBase
 
     public string? DiscogsId { get; set; }
 
-    public string? MusicBrainzId { get; set; }
+    public Guid? MusicBrainzId { get; set; }
 
     public string? LastFmId { get; set; }
 

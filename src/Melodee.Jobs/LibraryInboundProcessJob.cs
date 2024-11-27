@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
@@ -17,9 +18,9 @@ namespace Melodee.Jobs;
 [DisallowConcurrentExecution]
 public sealed class LibraryInboundProcessJob(
     ILogger logger,
-    ISettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,
     ILibraryService libraryService,
-    DirectoryProcessorService directoryProcessorService) : JobBase(logger, settingService)
+    DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
 {
     public override async Task Execute(IJobExecutionContext context)
     {

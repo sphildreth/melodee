@@ -5,6 +5,8 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.SearchEngine;
+using Melodee.Plugins.SearchEngine.MusicBrainz;
+using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -17,6 +19,7 @@ public class ArtistSearchEngineService(
     ISerializer serializer,
     ISettingService settingService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
+    MusicBrainzRepository musicBrainzRepository,
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -31,7 +34,8 @@ public class ArtistSearchEngineService(
 
         _artistSearchEnginePlugins =
         [
-           new MelodeeIArtistSearchEnginPlugin(ContextFactory)
+           new MelodeeArtistSearchEnginPlugin(ContextFactory),
+           new MusicBrainzArtistSearchEnginPlugin(musicBrainzRepository),
         ];
         
         _initialized = true;

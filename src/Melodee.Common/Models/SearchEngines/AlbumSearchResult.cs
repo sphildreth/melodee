@@ -2,4 +2,23 @@ using NodaTime;
 
 namespace Melodee.Common.Models.SearchEngines;
 
-public record AlbumSearchResult(long UniqueId, ArtistSearchResult Artist, Instant ReleaseDate, string[] Genres, string ThumbnailUrl, string Name, string NameNormalized, string SortTitle);
+public sealed record AlbumSearchResult
+{
+    public long UniqueId { get; init; }
+
+    public Instant? ReleaseDate { get; init; }
+
+    public string[]? Genres { get; init; }
+
+    public string? ThumbnailUrl { get; init; }
+
+    public required string Name { get; init; }
+
+    public required string NameNormalized { get; init; }
+
+    public required string SortName { get; init; }
+
+    public Guid? MusicBrainzId { get; init; }
+
+    public ArtistSearchResult? Artist { get; init; }
+}

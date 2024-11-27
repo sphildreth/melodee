@@ -535,7 +535,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 60,
                     Category = (int)SettingCategory.SearchEngine,
-                    Key = SettingRegistry.SearchEngineEnabledBingImage,
+                    Key = SettingRegistry.SearchEngineBingImageEnabled,
                     Comment = "Use Bing search engine to find images for albums and artists.",
                     Value = "false",
                     CreatedAt = now
@@ -544,7 +544,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 61,
                     Category = (int)SettingCategory.SearchEngine,
-                    Key = SettingRegistry.SearchEngineApiKeyBingImage,
+                    Key = SettingRegistry.SearchEngineBingImageApiKey,
                     Comment = "Bing search ApiKey (Ocp-Apim-Subscription-Key), leave blank to disable.",
                     Value = "",
                     CreatedAt = now
@@ -673,6 +673,51 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.OpenSubsonicIndexesArtistLimit,
                     Comment = "Limit the number of artists to include in an indexes request, set to zero for 32k per index (really not recommended with tens of thousands of artists and mobile clients timeout downloading indexes, a user can find an artist by search)",
                     Value = "1000",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 82,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineMusicBrainzEnabled,
+                    Comment = "Is MusicBrainz search engine enabled.",
+                    Value = "true",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 83,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineMusicBrainzStoragePath,
+                    Comment = "Storage path to hold MusicBrainz downloaded files and SQLite db.",
+                    Value = "/melodee_test/search-engine-storage/musicbrainz/",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 84,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineMusicBrainzImportMaximumToProcess,
+                    Comment = "Maximum number of records to import from MusicBrainz downloaded db dump, set to zero for unlimited.",
+                    Value = "20",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 85,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineMusicBrainzImportBatchSize,
+                    Comment = "Number of records to import from MusicBrainz downloaded db dump before commiting to local SQLite database.",
+                    Value = "10000",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 86,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp,
+                    Comment = "Timestamp of when last MusicBrainz import was successful.",
+                    Value = "",
                     CreatedAt = now
                 }
             );

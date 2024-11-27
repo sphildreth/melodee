@@ -25,7 +25,7 @@ public class LibraryProcessJobTests : ServiceTestBase
             Serializer);
 
         var job = new LibraryProcessJob(Logger,
-            MockSettingService(),
+            MockConfigurationFactory(),
             MockLibraryService(),
             Serializer,
             MockFactory(),

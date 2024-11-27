@@ -29,7 +29,7 @@ public class ImageSearchEngineService(
         {
             new BingImageSearchEngine(configuration, serializer, httpClientFactory)
             {
-                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineEnabledBingImage)
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled)
             }
         };
         var result = new List<ImageSearchResult>();

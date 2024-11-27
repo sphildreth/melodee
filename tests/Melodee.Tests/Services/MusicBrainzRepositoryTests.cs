@@ -1,4 +1,3 @@
-using Melodee.Services.MusicBrainz.Data;
 using ServiceStack;
 
 namespace Melodee.Tests.Services;

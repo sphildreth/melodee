@@ -46,7 +46,7 @@ public static class AlbumExtensions
             null,
             null,
             album.SortName,
-            album.MusicBrainzId,
+            album.MusicBrainzId?.ToString(),
             [], //TODO
             [], //TODO
             album.Artist.Name,

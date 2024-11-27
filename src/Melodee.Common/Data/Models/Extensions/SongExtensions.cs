@@ -47,7 +47,7 @@ public static class SongExtensions
             song.BPM,
             null,
             song.TitleSort,
-            song.MusicBrainzId,
+            song.MusicBrainzId?.ToString(),
             [], //TODO
             [], //TODO
             album.Artist.Name,

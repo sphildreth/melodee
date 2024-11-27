@@ -19,7 +19,7 @@ namespace Melodee.Plugins.SearchEngine;
 public sealed class BingImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) : IImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
-    
+
     public string Id => "7E8863EE-E95F-42F8-A4DE-693D78DC216C";
 
     public string DisplayName => nameof(BingImageSearchEngine);
@@ -32,8 +32,8 @@ public sealed class BingImageSearchEngine(IMelodeeConfiguration configuration, I
     {
         var result = new List<ImageSearchResult>();
 
-        var bingApiKey = configuration.GetValue<string?>(SettingRegistry.SearchEngineApiKeyBingImage);
-        if (bingApiKey.Nullify() == null || !configuration.GetValue<bool>(SettingRegistry.SearchEngineEnabledBingImage))
+        var bingApiKey = configuration.GetValue<string?>(SettingRegistry.SearchEngineBingImageApiKey);
+        if (bingApiKey.Nullify() == null || !configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled))
         {
             return new OperationResult<ImageSearchResult[]?>("Bing image search plugin is disabled.")
             {
@@ -74,13 +74,15 @@ public sealed class BingImageSearchEngine(IMelodeeConfiguration configuration, I
 
             if (imageResult?.Any() ?? false)
             {
-                result.AddRange(imageResult.Select(x => new ImageSearchResult(
-                    SafeParser.Hash(x.thumbnailUrl ?? string.Empty, x.contentUrl ?? string.Empty),
-                    x.width ?? 0,
-                    x.height ?? 0,
-                    x.thumbnailUrl ?? string.Empty,
-                    x.contentUrl ?? string.Empty,
-                    x.hostPageUrl ?? string.Empty)));
+                result.AddRange(imageResult.Select(x => new ImageSearchResult
+                {
+                    UniqueId = SafeParser.Hash(x.thumbnailUrl ?? string.Empty, x.contentUrl ?? string.Empty),
+                    Width = x.width ?? 0,
+                    Height = x.height ?? 0,
+                    ThumbnailUrl = x.thumbnailUrl ?? string.Empty,
+                    MediaUrl = x.contentUrl ?? string.Empty,
+                    Title = x.hostPageUrl ?? string.Empty
+                }));
             }
         }
         else
