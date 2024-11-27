@@ -44,7 +44,8 @@ public class LibraryProcessJobTests : ServiceTestBase
                     MockSettingService(),
                     MockLibraryService(),
                     albumDiscoveryService,
-                    Serializer, MockHttpClientFactory())));
+                    Serializer, MockHttpClientFactory()), 
+                GetArtistSearchEngineService()));
         
         var mockJobExecutionContext = new Mock<IJobExecutionContext>();
         mockJobExecutionContext.Setup(f => f.CancellationToken).Returns(CancellationToken.None);

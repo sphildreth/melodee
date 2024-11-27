@@ -639,12 +639,19 @@ public class LibraryProcessJob(
             var dbArtistsToAdd = new List<dbModels.Artist>();
             foreach (var artist in artists)
             {
-                var dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId(), cancellationToken).ConfigureAwait(false);
+                OperationResult<dbModels.Artist?> dbArtistResult = new OperationResult<dbModels.Artist?> {Data = null};
+                if (artist.MusicBrainzIdValue != null)
+                {
+                    dbArtistResult = await artistService.GetByMusicBrainzIdAsync(artist.MusicBrainzIdValue.Value, cancellationToken).ConfigureAwait(false);
+                }
                 if (!dbArtistResult.IsSuccess)
                 {
-                    dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
+                    dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId(), cancellationToken).ConfigureAwait(false);
+                    if (!dbArtistResult.IsSuccess)
+                    {
+                        dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
+                    }
                 }
-
                 var dbArtist = dbArtistResult.Data;
                 if (!dbArtistResult.IsSuccess || dbArtist == null)
                 {

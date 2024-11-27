@@ -8,10 +8,12 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.Scrobbling;
+using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
+using Melodee.Services.SearchEngines;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -23,6 +25,7 @@ using Serilog;
 using Serilog.Configuration;
 using Serilog.Events;
 using Serilog.Core;
+using ServiceStack.Data;
 
 namespace Melodee.Tests.Services;
 
@@ -129,6 +132,31 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
                 null,
                 null,
                 null));
+    }
+
+    protected IDbConnectionFactory MockDbContextFactory()
+    {
+        var mockFactory = new Mock<IDbConnectionFactory>();
+        return mockFactory.Object;
+    }
+
+    protected MusicBrainzRepository GetMusicBrainzRepository()
+    {
+        return new MusicBrainzRepository(Log.Logger, 
+            MockFactory(), 
+            MockConfigurationFactory(),
+            MockDbContextFactory());
+    }
+    
+    protected ArtistSearchEngineService GetArtistSearchEngineService()
+    {
+        return new ArtistSearchEngineService(Logger,
+            CacheManager,
+            Serializer,
+            MockSettingService(),
+            MockFactory(),
+            GetMusicBrainzRepository(),
+            MockHttpClientFactory());
     }
 
     protected OpenSubsonicApiService GetOpenSubsonicApiService()

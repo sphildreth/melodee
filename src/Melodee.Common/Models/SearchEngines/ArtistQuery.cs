@@ -9,10 +9,13 @@ public sealed record ArtistQuery
 
     public Guid? MusicBrainzIdValue => SafeParser.ToGuid(MusicBrainzId);
 
-    public string[]? AlbumNamesNormalized => AlbumKeyValues?.Where(x => x.Value != null).Select(x => x.Value.ToNormalizedString() ?? x.Value!).ToArray();
+    public string[]? AlbumNamesNormalized => AlbumKeyValues?.Where(x => x.Value != null).Select(x => x.Value!).ToArray();
 
     public required string Name { get; init; }
 
+    /// <summary>
+    /// Album information of Year and NormalizedName
+    /// </summary>
     public KeyValue[]? AlbumKeyValues { get; init; }
 
     public string? MusicBrainzId { get; init; }

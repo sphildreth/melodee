@@ -1,4 +1,5 @@
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
@@ -9,6 +10,8 @@ public record Artist(
     IEnumerable<ImageInfo>? Images = null,
     string? MusicBrainzId = null)
 {
+    public Guid? MusicBrainzIdValue => SafeParser.ToGuid(MusicBrainzId);
+    
     public static Artist NewArtistFromName(string name) 
         => new Artist(name, name.ToNormalizedString() ?? name, name.ToTitleCase());
 }

@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models.Extensions;
@@ -13,6 +14,16 @@ public static class ArtistExtensions
 
     private static readonly string CastRecordingSongArtistParseRegex = @"(original broadway cast|original cast*)";
 
+    public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
+    {
+        return new ArtistQuery
+        {
+            Name = artist.Name,
+            AlbumKeyValues = albumKeyValues,
+            MusicBrainzId = artist.MusicBrainzId
+        };
+    }
+    
     public static long UniqueId(this Artist artist)
     {
         return SafeParser.Hash(artist.MusicBrainzId ?? artist.NameNormalized);

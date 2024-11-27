@@ -6,6 +6,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Conversion;
@@ -18,6 +19,7 @@ using Melodee.Plugins.Processor.Models;
 using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Validation;
 using Melodee.Services.Interfaces;
+using Melodee.Services.SearchEngines;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
@@ -39,7 +41,8 @@ public sealed class DirectoryProcessorService(
     ISettingService settingService,
     ILibraryService libraryService,
     ISerializer serializer,
-    MediaEditService mediaEditService)
+    MediaEditService mediaEditService,
+    ArtistSearchEngineService artistSearchEngineService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
@@ -584,9 +587,39 @@ public sealed class DirectoryProcessorService(
                     }
 
                     album.Directory = albumDirInfo.ToDirectorySystemInfo();
+                    
+                    // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
+                    var artistSearchResult = await artistSearchEngineService.DoSearchAsync(album.Artist.ToArtistQuery([
+                                new KeyValue((album.AlbumYear() ?? 0).ToString(), 
+                                album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle())
+                            ]),
+                            1,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    if (artistSearchResult.IsSuccess)
+                    {
+                        var artistFromSearch = artistSearchResult.Data!.FirstOrDefault();
+                        if (artistFromSearch != null)
+                        {
+                            if (artistFromSearch.ImageUrl != null)
+                            {
+                                //TODO Download artist image to album folder
+                            }
+                            album.Artist = album.Artist with
+                            {
+                                MusicBrainzId = artistFromSearch.MusicBrainzId?.ToString(),
+                                Name = artistFromSearch.Name,
+                                NameNormalized = artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
+                                SortName = artistFromSearch.SortName
+                            };
+                        }
+                    }
+                    
+                    // Validate using AlbumValidator
                     var validationResult = _albumValidator.ValidateAlbum(album);
                     album.ValidationMessages = validationResult.Data.Messages ?? [];
                     album.Status = validationResult.Data.AlbumStatus;
+                    
                     var serialized = serializer.Serialize(album);
                     var jsonName = album.ToMelodeeJsonName(true);
                     if (jsonName.Nullify() != null)

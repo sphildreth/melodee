@@ -20,6 +20,7 @@ public class ArtistService(
     private const string CacheKeyDetailByApiKeyTemplate = "urn:artist:apikey:{0}";
     private const string CacheKeyDetailByMediaUniqueIdTemplate = "urn:artist:mediauniqueid:{0}";
     private const string CacheKeyDetailByNameNormalizedTemplate = "urn:artist:namenormalized:{0}";
+    private const string CacheKeyDetailByMusicBrainzIdTemplate = "urn:artist:musicbrainzid:{0}";
     private const string CacheKeyDetailTemplate = "urn:artist:{0}";
 
     public async Task<MelodeeModels.PagedResult<Artist>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
@@ -78,6 +79,28 @@ public class ArtistService(
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<Artist?>> GetByMusicBrainzIdAsync(Guid musicBrainzId, CancellationToken cancellationToken = default)
+    {
+        var id = await CacheManager.GetAsync(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(musicBrainzId.ToString()), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();
+                return await dbConn
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Artists\" WHERE \"MusicBrainzId\" = @musicBrainzId", new { musicBrainzId })
+                    .ConfigureAwait(false);
+            }
+        }, cancellationToken);
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
+            {
+                Data = null
+            };
+        }
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<MelodeeModels.OperationResult<Artist?>> GetByNameNormalized(string nameNormalized, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(nameNormalized, nameof(nameNormalized));
@@ -99,7 +122,6 @@ public class ArtistService(
                 Data = null
             };
         }
-
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
@@ -109,6 +131,10 @@ public class ArtistService(
         CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.ApiKey));
         CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.NameNormalized));
         CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Id));
+        if (artist.MusicBrainzId != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
+        }        
     }
 
     public async Task<MelodeeModels.OperationResult<Artist?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)

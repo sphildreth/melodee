@@ -49,8 +49,6 @@ builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
 builder.Services.AddSingleton<IDbConnectionFactory>(opt => 
     new OrmLiteConnectionFactory(builder.Configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
 
-
-
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddHttpContextAccessor();
 
