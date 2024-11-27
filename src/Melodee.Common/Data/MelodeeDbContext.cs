@@ -698,8 +698,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 84,
                     Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineMusicBrainzImportMaximumToProcess,
-                    Comment = "Maximum number of records to import from MusicBrainz downloaded db dump, set to zero for unlimited.",
-                    Value = "20",
+                    Comment = "Maximum number of batches import from MusicBrainz downloaded db dump (this setting is usually used during debugging), set to zero for unlimited.",
+                    Value = "0",
                     CreatedAt = now
                 },
                 new Setting

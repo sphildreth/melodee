@@ -118,7 +118,7 @@ builder.Services.AddQuartz(q =>
         .WithIdentity("LibraryInboundProcessJob-trigger")
         .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
         .UsingJobData(JobMapNameRegistry.Count, 0)
-        .WithCronSchedule("0 0/10 * * * ?")
+        .WithCronSchedule("0 0/10 * * * ?") // Every 10 minutes
     );
     
     q.AddJob<LibraryProcessJob>(opts => opts.WithIdentity(JobKeyRegistry.LibraryProcessJobJobKey));
@@ -127,8 +127,16 @@ builder.Services.AddQuartz(q =>
         .WithIdentity("LibraryProcessJob-trigger")
         .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
         .UsingJobData(JobMapNameRegistry.Count, 0)        
-        .WithCronSchedule("0 0 * * * ?")
+        .WithCronSchedule("0 0 * * * ?") // Once a day, at 00:00
     );    
+    
+    q.AddJob<MusicBrainzUpdateDatabaseJob>(opts => opts.WithIdentity(JobKeyRegistry.MusicBrainzUpdateDatabaseJobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(JobKeyRegistry.MusicBrainzUpdateDatabaseJobKey)
+        .WithIdentity("MusicBrainzUpdateDatabaseJob-trigger")
+        .StartNow()
+        .WithCronSchedule("0 0 1 * * ?") // Once a month, at 00:00
+    );        
     
 });
 builder.Services.AddSingleton<IScheduler>(provider =>

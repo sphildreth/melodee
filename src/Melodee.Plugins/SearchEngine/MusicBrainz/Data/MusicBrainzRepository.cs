@@ -1,16 +1,20 @@
 using System.Diagnostics;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Data;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
+using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
+using ServiceStack.OrmLite.Dapper;
 using Artist = Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Artist;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data;
@@ -27,7 +31,11 @@ using Release = Release;
 ///         See https://metabrainz.org/datasets/postgres-dumps#musicbrainz
 ///     </remarks>
 /// </summary>
-public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory configurationFactory, IDbConnectionFactory dbConnectionFactory)
+public class MusicBrainzRepository(
+    ILogger logger,
+    IDbContextFactory<MelodeeDbContext> contextFactory,
+    IMelodeeConfigurationFactory configurationFactory,
+    IDbConnectionFactory dbConnectionFactory)
 {
     public async Task<OperationResult<ArtistSearchResult[]?>> SearchArtist(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
@@ -157,14 +165,6 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: ImportData"))
         {
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
-            if (!configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled))
-            {
-                logger.Warning("MusicBrainz search engine is disabled in configuration [{KeyNam}]", SettingRegistry.SearchEngineMusicBrainzEnabled);
-                return new OperationResult<bool>
-                {
-                    Data = false
-                };
-            }
 
             var batchSize = configuration.GetValue<int>(SettingRegistry.SearchEngineMusicBrainzImportBatchSize);
             var maxToProcess = configuration.GetValue<int>(SettingRegistry.SearchEngineMusicBrainzImportMaximumToProcess);
@@ -173,7 +173,7 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
                 maxToProcess = int.MaxValue;
             }
 
-            var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath); // "/mnt/incoming/melodee_test/search-engine-storage/musicbrainz/";
+            var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath);
             if (storagePath == null || !Directory.Exists(storagePath))
             {
                 logger.Warning("MusicBrainz storage path is invalid [{KeyNam}]", SettingRegistry.SearchEngineMusicBrainzStoragePath);
@@ -184,17 +184,20 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
             }
 
             var artistCountInserted = 0;
-            var releaseCountInserted = 0;
             var artistCreditInserted = 0;
             var artistCreditNameInserted = 0;
             var artistAliasesInserted = 0;
+            var releaseCountInserted = 0;
+            var releaseCountriesCountInserted = 0;
+            var tagCountInserted = 0;
+            var releaseTagsCountInserted = 0;
 
             using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
             {
                 db.CreateTable<Artist>();
                 var artistsToAdd = new List<Artist>();
 
-                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/artist"), cancellationToken))
+                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/mbdump/artist"), cancellationToken))
                 {
                     var parts = lineFromFile.Split('\t');
                     var artist = new Artist
@@ -225,7 +228,7 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
 
                 db.CreateTable<ArtistCredit>();
                 var artistCreditsToAdd = new List<ArtistCredit>();
-                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/artist_credit"), cancellationToken))
+                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/mbdump/artist_credit"), cancellationToken))
                 {
                     var parts = lineFromFile.Split('\t');
 
@@ -257,7 +260,7 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
 
                 db.CreateTable<ArtistCreditName>();
                 var artistCreditNamesToAdd = new List<ArtistCreditName>();
-                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/artist_credit_name"), cancellationToken))
+                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/mbdump/artist_credit_name"), cancellationToken))
                 {
                     var parts = lineFromFile.Split('\t');
 
@@ -288,7 +291,7 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
 
                 db.CreateTable<ArtistAlias>();
                 var artistAliasToAdd = new List<ArtistAlias>();
-                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/artist_alias"), cancellationToken))
+                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/mbdump/artist_alias"), cancellationToken))
                 {
                     var parts = lineFromFile.Split('\t');
 
@@ -320,7 +323,7 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
 
                 db.CreateTable<Release>();
                 var releasesToAdd = new List<Release>();
-                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/release"), cancellationToken))
+                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/mbdump/release"), cancellationToken))
                 {
                     var parts = lineFromFile.Split('\t');
 
@@ -350,9 +353,109 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
                         break;
                     }
                 }
+                
+                db.CreateTable<ReleaseCountry>();
+                var releaseCountriesToAdd = new List<ReleaseCountry>();
+                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/mbdump/release_country"), cancellationToken))
+                {
+                    var parts = lineFromFile.Split('\t');
 
+                    var releaseCountry = new ReleaseCountry
+                    {
+                        ReleaseId = SafeParser.ToNumber<long>(parts[0]),
+                        CountryId = SafeParser.ToNumber<long>(parts[1]),
+                        DateYear = SafeParser.ToNumber<int>(parts[2]),
+                        DateMonth = SafeParser.ToNumber<int>(parts[3]),
+                        DateDay = SafeParser.ToNumber<int>(parts[4])
+                    };
 
-                //TODO record last time ran, create a job to run import
+                    if (releaseCountry.IsValid)
+                    {
+                        releaseCountriesToAdd.Add(releaseCountry);
+                        if (releaseCountriesToAdd.Count >= batchSize)
+                        {
+                            await db.InsertAllAsync(releaseCountriesToAdd, cancellationToken);
+                            releaseCountriesCountInserted += releaseCountriesToAdd.Count;
+                            releaseCountriesToAdd.Clear();
+                        }
+                    }
+
+                    if (releaseCountriesCountInserted > maxToProcess)
+                    {
+                        break;
+                    }
+                }                
+
+                db.CreateTable<Tag>();
+                var tagsToAdd = new List<Tag>();
+                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/mbdump/tag"), cancellationToken))
+                {
+                    var parts = lineFromFile.Split('\t');
+
+                    var tag = new Tag
+                    {
+                        Id = SafeParser.ToNumber<long>(parts[0]),
+                        Name = parts[1]
+                    };
+
+                    if (tag.IsValid)
+                    {
+                        tagsToAdd.Add(tag);
+                        if (releasesToAdd.Count >= batchSize)
+                        {
+                            await db.InsertAllAsync(tagsToAdd, cancellationToken);
+                            tagCountInserted += tagsToAdd.Count;
+                            tagsToAdd.Clear();
+                        }
+                    }
+
+                    if (tagCountInserted > maxToProcess)
+                    {
+                        break;
+                    }
+                }             
+                
+                db.CreateTable<ReleaseTag>();
+                var releaseTagsToAdd = new List<ReleaseTag>();
+                await foreach (var lineFromFile in File.ReadLinesAsync(Path.Combine(storagePath, "staging/mbdump/release_tag"), cancellationToken))
+                {
+                    var parts = lineFromFile.Split('\t');
+
+                    var releaseTag = new ReleaseTag
+                    {
+                        ReleaseId = SafeParser.ToNumber<long>(parts[0]),
+                        TagId = SafeParser.ToNumber<long>(parts[1])
+                    };
+
+                    if (releaseTag.IsValid)
+                    {
+                        releaseTagsToAdd.Add(releaseTag);
+                        if (releaseTagsToAdd.Count >= batchSize)
+                        {
+                            await db.InsertAllAsync(releaseTagsToAdd, cancellationToken);
+                            releaseTagsCountInserted += releaseTagsToAdd.Count;
+                            releaseTagsToAdd.Clear();
+                        }
+                    }
+
+                    if (releaseTagsCountInserted > maxToProcess)
+                    {
+                        break;
+                    }
+                }
+
+                await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    var setting = await scopedContext
+                        .Settings
+                        .FirstOrDefaultAsync(x => x.Key == SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp, cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
+                    if (setting != null)
+                    {
+                        setting.Value = (Instant.FromDateTimeUtc(DateTime.UtcNow)).ToString();
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                }
             }
 
             return new OperationResult<bool>
@@ -360,7 +463,10 @@ public class MusicBrainzRepository(ILogger logger, IMelodeeConfigurationFactory 
                 Data = artistCountInserted > 0 &&
                        releaseCountInserted > 0 &&
                        artistCreditInserted > 0 &&
-                       artistCreditNameInserted > 0
+                       artistCreditNameInserted > 0 && 
+                       releaseCountriesCountInserted > 0 &&
+                       tagCountInserted > 0 &&
+                       releaseTagsCountInserted > 0
             };
         }
     }
