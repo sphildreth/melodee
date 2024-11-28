@@ -12,11 +12,13 @@ public sealed class ImageHelperTests
     [InlineData("logo.jpg", false)]
     [InlineData("00-quantic--dancing_while_falling_(deluxe_edition)-web-2024-oma.jpg", false)]    
     [InlineData("Band.jpg", true)]
+    [InlineData("Artist.jpg", true)]
     [InlineData("Band_1.jpg", true)]
+    [InlineData("01-Artist.jpg", true)]
     [InlineData("Band01.jpg", true)]
     [InlineData("Band 01.jpg", true)]
     [InlineData("Band 14.jpg", true)]
-    public void FileIsBandImage(string fileName, bool shouldBe)
+    public void FileIsArtistImage(string fileName, bool shouldBe)
     {
         Assert.Equal(ImageHelper.IsArtistImage(new FileInfo(fileName)), shouldBe);
     }

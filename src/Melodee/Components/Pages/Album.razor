@@ -425,7 +425,7 @@
             await _albumCoverSearchModal.HideAsync();
             return;
         }
-        var saveResult = await MediaEditService.SaveImageUrlAsCoverAsync(_album.Directory, _album.UniqueId, selectedImageSearchResult.MediaUrl, selectedImageSearchResult.DoDeleteExistingCoverImages);
+        var saveResult = await MediaEditService.SaveImageUrlAsCoverAsync(_album.Directory, _album.UniqueId(), selectedImageSearchResult.MediaUrl, selectedImageSearchResult.DoDeleteExistingCoverImages);
         if (saveResult.IsSuccess)
         {
             NavManager.Refresh(true);
@@ -525,7 +525,7 @@
 
         if (confirmation)
         {
-            var result = await MediaEditService.DoMagic(_album.Directory, _album!.UniqueId);
+            var result = await MediaEditService.DoMagic(_album.Directory, _album!.UniqueId());
             if (result.IsSuccess)
             {
                 NavManager.ReloadPage();

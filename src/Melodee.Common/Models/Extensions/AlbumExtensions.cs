@@ -10,6 +10,13 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class AlbumExtensions
 {
+    public static KeyValue ToKeyValue(this Album album) => new KeyValue(album.UniqueId().ToString(), album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
+    
+    public static long UniqueId(this Album album)
+    {
+        return Album.GenerateUniqueId(album.Artist.UniqueId(), album.MusicBrainzId(), album.AlbumYear(), album.AlbumTitle());
+    }    
+    
     public static bool IsVariousArtistTypeAlbum(this Album album)
     {
         var songs = (album.Songs ?? []).ToArray();
@@ -130,7 +137,7 @@ public static class AlbumExtensions
             return (false, "Album title is invalid.");
         }
 
-        if (album.UniqueId < 1)
+        if (album.UniqueId() < 1)
         {
             return (false, "Album unique id is invalid.");
         }
@@ -150,7 +157,7 @@ public static class AlbumExtensions
 
     public static string ToMelodeeJsonName(this Album album, bool? isForAlbumDirectory = null)
     {
-        if (album.UniqueId < 1)
+        if (album.UniqueId() < 1)
         {
             return string.Empty;
         }
@@ -168,7 +175,7 @@ public static class AlbumExtensions
 
     public static string ToDirectoryName(this Album album)
     {
-        if (album.UniqueId < 1)
+        if (album.UniqueId() < 1)
         {
             return string.Empty;
         }
@@ -216,6 +223,8 @@ public static class AlbumExtensions
         return album.MetaTagValue<string?>(MetaTagIdentifier.Album);
     }
 
+    public static string? MusicBrainzId(this Album album) => album.MetaTagValue<string>(MetaTagIdentifier.MusicBrainzId);
+    
     /// <summary>
     ///     Return the value set for the OrigAlbumYear ?? RecordingYear ?? RecordingDateOrYear
     /// </summary>
@@ -362,7 +371,7 @@ public static class AlbumExtensions
 
         try
         {
-            var albumId = album.UniqueId.ToString();
+            var albumId = album.UniqueId().ToString();
             var normalizedArtistName = album.Artist?.ToAlphanumericName() ?? string.Empty;
             var normalizedTitleName = album.AlbumTitle()?.ToAlphanumericName() ?? string.Empty;
 

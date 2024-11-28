@@ -235,7 +235,7 @@ public sealed class MediaEditService(
         var albumStagingDirInfo = new DirectoryInfo(directoryInfo.FullName());
         var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
         await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
-        return album.UniqueId;
+        return album.UniqueId();
     }
 
     public async Task<OperationResult<(bool, long)>> RemoveUnwantedTextFromAlbumTitle(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)

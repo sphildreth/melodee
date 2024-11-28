@@ -19,10 +19,6 @@ public sealed record Album
     /// </summary>
     public Artist Artist { get; set; } = Artist.NewArtistFromName(string.Empty);
 
-    public static long GenerateUniqueId(string? artist, int? albumYear, string? albumTitle) => SafeParser.Hash(artist, albumYear.ToString(),albumTitle);
-
-    public long UniqueId => GenerateUniqueId(this.Artist.UniqueId().ToString(), this.AlbumYear(), this.AlbumTitle());
-
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
     
     public DateTimeOffset? Modified { get; set; }
@@ -75,10 +71,9 @@ public sealed record Album
         }
     }
     
-    public string UniqueIdSummary => $"{this.Artist.UniqueId()} : {this.AlbumYear()} : {this.AlbumTitle()}";
+    public string UniqueIdSummary => $"{Artist.UniqueId()} : {this.MusicBrainzId()} : {this.AlbumYear()} : {this.AlbumTitle()}";
     
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
-
 
     
     public Album MergeSongs(IEnumerable<Song> pluginResultData)
@@ -109,9 +104,14 @@ public sealed record Album
         return this with { Songs = songs.ToArray(), Tags = albumTags!.ToArray() };
     }
 
+    
+    
+    public static long GenerateUniqueId(long artistUniqueId, string? musicBrainzId, int? albumYear, string? albumTitle) => SafeParser.Hash(artistUniqueId.ToString(), musicBrainzId ?? $"{ albumYear}{albumTitle.ToNormalizedString() ?? albumTitle}");
+    
+    
     public override string ToString()
     {
-        return $"UniqueId [{UniqueId}] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+        return $"UniqueId [{this.UniqueId()}] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
     public Album Merge(Album otherAlbum)

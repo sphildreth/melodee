@@ -14,6 +14,8 @@ public static class ArtistExtensions
 
     private static readonly string CastRecordingSongArtistParseRegex = @"(original broadway cast|original cast*)";
 
+    public static KeyValue ToKeyValue(this Artist artist) => new KeyValue(artist.UniqueId().ToString(), artist.Name.ToNormalizedString() ?? artist.Name);
+    
     public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
     {
         return new ArtistQuery
@@ -26,7 +28,7 @@ public static class ArtistExtensions
     
     public static long UniqueId(this Artist artist)
     {
-        return SafeParser.Hash(artist.MusicBrainzId ?? artist.NameNormalized);
+       return Artist.GenerateUniqueId(artist.MusicBrainzId, artist.Name);
     }
 
     public static AlbumArtistType ArtistType(this Artist artist)

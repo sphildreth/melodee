@@ -217,7 +217,7 @@ public abstract class ServiceBase(
                             break;
                         }
 
-                        var foundAlbum = albums.FirstOrDefault(x => x.UniqueId == songsGroupedByAlbum.Key);
+                        var foundAlbum = albums.FirstOrDefault(x => x.UniqueId() == songsGroupedByAlbum.Key);
                         if (foundAlbum != null)
                         {
                             albums.Remove(foundAlbum);

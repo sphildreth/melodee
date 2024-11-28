@@ -313,7 +313,7 @@ public sealed class LibraryService(
                                 }
                                 else
                                 {
-                                    var fullName = Path.Combine(artistDirectoryParent, $"{MelodeeModels.ImageInfo.ImageFilePrefix}{nextArtistImageNumber}-Band.jpg");
+                                    var fullName = Path.Combine(artistDirectoryParent, $"{MelodeeModels.ImageInfo.ImageFilePrefix}{nextArtistImageNumber}-Artist.jpg");
                                     File.Move(image.FileInfo.FullName(libraryAlbumDirectoryInfo), fullName);
                                     Logger.Information("[{ServiceName}] renumbered and moved artist image [{ImageName}]", nameof(LibraryService), fullName);                                    
                                     nextArtistImageNumber++;

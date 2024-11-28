@@ -22,4 +22,33 @@ public class FileSystemDirectoryInfoExtensionTests
             Name = input
         }.IsDirectoryNotStudioAlbums());
     }
+
+    [Fact]
+    public void NextImageNumberInFolder()
+    {
+        var testPath = @"/melodee_test/tests/image_number_tests/";
+        if (Directory.Exists(testPath))
+        {
+            var fileDirectoryInfo = new FileSystemDirectoryInfo
+            {
+                Path = testPath,
+                Name = testPath
+            };
+            short maxAllowed = 2;
+            var nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, Melodee.Common.Data.Models.Artist.ImageType);
+            Assert.NotNull(nextImage.Item1);
+            Assert.True(nextImage.Item2 > 0);
+            var artistTypeCount = nextImage.Item2;
+            
+            nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, "Front");
+            Assert.NotNull(nextImage.Item1);
+            Assert.True(nextImage.Item2 > 0);    
+            Assert.NotEqual(artistTypeCount, nextImage.Item2);
+            
+            nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, Guid.NewGuid().ToString());
+            Assert.NotNull(nextImage.Item1);
+            Assert.True(nextImage.Item2 > 0);    
+            Assert.NotEqual(artistTypeCount, nextImage.Item2);            
+        }
+    }
 }

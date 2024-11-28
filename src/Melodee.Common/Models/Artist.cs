@@ -12,6 +12,8 @@ public record Artist(
 {
     public Guid? MusicBrainzIdValue => SafeParser.ToGuid(MusicBrainzId);
     
+    public static long GenerateUniqueId(string? musicBrainzId, string name) => SafeParser.Hash(musicBrainzId ?? name.ToNormalizedString() ?? name);
+    
     public static Artist NewArtistFromName(string name) 
         => new Artist(name, name.ToNormalizedString() ?? name, name.ToTitleCase());
 }

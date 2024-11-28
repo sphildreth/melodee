@@ -42,7 +42,8 @@ public sealed class DirectoryProcessorService(
     ILibraryService libraryService,
     ISerializer serializer,
     MediaEditService mediaEditService,
-    ArtistSearchEngineService artistSearchEngineService)
+    ArtistSearchEngineService artistSearchEngineService,
+    IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
@@ -225,6 +226,8 @@ public sealed class DirectoryProcessorService(
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
             LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Found [{0}] directories to process", null, directoriesToProcess.Count);
         }
+        
+        var httpClient = httpClientFactory.CreateClient();
 
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
@@ -601,9 +604,23 @@ public sealed class DirectoryProcessorService(
                         var artistFromSearch = artistSearchResult.Data!.FirstOrDefault();
                         if (artistFromSearch != null)
                         {
+                            var artistFromSearchImageFilename = Path.Combine(albumDirInfo.FullName,  albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Artist.ImageType).Item1);
                             if (artistFromSearch.ImageUrl != null)
                             {
-                                //TODO Download artist image to album folder
+                                await httpClient.DownloadFileAsync(
+                                    artistFromSearch.ImageUrl,
+                                    artistFromSearchImageFilename, async (existingFileInfo, newFileInfo, ct) =>
+                                    {
+                                      var existingImageInfo = await Image.LoadAsync(existingFileInfo.FullName, ct);
+                                      var newImageInfo = await Image.LoadAsync(newFileInfo.FullName, ct);
+                                      if (newImageInfo.Size.Height > existingImageInfo.Size.Height && 
+                                          existingImageInfo.Size.Width > newImageInfo.Size.Width)
+                                      {
+                                          return true;
+                                      }
+                                      return false;
+                                    },
+                                    cancellationToken);
                             }
                             album.Artist = album.Artist with
                             {
@@ -634,13 +651,13 @@ public sealed class DirectoryProcessorService(
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
                             {
-                                await mediaEditService.DoMagic(album.Directory, album.UniqueId, cancellationToken);
+                                await mediaEditService.DoMagic(album.Directory, album.UniqueId(), cancellationToken);
                             }
                         }
 
                         artistsUniqueIdsSeen.Add(album.Artist.UniqueId());
                         artistsUniqueIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId() ?? 0) ?? []);
-                        albumsUniqueIdsSeen.Add(album.UniqueId);
+                        albumsUniqueIdsSeen.Add(album.UniqueId());
                         songsUniqueIdsSeen.AddRange(album.Songs?.Select(x => x.UniqueId) ?? []);
                     }
                     else
@@ -864,6 +881,7 @@ public sealed class DirectoryProcessorService(
                             CrcHash = Crc32.Calculate(fileInfo),
                             FileInfo = new FileSystemFileInfo
                             {
+                                //TODO use the directory helper to get next image number
                                 Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
                                 Size = fileInfoFileSystemInfo.Size,
                                 OriginalName = fileInfo.Name

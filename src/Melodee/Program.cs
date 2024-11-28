@@ -132,8 +132,7 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(opts => opts
         .ForJob(JobKeyRegistry.MusicBrainzUpdateDatabaseJobKey)
         .WithIdentity("MusicBrainzUpdateDatabaseJob-trigger")
-        .StartNow()
-       // .WithCronSchedule("0 0 1 * * ?") // Once a month, at 00:00
+        .WithCronSchedule("0 0 1 * * ?") // Once a month, at 00:00
     );        
     
 });

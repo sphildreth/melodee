@@ -29,7 +29,7 @@ public class SerializerTests
         Assert.NotNull(serialized);
         var deserialized = Serializer.Deserialize<Album>(serialized);
         Assert.NotNull(deserialized);
-        Assert.Equal(album.UniqueId, deserialized.UniqueId);
+        Assert.Equal(album.UniqueId(), deserialized.UniqueId());
         Assert.Equal(album.Status, deserialized.Status);
         Assert.NotNull(deserialized.Songs);
 

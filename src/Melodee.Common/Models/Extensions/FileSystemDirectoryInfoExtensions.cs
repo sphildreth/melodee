@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using Commons;
 using Melodee.Common.Constants;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 using NodaTime;
@@ -98,6 +100,30 @@ public static class FileSystemDirectoryInfoExtensions
         }
 
         return result;
+    }
+
+    public static (string, int) GetNextFileNameForType(this FileSystemDirectoryInfo fileSystemDirectoryInfo, short maximumNumberOfImageTypeAllowed, string imageType)
+    {
+        var highestNumberFound = 0;
+        var maxNumberLength = SafeParser.ToNumber<short>(maximumNumberOfImageTypeAllowed.ToString().Length)+1;
+        var allImagesInDirectory = fileSystemDirectoryInfo.AllFileImageTypeFileInfos().ToArray();
+        if (allImagesInDirectory.Length != 0)
+        {
+            foreach (var image in allImagesInDirectory)
+            {
+                if (image.Name.EndsWith($"{imageType}.jpg", StringComparison.OrdinalIgnoreCase))
+                {
+                    var number = SafeParser.ToNumber<short>(image.Name.Substring(ImageInfo.ImageFilePrefix.Length, maxNumberLength));
+                    if (number > highestNumberFound)
+                    {
+                        highestNumberFound = number;
+                    }
+                }
+            }
+        }
+
+        highestNumberFound++;
+        return ($"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maximumNumberOfImageTypeAllowed)}-{imageType}.jpg", highestNumberFound);
     }
 
     public static IEnumerable<FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)

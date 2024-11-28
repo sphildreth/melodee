@@ -708,7 +708,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineMusicBrainzImportBatchSize,
                     Comment = "Number of records to import from MusicBrainz downloaded db dump before commiting to local SQLite database.",
-                    Value = "10000",
+                    Value = "100000",
                     CreatedAt = now
                 },
                 new Setting

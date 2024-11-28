@@ -471,9 +471,15 @@ public enum MetaTagIdentifier
     [Description("[TP4, TPE4]")] InterpretedRemixedOrOtherwiseModifiedBy,
 
     /// <summary>
+    ///     [TXXX:MusicBrainz Artist Id]
+    /// <remarks>https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html</remarks>
+    /// </summary>
+    [Description("[TXX, TXXX]")] MusicBrainzId,
+    
+    /// <summary>
     ///     [TXX, TXXX]
     /// </summary>
-    [Description("[TXX, TXXX]")] UserDefinedTextInformation,
+    [Description("[TXX, TXXX]")] UserDefinedTextInformation,    
 
     /// <summary>
     ///     [UFI, UFID]

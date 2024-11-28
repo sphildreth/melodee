@@ -15,6 +15,8 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(SortName))]
 public sealed class Artist : MetaDataModelBase
 {
+    public const string ImageType = "Artist";
+    
     [RequiredGreaterThanZero] public long MediaUniqueId { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]

@@ -365,7 +365,7 @@ public class LibraryProcessJob(
 
                 var albumTitle = melodeeFile.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
                 var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
-                var dbAlbumResult = await albumService.GetByMediaUniqueId(melodeeFile.UniqueId, cancellationToken).ConfigureAwait(false);
+                var dbAlbumResult = await albumService.GetByMediaUniqueId(melodeeFile.UniqueId(), cancellationToken).ConfigureAwait(false);
                 if (!dbAlbumResult.IsSuccess)
                 {
                     dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist.Id, nameNormalized, cancellationToken).ConfigureAwait(false);
@@ -387,7 +387,7 @@ public class LibraryProcessJob(
                         Duration = melodeeFile.TotalDuration(),
                         Genres = melodeeFile.Genre() == null ? null : melodeeFile.Genre()!.Split('/'),
                         IsCompilation = melodeeFile.IsVariousArtistTypeAlbum(),
-                        MediaUniqueId = melodeeFile.UniqueId,
+                        MediaUniqueId = melodeeFile.UniqueId(),
                         MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                         Name = albumTitle,
                         NameNormalized = nameNormalized,
@@ -511,7 +511,7 @@ public class LibraryProcessJob(
             }
 
             var albumsToUpdate = (from a in melodeeFilesForDirectory
-                    join addedAlbum in dbAlbumsToAdd on a.UniqueId equals addedAlbum.MediaUniqueId into aa
+                    join addedAlbum in dbAlbumsToAdd on a.UniqueId() equals addedAlbum.MediaUniqueId into aa
                     from album in aa.DefaultIfEmpty()
                     where album is null
                     select a)
@@ -542,7 +542,7 @@ public class LibraryProcessJob(
 
                 var albumTitle = album.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
                 var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
-                var dbAlbumResult = await albumService.GetByMediaUniqueId(album.UniqueId, cancellationToken).ConfigureAwait(false);
+                var dbAlbumResult = await albumService.GetByMediaUniqueId(album.UniqueId(), cancellationToken).ConfigureAwait(false);
                 if (!dbAlbumResult.IsSuccess)
                 {
                     dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist.Id, nameNormalized, cancellationToken).ConfigureAwait(false);
@@ -570,7 +570,7 @@ public class LibraryProcessJob(
                 dbAlbum.Genres = album.Genre() == null ? null : album.Genre()!.Split('/');
                 dbAlbum.IsCompilation = album.IsVariousArtistTypeAlbum();
                 dbAlbum.LastUpdatedAt = _now;
-                dbAlbum.MediaUniqueId = album.UniqueId;
+                dbAlbum.MediaUniqueId = album.UniqueId();
                 dbAlbum.MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess;
                 dbAlbum.Name = albumTitle;
                 dbAlbum.NameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
@@ -578,7 +578,7 @@ public class LibraryProcessJob(
                 dbAlbum.ReleaseDate = new LocalDate(album.AlbumYear() ?? throw new Exception("Album year is required."), 1, 1);
                 dbAlbum.SongCount = SafeParser.ToNumber<short>(album.Songs?.Count() ?? 0);
                 dbAlbum.SortName = albumTitle.CleanString(true);
-                dbAlbum.MediaUniqueId = album.UniqueId;
+                dbAlbum.MediaUniqueId = album.UniqueId();
                 dbAlbum.Name = albumTitle;
                 dbAlbum.NameNormalized = nameNormalized;
                 dbAlbum.SortName = albumTitle.CleanString(true);

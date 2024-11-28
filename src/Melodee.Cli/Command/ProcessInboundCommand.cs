@@ -130,7 +130,8 @@ public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
                     serializer,
                     scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
                 ),
-                artistSearchEngineService
+                artistSearchEngineService,
+                scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
             );
             var dirInfo = new DirectoryInfo(libraryToProcess.Path);
             if (!dirInfo.Exists)

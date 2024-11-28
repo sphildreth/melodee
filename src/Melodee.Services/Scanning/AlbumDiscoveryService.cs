@@ -50,7 +50,7 @@ public sealed class AlbumDiscoveryService(
         CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data?.FirstOrDefault(x => x.UniqueId == uniqueId);
+        var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data?.FirstOrDefault(x => x.UniqueId() == uniqueId);
         if (result == null)
         {
             Log.Error("Unable to find Album by id [{UniqueId}] in [{DirectoryName}]", uniqueId, fileSystemDirectoryInfo.FullName());
@@ -119,10 +119,10 @@ public sealed class AlbumDiscoveryService(
             {
                 case AlbumResultFilter.Duplicates:
                     var duplicates = albums
-                        .GroupBy(x => x.UniqueId)
+                        .GroupBy(x => x.UniqueId())
                         .Where(x => x.Count() > 1)
                         .Select(x => x.Key);
-                    albums = albums.Where(x => duplicates.Contains(x.UniqueId)).ToList();
+                    albums = albums.Where(x => duplicates.Contains(x.UniqueId())).ToList();
                     break;
 
                 case AlbumResultFilter.Incomplete:
@@ -149,7 +149,7 @@ public sealed class AlbumDiscoveryService(
                 case AlbumResultFilter.Selected:
                     if (pagedRequest.SelectedAlbumIds.Length > 0)
                     {
-                        albums = albums.Where(x => pagedRequest.SelectedAlbumIds.Contains(x.UniqueId)).ToList();
+                        albums = albums.Where(x => pagedRequest.SelectedAlbumIds.Contains(x.UniqueId())).ToList();
                     }
 
                     break;
@@ -267,7 +267,7 @@ public sealed class AlbumDiscoveryService(
             SongCount = x.SongTotalValue(),
             AlbumStatus = x.Status,
             ViaPlugins = x.ViaPlugins.ToArray(),
-            UniqueId = x.UniqueId
+            UniqueId = x.UniqueId()
         });
         var d = await Task.WhenAll(data);
         return new PagedResult<AlbumCard>
