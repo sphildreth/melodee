@@ -162,7 +162,7 @@ public class MusicBrainzRepository(
                            SortName = dynamicArtist.SortName
                        };
 
-                       var albumsForArtist = (await db.QueryAsync<AlbumSearchResult>(albumSql, new { artistId = artist.Id }).ConfigureAwait(false) ?? []).ToArray();
+                       var albumsForArtist = GetDataAlbums((await db.QueryAsync<AlbumSearchResult>(albumSql, new { artistId = artist.Id }).ConfigureAwait(false) ?? []).ToArray());
                        short rank = 1;
                        var matchedAlbumSearchResults = new List<AlbumSearchResult>();
                        if (albumsForArtist.Length > 0 && query.AlbumKeyValues != null)
