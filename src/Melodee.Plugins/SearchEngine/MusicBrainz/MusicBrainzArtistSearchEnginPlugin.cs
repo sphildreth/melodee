@@ -16,7 +16,7 @@ public class MusicBrainzArtistSearchEnginPlugin(MusicBrainzRepository repository
 
     public int SortOrder { get; } = 2;
 
-    public Task<OperationResult<ArtistSearchResult[]?>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public Task<PagedResult<ArtistSearchResult>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         return repository.SearchArtist(query, maxResults, cancellationToken);
     }

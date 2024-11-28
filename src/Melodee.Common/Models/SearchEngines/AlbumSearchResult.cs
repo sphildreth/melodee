@@ -1,12 +1,19 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using NodaTime;
 
 namespace Melodee.Common.Models.SearchEngines;
 
 public sealed record AlbumSearchResult
 {
+    public KeyValue KeyValue => new KeyValue(UniqueId.ToString(), NameNormalized);
+    
     public long UniqueId { get; init; }
 
-    public Instant? ReleaseDate { get; init; }
+    [JsonIgnore]
+    public string? ReleaseDateParts { get; init; }
+    
+    public string? ReleaseDate { get; set; }
 
     public string[]? Genres { get; init; }
 
@@ -17,8 +24,11 @@ public sealed record AlbumSearchResult
     public required string NameNormalized { get; init; }
 
     public required string SortName { get; init; }
-
-    public Guid? MusicBrainzId { get; init; }
+    
+    [JsonIgnore]
+    public string? MusicBrainzIdRaw { get; init; }
+  
+    public Guid? MusicBrainzId { get; set; }
 
     public ArtistSearchResult? Artist { get; init; }
 }

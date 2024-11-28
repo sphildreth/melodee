@@ -110,7 +110,7 @@
                 PageSize = SafeParser.ToNumber<short>(request.PageSize),
                 OrderBy = sorting
             }, request.CancellationToken);
-            return new GridDataProviderResult<Setting> { Data = result.Data, TotalCount = result.TotalCount };
+            return new GridDataProviderResult<Setting> { Data = result.Data, TotalCount = (int)result.TotalCount };
         }
         catch (Exception e)
         {

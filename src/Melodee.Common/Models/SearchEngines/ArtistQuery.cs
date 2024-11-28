@@ -5,6 +5,8 @@ namespace Melodee.Common.Models.SearchEngines;
 
 public sealed record ArtistQuery
 {
+    public KeyValue KeyValue => new KeyValue(SafeParser.Hash(MusicBrainzIdValue?.ToString() ?? NameNormalized).ToString(), NameNormalized);
+    
     public string NameNormalized => Name.ToNormalizedString() ?? Name;
 
     public Guid? MusicBrainzIdValue => SafeParser.ToGuid(MusicBrainzId);

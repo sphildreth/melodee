@@ -4,6 +4,7 @@ using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine;
 using Melodee.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
@@ -49,7 +50,7 @@ public class ArtistSearchEngineService(
         }
     }    
     
-    public async Task<OperationResult<ArtistSearchResult[]?>> DoSearchAsync(ArtistQuery query, int? maxResults, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ArtistSearchResult>> DoSearchAsync(ArtistQuery query, int? maxResults, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
         
@@ -58,6 +59,7 @@ public class ArtistSearchEngineService(
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
 
         long operationTime = 0;
+        long totalCount = 0;
         foreach (var plugin in _artistSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
         {
             if (cancellationToken.IsCancellationRequested)
@@ -68,6 +70,7 @@ public class ArtistSearchEngineService(
             if (pluginResult is { IsSuccess: true, Data: not null })
             {
                 result.AddRange(pluginResult.Data);
+                totalCount += pluginResult.TotalCount;
                 operationTime += pluginResult.OperationTime ?? 0;
             }
             if (result.Count > maxResultsValue || plugin.StopProcessing)
@@ -75,10 +78,13 @@ public class ArtistSearchEngineService(
                 break;
             }            
         }
-        return new OperationResult<ArtistSearchResult[]?>
+        return new PagedResult<ArtistSearchResult>
         {
             OperationTime = operationTime,
-            Data = result.Count != 0 ? result.ToArray() : null
+            CurrentPage = 1,
+            TotalCount = totalCount,
+            TotalPages = totalCount == 0 ? 0 : SafeParser.ToNumber<int>((totalCount +  maxResultsValue - 1) / maxResultsValue),
+            Data = result
         };
     }
 }

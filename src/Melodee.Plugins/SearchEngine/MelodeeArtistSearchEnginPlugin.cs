@@ -19,7 +19,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
 
     public int SortOrder { get; } = 1;
 
-    public async Task<OperationResult<ArtistSearchResult[]?>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ArtistSearchResult>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -125,10 +125,12 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                 }
             }
 
-            return new OperationResult<ArtistSearchResult[]?>
+            return new PagedResult<ArtistSearchResult>
             {
                 OperationTime = Stopwatch.GetElapsedTime(startTicks).Microseconds,
-                Data = data.Count == 0 ? null : data.ToArray()
+                TotalCount = 0,
+                TotalPages = 0,
+                Data = data                
             };
         }
     }

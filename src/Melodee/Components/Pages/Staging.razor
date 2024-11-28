@@ -225,7 +225,7 @@
                 PageSize = SafeParser.ToNumber<short>(request.PageSize),
                 OrderBy = sorting
             }).ConfigureAwait(false);
-            return new GridDataProviderResult<AlbumCard> { Data = result.Data, TotalCount = result.TotalCount };
+            return new GridDataProviderResult<AlbumCard> { Data = result.Data, TotalCount = (int)result.TotalCount };
         }
         catch (Exception e)
         {

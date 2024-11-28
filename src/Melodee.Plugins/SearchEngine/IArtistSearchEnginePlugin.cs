@@ -7,5 +7,5 @@ public interface IArtistSearchEnginePlugin : IPlugin
 {
     bool StopProcessing { get; }
 
-    Task<OperationResult<ArtistSearchResult[]?>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default);
+    Task<PagedResult<ArtistSearchResult>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default);
 }

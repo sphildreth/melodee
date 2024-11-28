@@ -149,7 +149,7 @@
                 PageSize = SafeParser.ToNumber<short>(request.PageSize),
                 OrderBy = sorting
             });
-            return new GridDataProviderResult<AlbumCard> { Data = result.Data, TotalCount = result.TotalCount };
+            return new GridDataProviderResult<AlbumCard> { Data = result.Data, TotalCount = (int)result.TotalCount };
         }
         catch (Exception e)
         {
