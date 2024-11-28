@@ -69,6 +69,7 @@ public class MusicBrainzUpdateDatabaseJob(
                 File.Move(dbName, tempDbName);
             }
 
+            //TODO this is here while debugging to skip downloading
             var doDownloadNewFiles = false;
             if (doDownloadNewFiles)
             {
