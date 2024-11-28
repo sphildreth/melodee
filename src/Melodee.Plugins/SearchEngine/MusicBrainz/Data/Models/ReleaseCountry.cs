@@ -5,13 +5,13 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 
 public sealed record ReleaseCountry
 {
-    [AutoIncrement] public long Id { get; init; }
+    public long Id { get; init; }
 
-    [Ignore] public LocalDate ReleaseDate => LocalDate.FromDateTime(new DateTime(DateYear, DateMonth, DateDay));
+    public LocalDate ReleaseDate => LocalDate.FromDateTime(new DateTime(DateYear, DateMonth, DateDay));
 
-    [Ignore] public bool IsValid => ReleaseId > 0 && DateYear > 0 && DateMonth > 0 && DateDay > 0;
+    public bool IsValid => ReleaseId > 0 && DateYear > 0 && DateMonth > 0 && DateDay > 0;
 
-    [Index(Unique = false)] public long ReleaseId { get; init; }
+    public long ReleaseId { get; init; }
 
     public long CountryId { get; init; }
 

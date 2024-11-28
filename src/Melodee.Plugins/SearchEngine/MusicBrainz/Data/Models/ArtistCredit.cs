@@ -4,7 +4,7 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 
 public sealed record ArtistCredit
 {
-    [Ignore] public bool IsValid => Id > 0 && ArtistCount > 0;
+    public bool IsValid => Id > 0 && ArtistCount > 0;
 
     public long Id { get; init; }
 

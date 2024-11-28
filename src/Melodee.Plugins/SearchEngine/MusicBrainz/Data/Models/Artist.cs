@@ -1,4 +1,7 @@
+using System.Text.Json.Serialization;
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
+using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Enums;
 using ServiceStack.DataAnnotations;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
@@ -8,15 +11,18 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 /// </summary>
 public sealed record Artist
 {
-    [Ignore] public bool IsValid => MusicBrainzId != Guid.Empty && Name.Nullify() != null;
+    public bool IsValid => MusicBrainzId != Guid.Empty && Name.Nullify() != null;
 
     public long Id { get; init; }
 
-    [Index(Unique = true)] public required Guid MusicBrainzId { get; init; }
+    public required Guid MusicBrainzId { get; init; }
 
-    [Index(Unique = false)] public required string Name { get; init; }
+    public required string Name { get; init; }
 
-    [Index(Unique = false)] public required string NameNormalized { get; init; }
+    public required string NameNormalized { get; init; }
+    
+    public int ArtistType { get; init; }
+    public ArtistType ArtistTypeValue => SafeParser.ToEnum<ArtistType>(ArtistType);
 
     public required string SortName { get; init; }
 }

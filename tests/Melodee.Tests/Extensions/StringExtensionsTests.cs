@@ -189,6 +189,20 @@ public class StringExtensionsTests
     public void ValidateHexEncoding(string? input, string? shouldBe)
     {
         Assert.Equal(shouldBe, input?.ToHexString());
-    }     
+    }
+
+    [Fact]
+    public void ValidateTags()
+    {
+        var tags = new string[] { "tag1", "TAG2", "tag3", "tag4", "tag5", "Tag6" };
+        var tag = "".AddTag(tags);
+        Assert.NotNull(tag);
+        Assert.Contains("tag2", tag.ToTags() ?? throw new InvalidOperationException());
+
+        var tagNoLower = "".AddTag(tags, dontLowerCase: true);
+        Assert.NotNull(tagNoLower);
+        Assert.Contains("TAG2", tagNoLower.ToTags() ?? throw new InvalidOperationException());
+
+    }
 
 }

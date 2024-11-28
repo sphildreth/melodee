@@ -5,11 +5,11 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 
 public sealed record ArtistAlias
 {
-    [Ignore] public bool IsValid => ArtistId > 0 && Name.Nullify() != null;
+    public bool IsValid => ArtistId > 0 && Name.Nullify() != null;
 
     public long Id { get; init; }
 
-    [Index(Unique = false)] public required long ArtistId { get; init; }
+    public required long ArtistId { get; init; }
 
     public int Type { get; init; }
 

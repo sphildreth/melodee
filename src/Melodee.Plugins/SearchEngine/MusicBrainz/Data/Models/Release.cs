@@ -10,17 +10,19 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 /// </summary>
 public sealed record Release
 {
-    [Ignore] public bool IsValid => MusicBrainzId != Guid.Empty && Name.Nullify() != null;
+    public bool IsValid => MusicBrainzId != Guid.Empty && Name.Nullify() != null;
 
     public long Id { get; init; }
 
-    [Index(Unique = true)] public Guid MusicBrainzId { get; init; }
+    public Guid MusicBrainzId { get; init; }
 
-    [Index(Unique = false)] public required string Name { get; init; }
+    public required string Name { get; init; }
 
-    [Index(Unique = false)] public string? NameNormalized { get; init; }
+    public string? NameNormalized { get; init; }
+    
+    public long ReleaseGroupId { get; init; }
 
     public string? SortName { get; init; }
 
-    [Index(Unique = false)] public required long ArtistCreditId { get; init; }
+    public required long ArtistCreditId { get; init; }
 }

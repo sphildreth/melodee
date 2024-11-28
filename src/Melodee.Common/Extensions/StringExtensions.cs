@@ -314,7 +314,7 @@ public static partial class StringExtensions
     /// <param name="str">Tag value to return tags joined by split value</param>
     /// <param name="value">Value to add to Tag result, can be Tags also joined by split value</param>
     /// <param name="tagSplit">Tag split value</param>
-    /// <param name="dontLowerCase">Dont return lowercase value, leave value case as is</param>
+    /// <param name="dontLowerCase">Don't return lowercase value, leave value case as is</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
     public static string? AddTag(this string? str, string? value, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
         => AddTag(str, value?.Split(tagSplit ?? TagsSeparator), tagSplit, dontLowerCase);
@@ -325,7 +325,7 @@ public static partial class StringExtensions
     /// <param name="str">Tag value to return tags joined by split value</param>
     /// <param name="values">Values to add to Tag result</param>
     /// <param name="tagSplit">Tag split value</param>
-    /// <param name="dontLowerCase">Dont return lowercase value, leave value case as is</param>
+    /// <param name="dontLowerCase">Don't return lowercase value, leave value case as is</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
     public static string? AddTag(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
     {
