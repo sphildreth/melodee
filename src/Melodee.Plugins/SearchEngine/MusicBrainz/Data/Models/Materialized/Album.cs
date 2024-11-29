@@ -33,4 +33,6 @@ public sealed record Album
     public required Guid MusicBrainzId { get; init; }
     
     public required DateTime ReleaseDate { get; init; }
+    
+    public string? ContributorIds { get; init; }
 }

@@ -399,10 +399,12 @@ public class MusicBrainzRepository(
                     }, cancellationToken).ConfigureAwait(false);
                 }                
 
+                // A dictionary of Artists in Melodee database using the MusicBrainz database Artist.Id as the key.
                 Dictionary<long, Models.Materialized.Artist> dbArtistDictionary;
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist from database"))
                 {
-                    dbArtistDictionary = (await db.SelectAsync<Models.Materialized.Artist>(x => x.Id > 0, token: cancellationToken).ConfigureAwait(false)).ToDictionary(x => x.MusicBrainzArtistId, x => x);
+                    dbArtistDictionary = (await db.SelectAsync<Models.Materialized.Artist>(x => x.Id > 0, token: cancellationToken).ConfigureAwait(false))
+                        .ToDictionary(x => x.MusicBrainzArtistId, x => x);
                 }
 
                 db.CreateTable<Models.Materialized.Album>();
@@ -411,11 +413,16 @@ public class MusicBrainzRepository(
                 var releaseCountriesDictionary = releasesCountries.GroupBy(x => x.ReleaseId).ToDictionary(x => x.Key, x => x.ToList());
                 var releaseGroupsDictionary = releaseGroups.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.ToList());
                 var releaseGroupsMetaDictionary = releaseGroupMetas.GroupBy(x => x.ReleaseGroupId).ToDictionary(x => x.Key, x => x.ToList());
+                var artistCreditsDictionary = artistCredits.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.ToList());
+                var artistCreditsNamesDictionary = artistCreditNames.GroupBy(x => x.ArtistCreditId).ToDictionary(x => x.Key, x => x.ToList());
                 
                 ReleaseCountry? releaseCountry = null;
                 ReleaseGroup? releaseGroup = null;
                 ReleaseGroupMeta? releaseGroupMeta = null;
+                ArtistCredit? artistCredit = null;
+                ArtistCreditName? artistCreditName = null;
                 Models.Materialized.Artist? releaseArtist = null;
+                string? contributorIds = null;
                 var invalidCount = 0;
                 logger.Debug("MusicBrainzRepository: Loaded ReleaseCountries [{RcCount}] ReleaseGroups [{RgCount}] ReleaseGroupMetas [{RgMetaCount}] Artists [{ACount}]", 
                     releaseCountriesDictionary.Count, releaseGroupsDictionary.Count, releaseGroupsMetaDictionary.Count,  dbArtistDictionary.Count);
@@ -442,6 +449,26 @@ public class MusicBrainzRepository(
                             };
                         }
                     }
+                    artistCreditsDictionary.TryGetValue(release.ArtistCreditId, out var releaseArtistCredits);
+                    artistCredit = releaseArtistCredits?.FirstOrDefault();
+                    if (artistCredit != null)
+                    {
+                        artistCreditsNamesDictionary.TryGetValue(artistCredit.Id, out var releaseArtistCreditNames);
+                        artistCreditName = releaseArtistCreditNames?.OrderBy(x => x.Position).FirstOrDefault();
+                        if (artistCreditName != null)
+                        {
+                            // Sometimes there are multiple artists on a release (see https://musicbrainz.org/release/519345af-b328-4d88-98cb-29f1a5d1fe2d) and the ArtistCreditId doesn't point to an ArtistId it points to a ArtistCredit.Id
+                            //   when this is true then get ArtistCredit for that Id then get the ArtistCreditNames and the first one is used for the artist for Melodee
+                            if (releaseArtist == null)
+                            {
+                                dbArtistDictionary.TryGetValue(artistCreditName.ArtistId, out releaseArtist);
+                            }
+                        }
+                        var artistCreditNameArtistId = artistCreditName?.ArtistId ?? 0;
+                        contributorIds = releaseArtistCreditNames == null ? null : "".AddTag(releaseArtistCreditNames
+                            .Where(x => x.ArtistId != artistCreditNameArtistId)
+                            .Select(x => x.ArtistId.ToString()));
+                    }                    
                     if (releaseArtist != null && releaseGroup != null && (releaseCountry?.IsValid ?? false))
                     {
                         albumsToInsert.Add(new Models.Materialized.Album
@@ -449,6 +476,7 @@ public class MusicBrainzRepository(
                             UniqueId = SafeParser.Hash(release.MusicBrainzId.ToString()),
                             ArtistId = releaseArtist.Id,
                             Name = release.Name,
+                            ContributorIds = contributorIds,
                             SortName = release.SortName ?? release.Name,
                             ReleaseType = releaseGroup.ReleaseType,
                             NormalizedName = release.NameNormalized ?? release.Name,
