@@ -17,7 +17,7 @@ public sealed record ReleaseCountry
     
     public int DateDayValue => DateMonth is > 0 and < 31 ? DateMonth : 1;
     
-    public bool IsValid => ReleaseId > 0 && DateYear > 0 && DateMonth > 0 && DateDay > 0;
+    public bool IsValid => ReleaseId > 0 && ReleaseDate != null;
 
     public long ReleaseId { get; init; }
 

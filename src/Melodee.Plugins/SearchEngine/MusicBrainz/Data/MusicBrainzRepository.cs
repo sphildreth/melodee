@@ -401,24 +401,23 @@ public class MusicBrainzRepository(
                 ReleaseCountry? releaseCountry = null;
                 ReleaseGroup? releaseGroup = null;
                 Models.Materialized.Artist? releaseArtist = null;
-                
+                var invalidCount = 0;
+                logger.Debug("MusicBrainzRepository: Loaded ReleaseCountries [{RcCount}] ReleaseGroups [{RgCount}], Artists [{ACount}]", 
+                    releaseCountriesDictionary.Count, releaseGroupsDictionary.Count, dbArtistDictionary.Count);
                 foreach (var release in releases)
                 {
-                    using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Found data for release"))
-                    {
-                        releaseCountriesDictionary.TryGetValue(release.Id, out var releaseCountrys);
-                        releaseGroupsDictionary.TryGetValue(release.ReleaseGroupId, out var releaseReleaseGroups);
-                        releaseCountry = releaseCountrys?.OrderBy(x => x.ReleaseDate).FirstOrDefault();
-                        releaseGroup = releaseReleaseGroups?.FirstOrDefault();
-                        dbArtistDictionary.TryGetValue(release.ArtistCreditId, out releaseArtist);
-                    }
+                    releaseCountriesDictionary.TryGetValue(release.Id, out var releaseCountrys);
+                    releaseGroupsDictionary.TryGetValue(release.ReleaseGroupId, out var releaseReleaseGroups);
+                    releaseCountry = releaseCountrys?.OrderBy(x => x.ReleaseDate).FirstOrDefault();
+                    releaseGroup = releaseReleaseGroups?.FirstOrDefault();
+                    dbArtistDictionary.TryGetValue(release.ArtistCreditId, out releaseArtist);
 
                     if (releaseArtist != null && releaseGroup != null && (releaseCountry?.IsValid ?? false))
                     {
                         albumsToInsert.Add(new Models.Materialized.Album
                         {
                             UniqueId = SafeParser.Hash(release.MusicBrainzId.ToString()),
-                            ArtistId = 1,
+                            ArtistId = releaseArtist.Id,
                             Name = release.Name,
                             SortName = release.SortName ?? release.Name,
                             ReleaseType = releaseGroup.ReleaseType,
@@ -427,7 +426,12 @@ public class MusicBrainzRepository(
                             ReleaseDate = releaseCountry.ReleaseDate!.Value
                         });
                     }
-
+                    else
+                    {
+                        logger.Error("Unable to find required data for Release [{Release}]: Artist [{ArtistCheck}] ReleaseGroup [{RgCheck}] ReleaseCountry [{RcCheck}]", release,
+                            releaseArtist != null, releaseGroup != null, releaseCountry != null);
+                        break;
+                    }
                     if (albumsToInsert.Count >= batchSize || release == releases.Last())
                     {
                         await db.InsertAllAsync(albumsToInsert, token: cancellationToken).ConfigureAwait(false);
