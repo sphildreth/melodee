@@ -1,4 +1,6 @@
+using Melodee.Common.Extensions;
 using NodaTime;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal;
 using ServiceStack.DataAnnotations;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
@@ -7,8 +9,14 @@ public sealed record ReleaseCountry
 {
     public long Id { get; init; }
 
-    public LocalDate ReleaseDate => LocalDate.FromDateTime(new DateTime(DateYear, DateMonth, DateDay));
+    public DateTime? ReleaseDate => IsValid ? null : DateTime.Parse($"{DateYearValue.ToStringPadLeft(4)}-{DateMonthValue.ToStringPadLeft(2)}-{DateDayValue.ToStringPadLeft(2)}T00:00:00");
 
+    public int DateYearValue => DateYear > DateTime.MinValue.Year && DateYear < DateTime.MaxValue.Year ? DateYear : DateTime.MinValue.Year;
+    
+    public int DateMonthValue => DateMonth is > 0 and < 12 ? DateMonth : 1;
+    
+    public int DateDayValue => DateMonth is > 0 and < 31 ? DateMonth : 1;
+    
     public bool IsValid => ReleaseId > 0 && DateYear > 0 && DateMonth > 0 && DateDay > 0;
 
     public long ReleaseId { get; init; }

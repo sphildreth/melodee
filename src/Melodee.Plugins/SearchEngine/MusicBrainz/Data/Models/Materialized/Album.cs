@@ -32,5 +32,5 @@ public sealed record Album
     [Index]
     public required Guid MusicBrainzId { get; init; }
     
-    public required DateOnly ReleaseDate { get; init; }
+    public required DateTime ReleaseDate { get; init; }
 }

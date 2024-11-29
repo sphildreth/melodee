@@ -312,7 +312,7 @@ public class MusicBrainzRepository(
                         MusicBrainzId = artist.MusicBrainzId,
                         AlternateNames = "".AddTag(aArtistAlias?.Select(x => x.Name.ToNormalizedString() ?? x.Name), dontLowerCase: true)
                     });
-                    if (artistsToInsert.Count >= batchSize)
+                    if (artistsToInsert.Count >= batchSize || artist == artists.Last())
                     {
                         await db.InsertAllAsync(artistsToInsert, token: cancellationToken).ConfigureAwait(false);
                         artistCountInserted += artistsToInsert.Count;
@@ -386,38 +386,49 @@ public class MusicBrainzRepository(
                     }, cancellationToken).ConfigureAwait(false);
                 }
 
+                Dictionary<long, Models.Materialized.Artist> dbArtistDictionary;
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist from database"))
+                {
+                    dbArtistDictionary = (await db.SelectAsync<Models.Materialized.Artist>(x => x.Id > 0, token: cancellationToken).ConfigureAwait(false)).ToDictionary(x => x.Id, x => x);
+                }
+
                 db.CreateTable<Models.Materialized.Album>();
                 var albumsToInsert = new List<Models.Materialized.Album>();
 
+                var releaseCountriesDictionary = releasesCountries.GroupBy(x => x.ReleaseId).ToDictionary(x => x.Key, x => x.ToList());
+                var releaseGroupsDictionary = releaseGroups.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.ToList());
+                
+                ReleaseCountry? releaseCountry = null;
+                ReleaseGroup? releaseGroup = null;
+                Models.Materialized.Artist? releaseArtist = null;
+                
                 foreach (var release in releases)
                 {
-                    var releaseCountry = releasesCountries
-                        .Where(x => x.ReleaseId == release.Id)
-                        .Select(x => x)
-                        .OrderBy(x => x.ReleaseDate)
-                        .FirstOrDefault();
+                    using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Found data for release"))
+                    {
+                        releaseCountriesDictionary.TryGetValue(release.Id, out var releaseCountrys);
+                        releaseGroupsDictionary.TryGetValue(release.ReleaseGroupId, out var releaseReleaseGroups);
+                        releaseCountry = releaseCountrys?.OrderBy(x => x.ReleaseDate).FirstOrDefault();
+                        releaseGroup = releaseReleaseGroups?.FirstOrDefault();
+                        dbArtistDictionary.TryGetValue(release.ArtistCreditId, out releaseArtist);
+                    }
 
-                    //var artistCredit = artistCredits.FirstOrDefault(x => x.Id == release.ArtistCreditId);
-                    var releaseGroup = releaseGroups.FirstOrDefault(x => x.Id == release.ReleaseGroupId);
-
-                    var releaseArtist = (await db.SelectAsync<Models.Materialized.Artist>(x => x.MusicBrainzArtistId == release.ArtistCreditId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
-
-                    if (releaseArtist != null && releaseGroup != null && releaseCountry != null)
+                    if (releaseArtist != null && releaseGroup != null && (releaseCountry?.IsValid ?? false))
                     {
                         albumsToInsert.Add(new Models.Materialized.Album
                         {
                             UniqueId = SafeParser.Hash(release.MusicBrainzId.ToString()),
-                            ArtistId = releaseArtist.Id,
+                            ArtistId = 1,
                             Name = release.Name,
                             SortName = release.SortName ?? release.Name,
                             ReleaseType = releaseGroup.ReleaseType,
                             NormalizedName = release.NameNormalized ?? release.Name,
                             MusicBrainzId = release.MusicBrainzId,
-                            ReleaseDate = new DateOnly(releaseCountry.DateYear, releaseCountry.DateMonth, releaseCountry.DateDay)
+                            ReleaseDate = releaseCountry.ReleaseDate!.Value
                         });
                     }
 
-                    if (albumsToInsert.Count >= batchSize)
+                    if (albumsToInsert.Count >= batchSize || release == releases.Last())
                     {
                         await db.InsertAllAsync(albumsToInsert, token: cancellationToken).ConfigureAwait(false);
                         releaseCountInserted += albumsToInsert.Count;
