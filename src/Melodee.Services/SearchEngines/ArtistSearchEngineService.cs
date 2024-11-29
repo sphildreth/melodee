@@ -46,7 +46,7 @@ public class ArtistSearchEngineService(
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Scrobble service is not initialized.");
+            throw new InvalidOperationException($"{nameof(ArtistSearchEngineService)} is not initialized.");
         }
     }    
     

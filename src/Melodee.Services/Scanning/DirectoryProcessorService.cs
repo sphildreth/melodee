@@ -6,7 +6,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Conversion;
@@ -121,6 +120,7 @@ public sealed class DirectoryProcessorService(
         }
 
         await mediaEditService.InitializeAsync(configuration, token).ConfigureAwait(false);
+        await artistSearchEngineService.InitializeAsync(configuration, token).ConfigureAwait(false);
 
         _initialized = true;
     }
@@ -266,14 +266,13 @@ public sealed class DirectoryProcessorService(
                                 var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
                                 if (!pluginResult.IsSuccess)
                                 {
-                                    return new OperationResult<DirectoryProcessorResult>(pluginResult.Messages)
-                                    {
-                                        Errors = pluginResult.Errors,
-                                        Data = result
-                                    };
+                                    processingErrors.AddRange(pluginResult.Errors ?? []);
+                                    processingMessages.AddRange(pluginResult.Messages ?? []);
                                 }
-
-                                conversionPluginsProcessedFileCount++;
+                                else
+                                {
+                                    conversionPluginsProcessedFileCount++;                                    
+                                }
                             }
                         }
 
@@ -296,7 +295,7 @@ public sealed class DirectoryProcessorService(
                     var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
                     if (!pluginResult.IsSuccess && pluginResult.Type != OperationResponseType.NotFound)
                     {
-                        processingErrors.AddRange(pluginResult.Errors);
+                        processingErrors.AddRange(pluginResult.Errors ?? []);
                         if (plugin.StopProcessing)
                         {
                             Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
@@ -512,8 +511,8 @@ public sealed class DirectoryProcessorService(
                     }
 
                     var albumImages = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
-                    var artistImages = album.Artist?.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
-                    foreach (var (image, index) in albumImages.Concat(artistImages).Select((image, index) => (image, index)) ?? [])
+                    var artistImages = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
+                    foreach (var (image, _) in albumImages.Concat(artistImages).Select((image, index) => (image, index)))
                     {
                         var oldImageFileName = Path.Combine(albumKvp.Key.Directory.FullName(), image.FileInfo!.OriginalName!);
                         if (!File.Exists(oldImageFileName))
@@ -601,7 +600,7 @@ public sealed class DirectoryProcessorService(
                         .ConfigureAwait(false);
                     if (artistSearchResult.IsSuccess)
                     {
-                        var artistFromSearch = artistSearchResult.Data!.FirstOrDefault();
+                        var artistFromSearch = artistSearchResult.Data.FirstOrDefault();
                         if (artistFromSearch != null)
                         {
                             var artistFromSearchImageFilename = Path.Combine(albumDirInfo.FullName,  albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Artist.ImageType).Item1);

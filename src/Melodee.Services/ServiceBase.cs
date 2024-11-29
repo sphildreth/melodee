@@ -196,13 +196,13 @@ public abstract class ServiceBase(
                                     songs.Add(pluginResult.Data);
                                     viaPlugins.Add(plugin.DisplayName);
                                 }
-
-                                messages.AddRange(pluginResult.Messages);
+                                messages.AddRange(pluginResult.Messages ?? []);
                             }
                         }
 
                         if (plugin.StopProcessing)
                         {
+                            Logger.Warning("[{PluginName}] set stop processing flag.", plugin.DisplayName);
                             break;
                         }
                     }

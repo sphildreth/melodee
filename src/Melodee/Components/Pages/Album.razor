@@ -703,7 +703,7 @@
         _info.Add(new KeyValuePair<string, object?>("Album: Display Summary", _album.DisplaySummary));
         _info.Add(new KeyValuePair<string, object?>("Album: Status", _album.Status.ToString()));
         _info.Add(new KeyValuePair<string, object?>("Album: Sort Name", _album.MetaTagValue<string?>(MetaTagIdentifier.SortAlbum)));
-        _info.Add(new KeyValuePair<string, object?>("Album: Unique Id", _album.UniqueId));
+        _info.Add(new KeyValuePair<string, object?>("Album: Unique Id", _album.UniqueId()));
         _info.Add(new KeyValuePair<string, object?>("Album: Via Plugins", string.Join(", ", _album.ViaPlugins)));
         if (_album.Tags != null)
         {

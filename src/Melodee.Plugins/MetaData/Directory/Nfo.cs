@@ -8,7 +8,9 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Data;
 using Serilog.Events;
 using SerilogTimings;
 
@@ -61,6 +63,10 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
                 using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
                 {
                     var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
+                    if (nfoAlbum == null)
+                    {
+                        continue;
+                    }
 
                     var isValidCheck = nfoAlbum.IsValid(Configuration);
                     if (!isValidCheck.Item1)
@@ -91,16 +97,16 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             nfoFile.Delete();
-                            Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
+                            Log.Information("[{Plugin}] Deleted NFO File [{FileName}]", DisplayName, nfoFile.Name);
                         }
                     }
                     else
                     {
-                        Log.Warning("Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", nfoFile.Name, nfoAlbum.Artist, nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
+                        Log.Warning("[{Plugin}] Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", DisplayName, nfoFile.Name, nfoAlbum.Artist, nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             nfoFile.Delete();
-                            Log.Information("Deleted NFO File [{FileName}]", nfoFile.Name);
+                            Log.Information("[{Plugin}] Deleted NFO File [{FileName}]", DisplayName, nfoFile.Name);
                         }
                     }
 
@@ -111,8 +117,7 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
         }
         catch (Exception e)
         {
-            Log.Error(e, "[{Name}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
-            StopProcessing = true;
+            Log.Error(e, "[{Plugin}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
         }
 
         return new OperationResult<int>
@@ -202,200 +207,210 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
         return !string.IsNullOrWhiteSpace(l) && IsLineForSongRegex().IsMatch(l);
     }
 
-    public async Task<Album> AlbumForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<Album?> AlbumForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        var splitChar = ':';
-        var albumTags = new List<MetaTag<object?>>();
-        var songs = new List<Common.Models.Song>();
-
-        var metaTagsToParseFromFile = new List<MetaTagIdentifier>
+        try
         {
-            MetaTagIdentifier.AlbumArtist,
-            MetaTagIdentifier.Encoder,
-            MetaTagIdentifier.Genre
-        };
+            var splitChar = ':';
+            var albumTags = new List<MetaTag<object?>>();
+            var songs = new List<Common.Models.Song>();
 
-        foreach (var line in await File.ReadAllLinesAsync(fileInfo.FullName, cancellationToken))
-        {
-            if (IsLineForSong(line))
+            var metaTagsToParseFromFile = new List<MetaTagIdentifier>
             {
-                var l = line.OnlyAlphaNumeric();
-                var songNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
-                var songDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
-                var songTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
-                songs.Add(new Common.Models.Song
+                MetaTagIdentifier.AlbumArtist,
+                MetaTagIdentifier.Encoder,
+                MetaTagIdentifier.Genre
+            };
+
+            foreach (var line in await File.ReadAllLinesAsync(fileInfo.FullName, cancellationToken))
+            {
+                if (IsLineForSong(line))
                 {
-                    CrcHash = Crc32.Calculate(fileInfo),
-                    Tags =
-                    [
-                        new MetaTag<object?>
+                    var l = line.OnlyAlphaNumeric();
+                    var songNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
+                    var songDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
+                    var songTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
+                    songs.Add(new Common.Models.Song
+                    {
+                        CrcHash = Crc32.Calculate(fileInfo),
+                        Tags =
+                        [
+                            new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.TrackNumber,
+                                Value = songNumber
+                            },
+                            new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Title,
+                                Value = songTitle
+                            },
+                            new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Length,
+                                Value = songDuration
+                            }
+                        ],
+                        File = new FileSystemFileInfo
                         {
-                            Identifier = MetaTagIdentifier.TrackNumber,
-                            Value = songNumber
+                            Name = string.Empty,
+                            Size = 0
                         },
-                        new MetaTag<object?>
+                        SortOrder = songNumber
+                    });
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(line.ToAlphanumericName().Nullify()))
+                {
+                    var plr = ParseLine(line, splitChar);
+                    var kp = plr.Item1;
+                    var rawValue = plr.Item2;
+                    if (IsLineForAlbumTitle(line))
+                    {
+                        albumTags.Add(new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.Title,
-                            Value = songTitle
-                        },
-                        new MetaTag<object?>
+                            Identifier = MetaTagIdentifier.Album,
+                            Value = kp.Value
+                        });
+                        continue;
+                    }
+
+                    if (IsLineForAlbumArtist(line))
+                    {
+                        albumTags.Add(new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.AlbumArtist,
+                            Value = kp.Value
+                        });
+                        continue;
+                    }
+
+                    if (IsLineForAlbumDate(line))
+                    {
+                        albumTags.Add(new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.AlbumDate,
+                            Value = SafeParser.ToDateTime(rawValue?.OnlyAlphaNumeric() ?? string.Empty)?.Year
+                        });
+                        continue;
+                    }
+
+                    if (IsLineForSongTotal(line))
+                    {
+                        albumTags.Add(new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.SongTotal,
+                            Value = SafeParser.ToNumber<int?>(rawValue?.OnlyAlphaNumeric() ?? string.Empty)
+                        });
+                        continue;
+                    }
+
+                    if (IsLineForLength(line))
+                    {
+                        albumTags.Add(new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Length,
-                            Value = songDuration
-                        }
-                    ],
-                    File = new FileSystemFileInfo
-                    {
-                        Name = string.Empty,
-                        Size = 0
-                    },
-                    SortOrder = songNumber
-                });
-                continue;
-            }
+                            Value = rawValue
+                        });
+                        continue;
+                    }
 
-            if (!string.IsNullOrEmpty(line.ToAlphanumericName().Nullify()))
-            {
-                var plr = ParseLine(line, splitChar);
-                var kp = plr.Item1;
-                var rawValue = plr.Item2;
-                if (IsLineForAlbumTitle(line))
-                {
-                    albumTags.Add(new MetaTag<object?>
+                    if (IsLineForPublisher(line))
                     {
-                        Identifier = MetaTagIdentifier.Album,
-                        Value = kp.Value
-                    });
-                    continue;
-                }
-
-                if (IsLineForAlbumArtist(line))
-                {
-                    albumTags.Add(new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.AlbumArtist,
-                        Value = kp.Value
-                    });
-                    continue;
-                }
-
-                if (IsLineForAlbumDate(line))
-                {
-                    albumTags.Add(new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.AlbumDate,
-                        Value = SafeParser.ToDateTime(rawValue?.OnlyAlphaNumeric() ?? string.Empty)?.Year
-                    });
-                    continue;
-                }
-
-                if (IsLineForSongTotal(line))
-                {
-                    albumTags.Add(new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.SongTotal,
-                        Value = SafeParser.ToNumber<int?>(rawValue?.OnlyAlphaNumeric() ?? string.Empty)
-                    });
-                    continue;
-                }
-
-                if (IsLineForLength(line))
-                {
-                    albumTags.Add(new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.Length,
-                        Value = rawValue
-                    });
-                    continue;
-                }
-
-                if (IsLineForPublisher(line))
-                {
-                    albumTags.Add(new MetaTag<object?>
-                    {
-                        Identifier = MetaTagIdentifier.Publisher,
-                        Value = rawValue?.OnlyAlphaNumeric()
-                    });
-                    continue;
-                }
-
-                if (kp.Key.Nullify() != null)
-                {
-                    foreach (var metaTagToParse in metaTagsToParseFromFile)
-                    {
-                        if (kp.Key.Equals(metaTagToParse.ToString(), StringComparison.OrdinalIgnoreCase) && kp.Value != null)
+                        albumTags.Add(new MetaTag<object?>
                         {
-                            albumTags.Add(new MetaTag<object?>
+                            Identifier = MetaTagIdentifier.Publisher,
+                            Value = rawValue?.OnlyAlphaNumeric()
+                        });
+                        continue;
+                    }
+
+                    if (kp.Key.Nullify() != null)
+                    {
+                        foreach (var metaTagToParse in metaTagsToParseFromFile)
+                        {
+                            if (kp.Key.Equals(metaTagToParse.ToString(), StringComparison.OrdinalIgnoreCase) && kp.Value != null)
                             {
-                                Identifier = metaTagToParse,
-                                Value = kp.Value
-                            });
-                            break;
+                                albumTags.Add(new MetaTag<object?>
+                                {
+                                    Identifier = metaTagToParse,
+                                    Value = kp.Value
+                                });
+                                break;
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (songs.Any() && albumTags.All(x => x.Identifier != MetaTagIdentifier.DiscTotal))
-        {
-            var discTotalTags = songs
-                .Where(x => x.Tags != null)
-                .SelectMany(x => x.Tags!)
-                .Where(x => x.Identifier == MetaTagIdentifier.DiscTotal)
-                .ToArray();
-            var maxSongDiscTotal = discTotalTags.Length != 0 ? discTotalTags.Max(x => SafeParser.ToNumber<short>(x.Value)) : 0;
-            albumTags.Add(new MetaTag<object?>
+            if (songs.Any() && albumTags.All(x => x.Identifier != MetaTagIdentifier.DiscTotal))
             {
-                Identifier = MetaTagIdentifier.DiscTotal,
-                Value = maxSongDiscTotal == 0 ? 1 : maxSongDiscTotal
-            });
-        }
-        var artistName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
-        var result = new Album
-        {
-            Artist = new Artist(
-                artistName ?? throw new Exception($"Invalid artist on { nameof(Nfo)}"),
-                artistName.ToNormalizedString(),
-                null),
-            Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ?? new FileSystemDirectoryInfo
-            {
-                Path = fileInfo.Directory?.FullName ?? string.Empty,
-                Name = fileInfo.Directory?.Name ?? string.Empty
-            },
-            Files =
-            [
-                new AlbumFile
+                var discTotalTags = songs
+                    .Where(x => x.Tags != null)
+                    .SelectMany(x => x.Tags!)
+                    .Where(x => x.Identifier == MetaTagIdentifier.DiscTotal)
+                    .ToArray();
+                var maxSongDiscTotal = discTotalTags.Length != 0 ? discTotalTags.Max(x => SafeParser.ToNumber<short>(x.Value)) : 0;
+                albumTags.Add(new MetaTag<object?>
                 {
-                    AlbumFileType = AlbumFileType.MetaData,
-                    ProcessedByPlugin = DisplayName,
-                    FileSystemFileInfo = fileInfo.ToFileSystemInfo()
-                }
-            ],
-            ViaPlugins = [nameof(Nfo)],
-            OriginalDirectory = new FileSystemDirectoryInfo
+                    Identifier = MetaTagIdentifier.DiscTotal,
+                    Value = maxSongDiscTotal == 0 ? 1 : maxSongDiscTotal
+                });
+            }
+
+            var artistName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
+            var result = new Album
             {
-                ParentId = parentDirectoryInfo?.UniqueId ?? 0,
-                Path = fileInfo.Directory?.FullName ?? string.Empty,
-                Name = fileInfo.Directory?.Name ?? string.Empty
-            },
-            Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
-            Tags = albumTags.ToArray(),
-            Songs = songs,
-            SortOrder = 0
-        };
-        var isValidCheck = result.IsValid(Configuration);
-        if (!isValidCheck.Item1)
+                Artist = new Artist(
+                    artistName ?? throw new Exception($"Invalid artist on {nameof(Nfo)}"),
+                    artistName.ToNormalizedString(),
+                    null),
+                Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ?? new FileSystemDirectoryInfo
+                {
+                    Path = fileInfo.Directory?.FullName ?? string.Empty,
+                    Name = fileInfo.Directory?.Name ?? string.Empty
+                },
+                Files =
+                [
+                    new AlbumFile
+                    {
+                        AlbumFileType = AlbumFileType.MetaData,
+                        ProcessedByPlugin = DisplayName,
+                        FileSystemFileInfo = fileInfo.ToFileSystemInfo()
+                    }
+                ],
+                ViaPlugins = [nameof(Nfo)],
+                OriginalDirectory = new FileSystemDirectoryInfo
+                {
+                    ParentId = parentDirectoryInfo?.UniqueId ?? 0,
+                    Path = fileInfo.Directory?.FullName ?? string.Empty,
+                    Name = fileInfo.Directory?.Name ?? string.Empty
+                },
+                Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
+                Tags = albumTags.ToArray(),
+                Songs = songs,
+                SortOrder = 0
+            };
+            var isValidCheck = result.IsValid(Configuration);
+            if (!isValidCheck.Item1)
+            {
+                result.ValidationMessages = result.ValidationMessages.Append(new ValidationResultMessage
+                {
+                    Message = isValidCheck.Item2 ?? "Album failed validation.",
+                    Severity = ValidationResultMessageSeverity.Critical
+                });
+            }
+
+            result.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
+            return result;
+        }
+        catch (Exception e)
         {
-            result.ValidationMessages = result.ValidationMessages.Append(new ValidationResultMessage
-            {
-                Message = isValidCheck.Item2 ?? "Album failed validation.",
-                Severity = ValidationResultMessageSeverity.Critical
-            });
+            Log.Error(e, "[{Plugin}] error processing NFO file", DisplayName);
         }
 
-        result.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
-        return result;
+        return null;
     }
 
     [GeneratedRegex(@"[0-9]+[a-z]+[0-9]{3,4}")]
