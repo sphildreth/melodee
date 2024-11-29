@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Melodee.Common.Enums;
 using NodaTime;
 
 namespace Melodee.Common.Models.SearchEngines;
@@ -12,6 +13,10 @@ public sealed record AlbumSearchResult
 
     [JsonIgnore]
     public string? ReleaseDateParts { get; init; }
+    
+    public required AlbumType AlbumType { get; init; }
+    
+    public string AlbumTypeValue => AlbumType.ToString();
     
     public string? ReleaseDate { get; set; }
 

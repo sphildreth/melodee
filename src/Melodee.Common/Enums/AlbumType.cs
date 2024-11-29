@@ -4,11 +4,13 @@ public enum AlbumType
 {
     NotSet = 0,
     
-    BoxSet,
+    Album = 1,
     
-    Ep,
+    Single = 2,
     
-    Album,
+    EP = 3,
     
-    Single
+    Other = 11,
+    
+    Broadcast = 12
 }

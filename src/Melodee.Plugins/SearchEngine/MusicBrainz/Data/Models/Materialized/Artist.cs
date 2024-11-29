@@ -1,3 +1,5 @@
+using Melodee.Common.Extensions;
+using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Enums;
 using ServiceStack.DataAnnotations;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized;
@@ -9,6 +11,7 @@ public sealed record Artist
 {
     [AutoIncrement]
     public long Id { get; set; }
+   
     
     public required long UniqueId { get; init; }
     
@@ -27,4 +30,8 @@ public sealed record Artist
     
     [Index(unique: false)]
     public string? AlternateNames { get; init; }
+
+    private string[]? _alternateNames;
+
+    public string[] AlternateNamesValues => (_alternateNames ??= AlternateNames?.ToTags()?.ToArray() ?? []);
 }

@@ -28,6 +28,10 @@ public sealed record Album
     public int ReleaseType { get; init; }
     
     public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);
+
+    public bool DoIncludeInArtistSearch => ReleaseDate > DateTime.MinValue && 
+                                           ReleaseTypeValue != Enums.ReleaseType.Single && 
+                                           ReleaseTypeValue != Enums.ReleaseType.Broadcast;
     
     [Index]
     public required Guid MusicBrainzId { get; init; }

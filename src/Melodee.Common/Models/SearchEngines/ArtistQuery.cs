@@ -15,6 +15,8 @@ public sealed record ArtistQuery
 
     public required string Name { get; init; }
 
+    public string NameReversed => string.Join(string.Empty, Name.Split(' ').Reverse()).ToNormalizedString() ?? Name;
+
     /// <summary>
     /// Album information of Year and NormalizedName
     /// </summary>
