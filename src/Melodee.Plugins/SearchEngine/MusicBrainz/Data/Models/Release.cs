@@ -14,13 +14,13 @@ public sealed record Release
 
     public long Id { get; init; }
 
-    public Guid MusicBrainzId { get; init; }
+    public required Guid MusicBrainzId { get; init; }
 
     public required string Name { get; init; }
 
     public string? NameNormalized { get; init; }
     
-    public long ReleaseGroupId { get; init; }
+    public required long ReleaseGroupId { get; init; }
 
     public string? SortName { get; init; }
 

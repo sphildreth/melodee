@@ -331,6 +331,7 @@ public class MusicBrainzRepository(
                 Tag[] tags;
                 ReleaseTag[] releaseTags;
                 ReleaseGroup[] releaseGroups;
+                ReleaseGroupMeta[] releaseGroupMetas;
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release"))
                 {
@@ -341,7 +342,8 @@ public class MusicBrainzRepository(
                         MusicBrainzId = SafeParser.ToGuid(parts[1]) ?? Guid.Empty,
                         Name = parts[2],
                         NameNormalized = parts[2].ToNormalizedString() ?? parts[2],
-                        SortName = parts[2].CleanString(true)
+                        SortName = parts[2].CleanString(true),
+                        ReleaseGroupId = SafeParser.ToNumber<long>(parts[4]),
                     }, cancellationToken).ConfigureAwait(false);
                 }
 
@@ -385,11 +387,22 @@ public class MusicBrainzRepository(
                         ReleaseType = SafeParser.ToNumber<int>(parts[4])
                     }, cancellationToken).ConfigureAwait(false);
                 }
+                
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release_group_meta"))
+                {
+                    releaseGroupMetas = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_group_meta"), parts => new ReleaseGroupMeta
+                    {
+                        ReleaseGroupId = SafeParser.ToNumber<long>(parts[0]),
+                        DateYear = SafeParser.ToNumber<int>(parts[2]),
+                        DateMonth = SafeParser.ToNumber<int>(parts[3]),
+                        DateDay = SafeParser.ToNumber<int>(parts[4])                        
+                    }, cancellationToken).ConfigureAwait(false);
+                }                
 
                 Dictionary<long, Models.Materialized.Artist> dbArtistDictionary;
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist from database"))
                 {
-                    dbArtistDictionary = (await db.SelectAsync<Models.Materialized.Artist>(x => x.Id > 0, token: cancellationToken).ConfigureAwait(false)).ToDictionary(x => x.Id, x => x);
+                    dbArtistDictionary = (await db.SelectAsync<Models.Materialized.Artist>(x => x.Id > 0, token: cancellationToken).ConfigureAwait(false)).ToDictionary(x => x.MusicBrainzArtistId, x => x);
                 }
 
                 db.CreateTable<Models.Materialized.Album>();
@@ -397,13 +410,15 @@ public class MusicBrainzRepository(
 
                 var releaseCountriesDictionary = releasesCountries.GroupBy(x => x.ReleaseId).ToDictionary(x => x.Key, x => x.ToList());
                 var releaseGroupsDictionary = releaseGroups.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.ToList());
+                var releaseGroupsMetaDictionary = releaseGroupMetas.GroupBy(x => x.ReleaseGroupId).ToDictionary(x => x.Key, x => x.ToList());
                 
                 ReleaseCountry? releaseCountry = null;
                 ReleaseGroup? releaseGroup = null;
+                ReleaseGroupMeta? releaseGroupMeta = null;
                 Models.Materialized.Artist? releaseArtist = null;
                 var invalidCount = 0;
-                logger.Debug("MusicBrainzRepository: Loaded ReleaseCountries [{RcCount}] ReleaseGroups [{RgCount}], Artists [{ACount}]", 
-                    releaseCountriesDictionary.Count, releaseGroupsDictionary.Count, dbArtistDictionary.Count);
+                logger.Debug("MusicBrainzRepository: Loaded ReleaseCountries [{RcCount}] ReleaseGroups [{RgCount}] ReleaseGroupMetas [{RgMetaCount}] Artists [{ACount}]", 
+                    releaseCountriesDictionary.Count, releaseGroupsDictionary.Count, releaseGroupsMetaDictionary.Count,  dbArtistDictionary.Count);
                 foreach (var release in releases)
                 {
                     releaseCountriesDictionary.TryGetValue(release.Id, out var releaseCountrys);
@@ -412,6 +427,21 @@ public class MusicBrainzRepository(
                     releaseGroup = releaseReleaseGroups?.FirstOrDefault();
                     dbArtistDictionary.TryGetValue(release.ArtistCreditId, out releaseArtist);
 
+                    if (releaseGroup != null && !(releaseCountry?.IsValid ?? false))
+                    {
+                        releaseGroupsMetaDictionary.TryGetValue(release.ReleaseGroupId, out var releaseGroupsMeta);
+                        releaseGroupMeta = releaseGroupsMeta?.OrderBy(x => x.ReleaseDate).FirstOrDefault();
+                        if (releaseGroupMeta?.IsValid ?? false)
+                        {
+                            releaseCountry = new ReleaseCountry
+                            {
+                                ReleaseId = release.Id,
+                                DateDay = releaseGroupMeta.DateDay,
+                                DateMonth = releaseGroupMeta.DateMonth,
+                                DateYear = releaseGroupMeta.DateYear
+                            };
+                        }
+                    }
                     if (releaseArtist != null && releaseGroup != null && (releaseCountry?.IsValid ?? false))
                     {
                         albumsToInsert.Add(new Models.Materialized.Album
@@ -423,21 +453,22 @@ public class MusicBrainzRepository(
                             ReleaseType = releaseGroup.ReleaseType,
                             NormalizedName = release.NameNormalized ?? release.Name,
                             MusicBrainzId = release.MusicBrainzId,
-                            ReleaseDate = releaseCountry.ReleaseDate!.Value
+                            ReleaseDate = releaseCountry.ReleaseDate
                         });
                     }
                     else
                     {
-                        logger.Error("Unable to find required data for Release [{Release}]: Artist [{ArtistCheck}] ReleaseGroup [{RgCheck}] ReleaseCountry [{RcCheck}]", release,
-                            releaseArtist != null, releaseGroup != null, releaseCountry != null);
-                        break;
+                        logger.Warning("Unable to find required data for Release [{Release}]: Artist [{ArtistCheck}] ReleaseGroup [{RgCheck}] ReleaseCountry [{RcCheck}]", 
+                            release, releaseArtist != null, releaseGroup != null, releaseCountry != null);
+                        invalidCount++;
                     }
                     if (albumsToInsert.Count >= batchSize || release == releases.Last())
                     {
                         await db.InsertAllAsync(albumsToInsert, token: cancellationToken).ConfigureAwait(false);
                         releaseCountInserted += albumsToInsert.Count;
                         albumsToInsert.Clear();
-                        logger.Debug("MusicBrainzRepository: ImportData: inserted [{NumberInserted}] of [{NumberToInsert}]", releaseCountInserted, releases.Length);
+                        logger.Debug("MusicBrainzRepository: ImportData: invalid found [{InvalidCount}], inserted [{NumberInserted}] of [{NumberToInsert}]", 
+                            invalidCount, releaseCountInserted, releases.Length);
                     }
 
                     if (releaseCountInserted > maxToProcess)
