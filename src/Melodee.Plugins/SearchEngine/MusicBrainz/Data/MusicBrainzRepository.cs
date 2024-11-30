@@ -114,7 +114,7 @@ public class MusicBrainzRepository(
             if (data.Count == 0)
             {
                 var artists = await db.SelectAsync<Models.Materialized.Artist>(x => x.NormalizedName.Contains(query.NameNormalized) || x.AlternateNames != null && x.AlternateNames.Contains(query.NameNormalized), token: cancellationToken).ConfigureAwait(false);
-                foreach (var artist in artists.Take(maxResults))
+                foreach (var artist in artists)
                 {
                     var rank = artist.NormalizedName == query.NameNormalized ? 10 : 1;
                     if (artist.AlternateNamesValues.Contains(query.NameNormalized))
@@ -176,7 +176,7 @@ public class MusicBrainzRepository(
             OperationTime = Stopwatch.GetElapsedTime(startTicks).Microseconds,
             TotalCount = totalCount,
             TotalPages = SafeParser.ToNumber<int>((totalCount + maxResults - 1) / maxResults),
-            Data = data.OrderByDescending(x => x.Rank).ToArray()
+            Data = data.OrderByDescending(x => x.Rank).Take(maxResults).ToArray()
         };
     }
 

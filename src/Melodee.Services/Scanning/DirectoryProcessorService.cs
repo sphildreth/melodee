@@ -629,12 +629,7 @@ public sealed class DirectoryProcessorService(
                                 NameNormalized = artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
                                 SortName = artistFromSearch.SortName
                             };
-                            // var albumMusicBrainzId = artistFromSearch.Releases?.FirstOrDefault()?.MusicBrainzId;
-                            // if (albumMusicBrainzId != null)
-                            // {
-                            //     album.SetTagValue(MetaTagIdentifier.MusicBrainzId, albumMusicBrainzId, false);
-                            // }
-                            LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine [{artistFromSearch}]");
+                            LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                         }
                         else
                         {
