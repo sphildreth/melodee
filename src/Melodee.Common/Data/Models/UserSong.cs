@@ -19,7 +19,10 @@ public class UserSong : DataModelBase
 
     public int PlayedCount { get; set; }
 
-    [Required] public required Instant LastPlayedAt { get; set; }
+    /// <summary>
+    /// Can be null if user is just toggling star.
+    /// </summary>
+    public Instant? LastPlayedAt { get; set; }
 
     public bool IsStarred { get; set; }
     

@@ -4,6 +4,7 @@ using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
@@ -21,6 +22,7 @@ using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Primitives;
 using NodaTime;
 using Quartz;
@@ -1542,5 +1544,172 @@ public class OpenSubsonicApiService(
             }
         };        
         
+    }
+
+    private async Task<bool> ToggleStar(int userId, bool isStarred, string? id, string? albumId, string? artistId, CancellationToken cancellationToken)
+    {
+        var result = false;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var idValue = id ?? albumId ?? artistId;
+            var apiKey = ApiKeyFromId(idValue);
+            if (apiKey != null)
+            {
+                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+                if (IsApiIdForArtist(idValue))
+                {
+                    var artist = await artistService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+                    if (artist?.Data != null)
+                    {
+                        var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                        if (userArtist == null)
+                        {
+                            userArtist = new UserArtist
+                            {
+                                UserId = userId,
+                                ArtistId = artist.Data.Id,
+                                CreatedAt = now,
+                            };
+                            scopedContext.UserArtists.Add(userArtist);
+                        }
+
+                        userArtist.StarredAt = isStarred ? now : null;
+                        userArtist.IsStarred = isStarred;
+                        userArtist.LastUpdatedAt = now;
+                        result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                    }
+                }
+                if (IsApiIdForAlbum(idValue))
+                {
+                    var album = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+                    if (album?.Data != null)
+                    {
+                        var userAlbum = await scopedContext.UserAlbums.FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == album.Data.Id, cancellationToken).ConfigureAwait(false);
+                        if (userAlbum == null)
+                        {
+                            userAlbum = new UserAlbum
+                            {
+                                UserId = userId,
+                                AlbumId = album.Data.Id,
+                                CreatedAt = now,
+                                LastPlayedAt = null,
+                            };
+                            scopedContext.UserAlbums.Add(userAlbum);
+                        }
+                        userAlbum.StarredAt = isStarred ? now : null;
+                        userAlbum.IsStarred = isStarred;
+                        userAlbum.LastUpdatedAt = now;
+                        result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                    }
+                }          
+                if (IsApiIdForSong(idValue))
+                {
+                    var song = await songService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+                    if (song?.Data != null)
+                    {
+                        var userSong = await scopedContext.UserSongs.FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == song.Data.Id, cancellationToken).ConfigureAwait(false);
+                        if (userSong == null)
+                        {
+                            userSong = new UserSong()
+                            {
+                                UserId = userId,
+                                SongId = song.Data.Id,
+                                CreatedAt = now,
+                                LastPlayedAt = null,
+                            };
+                            scopedContext.UserSongs.Add(userSong);
+                        }
+                        userSong.StarredAt = isStarred ? now : null;
+                        userSong.IsStarred = isStarred;
+                        userSong.LastUpdatedAt = now;
+                        result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                    }
+                }                    
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Toggles a star to a song, album or artist.
+    /// </summary>
+    public async Task<object> ToggleStarAsync(bool isStarred, string? id, string? albumId, string? artistId, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        var result = await ToggleStar(authResponse.UserInfo.Id, isStarred, id, albumId, artistId, cancellationToken).ConfigureAwait(false);
+
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.InvalidApiKeyError)
+        };
+    }
+
+    /// <summary>
+    /// Sets the rating for a music file.
+    /// </summary>
+    public async Task<object> SetRatingAsync(string id, int rating, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        var result = false;
+        
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var apiKey = ApiKeyFromId(id);
+            if (apiKey != null)
+            {
+                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+      
+                if (IsApiIdForSong(id))
+                {
+                    var song = await songService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+                    if (song?.Data != null)
+                    {
+                        var userSong = await scopedContext.UserSongs.FirstOrDefaultAsync(x => x.UserId == authResponse.UserInfo.Id && x.SongId == song.Data.Id, cancellationToken).ConfigureAwait(false);
+                        if (userSong == null)
+                        {
+                            userSong = new UserSong()
+                            {
+                                UserId = authResponse.UserInfo.Id,
+                                SongId = song.Data.Id,
+                                CreatedAt = now,
+                                LastPlayedAt = null,
+                            };
+                            scopedContext.UserSongs.Add(userSong);
+                        }
+                        userSong.Rating = rating;
+                        userSong.LastUpdatedAt = now;
+                        result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                    }
+                }                    
+            }
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.InvalidApiKeyError)
+        };
     }
 }
