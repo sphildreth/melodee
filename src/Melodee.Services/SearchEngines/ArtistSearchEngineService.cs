@@ -84,7 +84,7 @@ public class ArtistSearchEngineService(
             CurrentPage = 1,
             TotalCount = totalCount,
             TotalPages = totalCount == 0 ? 0 : SafeParser.ToNumber<int>((totalCount +  maxResultsValue - 1) / maxResultsValue),
-            Data = result
+            Data = result.OrderByDescending(x => x.Rank).ThenBy(x => x.SortName).ToArray()
         };
     }
 }

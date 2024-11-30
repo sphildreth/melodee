@@ -81,10 +81,13 @@ public class MusicBrainzRepository(
 
                     if (query.AlbumKeyValues != null)
                     {
-                        artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.UniqueId.ToString() || x.NormalizedName.Contains(xx.Value ?? string.Empty))).ToArray();
+                        artistAlbums = artistAlbums
+                            .Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() || 
+                                                                                                x.NormalizedName.Contains(xx.Value ?? string.Empty)))
+                            .ToArray();
                     }
 
-                    data.Add(new ArtistSearchResult
+                    data.Add(new ArtistSearchResult 
                     {
                         AlternateNames = artist.AlternateNames?.ToTags()?.ToArray() ?? [],
                         FromPlugin = nameof(MusicBrainzArtistSearchEnginPlugin),
@@ -135,7 +138,7 @@ public class MusicBrainzRepository(
 
                     if (query.AlbumKeyValues != null)
                     {
-                        artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.UniqueId.ToString() || 
+                        artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() || 
                                                                                               x.NormalizedName.Equals(xx.Value ?? string.Empty) || 
                                                                                               x.NormalizedName.Contains(xx.Value ?? string.Empty))).ToArray();
                         rank += artistAlbums.Length;

@@ -591,10 +591,11 @@ public sealed class DirectoryProcessorService(
                     album.Directory = albumDirInfo.ToDirectorySystemInfo();
                     
                     // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
-                    var artistSearchResult = await artistSearchEngineService.DoSearchAsync(album.Artist.ToArtistQuery([
-                                new KeyValue((album.AlbumYear() ?? 0).ToString(), 
-                                album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle())
-                            ]),
+                    var searchRequest = album.Artist.ToArtistQuery([
+                        new KeyValue((album.AlbumYear() ?? 0).ToString(),
+                            album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle())
+                    ]);
+                    var artistSearchResult = await artistSearchEngineService.DoSearchAsync(searchRequest,
                             1,
                             cancellationToken)
                         .ConfigureAwait(false);
@@ -623,11 +624,21 @@ public sealed class DirectoryProcessorService(
                             }
                             album.Artist = album.Artist with
                             {
-                                MusicBrainzId = artistFromSearch.MusicBrainzId?.ToString(),
+                                MusicBrainzId = artistFromSearch.MusicBrainzId?.ToString() ?? album.Artist.MusicBrainzId,
                                 Name = artistFromSearch.Name,
                                 NameNormalized = artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
                                 SortName = artistFromSearch.SortName
                             };
+                            // var albumMusicBrainzId = artistFromSearch.Releases?.FirstOrDefault()?.MusicBrainzId;
+                            // if (albumMusicBrainzId != null)
+                            // {
+                            //     album.SetTagValue(MetaTagIdentifier.MusicBrainzId, albumMusicBrainzId, false);
+                            // }
+                            LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine [{artistFromSearch}]");
+                        }
+                        else
+                        {
+                            LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] No result from search engine for artist [{searchRequest}]");
                         }
                     }
                     
