@@ -8,7 +8,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song;
@@ -24,7 +23,6 @@ using Serilog;
 using SmartFormat;
 using SearchOption = System.IO.SearchOption;
 using dbModels = Melodee.Common.Data.Models;
-using Directory = Melodee.Common.Models.OpenSubsonic.Directory;
 
 namespace Melodee.Jobs;
 
@@ -44,13 +42,12 @@ public class LibraryProcessJob(
     AlbumDiscoveryService albumDiscoveryService,
     DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
 {
-    private readonly List<int> _dbAlbumIdsModifiedOrUpdated = new();
-    private readonly List<int> _dbArtistsIdsModifiedOrUpdated = new();
+    private readonly List<int> _dbAlbumIdsModifiedOrUpdated = [];
+    private readonly List<int> _dbArtistsIdsModifiedOrUpdated = [];
     private int _batchSize;
-    private IMelodeeConfiguration _configuration;
-    private JobDataMap _dataMap;
+    private IMelodeeConfiguration _configuration = null!;
+    private JobDataMap _dataMap = null!;
     private int _maxSongsToProcess;
-    private AtlMetaTag _mediaFilePlugin;
     private Instant _now;
     private int _totalAlbumsInserted;
     private int _totalAlbumsUpdated;
@@ -113,7 +110,6 @@ public class LibraryProcessJob(
         [
             new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
         ];
-        _mediaFilePlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration);
         _now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
         _dataMap = context.JobDetail.JobDataMap;
@@ -121,8 +117,8 @@ public class LibraryProcessJob(
         var stagingLibrary = await libraryService.GetStagingLibraryAsync(context.CancellationToken).ConfigureAwait(false);
         if (!stagingLibrary.IsSuccess)
         {
-            messagesForJobRun.AddRange(stagingLibrary.Messages);
-            exceptionsForJobRun.AddRange(stagingLibrary.Errors);
+            messagesForJobRun.AddRange(stagingLibrary.Messages ?? []);
+            exceptionsForJobRun.AddRange(stagingLibrary.Errors ?? []);
             Logger.Warning("[{JobName}] Unable to get staging library, skipping processing.", nameof(LibraryProcessJob));
             return;
         }
@@ -224,7 +220,7 @@ public class LibraryProcessJob(
                 }
 
                 await ProcessArtistsAsync(library, melodeeFilesForDirectory, context.CancellationToken);
-                await ProcessAlbumsAsync(library, melodeeFilesForDirectory, context.CancellationToken);
+                await ProcessAlbumsAsync(melodeeFilesForDirectory, context.CancellationToken);
 
                 var batchCount = (_dbAlbumIdsModifiedOrUpdated.Count + _batchSize - 1) / _batchSize;
                 var dbConn = scopedContext.Database.GetDbConnection();
@@ -270,11 +266,11 @@ public class LibraryProcessJob(
                               where l."Id" = @libraryId;
                               """;
                     await dbConn
-                        .ExecuteAsync(sql, new { libraryId = library.Id})
+                        .ExecuteAsync(sql, new { libraryId = library.Id })
                         .ConfigureAwait(false);
 
                     //TODO Contributors
-                    
+
                     // sql = """
                     //       with performerSongCounts as (
                     //       	select c."ArtistId" as id, COUNT(*) as count
@@ -340,7 +336,7 @@ public class LibraryProcessJob(
     /// <summary>
     ///     For all albums with songs, add/update the db albums
     /// </summary>
-    private async Task ProcessAlbumsAsync(dbModels.Library library, List<Album> melodeeFilesForDirectory, CancellationToken cancellationToken)
+    private async Task ProcessAlbumsAsync(List<Album> melodeeFilesForDirectory, CancellationToken cancellationToken)
     {
         _dbAlbumIdsModifiedOrUpdated.Clear();
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -359,7 +355,7 @@ public class LibraryProcessJob(
                 var dbArtist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
                 if (dbArtist == null)
                 {
-                    Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqeId}].", melodeeFile.Artist.UniqueId(), melodeeFile.UniqueId);
+                    Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqueId}].", melodeeFile.Artist.UniqueId(), melodeeFile.UniqueId);
                     continue;
                 }
 
@@ -411,7 +407,7 @@ public class LibraryProcessJob(
                         var songsForDisc = melodeeFile.Songs?.Where(x => x.MediaNumber() == disc.DiscNumber).ToArray() ?? [];
                         foreach (var song in songsForDisc)
                         {
-                            var mediaFile = song.File.ToFileInfo(melodeeFile.Directory);
+                            var mediaFile = song.File.ToFileInfo(melodeeFile.Directory) ?? throw new Exception("Song File is required.");
                             var mediaFileHash = CRC32.Calculate(mediaFile);
                             var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
 
@@ -462,30 +458,31 @@ public class LibraryProcessJob(
 
                             disc.Songs.Add(new dbModels.Song
                             {
-                                AlbumDiscId = disc.Id,
                                 BitDepth = song.BitDepth(),
                                 BitRate = song.BitRate(),
                                 BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
-                                ChannelCount = song.ChannelCount(),
                                 ContentType = song.ContentType(),
                                 CreatedAt = _now,
                                 Duration = song.Duration() ?? throw new Exception("Song duration is required."),
                                 FileHash = mediaFileHash,
                                 FileName = mediaFile.Name,
                                 FileSize = mediaFile.Length,
-                                Genres = melodeeFile.Genre()?.Length < 1 ? null : song.Genre()!.Split('/'),
+                                SamplingRate = song.SamplingRate(),
+                                Title = songTitle,
+                                TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
+                                SongNumber = song.SongNumber(),
+                                AlbumDiscId = disc.Id,
+                                ChannelCount = song.ChannelCount(),
+                                Genres = melodeeFile.Genre()?.Nullify() == null ? null : song.Genre()!.Split('/'),
                                 IsVbr = song.IsVbr(),
                                 Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
                                 MediaUniqueId = song.UniqueId,
                                 MusicBrainzId = song.MetaTagValue<Guid>(MetaTagIdentifier.MusicBrainzId),
                                 PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
-                                SamplingRate = song.SamplingRate(),
                                 SortOrder = song.SortOrder,
-                                Title = songTitle,
-                                TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
-                                TitleSort = songTitle!.CleanString(true),
-                                SongNumber = song.SongNumber()
+                                TitleSort = songTitle.CleanString(true)
                             });
+
                             _totalSongsInserted++;
                         }
                     }
@@ -640,11 +637,12 @@ public class LibraryProcessJob(
             var dbArtistsToAdd = new List<dbModels.Artist>();
             foreach (var artist in artists)
             {
-                OperationResult<dbModels.Artist?> dbArtistResult = new OperationResult<dbModels.Artist?> {Data = null};
+                OperationResult<dbModels.Artist?> dbArtistResult = new OperationResult<dbModels.Artist?> { Data = null };
                 if (artist.MusicBrainzIdValue != null)
                 {
                     dbArtistResult = await artistService.GetByMusicBrainzIdAsync(artist.MusicBrainzIdValue.Value, cancellationToken).ConfigureAwait(false);
                 }
+
                 if (!dbArtistResult.IsSuccess)
                 {
                     dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId(), cancellationToken).ConfigureAwait(false);
@@ -653,22 +651,26 @@ public class LibraryProcessJob(
                         dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
                     }
                 }
+
                 var dbArtist = dbArtistResult.Data;
                 if (!dbArtistResult.IsSuccess || dbArtist == null)
                 {
                     var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
-                    dbArtistsToAdd.Add(new dbModels.Artist
+                    if (dbArtistsToAdd.All(x => x.MediaUniqueId != artist.UniqueId()))
                     {
-                        Directory = newArtistDirectory,
-                        CreatedAt = _now,
-                        LibraryId = library.Id,
-                        MediaUniqueId = artist.UniqueId(),
-                        MusicBrainzId = artist.MusicBrainzIdValue,
-                        MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
-                        Name = artist.Name,
-                        NameNormalized = artist.NameNormalized,
-                        SortName = artist.SortName
-                    });
+                        dbArtistsToAdd.Add(new dbModels.Artist
+                        {
+                            Directory = newArtistDirectory,
+                            CreatedAt = _now,
+                            LibraryId = library.Id,
+                            MediaUniqueId = artist.UniqueId(),
+                            MusicBrainzId = artist.MusicBrainzIdValue,
+                            MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
+                            Name = artist.Name,
+                            NameNormalized = artist.NameNormalized,
+                            SortName = artist.SortName
+                        });
+                    }
                 }
             }
 
@@ -700,19 +702,23 @@ public class LibraryProcessJob(
                     Logger.Warning("[{JobName}] Skipped processing locked artist [{ArtistId}]", nameof(LibraryProcessJob), dbArtistResult.Data);
                     continue;
                 }
+
                 var dbArtist = await scopedContext.Artists.FirstAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
                 var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
                 if (!string.Equals(newArtistDirectory, dbArtist.Directory, StringComparison.OrdinalIgnoreCase))
                 {
                     // directory has changed then; move artist folder
-                    if (System.IO.Directory.Exists(newArtistDirectory))
+                    if (Directory.Exists(newArtistDirectory))
                     {
-                        logger.Warning("[{JobName}] Artist [{Artist}] directory [{NewDir}] has changed [{OldDir}] but directory exists. Skipping artist update.", nameof(LibraryProcessJob), newArtistDirectory, dbArtist.Directory);
+                        Logger.Warning("[{JobName}] Artist [{Artist}] directory [{NewDir}] has changed [{OldDir}] but directory exists. Skipping artist update.",
+                            nameof(LibraryProcessJob), artist, newArtistDirectory, dbArtist.Directory);
                         continue;
                     }
+
                     MediaEditService.MoveDirectory(dbArtist.Directory, newArtistDirectory);
                     dbArtist.Directory = newArtistDirectory;
                 }
+
                 dbArtist.MediaUniqueId = artist.UniqueId();
                 dbArtist.Name = artist.Name;
                 dbArtist.NameNormalized = artist.NameNormalized;

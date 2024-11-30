@@ -52,6 +52,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         DoesSongTotalMatchSongCount(album);
         DoesAlbumHaveCoverImage(album);
         AlbumDoesNotHaveProofImages(album);
+        ArtistHasSearchEngineResult(album.Artist);
 
         if (_validationMessages.Count == 0)
         {
@@ -66,6 +67,20 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 AlbumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid
             }
         };
+    }
+
+    private bool ArtistHasSearchEngineResult(Artist albumArtist)
+    {
+        if (albumArtist?.SearchEngineResultUniqueId == null)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album Artist is unknown, will need manual validation.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });
+            return false;
+        }
+        return true;
     }
 
     private bool AlbumDoesNotHaveProofImages(Album album)

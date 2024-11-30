@@ -21,7 +21,7 @@ public record ScrobbleInfo(
     bool IsRandomizedScrobble,
     string? AlbumTitle,
     int? SongDuration,
-    string? SongMusicBrainzId,
+    Guid? SongMusicBrainzId,
     int? SongNumber,
     string? SongArtist,
     Instant CreatedAt,

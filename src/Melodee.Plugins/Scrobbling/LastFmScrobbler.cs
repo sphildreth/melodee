@@ -58,7 +58,7 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
                     Date = DateTime.UtcNow,
                     Album = scrobble.AlbumTitle,
                     AlbumArtist = scrobble.ArtistName,
-                    MBID = scrobble.SongMusicBrainzId,
+                    MBID = scrobble.SongMusicBrainzId?.ToString(),
                     Duration = SafeParser.ToNumber<int>(scrobble.SongDuration),
                     TrackNumber = scrobble.SongNumber ?? 0,
                     ChosenByUser = !scrobble.IsRandomizedScrobble

@@ -46,6 +46,8 @@ public sealed record Album
     public IEnumerable<ImageInfo>? Images { get; set; }
 
     public IEnumerable<MetaTag<object?>>? Tags { get; set; }
+    
+    public KeyValue? SearchEngineResultKeyValue { get; init; }
 
     public IEnumerable<Song>? Songs { get; set; }
 

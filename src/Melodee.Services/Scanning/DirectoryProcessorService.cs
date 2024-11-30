@@ -24,6 +24,7 @@ using NodaTime;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using ServiceStack;
 using SixLabors.ImageSharp;
 using SmartFormat;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
@@ -323,7 +324,7 @@ public sealed class DirectoryProcessorService(
                 {
                     var albumsForDirectory = await AllAlbumsForDirectoryAsync(
                         directoryInfoToProcess,
-                        _songPlugins.ToArray(),
+                        Enumerable.ToArray(_songPlugins),
                         _configuration,
                         cancellationToken);
                     if (!albumsForDirectory.IsSuccess)
@@ -627,13 +628,15 @@ public sealed class DirectoryProcessorService(
                                 MusicBrainzId = artistFromSearch.MusicBrainzId?.ToString() ?? album.Artist.MusicBrainzId,
                                 Name = artistFromSearch.Name,
                                 NameNormalized = artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
-                                SortName = artistFromSearch.SortName
+                                SortName = artistFromSearch.SortName,
+                                SearchEngineResultUniqueId = artistFromSearch.UniqueId,
+                                OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null
                             };
                             LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                         }
                         else
                         {
-                            LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] No result from search engine for artist [{searchRequest}]");
+                            LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from search engine for artist [{searchRequest}]");
                         }
                     }
                     

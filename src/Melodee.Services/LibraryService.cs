@@ -1,4 +1,3 @@
-using System.Text;
 using Ardalis.GuardClauses;
 using Dapper;
 using IdSharp.Common.Utils;
@@ -255,11 +254,13 @@ public sealed class LibraryService(
             };
         }
 
+        var _maxArtistImageCount = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
         var movedCount = 0;
         foreach (var album in albums)
         {
+            var artistDirectory = album.Artist.ToDirectoryName(configuration.GetValue<short>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
             var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);
-            var libraryAlbumPath = Path.Combine(library.Path, albumDirectory);
+            var libraryAlbumPath = Path.Combine(library.Path, artistDirectory, albumDirectory);
             if (!Directory.Exists(libraryAlbumPath))
             {
                 Directory.CreateDirectory(libraryAlbumPath);
@@ -270,62 +271,60 @@ public sealed class LibraryService(
                 Logger.Warning("Existing directory found. Skipping album moving.");
                 continue;
             }
+
+            var libraryArtistDirectoryInfo = new DirectoryInfo(Path.Combine(library.Path, artistDirectory)).ToDirectorySystemInfo();
+            var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
             MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, null);
             var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
             var melodeeFile = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFileName, cancellationToken));
             melodeeFile!.Directory!.Path = libraryAlbumPath;
             if (album.Artist.Images?.Any() ?? false)
             {
-                var artistDirectoryParent = Directory.GetParent(libraryAlbumPath)?.FullName;
-                if (artistDirectoryParent != null)
+                var existingArtistImages = libraryArtistDirectoryInfo.AllFileImageTypeFileInfos().Where(x => ImageHelper.IsArtistImage(x) || ImageHelper.IsArtistSecondaryImage(x)).ToArray();
+                if (existingArtistImages.Length == 0)
                 {
-                    var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
-                    var artistDirectoryInfo = new DirectoryInfo(artistDirectoryParent).ToDirectorySystemInfo();
-                    var existingArtistImages = artistDirectoryInfo.AllFileImageTypeFileInfos().Where(x => ImageHelper.IsArtistImage(x) || ImageHelper.IsArtistSecondaryImage(x)).ToArray();
-                    if (existingArtistImages.Length == 0)
+                    // If there are no artist images in artists library directory, move artist images from album folder
+                    foreach (var image in album.Artist.Images)
                     {
-                        // If there are no artist images just move artist images from album folder
-                        foreach (var image in album.Artist.Images)
+                        if (image.FileInfo != null)
                         {
-                            if (image.FileInfo != null)
+                            var fileToMoveFullName = Path.Combine(libraryAlbumDirectoryInfo.FullName(), image.FileInfo.Name);
+                            File.Move(fileToMoveFullName, image.FileInfo.FullName(libraryArtistDirectoryInfo));
+                            Logger.Information("[{ServiceName}] moved artist image [{ImageName}] into artist directory", nameof(LibraryService), fileToMoveFullName);
+                            movedCount++;
+                        }
+                    }
+                }
+                else
+                {
+                    var existingArtistImagesCrc32s = existingArtistImages.Select(Crc32.Calculate).ToArray();
+                    foreach (var image in album.Artist.Images.ToArray())
+                    {
+                        if (image.FileInfo != null)
+                        {
+                            // If there are artist images, check CRC and see if duplicate, delete any duplicate found in album folder
+                            if (existingArtistImagesCrc32s.Contains(CRC32.Calculate(image.FileInfo.ToFileInfo(libraryArtistDirectoryInfo))))
                             {
-                                var fullName = Path.Combine(artistDirectoryParent, image.FileInfo.Name);
-                                File.Move(image.FileInfo.FullName(libraryAlbumDirectoryInfo), fullName);
-                                Logger.Information("[{ServiceName}] moved artist image [{ImageName}]", nameof(LibraryService), fullName);
+                                var fileToDeleteFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(), image.FileInfo.Name);
+                                File.Delete(fileToDeleteFullName);
+                                Logger.Information("[{ServiceName}] deleted duplicate artist image [{ImageName}]", nameof(LibraryService), fileToDeleteFullName);
+                            }
+                            else
+                            {
+                                var fileToMoveFullName = Path.Combine(libraryAlbumDirectoryInfo.FullName(), image.FileInfo.Name);
+                                var moveToFileFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(), libraryArtistDirectoryInfo.GetNextFileNameForType(_maxArtistImageCount, Artist.ImageType).Item1);
+                                File.Move(fileToMoveFullName, moveToFileFullName);
+                                Logger.Information("[{ServiceName}] moved artist image [{ImageName}] into artist directory", nameof(LibraryService), fileToMoveFullName);
+
                                 movedCount++;
                             }
                         }
                     }
-                    else
-                    {
-                        var nextArtistImageNumber = existingArtistImages.Length + 1;
-                        var existingArtistImagesCrc32s = existingArtistImages.Select(Crc32.Calculate).ToArray();
-                        foreach (var image in album.Artist.Images.ToArray())
-                        {
-                            if (image.FileInfo != null)
-                            {
-                                // If there are artist images, check CRC and see if duplicate, delete any duplicate found in album folder
-                                if (existingArtistImagesCrc32s.Contains(CRC32.Calculate(image.FileInfo.ToFileInfo(artistDirectoryInfo))))
-                                {
-                                    var fullName = Path.Combine(libraryAlbumPath, image.FileInfo.Name); 
-                                    File.Delete(fullName);
-                                    Logger.Information("[{ServiceName}] deleted duplicate artist image [{ImageName}]", nameof(LibraryService), fullName);
-                                }
-                                else
-                                {
-                                    var fullName = Path.Combine(artistDirectoryParent, $"{MelodeeModels.ImageInfo.ImageFilePrefix}{nextArtistImageNumber}-Artist.jpg");
-                                    File.Move(image.FileInfo.FullName(libraryAlbumDirectoryInfo), fullName);
-                                    Logger.Information("[{ServiceName}] renumbered and moved artist image [{ImageName}]", nameof(LibraryService), fullName);                                    
-                                    nextArtistImageNumber++;
-                                    movedCount++;
-                                }
-
-                            }
-                        }
-                    }
                 }
+
                 melodeeFile.Artist = melodeeFile.Artist with { Images = null };
             }
+
             await File.WriteAllTextAsync(melodeeFileName, serializer.Serialize(melodeeFile), cancellationToken);
 
             movedCount++;

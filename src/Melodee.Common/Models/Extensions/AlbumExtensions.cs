@@ -274,16 +274,14 @@ public static class AlbumExtensions
             }
             else
             {
-                discTotal = album.Songs?.FirstOrDefault(x => x.MediaTotalNumber() > 0)?.MediaTotalNumber() ?? 0;
+                discTotal = album.Songs?.FirstOrDefault(x => x.MediaTotalNumber() > 0)?.MediaTotalNumber();
             }
         }
-
         if (discTotal == null || (discTotal < 1 && (album.Songs?.Any() ?? false)))
         {
-            return SafeParser.ToNumber<short>(album.Songs?.GroupBy(x => x.MediaNumber()).Count());
+            discTotal = SafeParser.ToNumber<short>(album.Songs?.GroupBy(x => x.MediaNumber()).Count());
         }
-
-        return discTotal ?? 0;
+        return discTotal ?? SafeParser.ToNumber<short>(album.Songs?.Any() ?? false ? 1 : 0);
     }
 
     public static int SongTotalValue(this Album album)

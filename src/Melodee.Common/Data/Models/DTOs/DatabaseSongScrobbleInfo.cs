@@ -10,6 +10,6 @@ public record DatabaseSongScrobbleInfo
     Instant TimePlayed,
     string SongTitle,
     double SongDuration,
-    string SongMusicBrainzId,
+    Guid? SongMusicBrainzId,
     int SongNumber
 );
