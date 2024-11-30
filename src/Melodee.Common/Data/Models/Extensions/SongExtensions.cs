@@ -2,12 +2,25 @@ using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
-using Melodee.Common.Utility;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
 public static class SongExtensions
 {
+    public static Common.Models.SearchEngines.SongSearchResult ToSearchEngineSongSearchResult(this Song song)
+    {
+        return new Common.Models.SearchEngines.SongSearchResult
+        {
+            Id = song.Id,
+            ApiKey = song.ApiKey,
+            UniqueId = song.MediaUniqueId,
+            Name = song.Title,
+            MusicBrainzId = song.MusicBrainzId,
+            SortName = song.TitleSort ?? song.Title,
+            PlayCount = song.PlayedCount
+        };
+    }
+    
     public static string ToCoverArtId(this Song song) => song.ToApiKey();
     
     public static string ToApiKey(this Song song) => $"song{OpenSubsonicServer.ApiIdSeparator }{song.ApiKey}";

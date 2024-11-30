@@ -7,6 +7,10 @@ namespace Melodee.Common.Models.SearchEngines;
 
 public sealed record AlbumSearchResult
 {
+    public int? Id { get; init; }
+    
+    public Guid ApiKey { get; set; }
+        
     public KeyValue KeyValue => new KeyValue(UniqueId.ToString(), NameNormalized);
     
     public long UniqueId { get; init; }

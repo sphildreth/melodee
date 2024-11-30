@@ -184,7 +184,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
                 Serializer),
             new Mock<IScheduler>().Object,
             GetScrobbleService(),
-            GetLibraryService());
+            GetLibraryService(),
+            GetArtistSearchEngineService());
     }
 
     protected ArtistService GetArtistService()

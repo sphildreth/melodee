@@ -19,6 +19,20 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     //getVideos
 
     /// <summary>
+    ///     Returns top songs for the given artist.
+    /// </summary>
+    /// <param name="artist">The artist name.</param>
+    /// <param name="count">Max number of songs to return.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getTopSongs.view")]
+    public async Task<IActionResult> GetTopSongs(string artist, int? count, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetTopSongsAsync(artist, count, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }      
+    
+    /// <summary>
     ///     Returns details for an artist.
     /// </summary>
     /// <param name="id">The artist ID.</param>

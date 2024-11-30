@@ -23,8 +23,10 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
 
     public async Task<OperationResult<bool>> NowPlaying(User user, ScrobbleInfo scrobble, CancellationToken token = default)
     {
+        //TODO I think this should use a user set API key not a system set APIKey ?!?
+        
         var result = true;
-        var apiKey = SettingRegistry.ScrobblingLastFmApiKey;
+        var apiKey = configuration.GetValue<string>(SettingRegistry.ScrobblingLastFmApiKey);
         if (apiKey.Nullify() != null)
         {
             var client = new LastfmClient(apiKey);

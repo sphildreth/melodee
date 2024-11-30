@@ -55,7 +55,7 @@ public abstract class ServiceBase(
                           ua."Rating" as "UserRating"
                       FROM "Albums" a 
                       LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
-                      LEFT JOIN "UserArtists" ua on (aa."Id" = ua."ArtistId" and ua."UserId" = @userId)
+                      LEFT JOIN "UserAlbums" ua on (a."Id" = ua."AlbumId" and ua."UserId" = @userId)
                       WHERE aa."ApiKey" = @artistApiKey;
                       """;
             return (await dbConn.QueryAsync<Melodee.Common.Models.OpenSubsonic.AlbumList2>(sql, new { userId, artistApiKey }).ConfigureAwait(false)).ToArray();

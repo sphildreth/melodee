@@ -8,6 +8,8 @@ namespace Melodee.Common.Models.SearchEngines;
 /// </summary>
 public sealed record ArtistSearchResult
 {
+    public int? Id { get; init; }
+    
     public KeyValue KeyValue => new KeyValue(UniqueId.ToString(), Name.ToNormalizedString() ?? Name);    
 
     /// <summary>Artist name</summary>
@@ -35,6 +37,8 @@ public sealed record ArtistSearchResult
 
     /// <summary>Public URL to an image.</summary>
     public string? ImageUrl { get; init; }
+    
+    public string? ThumbnailUrl { get; init; }
 
     /// <summary>Any found MusicBrainzId</summary>
     public Guid? MusicBrainzId { get; init; }
