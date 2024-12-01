@@ -424,7 +424,8 @@ public class OpenSubsonicApiService(
                 {
                     { "genre", albumListRequest.Genre },
                     { "fromYear", albumListRequest.FromYear },
-                    { "toYear", albumListRequest.ToYear }
+                    { "toYear", albumListRequest.ToYear },
+                    { "userId", authResponse.UserInfo.Id}
                 };
                 var selectSql = """
                                 SELECT 
@@ -441,6 +442,7 @@ public class OpenSubsonicApiService(
                                 aa."Name" as "Artist",
                                 DATE_PART('year', a."ReleaseDate"::date) as "Year",
                                 a."Genres",
+                                (SELECT "IsStarred" FROM "UserAlbums" WHERE "UserId" = @userId AND "AlbumId" = a."Id") as "Starred", 
                                 (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount"
                                 FROM "Albums" a 
                                 LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
@@ -482,7 +484,6 @@ public class OpenSubsonicApiService(
                         break;
 
                     case ListType.ByYear:
-                        //TODO fromYear and ToYear optional filtering
                         whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear ORDER BY \"Year\" DESC";
                         break;
 

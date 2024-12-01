@@ -20,4 +20,5 @@ public record DatabaseDirectoryInfo(
     int? UserRating)
 {
     public int UserRatingValue => UserRating ?? 0;
+    public bool Starred => UserStarred != null;
 }
