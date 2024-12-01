@@ -3,7 +3,6 @@ using Melodee.Common.Extensions;
 namespace Melodee.Common.Models.OpenSubsonic.Requests;
 
 /// <summary>
-/// 
 /// </summary>
 /// <param name="Query">Search query.</param>
 /// <param name="ArtistCount">Maximum number of artists to return.</param>

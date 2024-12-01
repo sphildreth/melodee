@@ -6,8 +6,8 @@ namespace Melodee.Common.Models.OpenSubsonic;
 public record Genre
 {
     public required string Value { get; init; }
-    
+
     public int SongCount { get; init; }
-    
+
     public int AlbumCount { get; init; }
 }

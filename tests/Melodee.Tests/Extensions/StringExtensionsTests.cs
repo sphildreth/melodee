@@ -42,6 +42,9 @@ public class StringExtensionsTests
     [InlineData(null, null)]
     [InlineData("", null)]
     [InlineData(" ", null)]
+    [InlineData("null", null)]
+    [InlineData("null ", null)]
+    [InlineData("  NULL ", null)]
     [InlineData("Bob ", "Bob")]
     public void Nullify(string? input, string? shouldBe)
     {
@@ -174,7 +177,10 @@ public class StringExtensionsTests
     [Theory]
     [InlineData(null, null)]    
     [InlineData("", null)]
+    [InlineData("enc:", null)]
+    [InlineData("enc:null", null)]
     [InlineData("736573616d65", "sesame")]
+    [InlineData("enc:736573616d65", "sesame")]
     [InlineData("736F6D657468696E675F6C6F6E675F235F2B215F776974685F2E782D642A5F77656972645F63686172616374657273", "something_long_#_+!_with_.x-d*_weird_characters")]
     public void ValidateHexDecoding(string? input, string? shouldBe)
     {

@@ -1,9 +1,12 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
-/// Directory.
+///     Directory.
 /// </summary>
-/// <param name="Id">The ApiKey id (this is passed to the GetMusicDirectory method and the prefix is needed to know if artist or album)</param>
+/// <param name="Id">
+///     The ApiKey id (this is passed to the GetMusicDirectory method and the prefix is needed to know if
+///     artist or album)
+/// </param>
 /// <param name="Parent">Parent item, is null when Directory is for Artist</param>
 /// <param name="Name">The directory name</param>
 /// <param name="Starred">Starred date [ISO 8601]</param>

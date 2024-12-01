@@ -24,6 +24,8 @@ public enum SettingCategory
     
     Scrobbling,
     
+    System,
+    
     Transcoding,
     
     Validation

@@ -4,7 +4,6 @@ using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
-using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine;
 using Melodee.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
@@ -29,22 +28,22 @@ public class ArtistSearchEngineService(
     private IArtistTopSongsSearchEnginePlugin[] _artistTopSongsSearchEnginePlugins = [];
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private bool _initialized;
-   
+
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken cancellationToken = default)
     {
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(cancellationToken).ConfigureAwait(false);
 
         _artistSearchEnginePlugins =
         [
-           new MelodeeArtistSearchEnginPlugin(ContextFactory),
-           new MusicBrainzArtistSearchEnginPlugin(musicBrainzRepository),
+            new MelodeeArtistSearchEnginPlugin(ContextFactory),
+            new MusicBrainzArtistSearchEnginPlugin(musicBrainzRepository)
         ];
 
         _artistTopSongsSearchEnginePlugins =
         [
             new MelodeeArtistSearchEnginPlugin(ContextFactory)
-        ];        
-        
+        ];
+
         _initialized = true;
     }
 
@@ -59,16 +58,16 @@ public class ArtistSearchEngineService(
     public async Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(string artistName, int? artistId, int? maxResults, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        
+
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
         long totalCount = 0;
         long operationTime = 0;
-        
+
         var artistIdValue = artistId;
         if (artistIdValue == null)
         {
-            var searchResult = await DoSearchAsync(new ArtistQuery { Name = artistName}, maxResults, cancellationToken).ConfigureAwait(false);
-            artistIdValue =searchResult.Data.FirstOrDefault(x => x.Id != null)?.Id;
+            var searchResult = await DoSearchAsync(new ArtistQuery { Name = artistName }, maxResults, cancellationToken).ConfigureAwait(false);
+            artistIdValue = searchResult.Data.FirstOrDefault(x => x.Id != null)?.Id;
         }
 
         if (artistId == null)
@@ -78,15 +77,16 @@ public class ArtistSearchEngineService(
                 Data = []
             };
         }
-        
+
         var result = new List<SongSearchResult>();
-        
+
         foreach (var plugin in _artistTopSongsSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
+
             var pluginResult = await plugin.DoArtistTopSongsSearchAsync(httpClientFactory, artistId.Value, maxResultsValue, cancellationToken).ConfigureAwait(false);
             if (pluginResult is { IsSuccess: true, Data: not null })
             {
@@ -94,12 +94,13 @@ public class ArtistSearchEngineService(
                 totalCount += pluginResult.TotalCount;
                 operationTime += pluginResult.OperationTime ?? 0;
             }
+
             if (result.Count > maxResultsValue)
             {
                 break;
-            }            
-        }        
-        
+            }
+        }
+
         return new PagedResult<SongSearchResult>
         {
             OperationTime = operationTime,
@@ -109,11 +110,11 @@ public class ArtistSearchEngineService(
             Data = result.OrderBy(x => x.SortOrder).ToArray()
         };
     }
-    
+
     public async Task<PagedResult<ArtistSearchResult>> DoSearchAsync(ArtistQuery query, int? maxResults, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        
+
         var result = new List<ArtistSearchResult>();
 
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
@@ -126,6 +127,7 @@ public class ArtistSearchEngineService(
             {
                 break;
             }
+
             var pluginResult = await plugin.DoSearchAsync(httpClientFactory, query, maxResultsValue, cancellationToken).ConfigureAwait(false);
             if (pluginResult is { IsSuccess: true, Data: not null })
             {
@@ -133,11 +135,13 @@ public class ArtistSearchEngineService(
                 totalCount += pluginResult.TotalCount;
                 operationTime += pluginResult.OperationTime ?? 0;
             }
+
             if (result.Count > maxResultsValue || plugin.StopProcessing)
             {
                 break;
-            }            
+            }
         }
+
         return new PagedResult<ArtistSearchResult>
         {
             OperationTime = operationTime,

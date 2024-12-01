@@ -150,7 +150,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 8,
                     Category = (int)SettingCategory.Formatting,
                     Key = SettingRegistry.FormattingDateTimeDisplayActivityFormat,
-                    Comment = "Format to use when displaying activity related dates (e.g. processing messages)",
+                    Comment = "Format to use when displaying activity related dates (e.g., processing messages)",
                     Value = MelodeeConfiguration.FormattingDateTimeDisplayActivityFormatDefault,
                     CreatedAt = now
                 },
@@ -718,6 +718,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp,
                     Comment = "Timestamp of when last MusicBrainz import was successful.",
                     Value = "",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 87,
+                    Category = (int)SettingCategory.System,
+                    Key = SettingRegistry.SystemBaseUrl,
+                    Comment = "Base URL for Melodee to use when building shareable links and image urls (e.g., 'https://server.domain.com:8080', 'http://server.domain.com').",
+                    Value = MelodeeConfiguration.RequiredNotSetValue,
                     CreatedAt = now
                 }
             );

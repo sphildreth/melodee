@@ -7,22 +7,22 @@ public enum ListType
     Random,
 
     /// <summary>
-    /// Ordered by recently added desc
+    ///     Ordered by recently added desc
     /// </summary>
     Newest,
 
     /// <summary>
-    /// Ordered by top rating desc
+    ///     Ordered by top rating desc
     /// </summary>
     Highest,
 
     /// <summary>
-    /// Ordered by most played
+    ///     Ordered by most played
     /// </summary>
     Frequent,
 
     /// <summary>
-    /// Ordered by most recently played
+    ///     Ordered by most recently played
     /// </summary>
     Recent,
 

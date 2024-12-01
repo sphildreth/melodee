@@ -833,7 +833,7 @@ public sealed class MediaEditService(
                 var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, selectedAlbumId, cancellationToken);
                 var albumStagingDirInfo = new DirectoryInfo(Path.Combine(directoryInfo.FullName(), album.ToDirectoryName()));
                 var albumLibraryDirInfo = new DirectoryInfo(Path.Combine(_directoryLibrary, album.ToDirectoryName()));
-                MoveDirectory(albumStagingDirInfo.FullName, albumLibraryDirInfo.FullName, null);
+                MoveDirectory(albumStagingDirInfo.FullName, albumLibraryDirInfo.FullName);
             }
 
             directoryInfo.DeleteAllEmptyDirectories();

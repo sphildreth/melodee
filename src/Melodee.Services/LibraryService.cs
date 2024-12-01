@@ -274,7 +274,7 @@ public sealed class LibraryService(
 
             var libraryArtistDirectoryInfo = new DirectoryInfo(Path.Combine(library.Path, artistDirectory)).ToDirectorySystemInfo();
             var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
-            MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath, null);
+            MediaEditService.MoveDirectory(album.Directory!.FullName(), libraryAlbumPath);
             var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
             var melodeeFile = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFileName, cancellationToken));
             melodeeFile!.Directory!.Path = libraryAlbumPath;

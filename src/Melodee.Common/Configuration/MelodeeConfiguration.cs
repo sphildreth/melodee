@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Net.NetworkInformation;
 using Melodee.Common.Constants;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
@@ -12,11 +14,23 @@ namespace Melodee.Common.Configuration;
 /// <param name="Configuration">Initial configuration from database.</param>
 public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : IMelodeeConfiguration
 {
+    public static string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
+    
     public static string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
     
     public static int BatchSizeDefault = 250;
     
     public static int BatchSizeMaximum = 1000;
+
+    public string GetBuildImageUrl(string apiKey, ImageSize imageSize)
+    {
+        var baseUrl = GetValue<string>(SettingRegistry.SystemBaseUrl);
+        if (baseUrl.Nullify() == null || baseUrl == RequiredNotSetValue)
+        {
+            throw new Exception($"Configuration setting [{SettingRegistry.SystemBaseUrl}] is invalid.");
+        }
+        return $"{baseUrl}/images/{apiKey}/{imageSize.ToString().ToLower()}";
+    }
     
     public void SetSetting<T>(string key, T? value) => Configuration[key] = value;
 

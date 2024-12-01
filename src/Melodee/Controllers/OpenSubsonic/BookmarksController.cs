@@ -7,9 +7,46 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class BookmarksController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
-    // getBookmarks
-    // createBookmark
-    // deleteBookmark
+    
+    /// <summary>
+    ///     Deletes a bookmark.
+    /// </summary>
+    /// <param name="id">ID of the media file for which to delete the bookmark. Other users’ bookmarks are not affected.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/deleteBookmark.view")]
+    public async Task<IActionResult> DeleteBookmarkAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.DeleteBookmarkAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }        
+
+    /// <summary>
+    ///     Creates or updates a bookmark.
+    /// </summary>
+    /// <param name="id">ID of the media file to bookmark. If a bookmark already exists for this file it will be overwritten.</param>
+    /// <param name="position">The position (in milliseconds) within the media file.</param>
+    /// <param name="comment">A user-defined comment.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/createBookmark.view")]
+    public async Task<IActionResult> CreateBookmarkAsync(string id, int position, string? comment, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.CreateBookmarkAsync(id, position, comment, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }    
+    
+    /// <summary>
+    ///     Returns all bookmarks for this user.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getBookmarks.view")]
+    public async Task<IActionResult> GetBookmarksAsync(CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetBookmarksAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }    
 
     /// <summary>
     ///     Returns the state of the play queue for this user.

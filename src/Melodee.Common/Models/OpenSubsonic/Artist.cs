@@ -1,7 +1,7 @@
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
-/// Artist record used in list and index operations.
+///     Artist record used in list and index operations.
 /// </summary>
 /// <param name="Id">Artist ApiKey</param>
 /// <param name="Name">Artist name</param>
@@ -24,8 +24,7 @@ public record Artist(
 )
 {
     /// <summary>
-    /// Sometimes its "Starred" and sometimes its "UserStarred" in the responses.
+    ///     Sometimes its "Starred" and sometimes its "UserStarred" in the responses.
     /// </summary>
     public string? Starred => UserStarred;
 }
-

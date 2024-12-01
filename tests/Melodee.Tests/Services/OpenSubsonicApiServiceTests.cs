@@ -10,6 +10,7 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Utility;
 using NodaTime;
 using Album = Melodee.Common.Data.Models.Album;
+using User = Melodee.Common.Data.Models.User;
 
 namespace Melodee.Tests.Services;
 

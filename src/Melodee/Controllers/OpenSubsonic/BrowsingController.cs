@@ -7,16 +7,42 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class BrowsingController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
-    //getAlbumInfo
-    //getAlbumInfo2
-    //getArtistInfo
-    //getArtistInfo2
     //getArtists
     //getSimilarSongs
     //getSimilarSongs2
     //getTopSongs
     //getVideoInfo
     //getVideos
+    
+    /// <summary>
+    ///     Returns album info.
+    /// </summary>
+    /// <param name="id">The artist, album or song ID.</param>
+    /// <param name="count">Max number of similar artists to return.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getAlbumInfo.view")]
+    [Route("/rest/getAlbumInfo2.view")]
+    public async Task<IActionResult> GetAlbumInfo(string id, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumInfoAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    } 
+    
+    /// <summary>
+    ///     Returns artist info.
+    /// </summary>
+    /// <param name="id">The artist, album or song ID.</param>
+    /// <param name="count">Max number of similar artists to return.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getArtistInfo.view")]
+    [Route("/rest/getArtistInfo2.view")]
+    public async Task<IActionResult> GetArtistInfo(string id, int? count, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetArtistInfoAsync(id, count, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }    
 
     /// <summary>
     ///     Returns top songs for the given artist.

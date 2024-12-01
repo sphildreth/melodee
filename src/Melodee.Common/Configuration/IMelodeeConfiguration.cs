@@ -1,7 +1,11 @@
+using Melodee.Common.Enums;
+
 namespace Melodee.Common.Configuration;
 
 public interface IMelodeeConfiguration
 {
+    string GetBuildImageUrl(string apiKey, ImageSize imageSize);
+    
     T? GetValue<T>(string key, Func<T?, T>? returnValue = null);
 
     int BatchProcessingSize();

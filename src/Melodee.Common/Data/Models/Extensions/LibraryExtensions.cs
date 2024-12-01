@@ -1,9 +1,13 @@
+using Melodee.Common.Data.Contants;
 using Melodee.Common.Models;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
 public static class LibraryExtensions
 {
+    public static string ToApiKey(this Library artist) => $"library{OpenSubsonicServer.ApiIdSeparator}{artist.ApiKey}";
+
+    
     public static void PurgePath(this Library library)
     {
         if (!Directory.Exists(library.Path))

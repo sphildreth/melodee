@@ -34,7 +34,7 @@ public class SystemController(Serilog.ILogger logger, ISerializer serializer, Op
     public async Task<IActionResult> Ping(CancellationToken cancellationToken = default)
     {
 
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.AuthenticateSubsonicApiAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.PingAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
 
     /// <summary>

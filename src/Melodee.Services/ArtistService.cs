@@ -98,6 +98,7 @@ public class ArtistService(
                 Data = null
             };
         }
+
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
@@ -122,6 +123,7 @@ public class ArtistService(
                 Data = null
             };
         }
+
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
@@ -134,7 +136,7 @@ public class ArtistService(
         if (artist.MusicBrainzId != null)
         {
             CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
-        }        
+        }
     }
 
     public async Task<MelodeeModels.OperationResult<Artist?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)

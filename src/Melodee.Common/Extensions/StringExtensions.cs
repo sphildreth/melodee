@@ -77,9 +77,12 @@ public static partial class StringExtensions
         {
             return null;
         }
-        
-
-        return input.Trim();
+        var inputValue = input.Trim();
+        if (string.Equals("null", inputValue, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+        return inputValue;
     }
     
     public static string ToBase64(this string text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -641,10 +644,15 @@ public static partial class StringExtensions
         {
             return null;
         }
-        var bytes = new byte[input!.Length / 2];
+        var inputVal = input?.StartsWith("enc:") ?? false ? input[4..] : input ?? string.Empty;
+        if (inputVal.Nullify() == null)
+        {
+            return null;
+        }
+        var bytes = new byte[inputVal!.Length / 2];
         for (var i = 0; i < bytes.Length; i++)
         {
-            bytes[i] = Convert.ToByte(input.Substring(i * 2, 2), 16);
+            bytes[i] = Convert.ToByte(inputVal.Substring(i * 2, 2), 16);
         }
         return Encoding.UTF8.GetString(bytes);
     }    

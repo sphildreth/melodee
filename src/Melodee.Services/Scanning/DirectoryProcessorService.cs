@@ -24,7 +24,6 @@ using NodaTime;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
-using ServiceStack;
 using SixLabors.ImageSharp;
 using SmartFormat;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
@@ -227,7 +226,7 @@ public sealed class DirectoryProcessorService(
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
             LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Found [{0}] directories to process", null, directoriesToProcess.Count);
         }
-        
+
         var httpClient = httpClientFactory.CreateClient();
 
         foreach (var directoryInfoToProcess in directoriesToProcess)
@@ -272,7 +271,7 @@ public sealed class DirectoryProcessorService(
                                 }
                                 else
                                 {
-                                    conversionPluginsProcessedFileCount++;                                    
+                                    conversionPluginsProcessedFileCount++;
                                 }
                             }
                         }
@@ -521,6 +520,7 @@ public sealed class DirectoryProcessorService(
                             Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);
                             continue;
                         }
+
                         var newImageFileName = Path.Combine(albumDirInfo.FullName, image.FileInfo.Name);
                         if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                         {
@@ -590,7 +590,7 @@ public sealed class DirectoryProcessorService(
                     }
 
                     album.Directory = albumDirInfo.ToDirectorySystemInfo();
-                    
+
                     // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
                     var searchRequest = album.Artist.ToArtistQuery([
                         new KeyValue((album.AlbumYear() ?? 0).ToString(),
@@ -605,24 +605,26 @@ public sealed class DirectoryProcessorService(
                         var artistFromSearch = artistSearchResult.Data.FirstOrDefault();
                         if (artistFromSearch != null)
                         {
-                            var artistFromSearchImageFilename = Path.Combine(albumDirInfo.FullName,  albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Artist.ImageType).Item1);
+                            var artistFromSearchImageFilename = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Artist.ImageType).Item1);
                             if (artistFromSearch.ImageUrl != null)
                             {
                                 await httpClient.DownloadFileAsync(
                                     artistFromSearch.ImageUrl,
                                     artistFromSearchImageFilename, async (existingFileInfo, newFileInfo, ct) =>
                                     {
-                                      var existingImageInfo = await Image.LoadAsync(existingFileInfo.FullName, ct);
-                                      var newImageInfo = await Image.LoadAsync(newFileInfo.FullName, ct);
-                                      if (newImageInfo.Size.Height > existingImageInfo.Size.Height && 
-                                          existingImageInfo.Size.Width > newImageInfo.Size.Width)
-                                      {
-                                          return true;
-                                      }
-                                      return false;
+                                        var existingImageInfo = await Image.LoadAsync(existingFileInfo.FullName, ct);
+                                        var newImageInfo = await Image.LoadAsync(newFileInfo.FullName, ct);
+                                        if (newImageInfo.Size.Height > existingImageInfo.Size.Height &&
+                                            existingImageInfo.Size.Width > newImageInfo.Size.Width)
+                                        {
+                                            return true;
+                                        }
+
+                                        return false;
                                     },
                                     cancellationToken);
                             }
+
                             album.Artist = album.Artist with
                             {
                                 MusicBrainzId = artistFromSearch.MusicBrainzId?.ToString() ?? album.Artist.MusicBrainzId,
@@ -639,12 +641,12 @@ public sealed class DirectoryProcessorService(
                             LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from search engine for artist [{searchRequest}]");
                         }
                     }
-                    
+
                     // Validate using AlbumValidator
                     var validationResult = _albumValidator.ValidateAlbum(album);
                     album.ValidationMessages = validationResult.Data.Messages ?? [];
                     album.Status = validationResult.Data.AlbumStatus;
-                    
+
                     var serialized = serializer.Serialize(album);
                     var jsonName = album.ToMelodeeJsonName(true);
                     if (jsonName.Nullify() != null)
@@ -806,7 +808,7 @@ public sealed class DirectoryProcessorService(
             }
 
             var fileInfo = new FileInfo(imageFile);
-            var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name);
+            var fileNameNormalized = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
             var isArtistImage = fileNameNormalized.Contains(album.Artist.NameNormalized, StringComparison.InvariantCultureIgnoreCase);
             if (isArtistImage || ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
             {
@@ -819,6 +821,7 @@ public sealed class DirectoryProcessorService(
                 {
                     pictureIdentifier = PictureIdentifier.BandSecondary;
                 }
+
                 if (pictureIdentifier != PictureIdentifier.NotSet)
                 {
                     var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);

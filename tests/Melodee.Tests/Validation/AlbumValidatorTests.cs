@@ -18,7 +18,12 @@ public class AlbumValidatorTests
             Artist = new Artist(
                 "Billy Joel",
                 "Billy Joel".ToNormalizedString(),
-                null),
+                null,
+                null,
+                "A064BB54-F9B3-42CE-B7F2-E7A8DFF87195")
+            {
+                SearchEngineResultUniqueId = 12345
+            },
             Directory = new FileSystemDirectoryInfo
             {
                 Path = "/melodee_test/tests/",

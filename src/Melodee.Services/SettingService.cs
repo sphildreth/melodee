@@ -15,7 +15,8 @@ using MelodeeModels = Melodee.Common.Models;
 namespace Melodee.Services;
 
 /// <summary>
-///     Setting data domain service, this is used to manage the settings, for getting settings for services see <see cref="IMelodeeConfigurationFactory"/>
+///     Setting data domain service, this is used to manage the settings, for getting settings for services see
+///     <see cref="IMelodeeConfigurationFactory" />
 /// </summary>
 public sealed class SettingService(
     ILogger logger,

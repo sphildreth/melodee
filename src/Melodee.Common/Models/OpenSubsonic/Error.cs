@@ -2,8 +2,6 @@ namespace Melodee.Common.Models.OpenSubsonic;
 
 public record Error(short Code, string Message, string? HelpUrl = null)
 {
-    public static Error GenericError(string? message) => new(0, message ?? "An error has occured.");
-    
     public static Error RequiredParameterMissingError => new(10, "Required parameter is missing.");
 
     public static Error IncompatibleSubsonicVersion => new(20, "Incompatible Subsonic REST protocol version. Client must upgrade.");
@@ -19,4 +17,9 @@ public record Error(short Code, string Message, string? HelpUrl = null)
     public static Error UserNotAuthorizedError => new(50, "User is not authorized for the given operation.");
 
     public static Error DataNotFoundError => new(70, "The requested data was not found.");
+
+    public static Error GenericError(string? message)
+    {
+        return new Error(0, message ?? "An error has occured.");
+    }
 }

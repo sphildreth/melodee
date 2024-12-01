@@ -1,7 +1,7 @@
 namespace Melodee.Common.Models.OpenSubsonic.Requests;
 
 /// <summary>
-/// Request to update a playlist.
+///     Request to update a playlist.
 /// </summary>
 /// <param name="PlaylistId">The playlist ID.</param>
 /// <param name="Name">The human-readable name of the playlist.</param>

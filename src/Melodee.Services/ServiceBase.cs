@@ -5,16 +5,16 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Enums;
-using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Utility;
+using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using Artist = Melodee.Common.Models.Artist;
 
 namespace Melodee.Services;
 
@@ -30,8 +30,8 @@ public abstract class ServiceBase(
     protected ICacheManager CacheManager { get; } = cacheManager;
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = contextFactory;
 
-    protected async Task<Melodee.Common.Models.OpenSubsonic.AlbumList2[]> AlbumListForArtistApiKey(Guid artistApiKey, int userId, CancellationToken cancellationToken)
-    {    
+    protected async Task<AlbumList2[]> AlbumListForArtistApiKey(Guid artistApiKey, int userId, CancellationToken cancellationToken)
+    {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -58,10 +58,10 @@ public abstract class ServiceBase(
                       LEFT JOIN "UserAlbums" ua on (a."Id" = ua."AlbumId" and ua."UserId" = @userId)
                       WHERE aa."ApiKey" = @artistApiKey;
                       """;
-            return (await dbConn.QueryAsync<Melodee.Common.Models.OpenSubsonic.AlbumList2>(sql, new { userId, artistApiKey }).ConfigureAwait(false)).ToArray();
-        }        
+            return (await dbConn.QueryAsync<AlbumList2>(sql, new { userId, artistApiKey }).ConfigureAwait(false)).ToArray();
+        }
     }
-    
+
     protected async Task<DatabaseDirectoryInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -77,8 +77,8 @@ public abstract class ServiceBase(
                       """;
             return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false);
         }
-    }    
-    
+    }
+
     protected async Task<DatabaseDirectoryInfo?> DatabaseAlbumInfoForAlbumApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -95,8 +95,8 @@ public abstract class ServiceBase(
                       """;
             return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false);
         }
-    }      
-    
+    }
+
     protected async Task<DatabaseDirectoryInfo[]?> DatabaseSongInfosForAlbumApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -115,8 +115,8 @@ public abstract class ServiceBase(
                       """;
             return (await dbConn.QueryAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false))?.ToArray();
         }
-    }        
-    
+    }
+
     protected async Task<DatabaseSongIdsInfo?> DatabaseSongIdsInfoForSongApiKey(Guid apiKeyId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -196,6 +196,7 @@ public abstract class ServiceBase(
                                     songs.Add(pluginResult.Data);
                                     viaPlugins.Add(plugin.DisplayName);
                                 }
+
                                 messages.AddRange(pluginResult.Messages ?? []);
                             }
                         }
@@ -267,7 +268,7 @@ public abstract class ServiceBase(
                                     Value = genre.Key,
                                     SortOrder = 5 + i
                                 }));
-                            var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();                            
+                            var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
                             var newAlbum = new Album
                             {
                                 Artist = Artist.NewArtistFromName(artistName ?? throw new Exception("Invalid artist name")),

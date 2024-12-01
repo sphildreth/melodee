@@ -9,8 +9,8 @@ public record ResponseModel
     public required UserInfo UserInfo { get; init; }
 
     /// <summary>
-    /// This is the '"subsonic-response"' level object returned to API consumers.
+    ///     This is the '"subsonic-response"' level object returned to API consumers.
     /// </summary>
-    [JsonPropertyName("subsonic-response")] 
+    [JsonPropertyName("subsonic-response")]
     public required ApiResponse ResponseData { get; init; }
 }
