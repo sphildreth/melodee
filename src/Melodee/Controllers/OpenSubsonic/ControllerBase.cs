@@ -100,7 +100,12 @@ public abstract class ControllerBase : Controller
                 GetRequestIp(context.HttpContext)
             )
         );
-        Console.WriteLine($"-*-> User [{ApiRequest.Username}] : {ApiRequest.ApiRequestPlayer}");
+        string? xmlWarning = null;
+        if (!ApiRequest.IsJsonRequest)
+        {
+            xmlWarning = "\u2620\ufe0f WARNING: client requested non supported XML format response.";
+        }
+        Console.WriteLine($"-*->{ xmlWarning } User [{ApiRequest.Username}] : {ApiRequest.ApiRequestPlayer}");
         return base.OnActionExecutionAsync(context, next);
     }
 }

@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Net;
+using System.Net.Mime;
 using Asp.Versioning;
 using Blazored.SessionStorage;
 using Melodee.Common.Configuration;
@@ -151,7 +153,20 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+   // app.UseExceptionHandler("/Error", createScopeForErrors: true);
+   app.UseExceptionHandler(exceptionHandlerApp =>
+   {
+       exceptionHandlerApp.Run(async context =>
+       {
+            var code =context.Response.StatusCode;
+            if (code == (int)HttpStatusCode.NotFound)
+            {
+                Log.Error("404 [{Url}]", context.Request.Path);
+            }
+            context.Response.ContentType = MediaTypeNames.Text.Plain;
+            await context.Response.WriteAsync("Doh! You found something that doesn't exist.");
+       });
+   });
     app.UseHsts();
 }
 

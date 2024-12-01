@@ -15,4 +15,7 @@ namespace Melodee.Common.Models.OpenSubsonic.Requests;
 /// <param name="Token">(t) The authentication token computed as md5(password + salt).</param>
 /// <param name="Salt">(s) A random string (“salt”) used as input for computing the password hash</param>
 /// <param name="ApiRequestPlayer">Details on the request subsonic client application (aka player.)</param>
-public record ApiRequest(KeyValue[] RequestHeaders, string? Username, string? Version, string? Format, string? ApiKey, string? Password, string? Token, string? Salt, UserPlayer ApiRequestPlayer);
+public record ApiRequest(KeyValue[] RequestHeaders, string? Username, string? Version, string? Format, string? ApiKey, string? Password, string? Token, string? Salt, UserPlayer ApiRequestPlayer)
+{
+    public bool IsJsonRequest => string.Equals(Format, "json", StringComparison.OrdinalIgnoreCase);
+}

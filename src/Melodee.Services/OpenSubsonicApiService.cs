@@ -76,9 +76,17 @@ public class OpenSubsonicApiService(
         {
             return null;
         }
-
         var apiIdParts = id.Nullify() == null ? [] : id.Split(Common.Data.Contants.OpenSubsonicServer.ApiIdSeparator);
-        return SafeParser.ToGuid(SafeParser.ToGuid(apiIdParts[1])!.Value);
+        string? toParse = id;
+        if (apiIdParts.Length < 2)
+        {
+            Log.Warning("ApiKeyFromId: Invalid ApiKey [{Key}]", id);
+        }
+        else
+        {
+            toParse = apiIdParts[1];
+        }
+        return SafeParser.ToGuid(SafeParser.ToGuid(toParse)!.Value);
     }
 
     /// <summary>
@@ -399,7 +407,12 @@ public class OpenSubsonicApiService(
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbConn = scopedContext.Database.GetDbConnection();
-                var sqlParameters = new Dictionary<string, object>();
+                var sqlParameters = new Dictionary<string, object?>()
+                {
+                    { "genre", albumListRequest.Genre },
+                    { "fromYear", albumListRequest.FromYear },
+                    { "toYear", albumListRequest.ToYear }
+                };
                 var selectSql = """
                                 SELECT 
                                 'album_' || cast(a."ApiKey" as varchar(50)) as "Id",
@@ -457,12 +470,11 @@ public class OpenSubsonicApiService(
 
                     case ListType.ByYear:
                         //TODO fromYear and ToYear optional filtering
-                        whereSql = "ORDER BY \"Year\" DESC";
+                        whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear ORDER BY \"Year\" DESC";
                         break;
 
                     case ListType.ByGenre:
-                        //TODO filter by given Genre
-                        whereSql = "ORDER BY \"Genre\" DESC";
+                        whereSql = "where @genre = any(a.\"Genres\") ORDER BY \"Genre\" DESC";
                         break;
                 }
 
@@ -1465,7 +1477,7 @@ public class OpenSubsonicApiService(
                     { "songCount", request.SongCount ?? defaultPageSize }
                 };
                 var sql = """
-                          select "ApiKey"::varchar as "Id", "Name", 'artist_' || "ApiKey" as "CoverArt", "AlbumCount"
+                          select 'artist_' || "ApiKey"::varchar as "Id", "Name", 'artist_' || "ApiKey" as "CoverArt", "AlbumCount"
                           from "Artists" a
                           where a."NameNormalized" like @normalizedQuery
                           or a."AlternateNames" like @query
@@ -1476,8 +1488,8 @@ public class OpenSubsonicApiService(
                     .ConfigureAwait(false)).ToArray();
 
                 sql = """
-                      select a."ApiKey"::varchar as "Id", a."Name", 'album_' || a."ApiKey"::varchar as "CoverArt", a."SongCount", a."CreatedAt", 
-                             a."Duration" as "DurationMs", aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
+                      select 'album_' || a."ApiKey"::varchar as "Id", a."Name", 'album_' || a."ApiKey"::varchar as "CoverArt", a."SongCount", a."CreatedAt", 
+                             a."Duration" as "DurationMs", 'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
                       from "Albums" a
                       left join "Artists" aa on (a."ArtistId" = aa."Id")
                       where a."NameNormalized"  like @normalizedQuery
@@ -1489,11 +1501,11 @@ public class OpenSubsonicApiService(
                     .ConfigureAwait(false)).ToArray();
 
                 sql = """
-                      select s."ApiKey"::varchar as "Id", a."ApiKey"::varchar as Parent, s."Title", a."Name" as Album, aa."Name" as "Artist", 'song_' || s."ApiKey"::varchar as "CoverArt", 
+                      select 'song_' || s."ApiKey"::varchar as "Id", a."ApiKey"::varchar as Parent, s."Title", a."Name" as Album, aa."Name" as "Artist", 'song_' || s."ApiKey"::varchar as "CoverArt", 
                              a."SongCount", s."CreatedAt", s."Duration" as "DurationMs", s."BitRate", s."SongNumber" as "Track", 
                              DATE_PART('year', a."ReleaseDate"::date) as "Year", unnest(a."Genres") as "Genre", s."FileSize" as "Size", 
-                             s."ContentType", l."Path" || aa."Directory" || a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", a."ApiKey"::varchar as "AlbumId", 
-                             aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
+                             s."ContentType", l."Path" || aa."Directory" || a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", 'album_' ||a."ApiKey"::varchar as "AlbumId", 
+                             'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
                       from "Songs" s
                       join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
                       join "Albums" a on (ad."AlbumId" = a."Id")
@@ -2025,6 +2037,7 @@ public class OpenSubsonicApiService(
             var userStarredArtists = await scopedContext
                 .UserArtists.Include(x => x.Artist)
                 .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
+                .OrderBy(x => x.Id)
                 .Take(indexLimit)
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -2033,6 +2046,7 @@ public class OpenSubsonicApiService(
             var userStarredAlbums = await scopedContext
                 .UserAlbums.Include(x => x.Album)
                 .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
+                .OrderBy(x => x.Id)
                 .Take(indexLimit)                
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -2041,6 +2055,7 @@ public class OpenSubsonicApiService(
             var userStarredSongs = await scopedContext
                 .UserSongs.Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
+                .OrderBy(x => x.Id)
                 .Take(indexLimit)                
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -2112,11 +2127,9 @@ public class OpenSubsonicApiService(
             IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
-                Data = new
-                {
-                    Songs = songs
-                },
+                Data = songs,
                 DataPropertyName = "songsByGenre",
+                DataDetailPropertyName = "song"                
             }
         };
     }

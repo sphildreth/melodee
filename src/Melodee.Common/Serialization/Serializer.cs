@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Serialization;
 using Melodee.Common.Serialization.Convertors;
 using Serilog;
 
@@ -9,7 +10,7 @@ namespace Melodee.Common.Serialization;
 public sealed class Serializer(ILogger logger) : ISerializer
 {
     private ILogger Logger { get; } = logger;
-
+    
     public string? Serialize(object? o)
     {
         if (o == null)

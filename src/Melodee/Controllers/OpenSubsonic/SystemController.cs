@@ -1,3 +1,6 @@
+using System.Xml;
+using System.Xml.Serialization;
+using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Serialization;
 using Melodee.Results;
 using Melodee.Services;
@@ -5,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class SystemController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class SystemController(Serilog.ILogger logger, ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
     /// <summary>
     ///     List the OpenSubsonic extensions supported by this server.
@@ -27,8 +30,10 @@ public class SystemController(ISerializer serializer, OpenSubsonicApiService ope
     [HttpGet]
     [HttpPost]
     [Route("/rest/ping.view")]
+    [Route("/rest/ping")]
     public async Task<IActionResult> Ping(CancellationToken cancellationToken = default)
     {
+
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.AuthenticateSubsonicApiAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
 
