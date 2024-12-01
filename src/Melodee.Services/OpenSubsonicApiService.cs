@@ -1,6 +1,5 @@
 using System.Globalization;
 using Dapper;
-using Instances.Exceptions;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
@@ -29,7 +28,6 @@ using Quartz;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
-using ServiceStack;
 using SmartFormat;
 using dbModels = Melodee.Common.Data.Models;
 using Artist = Melodee.Common.Models.OpenSubsonic.Artist;
@@ -98,6 +96,7 @@ public class OpenSubsonicApiService(
         {
             toParse = apiIdParts[1];
         }
+
         return SafeParser.ToGuid(toParse)!.Value;
     }
 
@@ -328,7 +327,7 @@ public class OpenSubsonicApiService(
             if (isCreatingPlaylist)
             {
                 // creating new with name and songs 
-                var songApiKeysForPlaylist = songId?.Where(x => x.Nullify() != null).Select(x => ApiKeyFromId(id)).ToArray() ?? [];
+                var songApiKeysForPlaylist = songId?.Where(x => x.Nullify() != null).Select(x => ApiKeyFromId(x)).ToArray() ?? [];
                 var songsForPlaylist = await scopedContext.Songs.Where(x => songApiKeysForPlaylist.Contains(x.ApiKey)).ToArrayAsync(cancellationToken).ConfigureAwait(false);
                 var newPlaylist = new dbModels.Playlist
                 {
@@ -346,6 +345,8 @@ public class OpenSubsonicApiService(
                 };
                 await scopedContext.Playlists.AddAsync(newPlaylist, cancellationToken).ConfigureAwait(false);
                 await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                playListId = newPlaylist.ToApiKey();
+                Logger.Information("User [{UserInfo}] created playlist [{Name}] with [{SongCount}] songs.", authResponse.UserInfo, name, songsForPlaylist.Length);
             }
             // updating either new name or songs on playlist
         }
@@ -1613,7 +1614,7 @@ public class OpenSubsonicApiService(
                         artistInfo.CalculatedRating,
                         artistInfo.PlayCount,
                         artistInfo.Played.ToString(),
-                        artistAlbums?.Select(x => x.ToApiChild(x.UserAlbums.FirstOrDefault())).ToArray() ?? []);
+                        artistAlbums.Select(x => x.ToApiChild(x.UserAlbums.FirstOrDefault())).ToArray());
                 }
             }
         }
@@ -1643,7 +1644,7 @@ public class OpenSubsonicApiService(
                             albumInfo.CalculatedRating,
                             albumInfo.PlayCount,
                             albumInfo.Played.ToString(),
-                            albumSongs?.Select(x => x.ToApiChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault())).ToArray() ?? []);
+                            albumSongs.Select(x => x.ToApiChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault())).ToArray());
                     }
                 }
             }
@@ -1685,7 +1686,7 @@ public class OpenSubsonicApiService(
         if (musicFolderId.HasValue)
         {
             var libraryResult = await libraryService.ListAsync(new PagedRequest(), cancellationToken).ConfigureAwait(false);
-            var library = libraryResult.Data?.Where(x => x.ApiKey == musicFolderId.Value).FirstOrDefault();
+            var library = libraryResult.Data.Where(x => x.ApiKey == musicFolderId.Value).FirstOrDefault();
             libraryId = library?.Id ?? 0;
             lastModifed = library?.LastUpdatedAt.ToString() ?? string.Empty;
         }
@@ -1837,7 +1838,7 @@ public class OpenSubsonicApiService(
                 if (IsApiIdForArtist(idValue))
                 {
                     var artist = await artistService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
-                    if (artist?.Data != null)
+                    if (artist.Data != null)
                     {
                         var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
                         if (userArtist == null)
@@ -1861,7 +1862,7 @@ public class OpenSubsonicApiService(
                 if (IsApiIdForAlbum(idValue))
                 {
                     var album = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
-                    if (album?.Data != null)
+                    if (album.Data != null)
                     {
                         var userAlbum = await scopedContext.UserAlbums.FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == album.Data.Id, cancellationToken).ConfigureAwait(false);
                         if (userAlbum == null)
@@ -1886,7 +1887,7 @@ public class OpenSubsonicApiService(
                 if (IsApiIdForSong(idValue))
                 {
                     var song = await songService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
-                    if (song?.Data != null)
+                    if (song.Data != null)
                     {
                         var userSong = await scopedContext.UserSongs.FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == song.Data.Id, cancellationToken).ConfigureAwait(false);
                         if (userSong == null)
@@ -1957,6 +1958,7 @@ public class OpenSubsonicApiService(
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
+            var dbConn = scopedContext.Database.GetDbConnection();
             var apiKey = ApiKeyFromId(id);
             if (apiKey != null)
             {
@@ -1965,7 +1967,7 @@ public class OpenSubsonicApiService(
                 if (IsApiIdForSong(id))
                 {
                     var song = await songService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
-                    if (song?.Data != null)
+                    if (song.Data != null)
                     {
                         var userSong = await scopedContext.UserSongs.FirstOrDefaultAsync(x => x.UserId == authResponse.UserInfo.Id && x.SongId == song.Data.Id, cancellationToken).ConfigureAwait(false);
                         if (userSong == null)
@@ -1974,8 +1976,7 @@ public class OpenSubsonicApiService(
                             {
                                 UserId = authResponse.UserInfo.Id,
                                 SongId = song.Data.Id,
-                                CreatedAt = now,
-                                LastPlayedAt = null
+                                CreatedAt = now
                             };
                             scopedContext.UserSongs.Add(userSong);
                         }
@@ -1983,6 +1984,76 @@ public class OpenSubsonicApiService(
                         userSong.Rating = rating;
                         userSong.LastUpdatedAt = now;
                         result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                        var sql = """
+                                  update "Songs" s set 
+                                    "LastUpdatedAt" = now(), 
+                                    "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserSongs" where "SongId" = s."Id")
+                                  where s."Id" = @dbId;
+                                  """;
+                        await dbConn.ExecuteAsync(sql, new { dbId = userSong.SongId }).ConfigureAwait(false);
+                        await songService.ClearCacheAsync(userSong.SongId, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                else if (IsApiIdForAlbum(id))
+                {
+                    var album = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+                    if (album.Data != null)
+                    {
+                        var userAlbum = await scopedContext.UserAlbums.FirstOrDefaultAsync(x => x.UserId == authResponse.UserInfo.Id && x.AlbumId == album.Data.Id, cancellationToken).ConfigureAwait(false);
+                        if (userAlbum == null)
+                        {
+                            userAlbum = new dbModels.UserAlbum
+                            {
+                                UserId = authResponse.UserInfo.Id,
+                                AlbumId = album.Data.Id,
+                                CreatedAt = now
+                            };
+                            scopedContext.UserAlbums.Add(userAlbum);
+                        }
+
+                        userAlbum.Rating = rating;
+                        userAlbum.LastUpdatedAt = now;
+                        result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                        var sql = """
+                                  update "Albums" a set 
+                                    "LastUpdatedAt" = now(), 
+                                    "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserAlbums" where "AlbumId" = a."Id")
+                                  where a."Id" = @dbId;
+                                  """;
+                        await dbConn.ExecuteAsync(sql, new { dbId = userAlbum.AlbumId }).ConfigureAwait(false);
+                        await albumService.ClearCacheAsync(userAlbum.AlbumId, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                else if (IsApiIdForArtist(id))
+                {
+                    var artist = await artistService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+                    if (artist.Data != null)
+                    {
+                        var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == authResponse.UserInfo.Id && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                        if (userArtist == null)
+                        {
+                            userArtist = new dbModels.UserArtist
+                            {
+                                UserId = authResponse.UserInfo.Id,
+                                ArtistId = artist.Data.Id,
+                                CreatedAt = now
+                            };
+                            scopedContext.UserArtists.Add(userArtist);
+                        }
+
+                        userArtist.Rating = rating;
+                        userArtist.LastUpdatedAt = now;
+                        result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+
+                        var sql = """
+                                  update "Artists" a set 
+                                    "LastUpdatedAt" = now(), 
+                                    "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserArtists" where "ArtistId" = a."Id")
+                                  where a."Id" = @dbId;
+                                  """;
+                        await dbConn.ExecuteAsync(sql, new { dbId = userArtist.ArtistId }).ConfigureAwait(false);
+                        await artistService.ClearCacheAsync(userArtist.ArtistId, cancellationToken).ConfigureAwait(false);
+                        result = true;
                     }
                 }
             }
@@ -2073,7 +2144,7 @@ public class OpenSubsonicApiService(
                 .Take(indexLimit)
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
-            artists = userStarredArtists?.Select(x => x.Artist.ToApiArtist(x))?.ToArray() ?? [];
+            artists = userStarredArtists.Select(x => x.Artist.ToApiArtist(x)).ToArray();
 
             var userStarredAlbums = await scopedContext
                 .UserAlbums.Include(x => x.Album)
@@ -2082,7 +2153,7 @@ public class OpenSubsonicApiService(
                 .Take(indexLimit)
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
-            albums = userStarredAlbums?.Select(x => x.Album.ToApiChild(x))?.ToArray() ?? [];
+            albums = userStarredAlbums.Select(x => x.Album.ToApiChild(x)).ToArray();
 
             var userStarredSongs = await scopedContext
                 .UserSongs.Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
@@ -2091,7 +2162,7 @@ public class OpenSubsonicApiService(
                 .Take(indexLimit)
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
-            songs = userStarredSongs.Select(x => x.Song.ToApiChild(x.Song.AlbumDisc.Album, x))?.ToArray() ?? [];
+            songs = userStarredSongs.Select(x => x.Song.ToApiChild(x.Song.AlbumDisc.Album, x)).ToArray();
         }
 
         return new ResponseModel
@@ -2144,7 +2215,7 @@ public class OpenSubsonicApiService(
                       offset @offset rows fetch next @takeSize rows only;
                       """;
 
-            var dbSongIds = (await dbConn.QueryAsync<int>(sql, new { genre, offset, takeSize = count < indexLimit ? count : indexLimit }).ConfigureAwait(false))?.ToArray() ?? [];
+            var dbSongIds = (await dbConn.QueryAsync<int>(sql, new { genre, offset, takeSize = count < indexLimit ? count : indexLimit }).ConfigureAwait(false)).ToArray();
             var dbSongs = await (from s in scopedContext.Songs
                     .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                     .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
@@ -2179,20 +2250,21 @@ public class OpenSubsonicApiService(
         }
 
         Bookmark[] data = [];
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var userBookmarks = await scopedContext.Bookmarks
                 .Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Include(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                 .Where(x => x.UserId == authResponse.UserInfo.Id)
-                .ToArrayAsync(cancellationToken: cancellationToken)
+                .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
-            if (userBookmarks?.Any() ?? false)
+            if (userBookmarks.Any())
             {
                 data = userBookmarks.Select(x => x.ToApiBookmark()).ToArray();
             }
         }
+
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
@@ -2231,7 +2303,7 @@ public class OpenSubsonicApiService(
                 {
                     var existingBookmark = await scopedContext
                         .Bookmarks
-                        .FirstOrDefaultAsync(x => x.UserId == authResponse.UserInfo.Id && x.SongId == songInfo.SongId, cancellationToken: cancellationToken)
+                        .FirstOrDefaultAsync(x => x.UserId == authResponse.UserInfo.Id && x.SongId == songInfo.SongId, cancellationToken)
                         .ConfigureAwait(false);
                     if (existingBookmark != null)
                     {
@@ -2251,6 +2323,7 @@ public class OpenSubsonicApiService(
                         };
                         scopedContext.Bookmarks.Add(newBookmark);
                     }
+
                     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     result = true;
                 }
@@ -2284,13 +2357,12 @@ public class OpenSubsonicApiService(
             var apiKey = ApiKeyFromId(id);
             if (apiKey != null)
             {
-                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
                 var songInfo = await DatabaseSongIdsInfoForSongApiKey(apiKey.Value, cancellationToken).ConfigureAwait(false);
                 if (songInfo != null)
                 {
                     var existingBookmark = await scopedContext
                         .Bookmarks
-                        .FirstOrDefaultAsync(x => x.UserId == authResponse.UserInfo.Id && x.SongId == songInfo.SongId, cancellationToken: cancellationToken)
+                        .FirstOrDefaultAsync(x => x.UserId == authResponse.UserInfo.Id && x.SongId == songInfo.SongId, cancellationToken)
                         .ConfigureAwait(false);
                     if (existingBookmark != null)
                     {
@@ -2323,18 +2395,18 @@ public class OpenSubsonicApiService(
         }
 
         ArtistInfo? data = null;
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var apiKey = ApiKeyFromId(id);
-            var artist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var artist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken).ConfigureAwait(false);
             if (artist != null)
             {
                 var configuration = await Configuration.Value;
-                
+
                 // TODO How to get similar artists?
                 Artist[]? similarArtists = null;
-                
+
                 data = new ArtistInfo(artist.ToApiKey(),
                     artist.Name,
                     configuration.GetBuildImageUrl(id, ImageSize.Thumbnail),
@@ -2347,7 +2419,7 @@ public class OpenSubsonicApiService(
                     similarArtists);
             }
         }
-        
+
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
@@ -2373,15 +2445,15 @@ public class OpenSubsonicApiService(
         }
 
         AlbumInfo? data = null;
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var apiKey = ApiKeyFromId(id);
-            var album= await scopedContext.Albums.FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var album = await scopedContext.Albums.FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken).ConfigureAwait(false);
             if (album != null)
             {
                 var configuration = await Configuration.Value;
-               
+
                 data = new AlbumInfo(album.ToApiKey(),
                     album.Name,
                     configuration.GetBuildImageUrl(id, ImageSize.Thumbnail),
@@ -2393,7 +2465,7 @@ public class OpenSubsonicApiService(
                     album.MusicBrainzId);
             }
         }
-        
+
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
@@ -2419,17 +2491,17 @@ public class OpenSubsonicApiService(
         }
 
         User? data = null;
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var usernameNormalized = username.ToNormalizedString() ?? username;
-            var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.UserNameNormalized == usernameNormalized, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.UserNameNormalized == usernameNormalized, cancellationToken).ConfigureAwait(false);
             if (user != null)
             {
                 data = user.ToApiUser();
             }
         }
-        
+
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
@@ -2455,14 +2527,15 @@ public class OpenSubsonicApiService(
         }
 
         Child[]? songs = null;
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var indexLimit = (await Configuration.Value).GetValue<short>(SettingRegistry.OpenSubsonicIndexesArtistLimit);
             if (indexLimit == 0)
             {
                 indexLimit = short.MaxValue;
-            }            
+            }
+
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
                       select s."Id"
@@ -2484,8 +2557,7 @@ public class OpenSubsonicApiService(
                                         fromYear = fromYear ?? 0,
                                         toYear = toYear ?? 9999
                                     })
-                                .ConfigureAwait(false))?.ToArray() ??
-                            [];
+                                .ConfigureAwait(false)).ToArray();
             var dbSongs = await (from s in scopedContext.Songs
                     .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                     .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
@@ -2493,7 +2565,7 @@ public class OpenSubsonicApiService(
                 select s).ToArrayAsync(cancellationToken).ConfigureAwait(false);
             songs = dbSongs.Select(x => x.ToApiChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault())).ToArray();
         }
-        
+
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,

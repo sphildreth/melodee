@@ -49,12 +49,12 @@ public abstract class ServiceBase(
                           'artist_' || cast(aa."ApiKey" as varchar(50)) as "ArtistId",
                           aa."Name" as "Artist",
                           DATE_PART('year', a."ReleaseDate"::date) as "Year",
-                          unnest(a."Genres") as "Genre",
+                          a."Genres",
                           (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount",
                           ua."IsStarred" as "Starred",
                           ua."Rating" as "UserRating"
                       FROM "Albums" a 
-                      LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
+                      JOIN "Artists" aa on (a."ArtistId" = aa."Id")
                       LEFT JOIN "UserAlbums" ua on (a."Id" = ua."AlbumId" and ua."UserId" = @userId)
                       WHERE aa."ApiKey" = @artistApiKey;
                       """;

@@ -10,7 +10,7 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     /// <summary>
     ///     Sets the rating for a music file.
     /// </summary>
-    /// <param name="id">A string which uniquely identifies the file (song) or folder (album/artist) to ra</param>
+    /// <param name="id">A string which uniquely identifies the file (song) or folder (album/artist) to rate</param>
     /// <param name="rating">The rating between 1 and 5 (inclusive), or 0 to remove the rating.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]

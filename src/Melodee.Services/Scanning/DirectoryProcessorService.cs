@@ -323,7 +323,7 @@ public sealed class DirectoryProcessorService(
                 {
                     var albumsForDirectory = await AllAlbumsForDirectoryAsync(
                         directoryInfoToProcess,
-                        Enumerable.ToArray(_songPlugins),
+                        _songPlugins.ToArray(),
                         _configuration,
                         cancellationToken);
                     if (!albumsForDirectory.IsSuccess)
