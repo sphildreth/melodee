@@ -1,9 +1,8 @@
-using ATL.Logging;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Melodee.Controllers;
+namespace Melodee.Controllers.OpenSubsonic;
 
-public class ImageController(Serilog.ILogger logger)
+public class ImageController(Serilog.ILogger logger) : ControllerBase
 {
     /// <summary>
     ///     Returns an image based on id and size.
@@ -13,7 +12,7 @@ public class ImageController(Serilog.ILogger logger)
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
     [Route("/images/{apiKey}/{size}")]
-    public async Task<IActionResult> GetAvatarAsync(string apiKey, string size, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetImageAsync(string apiKey, string size, CancellationToken cancellationToken = default)
     {
         //        return $"{baseUrl}/images/{apiKey}/{imageSize.ToString().ToLower()}";
         
