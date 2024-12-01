@@ -638,9 +638,9 @@ public class LibraryProcessJob(
             foreach (var artist in artists)
             {
                 OperationResult<dbModels.Artist?> dbArtistResult = new OperationResult<dbModels.Artist?> { Data = null };
-                if (artist.MusicBrainzIdValue != null)
+                if (artist.MusicBrainzId != null)
                 {
-                    dbArtistResult = await artistService.GetByMusicBrainzIdAsync(artist.MusicBrainzIdValue.Value, cancellationToken).ConfigureAwait(false);
+                    dbArtistResult = await artistService.GetByMusicBrainzIdAsync(SafeParser.ToGuid(artist.MusicBrainzId)!.Value, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (!dbArtistResult.IsSuccess)
@@ -664,7 +664,7 @@ public class LibraryProcessJob(
                             CreatedAt = _now,
                             LibraryId = library.Id,
                             MediaUniqueId = artist.UniqueId(),
-                            MusicBrainzId = artist.MusicBrainzIdValue,
+                            MusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId),
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                             Name = artist.Name,
                             NameNormalized = artist.NameNormalized,

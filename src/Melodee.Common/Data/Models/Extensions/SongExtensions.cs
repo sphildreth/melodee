@@ -7,7 +7,7 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class SongExtensions
 {
-    public static Common.Models.SearchEngines.SongSearchResult ToSearchEngineSongSearchResult(this Song song)
+    public static Common.Models.SearchEngines.SongSearchResult ToSearchEngineSongSearchResult(this Song song, int sortOrder)
     {
         return new Common.Models.SearchEngines.SongSearchResult
         {
@@ -17,6 +17,7 @@ public static class SongExtensions
             Name = song.Title,
             MusicBrainzId = song.MusicBrainzId,
             SortName = song.TitleSort ?? song.Title,
+            SortOrder = sortOrder,
             PlayCount = song.PlayedCount
         };
     }
@@ -25,7 +26,7 @@ public static class SongExtensions
     
     public static string ToApiKey(this Song song) => $"song{OpenSubsonicServer.ApiIdSeparator }{song.ApiKey}";
     
-    public static Child ToChild(this Song song, Album album, UserSong? userSong, NowPlayingInfo? nowPlayingInfo = null)
+    public static Child ToApiChild(this Song song, Album album, UserSong? userSong, NowPlayingInfo? nowPlayingInfo = null)
     {
         Contributor? albumArtist = null;
 

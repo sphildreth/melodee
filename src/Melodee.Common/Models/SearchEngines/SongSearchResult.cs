@@ -12,6 +12,8 @@ public sealed record SongSearchResult
     
     public required string Name { get; init; }
     
+    public int SortOrder { get; init; }
+    
     public required string SortName { get; init; }
     
     [JsonIgnore]

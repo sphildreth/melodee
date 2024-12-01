@@ -105,8 +105,8 @@ public class ArtistSearchEngineService(
             OperationTime = operationTime,
             CurrentPage = 1,
             TotalCount = totalCount,
-            TotalPages = totalCount == 0 ? 0 : SafeParser.ToNumber<int>((totalCount +  maxResultsValue - 1) / maxResultsValue),
-            Data = result.OrderByDescending(x => x.PlayCount).ThenBy(x => x.SortName).ToArray()
+            TotalPages = 1,
+            Data = result.OrderBy(x => x.SortOrder).ToArray()
         };
     }
     
@@ -143,7 +143,7 @@ public class ArtistSearchEngineService(
             OperationTime = operationTime,
             CurrentPage = 1,
             TotalCount = totalCount,
-            TotalPages = totalCount == 0 ? 0 : SafeParser.ToNumber<int>((totalCount +  maxResultsValue - 1) / maxResultsValue),
+            TotalPages = 1,
             Data = result.OrderByDescending(x => x.Rank).ThenBy(x => x.SortName).ToArray()
         };
     }

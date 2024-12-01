@@ -5,6 +5,7 @@ using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
+using Melodee.Plugins.SearchEngine.Melodee.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Song = Melodee.Common.Data.Models.Song;
 
@@ -149,21 +150,24 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
             {
 
                 var sql = """
-                          select s.*
+                          select ROW_NUMBER () OVER (
+                            ORDER BY
+                              s."PlayedCount" desc, s."LastPlayedAt" desc, s."SortOrder", s."TitleSort", a."SortOrder"
+                          ) as "Index", s.*
                           from "Songs" s
                           join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
                           join "Albums" a on (ad."AlbumId" = a."Id")
                           join "Artists" aa on (a."ArtistId" = aa."Id")
                           where aa."Id" = @artistId
-                          order by s."PlayedCount" desc, s."SortOrder", s."TitleSort", a."SortOrder"
+                          order by s."PlayedCount" desc, s."LastPlayedAt" desc, s."SortOrder", s."TitleSort", a."SortOrder"
                           offset 0 rows fetch next @maxResults rows only;
                           """;
                 
                 var songs = (await dbConn
-                    .QueryAsync<Song>(sql, new { artistId = artist.Id, maxResults })
+                    .QueryAsync<TopSongSearch>(sql, new { artistId = artist.Id, maxResults })
                     .ConfigureAwait(false)).ToArray();
 
-                data = songs.Select(x => x.ToSearchEngineSongSearchResult()).ToArray();
+                data = songs.Select(x => x.ToSearchEngineSongSearchResult(x.Index)).ToArray();
             }
 
             return new PagedResult<SongSearchResult>

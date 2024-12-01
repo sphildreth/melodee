@@ -11,7 +11,7 @@ public static class AlbumExtensions
     
     public static string ToApiKey(this Album album) => $"album{OpenSubsonicServer.ApiIdSeparator }{album.ApiKey}";
     
-    public static Child ToChild(this Album album, UserAlbum? userAlbum, NowPlayingInfo? nowPlayingInfo = null)
+    public static Child ToApiChild(this Album album, UserAlbum? userAlbum, NowPlayingInfo? nowPlayingInfo = null)
     {
         Contributor? albumArtist = null;
 

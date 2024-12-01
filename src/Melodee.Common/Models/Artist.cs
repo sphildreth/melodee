@@ -15,10 +15,7 @@ public record Artist(
     public long? SearchEngineResultUniqueId { get; init; }
     
     public string? OriginalName { get; init; }
-    
-    [JsonIgnore]
-    public Guid? MusicBrainzIdValue => SafeParser.ToGuid(MusicBrainzId);
-    
+   
     public static long GenerateUniqueId(string? musicBrainzId, string name) => SafeParser.Hash(musicBrainzId ?? name.ToNormalizedString() ?? name);
     
     public static Artist NewArtistFromName(string name) 

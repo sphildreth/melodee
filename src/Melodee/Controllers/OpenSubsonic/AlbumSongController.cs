@@ -17,6 +17,35 @@ public class AlbumSongController(ISerializer serializer, OpenSubsonicApiService 
     //getStarred2
 
     /// <summary>
+    ///     Returns songs in a given genre.
+    /// </summary>
+    /// <param name="genre">The genre, as returned by getGenres.</param>
+    /// <param name="count">The maximum number of songs to return. Max 500.</param>     
+    /// <param name="offset">The offset. Useful if you want to page through the songs in a genre.</param>
+    /// <param name="musicFolderId">Only return results from the music folder with the given ID. See getMusicFolders.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getSongsByGenre.view")]
+    public async Task<IActionResult> GetSongsByGenre(string genre, int? count, int? offset, string? musicFolderId, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetSongsByGenreAsync(genre, count, offset, musicFolderId, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }     
+
+    /// <summary>
+    ///     Returns starred songs, albums and artists.
+    /// </summary>
+    /// <param name="musicFolderId">Only return results from the music folder with the given ID. See getMusicFolders.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getStarred.view")]
+    public async Task<IActionResult> GetStarredAsync(string? musicFolderId, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetStarredAsync(musicFolderId, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+    }    
+    
+    /// <summary>
     ///     Returns what is currently being played by all users.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>

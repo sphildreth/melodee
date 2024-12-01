@@ -40,7 +40,7 @@ public record Playlist
     /// <summary>
     /// Creation date [ISO 8601]
     /// </summary>
-    public required string CreatedBy { get; init; }
+    public required string Created { get; init; }
     
     /// <summary>
     /// Last changed date [ISO 8601]
@@ -56,5 +56,10 @@ public record Playlist
     /// A list of allowed usernames
     /// </summary>
     public string[]? AllowedUsers { get; init; }
+    
+    /// <summary>
+    /// Songs on the playlist.
+    /// </summary>
+    public Child[]? Entry { get; init; }
 
 }
