@@ -31,4 +31,6 @@ public record AlbumSearchResult
     public int Duration => DurationMs.ToSeconds();
 
     public string Created => CreatedAt.ToString();
+    
+    public string[]? Genres { get; init; }
 }

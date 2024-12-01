@@ -33,7 +33,7 @@ public record SongSearchResult
 
     public int Year { get; init; }
 
-    public required string Genre { get; init; }
+    public string[]? Genres { get; init; }
 
     public required string Suffix { get; init; }
 

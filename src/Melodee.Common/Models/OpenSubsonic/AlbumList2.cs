@@ -37,7 +37,5 @@ public sealed record AlbumList2
 
     public int? UserRating { get; init; }
 
-    public string? Genre { get; init; }
-
-    public string[]? Genres => Genre?.Split('|').Select(x => x.Trim()).ToArray();
+    public string[]? Genres { get; init; }
 }

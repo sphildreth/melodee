@@ -98,8 +98,7 @@ public class OpenSubsonicApiService(
         {
             toParse = apiIdParts[1];
         }
-
-        return SafeParser.ToGuid(SafeParser.ToGuid(toParse)!.Value);
+        return SafeParser.ToGuid(toParse)!.Value;
     }
 
     /// <summary>
@@ -151,6 +150,7 @@ public class OpenSubsonicApiService(
                     .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                     .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                     .Where(x => x.UserId == authResponse.UserInfo.Id)
+                    .AsSplitQuery()
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
                 data = playLists.Select(x => x.ToApiPlaylist()).ToArray();
@@ -439,7 +439,7 @@ public class OpenSubsonicApiService(
                                 'artist_' || cast(aa."ApiKey" as varchar(50)) as "ArtistId",
                                 aa."Name" as "Artist",
                                 DATE_PART('year', a."ReleaseDate"::date) as "Year",
-                                unnest(a."Genres") as "Genre",
+                                a."Genres",
                                 (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount"
                                 FROM "Albums" a 
                                 LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
@@ -648,16 +648,17 @@ public class OpenSubsonicApiService(
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var allGenres = await dbConn.QueryAsync<string>("""
-                                                            select genre
-                                                            from
+                                                            select "Genres" 
+                                                            from 
                                                             (
-                                                                select genre
-                                                                from "Albums", unnest("Genres") as genre 
-                                                                union ALL
-                                                                select genre
-                                                                from "Songs", unnest("Genres") as genre 
+                                                            	select unnest("Genres") as "Genres"
+                                                            	from "Albums"
+                                                            	union ALL
+                                                            	select  unnest("Genres") as "Genres"
+                                                            	from "Songs"
                                                             ) t
-                                                            group by genre
+                                                            group by "Genres"
+                                                            order by "Genres";
                                                             """, cancellationToken).ConfigureAwait(false);
             var songGenres = await dbConn.QueryAsync<Genre>("select genre as Value, count(1) as SongCount from \"Songs\", unnest(\"Genres\") as genre group by genre order by genre;", cancellationToken).ConfigureAwait(false);
             var albumGenres = await dbConn.QueryAsync<Genre>("select genre as Value, count(1) as AlbumCount from \"Albums\", unnest(\"Genres\") as genre group by genre order by genre;", cancellationToken).ConfigureAwait(false);
@@ -1520,7 +1521,7 @@ public class OpenSubsonicApiService(
 
                 sql = """
                       select 'album_' || a."ApiKey"::varchar as "Id", a."Name", 'album_' || a."ApiKey"::varchar as "CoverArt", a."SongCount", a."CreatedAt", 
-                             a."Duration" as "DurationMs", 'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
+                             a."Duration" as "DurationMs", 'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist",a."Genres"  
                       from "Albums" a
                       left join "Artists" aa on (a."ArtistId" = aa."Id")
                       where a."NameNormalized"  like @normalizedQuery
@@ -1534,7 +1535,7 @@ public class OpenSubsonicApiService(
                 sql = """
                       select 'song_' || s."ApiKey"::varchar as "Id", a."ApiKey"::varchar as Parent, s."Title", a."Name" as Album, aa."Name" as "Artist", 'song_' || s."ApiKey"::varchar as "CoverArt", 
                              a."SongCount", s."CreatedAt", s."Duration" as "DurationMs", s."BitRate", s."SongNumber" as "Track", 
-                             DATE_PART('year', a."ReleaseDate"::date) as "Year", unnest(a."Genres") as "Genre", s."FileSize" as "Size", 
+                             DATE_PART('year', a."ReleaseDate"::date) as "Year", a."Genres", s."FileSize" as "Size", 
                              s."ContentType", l."Path" || aa."Directory" || a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", 'album_' ||a."ApiKey"::varchar as "AlbumId", 
                              'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
                       from "Songs" s
