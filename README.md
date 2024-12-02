@@ -1,4 +1,7 @@
-<img src="graphics/melodee_gh_card.png" alt="Melodee logo" title="melodee" style="margin:10px;" />
+<img src="graphics/melodee_gh_card.png" alt="Melodee logo" title="melodee" style="height:200px;margin:auto;display:flex;" />
+
+# NOTE
+Melodee is under development, very much a work in progress.
 
 # Melodee
 Melodee is a music system designed to handle libraries with tens of millions of songs with ease and speed.
