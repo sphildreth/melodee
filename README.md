@@ -1,12 +1,31 @@
-# Melodee 
-Melodee is a music streaming server designed to handle millions of songs with ease and speed. 
+<img src="graphics/melodee_gh_card.png" alt="Melodee logo" title="melodee" style="margin:10px;" />
+
+# Melodee
+Melodee is a music system designed to handle libraries with tens of millions of songs with ease and speed.
 
 ## Components
-* Melodee - Blazor Server
-  * Manager for media files; scanning and editing meta tag data.
-  * Manager for database data.
-  * OpenSubsonic API server.
+* Melodee - Blazor and OpenSubsonic API server.
 * Melodee.Cli - Command line interface for scanning media files.
 
-# WIP
-Melodee is currently under heavy development and is not even in alpha stage.
+## Features
+* Process inbound music to prepare for adding to library.
+  * Convert media to standard format.
+  * Apply regex based rules for editing metadata.
+  * Does configuration driven magic
+    * Validation.
+    * Song and Disc renumbering.
+    * Removes featuring/with artist from song titles'
+    * Removes unwanted text from song and album titles.
+* Plugin based architecture.
+* Job engine
+  * Uses cron like scheduling.
+  * Scans inbound, staging and library for new media and updates.
+* Web UI Editor
+  * Edit meta data.
+  * Edit album and band photos.
+* Robust configuration system
+* OpenSubsonic API server
+  * Real time transcoding. Including Ogg and Opus formats.
+  * Tested with several Subsonic clients
+    * Feishin
+    * Symphonium
