@@ -7,7 +7,6 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class BookmarksController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
 {
-    
     /// <summary>
     ///     Deletes a bookmark.
     /// </summary>
@@ -19,7 +18,7 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     public async Task<IActionResult> DeleteBookmarkAsync(string id, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.DeleteBookmarkAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }        
+    }
 
     /// <summary>
     ///     Creates or updates a bookmark.
@@ -34,8 +33,8 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     public async Task<IActionResult> CreateBookmarkAsync(string id, int position, string? comment, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.CreateBookmarkAsync(id, position, comment, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }    
-    
+    }
+
     /// <summary>
     ///     Returns all bookmarks for this user.
     /// </summary>
@@ -46,7 +45,7 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     public async Task<IActionResult> GetBookmarksAsync(CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetBookmarksAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }    
+    }
 
     /// <summary>
     ///     Returns the state of the play queue for this user.

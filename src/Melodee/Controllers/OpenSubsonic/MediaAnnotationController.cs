@@ -19,7 +19,7 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     public async Task<IActionResult> SetRatingAsync(string id, int rating, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SetRatingAsync(id, rating, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }    
+    }
 
     /// <summary>
     ///     Registers the local playback of one or more media files.
@@ -35,13 +35,19 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ScrobbleAsync(id, time, submission, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
-    
+
     /// <summary>
     ///     Attaches a star to a song, album or artist.
     /// </summary>
     /// <param name="id">The ID of the file (song) or folder (album/artist) to star. Multiple parameters allowed.</param>
-    /// <param name="albumId">The ID of an album to star. Use this rather than id if the client accesses the media collection according to ID3 tags rather than file structure. Multiple parameters allowed.</param>
-    /// <param name="artistId">The ID of an artist to star. Use this rather than id if the client accesses the media collection according to ID3 tags rather than file structure. Multiple parameters allowed.</param>
+    /// <param name="albumId">
+    ///     The ID of an album to star. Use this rather than id if the client accesses the media collection
+    ///     according to ID3 tags rather than file structure. Multiple parameters allowed.
+    /// </param>
+    /// <param name="artistId">
+    ///     The ID of an artist to star. Use this rather than id if the client accesses the media collection
+    ///     according to ID3 tags rather than file structure. Multiple parameters allowed.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
     [HttpPost]
@@ -49,14 +55,20 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     public async Task<IActionResult> StarAsync(string id, string? albumId, string? artistId, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ToggleStarAsync(true, id, albumId, artistId, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }    
-    
+    }
+
     /// <summary>
     ///     Removes a star to a song, album or artist.
     /// </summary>
     /// <param name="id">The ID of the file (song) or folder (album/artist) to star. Multiple parameters allowed.</param>
-    /// <param name="albumId">The ID of an album to star. Use this rather than id if the client accesses the media collection according to ID3 tags rather than file structure. Multiple parameters allowed.</param>
-    /// <param name="artistId">The ID of an artist to star. Use this rather than id if the client accesses the media collection according to ID3 tags rather than file structure. Multiple parameters allowed.</param>
+    /// <param name="albumId">
+    ///     The ID of an album to star. Use this rather than id if the client accesses the media collection
+    ///     according to ID3 tags rather than file structure. Multiple parameters allowed.
+    /// </param>
+    /// <param name="artistId">
+    ///     The ID of an artist to star. Use this rather than id if the client accesses the media collection
+    ///     according to ID3 tags rather than file structure. Multiple parameters allowed.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
     [HttpPost]
@@ -64,5 +76,5 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     public async Task<IActionResult> UnstarAsync(string id, string? albumId, string? artistId, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ToggleStarAsync(false, id, albumId, artistId, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }     
+    }
 }

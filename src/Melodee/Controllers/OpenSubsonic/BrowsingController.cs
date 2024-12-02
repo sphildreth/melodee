@@ -13,7 +13,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     //getTopSongs
     //getVideoInfo
     //getVideos
-    
+
     /// <summary>
     ///     Returns album info.
     /// </summary>
@@ -27,8 +27,8 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     public async Task<IActionResult> GetAlbumInfo(string id, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumInfoAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    } 
-    
+    }
+
     /// <summary>
     ///     Returns artist info.
     /// </summary>
@@ -42,7 +42,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     public async Task<IActionResult> GetArtistInfo(string id, int? count, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetArtistInfoAsync(id, count, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }    
+    }
 
     /// <summary>
     ///     Returns top songs for the given artist.
@@ -56,8 +56,8 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     public async Task<IActionResult> GetTopSongs(string artist, int? count, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetTopSongsAsync(artist, count, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }      
-    
+    }
+
     /// <summary>
     ///     Returns details for an artist.
     /// </summary>
@@ -69,7 +69,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     public async Task<IActionResult> GetArtistAsync(string id, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetArtistAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }    
+    }
 
     /// <summary>
     ///     Returns all configured top-level music folders.
@@ -102,7 +102,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync("indexes", musicFolderId, ifModifiedSince, ApiRequest, cancellationToken).ConfigureAwait(false))!);
     }
-    
+
     /// <summary>
     ///     Returns all artists.
     /// </summary>
@@ -117,7 +117,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     public async Task<IActionResult> GetArtistsAsync(Guid? musicFolderId, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync("artists", musicFolderId, null, ApiRequest, cancellationToken).ConfigureAwait(false))!);
-    }    
+    }
 
     /// <summary>
     ///     Returns a listing of all files in a music directory. Typically used to get list of albums for an artist, or list of

@@ -2148,7 +2148,7 @@ public class OpenSubsonicApiService(
             artists = userStarredArtists.Select(x => x.Artist.ToApiArtist(x)).ToArray();
 
             var userStarredAlbums = await scopedContext
-                .UserAlbums.Include(x => x.Album)
+                .UserAlbums.Include(x => x.Album).ThenInclude(x => x.Artist)
                 .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
                 .OrderBy(x => x.Id)
                 .Take(indexLimit)
@@ -2491,15 +2491,29 @@ public class OpenSubsonicApiService(
             };
         }
 
+        // Only users with admin privileges are allowed to call this method.
+        var isUserAdmin = await userService.IsUserAdminAsync(authResponse.UserInfo.UserName, cancellationToken).ConfigureAwait(false);
+        if (!isUserAdmin)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                IsSuccess = false,
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
+            };
+        }
+        
         User? data = null;
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var usernameNormalized = username.ToNormalizedString() ?? username;
-            var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.UserNameNormalized == usernameNormalized, cancellationToken).ConfigureAwait(false);
-            if (user != null)
+            var user = await userService.GetByUsernameAsync(username, cancellationToken).ConfigureAwait(false);
+            if (user.IsSuccess)
             {
-                data = user.ToApiUser();
+                if (user.Data!.Id != authResponse.UserInfo.Id)
+                {
+                }
+                data = user.Data!.ToApiUser();
             }
         }
 

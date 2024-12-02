@@ -155,6 +155,12 @@ public sealed class UserService(
             : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<bool> IsUserAdminAsync(string username, CancellationToken cancellationToken = default)
+    {
+        var user = await GetByUsernameAsync(username, cancellationToken).ConfigureAwait(false);
+        return user?.Data?.IsAdmin ?? false;
+    }
+
     public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));

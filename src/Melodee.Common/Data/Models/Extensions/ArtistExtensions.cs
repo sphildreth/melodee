@@ -14,7 +14,7 @@ public static class ArtistExtensions
             artist.ToApiKey(),
             artist.Name,
             artist.AlbumCount,
-            0,
+            userArtist?.Rating ?? 0,
             artist.CalculatedRating,
             artist.ToCoverArtId(),
             "Url", // TODO ?

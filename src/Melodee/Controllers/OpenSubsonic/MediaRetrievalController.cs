@@ -76,6 +76,7 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
                 .ConfigureAwait(false);
             return new EmptyResult();
         }
+
         Response.StatusCode = (int)HttpStatusCode.NotFound;
         return new JsonStringResult(serializer.Serialize(new ResponseModel
         {
