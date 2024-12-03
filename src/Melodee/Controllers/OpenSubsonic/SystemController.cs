@@ -27,8 +27,8 @@ public class SystemController(ILogger logger, ISerializer serializer, OpenSubson
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
     [HttpPost]
-    [Route("/rest/ping.view")]
     [Route("/rest/ping")]
+    [Route("/rest/ping.view")]
     public async Task<IActionResult> Ping(CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.PingAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);

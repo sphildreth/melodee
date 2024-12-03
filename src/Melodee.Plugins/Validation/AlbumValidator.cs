@@ -49,6 +49,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         AlbumArtistDoesNotHaveUnwantedText(album);
         AlbumTitleDoesNotHaveUnwantedText(album);
         DoMediaTotalMatchMediaNumbers(album);
+        DoAllSongsHaveMediaNumberSet(album);
         DoesSongTotalMatchSongCount(album);
         DoesAlbumHaveCoverImage(album);
         AlbumDoesNotHaveProofImages(album);
@@ -131,6 +132,25 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
         }
 
+        return result;
+    }
+
+    private bool DoAllSongsHaveMediaNumberSet(Album album)
+    {
+        var result = true;
+        var songs = album.Songs?.ToArray() ?? [];
+        foreach (var song in songs)
+        {
+            if (song.MediaNumber() < 1)
+            {
+                _validationMessages.Add(new ValidationResultMessage
+                {
+                    Message = $"Song [{song.DisplaySummary}] has invalid media number.",
+                    Severity = ValidationResultMessageSeverity.Critical
+                });
+                result = false;
+            }
+        }
         return result;
     }
 

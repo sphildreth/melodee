@@ -179,6 +179,16 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                         }
                                     }
 
+                                    if (identifier == MetaTagIdentifier.DiscNumber || 
+                                        identifier == MetaTagIdentifier.DiscTotal)
+                                    {
+                                        // Every album with songs has at least one disc
+                                        if (SafeParser.ToNumber<short>(v) < 1)
+                                        {
+                                            v = 1;
+                                        }
+                                    }
+
                                     tags.Add(new MetaTag<object?>
                                     {
                                         Identifier = identifier,

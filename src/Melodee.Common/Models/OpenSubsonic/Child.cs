@@ -90,4 +90,7 @@ public record Child(
     int? MinutesAgo = null,
     int? PlayerId = null,
     string? PlayerName = null
-);
+)
+{
+    public int? Track => Song;
+}
