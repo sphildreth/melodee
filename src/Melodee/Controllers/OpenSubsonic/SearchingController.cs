@@ -1,12 +1,11 @@
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Serialization;
-using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class SearchingController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class SearchingController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     // Deprecated says to use search2
     //search
@@ -23,8 +22,8 @@ public class SearchingController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/search3.view")]
-    public async Task<IActionResult> SearchAsync(SearchRequest request, CancellationToken cancellationToken = default)
+    public Task<IActionResult> SearchAsync(SearchRequest request, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SearchAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.SearchAsync(request, ApiRequest, cancellationToken));
     }
 }

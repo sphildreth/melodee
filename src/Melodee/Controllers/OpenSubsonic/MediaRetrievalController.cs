@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     //download
     //getCaptions

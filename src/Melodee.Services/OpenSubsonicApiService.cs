@@ -2339,7 +2339,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<object> DeleteBookmarkAsync(string id, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> DeleteBookmarkAsync(string id, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -2383,7 +2383,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<object> GetArtistInfoAsync(string id, int? count, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> GetArtistInfoAsync(string id, int? count, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)

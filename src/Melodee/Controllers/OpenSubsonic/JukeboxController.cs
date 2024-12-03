@@ -3,7 +3,7 @@ using Melodee.Services;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class JukeboxController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class JukeboxController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     // jukeboxControl
 }

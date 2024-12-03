@@ -1,12 +1,13 @@
 using System.Net;
+using Melodee.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
 /// <summary>
-/// No plans on implementing Podcasts in Melodee.
+///     No plans on implementing Podcasts in Melodee.
 /// </summary>
-public class PodcastController : ControllerBase
+public class PodcastController(ISerializer serializer) : ControllerBase(serializer)
 {
     [HttpGet]
     [HttpPost]

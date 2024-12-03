@@ -37,4 +37,11 @@
     <ProjectReference Include="..\..\src\Melodee.Services\Melodee.Services.csproj"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\data\subsonic-rest-api-1.16.1.xsd">
+      <Link>Data/subsonic-rest-api-1.16.1.xsd</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

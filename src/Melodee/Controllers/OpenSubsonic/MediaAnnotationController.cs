@@ -1,11 +1,10 @@
 using Melodee.Common.Serialization;
-using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     /// <summary>
     ///     Sets the rating for a music file.
@@ -16,9 +15,9 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/setRating.view")]
-    public async Task<IActionResult> SetRatingAsync(string id, int rating, CancellationToken cancellationToken = default)
+    public Task<IActionResult> SetRatingAsync(string id, int rating, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SetRatingAsync(id, rating, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.SetRatingAsync(id, rating, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -31,9 +30,9 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/scrobble.view")]
-    public async Task<IActionResult> ScrobbleAsync(string[] id, double[]? time, bool? submission, CancellationToken cancellationToken = default)
+    public Task<IActionResult> ScrobbleAsync(string[] id, double[]? time, bool? submission, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ScrobbleAsync(id, time, submission, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.ScrobbleAsync(id, time, submission, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -52,9 +51,9 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/star.view")]
-    public async Task<IActionResult> StarAsync(string id, string? albumId, string? artistId, CancellationToken cancellationToken = default)
+    public Task<IActionResult> StarAsync(string id, string? albumId, string? artistId, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ToggleStarAsync(true, id, albumId, artistId, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.ToggleStarAsync(true, id, albumId, artistId, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -73,8 +72,8 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/unstar.view")]
-    public async Task<IActionResult> UnstarAsync(string id, string? albumId, string? artistId, CancellationToken cancellationToken = default)
+    public Task<IActionResult> UnstarAsync(string id, string? albumId, string? artistId, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.ToggleStarAsync(false, id, albumId, artistId, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.ToggleStarAsync(false, id, albumId, artistId, ApiRequest, cancellationToken));
     }
 }

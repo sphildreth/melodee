@@ -1,11 +1,10 @@
 using Melodee.Common.Serialization;
-using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class MediaLibraryScanning(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class MediaLibraryScanning(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     /// <summary>
     ///     Initiates a rescan of the media libraries.
@@ -14,9 +13,9 @@ public class MediaLibraryScanning(ISerializer serializer, OpenSubsonicApiService
     [HttpGet]
     [HttpPost]
     [Route("/rest/startScan.view")]
-    public async Task<IActionResult> StartScanAsync(CancellationToken cancellationToken = default)
+    public Task<IActionResult> StartScanAsync(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.StartScanAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.StartScanAsync(ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -26,8 +25,8 @@ public class MediaLibraryScanning(ISerializer serializer, OpenSubsonicApiService
     [HttpGet]
     [HttpPost]
     [Route("/rest/getScanStatus.view")]
-    public async Task<IActionResult> GetScanStatusAsync(CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetScanStatusAsync(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetScanStatusAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetScanStatusAsync(ApiRequest, cancellationToken));
     }
 }

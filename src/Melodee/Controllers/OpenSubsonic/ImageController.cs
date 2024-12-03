@@ -1,9 +1,10 @@
+using Melodee.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using ILogger = Serilog.ILogger;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class ImageController(ILogger logger) : ControllerBase
+public class ImageController(ILogger logger, ISerializer serializer) : ControllerBase(serializer)
 {
     /// <summary>
     ///     Returns an image based on id and size.

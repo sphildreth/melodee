@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class SearchEngineController(ISerializer serializer, ArtistSearchEngineService artistSearchEngineService) : ControllerBase
+public class SearchEngineController(ISerializer serializer, ArtistSearchEngineService artistSearchEngineService) : ControllerBase(serializer)
 {
     /// <summary>
     ///     Perform an artist search engine search and return results.

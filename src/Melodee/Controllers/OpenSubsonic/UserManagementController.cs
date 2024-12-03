@@ -1,12 +1,11 @@
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Serialization;
-using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class UserManagementController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class UserManagementController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     // getUsers
     // updateUser
@@ -24,9 +23,9 @@ public class UserManagementController(ISerializer serializer, OpenSubsonicApiSer
     [HttpGet]
     [HttpPost]
     [Route("/rest/getUser.view")]
-    public async Task<IActionResult> GetUserAsync(string username, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetUserAsync(string username, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetUserAsync(username, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetUserAsync(username, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -37,8 +36,8 @@ public class UserManagementController(ISerializer serializer, OpenSubsonicApiSer
     [HttpGet]
     [HttpPost]
     [Route("/rest/createUser.view")]
-    public async Task<IActionResult> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
+    public Task<IActionResult> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.CreateUserAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.CreateUserAsync(request, ApiRequest, cancellationToken));
     }
 }

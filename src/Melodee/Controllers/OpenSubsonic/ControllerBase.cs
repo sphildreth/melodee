@@ -1,13 +1,17 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
+using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.Scrobbling;
+using Melodee.Common.Serialization;
+using Melodee.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Serilog;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public abstract class ControllerBase : Controller
+public abstract class ControllerBase(ISerializer serializer) : Controller
 {
     protected ApiRequest ApiRequest { get; private set; } = null!;
 
@@ -51,6 +55,28 @@ public abstract class ControllerBase : Controller
         return ip;
     }
 
+    protected async Task<IActionResult> MakeResult(Task<ResponseModel> modelTask)
+    {
+        var modelData = await modelTask.ConfigureAwait(false);
+        if (ApiRequest.IsJsonRequest)
+        {
+            return new JsonStringResult(serializer.Serialize(modelData)!);
+        }
+
+        if (ApiRequest.IsXmlRequest)
+        {
+            return new XmlStringResult(serializer.SerializeOpenSubsonicModelToXml(modelData)!);
+        }
+
+        if (ApiRequest.IsJsonPRequest)
+        {
+            return new JsonStringResult($"{ApiRequest.Callback}({serializer.Serialize(modelData)})");
+        }
+
+        Log.Logger.Warning("!! Request is unknown format [{format}] Request [{Request}]", ApiRequest.Format, ApiRequest);
+        throw new NotImplementedException();
+    }
+
     public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var values = new List<KeyValue>();
@@ -69,6 +95,7 @@ public abstract class ControllerBase : Controller
             values.Add(new KeyValue("t", context.HttpContext.Request.Form["t"]));
             values.Add(new KeyValue("s", context.HttpContext.Request.Form["s"]));
             values.Add(new KeyValue("c", context.HttpContext.Request.Form["c"]));
+            values.Add(new KeyValue("callback", context.HttpContext.Request.Form["callback"]));
         }
         else
         {
@@ -80,6 +107,7 @@ public abstract class ControllerBase : Controller
             values.Add(new KeyValue("t", context.HttpContext.Request.Query["t"].FirstOrDefault()));
             values.Add(new KeyValue("s", context.HttpContext.Request.Query["s"].FirstOrDefault()));
             values.Add(new KeyValue("c", context.HttpContext.Request.Query["c"].FirstOrDefault()));
+            values.Add(new KeyValue("callback", context.HttpContext.Request.Query["callback"].FirstOrDefault()));
         }
 
         ApiRequest = new ApiRequest
@@ -92,6 +120,7 @@ public abstract class ControllerBase : Controller
             values.FirstOrDefault(x => x.Key == "p")?.Value,
             values.FirstOrDefault(x => x.Key == "t")?.Value,
             values.FirstOrDefault(x => x.Key == "s")?.Value,
+            values.FirstOrDefault(x => x.Key == "callback")?.Value,
             new UserPlayer
             (
                 values.FirstOrDefault(x => x.Key == "User-Agent")?.Value,

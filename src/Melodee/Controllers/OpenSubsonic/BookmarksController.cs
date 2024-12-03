@@ -1,11 +1,10 @@
 using Melodee.Common.Serialization;
-using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class BookmarksController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class BookmarksController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     /// <summary>
     ///     Deletes a bookmark.
@@ -15,9 +14,9 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/deleteBookmark.view")]
-    public async Task<IActionResult> DeleteBookmarkAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> DeleteBookmarkAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.DeleteBookmarkAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.DeleteBookmarkAsync(id, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -30,9 +29,9 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/createBookmark.view")]
-    public async Task<IActionResult> CreateBookmarkAsync(string id, int position, string? comment, CancellationToken cancellationToken = default)
+    public Task<IActionResult> CreateBookmarkAsync(string id, int position, string? comment, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.CreateBookmarkAsync(id, position, comment, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.CreateBookmarkAsync(id, position, comment, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -42,9 +41,9 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/getBookmarks.view")]
-    public async Task<IActionResult> GetBookmarksAsync(CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetBookmarksAsync(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetBookmarksAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetBookmarksAsync(ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -54,9 +53,9 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/getPlayQueue.view")]
-    public async Task<IActionResult> GetPlayQueueAsync(CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetPlayQueueAsync(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetPlayQueueAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetPlayQueueAsync(ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -72,8 +71,8 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/savePlayQueue.view")]
-    public async Task<IActionResult> SavePlayQueueAsync(string[]? id, string? current, double? position, CancellationToken cancellationToken = default)
+    public Task<IActionResult> SavePlayQueueAsync(string[]? id, string? current, double? position, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.SavePlayQueueAsync(id, current, position, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.SavePlayQueueAsync(id, current, position, ApiRequest, cancellationToken));
     }
 }

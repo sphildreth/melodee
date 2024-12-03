@@ -1,12 +1,11 @@
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Serialization;
-using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class PlaylistController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class PlaylistController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     //deletePlaylist
 
@@ -18,9 +17,9 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/deletePlaylist.view")]
-    public async Task<IActionResult> DeletePlaylistAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> DeletePlaylistAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.DeletePlaylistAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.DeletePlaylistAsync(id, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -33,10 +32,11 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/createPlaylist.view")]
-    public async Task<IActionResult> CreatePlaylistAsync(string? id, string? name, string[]? songId, CancellationToken cancellationToken = default)
+    public Task<IActionResult> CreatePlaylistAsync(string? id, string? name, string[]? songId, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.CreatePlaylistAsync(id, name, songId, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.CreatePlaylistAsync(id, name, songId, ApiRequest, cancellationToken));
     }
+
 
     /// <summary>
     ///     Updates a playlist. Only the owner of a playlist is allowed to update it..
@@ -46,9 +46,9 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/updatePlaylist.view")]
-    public async Task<IActionResult> CreatePlaylistAsync(UpdatePlayListRequest updateRequest, CancellationToken cancellationToken = default)
+    public Task<IActionResult> CreatePlaylistAsync(UpdatePlayListRequest updateRequest, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.UpdatePlaylistAsync(updateRequest, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.UpdatePlaylistAsync(updateRequest, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -58,9 +58,9 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getPlaylists.view")]
-    public async Task<IActionResult> GetPlaylistsAsync(CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetPlaylistsAsync(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetPlaylistsAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetPlaylistsAsync(ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -71,8 +71,8 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getPlaylist.view")]
-    public async Task<IActionResult> GetPlaylistAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetPlaylistAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetPlaylistAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetPlaylistAsync(id, ApiRequest, cancellationToken));
     }
 }

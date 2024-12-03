@@ -2,6 +2,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Serialization;
+using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
+using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Serialization.Convertors;
 using Serilog;
 
@@ -10,6 +13,20 @@ namespace Melodee.Common.Serialization;
 public sealed class Serializer(ILogger logger) : ISerializer
 {
     private ILogger Logger { get; } = logger;
+
+    public string? SerializeOpenSubsonicModelToXml(ResponseModel? model)
+    {
+        if (model == null)
+        {
+            return null;
+        }
+        var result = new StringBuilder($"<subsonic-response xmlns=\"https://subsonic.org/restapi\" encoding=\"UTF-8\" status=\"{( model.IsSuccess ? "ok" : "error") }\" version=\"{model.ResponseData.Version}\">");
+
+        // Each object is an element and each object property is an attribute
+
+        result.Append("</subsonic-response>");
+        return result.ToString();
+    }
     
     public string? Serialize(object? o)
     {

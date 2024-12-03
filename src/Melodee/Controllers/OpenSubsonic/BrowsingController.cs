@@ -1,11 +1,10 @@
 using Melodee.Common.Serialization;
-using Melodee.Results;
 using Melodee.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class BrowsingController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase
+public class BrowsingController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
     //getArtists
     //getSimilarSongs
@@ -24,9 +23,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpPost]
     [Route("/rest/getAlbumInfo.view")]
     [Route("/rest/getAlbumInfo2.view")]
-    public async Task<IActionResult> GetAlbumInfo(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetAlbumInfo(string id, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumInfoAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetAlbumInfoAsync(id, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -39,9 +38,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpPost]
     [Route("/rest/getArtistInfo.view")]
     [Route("/rest/getArtistInfo2.view")]
-    public async Task<IActionResult> GetArtistInfo(string id, int? count, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetArtistInfo(string id, int? count, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetArtistInfoAsync(id, count, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetArtistInfoAsync(id, count, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -53,9 +52,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getTopSongs.view")]
-    public async Task<IActionResult> GetTopSongs(string artist, int? count, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetTopSongs(string artist, int? count, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetTopSongsAsync(artist, count, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetTopSongsAsync(artist, count, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -66,9 +65,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getArtist.view")]
-    public async Task<IActionResult> GetArtistAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetArtistAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetArtistAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetArtistAsync(id, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -78,9 +77,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getMusicFolders.view")]
-    public async Task<IActionResult> GetMusicFolders(CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetMusicFolders(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetMusicFolders(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetMusicFolders(ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -98,9 +97,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getIndexes.view")]
-    public async Task<IActionResult> GetIndexesAsync(Guid? musicFolderId, long? ifModifiedSince, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetIndexesAsync(Guid? musicFolderId, long? ifModifiedSince, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync("indexes", musicFolderId, ifModifiedSince, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetIndexesAsync("indexes", musicFolderId, ifModifiedSince, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -114,9 +113,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getArtists.view")]
-    public async Task<IActionResult> GetArtistsAsync(Guid? musicFolderId, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetArtistsAsync(Guid? musicFolderId, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetIndexesAsync("artists", musicFolderId, null, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetIndexesAsync("artists", musicFolderId, null, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -131,9 +130,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getMusicDirectory.view")]
-    public async Task<IActionResult> GetMusicDirectoryAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetMusicDirectoryAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetMusicDirectoryAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetMusicDirectoryAsync(id, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -144,9 +143,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getSong.view")]
-    public async Task<IActionResult> GetSongAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetSongAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetSongAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetSongAsync(id, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -156,9 +155,9 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getGenres.view")]
-    public async Task<IActionResult> GetGenresAsync(CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetGenresAsync(CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetGenresAsync(ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetGenresAsync(ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -169,8 +168,8 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getAlbum.view")]
-    public async Task<IActionResult> GetAlbumAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetAlbumAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new JsonStringResult(serializer.Serialize(await openSubsonicApiService.GetAlbumAsync(id, ApiRequest, cancellationToken).ConfigureAwait(false))!);
+        return MakeResult(openSubsonicApiService.GetAlbumAsync(id, ApiRequest, cancellationToken));
     }
 }
