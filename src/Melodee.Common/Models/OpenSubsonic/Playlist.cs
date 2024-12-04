@@ -1,6 +1,10 @@
+using System.Text;
+using Mapster;
+using Melodee.Common.Extensions;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
-public record Playlist
+public record Playlist : IOpenSubsonicToXml
 {
     /// <summary>
     ///     Id of the playlist
@@ -61,4 +65,23 @@ public record Playlist
     ///     Songs on the playlist.
     /// </summary>
     public Child[]? Entry { get; init; }
+
+    public string ToXml(string? nodeName = null)
+    {
+        var result = new StringBuilder($"<playlist id=\"{Id}\" name=\"{Name}\" comment=\"{Comment}\" owner=\"{Owner}\" public=\"{Public.ToLowerCaseString()}\" songCount=\"{SongCount}\" duration=\"{Duration}\" created=\"{Created}\" coverArt=\"{CoverArt}\"");
+        if (AllowedUsers != null)
+        {
+            result.Append('>');
+            foreach (var allowedUser in AllowedUsers)
+            {
+                result.Append($"<allowedUser>{allowedUser}</allowedUser>");
+            }
+            result.Append("/playlist");
+        }
+        else
+        {
+            result.Append("/>");
+        }
+        return result.ToString();
+    }
 }

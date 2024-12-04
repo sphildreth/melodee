@@ -1,3 +1,6 @@
+using System.Text;
+using Mapster;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
 public record AlbumInfo(
@@ -8,11 +11,26 @@ public record AlbumInfo(
     string? LargeImageUrl = null,
     int? SongCount = null,
     int? AlbumCount = null,
-    string? notes  = null,
-    Guid? MusicBrainzArtistId = null) : NamedInfo(Id,
+    string? Notes = null,
+    Guid? MusicBrainzArtistId = null,
+    string? LastFmUrl = null) : NamedInfo(Id,
     Name,
     SmallImageUrl,
     MediumImageUrl,
     LargeImageUrl,
     SongCount,
-    AlbumCount);
+    AlbumCount)
+{
+    public override string ToXml(string? nodeName = null)
+    {
+        var result = new StringBuilder("<albumInfo>");
+        result.Append($"<notes>{ Notes }</notes>");
+        result.Append($"<musicBrainzId>{ MusicBrainzArtistId }</musicBrainzId>");
+        result.Append($"<lastFmUrl>{ LastFmUrl }</lastFmUrl>");
+        result.Append($"<smallImageUrl>{ SmallImageUrl }</smallImageUrl>");
+        result.Append($"<mediumImageUrl>{ MediumImageUrl }</mediumImageUrl>");
+        result.Append($"<largeImageUrl>{ LargeImageUrl }</largeImageUrl>");
+        result.Append("</albumInfo>");
+        return result.ToString();
+    }
+}

@@ -9,4 +9,10 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// <param name="Created">Bookmark creation date [ISO 8601]</param>
 /// <param name="Change">Bookmark last updated date [ISO 8601]</param>
 /// <param name="Entry">The bookmark file</param>
-public sealed record Bookmark(long Position, string Username, string? Comment, string Created, string Change, Child Entry);
+public sealed record Bookmark(long Position, string Username, string? Comment, string Created, string Change, Child Entry) : IOpenSubsonicToXml
+{
+    public string ToXml(string? nodeName = null)
+    {
+        return $"<bookmark position=\"{Position}\" username=\"{Username}\" comment=\"{Comment}\" created=\"{Created}\" changed=\"{Change}\">{((IOpenSubsonicToXml)Entry).ToXml("entry")}</bookmark>";
+    }
+}

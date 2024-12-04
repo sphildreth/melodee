@@ -24,4 +24,10 @@ public record ArtistID3(
     string? MusicBrainzId,
     string? SortName,
     string[]? Roles
-);
+) : IOpenSubsonicToXml
+{
+    public string ToXml(string? nodeName = null)
+    {
+        return $"<{ nodeName ?? "artist"} id=\" { Id }\" name =\"{ Name } \" coverArt=\"{ CoverArt }\" artistImageUrl=\"{ ArtistImageUrl }\" albumCount=\"{ AlbumCount }\" starred=\"{ Starred }\" />";
+    }
+}

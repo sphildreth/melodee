@@ -1,3 +1,6 @@
+using System.Text;
+using Melodee.Common.Extensions;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
@@ -15,4 +18,19 @@ namespace Melodee.Common.Models.OpenSubsonic;
 /// <param name="PlayCount">The play count</param>
 /// <para name="Played">Last played date [ISO 8601]</para>
 /// <param name="Child">The directory content (can be an album, can be a song)</param>
-public record Directory(string Id, string? Parent, string Name, string? Starred, int? UserRating, decimal AverageRating, long PlayCount, string? Played, Child[] Child);
+public record Directory(string Id, string? Parent, string Name, string? Starred, int? UserRating, decimal AverageRating, long PlayCount, string? Played, Child[] Child): IOpenSubsonicToXml
+{
+    public string ToXml(string? nodeName = null)
+    {
+        var result = new StringBuilder($"<directory id=\"{ Id }\" parent=\"{ Parent }\" name=\"{ Name }\" starred=\"{Starred}\">");
+        if (Child.Length > 0)
+        {
+            foreach (var child in Child)
+            {
+                result.Append(child.ToXml($"<child id=\"{ child.Id}\" parent=\"{ child.Parent}\" title=\"{ child.Title}\" artist=\"{ child.Artist}\" isDir=\"{ (child.IsDir ?? false).ToLowerCaseString()}\" coverArt=\"{ child.CoverArt}\"/>"));
+            }
+        }
+        result.Append("</directory>");        
+        return result.ToString();   
+    }
+}

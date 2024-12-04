@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
@@ -21,10 +23,24 @@ public record Artist(
     string? ArtistImageUrl = null,
     string? UserStarred = null,
     AlbumList2[]? Album = null
-)
+) : IOpenSubsonicToXml
 {
     /// <summary>
     ///     Sometimes its "Starred" and sometimes its "UserStarred" in the responses.
     /// </summary>
     public string? Starred => UserStarred;
+
+    public string ToXml(string? nodeName = null)
+    {
+        var result = new StringBuilder("artist id=\"5432\" name=\"AC/DC\" coverArt=\"ar-5432\" albumCount=\"15\"");
+        if (Album != null)
+        {
+            foreach (var album in Album)
+            {
+                result.Append($"<album id=\"{ album.Id }\" name=\"{ album.Name }\" coverArt=\"{ album.CoverArt }\" songCount=\"{ album.SongCount }\" created=\"{ album.Created }\" duration=\"{ album.Duration }\" artist=\"{ album.Artist }\" artistId=\"{ album.ArtistId }\"/>");
+            }
+        }
+        result.Append("</artist>");
+        return result.ToString();
+    }
 }

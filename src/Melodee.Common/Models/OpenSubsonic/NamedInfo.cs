@@ -11,8 +11,8 @@ public record NamedInfo(
     int? SongCount = null,
     int? AlbumCount = null) : InfoBase(SmallImageUrl, MediumImageUrl, LargeImageUrl), IOpenSubsonicToXml
 {
-    public string ToXml()
+    public virtual string ToXml(string? nodeName = null)
     {
-        return $"<musicFolder id=\"{Id}\" name=\"{Name }\"/>";
+        return $"<{nodeName ?? "musicFolder"} id=\"{Id}\" name=\"{Name }\"/>";
     }
 }

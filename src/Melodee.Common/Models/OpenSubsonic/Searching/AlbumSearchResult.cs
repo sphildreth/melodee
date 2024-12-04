@@ -10,7 +10,7 @@ namespace Melodee.Common.Models.OpenSubsonic.Searching;
 ///         see  https://www.subsonic.org/pages/inc/api/examples/searchResult3_example_1.xml
 ///     </remarks>
 /// </summary>
-public record AlbumSearchResult
+public record AlbumSearchResult : IOpenSubsonicToXml
 {
     public required string Id { get; init; }
 
@@ -33,4 +33,9 @@ public record AlbumSearchResult
     public string Created => CreatedAt.ToString();
     
     public string[]? Genres { get; init; }
+    
+    public string ToXml(string? nodeName = null)
+    {
+        return $"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"/>";
+    }
 }

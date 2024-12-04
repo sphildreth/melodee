@@ -1,10 +1,12 @@
+using System.Text;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
 ///     Album with songs.
 ///     <remarks>https://opensubsonic.netlify.app/docs/responses/albumid3/</remarks>
 /// </summary>
-public record AlbumId3WithSongs
+public record AlbumId3WithSongs : IOpenSubsonicToXml
 {
     /// <summary>
     ///     The id of the album
@@ -105,4 +107,13 @@ public record AlbumId3WithSongs
     public Child[]? Song { get; init; }
 
     public required string Parent { get; set; }
+    public string ToXml(string? nodeName = null)
+    {
+        var result = new StringBuilder($"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Name }\" artistId=\"{ ArtistId }\">");
+
+    
+        result.Append("</album>");
+        return result.ToString();
+
+    }
 }

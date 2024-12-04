@@ -1,9 +1,11 @@
+using System.Runtime.InteropServices.JavaScript;
+using System.Text;
 using System.Text.Json.Serialization;
 using NodaTime;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
-public sealed record AlbumList2
+public sealed record AlbumList2 : IOpenSubsonicToXml
 {
     public required string Id { get; init; }
 
@@ -38,4 +40,9 @@ public sealed record AlbumList2
     public int? UserRating { get; init; }
 
     public string[]? Genres { get; init; }
+    
+    public string ToXml(string? nodeName = null)
+    {
+        throw new NotImplementedException();
+    }
 }

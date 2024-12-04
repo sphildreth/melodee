@@ -64,17 +64,17 @@ public class OpenSubsonicApiService(
 
     public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty);
 
-    public static bool IsApiIdForArtist(string? id)
+    private static bool IsApiIdForArtist(string? id)
     {
         return id.Nullify() != null && (id?.StartsWith($"artist{OpenSubsonicServer.ApiIdSeparator}") ?? false);
     }
 
-    public static bool IsApiIdForAlbum(string? id)
+    private static bool IsApiIdForAlbum(string? id)
     {
         return id.Nullify() != null && (id?.StartsWith($"album{OpenSubsonicServer.ApiIdSeparator}") ?? false);
     }
 
-    public static bool IsApiIdForSong(string? id)
+    private static bool IsApiIdForSong(string? id)
     {
         return id.Nullify() != null && (id?.StartsWith($"song{OpenSubsonicServer.ApiIdSeparator}") ?? false);
     }
@@ -2417,6 +2417,7 @@ public class OpenSubsonicApiService(
                     artist.AlbumCount,
                     artist.Biography,
                     artist.MusicBrainzId,
+                    artist.LastFmId,
                     similarArtists);
             }
         }

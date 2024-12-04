@@ -1,3 +1,7 @@
+using System.Runtime.InteropServices.JavaScript;
+using System.Text;
+using System.Text.Json.Serialization;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
@@ -90,7 +94,14 @@ public record Child(
     int? MinutesAgo = null,
     int? PlayerId = null,
     string? PlayerName = null
-)
+) : IOpenSubsonicToXml
 {
     public int? Track => Song;
+    
+    public string? Genre => Genres?.Length > 0 ? Genres[0].Value : null;
+    
+    public string ToXml(string? nodeName = null)
+    {
+        return $"<{nodeName ?? "song"} id=\"{Id}\" parent=\"{Parent}\" title=\"{Title}\" isDir=\"{IsDir}\" album=\"{Album}\" artist=\"{Artist}\" track=\"{Track}\" year=\"{Year}\" genre=\"{Genre}\" coverArt=\"{CoverArt}\" size=\"{Size}\" contentType=\"{ContentType}\" suffix=\"{Suffix}\" duration=\"{Duration}\" bitRate=\"{BitRate}\" path=\"{Path}\"/>";
+    }
 }
