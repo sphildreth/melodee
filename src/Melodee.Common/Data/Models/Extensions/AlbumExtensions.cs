@@ -11,6 +11,25 @@ public static class AlbumExtensions
     public static string ToCoverArtId(this Album album) => album.ToApiKey();
     
     public static string ToApiKey(this Album album) => $"album{OpenSubsonicServer.ApiIdSeparator }{album.ApiKey}";
+
+    public static AlbumID3 ToArtistID3(this Album album, UserAlbum? userAlbum, NowPlayingInfo? nowPlayingInfo)
+    {
+        return new AlbumID3
+        {
+            Id = album.ToApiKey(),
+            Name = album.Name,
+            Artist = album.Artist.Name,
+            ArtistId = album.Artist.ToApiKey(),
+            CoverArt = album.ToCoverArtId(),
+            SongCount = album.SongCount ?? 0,
+            Duration = album.Duration.ToSeconds(),
+            PlayCount = album.PlayedCount,
+            Created = album.CreatedAt.ToString(),
+            Starred = userAlbum?.StarredAt?.ToString(),
+            Year = album.ReleaseDate.Year,
+            Genre = album.Genres == null ? null : string.Join(", ", album.Genres)
+        };
+    }
     
     public static Child ToApiChild(this Album album, UserAlbum? userAlbum, NowPlayingInfo? nowPlayingInfo = null)
     {

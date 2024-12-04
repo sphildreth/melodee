@@ -4,7 +4,7 @@ namespace Melodee.Common.Models.OpenSubsonic.Responses;
 
 public record ResponseModel
 {
-    public bool IsSuccess { get; init; }
+    public bool IsSuccess { get; init; } = true;
 
     public required UserInfo UserInfo { get; init; }
 

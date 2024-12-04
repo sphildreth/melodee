@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using Melodee.Common.Exceptions;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Tests.Services;
 using NodaTime;
@@ -14,11 +16,41 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
     {
         string xsdPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Data", "subsonic-rest-api-1.16.1.xsd");
         var schemas = new XmlSchemaSet();
-        schemas.Add("http://subsonic.org/restapi", xsdPath);
+        schemas.Add("https://subsonic.org/restapi", xsdPath);
         return schemas;
     }
+
+    [Fact]
+    public void ValidateLicenseResponse()
+    {
+        var schemas = GetXmlSchemaSet();
+        var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
+        {
+            IsSuccess = true,
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
+            {
+                IsSuccess = true,
+                Version = "1.16.1",
+                Type = "Melodee",
+                ServerVersion = "v1.0.0-rc1",
+                DataPropertyName = string.Empty,
+                Data = new License(true, "admin@melodee.net", DateTimeOffset.UtcNow.AddYears(50).ToXmlSchemaDateTimeFormat(), string.Empty),
+            }
+        };
+        var xml = Serializer.SerializeOpenSubsonicModelToXml(response);
+        Assert.NotNull(xml);
+        var xmlDoc = XDocument.Load(new StringReader(xml));
+        var isValid = true;
+        xmlDoc.Validate(schemas, (sender, e) =>
+        {
+            testOutputHelper.WriteLine("Validation error: {0}", e.Message);
+            isValid = false;
+        });
+        Assert.True(isValid);
+    }    
     
-        [Fact]
+    [Fact]
     public void ValidateUserResponse()
     {
         var schemas = GetXmlSchemaSet();
@@ -29,7 +61,6 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
-                Status = "ok",
                 Version = "1.16.1",
                 Type = "Melodee",
                 ServerVersion = "v1.0.0-rc1",
@@ -38,9 +69,8 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
             }
         };
         var xml = Serializer.SerializeOpenSubsonicModelToXml(response);
-        var xmlDoc = XDocument.Load(new StringReader(xml));        
         Assert.NotNull(xml);
-        xmlDoc = XDocument.Load(new StringReader(xml));
+        var xmlDoc = XDocument.Load(new StringReader(xml));
         var isValid = true;
         xmlDoc.Validate(schemas, (sender, e) =>
         {
@@ -61,11 +91,11 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
-                Status = "ok",
                 Version = "1.16.1",
                 Type = "Melodee",
                 ServerVersion = "v1.0.0-rc1",
-                DataPropertyName = string.Empty,
+                DataPropertyName = "albumList2",
+                DataDetailPropertyName = "album",                
                 Data = new AlbumList2[]
                 {
                     new AlbumList2
@@ -83,7 +113,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
                         Artist = "Da Artist",
                         Year = 1980,
                         UserStarredCount = 0,
-                        Starred = false,
+                        Starred = null,
                         UserRating = 0,
                         Genres = new string[]
                         {
@@ -106,7 +136,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
                         Artist = "Da Artist 2",
                         Year = 1981,
                         UserStarredCount = 1,
-                        Starred = true,
+                        Starred = Instant.FromDateTimeUtc(DateTime.UtcNow).ToString(),
                         UserRating = 2,
                         Genres = new string[]
                         {
@@ -118,9 +148,8 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
             }
         };
         var xml = Serializer.SerializeOpenSubsonicModelToXml(response);
-        var xmlDoc = XDocument.Load(new StringReader(xml));        
         Assert.NotNull(xml);
-        xmlDoc = XDocument.Load(new StringReader(xml));
+        var xmlDoc = XDocument.Load(new StringReader(xml));
         var isValid = true;
         xmlDoc.Validate(schemas, (sender, e) =>
         {
@@ -129,13 +158,57 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         });
         Assert.True(isValid);
     }
+
+    private Child NewChild()
+    {
+        return new Child("child1", "parent1", false, "title1", "album1", "artist1", 1, 1980, "coverart1",
+            12345, "audio/mp3", "mp3", null, 4321, 320, 1, 44800, 2, "path1",
+            1, DateTimeOffset.UtcNow.AddSeconds(5).ToXmlSchemaDateTimeFormat(), 1, DateTimeOffset.UtcNow.AddSeconds(1).ToXmlSchemaDateTimeFormat(),
+            "albumid1", "artist1id", "music", "mediaType", false, 80, null, "sortname1", null, [new Genre { AlbumCount = 1, SongCount = 1, Value = "dagenre1" }],
+            null, "displayartist1", null, "displayalbumartist1", null, null, null, null, 4, 2, "username1",
+            3, 1, "feishin");
+    }
+    
+    [Fact]
+    public void ValidateRandomSongsXMLResponse()
+    {
+        var schemas = GetXmlSchemaSet();
+        var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
+        {
+            IsSuccess = true,
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
+            {
+                IsSuccess = true,
+                Version = "1.16.1",
+                Type = "Melodee",
+                ServerVersion = "v1.0.0-rc1",
+                DataPropertyName = "randomSongs",
+                DataDetailPropertyName = "song",                
+                Data = new Child[] {
+                    NewChild()
+                }
+            }
+        };
+      
+        var xml = Serializer.SerializeOpenSubsonicModelToXml(response);
+        Assert.NotNull(xml);
+        var xmlDoc = XDocument.Load(new StringReader(xml));
+        var isValid = true;
+        xmlDoc.Validate(schemas, (sender, e) =>
+        {
+            testOutputHelper.WriteLine("Validation error: {0}", e.Message);
+            isValid = false;
+        });
+        Assert.True(isValid);        
+    }
     
     [Fact]
     public void ValidateSubsonicXmlPingResponse()
     {
         var schemas = GetXmlSchemaSet();
-        var goodXml = "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"ok\" version=\"1.1.1\"> </subsonic-response>";
-        var badXml = "<subsonic-response xmlns=\"http://subsonic.org/restapi\" _sXXXatus=\"batman\" version=\"1.1.1\"> </subsonic-response>";
+        var goodXml = "<subsonic-response xmlns=\"https://subsonic.org/restapi\" status=\"ok\" version=\"1.1.1\"> </subsonic-response>";
+        var badXml = "<subsonic-response xmlns=\"https://subsonic.org/restapi\" _sXXXatus=\"batman\" version=\"1.1.1\"> </subsonic-response>";
 
         // Should be good
         var xmlDoc = XDocument.Load(new StringReader(goodXml));
@@ -164,7 +237,6 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
-                Status = "ok",
                 Version = "1.16.1",
                 Type = "Melodee",
                 ServerVersion = "v1.0.0-rc1",
@@ -184,4 +256,75 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         Assert.True(isValid);
 
     }
+
+    [Fact]
+    public void ValidateBookmarkXmlResponse()
+    {
+        var schemas = GetXmlSchemaSet();
+        var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
+        {
+            IsSuccess = true,
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
+            {
+                IsSuccess = true,
+                Version = "1.16.1",
+                Type = "Melodee",
+                ServerVersion = "v1.0.0-rc1",
+                DataPropertyName = "bookmarks",
+                DataDetailPropertyName = "bookmark",
+                Data = new Bookmark[] {
+                    new Bookmark(0, "username1", null, Instant.FromDateTimeUtc(DateTime.UtcNow).ToString(), Instant.FromDateTimeUtc(DateTime.UtcNow).ToString(), NewChild() )
+                }
+            }
+        };
+        var xml = Serializer.SerializeOpenSubsonicModelToXml(response);
+        Assert.NotNull(xml);
+        var xmlDoc = XDocument.Load(new StringReader(xml));
+        var isValid = true;
+        xmlDoc.Validate(schemas, (sender, e) =>
+        {
+            testOutputHelper.WriteLine("Validation error: {0}", e.Message);
+            isValid = false;
+        });
+        Assert.True(isValid);
+    }
+    
+    [Fact]
+    public void ValidatePlayQueueXmlResponse()
+    {
+        var schemas = GetXmlSchemaSet();
+        var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
+        {
+            IsSuccess = true,
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
+            {
+                IsSuccess = true,
+                Version = "1.16.1",
+                Type = "Melodee",
+                ServerVersion = "v1.0.0-rc1",
+                DataPropertyName = string.Empty,
+                Data = new PlayQueue
+                {
+                    Current = 1,
+                    Position = 1234,
+                    ChangedBy = "username1",
+                    Changed = Instant.FromDateTimeUtc(DateTime.UtcNow).ToString(),
+                    Username = "username1",
+                    Entry = [NewChild()]
+                }
+            }
+        };
+        var xml = Serializer.SerializeOpenSubsonicModelToXml(response);
+        Assert.NotNull(xml);
+        var xmlDoc = XDocument.Load(new StringReader(xml));
+        var isValid = true;
+        xmlDoc.Validate(schemas, (sender, e) =>
+        {
+            testOutputHelper.WriteLine("Validation error: {0}", e.Message);
+            isValid = false;
+        });
+        Assert.True(isValid);
+    }    
 }

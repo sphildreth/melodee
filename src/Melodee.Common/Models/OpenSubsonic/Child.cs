@@ -108,12 +108,18 @@ public record Child(
     //     <xs:attribute name="transcodedSuffix" type="xs:string" use="optional"/>
     //     <xs:attribute name="bookmarkPosition" type="xs:long" use="optional"/>  <!-- In millis. Added in 1.10.1 -->
     // </xs:complexType>
+    
+        string starredAttribute = string.Empty;
+        if (Starred != null)
+        {
+            starredAttribute = $" starred=\"{Starred}\"";
+        }    
         
-        return $"<{nodeName ?? "song"} id=\"{Id}\" parent=\"{Parent}\" title=\"{Title}\" isDir=\"{IsDir}\" " +
+        return $"<{nodeName ?? "song"} id=\"{Id}\" parent=\"{Parent}\" title=\"{Title}\" isDir=\"{(IsDir ?? false).ToLowerCaseString()}\" " +
                $"album=\"{Album}\" artist=\"{Artist}\" track=\"{Track}\" year=\"{Year}\" genre=\"{Genre}\" " +
                $"isVideo=\"{ (IsVideo ?? false).ToLowerCaseString() }\" playCount=\"{ PlayCount }\" discNumber=\"{DiscNumber}\" " +
                $"averageRating=\"{ AverageRating ?? 0 }\" userRating=\"{UserRating ?? 0}\" " +
-               $"created=\"{Created}\" starred=\"{Starred}\" albumId=\"{AlbumId}\" artistId=\"{ArtistId}\" type=\"{Type}\" " +
+               $"created=\"{Created}\" {starredAttribute} albumId=\"{AlbumId}\" artistId=\"{ArtistId}\" type=\"{Type}\" " +
                $"coverArt=\"{CoverArt}\" size=\"{Size}\" contentType=\"{ContentType}\" suffix=\"{Suffix}\" " +
                $"duration=\"{Duration}\" bitRate=\"{BitRate}\" path=\"{Path}\"/>";
     }

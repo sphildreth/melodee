@@ -14,8 +14,6 @@ public record ApiResponse
     /// </summary>
     public string? DataDetailPropertyName { get; init; }
 
-    public required string Status { get; init; }
-
     public required string Version { get; init; }
 
     public required string Type { get; init; }

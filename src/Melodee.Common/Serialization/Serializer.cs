@@ -23,7 +23,7 @@ public sealed class Serializer(ILogger logger) : ISerializer
         {
             return null;
         }
-        var result = new StringBuilder($"<subsonic-response xmlns=\"https://subsonic.org/restapi\" encoding=\"UTF-8\" status=\"{( model.IsSuccess ? "ok" : "error") }\" version=\"{model.ResponseData.Version}\">");
+        var result = new StringBuilder($"<subsonic-response xmlns=\"https://subsonic.org/restapi\" status=\"{( model.IsSuccess ? "ok" : "error") }\" version=\"{model.ResponseData.Version}\">");
 
         if (model.ResponseData.Error != null)
         {

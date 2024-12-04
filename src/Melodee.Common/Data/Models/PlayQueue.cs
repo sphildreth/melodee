@@ -31,4 +31,6 @@ public class PlayQueue : DataModelBase
     public required string ChangedBy { get; set; }
 
     [Required] public double Position { get; set; }
+    
+    [Required] public int PlayQueId { get; set; }
 }

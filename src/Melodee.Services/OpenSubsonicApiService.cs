@@ -108,14 +108,14 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = BlankUserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 DataPropertyName = "license",
                 Data = new License(true,
                     (await Configuration.Value).GetValue<string>(SettingRegistry.OpenSubsonicServerLicenseEmail) ?? ServiceUser.Instance.Value.Email,
-                    DateTimeOffset.UtcNow.AddYears(50).ToString("O"),
-                    DateTimeOffset.UtcNow.AddYears(50).ToString("O")
+                    DateTimeOffset.UtcNow.AddYears(50).ToXmlSchemaDateTimeFormat(),
+                    DateTimeOffset.UtcNow.AddYears(50).ToXmlSchemaDateTimeFormat()
                 )
             }
         };
@@ -129,11 +129,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Playlist[] data = [];
@@ -163,7 +159,6 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -178,11 +173,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Error? notAuthorizedError = null;
@@ -266,11 +257,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Error? notAuthorizedError = null;
@@ -312,11 +299,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var playListId = string.Empty;
@@ -362,11 +345,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Playlist? data = null;
@@ -388,25 +367,22 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
+                IsSuccess = data != null,
                 Data = data,
                 DataPropertyName = "playlist"
             }
         };
     }
-    
+
     public async Task<ResponseModel> GetAlbumListAsync(GetAlbumListRequest albumListRequest, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         AlbumList[] data = [];
@@ -422,7 +398,7 @@ public class OpenSubsonicApiService(
                     { "genre", albumListRequest.Genre },
                     { "fromYear", albumListRequest.FromYear },
                     { "toYear", albumListRequest.ToYear },
-                    { "userId", authResponse.UserInfo.Id}
+                    { "userId", authResponse.UserInfo.Id }
                 };
                 var selectSql = """
                                 SELECT 
@@ -505,7 +481,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -513,7 +489,7 @@ public class OpenSubsonicApiService(
                 DataDetailPropertyName = "album"
             }
         };
-    }    
+    }
 
     /// <summary>
     ///     Returns a list of random, newest, highest rated etc. albums.
@@ -523,11 +499,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         AlbumList2[] data = [];
@@ -543,7 +515,7 @@ public class OpenSubsonicApiService(
                     { "genre", albumListRequest.Genre },
                     { "fromYear", albumListRequest.FromYear },
                     { "toYear", albumListRequest.ToYear },
-                    { "userId", authResponse.UserInfo.Id}
+                    { "userId", authResponse.UserInfo.Id }
                 };
                 var selectSql = """
                                 SELECT 
@@ -560,7 +532,7 @@ public class OpenSubsonicApiService(
                                 aa."Name" as "Artist",
                                 DATE_PART('year', a."ReleaseDate"::date) as "Year",
                                 a."Genres",
-                                (SELECT "IsStarred" FROM "UserAlbums" WHERE "UserId" = @userId AND "AlbumId" = a."Id") as "Starred", 
+                                (SELECT "StarredAt" FROM "UserAlbums" WHERE "UserId" = @userId AND "AlbumId" = a."Id") as "Starred", 
                                 (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount"
                                 FROM "Albums" a 
                                 JOIN "Artists" aa on (a."ArtistId" = aa."Id")
@@ -624,7 +596,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -639,11 +611,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var songId = ApiKeyFromId(apiKey) ?? Guid.Empty;
@@ -663,6 +631,7 @@ public class OpenSubsonicApiService(
         var userSong = await userService.UserSongAsync(apiRequest.Username, songId, cancellationToken);
         return new ResponseModel
         {
+            IsSuccess = songResponse.IsSuccess,
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
@@ -677,11 +646,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var apiKey = ApiKeyFromId(apiId).Value;
@@ -713,7 +678,7 @@ public class OpenSubsonicApiService(
             DiscTitles = album.Discs.Select(x => new DiscTitle(x.DiscNumber, x.Title ?? string.Empty)).ToArray(),
             DisplayArtist = album.Artist.Name,
             Duration = album.Duration.ToSeconds(),
-            Genre = album.Genres?.ToCsv<string>(),
+            Genre = album.Genres?.ToCsv(),
             Genres = [], //TODO
             Id = album.ToApiKey(),
             IsCompilation = album.IsCompilation,
@@ -754,11 +719,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var data = new List<Genre>();
@@ -816,11 +777,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var avatarBytes = defaultImages.UserAvatarBytes;
@@ -846,7 +803,6 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            IsSuccess = true,
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
@@ -865,11 +821,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var coverBytes = defaultImages.AlbumCoverBytes;
@@ -973,7 +925,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            IsSuccess = true,
+            IsSuccess = coverBytes != null,
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
@@ -993,7 +945,6 @@ public class OpenSubsonicApiService(
         var authResponse = new ResponseModel
         {
             UserInfo = BlankUserInfo,
-            IsSuccess = true,
             ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
         };
         var data = new List<OpenSubsonicExtension>
@@ -1025,11 +976,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         await schedule.TriggerJob(JobKeyRegistry.LibraryProcessJobJobKey, cancellationToken);
@@ -1050,11 +997,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var executingJobs = await schedule.GetCurrentlyExecutingJobs(cancellationToken);
@@ -1100,7 +1043,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = BlankUserInfo,
-            IsSuccess = true,
+
             ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
         };
     }
@@ -1197,7 +1140,6 @@ public class OpenSubsonicApiService(
         return new ApiResponse
         {
             IsSuccess = isOk,
-            Status = isOk ? "ok" : "failed",
             Version = (await Configuration.Value).GetValue<string>(SettingRegistry.OpenSubsonicServerSupportedVersion) ?? throw new InvalidOperationException(),
             Type = (await Configuration.Value).GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? throw new InvalidOperationException(),
             ServerVersion = (await Configuration.Value).GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? throw new InvalidOperationException(),
@@ -1213,18 +1155,14 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var user = await userService.GetByUsernameAsync(apiRequest.Username, cancellationToken).ConfigureAwait(false);
             var usersPlayQues = await scopedContext
-                .PlayQues.Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album)
+                .PlayQues.Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Where(x => x.UserId == user.Data!.Id)
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -1232,7 +1170,7 @@ public class OpenSubsonicApiService(
             var current = usersPlayQues.FirstOrDefault(x => x.IsCurrentSong);
             var data = new PlayQueue
             {
-                Current = current?.SongApiKey.ToString() ?? string.Empty,
+                Current = current?.PlayQueId ?? 0,
                 Position = current?.Position ?? 0,
                 ChangedBy = current?.ChangedBy ?? user.Data!.UserName,
                 Changed = current?.LastUpdatedAt.ToString() ?? string.Empty,
@@ -1245,8 +1183,8 @@ public class OpenSubsonicApiService(
                 UserInfo = BlankUserInfo,
                 ResponseData = authResponse.ResponseData with
                 {
-                    Data = data,
-                    DataPropertyName = "playQueue"
+                    Data = current == null ? null : data,
+                    DataPropertyName = current == null ? string.Empty : "playQueue"
                 }
             };
         }
@@ -1257,11 +1195,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var result = false;
@@ -1325,6 +1259,7 @@ public class OpenSubsonicApiService(
                     {
                         addedPlayQues.Add(new dbModels.PlayQueue
                         {
+                            PlayQueId = addedPlayQues.Count + 1,
                             CreatedAt = now,
                             IsCurrentSong = song.ApiKey == current,
                             UserId = user.Data!.Id,
@@ -1381,11 +1316,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         if (times?.Length > 0 && times.Length != ids.Length)
@@ -1536,11 +1467,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var nowPlaying = await scrobbleService.GetNowPlaying(cancellationToken).ConfigureAwait(false);
@@ -1583,7 +1510,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -1598,11 +1525,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         ArtistSearchResult[] artists = [];
@@ -1680,7 +1603,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = new
@@ -1700,11 +1623,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Directory? data = null;
@@ -1771,7 +1690,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -1785,11 +1704,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var indexLimit = (await Configuration.Value).GetValue<short>(SettingRegistry.OpenSubsonicIndexesArtistLimit);
@@ -1853,7 +1768,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -1870,11 +1785,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         NamedInfo[] data = [];
@@ -1888,7 +1799,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -1903,11 +1814,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Artist? data = null;
@@ -1934,7 +1841,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -2040,13 +1947,9 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
-
+        
         var result = await ToggleStar(authResponse.UserInfo.Id, isStarred, id, albumId, artistId, cancellationToken).ConfigureAwait(false);
 
         return new ResponseModel
@@ -2065,11 +1968,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var result = false;
@@ -2190,11 +2089,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Child[]? data = null;
@@ -2220,7 +2115,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -2230,17 +2125,76 @@ public class OpenSubsonicApiService(
         };
     }
 
-
-    public async Task<ResponseModel> GetStarredAsync(string dataPropertyName, string? musicFolderId, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> GetStarred2Async(string? musicFolderId, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        ArtistID3[] artists;
+        AlbumID3[] albums = [];
+        Child[] songs = [];
+
+        var indexLimit = (await Configuration.Value).GetValue<short>(SettingRegistry.OpenSubsonicIndexesArtistLimit);
+        if (indexLimit == 0)
+        {
+            indexLimit = short.MaxValue;
+        }
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var userStarredArtists = await scopedContext
+                .UserArtists.Include(x => x.Artist)
+                .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
+                .OrderBy(x => x.Id)
+                .Take(indexLimit)
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
+            artists = userStarredArtists.Select(x => x.Artist.ToApiArtistID3(x)).ToArray();
+
+            var userStarredAlbums = await scopedContext
+                .UserAlbums.Include(x => x.Album).ThenInclude(x => x.Artist)
+                .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
+                .OrderBy(x => x.Id)
+                .Take(indexLimit)
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
+            albums = userStarredAlbums.Select(x => x.Album.ToArtistID3(x, null)).ToArray();
+
+            var userStarredSongs = await scopedContext
+                .UserSongs.Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
+                .OrderBy(x => x.Id)
+                .Take(indexLimit)
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
+            songs = userStarredSongs.Select(x => x.Song.ToApiChild(x.Song.AlbumDisc.Album, x)).ToArray();
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            ResponseData = await DefaultApiResponse() with
             {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+                Data = new
+                {
+                    Artist = artists,
+                    Album = albums,
+                    Song = songs
+                },
+                DataPropertyName = "starred2"
+            }
+        };
+    }
+
+    public async Task<ResponseModel> GetStarredAsync(string? musicFolderId, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Artist[] artists;
@@ -2286,7 +2240,6 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = new
@@ -2295,7 +2248,7 @@ public class OpenSubsonicApiService(
                     Album = albums,
                     Song = songs
                 },
-                DataPropertyName = dataPropertyName
+                DataPropertyName = "starred"
             }
         };
     }
@@ -2305,11 +2258,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var indexLimit = (await Configuration.Value).GetValue<short>(SettingRegistry.OpenSubsonicIndexesArtistLimit);
@@ -2345,7 +2294,6 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = songs,
@@ -2360,11 +2308,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Bookmark[] data = [];
@@ -2386,7 +2330,6 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -2401,11 +2344,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var result = false;
@@ -2461,11 +2400,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         var result = false;
@@ -2505,11 +2440,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         ArtistInfo? data = null;
@@ -2542,7 +2473,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
+
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -2556,11 +2487,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         AlbumInfo? data = null;
@@ -2587,8 +2514,8 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
+            IsSuccess = data != null,
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -2602,11 +2529,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         // Only users with admin privileges are allowed to call this method.
@@ -2620,7 +2543,7 @@ public class OpenSubsonicApiService(
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
             };
         }
-        
+
         User? data = null;
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -2631,14 +2554,15 @@ public class OpenSubsonicApiService(
                 if (user.Data!.Id != authResponse.UserInfo.Id)
                 {
                 }
+
                 data = user.Data!.ToApiUser();
             }
         }
 
         return new ResponseModel
         {
+            IsSuccess = data != null,
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -2652,11 +2576,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return new ResponseModel
-            {
-                UserInfo = BlankUserInfo,
-                ResponseData = authResponse.ResponseData
-            };
+            return authResponse with { UserInfo = BlankUserInfo };
         }
 
         Child[]? songs = null;
@@ -2683,14 +2603,14 @@ public class OpenSubsonicApiService(
                       """;
 
             var dbSongIds = (await dbConn.QueryAsync<int>(sql,
-                                    new
-                                    {
-                                        genre = genre ?? string.Empty,
-                                        takeSize = size < indexLimit ? size : indexLimit,
-                                        fromYear = fromYear ?? 0,
-                                        toYear = toYear ?? 9999
-                                    })
-                                .ConfigureAwait(false)).ToArray();
+                    new
+                    {
+                        genre = genre ?? string.Empty,
+                        takeSize = size < indexLimit ? size : indexLimit,
+                        fromYear = fromYear ?? 0,
+                        toYear = toYear ?? 9999
+                    })
+                .ConfigureAwait(false)).ToArray();
             var dbSongs = await (from s in scopedContext.Songs
                     .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                     .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
@@ -2701,8 +2621,8 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
+            IsSuccess = songs.Length > 0,
             UserInfo = authResponse.UserInfo,
-            IsSuccess = true,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = songs,
@@ -2711,6 +2631,4 @@ public class OpenSubsonicApiService(
             }
         };
     }
-
-
 }

@@ -50,7 +50,7 @@ public class AlbumSongController(ISerializer serializer, OpenSubsonicApiService 
     [Route("/rest/getStarred.view")]
     public Task<IActionResult> GetStarredAsync(string? musicFolderId, CancellationToken cancellationToken = default)
     {
-        return MakeResult(openSubsonicApiService.GetStarredAsync("starred", musicFolderId, ApiRequest, cancellationToken));
+        return MakeResult(openSubsonicApiService.GetStarredAsync(musicFolderId, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ public class AlbumSongController(ISerializer serializer, OpenSubsonicApiService 
     [Route("/rest/getStarred2.view")]
     public Task<IActionResult> GetStarred2Async(string? musicFolderId, CancellationToken cancellationToken = default)
     {
-        return MakeResult(openSubsonicApiService.GetStarredAsync("starred2", musicFolderId, ApiRequest, cancellationToken));
+        return MakeResult(openSubsonicApiService.GetStarred2Async( musicFolderId, ApiRequest, cancellationToken));
     }
 
     /// <summary>

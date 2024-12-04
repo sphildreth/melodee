@@ -19,7 +19,7 @@ public class OpenSubsonicResponseModelConvertor : JsonConverter<ResponseModel>
         writer.WriteStartObject();
 
         writer.WritePropertyName("status");
-        writer.WriteStringValue(value.ResponseData.Status);
+        writer.WriteStringValue(value.IsSuccess ? "ok" : "error");
         writer.WritePropertyName("version");
         writer.WriteStringValue(value.ResponseData.Version);
         writer.WritePropertyName("type");

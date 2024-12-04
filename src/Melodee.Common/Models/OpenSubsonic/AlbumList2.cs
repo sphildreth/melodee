@@ -35,7 +35,7 @@ public record AlbumList2 : IOpenSubsonicToXml
 
     public int? UserStarredCount { get; init; }
 
-    public bool Starred { get; init; }
+    public string? Starred { get; init; }
 
     public int? UserRating { get; init; }
 
@@ -45,8 +45,13 @@ public record AlbumList2 : IOpenSubsonicToXml
     
     public virtual string ToXml(string? nodeName = null)
     {
+        string starredAttribute = string.Empty;
+        if (Starred != null)
+        {
+            starredAttribute = $" starred=\"{Starred}\"";
+        }
         return $"<album id=\"{ Id }\" name=\"{ Name }\" songCount=\"{ SongCount }\" created=\"{ Created }\" " +
-               $"year=\"{ Year }\"  genre=\"{ Genre }\" coverArt=\"{ CoverArt }\" playCount=\"{ PlayedCount }\" starred=\"{ Starred }\" " +
+               $"year=\"{ Year }\"  genre=\"{ Genre }\" coverArt=\"{ CoverArt }\" playCount=\"{ PlayedCount }\"{ starredAttribute } " +
                $"duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"/>";
     }
 }
