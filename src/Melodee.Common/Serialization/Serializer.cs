@@ -1,9 +1,12 @@
+using System.Collections;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Extensions;
+using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Serialization.Convertors;
 using Serilog;
@@ -22,8 +25,36 @@ public sealed class Serializer(ILogger logger) : ISerializer
         }
         var result = new StringBuilder($"<subsonic-response xmlns=\"https://subsonic.org/restapi\" encoding=\"UTF-8\" status=\"{( model.IsSuccess ? "ok" : "error") }\" version=\"{model.ResponseData.Version}\">");
 
-        // Each object is an element and each object property is an attribute
+        if (model.ResponseData.Error != null)
+        {
+            result.Append($"<error code=\"{ model.ResponseData.Error.Code}\" message=\"{ model.ResponseData.Error.Message}\"/>");
+        }
+        else
+        {
+            if (model.ResponseData.Data != null)
+            {
+                if (model.ResponseData.DataPropertyName.Nullify() != null)
+                {
+                    result.Append($"<{ model.ResponseData.DataPropertyName}>");
+                }
 
+                if (model.ResponseData.Data is IEnumerable data)
+                {
+                    foreach(var element in data)
+                    {
+                        result.Append(((IOpenSubsonicToXml)element).ToXml()); 
+                    }
+                }
+                else
+                {
+                    result.Append(((IOpenSubsonicToXml)model.ResponseData.Data).ToXml());    
+                }
+                if (model.ResponseData.DataPropertyName.Nullify() != null)
+                {
+                    result.Append($"</{ model.ResponseData.DataPropertyName}>");
+                }                
+            }
+        }
         result.Append("</subsonic-response>");
         return result.ToString();
     }

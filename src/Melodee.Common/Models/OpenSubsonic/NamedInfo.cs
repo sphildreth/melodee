@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
 public record NamedInfo(
@@ -7,4 +9,10 @@ public record NamedInfo(
     string? MediumImageUrl = null,
     string? LargeImageUrl = null,
     int? SongCount = null,
-    int? AlbumCount = null) : InfoBase(SmallImageUrl, MediumImageUrl, LargeImageUrl);
+    int? AlbumCount = null) : InfoBase(SmallImageUrl, MediumImageUrl, LargeImageUrl), IOpenSubsonicToXml
+{
+    public string ToXml()
+    {
+        return $"<musicFolder id=\"{Id}\" name=\"{Name }\"/>";
+    }
+}
