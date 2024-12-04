@@ -517,12 +517,17 @@ public class OpenSubsonicApiService(
                     { "toYear", albumListRequest.ToYear },
                     { "userId", authResponse.UserInfo.Id }
                 };
+                
                 var selectSql = """
                                 SELECT 
                                 'album_' || cast(a."ApiKey" as varchar(50)) as "Id",
+                                'library_' || cast(aa."ApiKey" as varchar(50)) as "Parent",
                                 a."Name" as "Album",
                                 a."Name" as "Title",
                                 a."Name" as "Name",
+                                a."SortName",
+                                a."Comment",
+                                a."MusicBrainzId",
                                 'album_' || cast(a."ApiKey" as varchar(50)) as "CoverArt",
                                 a."SongCount",
                                 a."CreatedAt" as "CreatedRaw",
@@ -536,15 +541,12 @@ public class OpenSubsonicApiService(
                                 (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount"
                                 FROM "Albums" a 
                                 JOIN "Artists" aa on (a."ArtistId" = aa."Id")
+                                JOIN "Libraries" l on (aa."LibraryId" = l."Id")
                                 """;
-                var whereSql = string.Empty;
+                string whereSql;
                 var limitSql = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
                 switch (albumListRequest.Type)
                 {
-                    case ListType.Random:
-                        whereSql = "ORDER BY RANDOM()";
-                        break;
-
                     case ListType.Newest:
                         whereSql = "ORDER BY a.\"CreatedAt\" DESC";
                         break;
@@ -570,7 +572,7 @@ public class OpenSubsonicApiService(
                         break;
 
                     case ListType.Starred:
-                        whereSql = "ORDER BY \"UserStarredCount\" DESC";
+                        whereSql = "ORDER BY \"Starred\" DESC";
                         break;
 
                     case ListType.ByYear:
@@ -580,6 +582,10 @@ public class OpenSubsonicApiService(
                     case ListType.ByGenre:
                         whereSql = "where @genre = any(a.\"Genres\") ORDER BY \"Genre\" DESC";
                         break;
+                    
+                    default:
+                        whereSql = "ORDER BY RANDOM()";
+                        break;
                 }
 
                 sql = $"{selectSql} {whereSql} {limitSql}";
@@ -587,6 +593,7 @@ public class OpenSubsonicApiService(
                     .QueryAsync<AlbumList2>(sql, sqlParameters)
                     .ConfigureAwait(false)).ToArray();
             }
+            Logger.Debug("[{MethodName}] Result Count [{Count}] SQL [{sql}]", nameof(GetAlbumList2Async), data.Length, sql);
         }
         catch (Exception e)
         {
@@ -596,7 +603,6 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,

@@ -15,6 +15,7 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/setRating.view")]
+    [Route("/rest/setRating")]
     public Task<IActionResult> SetRatingAsync(string id, int rating, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.SetRatingAsync(id, rating, ApiRequest, cancellationToken));
@@ -30,6 +31,7 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/scrobble.view")]
+    [Route("/rest/scrobble")]
     public Task<IActionResult> ScrobbleAsync(string[] id, double[]? time, bool? submission, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.ScrobbleAsync(id, time, submission, ApiRequest, cancellationToken));
@@ -51,6 +53,7 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/star.view")]
+    [Route("/rest/star")]
     public Task<IActionResult> StarAsync(string id, string? albumId, string? artistId, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.ToggleStarAsync(true, id, albumId, artistId, ApiRequest, cancellationToken));
@@ -72,6 +75,7 @@ public class MediaAnnotationController(ISerializer serializer, OpenSubsonicApiSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/unstar.view")]
+    [Route("/rest/unstar")]
     public Task<IActionResult> UnstarAsync(string id, string? albumId, string? artistId, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.ToggleStarAsync(false, id, albumId, artistId, ApiRequest, cancellationToken));

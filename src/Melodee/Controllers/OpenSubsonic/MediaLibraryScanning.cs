@@ -13,6 +13,7 @@ public class MediaLibraryScanning(ISerializer serializer, OpenSubsonicApiService
     [HttpGet]
     [HttpPost]
     [Route("/rest/startScan.view")]
+    [Route("/rest/startScan")]
     public Task<IActionResult> StartScanAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.StartScanAsync(ApiRequest, cancellationToken));
@@ -25,6 +26,7 @@ public class MediaLibraryScanning(ISerializer serializer, OpenSubsonicApiService
     [HttpGet]
     [HttpPost]
     [Route("/rest/getScanStatus.view")]
+    [Route("/rest/getScanStatus")]
     public Task<IActionResult> GetScanStatusAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetScanStatusAsync(ApiRequest, cancellationToken));

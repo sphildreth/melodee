@@ -24,10 +24,10 @@ public static class AlbumExtensions
             SongCount = album.SongCount ?? 0,
             Duration = album.Duration.ToSeconds(),
             PlayCount = album.PlayedCount,
-            Created = album.CreatedAt.ToString(),
+            CreatedRaw = album.CreatedAt,
             Starred = userAlbum?.StarredAt?.ToString(),
             Year = album.ReleaseDate.Year,
-            Genre = album.Genres == null ? null : string.Join(", ", album.Genres)
+            Genres = album.Genres
         };
     }
     

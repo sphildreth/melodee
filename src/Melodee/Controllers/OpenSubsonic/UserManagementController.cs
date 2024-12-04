@@ -23,6 +23,7 @@ public class UserManagementController(ISerializer serializer, OpenSubsonicApiSer
     [HttpGet]
     [HttpPost]
     [Route("/rest/getUser.view")]
+    [Route("/rest/getUser")]
     public Task<IActionResult> GetUserAsync(string username, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetUserAsync(username, ApiRequest, cancellationToken));
@@ -36,6 +37,7 @@ public class UserManagementController(ISerializer serializer, OpenSubsonicApiSer
     [HttpGet]
     [HttpPost]
     [Route("/rest/createUser.view")]
+    [Route("/rest/createUser")]
     public Task<IActionResult> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.CreateUserAsync(request, ApiRequest, cancellationToken));

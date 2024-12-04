@@ -56,6 +56,12 @@ public abstract class ControllerBase(ISerializer serializer) : Controller
 
     protected async Task<IActionResult> MakeResult(Task<ResponseModel> modelTask)
     {
+        Response.Headers.Append("X-Content-Type-Options", "nosniff");
+        Response.Headers.Append("X-Frame-Options", "DENY");
+        Response.Headers.Append("X-Total-Count", "65432"); // TODO ??
+        Response.Headers.Append("Referrer-Policy", "same-origin");
+        Response.Headers.Append("Vary", "Origin");
+        
         var modelData = await modelTask.ConfigureAwait(false);
         if (ApiRequest.IsJsonRequest)
         {

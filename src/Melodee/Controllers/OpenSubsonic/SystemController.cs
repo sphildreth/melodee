@@ -39,6 +39,7 @@ public class SystemController(ILogger logger, ISerializer serializer, OpenSubson
     [HttpGet]
     [HttpPost]
     [Route("/rest/getLicense.view")]
+    [Route("/rest/getLicense")]
     public Task<IActionResult> GetLicenseAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetLicenseAsync(ApiRequest, cancellationToken));

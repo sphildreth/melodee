@@ -17,6 +17,7 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/deletePlaylist.view")]
+    [Route("/rest/deletePlaylist")]
     public Task<IActionResult> DeletePlaylistAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.DeletePlaylistAsync(id, ApiRequest, cancellationToken));
@@ -32,6 +33,7 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/createPlaylist.view")]
+    [Route("/rest/createPlaylist")]
     public Task<IActionResult> CreatePlaylistAsync(string? id, string? name, string[]? songId, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.CreatePlaylistAsync(id, name, songId, ApiRequest, cancellationToken));
@@ -46,6 +48,7 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/updatePlaylist.view")]
+    [Route("/rest/updatePlaylist")]
     public Task<IActionResult> CreatePlaylistAsync(UpdatePlayListRequest updateRequest, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.UpdatePlaylistAsync(updateRequest, ApiRequest, cancellationToken));
@@ -58,6 +61,7 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getPlaylists.view")]
+    [Route("/rest/getPlaylists")]
     public Task<IActionResult> GetPlaylistsAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetPlaylistsAsync(ApiRequest, cancellationToken));
@@ -71,6 +75,7 @@ public class PlaylistController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getPlaylist.view")]
+    [Route("/rest/getPlaylist")]
     public Task<IActionResult> GetPlaylistAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetPlaylistAsync(id, ApiRequest, cancellationToken));

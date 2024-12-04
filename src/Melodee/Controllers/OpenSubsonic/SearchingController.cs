@@ -22,6 +22,7 @@ public class SearchingController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/search3.view")]
+    [Route("/rest/search3")]
     public Task<IActionResult> SearchAsync(SearchRequest request, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.SearchAsync(request, ApiRequest, cancellationToken));

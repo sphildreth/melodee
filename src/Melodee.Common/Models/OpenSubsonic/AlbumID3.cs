@@ -1,4 +1,5 @@
-using System.Text;
+using System.Text.Json.Serialization;
+using NodaTime;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
@@ -22,10 +23,8 @@ public record AlbumID3 : IOpenSubsonicToXml
     /// <summary></summary>
     public string? ArtistId { get; init; }
     
-    /// <summary></summary>
     public string? CoverArt { get; init; }
     
-    /// <summary></summary>
     public short SongCount { get; init; }    
     
     /// <summary>
@@ -33,22 +32,22 @@ public record AlbumID3 : IOpenSubsonicToXml
     /// </summary>
     public required int Duration { get; init; }    
     
-    /// <summary></summary>
-    public int? PlayCount { get; init; }    
-    
+    public int? PlayCount { get; init; }  
+   
+    [JsonIgnore] public Instant? CreatedRaw { get; init; }
+
     /// <summary>
     ///     Date the album was added. [ISO 8601]
     /// </summary>
-    public required string Created { get; init; }  
+    public string Created => CreatedRaw?.ToString() ?? string.Empty;    
     
-    /// <summary></summary>
     public string? Starred { get; init; }    
     
-    /// <summary></summary>
     public int? Year { get; init; }    
 
-    /// <summary></summary>
-    public string? Genre { get; init; }
+    public string[]? Genres { get; init; }
+    
+    public string? Genre => Genres?.Length > 0 ? Genres[0] : null;
 
     public string ToXml(string? nodeName = null)
     {
@@ -56,9 +55,15 @@ public record AlbumID3 : IOpenSubsonicToXml
         if (Starred != null)
         {
             starredAttribute = $" starred=\"{Starred}\"";
+        }
+        string genreAttribute = string.Empty;
+        if (Genre != null)
+        {
+            genreAttribute = $" genre=\"{Genre}\"";
         }            
+        
         return $"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" " +
-                                       $"playCount=\"{ PlayCount }\" year=\"{ Year }\" genre=\"{ Genre }\"{ starredAttribute } " +
-                                       $"created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"/>";
+                                       $"playCount=\"{ PlayCount }\" year=\"{ Year }\"{genreAttribute}{ starredAttribute } " +
+                                       $"created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"><replayGain></replayGain></album>";
     }
 }

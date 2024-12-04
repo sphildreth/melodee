@@ -33,25 +33,30 @@ public record AlbumList2 : IOpenSubsonicToXml
 
     public required int Year { get; init; }
 
-    public int? UserStarredCount { get; init; }
-
-    public string? Starred { get; init; }
-
     public int? UserRating { get; init; }
 
     public string[]? Genres { get; init; }
     
     public string? Genre => Genres?.Length > 0 ? Genres[0] : null;
     
+    /// <summary>
+    /// ApiKeyId of Library
+    /// </summary>
+    public required string Parent { get; set; }
+    
+    public string? MusicBrainzId { get; init; }
+    
+    public string? Comment { get; init; }
+    
+    public string? SortName { get; init; }
+    
     public virtual string ToXml(string? nodeName = null)
     {
-        string starredAttribute = string.Empty;
-        if (Starred != null)
-        {
-            starredAttribute = $" starred=\"{Starred}\"";
-        }
-        return $"<album id=\"{ Id }\" name=\"{ Name }\" songCount=\"{ SongCount }\" created=\"{ Created }\" " +
-               $"year=\"{ Year }\"  genre=\"{ Genre }\" coverArt=\"{ CoverArt }\" playCount=\"{ PlayedCount }\"{ starredAttribute } " +
-               $"duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"/>";
+        return $"<album id=\"{ Id }\" parent=\"{ Parent }\" isDir=\"true\" title=\"{ Name }\" " +
+               $"name=\"{ Name }\" album=\"{ Name }\" artist=\"{ Artist }\" year=\"{ Year }\" genre=\"{ Genre }\" " +
+               $"coverArt=\"{ CoverArt }\" duration=\"{ Duration }\" " +
+               $"created=\"{ Created }\" artistId=\"{ ArtistId }\" " +
+               $"songCount=\"{ SongCount }\" isVideo=\"false\" bpm=\"0\" comment=\"{ Comment }\" sortName=\"{ SortName }\" mediaType=\"album\" " +
+               $"musicBrainzId=\"{ MusicBrainzId }\" channelCount=\"0\" samplingRate=\"0\"></album>";
     }
 }

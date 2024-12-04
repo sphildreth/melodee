@@ -26,6 +26,7 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     [HttpGet]
     [HttpPost]
     [Route("/rest/getAvatar.view")]
+    [Route("/rest/getAvatar")]
     public async Task<IActionResult> GetAvatarAsync(string username, CancellationToken cancellationToken = default)
     {
         return new FileContentResult((byte[])(await openSubsonicApiService.GetAvatarAsync(username,
@@ -43,6 +44,7 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     [HttpGet]
     [HttpPost]
     [Route("/rest/getCoverArt.view")]
+    [Route("/rest/getCoverArt")]
     public async Task<IActionResult> GetCoverArtAsync(string id, CancellationToken cancellationToken = default)
     {
         return new FileContentResult((byte[])(await openSubsonicApiService.GetCoverArtAsync(id,
@@ -61,6 +63,7 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     [HttpGet]
     [HttpPost]
     [Route("/rest/stream.view")]
+    [Route("/rest/stream")]
     public async Task<IActionResult> StreamAsync(StreamRequest request, CancellationToken cancellationToken = default)
     {
         var streamResult = await openSubsonicApiService.StreamAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false);

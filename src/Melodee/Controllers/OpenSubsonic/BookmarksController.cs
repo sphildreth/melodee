@@ -14,6 +14,7 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/deleteBookmark.view")]
+    [Route("/rest/deleteBookmark")]
     public Task<IActionResult> DeleteBookmarkAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.DeleteBookmarkAsync(id, ApiRequest, cancellationToken));
@@ -29,6 +30,7 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/createBookmark.view")]
+    [Route("/rest/createBookmark")]
     public Task<IActionResult> CreateBookmarkAsync(string id, int position, string? comment, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.CreateBookmarkAsync(id, position, comment, ApiRequest, cancellationToken));
@@ -41,6 +43,7 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/getBookmarks.view")]
+    [Route("/rest/getBookmarks")]
     public Task<IActionResult> GetBookmarksAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetBookmarksAsync(ApiRequest, cancellationToken));
@@ -53,6 +56,7 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/getPlayQueue.view")]
+    [Route("/rest/getPlayQueue")]
     public Task<IActionResult> GetPlayQueueAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetPlayQueueAsync(ApiRequest, cancellationToken));
@@ -71,6 +75,7 @@ public class BookmarksController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/savePlayQueue.view")]
+    [Route("/rest/savePlayQueue")]
     public Task<IActionResult> SavePlayQueueAsync(string[]? id, string? current, double? position, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.SavePlayQueueAsync(id, current, position, ApiRequest, cancellationToken));

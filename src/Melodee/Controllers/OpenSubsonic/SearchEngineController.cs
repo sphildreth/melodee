@@ -17,6 +17,7 @@ public class SearchEngineController(ISerializer serializer, ArtistSearchEngineSe
     [HttpGet]
     [HttpPost]
     [Route("/rest/searchForArtist.view")]
+    [Route("/rest/searchForArtist")]
     public async Task<IActionResult> SearchForArtistAsync(ArtistQuery query, int? maxResult, CancellationToken cancellationToken = default)
     {
         await artistSearchEngineService.InitializeAsync(null, cancellationToken);

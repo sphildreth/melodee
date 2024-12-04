@@ -12,8 +12,6 @@ using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Components;
 using Melodee.Jobs;
-using Melodee.Plugins.Conversion.Image;
-using Melodee.Plugins.Scripting;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services;
@@ -25,8 +23,6 @@ using Melodee.Utils;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
-using NodaTime;
-using Npgsql;
 using Quartz;
 using Quartz.AspNetCore;
 using Serilog;
@@ -179,6 +175,10 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
+
+app.UseCors(
+    options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+);
 
 app.MapControllers();
 

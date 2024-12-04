@@ -23,6 +23,8 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpPost]
     [Route("/rest/getAlbumInfo.view")]
     [Route("/rest/getAlbumInfo2.view")]
+    [Route("/rest/getAlbumInfo")]
+    [Route("/rest/getAlbumInfo2")]    
     public Task<IActionResult> GetAlbumInfo(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetAlbumInfoAsync(id, ApiRequest, cancellationToken));
@@ -38,6 +40,8 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpPost]
     [Route("/rest/getArtistInfo.view")]
     [Route("/rest/getArtistInfo2.view")]
+    [Route("/rest/getArtistInfo")]
+    [Route("/rest/getArtistInfo2")]    
     public Task<IActionResult> GetArtistInfo(string id, int? count, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetArtistInfoAsync(id, count, ApiRequest, cancellationToken));
@@ -52,6 +56,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getTopSongs.view")]
+    [Route("/rest/getTopSongs")]
     public Task<IActionResult> GetTopSongs(string artist, int? count, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetTopSongsAsync(artist, count, ApiRequest, cancellationToken));
@@ -65,6 +70,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getArtist.view")]
+    [Route("/rest/getArtist")]
     public Task<IActionResult> GetArtistAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetArtistAsync(id, ApiRequest, cancellationToken));
@@ -77,6 +83,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getMusicFolders.view")]
+    [Route("/rest/getMusicFolders")]
     public Task<IActionResult> GetMusicFolders(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetMusicFolders(ApiRequest, cancellationToken));
@@ -97,6 +104,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getIndexes.view")]
+    [Route("/rest/getIndexes")]
     public Task<IActionResult> GetIndexesAsync(Guid? musicFolderId, long? ifModifiedSince, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetIndexesAsync("indexes", musicFolderId, ifModifiedSince, ApiRequest, cancellationToken));
@@ -113,6 +121,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getArtists.view")]
+    [Route("/rest/getArtists")]
     public Task<IActionResult> GetArtistsAsync(Guid? musicFolderId, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetIndexesAsync("artists", musicFolderId, null, ApiRequest, cancellationToken));
@@ -130,6 +139,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getMusicDirectory.view")]
+    [Route("/rest/getMusicDirectory")]
     public Task<IActionResult> GetMusicDirectoryAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetMusicDirectoryAsync(id, ApiRequest, cancellationToken));
@@ -143,6 +153,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getSong.view")]
+    [Route("/rest/getSong")]
     public Task<IActionResult> GetSongAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetSongAsync(id, ApiRequest, cancellationToken));
@@ -155,6 +166,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getGenres.view")]
+    [Route("/rest/getGenres")]
     public Task<IActionResult> GetGenresAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetGenresAsync(ApiRequest, cancellationToken));
@@ -168,6 +180,7 @@ public class BrowsingController(ISerializer serializer, OpenSubsonicApiService o
     [HttpGet]
     [HttpPost]
     [Route("/rest/getAlbum.view")]
+    [Route("/rest/getAlbum")]
     public Task<IActionResult> GetAlbumAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetAlbumAsync(id, ApiRequest, cancellationToken));
