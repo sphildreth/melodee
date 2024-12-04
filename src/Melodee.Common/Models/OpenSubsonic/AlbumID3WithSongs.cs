@@ -108,6 +108,7 @@ public record AlbumId3WithSongs : IOpenSubsonicToXml
     public Child[]? Song { get; init; }
 
     public required string Parent { get; set; }
+    
     public string ToXml(string? nodeName = null)
     {
         var result = new StringBuilder($"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\">");

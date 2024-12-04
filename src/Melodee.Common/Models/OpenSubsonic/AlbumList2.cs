@@ -41,8 +41,12 @@ public record AlbumList2 : IOpenSubsonicToXml
 
     public string[]? Genres { get; init; }
     
+    public string? Genre => Genres?.Length > 0 ? Genres[0] : null;
+    
     public virtual string ToXml(string? nodeName = null)
     {
-        return $"<album id=\"{ Id }\" name=\"{ Name }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"/>";
+        return $"<album id=\"{ Id }\" name=\"{ Name }\" songCount=\"{ SongCount }\" created=\"{ Created }\" " +
+               $"year=\"{ Year }\"  genre=\"{ Genre }\" coverArt=\"{ CoverArt }\" playCount=\"{ PlayedCount }\" starred=\"{ Starred }\" " +
+               $"duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"/>";
     }
 }

@@ -63,7 +63,7 @@ public abstract class ControllerBase(ISerializer serializer) : Controller
         }
         if (ApiRequest.IsJsonPRequest)
         {
-            return new JsonStringResult($"{ApiRequest.Callback}({serializer.Serialize(modelData)})");
+            return new JsonPStringResult($"{ApiRequest.Callback}({serializer.Serialize(modelData)})");
         }
         return new XmlStringResult(serializer.SerializeOpenSubsonicModelToXml(modelData)!);
     }
