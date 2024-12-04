@@ -396,6 +396,123 @@ public class OpenSubsonicApiService(
             }
         };
     }
+    
+    public async Task<ResponseModel> GetAlbumListAsync(GetAlbumListRequest albumListRequest, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData
+            };
+        }
+
+        AlbumList[] data = [];
+        var sql = string.Empty;
+
+        try
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();
+                var sqlParameters = new Dictionary<string, object?>
+                {
+                    { "genre", albumListRequest.Genre },
+                    { "fromYear", albumListRequest.FromYear },
+                    { "toYear", albumListRequest.ToYear },
+                    { "userId", authResponse.UserInfo.Id}
+                };
+                var selectSql = """
+                                SELECT 
+                                'album_' || cast(a."ApiKey" as varchar(50)) as "Id",
+                                a."Name" as "Album",
+                                a."Name" as "Title",
+                                a."Name" as "Name",
+                                'album_' || cast(a."ApiKey" as varchar(50)) as "CoverArt",
+                                a."SongCount",
+                                a."CreatedAt" as "CreatedRaw",
+                                a."Duration"/1000 as "Duration",
+                                a."PlayedCount",
+                                'artist_' || cast(aa."ApiKey" as varchar(50)) as "ArtistId",
+                                aa."Name" as "Artist",
+                                DATE_PART('year', a."ReleaseDate"::date) as "Year",
+                                a."Genres",
+                                (SELECT "IsStarred" FROM "UserAlbums" WHERE "UserId" = @userId AND "AlbumId" = a."Id") as "Starred", 
+                                (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount",
+                                a."CalculatedRating" as "AverageRating"
+                                FROM "Albums" a 
+                                LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
+                                """;
+                var whereSql = string.Empty;
+                var limitSql = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
+                switch (albumListRequest.Type)
+                {
+                    case ListType.Random:
+                        whereSql = "ORDER BY RANDOM()";
+                        break;
+
+                    case ListType.Newest:
+                        whereSql = "ORDER BY a.\"CreatedAt\" DESC";
+                        break;
+
+                    case ListType.Highest:
+                        whereSql = "ORDER BY a.\"CalculatedRating\" DESC";
+                        break;
+
+                    case ListType.Frequent:
+                        whereSql = "ORDER BY a.\"PlayedCount\" DESC";
+                        break;
+
+                    case ListType.Recent:
+                        whereSql = "ORDER BY a.\"LastPlayedAt\" DESC";
+                        break;
+
+                    case ListType.AlphabeticalByName:
+                        whereSql = "ORDER BY a.\"SortName\"";
+                        break;
+
+                    case ListType.AlphabeticalByArtist:
+                        whereSql = "ORDER BY aa.\"SortName\"";
+                        break;
+
+                    case ListType.Starred:
+                        whereSql = "ORDER BY \"UserStarredCount\" DESC";
+                        break;
+
+                    case ListType.ByYear:
+                        whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear ORDER BY \"Year\" DESC";
+                        break;
+
+                    case ListType.ByGenre:
+                        whereSql = "where @genre = any(a.\"Genres\") ORDER BY \"Genre\" DESC";
+                        break;
+                }
+
+                sql = $"{selectSql} {whereSql} {limitSql}";
+                data = (await dbConn
+                    .QueryAsync<AlbumList>(sql, sqlParameters)
+                    .ConfigureAwait(false)).ToArray();
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to get AlbumList SQL [{Sql}] Request [{ApiResult}]", sql, apiRequest);
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            IsSuccess = true,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data,
+                DataPropertyName = "albumList",
+                DataDetailPropertyName = "album"
+            }
+        };
+    }    
 
     /// <summary>
     ///     Returns a list of random, newest, highest rated etc. albums.
@@ -2594,4 +2711,6 @@ public class OpenSubsonicApiService(
             }
         };
     }
+
+
 }

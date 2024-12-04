@@ -32,7 +32,7 @@ public record Artist(
 
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder("artist id=\"5432\" name=\"AC/DC\" coverArt=\"ar-5432\" albumCount=\"15\"");
+        var result = new StringBuilder("<artist id=\"5432\" name=\"AC/DC\" coverArt=\"ar-5432\" albumCount=\"15\">");
         if (Album != null)
         {
             foreach (var album in Album)

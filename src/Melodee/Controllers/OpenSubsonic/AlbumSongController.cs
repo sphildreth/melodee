@@ -7,10 +7,6 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class AlbumSongController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
 {
-    // These are by file structure, versus ID tags
-    //getAlbumList
-
-
     /// <summary>
     ///     Returns random songs matching the given criteria.
     /// </summary>
@@ -90,9 +86,22 @@ public class AlbumSongController(ISerializer serializer, OpenSubsonicApiService 
     [HttpGet]
     [HttpPost]
     [Route("/rest/getAlbumList2.view")]
-    [Route("/rest/getAlbumList.view")]
     public Task<IActionResult> GetAlbumList2Async(GetAlbumListRequest getAlbumListRequest, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetAlbumList2Async(getAlbumListRequest, ApiRequest, cancellationToken));
     }
+
+    /// <summary>
+    ///     Returns a list of random, newest, highest rated etc. albums.
+    /// </summary>
+    /// <param name="getAlbumListRequest">Request model</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getAlbumList.view")]
+    public Task<IActionResult> GetAlbumListAsync(GetAlbumListRequest getAlbumListRequest, CancellationToken cancellationToken = default)
+    {
+        return MakeResult(openSubsonicApiService.GetAlbumListAsync(getAlbumListRequest, ApiRequest, cancellationToken));
+    }
+    
 }

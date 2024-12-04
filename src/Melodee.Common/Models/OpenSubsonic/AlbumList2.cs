@@ -5,7 +5,7 @@ using NodaTime;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
-public sealed record AlbumList2 : IOpenSubsonicToXml
+public record AlbumList2 : IOpenSubsonicToXml
 {
     public required string Id { get; init; }
 
@@ -41,8 +41,8 @@ public sealed record AlbumList2 : IOpenSubsonicToXml
 
     public string[]? Genres { get; init; }
     
-    public string ToXml(string? nodeName = null)
+    public virtual string ToXml(string? nodeName = null)
     {
-        throw new NotImplementedException();
+        return $"<album id=\"{ Id }\" name=\"{ Name }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"/>";
     }
 }

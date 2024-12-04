@@ -7,7 +7,6 @@ using Melodee.Common.Serialization;
 using Melodee.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Serilog;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
@@ -62,19 +61,11 @@ public abstract class ControllerBase(ISerializer serializer) : Controller
         {
             return new JsonStringResult(serializer.Serialize(modelData)!);
         }
-
-        if (ApiRequest.IsXmlRequest)
-        {
-            return new XmlStringResult(serializer.SerializeOpenSubsonicModelToXml(modelData)!);
-        }
-
         if (ApiRequest.IsJsonPRequest)
         {
             return new JsonStringResult($"{ApiRequest.Callback}({serializer.Serialize(modelData)})");
         }
-
-        Log.Logger.Warning("!! Request is unknown format [{format}] Request [{Request}]", ApiRequest.Format, ApiRequest);
-        throw new NotImplementedException();
+        return new XmlStringResult(serializer.SerializeOpenSubsonicModelToXml(modelData)!);
     }
 
     public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
