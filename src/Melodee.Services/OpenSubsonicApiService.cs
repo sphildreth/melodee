@@ -441,9 +441,10 @@ public class OpenSubsonicApiService(
                                 a."Genres",
                                 (SELECT "IsStarred" FROM "UserAlbums" WHERE "UserId" = @userId AND "AlbumId" = a."Id") as "Starred", 
                                 (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount",
-                                a."CalculatedRating" as "AverageRating"
+                                a."CalculatedRating" as "AverageRating",
+                                ''
                                 FROM "Albums" a 
-                                LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
+                                JOIN "Artists" aa on (a."ArtistId" = aa."Id")
                                 """;
                 var whereSql = string.Empty;
                 var limitSql = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
@@ -562,7 +563,7 @@ public class OpenSubsonicApiService(
                                 (SELECT "IsStarred" FROM "UserAlbums" WHERE "UserId" = @userId AND "AlbumId" = a."Id") as "Starred", 
                                 (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount"
                                 FROM "Albums" a 
-                                LEFT JOIN "Artists" aa on (a."ArtistId" = aa."Id")
+                                JOIN "Artists" aa on (a."ArtistId" = aa."Id")
                                 """;
                 var whereSql = string.Empty;
                 var limitSql = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
@@ -740,8 +741,7 @@ public class OpenSubsonicApiService(
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
-                Data = data,
-                DataPropertyName = "album"
+                Data = data
             }
         };
     }

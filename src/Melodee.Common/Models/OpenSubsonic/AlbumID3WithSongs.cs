@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
@@ -109,6 +110,12 @@ public record AlbumId3WithSongs : IOpenSubsonicToXml
     public required string Parent { get; set; }
     public string ToXml(string? nodeName = null)
     {
-        throw new NotImplementedException();
+        var result = new StringBuilder($"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\">");
+        foreach (var child in Song ?? [])
+        {
+            result.Append(child.ToXml());
+        }
+        result.Append("</album>");
+        return result.ToString();
     }
 }

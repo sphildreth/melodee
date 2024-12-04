@@ -120,7 +120,7 @@ public abstract class ControllerBase(ISerializer serializer) : Controller
                 GetRequestIp(context.HttpContext)
             )
         );
-        Console.WriteLine($"-*-> User [{ApiRequest.Username}] : {ApiRequest.ApiRequestPlayer}");
+        Console.WriteLine($"-*-> User [{ApiRequest.Username}] : {ApiRequest}");
         return base.OnActionExecutionAsync(context, next);
     }
 }
