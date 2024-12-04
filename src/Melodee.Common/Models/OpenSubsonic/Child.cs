@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Text.Json.Serialization;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
@@ -90,11 +91,12 @@ public record Child(
     string? DisplayComposer,
     string[]? Moods,
     ReplayGain? ReplayGain,
+    int? AverageRating = null,
+    int? UserRating = null,
     string? Username = null,
     int? MinutesAgo = null,
     int? PlayerId = null,
-    string? PlayerName = null
-) : IOpenSubsonicToXml
+    string? PlayerName = null) : IOpenSubsonicToXml
 {
     public int? Track => Song;
     
@@ -102,6 +104,17 @@ public record Child(
     
     public string ToXml(string? nodeName = null)
     {
-        return $"<{nodeName ?? "song"} id=\"{Id}\" parent=\"{Parent}\" title=\"{Title}\" isDir=\"{IsDir}\" album=\"{Album}\" artist=\"{Artist}\" track=\"{Track}\" year=\"{Year}\" genre=\"{Genre}\" coverArt=\"{CoverArt}\" size=\"{Size}\" contentType=\"{ContentType}\" suffix=\"{Suffix}\" duration=\"{Duration}\" bitRate=\"{BitRate}\" path=\"{Path}\"/>";
+    //     <xs:attribute name="transcodedContentType" type="xs:string" use="optional"/>
+    //     <xs:attribute name="transcodedSuffix" type="xs:string" use="optional"/>
+    //     <xs:attribute name="bookmarkPosition" type="xs:long" use="optional"/>  <!-- In millis. Added in 1.10.1 -->
+    // </xs:complexType>
+        
+        return $"<{nodeName ?? "song"} id=\"{Id}\" parent=\"{Parent}\" title=\"{Title}\" isDir=\"{IsDir}\" " +
+               $"album=\"{Album}\" artist=\"{Artist}\" track=\"{Track}\" year=\"{Year}\" genre=\"{Genre}\" " +
+               $"isVideo=\"{ (IsVideo ?? false).ToLowerCaseString() }\" playCount=\"{ PlayCount }\" discNumber=\"{DiscNumber}\" " +
+               $"averageRating=\"{ AverageRating ?? 0 }\" userRating=\"{UserRating ?? 0}\" " +
+               $"created=\"{Created}\" starred=\"{Starred}\" albumId=\"{AlbumId}\" artistId=\"{ArtistId}\" type=\"{Type}\" " +
+               $"coverArt=\"{CoverArt}\" size=\"{Size}\" contentType=\"{ContentType}\" suffix=\"{Suffix}\" " +
+               $"duration=\"{Duration}\" bitRate=\"{BitRate}\" path=\"{Path}\"/>";
     }
 }

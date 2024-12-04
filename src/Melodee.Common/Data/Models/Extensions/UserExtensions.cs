@@ -8,7 +8,7 @@ namespace Melodee.Common.Data.Models.Extensions;
 public static class UserExtensions
 {
     public static Common.Models.OpenSubsonic.User ToApiUser(this User user) 
-        => new(user.UserName, user.IsAdmin, user.Email, user.HasStreamRole, user.IsScrobblingEnabled, user.HasDownloadRole, user.HasShareRole, user.HasJukeboxRole);
+        => new(user.UserName, user.IsAdmin, user.Email, user.HasStreamRole, user.IsScrobblingEnabled, user.HasDownloadRole, user.HasShareRole, user.HasJukeboxRole, user.LastUpdatedAt?.ToString() ?? user.CreatedAt.ToString());
 
     public static UserInfo ToUserInfo(this User user) => new(user.Id, user.ApiKey, user.UserName, user.Email);
     

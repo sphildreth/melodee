@@ -2,6 +2,7 @@ using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
@@ -71,10 +72,12 @@ public static class SongExtensions
             null, //TODO
             [], //TODO
             null, //TODO,
-            nowPlayingInfo?.User.UserName,
-            nowPlayingInfo?.Scrobble.MinutesAgo,
-            0,
-            nowPlayingInfo?.Scrobble.PlayerName
+            SafeParser.ToNumber<int>(song.CalculatedRating),
+            userSong?.Rating,
+            Username: nowPlayingInfo?.User.UserName,
+            MinutesAgo: nowPlayingInfo?.Scrobble.MinutesAgo,
+            PlayerId: 0,
+            PlayerName: nowPlayingInfo?.Scrobble.PlayerName
         );
 
     }

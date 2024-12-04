@@ -17,6 +17,38 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         schemas.Add("http://subsonic.org/restapi", xsdPath);
         return schemas;
     }
+    
+        [Fact]
+    public void ValidateUserResponse()
+    {
+        var schemas = GetXmlSchemaSet();
+        var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
+        {
+            IsSuccess = true,
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
+            {
+                IsSuccess = true,
+                Status = "ok",
+                Version = "1.16.1",
+                Type = "Melodee",
+                ServerVersion = "v1.0.0-rc1",
+                DataPropertyName = string.Empty,
+                Data = new User("dausername", false, "dauser@melodee.net", true, true, true, true,true, Instant.FromDateTimeUtc(DateTime.UtcNow).ToString()),
+            }
+        };
+        var xml = Serializer.SerializeOpenSubsonicModelToXml(response);
+        var xmlDoc = XDocument.Load(new StringReader(xml));        
+        Assert.NotNull(xml);
+        xmlDoc = XDocument.Load(new StringReader(xml));
+        var isValid = true;
+        xmlDoc.Validate(schemas, (sender, e) =>
+        {
+            testOutputHelper.WriteLine("Validation error: {0}", e.Message);
+            isValid = false;
+        });
+        Assert.True(isValid);
+    }
 
     [Fact]
     public void ValidateAlbumList2Response()
