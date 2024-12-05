@@ -703,7 +703,7 @@ public class OpenSubsonicApiService(
             Artist = album.Artist.Name,
             ArtistId = album.Artist.ToApiKey(),
             Artists = [], //TODO
-            CoverArt = $"album_{album.ApiKey}",
+            CoverArt = album.ToApiKey(),
             Created = album.CreatedAt.ToString(),
             DiscTitles = album.Discs.Select(x => new DiscTitle(x.DiscNumber, x.Title ?? string.Empty)).ToArray(),
             DisplayArtist = album.Artist.Name,
