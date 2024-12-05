@@ -16,9 +16,12 @@ public class ImageController(ILogger logger, ISerializer serializer) : Controlle
     [Route("/images/{apiKey}/{size}")]
     public async Task<IActionResult> GetImageAsync(string apiKey, string size, CancellationToken cancellationToken = default)
     {
+        // TODO From logs using Dsub
+        // images/artist_3f9b4979-570d-4d9c-a172-36faafcce50a/large
+        
         //        return $"{baseUrl}/images/{apiKey}/{imageSize.ToString().ToLower()}";
 
-        logger.Warning("Image Request for [{ApiKey}] Size [{Size}", apiKey, size);
+        logger.Warning("Image Request for [{ApiKey}] Size [{Size}]", apiKey, size);
 
         throw new NotImplementedException();
     }
