@@ -1634,16 +1634,10 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-
             ResponseData = await DefaultApiResponse() with
             {
-                Data = new
-                {
-                    Artist = artists,
-                    Album = albums,
-                    Song = songs
-                },
-                DataPropertyName = "searchResult3"
+                Data = new Search3Result(artists, albums,songs),
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "searchResult3"
             }
         };
     }
