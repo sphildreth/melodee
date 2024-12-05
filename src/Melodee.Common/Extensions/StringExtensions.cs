@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Net;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -667,6 +668,8 @@ public static partial class StringExtensions
             .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
             .ToArray());
     }
+    
+    public static string? ToSafeXmlString(this string? input) => SecurityElement.Escape(input);
     
     [GeneratedRegex("[^a-zA-Z0-9 -.:]")]
     private static partial Regex OnlyAlphaNumericRegex();

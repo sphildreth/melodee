@@ -1,5 +1,6 @@
 using System.Text;
 using Mapster;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
@@ -24,7 +25,7 @@ public record AlbumInfo(
     public override string ToXml(string? nodeName = null)
     {
         var result = new StringBuilder("<albumInfo>");
-        result.Append($"<notes>{ Notes }</notes>");
+        result.Append($"<notes>{ Notes.ToSafeXmlString() }</notes>");
         result.Append($"<musicBrainzId>{ MusicBrainzArtistId }</musicBrainzId>");
         result.Append($"<lastFmUrl>{ LastFmUrl }</lastFmUrl>");
         result.Append($"<smallImageUrl>{ SmallImageUrl }</smallImageUrl>");

@@ -22,12 +22,12 @@ public record Directory(string Id, string? Parent, string Name, string? Starred,
 {
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<directory id=\"{ Id }\" parent=\"{ Parent }\" name=\"{ Name }\" starred=\"{Starred}\">");
+        var result = new StringBuilder($"<directory id=\"{ Id }\" parent=\"{ Parent }\" name=\"{ Name.ToSafeXmlString() }\" starred=\"{Starred}\">");
         if (Child.Length > 0)
         {
             foreach (var child in Child)
             {
-                result.Append(child.ToXml($"<child id=\"{ child.Id}\" parent=\"{ child.Parent}\" title=\"{ child.Title}\" artist=\"{ child.Artist}\" isDir=\"{ (child.IsDir ?? false).ToLowerCaseString()}\" coverArt=\"{ child.CoverArt}\"/>"));
+                result.Append(child.ToXml($"<child id=\"{ child.Id}\" parent=\"{ child.Parent}\" title=\"{ child.Title.ToSafeXmlString()}\" artist=\"{ child.Artist.ToSafeXmlString()}\" isDir=\"{ (child.IsDir ?? false).ToLowerCaseString()}\" coverArt=\"{ child.CoverArt}\"/>"));
             }
         }
         result.Append("</directory>");        

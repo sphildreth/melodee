@@ -6,7 +6,7 @@ public record User(string Username, bool AdminRole, string Email, bool StreamRol
 {
     public string ToXml(string? nodeName = null)
     {
-        return $"<user username=\"{Username}\" email=\"{Email}\" scrobblingEnabled=\"{ScrobblingEnabled.ToLowerCaseString()}\" adminRole=\"{AdminRole.ToLowerCaseString()}\" " +
+        return $"<user username=\"{Username.ToSafeXmlString()}\" email=\"{Email.ToSafeXmlString()}\" scrobblingEnabled=\"{ScrobblingEnabled.ToLowerCaseString()}\" adminRole=\"{AdminRole.ToLowerCaseString()}\" " +
                $"settingsRole=\"{AdminRole.ToLowerCaseString()}\" downloadRole=\"{DownloadRole.ToLowerCaseString()}\" " +
                $"maxBitRate=\"320\" videoConversionRole=\"false\" avatarLastChanged=\"{AvatarLastChanged}\" " +
                $"uploadRole=\"{AdminRole.ToLowerCaseString()}\" playlistRole=\"{StreamRole.ToLowerCaseString()}\" coverArtRole=\"{AdminRole.ToLowerCaseString()}\" " +

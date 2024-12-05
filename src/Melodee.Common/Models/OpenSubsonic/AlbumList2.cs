@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Text.Json.Serialization;
+using Melodee.Common.Extensions;
 using NodaTime;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -22,6 +23,8 @@ public record AlbumList2 : IOpenSubsonicToXml
     [JsonIgnore] public Instant? CreatedRaw { get; init; }
 
     public string Created => CreatedRaw?.ToString() ?? string.Empty;
+
+    //public string Created => "2024-10-14T12:12:14.692182698-05:00";
 
     public required int Duration { get; init; }
 
@@ -52,11 +55,11 @@ public record AlbumList2 : IOpenSubsonicToXml
     
     public virtual string ToXml(string? nodeName = null)
     {
-        return $"<album id=\"{ Id }\" parent=\"{ Parent }\" isDir=\"true\" title=\"{ Name }\" " +
-               $"name=\"{ Name }\" album=\"{ Name }\" artist=\"{ Artist }\" year=\"{ Year }\" genre=\"{ Genre }\" " +
+        return $"<album id=\"{ Id }\" parent=\"{ Parent }\" isDir=\"true\" title=\"{ Name.ToSafeXmlString() }\" " +
+               $"name=\"{ Name.ToSafeXmlString() }\" album=\"{ Name.ToSafeXmlString() }\" artist=\"{ Artist.ToSafeXmlString() }\" year=\"{ Year }\" genre=\"{ Genre.ToSafeXmlString() }\" " +
                $"coverArt=\"{ CoverArt }\" duration=\"{ Duration }\" " +
                $"created=\"{ Created }\" artistId=\"{ ArtistId }\" " +
-               $"songCount=\"{ SongCount }\" isVideo=\"false\" bpm=\"0\" comment=\"{ Comment }\" sortName=\"{ SortName }\" mediaType=\"album\" " +
-               $"musicBrainzId=\"{ MusicBrainzId }\" channelCount=\"0\" samplingRate=\"0\"></album>";
+               $"songCount=\"{ SongCount }\" isVideo=\"false\" bpm=\"0\" comment=\"{ Comment.ToSafeXmlString() }\" sortName=\"{ SortName.ToSafeXmlString() }\" mediaType=\"album\" " +
+               $"musicBrainzId=\"{ MusicBrainzId }\" channelCount=\"0\" samplingRate=\"0\"><replayGain></replayGain></album>";
     }
 }

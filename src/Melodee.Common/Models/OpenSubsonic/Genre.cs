@@ -1,4 +1,5 @@
 using System.Text;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
@@ -15,6 +16,6 @@ public record Genre : IOpenSubsonicToXml
     
     public string ToXml(string? nodeName = null)
     {
-        return $"<genre songCount=\"{ SongCount }\" albumCount=\"{ AlbumCount }\">{Value}</genre>";
+        return $"<genre songCount=\"{ SongCount }\" albumCount=\"{ AlbumCount }\">{Value.ToSafeXmlString()}</genre>";
     }
 }

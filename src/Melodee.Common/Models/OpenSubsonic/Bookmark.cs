@@ -1,3 +1,5 @@
+using Melodee.Common.Extensions;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
@@ -13,6 +15,6 @@ public sealed record Bookmark(long Position, string Username, string? Comment, s
 {
     public string ToXml(string? nodeName = null)
     {
-        return $"<bookmark position=\"{Position}\" username=\"{Username}\" comment=\"{Comment}\" created=\"{Created}\" changed=\"{Change}\">{((IOpenSubsonicToXml)Entry).ToXml("entry")}</bookmark>";
+        return $"<bookmark position=\"{Position}\" username=\"{Username.ToSafeXmlString()}\" comment=\"{Comment.ToSafeXmlString()}\" created=\"{Created}\" changed=\"{Change}\">{((IOpenSubsonicToXml)Entry).ToXml("entry")}</bookmark>";
     }
 }

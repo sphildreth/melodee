@@ -1,4 +1,5 @@
 using System.Text;
+using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
@@ -32,12 +33,12 @@ public record Artist(
 
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder("<artist id=\"5432\" name=\"AC/DC\" coverArt=\"ar-5432\" albumCount=\"15\">");
+        var result = new StringBuilder($"<artist id=\"{ Id }\" name=\"{ Name.ToSafeXmlString() }\" coverArt=\"{ CoverArt }\" albumCount=\"{ AlbumCount }\">");
         if (Album != null)
         {
             foreach (var album in Album)
             {
-                result.Append($"<album id=\"{ album.Id }\" name=\"{ album.Name }\" coverArt=\"{ album.CoverArt }\" songCount=\"{ album.SongCount }\" created=\"{ album.Created }\" duration=\"{ album.Duration }\" artist=\"{ album.Artist }\" artistId=\"{ album.ArtistId }\"/>");
+                result.Append($"<album id=\"{ album.Id }\" name=\"{ album.Name.ToSafeXmlString() }\" coverArt=\"{ album.CoverArt }\" songCount=\"{ album.SongCount }\" created=\"{ album.Created }\" duration=\"{ album.Duration }\" artist=\"{ album.Artist.ToSafeXmlString() }\" artistId=\"{ album.ArtistId }\"/>");
             }
         }
         result.Append("</artist>");

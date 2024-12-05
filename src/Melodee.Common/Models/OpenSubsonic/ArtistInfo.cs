@@ -1,4 +1,5 @@
 using System.Text;
+using Melodee.Common.Extensions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -25,7 +26,7 @@ public record ArtistInfo(
     public override string ToXml(string? nodeName = null)
     {
         var result = new StringBuilder("<artistInfo>");
-        result.Append($"<biography>{Biography}</biography>");
+        result.Append($"<biography>{Biography.ToSafeXmlString()}</biography>");
         result.Append($"<musicBrainzId>{MusicBrainzArtistId}</musicBrainzId>");
         result.Append($"<lastFmUrl>{LastFmUrl}</lastFmUrl>");
         result.Append($"<smallImageUrl>{SmallImageUrl}</smallImageUrl>");

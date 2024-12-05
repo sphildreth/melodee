@@ -1,3 +1,5 @@
+using Melodee.Common.Extensions;
+
 namespace Melodee.Common.Models.OpenSubsonic;
 
 /// <summary>
@@ -28,6 +30,6 @@ public record ArtistID3(
 {
     public string ToXml(string? nodeName = null)
     {
-        return $"<{ nodeName ?? "artist"} id=\" { Id }\" name =\"{ Name } \" coverArt=\"{ CoverArt }\" artistImageUrl=\"{ ArtistImageUrl }\" albumCount=\"{ AlbumCount }\" starred=\"{ Starred }\" />";
+        return $"<{ nodeName ?? "artist"} id=\" { Id }\" name =\"{ Name.ToSafeXmlString() } \" coverArt=\"{ CoverArt }\" artistImageUrl=\"{ ArtistImageUrl }\" albumCount=\"{ AlbumCount }\" starred=\"{ Starred }\" />";
     }
 }

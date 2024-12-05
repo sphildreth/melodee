@@ -115,8 +115,8 @@ public record Child(
             starredAttribute = $" starred=\"{Starred}\"";
         }    
         
-        return $"<{nodeName ?? "song"} id=\"{Id}\" parent=\"{Parent}\" title=\"{Title}\" isDir=\"{(IsDir ?? false).ToLowerCaseString()}\" " +
-               $"album=\"{Album}\" artist=\"{Artist}\" track=\"{Track}\" year=\"{Year}\" genre=\"{Genre}\" " +
+        return $"<{nodeName ?? "song"} id=\"{Id}\" parent=\"{Parent}\" title=\"{Title.ToSafeXmlString()}\" isDir=\"{(IsDir ?? false).ToLowerCaseString()}\" " +
+               $"album=\"{Album.ToSafeXmlString()}\" artist=\"{Artist.ToSafeXmlString()}\" track=\"{Track}\" year=\"{Year}\" genre=\"{Genre.ToSafeXmlString()}\" " +
                $"isVideo=\"{ (IsVideo ?? false).ToLowerCaseString() }\" playCount=\"{ PlayCount }\" discNumber=\"{DiscNumber}\" " +
                $"averageRating=\"{ AverageRating ?? 0 }\" userRating=\"{UserRating ?? 0}\" " +
                $"created=\"{Created}\" {starredAttribute} albumId=\"{AlbumId}\" artistId=\"{ArtistId}\" type=\"{Type}\" " +

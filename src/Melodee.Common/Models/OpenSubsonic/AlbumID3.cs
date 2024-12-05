@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Melodee.Common.Extensions;
 using NodaTime;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -59,11 +60,11 @@ public record AlbumID3 : IOpenSubsonicToXml
         string genreAttribute = string.Empty;
         if (Genre != null)
         {
-            genreAttribute = $" genre=\"{Genre}\"";
+            genreAttribute = $" genre=\"{Genre.ToSafeXmlString()}\"";
         }            
         
-        return $"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" " +
+        return $"<album id=\"{ Id }\" name=\"{ Name.ToSafeXmlString() }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" " +
                                        $"playCount=\"{ PlayCount }\" year=\"{ Year }\"{genreAttribute}{ starredAttribute } " +
-                                       $"created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"></album>";
+                                       $"created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist.ToSafeXmlString() }\" artistId=\"{ ArtistId }\"></album>";
     }
 }

@@ -1,4 +1,5 @@
 using System.Text;
+using Melodee.Common.Extensions;
 using NodaTime;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -22,7 +23,7 @@ public sealed record PlayQueue : IOpenSubsonicToXml
     
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<playQueue current=\"{ Current }\" position=\"{ Position }\" username=\"{ Username}\" changed=\"{Changed}\" changedBy=\"{ ChangedBy}\">");
+        var result = new StringBuilder($"<playQueue current=\"{ Current }\" position=\"{ Position }\" username=\"{ Username.ToSafeXmlString()}\" changed=\"{Changed}\" changedBy=\"{ ChangedBy.ToSafeXmlString()}\">");
         if (Entry != null)
         {
             foreach (var child in Entry)

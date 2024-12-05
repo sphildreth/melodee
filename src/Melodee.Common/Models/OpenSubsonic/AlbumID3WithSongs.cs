@@ -1,4 +1,5 @@
 using System.Text;
+using Melodee.Common.Extensions;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -111,7 +112,7 @@ public record AlbumId3WithSongs : IOpenSubsonicToXml
     
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\">");
+        var result = new StringBuilder($"<album id=\"{ Id }\" name=\"{ Name.ToSafeXmlString() }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist.ToSafeXmlString() }\" artistId=\"{ ArtistId }\">");
         foreach (var child in Song ?? [])
         {
             result.Append(child.ToXml());

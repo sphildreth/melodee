@@ -145,6 +145,11 @@ builder.Services.AddQuartzServer(opts =>
     opts.WaitForJobsToComplete = true;
 });
 
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -179,6 +184,8 @@ app.MapRazorComponents<App>()
 app.UseCors(
     options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
 );
+
+app.UseResponseCompression();
 
 app.MapControllers();
 
