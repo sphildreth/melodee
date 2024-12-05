@@ -295,8 +295,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
                 Type = "Melodee",
                 ServerVersion = "v1.0.0-rc1",
                 DataPropertyName = "bookmarks",
-                DataDetailPropertyName = "bookmark",
-                Data = new Bookmark[] {
+                Data = new [] {
                     new Bookmark(0, "username1", null, Instant.FromDateTimeUtc(DateTime.UtcNow).ToString(), Instant.FromDateTimeUtc(DateTime.UtcNow).ToString(), NewChild() )
                 }
             }

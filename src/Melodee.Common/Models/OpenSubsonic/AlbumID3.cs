@@ -64,6 +64,6 @@ public record AlbumID3 : IOpenSubsonicToXml
         
         return $"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" " +
                                        $"playCount=\"{ PlayCount }\" year=\"{ Year }\"{genreAttribute}{ starredAttribute } " +
-                                       $"created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"><replayGain></replayGain></album>";
+                                       $"created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"></album>";
     }
 }

@@ -25,5 +25,8 @@ public record ApiRequest(KeyValue[] RequestHeaders, string? Username, string? Ve
     
     public bool IsJsonPRequest => string.Equals(Format, "jsonp", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(Callback);
     
-    public bool IsXmlRequest => string.Equals(Format, "xml", StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// Defaults to XML
+    /// </summary>
+    public bool IsXmlRequest => !IsJsonRequest && !IsJsonPRequest;
 }

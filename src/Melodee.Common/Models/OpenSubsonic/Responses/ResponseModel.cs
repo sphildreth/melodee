@@ -13,4 +13,6 @@ public record ResponseModel
     /// </summary>
     [JsonPropertyName("subsonic-response")]
     public required ApiResponse ResponseData { get; init; }
+
+    public long TotalCount { get; init; }
 }

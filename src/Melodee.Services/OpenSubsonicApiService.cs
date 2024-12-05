@@ -385,6 +385,7 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
+        long totalCount = 0;
         AlbumList[] data = [];
         var sql = string.Empty;
 
@@ -423,54 +424,61 @@ public class OpenSubsonicApiService(
                                 JOIN "Artists" aa on (a."ArtistId" = aa."Id")
                                 """;
                 var whereSql = string.Empty;
+                var orderSql = string.Empty;
                 var limitSql = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
                 switch (albumListRequest.Type)
                 {
                     case ListType.Random:
-                        whereSql = "ORDER BY RANDOM()";
+                        orderSql = "ORDER BY RANDOM()";
                         break;
 
                     case ListType.Newest:
-                        whereSql = "ORDER BY a.\"CreatedAt\" DESC";
+                        orderSql = "ORDER BY a.\"CreatedAt\" DESC";
                         break;
 
                     case ListType.Highest:
-                        whereSql = "ORDER BY a.\"CalculatedRating\" DESC";
+                        orderSql = "ORDER BY a.\"CalculatedRating\" DESC";
                         break;
 
                     case ListType.Frequent:
-                        whereSql = "ORDER BY a.\"PlayedCount\" DESC";
+                        orderSql = "ORDER BY a.\"PlayedCount\" DESC";
                         break;
 
                     case ListType.Recent:
-                        whereSql = "ORDER BY a.\"LastPlayedAt\" DESC";
+                        orderSql = "ORDER BY a.\"LastPlayedAt\" DESC";
                         break;
 
                     case ListType.AlphabeticalByName:
-                        whereSql = "ORDER BY a.\"SortName\"";
+                        orderSql = "ORDER BY a.\"SortName\"";
                         break;
 
                     case ListType.AlphabeticalByArtist:
-                        whereSql = "ORDER BY aa.\"SortName\"";
+                        orderSql = "ORDER BY aa.\"SortName\"";
                         break;
 
                     case ListType.Starred:
-                        whereSql = "ORDER BY \"UserStarredCount\" DESC";
+                        orderSql = "ORDER BY \"UserStarredCount\" DESC";
                         break;
 
                     case ListType.ByYear:
-                        whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear ORDER BY \"Year\" DESC";
+                        whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear";
+                        orderSql = "ORDER BY \"Year\" DESC";
                         break;
 
                     case ListType.ByGenre:
-                        whereSql = "where @genre = any(a.\"Genres\") ORDER BY \"Genre\" DESC";
+                        whereSql = "where @genre = any(a.\"Genres\")";
+                        orderSql = "ORDER BY \"Genre\" DESC";
                         break;
                 }
 
-                sql = $"{selectSql} {whereSql} {limitSql}";
+                sql = $"{selectSql} {whereSql} {orderSql} {limitSql}";
                 data = (await dbConn
                     .QueryAsync<AlbumList>(sql, sqlParameters)
                     .ConfigureAwait(false)).ToArray();
+                
+                totalCount = await dbConn
+                    .ExecuteScalarAsync<long>($"SELECT COUNT(*) FROM \"Albums\" {whereSql};")
+                    .ConfigureAwait(false);                  
             }
         }
         catch (Exception e)
@@ -481,7 +489,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-
+            TotalCount = totalCount,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -502,6 +510,7 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
+        long totalCount = 0;
         AlbumList2[] data = [];
         var sql = string.Empty;
 
@@ -543,57 +552,71 @@ public class OpenSubsonicApiService(
                                 JOIN "Artists" aa on (a."ArtistId" = aa."Id")
                                 JOIN "Libraries" l on (aa."LibraryId" = l."Id")
                                 """;
-                string whereSql;
+                string whereSql = string.Empty;
+                string orderSql;
                 var limitSql = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
                 switch (albumListRequest.Type)
                 {
                     case ListType.Newest:
-                        whereSql = "ORDER BY a.\"CreatedAt\" DESC";
+                        orderSql = "ORDER BY a.\"CreatedAt\" DESC";
                         break;
 
                     case ListType.Highest:
-                        whereSql = "ORDER BY a.\"CalculatedRating\" DESC";
+                        orderSql = "ORDER BY a.\"CalculatedRating\" DESC";
                         break;
 
                     case ListType.Frequent:
-                        whereSql = "ORDER BY a.\"PlayedCount\" DESC";
+                        orderSql = "ORDER BY a.\"PlayedCount\" DESC";
                         break;
 
                     case ListType.Recent:
-                        whereSql = "ORDER BY a.\"LastPlayedAt\" DESC";
+                        orderSql = "ORDER BY a.\"LastPlayedAt\" DESC";
                         break;
 
                     case ListType.AlphabeticalByName:
-                        whereSql = "ORDER BY a.\"SortName\"";
+                        orderSql = "ORDER BY a.\"SortName\"";
                         break;
 
                     case ListType.AlphabeticalByArtist:
-                        whereSql = "ORDER BY aa.\"SortName\"";
+                        orderSql = "ORDER BY aa.\"SortName\"";
                         break;
 
                     case ListType.Starred:
-                        whereSql = "ORDER BY \"Starred\" DESC";
+                        orderSql = "ORDER BY \"Starred\" DESC";
                         break;
 
                     case ListType.ByYear:
-                        whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear ORDER BY \"Year\" DESC";
+                        whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear";
+                        orderSql = "ORDER BY \"Year\" DESC";
                         break;
 
                     case ListType.ByGenre:
-                        whereSql = "where @genre = any(a.\"Genres\") ORDER BY \"Genre\" DESC";
+                        whereSql = "where @genre = any(a.\"Genres\")";
+                        orderSql = "ORDER BY \"Genre\" DESC";
                         break;
                     
                     default:
-                        whereSql = "ORDER BY RANDOM()";
+                        orderSql = "ORDER BY RANDOM()";
                         break;
                 }
 
-                sql = $"{selectSql} {whereSql} {limitSql}";
+                sql = $"{selectSql} {whereSql} {orderSql} {limitSql}";
                 data = (await dbConn
                     .QueryAsync<AlbumList2>(sql, sqlParameters)
                     .ConfigureAwait(false)).ToArray();
+
+                sql = """
+                      SELECT COUNT(a.*)
+                      FROM "Albums" a 
+                      JOIN "Artists" aa on (a."ArtistId" = aa."Id")
+                      JOIN "Libraries" l on (aa."LibraryId" = l."Id")
+                      """;
+                totalCount = await dbConn
+                    .ExecuteScalarAsync<long>($"{sql} {whereSql}", sqlParameters)
+                    .ConfigureAwait(false);     
             }
-            Logger.Debug("[{MethodName}] Result Count [{Count}] SQL [{sql}]", nameof(GetAlbumList2Async), data.Length, sql);
+            Logger.Debug("[{MethodName}] Total Count [{TotalCount}] Result Count [{Count}]",
+                nameof(GetAlbumList2Async), totalCount, data.Length);
         }
         catch (Exception e)
         {
@@ -603,6 +626,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
+            TotalCount = totalCount,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -712,7 +736,8 @@ public class OpenSubsonicApiService(
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
-                Data = data
+                Data = data,
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "album"
             }
         };
     }
@@ -1774,7 +1799,6 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -1847,7 +1871,7 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
-
+            TotalCount = data?.AlbumCount ?? 0,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
@@ -2273,11 +2297,20 @@ public class OpenSubsonicApiService(
             indexLimit = short.MaxValue;
         }
 
+        long totalCount = 0;
         Child[] songs;
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
+            var totalCountSql = """
+                      select COUNT(s."Id")
+                      from "Songs" s
+                      join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                      join "Albums" a on (ad."AlbumId" = a."Id")
+                      join "Artists" aa on (a."ArtistId" = aa."Id")
+                      where @genre = any(a."Genres") or @genre = any(s."Genres")
+                      """;
             var sql = """
                       select s."Id"
                       from "Songs" s
@@ -2286,8 +2319,12 @@ public class OpenSubsonicApiService(
                       join "Artists" aa on (a."ArtistId" = aa."Id")
                       where @genre = any(a."Genres") or @genre = any(s."Genres")
                       offset @offset rows fetch next @takeSize rows only;
-                      """;
-
+                      """;           
+            
+            totalCount = await dbConn
+                .ExecuteScalarAsync<long>(totalCountSql, new { genre})
+                .ConfigureAwait(false);
+            
             var dbSongIds = (await dbConn.QueryAsync<int>(sql, new { genre, offset, takeSize = count < indexLimit ? count : indexLimit }).ConfigureAwait(false)).ToArray();
             var dbSongs = await (from s in scopedContext.Songs
                     .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
@@ -2295,11 +2332,13 @@ public class OpenSubsonicApiService(
                 join ss in dbSongIds on s.Id equals ss
                 select s).ToArrayAsync(cancellationToken).ConfigureAwait(false);
             songs = dbSongs.Select(x => x.ToApiChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault())).ToArray();
+   
         }
 
         return new ResponseModel
         {
             UserInfo = authResponse.UserInfo,
+            TotalCount = totalCount,
             ResponseData = await DefaultApiResponse() with
             {
                 Data = songs,
