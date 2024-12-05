@@ -1,4 +1,5 @@
 using System.Net;
+using Mapster;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
@@ -45,15 +46,13 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     [HttpPost]
     [Route("/rest/getCoverArt.view")]
     [Route("/rest/getCoverArt")]
-    public async Task<IActionResult> GetCoverArtAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetCoverArtAsync(string id, CancellationToken cancellationToken = default)
     {
-        return new FileContentResult((byte[])(await openSubsonicApiService.GetCoverArtAsync(id,
-                null,
-                ApiRequest,
-                cancellationToken)).ResponseData.Data!,
-            "image/jpeg");
+        return ImageResult(openSubsonicApiService.GetImageForApiKeyId(id,
+            null,
+            ApiRequest,
+            cancellationToken));
     }
-
 
     /// <summary>
     ///     Streams a given media file.

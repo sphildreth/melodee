@@ -21,7 +21,7 @@ public static class HashHelper
         return CreateMd5(File.ReadAllBytes(file.FullName));
     }
 
-    private static string? CreateMd5(byte[]? bytes)
+    public static string? CreateMd5(byte[]? bytes)
     {
         if (bytes == null || !bytes.Any())
         {

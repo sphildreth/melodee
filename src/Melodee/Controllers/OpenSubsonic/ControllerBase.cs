@@ -4,6 +4,7 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 using Melodee.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -52,6 +53,14 @@ public abstract class ControllerBase(ISerializer serializer) : Controller
         }
 
         return ip;
+    }
+
+    protected async Task<IActionResult> ImageResult(Task<ResponseModel> action)
+    {
+        var model = await action;
+        var bytes = (byte[])model.ResponseData.Data!;
+        HttpContext.Response.Headers.Append("ETag", HashHelper.CreateMd5(bytes));
+        return new FileContentResult(bytes, "image/jpeg");        
     }
 
     protected async Task<IActionResult> MakeResult(Task<ResponseModel> modelTask)

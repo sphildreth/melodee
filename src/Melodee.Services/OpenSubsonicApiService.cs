@@ -17,6 +17,7 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.OpenSubsonic.Searching;
 using Melodee.Common.Utility;
+using Melodee.Plugins.Conversion.Image;
 using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
@@ -845,9 +846,9 @@ public class OpenSubsonicApiService(
     }
 
     /// <summary>
-    ///     Returns a cover art image.
+    ///     Returns an artist, album, or song art image.
     /// </summary>
-    public async Task<ResponseModel> GetCoverArtAsync(string apiId, int? size, ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> GetImageForApiKeyId(string apiId, string? size, ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -855,11 +856,12 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
-        var coverBytes = defaultImages.AlbumCoverBytes;
+        var sizeValue = size ?? "large";
+        var imageBytes = defaultImages.AlbumCoverBytes;
 
-        var cachedBytes = await CacheManager.GetAsync<byte[]?>($"urn:opensubsonic:coverart:{apiId}", async () =>
+        var cachedBytes = await CacheManager.GetAsync<byte[]?>($"urn:opensubsonic:imageforapikey:{apiId}", async () =>
         {
-            using (Operation.At(LogEventLevel.Debug).Time("GetCoverArtAsync: [{Username}]", apiId))
+            using (Operation.At(LogEventLevel.Debug).Time("GetImageForApiKeyId: [{Username}] Size [{Size}]", apiId, sizeValue))
             {
                 try
                 {
@@ -877,7 +879,7 @@ public class OpenSubsonicApiService(
                             var firstArtistImage = artistDirectoryInfo.AllFileImageTypeFileInfos().OrderBy(x => x.Name).FirstOrDefault();
                             if (firstArtistImage != null)
                             {
-                                coverBytes = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken).ConfigureAwait(false);
+                                imageBytes = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken).ConfigureAwait(false);
                             }
                         }
                     }
@@ -923,7 +925,7 @@ public class OpenSubsonicApiService(
                                     var image = melodeeFile?.CoverImage();
                                     if (image != null)
                                     {
-                                        coverBytes = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
+                                        imageBytes = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
                                     }
                                     else
                                     {
@@ -937,11 +939,31 @@ public class OpenSubsonicApiService(
                                         var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, $" {ImageInfo.ImageFilePrefix}01-front.jpg", StringComparison.OrdinalIgnoreCase));
                                         if (firstFrontImage != null)
                                         {
-                                            coverBytes = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
+                                            imageBytes = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
                                         }
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    if (!string.Equals(sizeValue, "large", StringComparison.OrdinalIgnoreCase))
+                    {
+                        switch (sizeValue.ToUpperInvariant())
+                        {
+                            case "SMALL":
+                                var smallSize = (await Configuration.Value).GetValue<string?>(SettingRegistry.ImagingSmallSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
+                                imageBytes = ImageConvertor.ResizeImageIfNeeded(imageBytes,
+                                    SafeParser.ToNumber<int>(smallSize.Split('x')[0]),
+                                    SafeParser.ToNumber<int>(smallSize.Split('x')[0]));
+                                break;
+                            
+                            case "MEDIUM":
+                                var mediumSize = (await Configuration.Value).GetValue<string?>(SettingRegistry.ImagingMediumSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingMediumSize}] not found.");
+                                imageBytes = ImageConvertor.ResizeImageIfNeeded(imageBytes,
+                                    SafeParser.ToNumber<int>(mediumSize.Split('x')[0]),
+                                    SafeParser.ToNumber<int>(mediumSize.Split('x')[0]));
+                                break;
                         }
                     }
                 }
@@ -956,11 +978,11 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            IsSuccess = coverBytes != null,
+            IsSuccess = imageBytes != null,
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
-                Data = coverBytes,
+                Data = imageBytes,
                 DataPropertyName = string.Empty,
                 DataDetailPropertyName = string.Empty
             }

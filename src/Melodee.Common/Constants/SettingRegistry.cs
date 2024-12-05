@@ -15,9 +15,11 @@ public static class SettingRegistry
     public const string FormattingDateTimeDisplayActivityFormat = "formatting.dateTimeDisplayActivityFormat";
     public const string FormattingDateTimeDisplayFormatShort = "formatting.dateTimeDisplayFormatShort";
     public const string ImagingDoLoadEmbeddedImages = "imaging.doLoadEmbeddedImages";    
-    public const string ImagingMaximumImageSize = "imaging.imagingMaximumImageSize";
     public const string ImagingMaximumNumberOfAlbumImages = "imaging.maximumNumberOfAlbumImages";
     public const string ImagingMaximumNumberOfArtistImages = "imaging.maximumNumberOfArtistImages";
+    public const string ImagingSmallSize = "imaging.smallSize";
+    public const string ImagingMediumSize = "imaging.mediumSize";
+    public const string ImagingLargeSize = "imaging.largeSize";
     public const string MagicDoRemoveFeaturingArtistFromSongArtist = "magic.doRemoveFeaturingArtistFromSongArtist";
     public const string MagicDoRemoveFeaturingArtistFromSongTitle = "magic.doRemoveFeaturingArtistFromSongTitle";
     public const string MagicDoRemoveUnwantedTextFromAlbumTitle = "magic.doRemoveUnwantedTextFromAlbumTitle";
