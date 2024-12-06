@@ -23,6 +23,7 @@ using Melodee.Utils;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Quartz;
 using Quartz.AspNetCore;
 using Serilog;
@@ -42,7 +43,9 @@ builder.Services
 builder.Services.AddControllers();
 
 builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
-    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o 
+        => o.UseNodaTime()
+            .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 builder.Services.AddSingleton<IDbConnectionFactory>(opt => 
     new OrmLiteConnectionFactory(builder.Configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));

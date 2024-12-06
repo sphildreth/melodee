@@ -188,6 +188,7 @@ public class OpenSubsonicApiService(
                 .Include(x => x.User)
                 .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
+
                 .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
                 .ConfigureAwait(false);
             if (playlist != null)
@@ -270,6 +271,7 @@ public class OpenSubsonicApiService(
             var playlist = await scopedContext
                 .Playlists
                 .Include(x => x.User)
+
                 .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
                 .ConfigureAwait(false);
             if (playlist != null)
@@ -593,7 +595,7 @@ public class OpenSubsonicApiService(
 
                     case ListType.ByGenre:
                         whereSql = "where @genre = any(a.\"Genres\")";
-                        orderSql = "ORDER BY \"Genre\" DESC";
+                        orderSql = "ORDER BY \"Genres\" DESC";
                         break;
                     
                     default:

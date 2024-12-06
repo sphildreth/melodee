@@ -14,6 +14,7 @@ public class SystemController(ILogger logger, ISerializer serializer, OpenSubson
     [HttpGet]
     [HttpPost]
     [Route("/rest/getOpenSubsonicExtensions.view")]
+    [Route("/rest/getOpenSubsonicExtensions")]
     public Task<IActionResult> GetOpenSubsonicExtensionsAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetOpenSubsonicExtensionsAsync(ApiRequest, cancellationToken));
