@@ -71,6 +71,10 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
 
     public static byte[] ResizeImageIfNeeded(ReadOnlySpan<byte> imageBytes, int maxWidth, int maxHeight)
     {
+        if (imageBytes.Length == 0)
+        {
+            return imageBytes.ToArray();
+        }
         using var outStream = new MemoryStream();
         using (var image = SixLabors.ImageSharp.Image.Load(imageBytes))
         {
