@@ -13,6 +13,8 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public abstract class ControllerBase(ISerializer serializer) : Controller
 {
+    protected readonly ISerializer Serializer = serializer;
+
     protected ApiRequest ApiRequest { get; private set; } = null!;
 
     private static T? GetHeaderValueAs<T>(HttpContext? context, string headerName)
@@ -75,13 +77,13 @@ public abstract class ControllerBase(ISerializer serializer) : Controller
 
         if (ApiRequest.IsJsonRequest)
         {
-            return new JsonStringResult(serializer.Serialize(modelData)!);
+            return new JsonStringResult(Serializer.Serialize(modelData)!);
         }
         if (ApiRequest.IsJsonPRequest)
         {
-            return new JsonPStringResult($"{ApiRequest.Callback}({serializer.Serialize(modelData)})");
+            return new JsonPStringResult($"{ApiRequest.Callback}({Serializer.Serialize(modelData)})");
         }
-        return new XmlStringResult(serializer.SerializeOpenSubsonicModelToXml(modelData)!);
+        return new XmlStringResult(Serializer.SerializeOpenSubsonicModelToXml(modelData)!);
     }
 
     public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)

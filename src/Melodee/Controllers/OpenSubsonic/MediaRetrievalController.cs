@@ -1,5 +1,4 @@
 using System.Net;
-using Mapster;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
@@ -22,7 +21,7 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     /// <summary>
     ///     Returns the avatar (personal image) for a user.
     /// </summary>
-    /// <param name="username">The user in question.. 	</param>
+    /// <param name="username">The user in question.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
     [HttpPost]
@@ -31,7 +30,6 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
     public async Task<IActionResult> GetAvatarAsync(string username, CancellationToken cancellationToken = default)
     {
         return new FileContentResult((byte[])(await openSubsonicApiService.GetAvatarAsync(username,
-                null,
                 ApiRequest,
                 cancellationToken)).ResponseData.Data!,
             "image/png");
@@ -53,6 +51,36 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
             ApiRequest,
             cancellationToken));
     }
+    
+    /// <summary>
+    ///     Downloads a given media file.
+    /// </summary>
+    /// <param name="request">Stream model for parameters for downloading.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/download.view")]
+    [Route("/rest/download")]
+    public async Task<IActionResult> DownloadAsync(StreamRequest request, CancellationToken cancellationToken = default)
+    {
+        request.IsDownloadingRequest = true;
+        var streamResult = await openSubsonicApiService.StreamAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false);
+        if (streamResult.IsSuccess)
+        {
+            return File(streamResult.Bytes, streamResult.ContentType, streamResult.FileName);
+        }
+        Response.StatusCode = (int)HttpStatusCode.NotFound;
+        return new JsonStringResult(Serializer.Serialize(new ResponseModel
+        {
+            UserInfo = OpenSubsonicApiService.BlankUserInfo,
+            IsSuccess = false,
+            ResponseData = await openSubsonicApiService.NewApiResponse(
+                false,
+                string.Empty,
+                string.Empty,
+                Error.DataNotFoundError)
+        })!);
+    }    
 
     /// <summary>
     ///     Streams a given media file.
@@ -72,15 +100,13 @@ public class MediaRetrievalController(ISerializer serializer, OpenSubsonicApiSer
             {
                 Response.Headers[responseHeader.Key] = responseHeader.Value;
             }
-
             await Response.Body
                 .WriteAsync(streamResult.Bytes.AsMemory(0, streamResult.Bytes.Length), cancellationToken)
                 .ConfigureAwait(false);
             return new EmptyResult();
         }
-
         Response.StatusCode = (int)HttpStatusCode.NotFound;
-        return new JsonStringResult(serializer.Serialize(new ResponseModel
+        return new JsonStringResult(Serializer.Serialize(new ResponseModel
         {
             UserInfo = OpenSubsonicApiService.BlankUserInfo,
             IsSuccess = false,

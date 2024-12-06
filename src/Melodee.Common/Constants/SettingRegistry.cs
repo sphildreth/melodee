@@ -69,6 +69,7 @@ public static class SettingRegistry
     public const string SearchEngineMusicBrainzImportLastImportTimestamp = "searchEngine.musicbrainz.importLastImportTimestamp";
     public const string SearchEngineUserAgent = "searchEngine.userAgent";
     public const string SystemBaseUrl = "system.baseUrl";
+    public const string SystemIsDownloadingEnabled = "system.isDownloadingEnabled";
     public const string TranscodingCommandAac = "transcoding.command.aac";
     public const string TranscodingCommandMp3 = "transcoding.command.mp3";
     public const string TranscodingCommandOpus = "transcoding.command.opus";

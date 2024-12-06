@@ -2,4 +2,4 @@ using Microsoft.Extensions.Primitives;
 
 namespace Melodee.Common.Models.OpenSubsonic.Responses;
 
-public sealed record StreamResponse(IDictionary<string, StringValues> ResponseHeaders, bool IsSuccess, byte[] Bytes);
+public sealed record StreamResponse(IDictionary<string, StringValues> ResponseHeaders, bool IsSuccess, byte[] Bytes, string? FileName = null, string? ContentType = null);

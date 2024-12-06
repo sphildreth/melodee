@@ -739,7 +739,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Value = "",
                     CreatedAt = now
                 },
-                
                 new Setting
                 {
                     Id = 1100,
@@ -747,6 +746,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.SystemBaseUrl,
                     Comment = "Base URL for Melodee to use when building shareable links and image urls (e.g., 'https://server.domain.com:8080', 'http://server.domain.com').",
                     Value = MelodeeConfiguration.RequiredNotSetValue,
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 1101,
+                    Category = (int)SettingCategory.System,
+                    Key = SettingRegistry.SystemIsDownloadingEnabled,
+                    Comment = "Is downloading enabled.",
+                    Value = "true",
                     CreatedAt = now
                 }
             );

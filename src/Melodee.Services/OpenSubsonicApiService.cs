@@ -22,7 +22,9 @@ using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using Melodee.Services.SearchEngines;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Primitives;
 using NodaTime;
 using Quartz;
@@ -806,7 +808,7 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Returns the avatar (personal image) for a user.
     /// </summary>
-    public async Task<ResponseModel> GetAvatarAsync(string username, object o, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> GetAvatarAsync(string username, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -1434,7 +1436,7 @@ public class OpenSubsonicApiService(
         long rangeBegin = 0;
         long rangeEnd = 0;
         var range = apiRequest.RequestHeaders.FirstOrDefault(x => x.Key == "Range")?.Value;
-        if (range.Nullify() != null)
+        if (!request.IsDownloadingRequest && range.Nullify() != null)
         {
             if (string.Equals(range, "bytes=0-", StringComparison.OrdinalIgnoreCase))
             {
@@ -1451,8 +1453,27 @@ public class OpenSubsonicApiService(
             }
         }
 
+        if (request.IsDownloadingRequest)
+        {
+            var isDownloadingEnabled = (await Configuration.Value).GetValue<bool?>(SettingRegistry.SystemIsDownloadingEnabled) ?? false;
+            if (!isDownloadingEnabled)
+            {
+                Logger.Warning("[{ServiceName}] Downloading is disabled [{SettingName}]. Request [{Request}", 
+                    nameof(OpenSubsonicApiService), 
+                    SettingRegistry.SystemIsDownloadingEnabled, 
+                    request);
+                return new StreamResponse(new HeaderDictionary(), false, []);
+            }
+        }
+
+        if (request is { IsDownloadingRequest: false, TimeOffset: not null })
+        {
+            // TODO If specified, start streaming at the given offset (in seconds) into the media. 
+            Logger.Warning("[{ServiceName}] Stream request has TimeOffset. Request [{Request}", nameof(OpenSubsonicApiService), request);
+        }
+
         var sql = """
-                  select l."Path" || aa."Directory" || a."Directory" || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration", s."ContentType"
+                  select l."Path" || aa."Directory" || a."Directory" || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration",s."BitRate", s."ContentType"
                   from "Songs" s 
                   join "AlbumDiscs" ad on (ad."Id" = s."AlbumDiscId")
                   join "Albums" a on (a."Id" = ad."AlbumId")
@@ -1474,7 +1495,7 @@ public class OpenSubsonicApiService(
                     []
                 );
             }
-
+            
             rangeEnd = rangeEnd == 0 ? songStreamInfo.FileSize : rangeEnd;
 
             var bytesToRead = (int)(rangeEnd - rangeBegin) + 1;
@@ -1485,18 +1506,36 @@ public class OpenSubsonicApiService(
 
             var trackBytes = new byte[bytesToRead];
 
+            if (request.IsTranscodingRequest)
+            {
+                if (request.MaxBitRate != songStreamInfo.BitRate)
+                {
+                    //TODO transcoding for the format and maxBitRate as needed
+                    Logger.Warning("[{ServiceName}] Stream request has MaxBitRate [{MaxBitRate}] different than song BitRate [{SongRate}] has TimeOffset. Request [{Request}", 
+                        nameof(OpenSubsonicApiService),
+                        request.MaxBitRate,
+                        songStreamInfo.BitRate,
+                        request);
+                }
+            }
 
+            var numberOfBytesRead = 0;
             await using (var fs = songStreamInfo.TrackFileInfo.OpenRead())
             {
                 try
                 {
                     fs.Seek(rangeBegin, SeekOrigin.Begin);
-                    await fs.ReadAsync(trackBytes.AsMemory(0, bytesToRead), cancellationToken).ConfigureAwait(false);
+                    numberOfBytesRead = await fs.ReadAsync(trackBytes.AsMemory(0, bytesToRead), cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     Logger.Error(ex, "Reading song [{SongInfo}]", songStreamInfo);
                 }
+            }
+
+            if (request.IsDownloadingRequest)
+            {
+                Logger.Information("[{ServiceName}] User downloaded song [{SongId}]", nameof(OpenSubsonicApiService), request.Id);
             }
 
             return new StreamResponse
@@ -1506,13 +1545,15 @@ public class OpenSubsonicApiService(
                     { "Accept-Ranges", "bytes" },
                     { "Cache-Control", "no-store, must-revalidate, no-cache, max-age=0" },
                     { "Content-Duration", songStreamInfo.Duration.ToString(CultureInfo.InvariantCulture) },
-                    { "Content-Length", trackBytes.Length.ToString() },
-                    { "Content-Range", $"bytes {rangeBegin}-{rangeEnd}/{trackBytes.Length}" },
+                    { "Content-Length", numberOfBytesRead.ToString() },
+                    { "Content-Range", $"bytes {rangeBegin}-{rangeEnd}/{numberOfBytesRead}" },
                     { "Content-Type", songStreamInfo.ContentType },
                     { "Expires", "Mon, 01 Jan 1990 00:00:00 GMT" }
                 },
-                trackBytes.Length > 0,
-                trackBytes
+                numberOfBytesRead > 0,
+                trackBytes,
+                request.IsDownloadingRequest ? songStreamInfo.TrackFileInfo.Name : null,
+                request.IsDownloadingRequest ? songStreamInfo.ContentType : null
             );
         }
     }
