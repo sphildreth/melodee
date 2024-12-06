@@ -40,15 +40,16 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
     ///     Returns a cover art image.
     /// </summary>
     /// <param name="id">Composite ID of type:apikey</param>
+    /// <param name="size">If specified, scale image to this size.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
     [HttpPost]
     [Route("/rest/getCoverArt.view")]
     [Route("/rest/getCoverArt")]
-    public Task<IActionResult> GetCoverArtAsync(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetCoverArtAsync(string id, string? size, CancellationToken cancellationToken = default)
     {
         return ImageResult(openSubsonicApiService.GetImageForApiKeyId(id,
-            null,
+            size,
             ApiRequest,
             cancellationToken));
     }

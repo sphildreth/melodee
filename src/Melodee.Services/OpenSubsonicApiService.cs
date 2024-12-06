@@ -962,23 +962,34 @@ public class OpenSubsonicApiService(
 
                     if (!string.Equals(sizeValue, ImageSizeRegistry.Large, StringComparison.OrdinalIgnoreCase))
                     {
-                        switch (sizeValue.ToLowerInvariant())
+                        var sizeValueParsed = SafeParser.ToNumber<int>(sizeValue);
+                        if (sizeValueParsed > 0)
                         {
-                            case ImageSizeRegistry.Small:
-                                var smallSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingSmallSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
-                                result = ImageConvertor.ResizeImageIfNeeded(result,
-                                    smallSize,
-                                    smallSize);
-                                etag = HashHelper.CreateMd5(etag+ImageSizeRegistry.Small);
-                                break;
+                            result = ImageConvertor.ResizeImageIfNeeded(result,
+                                sizeValueParsed,
+                                sizeValueParsed);
+                            etag = HashHelper.CreateMd5(etag+ImageSizeRegistry.Small);
+                        }
+                        else
+                        {
+                            switch (sizeValue.ToLowerInvariant())
+                            {
+                                case ImageSizeRegistry.Small:
+                                    var smallSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingSmallSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
+                                    result = ImageConvertor.ResizeImageIfNeeded(result,
+                                        smallSize,
+                                        smallSize);
+                                    etag = HashHelper.CreateMd5(etag + ImageSizeRegistry.Small);
+                                    break;
 
-                            case ImageSizeRegistry.Medium:
-                                var mediumSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingMediumSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingMediumSize}] not found.");
-                                result = ImageConvertor.ResizeImageIfNeeded(result,
-                                    mediumSize,
-                                    mediumSize);
-                                etag = HashHelper.CreateMd5(etag+ImageSizeRegistry.Medium);
-                                break;
+                                case ImageSizeRegistry.Medium:
+                                    var mediumSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingMediumSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingMediumSize}] not found.");
+                                    result = ImageConvertor.ResizeImageIfNeeded(result,
+                                        mediumSize,
+                                        mediumSize);
+                                    etag = HashHelper.CreateMd5(etag + ImageSizeRegistry.Medium);
+                                    break;
+                            }
                         }
                     }
                 }
