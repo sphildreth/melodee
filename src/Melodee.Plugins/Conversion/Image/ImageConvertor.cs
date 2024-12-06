@@ -52,10 +52,10 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         {
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
             var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));
-            var maxSize = MelodeeConfiguration.GetValue<string?>(SettingRegistry.ImagingLargeSize);
+            var maxSize = MelodeeConfiguration.GetValue<int?>(SettingRegistry.ImagingLargeSize);
             if (maxSize != null)
             {
-                convertedBytes = ResizeImageIfNeeded(convertedBytes, SafeParser.ToNumber<int>(maxSize.Split('x')[0]), SafeParser.ToNumber<int>(maxSize.Split('x')[1]));
+                convertedBytes = ResizeImageIfNeeded(convertedBytes, maxSize.Value, maxSize.Value);
             }
 
             await File.WriteAllBytesAsync(newName, convertedBytes, cancellationToken);

@@ -79,265 +79,274 @@ public class LibraryProcessJob(
 
     public override async Task Execute(IJobExecutionContext context)
     {
-        var startTicks = Stopwatch.GetTimestamp();
-        _configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
-        var libraries = await libraryService.ListAsync(new PagedRequest(), context.CancellationToken).ConfigureAwait(false);
-        if (!libraries.IsSuccess)
+        try
         {
-            Logger.Warning("[{JobName}] Unable to get libraries, skipping processing.", nameof(LibraryProcessJob));
-            return;
-        }
-
-        DirectoryInfo? processingDirectory = null;
-
-        _totalAlbumsInserted = 0;
-        _totalAlbumsUpdated = 0;
-        _totalArtistsInserted = 0;
-        _totalSongsInserted = 0;
-        _totalSongsUpdated = 0;
-        _maxSongsToProcess = _configuration.GetValue<int?>(SettingRegistry.ProcessingMaximumProcessingCount) ?? 0;
-        _batchSize = _configuration.BatchProcessingSize();
-        var messagesForJobRun = new List<string>();
-        var exceptionsForJobRun = new List<Exception>();
-
-        Trace.Listeners.Clear();
-        Trace.Listeners.Add(new ConsoleTraceListener());
-
-        await albumDiscoveryService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
-        await directoryProcessorService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
-
-        ISongPlugin[] songPlugins =
-        [
-            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
-        ];
-        _now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-
-        _dataMap = context.JobDetail.JobDataMap;
-        var defaultNeverScannedDate = Instant.FromDateTimeUtc(DateTime.MinValue.ToUniversalTime());
-        var stagingLibrary = await libraryService.GetStagingLibraryAsync(context.CancellationToken).ConfigureAwait(false);
-        if (!stagingLibrary.IsSuccess)
-        {
-            messagesForJobRun.AddRange(stagingLibrary.Messages ?? []);
-            exceptionsForJobRun.AddRange(stagingLibrary.Errors ?? []);
-            Logger.Warning("[{JobName}] Unable to get staging library, skipping processing.", nameof(LibraryProcessJob));
-            return;
-        }
-
-        var librariesToProcess = libraries.Data.Where(x => x.TypeValue == LibraryType.Library).ToArray();
-        _dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.InProcess.ToString());
-        OnProcessingEvent?.Invoke(
-            this,
-            new ProcessingEvent(ProcessingEventType.Start,
-                nameof(LibraryProcessJob),
-                librariesToProcess.Count(),
-                0,
-                "Started library processing libraries."));
-        await using (var scopedContext = await contextFactory.CreateDbContextAsync(context.CancellationToken).ConfigureAwait(false))
-        {
-            foreach (var library in librariesToProcess)
+            var startTicks = Stopwatch.GetTimestamp();
+            _configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
+            var libraries = await libraryService.ListAsync(new PagedRequest(), context.CancellationToken).ConfigureAwait(false);
+            if (!libraries.IsSuccess)
             {
-                if (library.IsLocked)
-                {
-                    Logger.Warning("[{JobName}] Skipped processing locked library [{LibraryName}]", nameof(LibraryProcessJob), library.Name);
-                    continue;
-                }
+                Logger.Warning("[{JobName}] Unable to get libraries, skipping processing.", nameof(LibraryProcessJob));
+                return;
+            }
 
-                if (_totalSongsInserted + _totalSongsUpdated > _maxSongsToProcess && _maxSongsToProcess > 0)
-                {
-                    Logger.Warning("[{JobName}] Maximum Processing Count reached. Stopping processing.", nameof(LibraryProcessJob));
-                    break;
-                }
+            DirectoryInfo? processingDirectory = null;
 
-                var libraryProcessStartTicks = Stopwatch.GetTimestamp();
-                var dirs = new DirectoryInfo(library.Path).GetDirectories("*", SearchOption.AllDirectories);
-                var lastScanAt = library.LastScanAt ?? defaultNeverScannedDate;
-                if (_totalSongsInserted + _totalSongsUpdated > _maxSongsToProcess && _maxSongsToProcess > 0)
-                {
-                    Logger.Warning("[{JobName}] Maximum Processing Count reached. Stopping processing.", nameof(LibraryProcessJob));
-                    break;
-                }
+            _totalAlbumsInserted = 0;
+            _totalAlbumsUpdated = 0;
+            _totalArtistsInserted = 0;
+            _totalSongsInserted = 0;
+            _totalSongsUpdated = 0;
+            _maxSongsToProcess = _configuration.GetValue<int?>(SettingRegistry.ProcessingMaximumProcessingCount) ?? 0;
+            _batchSize = _configuration.BatchProcessingSize();
+            var messagesForJobRun = new List<string>();
+            var exceptionsForJobRun = new List<Exception>();
 
-                var melodeeFilesForDirectory = new List<Album>();
-                // Get a list of modified directories in the Library; remember a library directory should only contain a single album in Melodee
-                var allDirsForLibrary = dirs.Where(d => d.LastWriteTime >= lastScanAt.ToDateTimeUtc() && d.Name.Length > 3).ToArray();
-                var batches = (allDirsForLibrary.Length + _batchSize - 1) / _batchSize;
-                for (var batch = 0; batch < batches; batch++)
+            Trace.Listeners.Clear();
+            Trace.Listeners.Add(new ConsoleTraceListener());
+
+            await albumDiscoveryService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
+            await directoryProcessorService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
+
+            ISongPlugin[] songPlugins =
+            [
+                new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
+            ];
+            _now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+
+            _dataMap = context.JobDetail.JobDataMap;
+            var defaultNeverScannedDate = Instant.FromDateTimeUtc(DateTime.MinValue.ToUniversalTime());
+            var stagingLibrary = await libraryService.GetStagingLibraryAsync(context.CancellationToken).ConfigureAwait(false);
+            if (!stagingLibrary.IsSuccess)
+            {
+                messagesForJobRun.AddRange(stagingLibrary.Messages ?? []);
+                exceptionsForJobRun.AddRange(stagingLibrary.Errors ?? []);
+                Logger.Warning("[{JobName}] Unable to get staging library, skipping processing.", nameof(LibraryProcessJob));
+                return;
+            }
+
+            var librariesToProcess = libraries.Data.Where(x => x.TypeValue == LibraryType.Library).ToArray();
+            _dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.InProcess.ToString());
+            OnProcessingEvent?.Invoke(
+                this,
+                new ProcessingEvent(ProcessingEventType.Start,
+                    nameof(LibraryProcessJob),
+                    librariesToProcess.Count(),
+                    0,
+                    "Started library processing libraries."));
+            await using (var scopedContext = await contextFactory.CreateDbContextAsync(context.CancellationToken).ConfigureAwait(false))
+            {
+                foreach (var library in librariesToProcess)
                 {
-                    foreach (var dir in allDirsForLibrary.Skip(_batchSize * batch).Take(_batchSize))
+                    if (library.IsLocked)
                     {
-                        try
+                        Logger.Warning("[{JobName}] Skipped processing locked library [{LibraryName}]", nameof(LibraryProcessJob), library.Name);
+                        continue;
+                    }
+
+                    if (_totalSongsInserted + _totalSongsUpdated > _maxSongsToProcess && _maxSongsToProcess > 0)
+                    {
+                        Logger.Warning("[{JobName}] Maximum Processing Count reached. Stopping processing.", nameof(LibraryProcessJob));
+                        break;
+                    }
+
+                    var libraryProcessStartTicks = Stopwatch.GetTimestamp();
+                    var dirs = new DirectoryInfo(library.Path).GetDirectories("*", SearchOption.AllDirectories);
+                    var lastScanAt = library.LastScanAt ?? defaultNeverScannedDate;
+                    if (_totalSongsInserted + _totalSongsUpdated > _maxSongsToProcess && _maxSongsToProcess > 0)
+                    {
+                        Logger.Warning("[{JobName}] Maximum Processing Count reached. Stopping processing.", nameof(LibraryProcessJob));
+                        break;
+                    }
+
+                    var melodeeFilesForDirectory = new List<Album>();
+                    // Get a list of modified directories in the Library; remember a library directory should only contain a single album in Melodee
+                    var allDirsForLibrary = dirs.Where(d => d.LastWriteTime >= lastScanAt.ToDateTimeUtc() && d.Name.Length > 3).ToArray();
+                    var batches = (allDirsForLibrary.Length + _batchSize - 1) / _batchSize;
+                    for (var batch = 0; batch < batches; batch++)
+                    {
+                        foreach (var dir in allDirsForLibrary.Skip(_batchSize * batch).Take(_batchSize))
                         {
-                            processingDirectory = dir;
-
-                            var dirFileSystemDirectoryInfo = new FileSystemDirectoryInfo
+                            try
                             {
-                                Path = dir.FullName,
-                                Name = dir.Name
-                            };
-                            var allDirectoryFiles = dir.GetFiles("*", SearchOption.TopDirectoryOnly);
-                            var mediaFiles = allDirectoryFiles.Where(x => FileHelper.IsFileMediaType(x.Extension)).ToArray();
+                                processingDirectory = dir;
 
-                            // Don't continue if there are no media files in the directory.
-                            if (mediaFiles.Length == 0)
-                            {
-                                continue;
-                            }
-
-                            // See if an existing melodee file exists in the directory and if so load it
-                            var melodeeFile = (await albumDiscoveryService
-                                    .AllMelodeeAlbumDataFilesForDirectoryAsync(dirFileSystemDirectoryInfo, context.CancellationToken)
-                                    .ConfigureAwait(false))
-                                .Data?
-                                .FirstOrDefault();
-                            if (melodeeFile == null)
-                            {
-                                melodeeFile = (await directoryProcessorService.AllAlbumsForDirectoryAsync(
-                                        dirFileSystemDirectoryInfo,
-                                        songPlugins.ToArray(),
-                                        _configuration,
-                                        context.CancellationToken)
-                                    .ConfigureAwait(false)).Data.Item1.FirstOrDefault();
-                                if (melodeeFile == null)
+                                var dirFileSystemDirectoryInfo = new FileSystemDirectoryInfo
                                 {
-                                    Logger.Warning("[{JobName}] Unable to find Melodee file for directory [{DirName}]", nameof(LibraryProcessJob), dirFileSystemDirectoryInfo);
+                                    Path = dir.FullName,
+                                    Name = dir.Name
+                                };
+                                var allDirectoryFiles = dir.GetFiles("*", SearchOption.TopDirectoryOnly);
+                                var mediaFiles = allDirectoryFiles.Where(x => FileHelper.IsFileMediaType(x.Extension)).ToArray();
+
+                                // Don't continue if there are no media files in the directory.
+                                if (mediaFiles.Length == 0)
+                                {
                                     continue;
                                 }
-                            }
 
-                            if (!melodeeFile.IsValid(_configuration.Configuration).Item1)
+                                // See if an existing melodee file exists in the directory and if so load it
+                                var melodeeFile = (await albumDiscoveryService
+                                        .AllMelodeeAlbumDataFilesForDirectoryAsync(dirFileSystemDirectoryInfo, context.CancellationToken)
+                                        .ConfigureAwait(false))
+                                    .Data?
+                                    .FirstOrDefault();
+                                if (melodeeFile == null)
+                                {
+                                    melodeeFile = (await directoryProcessorService.AllAlbumsForDirectoryAsync(
+                                            dirFileSystemDirectoryInfo,
+                                            songPlugins.ToArray(),
+                                            _configuration,
+                                            context.CancellationToken)
+                                        .ConfigureAwait(false)).Data.Item1.FirstOrDefault();
+                                    if (melodeeFile == null)
+                                    {
+                                        Logger.Warning("[{JobName}] Unable to find Melodee file for directory [{DirName}]", nameof(LibraryProcessJob), dirFileSystemDirectoryInfo);
+                                        continue;
+                                    }
+                                }
+
+                                if (!melodeeFile.IsValid(_configuration.Configuration).Item1)
+                                {
+                                    Logger.Warning("[{JobName}] Invalid Melodee file [{Status}]", nameof(LibraryProcessJob), melodeeFile.ToString());
+                                    continue;
+                                }
+
+                                melodeeFilesForDirectory.Add(melodeeFile);
+                            }
+                            catch (Exception e)
                             {
-                                Logger.Warning("[{JobName}] Invalid Melodee file [{Status}]", nameof(LibraryProcessJob), melodeeFile.ToString());
-                                continue;
+                                Logger.Error(e, "[{JobName}] Error processing directory [{Dir}]", nameof(LibraryProcessJob), processingDirectory);
                             }
-
-                            melodeeFilesForDirectory.Add(melodeeFile);
-                        }
-                        catch (Exception e)
-                        {
-                            Logger.Error(e, "[{JobName}] Error processing directory [{Dir}]", nameof(LibraryProcessJob), processingDirectory);
                         }
                     }
-                }
 
-                var processedArtistsResult = await ProcessArtistsAsync(library, melodeeFilesForDirectory, context.CancellationToken);
-                if (!processedArtistsResult)
-                {
-                    continue;
-                }
-                var processedAlbumsResult = await ProcessAlbumsAsync(melodeeFilesForDirectory, context.CancellationToken);
-                if (!processedAlbumsResult)
-                {
-                    continue;
-                }
-                var batchCount = (_dbAlbumIdsModifiedOrUpdated.Count + _batchSize - 1) / _batchSize;
-                var dbConn = scopedContext.Database.GetDbConnection();
-                for (var updateCountBatch = 0; updateCountBatch < batchCount; updateCountBatch++)
-                {
-                    var skipValue = updateCountBatch * _batchSize;
-                    var joinedDbIds = string.Join(',', _dbAlbumIdsModifiedOrUpdated.Skip(skipValue).Take(_batchSize));
+                    var processedArtistsResult = await ProcessArtistsAsync(library, melodeeFilesForDirectory, context.CancellationToken);
+                    if (!processedArtistsResult)
+                    {
+                        continue;
+                    }
 
-                    var sql = """
-                              UPDATE "Artists" a
-                              SET "AlbumCount" = (select COUNT(*) from "Albums" where "ArtistId" = a."Id"), "LastUpdatedAt" = NOW()
-                              where "AlbumCount" <> (select COUNT(*) from "Albums" where "ArtistId" = a."Id");
-                                                             
-                              UPDATE "Artists" a
-                              SET "SongCount" = (
-                              	select COUNT(s.*)
-                              	from "Songs" s 
-                              	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                join "Albums" aa on (ad."AlbumId" = aa."Id")	
-                              	where aa."ArtistId" = a."Id"
-                              ), "LastUpdatedAt" = NOW()
-                              where "SongCount" <> (
-                              	select COUNT(s.*)
-                              	from "Songs" s 
-                              	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                join "Albums" aa on (ad."AlbumId" = aa."Id")	
-                              	where aa."ArtistId" = a."Id"
-                              );
+                    var processedAlbumsResult = await ProcessAlbumsAsync(melodeeFilesForDirectory, context.CancellationToken);
+                    if (!processedAlbumsResult)
+                    {
+                        continue;
+                    }
 
-                              UPDATE "Libraries" l 
-                              set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
-                                  "AlbumCount" = (select count(aa.*) 
-                                  	from "Albums" aa 
-                                  	join "Artists" a on (a."Id" = aa."ArtistId") 
-                                  	where a."LibraryId" = l."Id"),
-                                  "SongCount" = (select count(s.*) 
-                                  	from "Songs" s
+                    var batchCount = (_dbAlbumIdsModifiedOrUpdated.Count + _batchSize - 1) / _batchSize;
+                    var dbConn = scopedContext.Database.GetDbConnection();
+                    for (var updateCountBatch = 0; updateCountBatch < batchCount; updateCountBatch++)
+                    {
+                        var skipValue = updateCountBatch * _batchSize;
+                        var joinedDbIds = string.Join(',', _dbAlbumIdsModifiedOrUpdated.Skip(skipValue).Take(_batchSize));
+
+                        var sql = """
+                                  UPDATE "Artists" a
+                                  SET "AlbumCount" = (select COUNT(*) from "Albums" where "ArtistId" = a."Id"), "LastUpdatedAt" = NOW()
+                                  where "AlbumCount" <> (select COUNT(*) from "Albums" where "ArtistId" = a."Id");
+                                                                 
+                                  UPDATE "Artists" a
+                                  SET "SongCount" = (
+                                  	select COUNT(s.*)
+                                  	from "Songs" s 
                                   	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                  	join "Albums" aa on (ad."AlbumId" = aa."Id") 
-                                  	join "Artists" a on (a."Id" = aa."ArtistId") 
-                                  	where a."LibraryId" = l."Id"),
-                              	"LastUpdatedAt" = now()
-                              where l."Id" = @libraryId;
-                              """;
-                    await dbConn
-                        .ExecuteAsync(sql, new { libraryId = library.Id })
-                        .ConfigureAwait(false);
+                                    join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                                  	where aa."ArtistId" = a."Id"
+                                  ), "LastUpdatedAt" = NOW()
+                                  where "SongCount" <> (
+                                  	select COUNT(s.*)
+                                  	from "Songs" s 
+                                  	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                    join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                                  	where aa."ArtistId" = a."Id"
+                                  );
 
-                    //TODO Contributors
+                                  UPDATE "Libraries" l 
+                                  set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
+                                      "AlbumCount" = (select count(aa.*) 
+                                      	from "Albums" aa 
+                                      	join "Artists" a on (a."Id" = aa."ArtistId") 
+                                      	where a."LibraryId" = l."Id"),
+                                      "SongCount" = (select count(s.*) 
+                                      	from "Songs" s
+                                      	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                      	join "Albums" aa on (ad."AlbumId" = aa."Id") 
+                                      	join "Artists" a on (a."Id" = aa."ArtistId") 
+                                      	where a."LibraryId" = l."Id"),
+                                  	"LastUpdatedAt" = now()
+                                  where l."Id" = @libraryId;
+                                  """;
+                        await dbConn
+                            .ExecuteAsync(sql, new { libraryId = library.Id })
+                            .ConfigureAwait(false);
 
-                    // sql = """
-                    //       with performerSongCounts as (
-                    //       	select c."ArtistId" as id, COUNT(*) as count
-                    //       	from "Contributors" c 
-                    //       	left join "Songs" s on (c."SongId" = s."Id")
-                    //         left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                    //         left join "Albums" a on (ad."AlbumId" = a."Id")
-                    //         WHERE a."LibraryId" = {0}
-                    //       	group by c."ArtistId"
-                    //       )
-                    //       UPDATE "Artists"
-                    //       set "SongCount" = c.count, "LastUpdatedAt" = NOW()
-                    //       from performerSongCounts c
-                    //       where c.id = "Artists"."Id"
-                    //       and c.id in ({1});
-                    //       """;
-                    // await dbConn
-                    //     .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
-                    //     .ConfigureAwait(false);
+                        //TODO Contributors
+
+                        // sql = """
+                        //       with performerSongCounts as (
+                        //       	select c."ArtistId" as id, COUNT(*) as count
+                        //       	from "Contributors" c 
+                        //       	left join "Songs" s on (c."SongId" = s."Id")
+                        //         left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                        //         left join "Albums" a on (ad."AlbumId" = a."Id")
+                        //         WHERE a."LibraryId" = {0}
+                        //       	group by c."ArtistId"
+                        //       )
+                        //       UPDATE "Artists"
+                        //       set "SongCount" = c.count, "LastUpdatedAt" = NOW()
+                        //       from performerSongCounts c
+                        //       where c.id = "Artists"."Id"
+                        //       and c.id in ({1});
+                        //       """;
+                        // await dbConn
+                        //     .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
+                        //     .ConfigureAwait(false);
+                    }
+
+                    var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id).ConfigureAwait(false);
+                    dbLibrary.LastScanAt = _now;
+                    dbLibrary.LastUpdatedAt = _now;
+                    var newLibraryScanHistory = new dbModels.LibraryScanHistory
+                    {
+                        LibraryId = dbLibrary.Id,
+                        CreatedAt = _now,
+                        DurationInMs = Stopwatch.GetElapsedTime(libraryProcessStartTicks).TotalMilliseconds,
+                        FoundAlbumsCount = _totalAlbumsInserted + _totalAlbumsUpdated,
+                        FoundArtistsCount = _totalArtistsInserted,
+                        FoundSongsCount = _totalSongsInserted + _totalSongsUpdated
+                    };
+                    scopedContext.LibraryScanHistories.Add(newLibraryScanHistory);
+                    await scopedContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
                 }
-
-                var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id).ConfigureAwait(false);
-                dbLibrary.LastScanAt = _now;
-                dbLibrary.LastUpdatedAt = _now;
-                var newLibraryScanHistory = new dbModels.LibraryScanHistory
-                {
-                    LibraryId = dbLibrary.Id,
-                    CreatedAt = _now,
-                    DurationInMs = Stopwatch.GetElapsedTime(libraryProcessStartTicks).TotalMilliseconds,
-                    FoundAlbumsCount = _totalAlbumsInserted + _totalAlbumsUpdated,
-                    FoundArtistsCount = _totalArtistsInserted,
-                    FoundSongsCount = _totalSongsInserted + _totalSongsUpdated
-                };
-                scopedContext.LibraryScanHistories.Add(newLibraryScanHistory);
-                await scopedContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
             }
+
+            _dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString());
+            _dataMap.Put(JobMapNameRegistry.Count, _totalAlbumsInserted + _totalAlbumsUpdated + _totalArtistsInserted + _totalSongsInserted + _totalSongsUpdated);
+
+            OnProcessingEvent?.Invoke(
+                this,
+                new ProcessingEvent(ProcessingEventType.Stop,
+                    nameof(LibraryProcessJob),
+                    0,
+                    0,
+                    "Processed [{0}] albums, [{1}] songs in [{2}]".FormatSmart(_totalAlbumsUpdated + _totalAlbumsInserted, _totalSongsUpdated + _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks))));
+
+            foreach (var message in messagesForJobRun)
+            {
+                Log.Debug("[{JobName}] Message: [{Message}]", nameof(LibraryProcessJob), message);
+            }
+
+            foreach (var exception in exceptionsForJobRun)
+            {
+                Log.Error(exception, "[{JobName}] Processing Exception", nameof(LibraryProcessJob));
+            }
+
+            Log.Debug("ℹ️ [{JobName}] Completed. Processed [{NumberOfAlbumsUpdated}] albums, [{NumberOfSongsUpdated}] songs in [{ElapsedTime}]", nameof(LibraryProcessJob), _totalAlbumsUpdated + _totalAlbumsInserted, _totalSongsUpdated + _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks));
         }
-
-        _dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString());
-        _dataMap.Put(JobMapNameRegistry.Count, _totalAlbumsInserted + _totalAlbumsUpdated + _totalArtistsInserted + _totalSongsInserted + _totalSongsUpdated);
-
-        OnProcessingEvent?.Invoke(
-            this,
-            new ProcessingEvent(ProcessingEventType.Stop,
-                nameof(LibraryProcessJob),
-                0,
-                0,
-                "Processed [{0}] albums, [{1}] songs in [{2}]".FormatSmart(_totalAlbumsUpdated + _totalAlbumsInserted, _totalSongsUpdated + _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks))));
-
-        foreach (var message in messagesForJobRun)
+        catch (Exception e)
         {
-            Log.Debug("[{JobName}] Message: [{Message}]", nameof(LibraryProcessJob), message);
+            Logger.Error(e, "[{JobName}] Processing Exception", nameof(LibraryProcessJob));
         }
-
-        foreach (var exception in exceptionsForJobRun)
-        {
-            Log.Error(exception, "[{JobName}] Processing Exception", nameof(LibraryProcessJob));
-        }
-
-        Log.Debug("ℹ️ [{JobName}] Completed. Processed [{NumberOfAlbumsUpdated}] albums, [{NumberOfSongsUpdated}] songs in [{ElapsedTime}]", nameof(LibraryProcessJob), _totalAlbumsUpdated + _totalAlbumsInserted, _totalSongsUpdated + _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks));
     }
 
     /// <summary>
@@ -500,13 +509,14 @@ public class LibraryProcessJob(
                             }
                         }
 
-                        if (dbAlbumsToAdd.Any(x => (x.NameNormalized == newAlbum.NameNormalized || x.SortName == newAlbum.SortName) && 
-                                                          x.ArtistId == newAlbum.ArtistId))
+                        if (dbAlbumsToAdd.Any(x => (x.NameNormalized == newAlbum.NameNormalized || x.SortName == newAlbum.SortName) &&
+                                                   x.ArtistId == newAlbum.ArtistId))
                         {
                             Logger.Error("[{JobName}] [{MethodName}] Found more than one album with the same name for the same artist [{Album}].",
                                 nameof(LibraryProcessJob), nameof(ProcessAlbumsAsync), newAlbum);
                             return false;
                         }
+
                         dbAlbumsToAdd.Add(newAlbum);
                     }
                 }
@@ -775,8 +785,8 @@ public class LibraryProcessJob(
         {
             Logger.Error(e, "[{JobName}] [{MethodName}] error processing artist [{Artist}]", nameof(LibraryProcessJob), nameof(ProcessArtistsAsync), currentArtist);
         }
-        return false;
 
+        return false;
     }
 
     private async Task<dbModels.Contributor[]> GetContributorsForSong(Song song, int artistId, int albumId, int songId, Instant now, CancellationToken token)

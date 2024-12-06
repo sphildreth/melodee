@@ -856,10 +856,10 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
-        var sizeValue = size ?? "large";
+        var sizeValue = size ?? ImageSizeRegistry.Large;
         var imageBytes = defaultImages.AlbumCoverBytes;
 
-        var cachedBytes = await CacheManager.GetAsync<byte[]?>($"urn:opensubsonic:imageforapikey:{apiId}", async () =>
+        var cachedBytes = await CacheManager.GetAsync<byte[]?>($"urn:opensubsonic:imageforapikey:{apiId}:{sizeValue}", async () =>
         {
             using (Operation.At(LogEventLevel.Debug).Time("GetImageForApiKeyId: [{Username}] Size [{Size}]", apiId, sizeValue))
             {
@@ -947,22 +947,22 @@ public class OpenSubsonicApiService(
                         }
                     }
 
-                    if (!string.Equals(sizeValue, "large", StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(sizeValue, ImageSizeRegistry.Large, StringComparison.OrdinalIgnoreCase))
                     {
-                        switch (sizeValue.ToUpperInvariant())
+                        switch (sizeValue.ToLowerInvariant())
                         {
-                            case "SMALL":
-                                var smallSize = (await Configuration.Value).GetValue<string?>(SettingRegistry.ImagingSmallSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
+                            case ImageSizeRegistry.Small:
+                                var smallSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingSmallSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
                                 imageBytes = ImageConvertor.ResizeImageIfNeeded(imageBytes,
-                                    SafeParser.ToNumber<int>(smallSize.Split('x')[0]),
-                                    SafeParser.ToNumber<int>(smallSize.Split('x')[0]));
+                                    smallSize,
+                                    smallSize);
                                 break;
                             
-                            case "MEDIUM":
-                                var mediumSize = (await Configuration.Value).GetValue<string?>(SettingRegistry.ImagingMediumSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingMediumSize}] not found.");
+                            case ImageSizeRegistry.Medium:
+                                var mediumSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingMediumSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingMediumSize}] not found.");
                                 imageBytes = ImageConvertor.ResizeImageIfNeeded(imageBytes,
-                                    SafeParser.ToNumber<int>(mediumSize.Split('x')[0]),
-                                    SafeParser.ToNumber<int>(mediumSize.Split('x')[0]));
+                                    mediumSize,
+                                    mediumSize);
                                 break;
                         }
                     }

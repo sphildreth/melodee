@@ -24,9 +24,9 @@ using Spectre.Console.Json;
 
 namespace Melodee.Cli.Command;
 
-public class ProcessInboundCommand : AsyncCommand<ProcessInboundSettings>
+public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ProcessInboundSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, LibraryProcessSettings settings)
     {
         // var font = FigletFont.Load("Fonts/Elite.flf");        
         //

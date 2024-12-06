@@ -635,8 +635,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 401,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingSmallSize,
-                    Comment = "Small image size (Width x Height) .",
-                    Value = "300x300",
+                    Comment = "Small image size (rectangle image this is both width and height).",
+                    Value = "300",
                     CreatedAt = now
                 },         
                 new Setting
@@ -644,8 +644,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 402,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingMediumSize,
-                    Comment = "Medium image size (Width x Height).",
-                    Value = "600x600",
+                    Comment = "Medium image size (rectangle image this is both width and height).",
+                    Value = "600",
                     CreatedAt = now
                 }, 
                 new Setting
@@ -653,8 +653,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 403,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingLargeSize,
-                    Comment = "Large image size (Width x Height), if larger than will be resized to this image, leave blank to disable.",
-                    Value = "1600x1600",
+                    Comment = "Large image size (rectangle image this is both width and height), if larger than will be resized to this image, leave blank to disable.",
+                    Value = "1600",
                     CreatedAt = now
                 },                 
                 new Setting

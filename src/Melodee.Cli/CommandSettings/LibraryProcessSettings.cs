@@ -5,7 +5,7 @@ using ValidationResult = Spectre.Console.ValidationResult;
 
 namespace Melodee.Cli.CommandSettings;
 
-public class ProcessInboundSettings : Spectre.Console.Cli.CommandSettings
+public class LibraryProcessSettings : LibrarySetting
 {
     [Description("Name of library to process.")] 
     [CommandArgument(0, "[LIBRARY]")] 
@@ -26,12 +26,6 @@ public class ProcessInboundSettings : Spectre.Console.Cli.CommandSettings
     [CommandArgument(0, "[PRESCRIPT]")]
     [DefaultValue(null)]
     public string? PreDiscoveryScript { get; set; }
-
-    [Description("Output verbose debug and timing results to console.")]
-    [CommandOption("--verbose")]
-    [DefaultValue(true)]
-    public bool Verbose { get; init; }
-
 
     public override ValidationResult Validate()
     {

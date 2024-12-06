@@ -4,7 +4,7 @@ using Spectre.Console.Cli;
 
 namespace Melodee.Cli.CommandSettings;
 
-public class LibraryMoveOkSetting : Spectre.Console.Cli.CommandSettings
+public class LibraryMoveOkSetting : LibrarySetting
 {
     [Description("Name of library to process.")] 
     [CommandArgument(0, "[LIBRARY]")] 
@@ -15,9 +15,4 @@ public class LibraryMoveOkSetting : Spectre.Console.Cli.CommandSettings
     [CommandArgument(0, "[TOLIBRARY]")] 
     [Required]
     public string ToLibraryName { get; set; } = string.Empty;
-    
-    [Description("Output verbose debug and timing results to console.")]
-    [CommandOption("--verbose")]
-    [DefaultValue(true)]
-    public bool Verbose { get; init; }
 }
