@@ -1,11 +1,12 @@
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Serialization;
 using Melodee.Services;
+using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class UserManagementController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
+public class UserManagementController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
     // getUsers
     // updateUser

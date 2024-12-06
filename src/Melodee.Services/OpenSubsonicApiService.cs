@@ -863,6 +863,7 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
+        string? etag = null;
         var sizeValue = size ?? ImageSizeRegistry.Large;
         var imageBytes = await CacheManager.GetAsync($"urn:openSubsonic:imageForApikey:{apiId}:{sizeValue}", async () =>
         {
@@ -891,6 +892,7 @@ public class OpenSubsonicApiService(
                             if (firstArtistImage != null)
                             {
                                 result = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken).ConfigureAwait(false);
+                                etag = artistInfo.CreatedAt.ToEtag();
                             }
                         }
                     }
@@ -936,6 +938,7 @@ public class OpenSubsonicApiService(
                                 if (image != null)
                                 {
                                     result = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
+                                    etag = melodeeFile!.Created.ToUnixTimeMilliseconds().ToString();
                                 }
                                 else
                                 {
@@ -950,6 +953,7 @@ public class OpenSubsonicApiService(
                                     if (firstFrontImage != null)
                                     {
                                         result = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
+                                        etag = firstFrontImage.LastWriteTimeUtc.Ticks.ToString();
                                     }
                                 }
                             }
@@ -965,6 +969,7 @@ public class OpenSubsonicApiService(
                                 result = ImageConvertor.ResizeImageIfNeeded(result,
                                     smallSize,
                                     smallSize);
+                                etag = HashHelper.CreateMd5(etag+ImageSizeRegistry.Small);
                                 break;
 
                             case ImageSizeRegistry.Medium:
@@ -972,6 +977,7 @@ public class OpenSubsonicApiService(
                                 result = ImageConvertor.ResizeImageIfNeeded(result,
                                     mediumSize,
                                     mediumSize);
+                                etag = HashHelper.CreateMd5(etag+ImageSizeRegistry.Medium);
                                 break;
                         }
                     }
@@ -987,13 +993,16 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
+            ApiKeyId = apiId,
             IsSuccess = true,
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
                 Data = imageBytes ?? defaultImages.AlbumCoverBytes,
                 DataPropertyName = string.Empty,
-                DataDetailPropertyName = string.Empty
+                DataDetailPropertyName = string.Empty,
+                Etag = etag,
+                ContentType = "image/jpeg"
             }
         };
     }

@@ -68,7 +68,7 @@ public abstract class ServiceBase(
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
-                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", 
+                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", a."CreatedAt" as "CreatedAt",
                              a."LastPlayedAt" as "Played", l."Path" || a."Directory" as "Directory", ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
                       from "Artists" a
                       join "Libraries" l on (a."LibraryId" = l."Id")
@@ -85,7 +85,7 @@ public abstract class ServiceBase(
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
-                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'album_' || a."ApiKey" as "CoverArt", a."CalculatedRating", 0 as "AlbumCount", a."PlayedCount" as "PlayCount", 
+                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'album_' || a."ApiKey" as "CoverArt", a."CalculatedRating", 0 as "AlbumCount", a."PlayedCount" as "PlayCount",a."CreatedAt" as "CreatedAt", 
                              a."LastPlayedAt" as "Played", l."Path" || a."Directory" as "Directory", ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
                       from "Albums" a
                       join "Artists" aa on (a."ArtistId" = aa."Id")
@@ -103,7 +103,7 @@ public abstract class ServiceBase(
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
-                      select s."Id", s."ApiKey", LEFT(s."TitleSort", 1) as "Index", s."Title" as "Name", 'song_' || s."ApiKey" as "CoverArt", s."CalculatedRating", 0 as "AlbumCount", s."PlayedCount" as "PlayCount", 
+                      select s."Id", s."ApiKey", LEFT(s."TitleSort", 1) as "Index", s."Title" as "Name", 'song_' || s."ApiKey" as "CoverArt", s."CalculatedRating", 0 as "AlbumCount", s."PlayedCount" as "PlayCount", s."CreatedAt" as "CreatedAt", 
                              s."LastPlayedAt" as "Played", l."Path" || a."Directory" as "Directory", us."StarredAt" as "UserStarred", us."Rating" as "UserRating"
                       from "Songs" s
                       join "AlbumDiscs" ad on (ad."Id" = s."AlbumDiscId")

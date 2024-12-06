@@ -11,6 +11,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Components;
+using Melodee.Filters;
 using Melodee.Jobs;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
@@ -40,7 +41,10 @@ builder.Services
     .AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ETagFilter>();
+});
 
 builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o 
@@ -85,6 +89,7 @@ builder.Services
     })
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>()
+    .AddSingleton<EtagRepository>()
     .AddScoped<MusicBrainzRepository>()    
     .AddScoped<LocalStorageService>()
     .AddScoped<ISettingService, SettingService>()

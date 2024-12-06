@@ -1,10 +1,11 @@
 using Melodee.Common.Serialization;
 using Melodee.Services;
+using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class MediaLibraryScanning(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
+public class MediaLibraryScanning(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
     /// <summary>
     ///     Initiates a rescan of the media libraries.

@@ -6,12 +6,13 @@ using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Results;
+using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public abstract class ControllerBase(ISerializer serializer) : Controller
+public abstract class ControllerBase(EtagRepository etagRepository, ISerializer serializer) : Controller
 {
     protected readonly ISerializer Serializer = serializer;
 
@@ -60,9 +61,9 @@ public abstract class ControllerBase(ISerializer serializer) : Controller
     protected async Task<IActionResult> ImageResult(Task<ResponseModel> action)
     {
         var model = await action;
-        var bytes = (byte[])model.ResponseData.Data!;
-        HttpContext.Response.Headers.Append("ETag", HashHelper.CreateMd5(bytes));
-        return new FileContentResult(bytes, "image/jpeg");        
+        HttpContext.Response.Headers.Append("ETag", model.ResponseData.Etag);
+        etagRepository.AddEtag(model.ApiKeyId, model.ResponseData.Etag);
+        return new FileContentResult((byte[])model.ResponseData.Data!, model.ResponseData.ContentType ?? "image/jpeg");        
     }
 
     protected async Task<IActionResult> MakeResult(Task<ResponseModel> modelTask)

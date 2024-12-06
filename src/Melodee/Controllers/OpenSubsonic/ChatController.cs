@@ -1,9 +1,10 @@
 using Melodee.Common.Serialization;
 using Melodee.Services;
+using Melodee.Utils;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class ChatController(ISerializer serializer, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(serializer)
+public class ChatController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
     // getChatMessages
     // addChatMessage

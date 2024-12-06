@@ -14,6 +14,7 @@ public record DatabaseDirectoryInfo(
     decimal CalculatedRating,
     int AlbumCount,
     int PlayCount,
+    Instant CreatedAt,
     Instant? Played,
     string? Directory,
     Instant? UserStarred,

@@ -2,11 +2,12 @@ using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Results;
 using Melodee.Services.SearchEngines;
+using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
-public class SearchEngineController(ISerializer serializer, ArtistSearchEngineService artistSearchEngineService) : ControllerBase(serializer)
+public class SearchEngineController(ISerializer serializer, EtagRepository etagRepository, ArtistSearchEngineService artistSearchEngineService) : ControllerBase(etagRepository, serializer)
 {
     /// <summary>
     ///     Perform an artist search engine search and return results.
