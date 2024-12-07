@@ -46,6 +46,7 @@ public sealed class DirectoryProcessorService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
+    private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private IEnumerable<IConversionPlugin> _conversionPlugins = [];
     private IEnumerable<IDirectoryPlugin> _directoryPlugins = [];
@@ -87,6 +88,7 @@ public sealed class DirectoryProcessorService(
         ];
 
         _albumValidator = new AlbumValidator(_configuration);
+        _imageValidator = new ImageValidator(_configuration);
 
         _directoryPlugins =
         [
@@ -431,7 +433,7 @@ public sealed class DirectoryProcessorService(
                         }
 
                         var albumImages = new List<ImageInfo>();
-                        var foundAlbumImages = (await FindImagesForAlbum(album, _maxImageCount, cancellationToken)).ToArray();
+                        var foundAlbumImages = (await FindImagesForAlbum(album, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
                         if (foundAlbumImages.Length != 0)
                         {
                             foreach (var foundAlbumImage in foundAlbumImages)
@@ -849,7 +851,7 @@ public sealed class DirectoryProcessorService(
         return imageInfos;
     }
 
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).Order().ToArray();
@@ -862,8 +864,12 @@ public sealed class DirectoryProcessorService(
             }
 
             var fileInfo = new FileInfo(imageFile);
-            if (album.IsFileForAlbum(fileInfo) && !AlbumValidator.IsImageAProofType(imageFile))
+            if (album.IsFileForAlbum(fileInfo))
             {
+                if (!(await imageValidator.ValidateImage(fileInfo, cancellationToken)).Data.IsValid)
+                {
+                    continue;
+                }
                 var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);
                 var artistNormalized = album.Artist.NameNormalized;
                 var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;

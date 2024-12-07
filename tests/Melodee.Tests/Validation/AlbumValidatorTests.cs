@@ -242,7 +242,7 @@ public class AlbumValidatorTests
     [InlineData("00-big_ed_the_assassin-edward_lee_knight_1971-2001-2001-proof-cr_int", true)]
     public void IsImageProofType(string? text, bool shouldBe)
     {
-        Assert.Equal(shouldBe, AlbumValidator.IsImageAProofType(text));
+        Assert.Equal(shouldBe, ImageValidator.IsImageAProofType(text));
     }
 
 

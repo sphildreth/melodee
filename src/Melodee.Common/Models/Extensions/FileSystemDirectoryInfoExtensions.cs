@@ -13,7 +13,7 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemDirectoryInfoExtensions
 {
-    private static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|compilation(s*)|live|promo(s*)|demo)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
@@ -226,6 +226,11 @@ public static class FileSystemDirectoryInfoExtensions
         }
     }
 
+    /// <summary>
+    /// This is true then the name of the directory has fragments that test for non studio albums (e.g. 'live', 'compilation')
+    /// </summary>
+    /// <param name="fileSystemDirectoryInfo"></param>
+    /// <returns></returns>
     public static bool IsDirectoryNotStudioAlbums(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var dir = fileSystemDirectoryInfo.FullName();

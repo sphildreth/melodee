@@ -21,21 +21,16 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
     public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private static readonly Regex ImageNameIsProofRegex = new(@"(proof)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
-
     private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
     private readonly List<ValidationResultMessage> _validationMessages = [];
 
-    public OperationResult<ValidationResult> ValidateAlbum(Album? album)
+    public OperationResult<AlbumValidationResult> ValidateAlbum(Album? album)
     {
         if (album == null)
         {
-            return new OperationResult<ValidationResult>(["Album is invalid."])
+            return new OperationResult<AlbumValidationResult>(["Album is invalid."])
             {
-                Data = new ValidationResult
-                {
-                    AlbumStatus = AlbumStatus.Invalid
-                }
+                Data = new AlbumValidationResult(AlbumStatus.Invalid)
             };
         }
 
@@ -52,23 +47,36 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         DoAllSongsHaveMediaNumberSet(album);
         DoesSongTotalMatchSongCount(album);
         DoesAlbumHaveCoverImage(album);
-        AlbumDoesNotHaveProofImages(album);
         ArtistHasSearchEngineResult(album.Artist);
+        AlbumIsStudioTypeAlbum(album);
 
         if (_validationMessages.Count == 0)
         {
             IsValid(album);
         }
 
-        return new OperationResult<ValidationResult>
+        return new OperationResult<AlbumValidationResult>
         {
-            Data = new ValidationResult
+            Data = new AlbumValidationResult(_validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid)
             {
-                Messages = _validationMessages,
-                AlbumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid
+                Messages = _validationMessages
             }
         };
     }
+    
+    private bool AlbumIsStudioTypeAlbum(Album album)
+    {
+        if (!album.IsStudioTypeAlbum())
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album is not studio type, will need manual validation.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });
+            return false;
+        }
+        return true;
+    }    
 
     private bool ArtistHasSearchEngineResult(Artist albumArtist)
     {
@@ -81,24 +89,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             return false;
         }
-        return true;
-    }
-
-    private bool AlbumDoesNotHaveProofImages(Album album)
-    {
-        if (album.Images?.Any() ?? false)
-        {
-            if (album.Images.Any(x => IsImageAProofType(x.FileInfo?.Name) || IsImageAProofType(x.OriginalFilename)))
-            {
-                _validationMessages.Add(new ValidationResultMessage
-                {
-                    Message = "Album has proof images.",
-                    Severity = ValidationResultMessageSeverity.Critical
-                });
-                return false;
-            }
-        }
-
         return true;
     }
 
@@ -399,11 +389,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
     public static bool StringHasFeaturingFragments(string? input)
     {
         return !string.IsNullOrWhiteSpace(input) && HasFeatureFragmentsRegex.IsMatch(input);
-    }
-
-    public static bool IsImageAProofType(string? imageName)
-    {
-        return !string.IsNullOrWhiteSpace(imageName) && ImageNameIsProofRegex.IsMatch(imageName);
     }
 
     public static string? ReplaceSongArtistSeparators(string? songArtist)

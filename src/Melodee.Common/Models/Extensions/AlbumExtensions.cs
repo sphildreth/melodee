@@ -15,7 +15,18 @@ public static class AlbumExtensions
     public static long UniqueId(this Album album)
     {
         return Album.GenerateUniqueId(album.Artist.UniqueId(), album.MusicBrainzId(), album.AlbumYear(), album.AlbumTitle());
-    }    
+    }
+
+    public static bool IsStudioTypeAlbum(this Album album)
+    {
+        var songs = (album.Songs ?? []).ToArray();
+        if (songs.Length == 0)
+        {
+            return false;
+        }
+        return !album.Directory.IsDirectoryNotStudioAlbums() && 
+               !FileSystemDirectoryInfoExtensions.IsDirectoryNotStudioAlbumsRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
+    }
     
     public static bool IsVariousArtistTypeAlbum(this Album album)
     {

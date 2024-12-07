@@ -5,5 +5,5 @@ namespace Melodee.Plugins.Validation;
 
 public interface IAlbumValidator
 {
-    OperationResult<ValidationResult> ValidateAlbum(Album? album);
+    OperationResult<AlbumValidationResult> ValidateAlbum(Album? album);
 }

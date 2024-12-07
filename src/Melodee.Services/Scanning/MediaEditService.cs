@@ -144,18 +144,15 @@ public sealed class MediaEditService(
         };
     }
 
-    public async Task<OperationResult<ValidationResult>> DoMagic(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<AlbumValidationResult>> DoMagic(FileSystemDirectoryInfo directoryInfo, long albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
         if (!SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicEnabled]))
         {
-            return new OperationResult<ValidationResult>
+            return new OperationResult<AlbumValidationResult>
             {
-                Data = new ValidationResult
-                {
-                    AlbumStatus = AlbumStatus.NotSet
-                }
+                Data = new AlbumValidationResult(AlbumStatus.NotSet)
             };
         }
 
@@ -164,24 +161,18 @@ public sealed class MediaEditService(
         if (!albumValidResult.Item1)
         {
             Logger.Warning($"Album [{album}] is invalid [{albumValidResult.Item2}]");
-            return new OperationResult<ValidationResult>
+            return new OperationResult<AlbumValidationResult>
             {
-                Data = new ValidationResult
-                {
-                    AlbumStatus = AlbumStatus.Invalid
-                }
+                Data = new AlbumValidationResult(AlbumStatus.Invalid)
             };
         }
 
         if (!(album.Directory?.Exists() ?? false))
         {
             Logger.Warning("Album directory is invalid.");
-            return new OperationResult<ValidationResult>
+            return new OperationResult<AlbumValidationResult>
             {
-                Data = new ValidationResult
-                {
-                    AlbumStatus = AlbumStatus.Invalid
-                }
+                Data = new AlbumValidationResult(AlbumStatus.Invalid)
             };
         }
 

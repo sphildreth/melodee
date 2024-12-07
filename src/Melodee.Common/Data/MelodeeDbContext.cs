@@ -675,6 +675,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Value = "25",
                     CreatedAt = now
                 },
+                new Setting
+                {
+                    Id = 406,
+                    Category = (int)SettingCategory.Imaging,
+                    Key = SettingRegistry.ImagingMinimumImageSize,
+                    Comment = "Images under this size are considered invalid, set to zero to disable.",
+                    Value = "300",
+                    CreatedAt = now
+                },
 
                 new Setting
                 {

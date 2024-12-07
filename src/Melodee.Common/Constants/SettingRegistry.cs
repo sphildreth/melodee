@@ -17,6 +17,7 @@ public static class SettingRegistry
     public const string ImagingDoLoadEmbeddedImages = "imaging.doLoadEmbeddedImages";    
     public const string ImagingMaximumNumberOfAlbumImages = "imaging.maximumNumberOfAlbumImages";
     public const string ImagingMaximumNumberOfArtistImages = "imaging.maximumNumberOfArtistImages";
+    public const string ImagingMinimumImageSize = "imaging.minimumImageSize";
     public const string ImagingSmallSize = "imaging.smallSize";
     public const string ImagingMediumSize = "imaging.mediumSize";
     public const string ImagingLargeSize = "imaging.largeSize";
