@@ -24,7 +24,7 @@ public static class AlbumExtensions
         {
             return false;
         }
-        return !album.Directory.IsDirectoryNotStudioAlbums() && 
+        return album.Directory.IsDirectoryStudioAlbums() && 
                !FileSystemDirectoryInfoExtensions.IsDirectoryNotStudioAlbumsRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
     }
     

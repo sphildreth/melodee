@@ -30,13 +30,17 @@ public class FileSystemDirectoryInfoExtensionTests
     [InlineData("Single & EP's", false)]
     [InlineData("Singles", false)]
     [InlineData("Singles, EPs, Fan Club & Promo", false)]
+    [InlineData("Bobs Greatest Hits Vol 2", false)]
+    [InlineData("Bobs Greatest Hits", false)]
+    [InlineData("Greatest Hits and Misses and Just Garbage", false)]
+    [InlineData("The best of Bob", false)]
     public void IsDirectoryNotStudioAlbums(string input, bool shouldBe)
     {
         Assert.Equal(shouldBe, new FileSystemDirectoryInfo
         {
             Path = string.Empty,
             Name = input
-        }.IsDirectoryNotStudioAlbums());
+        }.IsDirectoryStudioAlbums());
     }
 
     [Fact]

@@ -141,13 +141,13 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
 
             var startTicks = Stopwatch.GetTimestamp();
 
-            Log.Debug("\ud83d\udcc1 Processing library [{Inbound}]", libraryToProcess);
+            Log.Debug("\ud83d\udcc1 Processing library [{Inbound}]", libraryToProcess.ToString());
 
             await processor.InitializeAsync();
 
             var result = await processor.ProcessDirectoryAsync(libraryToProcess.ToFileSystemDirectoryInfo(), settings.ForceMode ? null : libraryToProcess.LastScanAt);
 
-            Log.Debug("ℹ️ Processed library [{Inbound}] in [{ElapsedTime}]", libraryToProcess, Stopwatch.GetElapsedTime(startTicks));
+            Log.Debug("ℹ️ Processed library [{Inbound}] in [{ElapsedTime}]", libraryToProcess.ToString(), Stopwatch.GetElapsedTime(startTicks));
 
             if (settings.Verbose)
             {

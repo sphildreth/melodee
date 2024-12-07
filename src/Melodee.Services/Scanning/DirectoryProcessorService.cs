@@ -453,7 +453,7 @@ public sealed class DirectoryProcessorService(
                         album.Images = albumImages.ToArray();
 
                         var artistImages = new List<ImageInfo>();
-                        var foundArtistImages = (await FindImagesForArtist(album, _maxImageCount, cancellationToken)).ToArray();
+                        var foundArtistImages = (await FindImagesForArtist(album, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
                         if (foundArtistImages.Length != 0)
                         {
                             foreach (var foundArtistImage in foundArtistImages)
@@ -680,7 +680,7 @@ public sealed class DirectoryProcessorService(
                     if (album.Status == AlbumStatus.Ok)
                     {
                         numberOfValidAlbumsProcessed++;
-                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83c\udf89 Found valid album [{fileSystemDirectoryInfo}]");
+                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] * Found valid album [{fileSystemDirectoryInfo}]");
                         if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
                         {
                             LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
@@ -797,12 +797,15 @@ public sealed class DirectoryProcessorService(
         OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
     }
 
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).Order().ToArray();
+        // Get any artist images in the albums folder
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToArray();
+        // Get any artist images in the albums parent folder
+        imageFiles = imageFiles.Concat(ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.ToDirectoryInfo().Parent?.FullName, SearchOption.TopDirectoryOnly).ToArray()).ToArray();
         var index = 1;
-        foreach (var imageFile in imageFiles)
+        foreach (var imageFile in imageFiles.Order())
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -814,6 +817,10 @@ public sealed class DirectoryProcessorService(
             var isArtistImage = fileNameNormalized.Contains(album.Artist.NameNormalized, StringComparison.InvariantCultureIgnoreCase);
             if (isArtistImage || ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
             {
+                if (!(await imageValidator.ValidateImage(fileInfo, cancellationToken)).Data.IsValid)
+                {
+                    continue;
+                }                
                 var pictureIdentifier = PictureIdentifier.NotSet;
                 if (ImageHelper.IsArtistImage(fileInfo))
                 {

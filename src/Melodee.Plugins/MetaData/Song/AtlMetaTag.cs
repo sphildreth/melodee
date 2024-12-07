@@ -215,35 +215,42 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
 
                         if (fileAtl.EmbeddedPictures.Any() && SafeParser.ToBoolean(Configuration[SettingRegistry.ImagingDoLoadEmbeddedImages]))
                         {
-                            var artistUniqueId = Artist.GenerateUniqueId(null, tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString() ?? string.Empty);
-                            var albumId = Album.GenerateUniqueId(
-                                artistUniqueId,
-                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.MusicBrainzId)?.Value?.ToString(),
-                                 SafeParser.ToNumber<int?>(tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)?.Value),
-                                 tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value?.ToString());
-                            var pictureIndex = 0;
-                            foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
+                            try
                             {
-                                var imageInfo = Image.Load(embeddedPicture.PictureData);
-                                var imageCrcHash = Crc32.Calculate(embeddedPicture.PictureData);
-                                if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
+                                var artistUniqueId = Artist.GenerateUniqueId(null, tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString() ?? string.Empty);
+                                var albumId = Album.GenerateUniqueId(
+                                    artistUniqueId,
+                                    tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.MusicBrainzId)?.Value?.ToString(),
+                                    SafeParser.ToNumber<int?>(tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)?.Value),
+                                    tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value?.ToString());
+                                var pictureIndex = 0;
+                                foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
                                 {
-                                    var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
-                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{albumId}-{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
-                                    await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
-                                    images.Add(new ImageInfo
+                                    var imageInfo = Image.Load(embeddedPicture.PictureData);
+                                    var imageCrcHash = Crc32.Calculate(embeddedPicture.PictureData);
+                                    if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
                                     {
-                                        CrcHash = imageCrcHash,
-                                        PictureIdentifier = pictureIdentifier,
-                                        FileInfo = new FileInfo(newImageFileName).ToFileSystemInfo(),
-                                        Width = imageInfo.Width,
-                                        Height = imageInfo.Height,
-                                        SortOrder = embeddedPicture.Position,
-                                        WasEmbeddedInSong = true
-                                    });
-                                }
+                                        var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
+                                        var newImageFileName = Path.Combine(directoryInfo.Path, $"{albumId}-{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
+                                        await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
+                                        images.Add(new ImageInfo
+                                        {
+                                            CrcHash = imageCrcHash,
+                                            PictureIdentifier = pictureIdentifier,
+                                            FileInfo = new FileInfo(newImageFileName).ToFileSystemInfo(),
+                                            Width = imageInfo.Width,
+                                            Height = imageInfo.Height,
+                                            SortOrder = embeddedPicture.Position,
+                                            WasEmbeddedInSong = true
+                                        });
+                                    }
 
-                                pictureIndex++;
+                                    pictureIndex++;
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Warning(e, "Could not load embedded pictures [{FileInfo}]", fileSystemFileInfo);
                             }
                         }
                     }

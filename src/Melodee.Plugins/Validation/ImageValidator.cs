@@ -4,6 +4,8 @@ using Melodee.Common.Constants;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Validation;
 using Melodee.Plugins.Validation.Models;
+using Serilog;
+using Serilog.Core;
 using SixLabors.ImageSharp;
 
 namespace Melodee.Plugins.Validation;
@@ -43,6 +45,7 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
         try
         {
             var imageInfo = await Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+            //var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
             if (imageInfo.Width != imageInfo.Height)
             {
                 _validationMessages.Add(new ValidationResultMessage
@@ -81,11 +84,27 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
                 Message = $"Image is a proof type image."
             });
         }
+
+        var isValid = _validationMessages.All(x => x.Severity != ValidationResultMessageSeverity.Critical);
+        if (isValid)
+        {
+            Log.Debug("\"[{PluginName}] * Image validated [{FileInfo}]",nameof(ImageValidator), fileInfo.FullName);
+        }
+        else
+        {
+            foreach (var validationMessage in _validationMessages)
+            {
+                Log.Warning("[{PluginName}] Image [{FileInfo}] Invalid [{validationMessage.Message}]",
+                    nameof(ImageValidator),
+                    fileInfo.FullName, 
+                    validationMessage.Message);
+            }
+        }
         return new OperationResult<ValidationResult>
         {
             Data = new ValidationResult
             {
-                IsValid = _validationMessages.All(x => x.Severity != ValidationResultMessageSeverity.Critical),
+                IsValid = isValid,
                 Messages = _validationMessages,
             }
         };

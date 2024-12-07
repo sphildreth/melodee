@@ -11,11 +11,11 @@ public static class ImageHelper
         return new string[7] { "*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp" };
     }
 
-    private static string[] GetFiles(string path,
+    private static string[] GetFiles(string? path,
         string[]? patterns = null,
         SearchOption options = SearchOption.TopDirectoryOnly)
     {
-        if (!Directory.Exists(path))
+        if (string.IsNullOrEmpty(path) ||!Directory.Exists(path))
         {
             return new string[0];
         }
@@ -33,7 +33,7 @@ public static class ImageHelper
         return patterns.SelectMany(pattern => Directory.GetFiles(path, pattern, options)).Distinct().ToArray();
     }
 
-    public static string[] ImageFilesInDirectory(string directory, SearchOption searchOption)
+    public static string[] ImageFilesInDirectory(string? directory, SearchOption searchOption)
     {
         return GetFiles(directory, ImageExtensions(), searchOption);
     }
