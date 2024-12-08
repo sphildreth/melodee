@@ -15,6 +15,8 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(ArtistId), nameof(SortName), IsUnique = true)]
 public sealed class Album : MetaDataModelBase
 {
+    public const string FrontImageType = "Front";    
+    
     [RequiredGreaterThanZero] public int ArtistId { get; set; }
 
     public Artist Artist { get; set; } = null!;

@@ -33,6 +33,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
                 Serializer,
                 MockHttpClientFactory()),
             GetArtistSearchEngineService(),
+            GetAlbumImageSearchEngineService(),
             MockHttpClientFactory()
         );
     }

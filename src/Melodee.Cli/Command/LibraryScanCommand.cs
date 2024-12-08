@@ -113,6 +113,15 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                         ),
                         httpClientFactory
                     ),
+                    new AlbumImageSearchEngineService
+                    (
+                        Log.Logger,
+                        cacheManager,
+                        serializer,
+                        settingService,
+                        dbFactory,
+                        httpClientFactory
+                    ),
                     httpClientFactory
                 )
             );

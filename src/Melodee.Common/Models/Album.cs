@@ -20,6 +20,8 @@ public sealed record Album
     public Artist Artist { get; set; } = Artist.NewArtistFromName(string.Empty);
 
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
+
+    public string? MusicBrainzId { get; set; }
     
     public DateTimeOffset? Modified { get; set; }
 
@@ -73,7 +75,7 @@ public sealed record Album
         }
     }
     
-    public string UniqueIdSummary => $"{Artist.UniqueId()} : {this.MusicBrainzId()} : {this.AlbumYear()} : {this.AlbumTitle()}";
+    public string UniqueIdSummary => $"{Artist.UniqueId()} : {MusicBrainzId} : {this.AlbumYear()} : {this.AlbumTitle()}";
     
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
@@ -105,10 +107,9 @@ public sealed record Album
 
         return this with { Songs = songs.ToArray(), Tags = albumTags!.ToArray() };
     }
-
     
-    
-    public static long GenerateUniqueId(long artistUniqueId, string? musicBrainzId, int? albumYear, string? albumTitle) => SafeParser.Hash(artistUniqueId.ToString(), musicBrainzId ?? $"{ albumYear}{albumTitle.ToNormalizedString() ?? albumTitle}");
+    public static long GenerateUniqueId(long artistUniqueId, string? musicBrainzId, int? albumYear, string? albumTitle) 
+        => SafeParser.Hash(artistUniqueId.ToString(), musicBrainzId ?? $"{ albumYear}{albumTitle.ToNormalizedString() ?? albumTitle}");
     
     
     public override string ToString()
@@ -268,4 +269,5 @@ public sealed record Album
             Songs = songs.ToArray();
         }
     }
+    
 }

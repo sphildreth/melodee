@@ -4,6 +4,7 @@ using System.Text.Json;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models.Extensions;
@@ -14,7 +15,7 @@ public static class AlbumExtensions
     
     public static long UniqueId(this Album album)
     {
-        return Album.GenerateUniqueId(album.Artist.UniqueId(), album.MusicBrainzId(), album.AlbumYear(), album.AlbumTitle());
+        return Album.GenerateUniqueId(album.Artist.UniqueId(), album.MusicBrainzId, album.AlbumYear(), album.AlbumTitle());
     }
 
     public static bool IsStudioTypeAlbum(this Album album)
@@ -234,8 +235,6 @@ public static class AlbumExtensions
         return album.MetaTagValue<string?>(MetaTagIdentifier.Album);
     }
 
-    public static string? MusicBrainzId(this Album album) => album.MetaTagValue<string>(MetaTagIdentifier.MusicBrainzId);
-    
     /// <summary>
     ///     Return the value set for the OrigAlbumYear ?? RecordingYear ?? RecordingDateOrYear
     /// </summary>
@@ -545,5 +544,15 @@ public static class AlbumExtensions
         }
 
         return null;
+    }
+
+    public static AlbumQuery ToAlbumQuery(this Album album)
+    {
+        return new AlbumQuery
+        {
+            Name = album.AlbumTitle() ?? string.Empty,
+            MusicBrainzId = album.MusicBrainzId,
+            Year = album.AlbumYear() ?? 0
+        };
     }
 }

@@ -104,7 +104,7 @@ builder.Services
     .AddScoped<DirectoryProcessorService>()
     .AddScoped<ImageConversionService>()
     .AddScoped<OpenSubsonicApiService>()
-    .AddScoped<ImageSearchEngineService>()
+    .AddScoped<AlbumImageSearchEngineService>()
     .AddScoped<ArtistSearchEngineService>();
     
 builder.Services.AddBlazoredSessionStorage();

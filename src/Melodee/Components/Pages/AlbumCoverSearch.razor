@@ -1,7 +1,7 @@
 @using System.Reactive.Linq
 @using System.Reactive.Subjects
 @using Melodee.Common.Models.SearchEngines
-@inject ImageSearchEngineService ImageSearchEngineService
+@inject AlbumImageSearchEngineService ImageSearchEngineService
 @inject IHttpClientFactory HttpClientFactory
 @inject ISettingService SettingService
 
@@ -66,7 +66,7 @@
         _query = $"album cover {Album.Artist.Name} {Album.AlbumTitle()}";
         _searchEvents.Throttle(TimeSpan.FromMilliseconds(800)).Subscribe(async (text) =>
         {
-            _results = (await ImageSearchEngineService.DoSearchAsync(HttpClientFactory, _query ?? text ?? string.Empty, _maxResults)).Data;
+            _results = (await ImageSearchEngineService.DoSearchAsync(Album.ToAlbumQuery(), _maxResults)).Data;
             _loading = false;
             await InvokeAsync(StateHasChanged);
         });

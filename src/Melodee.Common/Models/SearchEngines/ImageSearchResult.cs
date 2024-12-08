@@ -2,6 +2,8 @@ namespace Melodee.Common.Models.SearchEngines;
 
 public sealed record ImageSearchResult
 {
+    public short Rank { get; init; }
+    
     public bool DoDeleteExistingCoverImages { get; set; }
 
     public long UniqueId { get; init; }

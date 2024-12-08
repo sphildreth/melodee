@@ -72,17 +72,28 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 settingService,
                 serializer);
 
-            var musicBrainzRepository = new MusicBrainzRepository(Log.Logger, 
+            var musicBrainzRepository = new MusicBrainzRepository(
+                Log.Logger, 
                 dbFactory, 
                 melodeeConfigurationFactory, 
                 scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>());
             
-            var artistSearchEngineService = new ArtistSearchEngineService(Log.Logger, 
+            var artistSearchEngineService = new ArtistSearchEngineService(
+                Log.Logger, 
                 cacheManager, 
                 serializer,
                 settingService,
                 dbFactory,
                 musicBrainzRepository,
+                scope.ServiceProvider.GetRequiredService<IHttpClientFactory>());
+            
+            var albumImageSearchEngineService = new AlbumImageSearchEngineService
+            (
+                Log.Logger,
+                cacheManager,
+                serializer,
+                settingService,
+                dbFactory,
                 scope.ServiceProvider.GetRequiredService<IHttpClientFactory>());
             
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
@@ -131,6 +142,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                     scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
                 ),
                 artistSearchEngineService,
+                albumImageSearchEngineService,
                 scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
             );
             var dirInfo = new DirectoryInfo(libraryToProcess.Path);

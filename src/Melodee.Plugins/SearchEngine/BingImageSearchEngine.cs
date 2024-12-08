@@ -16,19 +16,19 @@ namespace Melodee.Plugins.SearchEngine;
 ///     Bing image search plugin.
 ///     <remarks>https://learn.microsoft.com/en-us/bing/search-apis/bing-image-search/quickstarts/rest/csharp</remarks>
 /// </summary>
-public sealed class BingImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) : IImageSearchEnginePlugin
+public sealed class BingIAlbumImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 
     public string Id => "7E8863EE-E95F-42F8-A4DE-693D78DC216C";
 
-    public string DisplayName => nameof(BingImageSearchEngine);
+    public string DisplayName => nameof(BingIAlbumImageSearchEngine);
 
     public bool IsEnabled { get; set; }
 
     public int SortOrder { get; } = 0;
 
-    public async Task<OperationResult<ImageSearchResult[]?>> DoSearch(string query, int maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
     {
         var result = new List<ImageSearchResult>();
 
@@ -46,7 +46,7 @@ public sealed class BingImageSearchEngine(IMelodeeConfiguration configuration, I
             { "count", maxResults.ToString() },
             { "safeSearch", "Off" },
             { "aspect", "Square" },
-            { "q", $"'{Uri.EscapeDataString(query.Trim())}'" }
+            { "q", $"'{Uri.EscapeDataString(query.Name.Trim())}'" }
         };
 
         var httpRequestMessage = new HttpRequestMessage(

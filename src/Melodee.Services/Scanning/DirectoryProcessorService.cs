@@ -42,6 +42,7 @@ public sealed class DirectoryProcessorService(
     ISerializer serializer,
     MediaEditService mediaEditService,
     ArtistSearchEngineService artistSearchEngineService,
+    AlbumImageSearchEngineService albumImageSearchEngineService,
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -452,6 +453,8 @@ public sealed class DirectoryProcessorService(
 
                         album.Images = albumImages.ToArray();
 
+                        // Look in the album directory and see if there are any artist images. 
+                        // Most of the time an artist image is one up from a album folder in the 'artist' folder.
                         var artistImages = new List<ImageInfo>();
                         var foundArtistImages = (await FindImagesForArtist(album, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
                         if (foundArtistImages.Length != 0)
@@ -612,8 +615,13 @@ public sealed class DirectoryProcessorService(
                             {
                                 await httpClient.DownloadFileAsync(
                                     artistFromSearch.ImageUrl,
-                                    artistFromSearchImageFilename, async (existingFileInfo, newFileInfo, ct) =>
+                                    artistFromSearchImageFilename,
+                                    async (existingFileInfo, newFileInfo, ct) =>
                                     {
+                                        if (!(await _imageValidator.ValidateImage(newFileInfo, cancellationToken)).Data.IsValid)
+                                        {
+                                            return false;
+                                        }  
                                         var existingImageInfo = await Image.LoadAsync(existingFileInfo.FullName, ct);
                                         var newImageInfo = await Image.LoadAsync(newFileInfo.FullName, ct);
                                         if (newImageInfo.Size.Height > existingImageInfo.Size.Height &&
@@ -621,7 +629,6 @@ public sealed class DirectoryProcessorService(
                                         {
                                             return true;
                                         }
-
                                         return false;
                                     },
                                     cancellationToken);
@@ -636,11 +643,61 @@ public sealed class DirectoryProcessorService(
                                 SearchEngineResultUniqueId = artistFromSearch.UniqueId,
                                 OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null
                             };
+
+                            if (artistFromSearch.Releases?.Length != 0)
+                            {
+                                album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId?.ToString();
+                            }
                             LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                         }
                         else
                         {
                             LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from search engine for artist [{searchRequest}]");
+                        }
+                    }
+                    
+                    // If album has no images then see if ImageSearchEngine can find any
+                    if (album.Images?.Count() == 0)
+                    {
+                        var albumImageSearchRequest = album.ToAlbumQuery();
+                        var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(albumImageSearchRequest,
+                                1,
+                                cancellationToken)
+                            .ConfigureAwait(false);
+                        if (albumImageSearchResult.IsSuccess)
+                        {
+                            var imageSearchResult = albumImageSearchResult.Data.FirstOrDefault();
+                            if (imageSearchResult != null)
+                            {
+                                var albumImageFromSearchFileName = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Album.FrontImageType).Item1);
+                                if (await httpClient.DownloadFileAsync(
+                                        imageSearchResult.MediaUrl,
+                                        albumImageFromSearchFileName,
+                                        async (existingFileInfo, newFileInfo, ct) => (await _imageValidator.ValidateImage(newFileInfo, cancellationToken)).Data.IsValid,
+                                        cancellationToken))
+                                {
+                                    var newImageInfo = new FileInfo(albumImageFromSearchFileName);
+                                    var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName, cancellationToken).ConfigureAwait(false);
+                                    album.Images = new List<ImageInfo>
+                                    {
+                                        new()
+                                        {
+                                            FileInfo = newImageInfo.ToFileSystemInfo(),
+                                            PictureIdentifier = PictureIdentifier.NotSet,
+                                            CrcHash = Crc32.Calculate(newImageInfo),
+                                            Width = imageInfo.Width,
+                                            Height = imageInfo.Height,
+                                            SortOrder = 1,
+                                            WasEmbeddedInSong = false
+                                        }
+                                    };
+                                    LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");                                    
+                                }
+                            }
+                            else
+                            {
+                                LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from album search engine for album [{albumImageSearchRequest}]");
+                            }                          
                         }
                     }
 
@@ -800,10 +857,7 @@ public sealed class DirectoryProcessorService(
     private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        // Get any artist images in the albums folder
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToArray();
-        // Get any artist images in the albums parent folder
-        imageFiles = imageFiles.Concat(ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.ToDirectoryInfo().Parent?.FullName, SearchOption.TopDirectoryOnly).ToArray()).ToArray();
         var index = 1;
         foreach (var imageFile in imageFiles.Order())
         {

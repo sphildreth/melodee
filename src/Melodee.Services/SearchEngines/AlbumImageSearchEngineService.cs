@@ -4,6 +4,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.SearchEngine;
+using Melodee.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -11,23 +12,30 @@ using Serilog;
 namespace Melodee.Services.SearchEngines;
 
 /// <summary>
-///     Uses enabled Image Search plugins to get images for query.
+///     Uses enabled Image Search plugins to get images for album query.
 /// </summary>
-public class ImageSearchEngineService(
+public class AlbumImageSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     ISerializer serializer,
     ISettingService settingService,
-    IDbContextFactory<MelodeeDbContext> contextFactory)
+    IDbContextFactory<MelodeeDbContext> contextFactory,
+    IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(IHttpClientFactory httpClientFactory, string query, int maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(AlbumQuery query, int? maxResults, CancellationToken token = default)
     {
         var configuration = await settingService.GetMelodeeConfigurationAsync(token);
+        
+        var maxResultsValue = maxResults ?? configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
 
-        var searchEngines = new List<IImageSearchEnginePlugin>
+        var searchEngines = new List<IAlbumImageSearchEnginePlugin>
         {
-            new BingImageSearchEngine(configuration, serializer, httpClientFactory)
+            new MusicBrainzCoverArtArchiveSearchEngine(configuration, serializer, httpClientFactory)
+            {
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
+            },
+            new BingIAlbumImageSearchEngine(configuration, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled)
             }
@@ -35,7 +43,7 @@ public class ImageSearchEngineService(
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled))
         {
-            var searchResult = await searchEngine.DoSearch(query, maxResults, token);
+            var searchResult = await searchEngine.DoSearch(query, maxResultsValue, token);
             if (searchResult.IsSuccess)
             {
                 result.AddRange(searchResult.Data ?? []);
@@ -44,7 +52,7 @@ public class ImageSearchEngineService(
 
         return new OperationResult<ImageSearchResult[]>
         {
-            Data = result.ToArray()
+            Data = result.OrderByDescending(x => x.Rank).ToArray()
         };
     }
 }

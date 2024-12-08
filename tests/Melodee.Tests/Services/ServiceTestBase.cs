@@ -159,6 +159,16 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetMusicBrainzRepository(),
             MockHttpClientFactory());
     }
+    
+    protected AlbumImageSearchEngineService GetAlbumImageSearchEngineService()
+    {
+        return new AlbumImageSearchEngineService(Logger,
+            CacheManager,
+            Serializer,
+            MockSettingService(),
+            MockFactory(),
+            MockHttpClientFactory());
+    }    
 
     protected OpenSubsonicApiService GetOpenSubsonicApiService()
     {
