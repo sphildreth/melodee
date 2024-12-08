@@ -47,7 +47,7 @@ public record AlbumList2 : IOpenSubsonicToXml
     /// </summary>
     public required string Parent { get; set; }
     
-    public string? MusicBrainzId { get; init; }
+    public Guid? MusicBrainzId { get; init; }
     
     public string? Comment { get; init; }
     
