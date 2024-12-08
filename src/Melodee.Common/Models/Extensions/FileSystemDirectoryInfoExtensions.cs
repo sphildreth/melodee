@@ -13,7 +13,7 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemDirectoryInfoExtensions
 {
-    public static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|the\s?best\s?of|greatest(s*)\s?hit(s*)|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|\s?best\s?of|greatest(s*)\s?hit(s*)|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
