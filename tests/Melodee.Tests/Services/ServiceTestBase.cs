@@ -139,6 +139,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             Serializer,
             MockSettingService(),
             MockFactory(),
+            GetMusicBrainzRepository(),
             MockHttpClientFactory());
     }    
 

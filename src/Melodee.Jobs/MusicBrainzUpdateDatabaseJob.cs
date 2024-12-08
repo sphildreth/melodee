@@ -9,6 +9,8 @@ using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services.Interfaces;
 using Quartz;
 using Serilog;
+using Serilog.Events;
+using SerilogTimings;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Melodee.Jobs;
@@ -73,6 +75,7 @@ public class MusicBrainzUpdateDatabaseJob(
                 File.Move(dbName, tempDbName);
             }
 
+            DateTimeOffset? lastJobRunTimestamp = null;
             using (var client = httpClientFactory.CreateClient())
             {
                 var storageStagingDirectory = new DirectoryInfo(Path.Combine(storagePath, "staging"));
@@ -91,7 +94,7 @@ public class MusicBrainzUpdateDatabaseJob(
                 if (doesDbExist && latest != null)
                 {
                     var latestTimeStamp = DateTimeOffset.Parse(latest);
-                    var lastJobRunTimestamp = configuration.GetValue<DateTimeOffset?>(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
+                    lastJobRunTimestamp = configuration.GetValue<DateTimeOffset?>(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
                     if (latestTimeStamp < lastJobRunTimestamp)
                     {
                         Logger.Warning("[{JobName}] MusicBrainz LATEST is older than Last Job Run timestamp [{SettingName}], meaning latest MusicBrainz export has already been processed.", 
@@ -115,41 +118,57 @@ public class MusicBrainzUpdateDatabaseJob(
                     null,
                     context.CancellationToken);
 
-                await using (Stream mbDumpStream = File.OpenRead(mbDumpFileName))
+                using (Operation.At(LogEventLevel.Debug).Time("Extracted downloaded file [{File}]", mbDumpFileName))
                 {
-                    await using (Stream bzipStream = new BZip2InputStream(mbDumpStream))
+                    await using (Stream mbDumpStream = File.OpenRead(mbDumpFileName))
                     {
-                        var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
-                        tarArchive.ExtractContents(storageStagingDirectory.FullName);
-                        tarArchive.Close();
-                        bzipStream.Close();
-                    }
+                        await using (Stream bzipStream = new BZip2InputStream(mbDumpStream))
+                        {
+                            var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
+                            tarArchive.ExtractContents(storageStagingDirectory.FullName);
+                            tarArchive.Close();
+                            bzipStream.Close();
+                        }
 
-                    mbDumpStream.Close();
+                        mbDumpStream.Close();
+                    }
                 }
 
-                await using (Stream mbDumpDerivedStream = File.OpenRead(mbDumpDerivedFileName))
+                using (Operation.At(LogEventLevel.Debug).Time("Extracted downloaded file [{File}]", mbDumpDerivedFileName))
                 {
-                    await using (Stream bzipStream = new BZip2InputStream(mbDumpDerivedStream))
+                    await using (Stream mbDumpDerivedStream = File.OpenRead(mbDumpDerivedFileName))
                     {
-                        var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
-                        tarArchive.ExtractContents(storageStagingDirectory.FullName);
-                        tarArchive.Close();
-                        bzipStream.Close();
-                    }
+                        await using (Stream bzipStream = new BZip2InputStream(mbDumpDerivedStream))
+                        {
+                            var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
+                            tarArchive.ExtractContents(storageStagingDirectory.FullName);
+                            tarArchive.Close();
+                            bzipStream.Close();
+                        }
 
-                    mbDumpDerivedStream.Close();
+                        mbDumpDerivedStream.Close();
+                    }
                 }
             }
-
-
+            
             var importResult = await repository.ImportData(context.CancellationToken).ConfigureAwait(false);
-            if (importResult.IsSuccess && tempDbName != null)
+            if (importResult.IsSuccess)
             {
-                File.Delete(tempDbName);
+                if (tempDbName != null)
+                {
+                    File.Delete(tempDbName);
+                }
+
+                settingResult = await settingService.GetAsync(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp, context.CancellationToken).ConfigureAwait(false);
+                setting = settingResult.Data;
+                if (setting != null)
+                {
+                    setting.Value = (lastJobRunTimestamp ??= DateTimeOffset.UtcNow).ToString();
+                    await settingService.UpdateAsync(setting, context.CancellationToken).ConfigureAwait(false);
+                }
             }
 
-            Log.Debug("ℹ️ [{JobName}] Completed in [{ElapsedTime}] minutes.", nameof(LibraryProcessJob), Stopwatch.GetElapsedTime(startTicks).TotalMinutes);
+            Log.Debug("ℹ️ [{JobName}] Completed in [{ElapsedTime}] minutes.", nameof(MusicBrainzUpdateDatabaseJob), Stopwatch.GetElapsedTime(startTicks).TotalMinutes);
         }
         catch (Exception e)
         {

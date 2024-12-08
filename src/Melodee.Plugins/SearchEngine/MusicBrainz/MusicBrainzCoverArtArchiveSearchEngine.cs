@@ -3,10 +3,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
-using Melodee.Common.Utility;
-using Melodee.Plugins.SearchEngine.MusicBrainz.CoverArtArchive.Models;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Net.Http.Headers;
+using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Serilog;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz;
@@ -14,7 +11,7 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz;
 /// <summary>
 ///     https://musicbrainz.org/doc/Cover_Art_Archive/API
 /// </summary>
-public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
+public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration configuration, MusicBrainzRepository repository, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 
@@ -42,37 +39,22 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration
         {
             if (query.MusicBrainzIdValue != null)
             {
-                var httpRequestMessage = new HttpRequestMessage(
-                    HttpMethod.Get,
-                    new Uri($"http://coverartarchive.org/release/{ query.MusicBrainzId}"))
+                // Get resource group from Melodee MusicBrainz db for given MusicBrainzId
+                var mbAlbum = await repository.GetAlbumByMusicBrainzId(query.MusicBrainzIdValue.Value, token).ConfigureAwait(false);
+                if (mbAlbum == null)
                 {
-                    Headers =
+                    return new OperationResult<ImageSearchResult[]?>($"[{nameof(MusicBrainzCoverArtArchiveSearchEngine)}] unable to find MusicBrainz database Album by Id [{query.MusicBrainzId}]")
                     {
-                        { HeaderNames.Accept, "application/json" },
-                        { HeaderNames.UserAgent, configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) },
-                    }
-                };
-
-                var httpClient = httpClientFactory.CreateClient();
-
-                var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, token);
-
-                var contentString = await httpResponseMessage.Content.ReadAsStringAsync(token);
-                if (httpResponseMessage.IsSuccessStatusCode)
-                {
-                    var searchResponse = serializer.Deserialize<ReleaseInfoResult?>(contentString);             
-                    if (searchResponse != null)
-                    {
-                        result.AddRange(searchResponse?.Images.Select(x => new ImageSearchResult
-                        {
-                            FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),
-                            Rank = 1,
-                            ThumbnailUrl = x.Thumbnails.OrderBy(x => SafeParser.ToNumber<int>(x.Key)).FirstOrDefault().Value,
-                            MediaUrl = x.Image,
-                            Title = x.Comment
-                        }) ?? []);
-                    }
+                        Data = null
+                    };
                 }
+                result.Add(new ImageSearchResult
+                {
+                    FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),
+                    Rank = 10,
+                    ThumbnailUrl = string.Empty,
+                    MediaUrl = $"https://coverartarchive.org/release-group/{mbAlbum.ReleaseGroupMusicBrainzId}/front"
+                });
             }
         }
         catch (Exception e)
@@ -84,7 +66,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration
         {
             Log.Debug("[{PluginName}] no MusicBrainz Cover Art response for query[{Query}]", nameof(MusicBrainzArtistSearchEnginPlugin), query);
         }
-        
+
         return new OperationResult<ImageSearchResult[]?>
         {
             Data = result.ToArray()

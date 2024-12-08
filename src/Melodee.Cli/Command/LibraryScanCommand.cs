@@ -49,6 +49,9 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
         services.AddHttpClient();
         services.AddSingleton<IDbConnectionFactory>(opt => 
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
+        services.AddScoped<MusicBrainzRepository>();    
+        services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
+        services.AddSingleton(Log.Logger);
         
         var serviceProvider = services.BuildServiceProvider();
 
@@ -61,7 +64,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                 dbFactory,
                 settingService,
                 serializer);
-
+            
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
             
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
@@ -105,12 +108,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                         serializer,
                         settingService,
                         dbFactory,
-                        new MusicBrainzRepository(
-                            Log.Logger, 
-                            dbFactory, 
-                            configurationFactory,
-                            serviceProvider.GetRequiredService<IDbConnectionFactory>()
-                        ),
+                        scope.ServiceProvider.GetRequiredService<MusicBrainzRepository>(),
                         httpClientFactory
                     ),
                     new AlbumImageSearchEngineService
@@ -120,6 +118,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                         serializer,
                         settingService,
                         dbFactory,
+                        scope.ServiceProvider.GetRequiredService<MusicBrainzRepository>(),
                         httpClientFactory
                     ),
                     httpClientFactory

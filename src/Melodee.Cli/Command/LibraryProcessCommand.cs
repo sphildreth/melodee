@@ -55,8 +55,9 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
         
         services.AddSingleton<IDbConnectionFactory>(opt => 
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
-
-        services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();        
+        services.AddScoped<MusicBrainzRepository>();    
+        services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
+        services.AddSingleton(Log.Logger);
         
         var serviceProvider = services.BuildServiceProvider();
 
@@ -94,6 +95,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 serializer,
                 settingService,
                 dbFactory,
+                scope.ServiceProvider.GetRequiredService<MusicBrainzRepository>(),
                 scope.ServiceProvider.GetRequiredService<IHttpClientFactory>());
             
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));

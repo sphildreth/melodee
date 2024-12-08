@@ -19,6 +19,7 @@ using ServiceStack;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
 using ServiceStack.OrmLite.Dapper;
+using Album = Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized.Album;
 using Artist = Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Artist;
 using StringExtensions = Melodee.Common.Extensions.StringExtensions;
 
@@ -57,6 +58,14 @@ public class MusicBrainzRepository(
         }
 
         return result.ToArray();
+    }
+
+    public async Task<Album?> GetAlbumByMusicBrainzId(Guid musicBrainzId, CancellationToken cancellationToken = default)
+    {
+        using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
+        {
+            return await db.SingleAsync<Album>(x => x.MusicBrainzId == musicBrainzId, token: cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async Task<PagedResult<ArtistSearchResult>> SearchArtist(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)

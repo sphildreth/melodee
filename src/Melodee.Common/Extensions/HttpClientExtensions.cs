@@ -1,12 +1,13 @@
 using System.Diagnostics;
-using ATL;
+using Serilog.Events;
+using SerilogTimings;
 
 namespace Melodee.Common.Extensions;
 
 public static class HttpClientExtensions
 {
     /// <summary>
-    /// Download given url to a file and if a file exists with same name execute the condion.
+    /// Download given url to a file and if a file exists with same name execute the condition.
     /// </summary>
     /// <returns>True if the file downloaded was kept, false if deleted as failed condition or errored.</returns>
     public static async Task<bool> DownloadFileAsync(this HttpClient httpClient, string url, string filePath, Func<FileInfo, FileInfo, CancellationToken, Task<bool>>? overrideCondition = null, CancellationToken cancellationToken = default)
@@ -16,11 +17,14 @@ public static class HttpClientExtensions
 
         try
         {
-            await using (var stream = await httpClient.GetStreamAsync(url, cancellationToken))
+            using (Operation.At(LogEventLevel.Debug).Time("\u2584 Downloaded url [{Url}] to file [{File}]", url, filePath))
             {
-                await using (var fs = new FileStream(tempDownloadName, FileMode.OpenOrCreate))
+                await using (var stream = await httpClient.GetStreamAsync(url, cancellationToken))
                 {
-                    await stream.CopyToAsync(fs, cancellationToken);
+                    await using (var fs = new FileStream(tempDownloadName, FileMode.OpenOrCreate))
+                    {
+                        await stream.CopyToAsync(fs, cancellationToken);
+                    }
                 }
             }
         }
