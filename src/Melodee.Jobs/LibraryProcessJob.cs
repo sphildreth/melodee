@@ -404,6 +404,7 @@ public class LibraryProcessJob(
                             Duration = melodeeAlbum.TotalDuration(),
                             Genres = melodeeAlbum.Genre() == null ? null : melodeeAlbum.Genre()!.Split('/'),
                             IsCompilation = melodeeAlbum.IsVariousArtistTypeAlbum(),
+                            MusicBrainzId = SafeParser.ToGuid(melodeeAlbum.MusicBrainzId),
                             MediaUniqueId = melodeeAlbum.UniqueId(),
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                             Name = albumTitle,

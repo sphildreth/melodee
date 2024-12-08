@@ -767,7 +767,7 @@ public class OpenSubsonicApiService(
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var allGenres = await dbConn.QueryAsync<string>("""
-                                                            select "Genres" 
+                                                            select distinct "Genres" 
                                                             from 
                                                             (
                                                             	select unnest("Genres") as "Genres"
@@ -779,20 +779,24 @@ public class OpenSubsonicApiService(
                                                             group by "Genres"
                                                             order by "Genres";
                                                             """, cancellationToken).ConfigureAwait(false);
-            var songGenres = (await dbConn.QueryAsync<Genre>("select genre as Value, count(1) as SongCount from \"Songs\", unnest(\"Genres\") as genre group by genre order by genre;", cancellationToken).ConfigureAwait(false)).ToArray();
-            var albumGenres = (await dbConn.QueryAsync<Genre>("select genre as Value, count(1) as AlbumCount from \"Albums\", unnest(\"Genres\") as genre group by genre order by genre;", cancellationToken).ConfigureAwait(false)).ToArray();
+            var songGenres = (await dbConn.QueryAsync<Genre>("select genre as Value, count(1) as \"SongCount\" from \"Songs\", unnest(\"Genres\") as genre group by genre order by genre;", cancellationToken).ConfigureAwait(false)).ToArray();
+            var albumGenres = (await dbConn.QueryAsync<Genre>("select genre as Value, count(1) as \"AlbumCount\" from \"Albums\", unnest(\"Genres\") as genre group by genre order by genre;", cancellationToken).ConfigureAwait(false)).ToArray();
 
             foreach (var genre in allGenres)
             {
-                var songGenre = songGenres.FirstOrDefault(x => x.Value == genre);
-                var albumGenre = albumGenres.FirstOrDefault(x => x.Value == genre);
-                data.Add(new Genre
-                    {
-                        Value = genre,
-                        SongCount = songGenre?.SongCount ?? 0,
-                        AlbumCount = albumGenre?.AlbumCount ?? 0
-                    }
-                );
+                var genreNormalized = genre.ToNormalizedString() ?? genre;
+                if (data.All(x => x.ValueNormalized != genreNormalized))
+                {
+                    var songCount = songGenres.Where(x => x.ValueNormalized == genreNormalized).Sum(x => x.SongCount);
+                    var albumCount = albumGenres.Where(x => x.ValueNormalized == genreNormalized).Sum(x => x.AlbumCount);
+                    data.Add(new Genre
+                        {
+                            Value = genre.CleanString() ?? genre,
+                            SongCount = songCount,
+                            AlbumCount = albumCount
+                        }
+                    );
+                }
             }
         }
 

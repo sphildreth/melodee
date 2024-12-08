@@ -21,12 +21,7 @@ public static class AlbumExtensions
     public static bool IsStudioTypeAlbum(this Album album)
     {
         var songs = (album.Songs ?? []).ToArray();
-        if (songs.Length == 0)
-        {
-            return false;
-        }
-        return album.Directory.IsDirectoryStudioAlbums() && 
-               !FileSystemDirectoryInfoExtensions.IsDirectoryNotStudioAlbumsRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
+        return songs.Length != 0 && album.Directory.IsDirectoryStudioAlbums();
     }
     
     public static bool IsVariousArtistTypeAlbum(this Album album)
