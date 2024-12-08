@@ -23,7 +23,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
 
     public override bool IsEnabled { get; set; } = true;
 
-    public override int SortOrder { get; } = 0;
+    public override int SortOrder { get; } = 1;
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {

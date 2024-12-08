@@ -6,6 +6,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Conversion;
@@ -47,12 +48,12 @@ public sealed class DirectoryProcessorService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
-    private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private IEnumerable<IConversionPlugin> _conversionPlugins = [];
     private IEnumerable<IDirectoryPlugin> _directoryPlugins = [];
 
     private string _directoryStaging = null!;
+    private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private bool _initialized;
     private int _maxAlbumProcessingCount;
     private short _maxImageCount;
@@ -454,7 +455,7 @@ public sealed class DirectoryProcessorService(
                         album.Images = albumImages.ToArray();
 
                         // Look in the album directory and see if there are any artist images. 
-                        // Most of the time an artist image is one up from a album folder in the 'artist' folder.
+                        // Most of the time an artist image is one up from an album folder in the 'artist' folder.
                         var artistImages = new List<ImageInfo>();
                         var foundArtistImages = (await FindImagesForArtist(album, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
                         if (foundArtistImages.Length != 0)
@@ -621,7 +622,8 @@ public sealed class DirectoryProcessorService(
                                         if (!(await _imageValidator.ValidateImage(newFileInfo, cancellationToken)).Data.IsValid)
                                         {
                                             return false;
-                                        }  
+                                        }
+
                                         var existingImageInfo = await Image.LoadAsync(existingFileInfo.FullName, ct);
                                         var newImageInfo = await Image.LoadAsync(newFileInfo.FullName, ct);
                                         if (newImageInfo.Size.Height > existingImageInfo.Size.Height &&
@@ -629,6 +631,7 @@ public sealed class DirectoryProcessorService(
                                         {
                                             return true;
                                         }
+
                                         return false;
                                     },
                                     cancellationToken);
@@ -648,6 +651,7 @@ public sealed class DirectoryProcessorService(
                             {
                                 album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId?.ToString();
                             }
+
                             LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                         }
                         else
@@ -655,7 +659,7 @@ public sealed class DirectoryProcessorService(
                             LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from search engine for artist [{searchRequest}]");
                         }
                     }
-                    
+
                     // If album has no images then see if ImageSearchEngine can find any
                     if (album.Images?.Count() == 0)
                     {
@@ -683,7 +687,7 @@ public sealed class DirectoryProcessorService(
                                         new()
                                         {
                                             FileInfo = newImageInfo.ToFileSystemInfo(),
-                                            PictureIdentifier = PictureIdentifier.NotSet,
+                                            PictureIdentifier = PictureIdentifier.Front,
                                             CrcHash = Crc32.Calculate(newImageInfo),
                                             Width = imageInfo.Width,
                                             Height = imageInfo.Height,
@@ -691,13 +695,23 @@ public sealed class DirectoryProcessorService(
                                             WasEmbeddedInSong = false
                                         }
                                     };
-                                    LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");                                    
+                                    if (imageSearchResult.Rank < 1)
+                                    {
+                                        // without a positive match, add a validation message to manually review downloaded album image
+                                        album.ValidationMessages = album.ValidationMessages.Append(new ValidationResultMessage
+                                        {
+                                            Message = "Album image needs reviewing.",
+                                            Severity = ValidationResultMessageSeverity.Critical
+                                        });
+                                    }
+
+                                    LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
                                 }
                             }
                             else
                             {
                                 LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from album search engine for album [{albumImageSearchRequest}]");
-                            }                          
+                            }
                         }
                     }
 
@@ -874,7 +888,8 @@ public sealed class DirectoryProcessorService(
                 if (!(await imageValidator.ValidateImage(fileInfo, cancellationToken)).Data.IsValid)
                 {
                     continue;
-                }                
+                }
+
                 var pictureIdentifier = PictureIdentifier.NotSet;
                 if (ImageHelper.IsArtistImage(fileInfo))
                 {
@@ -931,6 +946,7 @@ public sealed class DirectoryProcessorService(
                 {
                     continue;
                 }
+
                 var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);
                 var artistNormalized = album.Artist.NameNormalized;
                 var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;

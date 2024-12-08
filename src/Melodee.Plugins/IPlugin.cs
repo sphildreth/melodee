@@ -8,5 +8,8 @@ public interface IPlugin
 
     bool IsEnabled { get; set; }
 
+    /// <summary>
+    /// Ranking of Plugin, plugins is sorted in ascending order with the lowest number executed first. 
+    /// </summary>
     int SortOrder { get; }
 }

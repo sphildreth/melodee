@@ -29,35 +29,7 @@ using ServiceStack.Data;
 
 namespace Melodee.Tests.Services;
 
-public class ConsoleLogSink : ILogEventSink
-{
-    private readonly IFormatProvider _formatProvider;
 
-    public ConsoleLogSink(IFormatProvider formatProvider)
-    {
-        _formatProvider = formatProvider;
-    }
-
-    public void Emit(LogEvent logEvent)
-    {
-        var message = logEvent.RenderMessage(_formatProvider);
-        if (logEvent.Exception != null)
-        {
-            message += $"\n{logEvent.Exception}";
-        }
-        Console.WriteLine(DateTimeOffset.Now.ToString() + " "  + message);
-    }
-}
-
-public static class ConsoleLogSinkExtensions
-{
-    public static LoggerConfiguration ConsoleLogSink(
-        this LoggerSinkConfiguration loggerConfiguration,
-        IFormatProvider formatProvider = null)
-    {
-        return loggerConfiguration.Sink(new ConsoleLogSink(formatProvider));
-    }
-}
 
 public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 {
@@ -69,7 +41,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
-            .WriteTo.ConsoleLogSink()
+            .WriteTo.Console()
             .CreateLogger();
         Serializer = new Serializer(Logger);
         CacheManager = new FakeCacheManager(Logger, TimeSpan.FromDays(1), Serializer);

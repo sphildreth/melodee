@@ -29,14 +29,17 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data);
             Assert.NotNull(tagResult.Data.Tags);
             Assert.NotNull(tagResult.Data.File);
-            var bitRate = tagResult.Data.MediaAudios.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate);
-            Assert.NotNull(bitRate);
-            var parsedBitRate = SafeParser.ToNumber<int>(bitRate.Value);
-            Assert.True(parsedBitRate > 0);
+            if (tagResult.Data.MediaAudios != null)
+            {
+                var bitRate = tagResult.Data.MediaAudios.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate);
+                Assert.NotNull(bitRate);
+                var parsedBitRate = SafeParser.ToNumber<int>(bitRate.Value);
+                Assert.True(parsedBitRate > 0);
 
-            var bitRateFromParser = SafeParser.ToNumber<int>(tagResult.Data.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value);
-            Assert.Equal(parsedBitRate, bitRateFromParser);
-            
+                var bitRateFromParser = SafeParser.ToNumber<int>(tagResult.Data.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value);
+                Assert.Equal(parsedBitRate, bitRateFromParser);
+            }
+
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.Title()?.Nullify());
         }

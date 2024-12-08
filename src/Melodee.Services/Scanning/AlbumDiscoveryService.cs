@@ -66,7 +66,7 @@ public sealed class AlbumDiscoveryService(
         return result;
     }
 
-    public async Task<PagedResult<Album>> AlbumsForDirectoryAsync(
+    private async Task<PagedResult<Album>> AlbumsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
@@ -110,7 +110,7 @@ public sealed class AlbumDiscoveryService(
         {
             albums = albums.Where(x =>
                 (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)) ||
-                (x.Artist != null && x.Artist.Name.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase))).ToList();
+                x.Artist.Name.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)).ToList();
         }
 
         if (pagedRequest.AlbumResultFilter != AlbumResultFilter.All && albums.Count != 0)
@@ -168,7 +168,7 @@ public sealed class AlbumDiscoveryService(
                 switch (filterBy.PropertyName)
                 {
                     case "Artist":
-                        albums = albums.Where(x => x.Artist.NameNormalized.Contains(filterBy.Value?.ToString()?.ToNormalizedString() ?? string.Empty)).ToList();
+                        albums = albums.Where(x => x.Artist.NameNormalized.Contains(filterBy.Value.ToString()?.ToNormalizedString() ?? string.Empty)).ToList();
                         break;
 
                     case "AlbumStatus":
@@ -241,7 +241,7 @@ public sealed class AlbumDiscoveryService(
         {
             TotalCount = albumsCount,
             TotalPages = (albumsCount + pagedRequest.PageSizeValue - 1) / pagedRequest.PageSizeValue,
-            Data = (albums ?? [])
+            Data = albums
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.PageSizeValue)
         };
@@ -259,7 +259,7 @@ public sealed class AlbumDiscoveryService(
             Artist = x.Artist.Name,
             Created = x.Created,
             Duration = x.Duration(),
-            MelodeeDataFileName = Path.Combine(x.Directory?.FullName() ?? fileSystemDirectoryInfo.FullName(), Album.JsonFileName),
+            MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName),
             ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
             IsValid = x.IsValid(_configuration.Configuration).Item1,
             Title = x.AlbumTitle(),
@@ -305,7 +305,7 @@ public sealed class AlbumDiscoveryService(
                             var r = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
                             if (r != null)
                             {
-                                r.Directory = jsonFile.Directory?.ToDirectorySystemInfo();
+                                r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
                                 r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
                                 albums.Add(r);
                             }

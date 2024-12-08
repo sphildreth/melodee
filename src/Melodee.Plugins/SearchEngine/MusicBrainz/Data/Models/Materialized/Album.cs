@@ -23,7 +23,7 @@ public sealed record Album
     public required string SortName { get; init; }
     
     [Index(unique: false)]
-    public required string NormalizedName { get; init; }
+    public required string NameNormalized { get; init; }
     
     public int ReleaseType { get; init; }
     
@@ -35,6 +35,8 @@ public sealed record Album
     
     [Index]
     public required Guid MusicBrainzId { get; init; }
+    
+    public required Guid ReleaseGroupMusicBrainzId { get; init; }
     
     public required DateTime ReleaseDate { get; init; }
     

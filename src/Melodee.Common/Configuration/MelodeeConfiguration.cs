@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net.NetworkInformation;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -34,7 +33,10 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
     
     public void SetSetting<T>(string key, T? value) => Configuration[key] = value;
 
-    public T? GetValue<T>(string key, Func<T?, T?>? returnValue = null) => returnValue == null ? GetSettingValue<T>(Configuration, key) : returnValue(GetSettingValue<T>(Configuration, key));
+    public T? GetValue<T>(string key, Func<T?, T?>? returnValue = null) =>
+        returnValue == null
+            ? GetSettingValue<T>(Configuration, key)
+            : returnValue(GetSettingValue<T>(Configuration, key));
 
     public int BatchProcessingSize()
     {
@@ -42,14 +44,14 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             if (i is null or < 1)
             {
-                return MelodeeConfiguration.BatchSizeDefault;
+                return BatchSizeDefault;
             }
-            if (i > MelodeeConfiguration.BatchSizeMaximum)
+            if (i > BatchSizeMaximum)
             {
-                return MelodeeConfiguration.BatchSizeMaximum;
+                return BatchSizeMaximum;
             }
-            return MelodeeConfiguration.BatchSizeDefault;
-        }) ?? MelodeeConfiguration.BatchSizeDefault;
+            return BatchSizeDefault;
+        }) ?? BatchSizeDefault;
     }
     
     /// <summary>

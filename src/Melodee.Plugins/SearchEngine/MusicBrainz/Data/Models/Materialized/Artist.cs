@@ -23,7 +23,7 @@ public sealed record Artist
     public required string SortName { get; init; }
     
     [Index(unique: false)]
-    public required string NormalizedName { get; init; }
+    public required string NameNormalized { get; init; }
     
     [Index]
     public required Guid MusicBrainzId { get; init; }

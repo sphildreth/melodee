@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using System.Net;
 using System.Security;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Melodee.Common.Models;
@@ -228,19 +227,20 @@ public static partial class StringExtensions
     
     public static string? AddToDelimitedList(this string? input, IEnumerable<string>? values, char delimiter = '|')
     {
-        if (string.IsNullOrEmpty(input) && (values == null || !(values?.Any() ?? false)))
+        var vv = values?.ToArray() ?? [];
+        if (string.IsNullOrEmpty(input) && (values == null || vv.Length != 0))
         {
             return null;
         }
         if (string.IsNullOrEmpty(input))
         {
-            return string.Join(delimiter.ToString(), values);
+            return string.Join(delimiter.ToString(), vv);
         }
-        if (values == null || !values.Any())
+        if (values == null || vv.Length == 0)
         {
             return input;
         }
-        foreach (var value in values)
+        foreach (var value in vv)
         {
             if (string.IsNullOrEmpty(value))
             {
@@ -295,7 +295,7 @@ public static partial class StringExtensions
     }
 
     /// <summary>
-    ///     If the given input is a tag delimited string, return a enumerable of tags, otherwise return null.
+    ///     If the given input is a tag delimited string, return an enumeration of tags, otherwise return null.
     /// </summary>
     /// <param name="str">Nullable string of tag delimited values</param>
     /// <returns>Enumerable collection of tags</returns>
@@ -307,7 +307,7 @@ public static partial class StringExtensions
         }
         if (!str!.Contains(TagsSeparator))
         {
-            return new[] { str };
+            return [str];
         }
         return str.Split(TagsSeparator).Where(x => !SafeParser.IsNull(x));
     }    
@@ -366,7 +366,7 @@ public static partial class StringExtensions
         {
             return null;
         }
-        var v = input?.CleanStringAsIs();
+        var v = input.CleanStringAsIs();
         if (string.IsNullOrWhiteSpace(v))
         {
             return null;
@@ -650,7 +650,7 @@ public static partial class StringExtensions
         {
             return null;
         }
-        var bytes = new byte[inputVal!.Length / 2];
+        var bytes = new byte[inputVal.Length / 2];
         for (var i = 0; i < bytes.Length; i++)
         {
             bytes[i] = Convert.ToByte(inputVal.Substring(i * 2, 2), 16);

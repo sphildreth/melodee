@@ -22,7 +22,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
 
     public bool IsEnabled { get; set; } = true;
 
-    public int SortOrder { get; } = 1;
+    public int SortOrder { get; } = 0;
 
     public async Task<PagedResult<ArtistSearchResult>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {

@@ -12,7 +12,11 @@ public static class Program
 
         app.Configure(config =>
         {
-           
+            config.AddBranch<JobSettings>("job", add =>
+            {
+                add.AddCommand<JobRunMusicBrainzUpdateDatabaseJobCommand>("musicbrainz-update")
+                    .WithDescription("Run MusicBrainz update database job. This downloads MusicBrainz data dump and creates local database for Melodee when scanning metadata.");
+            });
             config.AddBranch<LibrarySetting>("library", add =>
             {
                 add.AddCommand<ProcessInboundCommand>("process")
@@ -24,7 +28,6 @@ public static class Program
                 add.AddCommand<LibraryScanCommand>("scan")
                     .WithAlias("s")
                     .WithDescription("Scan all non inbound and staging libraries for database updates from processed media.");
-
             });          
             config.AddBranch<ParseSettings>("parser", add =>
             {

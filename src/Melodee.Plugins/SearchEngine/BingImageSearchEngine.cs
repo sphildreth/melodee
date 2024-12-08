@@ -16,17 +16,17 @@ namespace Melodee.Plugins.SearchEngine;
 ///     Bing image search plugin.
 ///     <remarks>https://learn.microsoft.com/en-us/bing/search-apis/bing-image-search/quickstarts/rest/csharp</remarks>
 /// </summary>
-public sealed class BingIAlbumImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
+public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 
     public string Id => "7E8863EE-E95F-42F8-A4DE-693D78DC216C";
 
-    public string DisplayName => nameof(BingIAlbumImageSearchEngine);
+    public string DisplayName => nameof(BingAlbumImageSearchEngine);
 
     public bool IsEnabled { get; set; }
 
-    public int SortOrder { get; } = 0;
+    public int SortOrder { get; } = 1;
 
     public async Task<OperationResult<ImageSearchResult[]?>> DoSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
     {
@@ -76,6 +76,7 @@ public sealed class BingIAlbumImageSearchEngine(IMelodeeConfiguration configurat
             {
                 result.AddRange(imageResult.Select(x => new ImageSearchResult
                 {
+                    FromPlugin = nameof(BingAlbumImageSearchEngine),
                     UniqueId = SafeParser.Hash(x.thumbnailUrl ?? string.Empty, x.contentUrl ?? string.Empty),
                     Width = x.width ?? 0,
                     Height = x.height ?? 0,

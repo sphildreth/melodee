@@ -77,13 +77,13 @@ public class MusicBrainzRepository(
                         .SelectAsync<Models.Materialized.Album>(x => x.ArtistId == artist.Id, token: cancellationToken)
                         .ConfigureAwait(false) ?? [];
 
-                    var artistAlbums = allArtistAlbums.GroupBy(x => x.NormalizedName).Select(x => x.OrderBy(xx => xx.ReleaseDate).FirstOrDefault()).ToArray();
+                    var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(xx => xx.ReleaseDate).FirstOrDefault()).ToArray();
 
                     if (query.AlbumKeyValues != null)
                     {
                         artistAlbums = artistAlbums
                             .Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() || 
-                                                                                                x.NormalizedName.Contains(xx.Value ?? string.Empty)))
+                                                                                                x.NameNormalized.Contains(xx.Value ?? string.Empty)))
                             .ToArray();
                     }
 
@@ -103,7 +103,7 @@ public class MusicBrainzRepository(
                             ReleaseDate = x.ReleaseDate.ToString("o", CultureInfo.InvariantCulture),
                             UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                             Name = x.Name,
-                            NameNormalized = x.NormalizedName,
+                            NameNormalized = x.NameNormalized,
                             SortName = x.SortName,
                             MusicBrainzId = x.MusicBrainzId
                         }).ToArray()
@@ -113,10 +113,10 @@ public class MusicBrainzRepository(
 
             if (data.Count == 0)
             {
-                var artists = await db.SelectAsync<Models.Materialized.Artist>(x => x.NormalizedName.Contains(query.NameNormalized) || x.AlternateNames != null && x.AlternateNames.Contains(query.NameNormalized), token: cancellationToken).ConfigureAwait(false);
+                var artists = await db.SelectAsync<Models.Materialized.Artist>(x => x.NameNormalized.Contains(query.NameNormalized) || x.AlternateNames != null && x.AlternateNames.Contains(query.NameNormalized), token: cancellationToken).ConfigureAwait(false);
                 foreach (var artist in artists)
                 {
-                    var rank = artist.NormalizedName == query.NameNormalized ? 10 : 1;
+                    var rank = artist.NameNormalized == query.NameNormalized ? 10 : 1;
                     if (artist.AlternateNamesValues.Contains(query.NameNormalized))
                     {
                         rank++;
@@ -134,13 +134,13 @@ public class MusicBrainzRepository(
                         .SelectAsync<Models.Materialized.Album>(x => x.ArtistId == artist.Id, token: cancellationToken)
                         .ConfigureAwait(false) ?? [];
 
-                    var artistAlbums = allArtistAlbums.GroupBy(x => x.NormalizedName).Select(x => x.OrderBy(x => x.ReleaseDate).FirstOrDefault()).ToArray();
+                    var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(x => x.ReleaseDate).FirstOrDefault()).ToArray();
 
                     if (query.AlbumKeyValues != null)
                     {
                         artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() || 
-                                                                                              x.NormalizedName.Equals(xx.Value ?? string.Empty) || 
-                                                                                              x.NormalizedName.Contains(xx.Value ?? string.Empty))).ToArray();
+                                                                                              x.NameNormalized.Equals(xx.Value ?? string.Empty) || 
+                                                                                              x.NameNormalized.Contains(xx.Value ?? string.Empty))).ToArray();
                         rank += artistAlbums.Length;
                     }
                     
@@ -160,7 +160,7 @@ public class MusicBrainzRepository(
                             ReleaseDate = x.ReleaseDate.ToString("o", CultureInfo.InvariantCulture),
                             UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                             Name = x.Name,
-                            NameNormalized = x.NormalizedName,
+                            NameNormalized = x.NameNormalized,
                             SortName = x.SortName,
                             MusicBrainzId = x.MusicBrainzId
                         }).ToArray()
@@ -271,7 +271,7 @@ public class MusicBrainzRepository(
                         MusicBrainzArtistId = artist.Id,
                         Name = artist.Name,
                         SortName = artist.SortName,
-                        NormalizedName = artist.NameNormalized,
+                        NameNormalized = artist.NameNormalized,
                         MusicBrainzId = artist.MusicBrainzId,
                         AlternateNames = "".AddTag(aArtistAlias?.Select(x => x.Name.ToNormalizedString() ?? x.Name), dontLowerCase: true)
                     });
@@ -345,6 +345,7 @@ public class MusicBrainzRepository(
                     releaseGroups = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_group"), parts => new ReleaseGroup
                     {
                         Id = SafeParser.ToNumber<long>(parts[0]),
+                        MusicBrainzId = SafeParser.ToGuid(parts[1]) ?? Guid.Empty,
                         Name = parts[2],
                         ArtistCreditId = SafeParser.ToNumber<long>(parts[3]),
                         ReleaseType = SafeParser.ToNumber<int>(parts[4])
@@ -441,15 +442,16 @@ public class MusicBrainzRepository(
                     {
                         albumsToInsert.Add(new Models.Materialized.Album
                         {
-                            UniqueId = SafeParser.Hash(release.MusicBrainzId.ToString()),
                             ArtistId = releaseArtist.Id,
-                            Name = release.Name,
                             ContributorIds = contributorIds,
-                            SortName = release.SortName ?? release.Name,
-                            ReleaseType = releaseGroup.ReleaseType,
-                            NormalizedName = release.NameNormalized ?? release.Name,
                             MusicBrainzId = release.MusicBrainzId,
-                            ReleaseDate = releaseCountry.ReleaseDate
+                            Name = release.Name,
+                            NameNormalized = release.NameNormalized ?? release.Name,
+                            ReleaseDate = releaseCountry.ReleaseDate,
+                            ReleaseGroupMusicBrainzId = releaseGroup.MusicBrainzId,
+                            ReleaseType = releaseGroup.ReleaseType,
+                            SortName = release.SortName ?? release.Name,
+                            UniqueId = SafeParser.Hash(release.MusicBrainzId.ToString()),
                         });
                     }
                     else

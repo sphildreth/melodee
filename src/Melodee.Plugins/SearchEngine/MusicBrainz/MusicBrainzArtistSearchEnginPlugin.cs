@@ -14,7 +14,7 @@ public class MusicBrainzArtistSearchEnginPlugin(MusicBrainzRepository repository
 
     public bool IsEnabled { get; set; } = true;
 
-    public int SortOrder { get; } = 2;
+    public int SortOrder { get; } = 1;
 
     public Task<PagedResult<ArtistSearchResult>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {

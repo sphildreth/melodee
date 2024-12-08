@@ -16,7 +16,7 @@ public class ArtistServiceTests : ServiceTestBase
         var shouldContainApiKey = Guid.NewGuid();
 
         var artistName = "Bob Jones";
-        var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString(), artistName.CleanString(doPutTheAtEnd: true));
+        var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, artistName.CleanString(doPutTheAtEnd: true));
         
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
@@ -47,7 +47,7 @@ public class ArtistServiceTests : ServiceTestBase
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
             var artistName = "Bob Jones";
-            var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString(), artistName.CleanString(doPutTheAtEnd: true));
+            var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, artistName.CleanString(doPutTheAtEnd: true));
 
             context.Artists.Add(new Artist
             {
@@ -82,7 +82,7 @@ public class ArtistServiceTests : ServiceTestBase
     public async Task GetByNameNormalizedAsync()
     {
         var artistName = "Bob Jones";
-        var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString(), artistName.CleanString(doPutTheAtEnd: true));
+        var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, artistName.CleanString(doPutTheAtEnd: true));
 
         await using (var context = await MockFactory().CreateDbContextAsync())
         {

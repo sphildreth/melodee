@@ -14,7 +14,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
 {
     private XmlSchemaSet GetXmlSchemaSet()
     {
-        string xsdPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Data", "subsonic-rest-api-1.16.1.xsd");
+        string xsdPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Data", "subsonic-rest-api-1.16.1.xsd");
         var schemas = new XmlSchemaSet();
         schemas.Add("https://subsonic.org/restapi", xsdPath);
         return schemas;

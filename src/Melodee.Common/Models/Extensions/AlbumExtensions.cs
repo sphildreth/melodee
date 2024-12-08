@@ -550,7 +550,7 @@ public static class AlbumExtensions
     {
         return new AlbumQuery
         {
-            Name = album.AlbumTitle() ?? string.Empty,
+            Name = $"{ album.Artist.Name } { album.AlbumTitle() }",
             MusicBrainzId = album.MusicBrainzId,
             Year = album.AlbumYear() ?? 0
         };

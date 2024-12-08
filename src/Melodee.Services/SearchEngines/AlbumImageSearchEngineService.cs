@@ -26,7 +26,7 @@ public class AlbumImageSearchEngineService(
     public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(AlbumQuery query, int? maxResults, CancellationToken token = default)
     {
         var configuration = await settingService.GetMelodeeConfigurationAsync(token);
-        
+
         var maxResultsValue = maxResults ?? configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
 
         var searchEngines = new List<IAlbumImageSearchEnginePlugin>
@@ -35,7 +35,7 @@ public class AlbumImageSearchEngineService(
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
             },
-            new BingIAlbumImageSearchEngine(configuration, serializer, httpClientFactory)
+            new BingAlbumImageSearchEngine(configuration, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled)
             }

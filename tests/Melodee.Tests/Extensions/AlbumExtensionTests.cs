@@ -14,7 +14,7 @@ public class AlbumExtensionTests
         {
             Artist = new Artist(
                 "Holy Truth",
-                "Holy Truth".ToNormalizedString(),
+                "Holy Truth".ToNormalizedString()!,
                 null),
             Directory = new FileSystemDirectoryInfo
             {

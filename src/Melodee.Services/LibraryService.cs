@@ -243,7 +243,6 @@ public sealed class LibraryService(
 
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
-        var result = false;
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
 
         if (albums.Any(x => !x.IsValid(configuration.Configuration).Item1))
@@ -254,7 +253,7 @@ public sealed class LibraryService(
             };
         }
 
-        var _maxArtistImageCount = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
+        var maxArtistImageCount = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
         var movedCount = 0;
         foreach (var album in albums)
         {
@@ -312,7 +311,7 @@ public sealed class LibraryService(
                             else
                             {
                                 var fileToMoveFullName = Path.Combine(libraryAlbumDirectoryInfo.FullName(), image.FileInfo.Name);
-                                var moveToFileFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(), libraryArtistDirectoryInfo.GetNextFileNameForType(_maxArtistImageCount, Artist.ImageType).Item1);
+                                var moveToFileFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(), libraryArtistDirectoryInfo.GetNextFileNameForType(maxArtistImageCount, Artist.ImageType).Item1);
                                 File.Move(fileToMoveFullName, moveToFileFullName);
                                 Logger.Information("[{ServiceName}] moved artist image [{ImageName}] into artist directory", nameof(LibraryService), fileToMoveFullName);
 

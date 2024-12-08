@@ -19,7 +19,7 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
 
     public bool IsEnabled { get; set; } = false;
 
-    public int SortOrder { get; } = 0;
+    public int SortOrder { get; } = 1;
 
     public async Task<OperationResult<bool>> NowPlaying(User user, ScrobbleInfo scrobble, CancellationToken token = default)
     {

@@ -6,7 +6,7 @@ namespace Melodee.Common.Serialization.Convertors;
 
 public class OpenSubsonicResponseModelConvertor : JsonConverter<ResponseModel>
 {
-    public override ResponseModel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override ResponseModel Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
     }
@@ -44,7 +44,7 @@ public class OpenSubsonicResponseModelConvertor : JsonConverter<ResponseModel>
         {
             if (hasDetailPropertyName)
             {
-                writer.WritePropertyName(value.ResponseData.DataDetailPropertyName);
+                writer.WritePropertyName(value.ResponseData.DataDetailPropertyName!);
             }
             writer.WriteRawValue(JsonSerializer.Serialize(value.ResponseData.Data, Serializer.JsonSerializerOptions));
         }

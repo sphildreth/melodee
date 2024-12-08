@@ -73,90 +73,91 @@ public class MusicBrainzUpdateDatabaseJob(
                 File.Move(dbName, tempDbName);
             }
 
-            //TODO this is here while debugging to skip downloading
-            var doDownloadNewFiles = false;
-            if (doDownloadNewFiles)
+            using (var client = httpClientFactory.CreateClient())
             {
-                using (var client = httpClientFactory.CreateClient())
-                {
-                    var storageStagingDirectory = new DirectoryInfo(Path.Combine(storagePath, "staging"));
-                    storageStagingDirectory.Empty();
+                var storageStagingDirectory = new DirectoryInfo(Path.Combine(storagePath, "staging"));
+                Directory.CreateDirectory(storageStagingDirectory.FullName);
+                storageStagingDirectory.Empty();
 
-                    var latest = await client.GetStringAsync("https://data.metabrainz.org/pub/musicbrainz/data/fullexport/LATEST", context.CancellationToken).ConfigureAwait(false);
-                    if (latest.Nullify() == null)
+                var latest = await client.GetStringAsync("https://data.metabrainz.org/pub/musicbrainz/data/fullexport/LATEST", context.CancellationToken).ConfigureAwait(false);
+                if (latest.Nullify() == null)
+                {
+                    Logger.Error("[{JobName}] Unable to download LATEST information from MusicBrainz", nameof(MusicBrainzUpdateDatabaseJob));
+                    return;
+                }
+
+                latest = latest.CleanString();
+
+                if (doesDbExist && latest != null)
+                {
+                    var latestTimeStamp = DateTimeOffset.Parse(latest);
+                    var lastJobRunTimestamp = configuration.GetValue<DateTimeOffset?>(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
+                    if (latestTimeStamp < lastJobRunTimestamp)
                     {
-                        Logger.Error("[{JobName}] Unable to download LATEST information from MusicBrainz", nameof(MusicBrainzUpdateDatabaseJob));
+                        Logger.Warning("[{JobName}] MusicBrainz LATEST is older than Last Job Run timestamp [{SettingName}], meaning latest MusicBrainz export has already been processed.", 
+                            nameof(MusicBrainzUpdateDatabaseJob),
+                            SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
                         return;
                     }
+                }
 
-                    latest = latest.CleanString();
+                var mbDumpFileName = Path.Combine(storageStagingDirectory.FullName, "mbdump.tar.bz2");
+                await client.DownloadFileAsync(
+                    $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump.tar.bz2",
+                    mbDumpFileName,
+                    null,
+                    context.CancellationToken);
 
-                    if (doesDbExist && latest != null)
+                var mbDumpDerivedFileName = Path.Combine(storageStagingDirectory.FullName, "mbdump-derived.tar.bz2");
+                await client.DownloadFileAsync(
+                    $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump-derived.tar.bz2",
+                    mbDumpDerivedFileName,
+                    null,
+                    context.CancellationToken);
+
+                await using (Stream mbDumpStream = File.OpenRead(mbDumpFileName))
+                {
+                    await using (Stream bzipStream = new BZip2InputStream(mbDumpStream))
                     {
-                        var latestTimeStamp = DateTimeOffset.Parse(latest);
-                        var lastJobRunTimestamp = configuration.GetValue<DateTimeOffset?>(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
-                        if (latestTimeStamp < lastJobRunTimestamp)
-                        {
-                            Logger.Warning("[{JobName}] MusicBrainz LATEST is older than Last Job Run timestamp, meaning latest MusicBrainz export has already been processed.", nameof(MusicBrainzUpdateDatabaseJob));
-                            return;
-                        }
+                        var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
+                        tarArchive.ExtractContents(storageStagingDirectory.FullName);
+                        tarArchive.Close();
+                        bzipStream.Close();
                     }
 
-                    var mbDumpFileName = Path.Combine(storageStagingDirectory.FullName, "mbdump.tar.bz2");
-                    await client.DownloadFileAsync(
-                        $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump.tar.bz2",
-                        mbDumpFileName,
-                        null,
-                        context.CancellationToken);
+                    mbDumpStream.Close();
+                }
 
-                    var mbDumpDerivedFileName = Path.Combine(storageStagingDirectory.FullName, "mbdump-derived.tar.bz2");
-                    await client.DownloadFileAsync(
-                        $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump-derived.tar.bz2",
-                        mbDumpDerivedFileName,
-                        null,
-                        context.CancellationToken);
-                    
-                    await using (Stream mbDumpStream = File.OpenRead(mbDumpFileName))
+                await using (Stream mbDumpDerivedStream = File.OpenRead(mbDumpDerivedFileName))
+                {
+                    await using (Stream bzipStream = new BZip2InputStream(mbDumpDerivedStream))
                     {
-                        await using (Stream bzipStream = new BZip2InputStream(mbDumpStream))
-                        {
-                            var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
-                            tarArchive.ExtractContents(storageStagingDirectory.FullName);
-                            tarArchive.Close();
-                            bzipStream.Close();
-                        }
-
-                        mbDumpStream.Close();
+                        var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
+                        tarArchive.ExtractContents(storageStagingDirectory.FullName);
+                        tarArchive.Close();
+                        bzipStream.Close();
                     }
 
-                    await using (Stream mbDumpDerivedStream = File.OpenRead(mbDumpDerivedFileName))
-                    {
-                        await using (Stream bzipStream = new BZip2InputStream(mbDumpDerivedStream))
-                        {
-                            var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
-                            tarArchive.ExtractContents(storageStagingDirectory.FullName);
-                            tarArchive.Close();
-                            bzipStream.Close();
-                        }
-
-                        mbDumpDerivedStream.Close();
-                    }
+                    mbDumpDerivedStream.Close();
                 }
             }
+
 
             var importResult = await repository.ImportData(context.CancellationToken).ConfigureAwait(false);
             if (importResult.IsSuccess && tempDbName != null)
             {
                 File.Delete(tempDbName);
             }
-            Log.Debug("ℹ️ [{JobName}] Completed in [{ElapsedTime}] minutes.", nameof(LibraryProcessJob), Stopwatch.GetElapsedTime(startTicks).TotalMinutes);            
+
+            Log.Debug("ℹ️ [{JobName}] Completed in [{ElapsedTime}] minutes.", nameof(LibraryProcessJob), Stopwatch.GetElapsedTime(startTicks).TotalMinutes);
         }
         catch (Exception e)
-        {   
+        {
             if (tempDbName != null && storagePath != null)
             {
                 File.Move(tempDbName, Path.Combine(storagePath, $"melodee.db"));
             }
+
             Logger.Error(e, "Error updating database");
         }
         finally

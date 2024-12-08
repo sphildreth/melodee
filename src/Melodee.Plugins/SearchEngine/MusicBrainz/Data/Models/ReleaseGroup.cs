@@ -13,6 +13,8 @@ public sealed record ReleaseGroup
    public string? Name { get; init; }
 
    public int ReleaseType { get; init; }
+   
+   public Guid MusicBrainzId { get; init; }
 
    public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);   
 }

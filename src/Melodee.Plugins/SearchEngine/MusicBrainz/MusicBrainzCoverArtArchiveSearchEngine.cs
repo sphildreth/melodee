@@ -65,6 +65,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration
                     {
                         result.AddRange(searchResponse?.Images.Select(x => new ImageSearchResult
                         {
+                            FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),
                             Rank = 1,
                             ThumbnailUrl = x.Thumbnails.OrderBy(x => SafeParser.ToNumber<int>(x.Key)).FirstOrDefault().Value,
                             MediaUrl = x.Image,

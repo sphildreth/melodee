@@ -9,9 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" />
+    <PackageReference Include="Quartz.Jobs" />
+    <PackageReference Include="Quartz.Plugins.TimeZoneConverter" />
+    <PackageReference Include="Quartz.Serialization.SystemTextJson" />
     <PackageReference Include="Serilog" />
-    <PackageReference Include="Serilog.Settings.AppSettings" />    
-    <PackageReference Include="Serilog.Settings.Configuration" />    
+    <PackageReference Include="Serilog.Settings.AppSettings" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Spectre.Console" />

@@ -554,7 +554,7 @@ public class OpenSubsonicApiService(
                                 JOIN "Artists" aa on (a."ArtistId" = aa."Id")
                                 JOIN "Libraries" l on (aa."LibraryId" = l."Id")
                                 """;
-                string whereSql = string.Empty;
+                var whereSql = string.Empty;
                 string orderSql;
                 var limitSql = $"OFFSET {albumListRequest.OffsetValue} ROWS FETCH NEXT {albumListRequest.SizeValue} ROWS ONLY;";
                 switch (albumListRequest.Type)
@@ -2086,6 +2086,7 @@ public class OpenSubsonicApiService(
         {
             return authResponse with { UserInfo = BlankUserInfo };
         }
+
         var result = false;
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {

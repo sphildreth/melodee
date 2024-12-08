@@ -31,7 +31,7 @@ public class NfoTests : TestsBase
     [InlineData("           ллл   01.Tokyo Night                          05:25   ллл", true)]
     [InlineData("Û 02. Legendary (feat. Lonnie Westry)                                     2:41 Û", true)]
     [InlineData("             01. Szango ....................................... 05:52  ", true)]
-    public async Task ValidateIsLineForSong(string? input, bool shouldBe)
+    public void ValidateIsLineForSong(string? input, bool shouldBe)
     {
         Assert.Equal(shouldBe, Nfo.IsLineForSong(input ?? string.Empty));
     }
