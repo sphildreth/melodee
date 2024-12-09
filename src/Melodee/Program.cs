@@ -1,22 +1,22 @@
-using System.ComponentModel;
 using System.Net;
 using System.Net.Mime;
-using Asp.Versioning;
 using Blazored.SessionStorage;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Components;
+using Melodee.Extensions;
 using Melodee.Filters;
 using Melodee.Jobs;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services;
 using Melodee.Services.Caching;
+using Melodee.Services.EventHandlers;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Scanning;
 using Melodee.Services.SearchEngines;
@@ -24,7 +24,6 @@ using Melodee.Utils;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Quartz;
 using Quartz.AspNetCore;
 using Serilog;
@@ -51,7 +50,7 @@ builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
         => o.UseNodaTime()
             .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
-builder.Services.AddSingleton<IDbConnectionFactory>(opt => 
+builder.Services.AddSingleton<IDbConnectionFactory>(_ => 
     new OrmLiteConnectionFactory(builder.Configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
 
 builder.Services.AddBlazorBootstrap();
@@ -71,6 +70,8 @@ builder.Services.AddScoped<CookieStorageAccessor>();
 builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpClient();
+
+builder.Services.AddInMemoryEvent<UserLoginEvent, UserLoginEventHandler>();
 
 builder.Services
     .AddSingleton<ISerializer, Serializer>()
@@ -153,11 +154,6 @@ builder.Services.AddQuartzServer(opts =>
     opts.WaitForJobsToComplete = true;
 });
 
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-});
-
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -176,12 +172,11 @@ if (!app.Environment.IsDevelopment())
             await context.Response.WriteAsync("Doh! You found something that doesn't exist.");
        });
    });
-    app.UseHsts();
 }
 
-app.UseSerilogRequestLogging();
+app.Services.StartConsumersAsync();
 
-//app.UseHttpsRedirection();
+app.UseSerilogRequestLogging();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
@@ -193,8 +188,7 @@ app.UseCors(
     options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
 );
 
-app.UseResponseCompression();
-
 app.MapControllers();
+
 
 app.Run();

@@ -8,6 +8,8 @@ using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.MessageBus;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
@@ -59,7 +61,9 @@ public class OpenSubsonicApiService(
     IScheduler schedule,
     ScrobbleService scrobbleService,
     ILibraryService libraryService,
-    ArtistSearchEngineService artistSearchEngineService)
+    ArtistSearchEngineService artistSearchEngineService,
+    IEventPublisher<UserLoginEvent> userEventPublisher
+    )
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
@@ -1132,7 +1136,6 @@ public class OpenSubsonicApiService(
         return new ResponseModel
         {
             UserInfo = BlankUserInfo,
-
             ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
         };
     }
@@ -1186,21 +1189,7 @@ public class OpenSubsonicApiService(
 
                     if (isAuthenticated)
                     {
-                        _ = Task.Run(async () =>
-                        {
-                            using (Operation.At(LogEventLevel.Debug).Time("AuthenticateSubsonicApiAsync: username [{Username}] : update timestamps", apiRequest.Username))
-                            {
-                                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-                                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken))
-                                {
-                                    await scopedContext.Users
-                                        .Where(x => x.Id == user.Data!.Id)
-                                        .ExecuteUpdateAsync(setters =>
-                                            setters.SetProperty(x => x.LastActivityAt, now)
-                                                .SetProperty(x => x.LastLoginAt, now), cancellationToken).ConfigureAwait(false);
-                                }
-                            }
-                        }, cancellationToken);
+                        await userEventPublisher.Publish(new Event<UserLoginEvent>(new UserLoginEvent(user.Data!.Id, user.Data.UserName)), cancellationToken).ConfigureAwait(false);
                         result = true;
                     }
                 }

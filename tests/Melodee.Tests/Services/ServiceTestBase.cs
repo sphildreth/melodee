@@ -3,6 +3,8 @@ using System.Net;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
+using Melodee.Common.MessageBus;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.Scrobbling;
@@ -120,6 +122,12 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockConfigurationFactory(),
             MockDbContextFactory());
     }
+
+    protected IEventPublisher<UserLoginEvent> MockEventPublisher()
+    {
+        var mockEventPublisher = new Mock<IEventPublisher<UserLoginEvent>>();
+        return mockEventPublisher.Object;
+    }
     
     protected ArtistSearchEngineService GetArtistSearchEngineService()
     {
@@ -169,9 +177,16 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             new Mock<IScheduler>().Object,
             GetScrobbleService(),
             GetLibraryService(),
-            GetArtistSearchEngineService());
+            GetArtistSearchEngineService(),
+            MockEventPublisher());
     }
 
+    protected InMemoryEventBusPublisher<UserLoginEvent> MockUserLoginEventBusPublisher()
+    {
+        var mockFactory = new Mock<InMemoryEventBusPublisher<UserLoginEvent>>();
+        return mockFactory.Object;
+    }
+    
     protected ArtistService GetArtistService()
     {
         return new ArtistService(Logger, CacheManager, MockFactory());
