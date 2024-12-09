@@ -30,8 +30,7 @@ public sealed class LibraryService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ISettingService settingService,
-    ISerializer serializer,
-    IImageValidator imageValidator)
+    ISerializer serializer)
     : ServiceBase(logger, cacheManager, contextFactory), ILibraryService
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
@@ -479,6 +478,9 @@ public sealed class LibraryService(
         }
 
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        
+        var imageValidator = new ImageValidator(configuration);
+        
         ISongPlugin[] songPlugins =
         [
             new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageValidator, configuration)

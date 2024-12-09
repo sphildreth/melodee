@@ -221,8 +221,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             CacheManager,
             MockFactory(),
             MockSettingService(),
-            Serializer,
-            GetImageValidator()
+            Serializer
         );
     }
     

@@ -47,8 +47,7 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSetting>
                 cacheManager,
                 dbFactory,
                 settingService,
-                serializer,
-                new ImageValidator(melodeeConfiguration));
+                serializer);
 
             libraryService.OnProcessingProgressEvent += (sender, e) =>
             {

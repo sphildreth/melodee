@@ -14,6 +14,7 @@ using Melodee.Filters;
 using Melodee.Jobs;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.EventHandlers;
@@ -91,7 +92,7 @@ builder.Services
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>()
     .AddSingleton<EtagRepository>()
-    .AddScoped<MusicBrainzRepository>()    
+    .AddScoped<MusicBrainzRepository>()
     .AddScoped<LocalStorageService>()
     .AddScoped<ISettingService, SettingService>()
     .AddScoped<ArtistService>()
@@ -141,6 +142,13 @@ builder.Services.AddQuartz(q =>
         .WithIdentity("MusicBrainzUpdateDatabaseJob-trigger")
         .WithCronSchedule("0 0 1 * * ?") // Once a month, at 00:00
     );        
+    
+    q.AddJob<ArtistImageJob>(opts => opts.WithIdentity(JobKeyRegistry.ArtistImageJobKey));
+    q.AddTrigger(opts => opts
+            .ForJob(JobKeyRegistry.ArtistImageJobKey)
+            .WithIdentity("ArtistImageJobKey-trigger")
+            .WithCronSchedule("0 * * * * ?") // Every hour
+    );      
     
 });
 builder.Services.AddSingleton<IScheduler>(provider =>

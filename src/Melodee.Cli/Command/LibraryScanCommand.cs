@@ -66,8 +66,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                 cacheManager,
                 dbFactory,
                 settingService,
-                serializer,
-                new ImageValidator(melodeeConfiguration));
+                serializer);
             
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
             
@@ -105,8 +104,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                             settingService, 
                             serializer), 
                         serializer, 
-                        httpClientFactory,
-                        imageValidator
+                        httpClientFactory
                     ),
                     new ArtistSearchEngineService
                     (

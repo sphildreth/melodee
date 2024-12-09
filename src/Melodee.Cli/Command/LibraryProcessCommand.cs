@@ -74,8 +74,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 cacheManager,
                 dbFactory,
                 settingService,
-                serializer,
-                imageValidator);
+                serializer);
 
             var musicBrainzRepository = new MusicBrainzRepository(
                 Log.Logger, 
@@ -145,8 +144,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                         settingService,
                         serializer),
                     serializer,
-                    scope.ServiceProvider.GetRequiredService<IHttpClientFactory>(),
-                    imageValidator
+                    scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
                 ),
                 artistSearchEngineService,
                 albumImageSearchEngineService,

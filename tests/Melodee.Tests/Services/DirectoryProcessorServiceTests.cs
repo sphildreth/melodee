@@ -31,8 +31,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
                     MockSettingService(),
                     Serializer),
                 Serializer,
-                MockHttpClientFactory(),
-                GetImageValidator()),
+                MockHttpClientFactory()),
             GetArtistSearchEngineService(),
             GetAlbumImageSearchEngineService(),
             MockHttpClientFactory()
