@@ -1,5 +1,6 @@
 using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
@@ -8,6 +9,9 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class AlbumExtensions
 {
+
+    public static KeyValue ToKeyValue(this Album album) => new KeyValue(album.MusicBrainzId?.ToString() ?? album.MediaUniqueId.ToString(), album.Name.ToNormalizedString() ?? album.Name);    
+    
     public static string ToCoverArtId(this Album album) => album.ToApiKey();
     
     public static string ToApiKey(this Album album) => $"album{OpenSubsonicServer.ApiIdSeparator }{album.ApiKey}";

@@ -9,6 +9,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song.Extensions;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -21,7 +22,7 @@ namespace Melodee.Plugins.MetaData.Song;
 ///     Implementation of Song Plugin using ATL Library
 ///     <remarks>https://github.com/Zeugma440/atldotnet</remarks>
 /// </summary>
-public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, IMelodeeConfiguration configuration) : MetaDataBase(configuration), ISongPlugin
+public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, IImageValidator imageValidator, IMelodeeConfiguration configuration) : MetaDataBase(configuration), ISongPlugin
 {
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
 
@@ -233,16 +234,23 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                         var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
                                         var newImageFileName = Path.Combine(directoryInfo.Path, $"{albumId}-{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
                                         await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
-                                        images.Add(new ImageInfo
+                                        if ((await imageValidator.ValidateImage(new FileInfo(newImageFileName), cancellationToken)).Data.IsValid)
                                         {
-                                            CrcHash = imageCrcHash,
-                                            PictureIdentifier = pictureIdentifier,
-                                            FileInfo = new FileInfo(newImageFileName).ToFileSystemInfo(),
-                                            Width = imageInfo.Width,
-                                            Height = imageInfo.Height,
-                                            SortOrder = embeddedPicture.Position,
-                                            WasEmbeddedInSong = true
-                                        });
+                                            images.Add(new ImageInfo
+                                            {
+                                                CrcHash = imageCrcHash,
+                                                PictureIdentifier = pictureIdentifier,
+                                                FileInfo = new FileInfo(newImageFileName).ToFileSystemInfo(),
+                                                Width = imageInfo.Width,
+                                                Height = imageInfo.Height,
+                                                SortOrder = embeddedPicture.Position,
+                                                WasEmbeddedInSong = true
+                                            });
+                                        }
+                                        else
+                                        {
+                                            Log.Warning("[{PluinName}] embedded image did not pass validation.", nameof(AtlMetaTag));
+                                        }
                                     }
 
                                     pictureIndex++;

@@ -12,6 +12,7 @@ using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Models;
@@ -40,7 +41,8 @@ public class LibraryProcessJob(
     ArtistService artistService,
     AlbumService albumService,
     AlbumDiscoveryService albumDiscoveryService,
-    DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
+    DirectoryProcessorService directoryProcessorService,
+    IImageValidator imageValidator) : JobBase(logger, configurationFactory)
 {
     private readonly List<int> _dbAlbumIdsModifiedOrUpdated = [];
     private readonly List<int> _dbArtistsIdsModifiedOrUpdated = [];
@@ -110,7 +112,7 @@ public class LibraryProcessJob(
 
             ISongPlugin[] songPlugins =
             [
-                new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
+                new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), imageValidator, _configuration)
             ];
             _now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 

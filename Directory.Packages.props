@@ -17,6 +17,7 @@
     <PackageVersion Include="Hashids.net" Version="1.7.0" />
     <PackageVersion Include="Hqub.Last.fm" Version="2.4.0" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.11.71" />
+    <PackageVersion Include="IdGen" Version="3.0.7" />
     <PackageVersion Include="IdSharp.Common" Version="1.0.1" />
     <PackageVersion Include="IdSharp.Tagging" Version="1.0.0-rc3" />
     <PackageVersion Include="K4os.Hash.xxHash" Version="1.0.8" />

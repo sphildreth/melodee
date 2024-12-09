@@ -78,9 +78,12 @@ public sealed class DirectoryProcessorService(
 
         _directoryStaging = (await libraryService.GetStagingLibraryAsync(token)).Data.Path;
 
+        _albumValidator = new AlbumValidator(_configuration);
+        _imageValidator = new ImageValidator(_configuration);
+        
         _songPlugins =
         [
-            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
+            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageValidator,  _configuration)
         ];
 
         _conversionPlugins =
@@ -88,10 +91,7 @@ public sealed class DirectoryProcessorService(
             new ImageConvertor(_configuration),
             new MediaConvertor(_configuration)
         ];
-
-        _albumValidator = new AlbumValidator(_configuration);
-        _imageValidator = new ImageValidator(_configuration);
-
+        
         _directoryPlugins =
         [
             new CueSheet(serializer, _songPlugins, _configuration)
@@ -868,6 +868,7 @@ public sealed class DirectoryProcessorService(
         OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
     }
 
+    //TODO make this use the Artist method to get images for an artist
     private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();

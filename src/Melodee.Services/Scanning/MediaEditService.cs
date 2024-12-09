@@ -32,7 +32,8 @@ public sealed class MediaEditService(
     ILibraryService libraryService,
     AlbumDiscoveryService albumDiscoveryService,
     ISerializer serializer,
-    IHttpClientFactory httpClientFactory) : ServiceBase(logger, cacheManager, contextFactory)
+    IHttpClientFactory httpClientFactory,
+    IImageValidator imageValidator) : ServiceBase(logger, cacheManager, contextFactory)
 {
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
@@ -45,7 +46,7 @@ public sealed class MediaEditService(
     {
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         _albumValidator = new AlbumValidator(_configuration);
-        _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration);
+        _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), imageValidator, _configuration);
 
         _directoryLibrary = (await libraryService.GetLibraryAsync(token)).Data.Path;
 

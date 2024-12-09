@@ -5,6 +5,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using Melodee.Plugins.Validation;
 using Moq;
 using NodaTime;
 using Serilog;
@@ -22,6 +23,11 @@ public abstract class TestsBase
     private ILogger Logger { get; }
 
     protected ISerializer Serializer { get; }
+    
+    protected IImageValidator GetImageValidator()
+    {
+        return new ImageValidator(TestsBase.NewPluginsConfiguration());
+    }    
 
     public static IMelodeeConfiguration NewPluginsConfiguration()
     {
@@ -43,7 +49,7 @@ public abstract class TestsBase
             Data = TestLibraries().Data.First(x => x.TypeValue == LibraryType.Library)
         };
     }
-
+    
     public static PagedResult<Library> TestLibraries()
     {
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);

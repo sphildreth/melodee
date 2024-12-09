@@ -5,6 +5,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.Processor.MetaTagProcessors;
+using Melodee.Plugins.Validation;
 using Album = Melodee.Plugins.Processor.MetaTagProcessors.Album;
 using Artist = Melodee.Plugins.Processor.MetaTagProcessors.Artist;
 

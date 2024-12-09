@@ -1,5 +1,7 @@
 using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models;
+using Melodee.Common.Models.SearchEngines;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
@@ -38,5 +40,24 @@ public static class ArtistExtensions
             userArtist?.StarredAt.ToString()
             );
         
+    }
+    
+    public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
+    {
+        return new ArtistQuery
+        {
+            Name = artist.Name,
+            AlbumKeyValues = albumKeyValues,
+            MusicBrainzId = artist.MusicBrainzId?.ToString(),
+        };
+    }    
+
+    public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this Artist artist)
+    {
+        return new FileSystemDirectoryInfo
+        {
+            Path = Path.Combine(artist.Library.Path, artist.Directory),
+            Name = artist.Directory,
+        };
     }
 }

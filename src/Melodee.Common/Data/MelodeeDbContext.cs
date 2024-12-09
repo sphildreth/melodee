@@ -379,7 +379,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Value = "0",
                     CreatedAt = now
                 },
-                new Setting
+                 new Setting
                 {
                     Id = 35,
                     Key = SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength,

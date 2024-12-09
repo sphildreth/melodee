@@ -18,7 +18,7 @@ public class M3UTests : TestsBase
         {
             var m3U = new M3UPlaylist(Serializer,new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration())
+                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageValidator(), NewPluginsConfiguration())
                 }, new AlbumValidator(NewPluginsConfiguration()),
                 NewPluginsConfiguration());
             var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo

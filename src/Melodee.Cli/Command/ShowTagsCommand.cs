@@ -7,6 +7,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,8 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
             var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
+            var imageValidator = new ImageValidator(config);
+            
             var fileInfo = new FileInfo(settings.Filename);
             if (!fileInfo.Exists)
             {
@@ -65,7 +68,7 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
 
             var isValid = false;
 
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(config, serializer), config);
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageValidator, config);
             var tagResult = await metaTag.ProcessFileAsync(fileInfo.Directory!.ToDirectorySystemInfo(), FileSystemInfoExtensions.ToFileSystemInfo(fileInfo));
 
             if (settings.OnlyTags.Nullify() != null)

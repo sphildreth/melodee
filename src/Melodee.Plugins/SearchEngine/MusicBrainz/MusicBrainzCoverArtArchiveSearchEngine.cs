@@ -23,7 +23,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration
 
     public int SortOrder { get; } = 0;
 
-    public async Task<OperationResult<ImageSearchResult[]?>> DoSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
     {
         var result = new List<ImageSearchResult>();
 

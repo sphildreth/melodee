@@ -12,6 +12,7 @@ using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
+using Melodee.Plugins.Validation;
 using Melodee.Services.Interfaces;
 using Melodee.Services.Models;
 using Melodee.Services.Scanning;
@@ -29,7 +30,8 @@ public sealed class LibraryService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ISettingService settingService,
-    ISerializer serializer)
+    ISerializer serializer,
+    IImageValidator imageValidator)
     : ServiceBase(logger, cacheManager, contextFactory), ILibraryService
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
@@ -479,7 +481,7 @@ public sealed class LibraryService(
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
         ISongPlugin[] songPlugins =
         [
-            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), configuration)
+            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageValidator, configuration)
         ];
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);

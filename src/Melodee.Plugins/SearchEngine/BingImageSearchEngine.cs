@@ -16,7 +16,8 @@ namespace Melodee.Plugins.SearchEngine;
 ///     Bing image search plugin.
 ///     <remarks>https://learn.microsoft.com/en-us/bing/search-apis/bing-image-search/quickstarts/rest/csharp</remarks>
 /// </summary>
-public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
+public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) 
+    : IAlbumImageSearchEnginePlugin, IArtistImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 
@@ -27,8 +28,12 @@ public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configurati
     public bool IsEnabled { get; set; }
 
     public int SortOrder { get; } = 1;
+    public Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
 
-    public async Task<OperationResult<ImageSearchResult[]?>> DoSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
     {
         var result = new List<ImageSearchResult>();
 

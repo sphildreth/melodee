@@ -8,6 +8,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Scanning;
@@ -66,12 +67,15 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var melodeeConfigurationFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
-
+            var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
+            var imageValidator = new ImageValidator(melodeeConfiguration);
+            
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
                 settingService,
-                serializer);
+                serializer,
+                imageValidator);
 
             var musicBrainzRepository = new MusicBrainzRepository(
                 Log.Logger, 
@@ -141,7 +145,8 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                         settingService,
                         serializer),
                     serializer,
-                    scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()
+                    scope.ServiceProvider.GetRequiredService<IHttpClientFactory>(),
+                    imageValidator
                 ),
                 artistSearchEngineService,
                 albumImageSearchEngineService,

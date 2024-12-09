@@ -11,6 +11,7 @@ using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.Interfaces;
@@ -139,6 +140,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetMusicBrainzRepository(),
             MockHttpClientFactory());
     }
+
+    protected IImageValidator GetImageValidator()
+    {
+        return new ImageValidator(TestsBase.NewPluginsConfiguration());
+    }
     
     protected AlbumImageSearchEngineService GetAlbumImageSearchEngineService()
     {
@@ -215,7 +221,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             CacheManager,
             MockFactory(),
             MockSettingService(),
-            Serializer
+            Serializer,
+            GetImageValidator()
         );
     }
     

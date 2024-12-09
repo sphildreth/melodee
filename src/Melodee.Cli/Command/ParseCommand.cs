@@ -48,6 +48,8 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
+            var imageValidator = new ImageValidator(config);
+            
             var fileInfo = new FileInfo(settings.Filename);
             if (!fileInfo.Exists)
             {
@@ -67,7 +69,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             var sfv = new SimpleFileVerification(serializer,
                 new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageValidator, config)
                 }, new AlbumValidator(config), config);
             if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
@@ -98,7 +100,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             var m3u = new M3UPlaylist(serializer,
                 new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), config)
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageValidator, config)
                 }, new AlbumValidator(config)
                 , config);
             if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))

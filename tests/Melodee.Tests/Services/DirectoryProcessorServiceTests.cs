@@ -31,7 +31,8 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
                     MockSettingService(),
                     Serializer),
                 Serializer,
-                MockHttpClientFactory()),
+                MockHttpClientFactory(),
+                GetImageValidator()),
             GetArtistSearchEngineService(),
             GetAlbumImageSearchEngineService(),
             MockHttpClientFactory()
@@ -111,7 +112,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
             ISongPlugin[] songPlugins =
             [
-                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config)
+                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), GetImageValidator(), config)
             ];            
             var allAlbums = await processor.AllAlbumsForDirectoryAsync(
                 dirInfo.ToDirectorySystemInfo(),
@@ -177,7 +178,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             var config = TestsBase.NewPluginsConfiguration();
             ISongPlugin[] songPlugins =
             [
-                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), config)
+                new AtlMetaTag(new MetaTagsProcessor(config, Serializer),GetImageValidator(), config)
             ]; 
             var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());

@@ -13,30 +13,25 @@ using Serilog;
 namespace Melodee.Services.SearchEngines;
 
 /// <summary>
-///     Uses enabled Image Search plugins to get images for album query.
+///     Uses enabled Image Search plugins to get images for artist query.
 /// </summary>
-public class AlbumImageSearchEngineService(
+public class ArtistImageSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     ISerializer serializer,
     ISettingService settingService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    MusicBrainzRepository musicBrainzRepository,    
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(AlbumQuery query, int? maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(ArtistQuery query, int? maxResults, CancellationToken token = default)
     {
         var configuration = await settingService.GetMelodeeConfigurationAsync(token);
 
         var maxResultsValue = maxResults ?? configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
 
-        var searchEngines = new List<IAlbumImageSearchEnginePlugin>
+        var searchEngines = new List<IArtistImageSearchEnginePlugin>
         {
-            new MusicBrainzCoverArtArchiveSearchEngine(configuration, musicBrainzRepository, serializer, httpClientFactory)
-            {
-                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
-            },
             new BingAlbumImageSearchEngine(configuration, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled)
@@ -45,7 +40,7 @@ public class AlbumImageSearchEngineService(
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled))
         {
-            var searchResult = await searchEngine.DoAlbumImageSearch(query, maxResultsValue, token);
+            var searchResult = await searchEngine.DoArtistImageSearch(query, maxResultsValue, token);
             if (searchResult.IsSuccess)
             {
                 result.AddRange(searchResult.Data ?? []);

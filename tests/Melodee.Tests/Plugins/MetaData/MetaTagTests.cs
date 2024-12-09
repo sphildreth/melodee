@@ -17,7 +17,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageValidator(), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -52,7 +52,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageValidator(), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -100,7 +100,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageValidator(), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -157,7 +157,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageValidator(), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -186,7 +186,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageValidator(), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -214,7 +214,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageValidator(), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -243,7 +243,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageValidator(), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);

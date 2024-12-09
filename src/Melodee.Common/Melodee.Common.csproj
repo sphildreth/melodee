@@ -11,6 +11,7 @@
     <PackageReference Include="FFMpegCore"  />
     <PackageReference Include="FluentValidation"  />
     <PackageReference Include="Hashids.net"  />
+    <PackageReference Include="IdGen" />
     <PackageReference Include="K4os.Hash.xxHash"  />
     <PackageReference Include="Mapster"  />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
