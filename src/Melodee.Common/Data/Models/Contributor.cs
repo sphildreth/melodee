@@ -60,5 +60,5 @@ public class Contributor : DataModelBase
 
     public int ContributorType { get; set; }
 
-    [NotMapped] public ContributorType TypeValue => SafeParser.ToEnum<ContributorType>(ContributorType);
+    [NotMapped] public ContributorType ContributorTypeValue => SafeParser.ToEnum<ContributorType>(ContributorType);
 }

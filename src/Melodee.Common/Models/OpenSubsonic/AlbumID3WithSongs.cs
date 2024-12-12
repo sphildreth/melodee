@@ -72,16 +72,13 @@ public record AlbumId3WithSongs : IOpenSubsonicToXml
     public string? MusicBrainzId { get; init; }
 
     /// <summary></summary>
-    public Genre[]? Genres { get; init; }
+    public ItemGenre[]? Genres { get; init; }
 
     /// <summary></summary>
     public ArtistID3[]? Artists { get; init; }
 
     /// <summary></summary>
     public string? DisplayArtist { get; init; }
-
-    /// <summary></summary>
-    public string[]? AlbumTypes { get; init; }
 
     /// <summary></summary>
     public string[]? Moods { get; init; }

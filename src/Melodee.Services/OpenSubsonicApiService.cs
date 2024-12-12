@@ -710,27 +710,26 @@ public class OpenSubsonicApiService(
             data = new AlbumId3WithSongs
             {
                 AlbumDate = album.ReleaseDate.ToItemDate(),
-                AlbumTypes = [], //TODO
                 Artist = album.Artist.Name,
                 ArtistId = album.Artist.ToApiKey(),
-                Artists = [], //TODO
+                Artists =  album.ContributingArtists(),
                 CoverArt = album.ToApiKey(),
                 Created = album.CreatedAt.ToString(),
                 DiscTitles = album.Discs.Select(x => new DiscTitle(x.DiscNumber, x.Title ?? string.Empty)).ToArray(),
                 DisplayArtist = album.Artist.Name,
                 Duration = album.Duration.ToSeconds(),
                 Genre = album.Genres?.ToCsv(),
-                Genres = [], //TODO
+                Genres = album.Genres?.Select(x => new ItemGenre(x)).ToArray() ?? [],
                 Id = album.ToApiKey(),
                 IsCompilation = album.IsCompilation,
-                Moods = [], //TODO
-                MusicBrainzId = null,
+                Moods = album.Moods ?? [],
+                MusicBrainzId = album.MusicBrainzId?.ToString(),
                 Name = album.Name,
                 OriginalAlbumDate = album.OriginalReleaseDate?.ToItemDate() ?? album.ReleaseDate.ToItemDate(),
                 Parent = album.ToApiKey(),
                 PlayCount = album.PlayedCount,
                 Played = album.LastPlayedAt.ToString(),
-                RecordLabels = [], //TODO
+                RecordLabels = album.RecordLabels(),
                 Song = album.Discs.SelectMany(x => x.Songs)
                     .Select(x => x.ToApiChild(album, userSongsForAlbum.FirstOrDefault(us => us.SongId == x.Id)))
                     .ToArray(),
@@ -827,21 +826,26 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
-        var avatarBytes = defaultImages.UserAvatarBytes;
-
-        //TODO cache images?
+        byte[]? avatarBytes = null;
 
         try
         {
-            var userLibraryResult = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
-            if (userLibraryResult.IsSuccess)
+            avatarBytes = await CacheManager.GetAsync($"urn:openSubsonic:avatar:{username}", async () =>
             {
-                var userAvatarFilename = authResponse.UserInfo.ToAvatarFilename(userLibraryResult.Data.Path);
-                if (File.Exists(userAvatarFilename))
+                using (Operation.At(LogEventLevel.Debug).Time("GetAvatarAsync: [{Username}]", username))
                 {
-                    avatarBytes = await File.ReadAllBytesAsync(userAvatarFilename, cancellationToken).ConfigureAwait(false);
+                    var userLibraryResult = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
+                    if (userLibraryResult.IsSuccess)
+                    {
+                        var userAvatarFilename = authResponse.UserInfo.ToAvatarFilename(userLibraryResult.Data.Path);
+                        if (File.Exists(userAvatarFilename))
+                        {
+                            return await File.ReadAllBytesAsync(userAvatarFilename, cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                    return null;
                 }
-            }
+            }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -853,7 +857,7 @@ public class OpenSubsonicApiService(
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
-                Data = avatarBytes,
+                Data = avatarBytes ?? defaultImages.UserAvatarBytes,
                 DataPropertyName = string.Empty,
                 DataDetailPropertyName = string.Empty
             }

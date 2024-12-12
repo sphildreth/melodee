@@ -21,6 +21,7 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Quartz;
 using Serilog;
+using ServiceStack;
 using SmartFormat;
 using SearchOption = System.IO.SearchOption;
 using dbModels = Melodee.Common.Data.Models;
@@ -197,7 +198,7 @@ public class LibraryProcessJob(
                                 {
                                     melodeeFile = (await directoryProcessorService.AllAlbumsForDirectoryAsync(
                                             dirFileSystemDirectoryInfo,
-                                            songPlugins.ToArray(),
+                                            Enumerable.ToArray(songPlugins),
                                             _configuration,
                                             context.CancellationToken)
                                         .ConfigureAwait(false)).Data.Item1.FirstOrDefault();
@@ -282,27 +283,25 @@ public class LibraryProcessJob(
                             .ExecuteAsync(sql, new { libraryId = library.Id })
                             .ConfigureAwait(false);
 
-                        //TODO Contributors
-
-                        // sql = """
-                        //       with performerSongCounts as (
-                        //       	select c."ArtistId" as id, COUNT(*) as count
-                        //       	from "Contributors" c 
-                        //       	left join "Songs" s on (c."SongId" = s."Id")
-                        //         left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                        //         left join "Albums" a on (ad."AlbumId" = a."Id")
-                        //         WHERE a."LibraryId" = {0}
-                        //       	group by c."ArtistId"
-                        //       )
-                        //       UPDATE "Artists"
-                        //       set "SongCount" = c.count, "LastUpdatedAt" = NOW()
-                        //       from performerSongCounts c
-                        //       where c.id = "Artists"."Id"
-                        //       and c.id in ({1});
-                        //       """;
-                        // await dbConn
-                        //     .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
-                        //     .ConfigureAwait(false);
+                        sql = """
+                              with performerSongCounts as (
+                              	select c."ArtistId" as id, COUNT(*) as count
+                              	from "Contributors" c 
+                              	left join "Songs" s on (c."SongId" = s."Id")
+                                left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                left join "Albums" a on (ad."AlbumId" = a."Id")
+                                WHERE a."LibraryId" = {0}
+                              	group by c."ArtistId"
+                              )
+                              UPDATE "Artists"
+                              set "SongCount" = c.count, "LastUpdatedAt" = NOW()
+                              from performerSongCounts c
+                              where c.id = "Artists"."Id"
+                              and c.id in ({1});
+                              """;
+                        await dbConn
+                            .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
+                            .ConfigureAwait(false);
                     }
 
                     var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id).ConfigureAwait(false);
@@ -435,52 +434,6 @@ public class LibraryProcessJob(
                                 var mediaFile = song.File.ToFileInfo(melodeeAlbum.Directory) ?? throw new Exception("Song File is required.");
                                 var mediaFileHash = CRC32.Calculate(mediaFile);
                                 var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
-
-                                //         var dbContributors = await scopedContext
-                                //             .Contributors.Include(x => x.Artist)
-                                //             .Where(x => x.SongId == dbSong.Id)
-                                //             .ToListAsync(context.CancellationToken)
-                                //             .ConfigureAwait(false);
-                                //         var dbContributorsForSong = await GetContributorsForSong(song, dbArtist.Id, dbAlbum.Id, dbSong.Id, now, context.CancellationToken).ConfigureAwait(false);
-                                //         if (dbContributors.Count == 0 && dbContributorsForSong.Any())
-                                //         {
-                                //             dbContributorsToAdd.AddRange(dbContributorsForSong);
-                                //         }
-                                //         else
-                                //         {
-                                //             var dbContributorsToDelete = new List<dbModels.Contributor>();
-                                //             foreach (var dbContributor in dbContributors)
-                                //             {
-                                //                 // If there isn't a contributor for the MetaTagIdentifier in the song, delete the database one.
-                                //                 if (!dbContributor.IsLocked && dbContributorsForSong.All(x => x.MetaTagIdentifier != dbContributor.MetaTagIdentifier))
-                                //                 {
-                                //                     dbContributorsToDelete.Add(dbContributor);
-                                //                 }
-                                //             }
-                                //
-                                //             foreach (var songContributor in dbContributorsForSong)
-                                //             {
-                                //                 var dbContributor = dbContributorsToDelete.FirstOrDefault(x => x.MetaTagIdentifier == songContributor.MetaTagIdentifier && (x.ArtistId == songContributor.ArtistId || string.Equals(x.ContributorName, songContributor.ContributorName, StringComparison.OrdinalIgnoreCase)));
-                                //                 if (dbContributor == null)
-                                //                 {
-                                //                     dbContributorsToAdd.Add(songContributor);
-                                //                 }
-                                //                 else
-                                //                 {
-                                //                     // update db contributor
-                                //                     var updatedRole = songContributor.Role.CleanStringAsIs();
-                                //                     if (updatedRole != null && !dbContributor.IsLocked)
-                                //                     {
-                                //                         dbContributor.ArtistId = songContributor.ArtistId;
-                                //                         dbContributor.ContributorName = songContributor.ContributorName;
-                                //                         dbContributor.LastUpdatedAt = now;
-                                //                         dbContributor.Role = updatedRole;
-                                //                         dbContributor.SubRole = songContributor.SubRole?.CleanStringAsIs();
-                                //                     }
-                                //                 }
-                                //             }                            
-                                //                  var dbContributorsForSong = await GetContributorsForSong(song, dbArtist.Id, dbAlbum.Id, dbSong.Id, now, context.CancellationToken).ConfigureAwait(false);
-
                                 disc.Songs.Add(new dbModels.Song
                                 {
                                     BitDepth = song.BitDepth(),
@@ -539,6 +492,33 @@ public class LibraryProcessJob(
                     _totalAlbumsInserted += dbAlbumsToAdd.Count;
                     _dbAlbumIdsModifiedOrUpdated.AddRange(dbAlbumsToAdd.Select(x => x.Id));
                     UpdateDataMap();
+
+                    var dbContributorsToAdd = new List<dbModels.Contributor>();
+                    foreach (var dbAlbum in dbAlbumsToAdd)
+                    {
+                        var melodeeAlbum = melodeeAlbumsForDirectory.First(x => x.UniqueId() == dbAlbum.MediaUniqueId);
+                        foreach (var song in melodeeAlbum.Songs ?? [])
+                        {
+                            var dbSong = dbAlbum.Discs.SelectMany(x => x.Songs).FirstOrDefault(x => x.MediaUniqueId == song.UniqueId);
+                            if (dbSong != null)
+                            {
+                                dbContributorsToAdd.AddRange(await GetContributorsForSong(song, dbAlbum.ArtistId, dbAlbum.Id, dbSong.Id, cancellationToken));
+                            }
+                        }
+                    }
+                    if (dbContributorsToAdd.Count > 0)
+                    {
+                        try
+                        {
+                            await scopedContext.Contributors.AddRangeAsync(dbContributorsToAdd, cancellationToken).ConfigureAwait(false);
+                            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error(e, "Unable to insert album contributors into db.");
+                        }
+                    }
+                    
                 }
 
                 var albumsToUpdate = (from a in melodeeAlbumsForDirectory
@@ -623,6 +603,8 @@ public class LibraryProcessJob(
                     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     _totalAlbumsUpdated += albumsToUpdate.Length;
                     UpdateDataMap();
+
+                   
                 }
 
                 //TODO
@@ -792,12 +774,12 @@ public class LibraryProcessJob(
         return false;
     }
 
-    private async Task<dbModels.Contributor[]> GetContributorsForSong(Song song, int artistId, int albumId, int songId, Instant now, CancellationToken token)
+    private async Task<dbModels.Contributor[]> GetContributorsForSong(Song song, int artistId, int albumId, int songId, CancellationToken token)
     {
         var dbContributorsToAdd = new List<dbModels.Contributor>();
         foreach (var contributorTag in ContributorMetaTagIdentifiers)
         {
-            var contributorForTag = await CreateContributorForSongAndTag(song, contributorTag, artistId, albumId, songId, now, null, null, null, token);
+            var contributorForTag = await CreateContributorForSongAndTag(song, contributorTag, artistId, albumId, songId, _now, null, null, token);
             if (contributorForTag != null)
             {
                 dbContributorsToAdd.Add(contributorForTag);
@@ -807,7 +789,7 @@ public class LibraryProcessJob(
         foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.InvariantCultureIgnoreCase)) ?? [])
         {
             var subRole = tmclTag.Value!.ToString()!.Substring(6).Trim();
-            var contributorForTag = await CreateContributorForSongAndTag(song, tmclTag.Identifier, artistId, albumId, songId, now, null, subRole, null, token);
+            var contributorForTag = await CreateContributorForSongAndTag(song, tmclTag.Identifier, artistId, albumId, songId, _now, subRole, null, token);
             if (contributorForTag != null)
             {
                 dbContributorsToAdd.Add(contributorForTag);
@@ -818,8 +800,8 @@ public class LibraryProcessJob(
         if (songPublisherTag != null)
         {
             var publisherName = songPublisherTag.Trim();
-            var publisherTag = await CreateContributorForSongAndTag(song, MetaTagIdentifier.Publisher, artistId, albumId, songId, now, null, null, publisherName, token);
-            if (publisherTag != null)
+            var publisherTag = await CreateContributorForSongAndTag(song, MetaTagIdentifier.Publisher, artistId, albumId, null, _now, null, publisherName, token);
+            if (publisherTag != null && dbContributorsToAdd.All(x => x.ContributorTypeValue != ContributorType.Publisher))
             {
                 dbContributorsToAdd.Add(publisherTag);
             }
@@ -833,9 +815,8 @@ public class LibraryProcessJob(
         MetaTagIdentifier tag,
         int dbArtist,
         int dbAlbumId,
-        int dbSongId,
+        int? dbSongId,
         Instant now,
-        string? role,
         string? subRole,
         string? contributorName,
         CancellationToken cancellationToken = default)
@@ -858,7 +839,7 @@ public class LibraryProcessJob(
                         ContributorType = DetermineContributorType(tag),
                         CreatedAt = now,
                         MetaTagIdentifier = SafeParser.ToNumber<int>(tag),
-                        Role = role?.CleanStringAsIs() ?? tag.GetEnumDescriptionValue(),
+                        Role = tag.GetEnumDescriptionValue(),
                         SongUniqueId = song.UniqueId,
                         SongId = dbSongId,
                         SubRole = subRole?.CleanStringAsIs()

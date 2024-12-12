@@ -1,4 +1,5 @@
 using Melodee.Common.Data.Contants;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic;
@@ -16,6 +17,36 @@ public static class AlbumExtensions
     
     public static string ToApiKey(this Album album) => $"album{OpenSubsonicServer.ApiIdSeparator }{album.ApiKey}";
 
+    public static RecordLabel[]? RecordLabels(this Album album)
+    {
+        if (album.Contributors.Any())
+        {
+            var publisher = album.Contributors.Where(x => x.ContributorTypeValue == ContributorType.Publisher).ToArray();
+            if(publisher.Length > 0)
+            {
+                return publisher.Select(x => new RecordLabel(x.ContributorName ?? throw new Exception("Album contributor of Publisher cannot have a null ContributorName"))).ToArray();
+            }
+        }
+        return null;
+    }
+    
+    public static ArtistID3[] ContributingArtists(this Album album)
+    {
+        var result = new List<ArtistID3>();
+        var songsWithContributors = album.Discs.SelectMany(x => x.Songs).Where(x => x.Contributors.Any()).ToArray();
+        if (songsWithContributors.Length > 0)
+        {
+            foreach (var song in songsWithContributors)
+            {
+                foreach (var artistContributor in song.Contributors.Where(x => x.ContributorTypeValue == ContributorType.Performer))
+                {
+                    result.Add(artistContributor.Artist!.ToApiArtistID3());
+                }
+            }
+        }
+        return result.ToArray();
+    }
+    
     public static AlbumID3 ToArtistID3(this Album album, UserAlbum? userAlbum, NowPlayingInfo? nowPlayingInfo)
     {
         return new AlbumID3
