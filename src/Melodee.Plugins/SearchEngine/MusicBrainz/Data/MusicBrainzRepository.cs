@@ -304,6 +304,10 @@ public class MusicBrainzRepository(
                 ReleaseTag[] releaseTags;
                 ReleaseGroup[] releaseGroups;
                 ReleaseGroupMeta[] releaseGroupMetas;
+                
+                LinkType[] linkTypes;
+                Link[] links;
+                LinkArtistToArtist[] linkArtistToArtists;
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release"))
                 {
@@ -371,6 +375,56 @@ public class MusicBrainzRepository(
                         DateDay = SafeParser.ToNumber<int>(parts[4])
                     }, cancellationToken).ConfigureAwait(false);
                 }
+                
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded link_type"))
+                {
+                    linkTypes = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link_type"), parts => new LinkType
+                    {
+                        Id = SafeParser.ToNumber<long>(parts[0]),
+                        ParentId = SafeParser.ToNumber<long>(parts[1]),
+                        ChildOrder = SafeParser.ToNumber<int>(parts[2]),
+                        MusicBrainzId = SafeParser.ToGuid(parts[3]) ?? Guid.Empty,
+                        EntityType0 = parts[4],
+                        EntityType1 = parts[5],
+                        Name = parts[6],
+                        Description = parts[7],
+                        LinkPhrase = parts[8],
+                        ReverseLinkPhrase = parts[9],
+                        HasDates = SafeParser.ToBoolean(parts[13]),
+                        Entity0Cardinality = SafeParser.ToNumber<int>(parts[14]),
+                        Entity1Cardinality = SafeParser.ToNumber<int>(parts[15]),
+                    }, cancellationToken).ConfigureAwait(false);
+                }           
+                
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded link"))
+                {
+                    links = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link"), parts => new Link
+                    {
+                        Id = SafeParser.ToNumber<long>(parts[0]),
+                        LinkTypeId = SafeParser.ToNumber<long>(parts[1]),
+                        BeginDateYear = SafeParser.ToNumber<int>(parts[2]),
+                        BeginDateMonth = SafeParser.ToNumber<int>(parts[3]),
+                        BeginDateDay = SafeParser.ToNumber<int>(parts[4]),
+                        EndDateYear = SafeParser.ToNumber<int>(parts[5]),
+                        EndDateMonth = SafeParser.ToNumber<int>(parts[6]),
+                        EndDateDay = SafeParser.ToNumber<int>(parts[7]),
+                        IsEnded = SafeParser.ToBoolean(parts[10])
+                    }, cancellationToken).ConfigureAwait(false);
+                }                
+                
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist link"))
+                {
+                    linkArtistToArtists = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/l_artist_artist"), parts => new LinkArtistToArtist
+                    {
+                        Id = SafeParser.ToNumber<long>(parts[0]),
+                        LinkId = SafeParser.ToNumber<long>(parts[1]),
+                        Artist0 = SafeParser.ToNumber<long>(parts[2]),
+                        Artist1 = SafeParser.ToNumber<long>(parts[3]),
+                        LinkOrder = SafeParser.ToNumber<int>(parts[6]),
+                        Artist0Credit = parts[7],
+                        Artist1Credit = parts[8],
+                    }, cancellationToken).ConfigureAwait(false);
+                }                  
 
                 // A dictionary of Artists in Melodee database using the MusicBrainz database Artist.Id as the key.
                 Dictionary<long, Models.Materialized.Artist> dbArtistDictionary;
