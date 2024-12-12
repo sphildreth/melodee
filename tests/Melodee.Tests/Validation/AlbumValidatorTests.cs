@@ -67,6 +67,7 @@ public class AlbumValidatorTests
                     Value = "1971"
                 }
             },
+            MusicBrainzId = "78F60545-4C64-4CD3-A810-89BAD2F5EAB4",
             Songs = new[]
             {
                 new Song

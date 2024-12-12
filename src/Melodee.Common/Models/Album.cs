@@ -107,9 +107,12 @@ public sealed record Album
 
         return this with { Songs = songs.ToArray(), Tags = albumTags!.ToArray() };
     }
-    
-    public static long GenerateUniqueId(long artistUniqueId, string? musicBrainzId, int? albumYear, string? albumTitle) 
-        => IdGenerator.CreateId;
+
+    public static long GenerateUniqueId(long artistUniqueId, string? musicBrainzId, int? albumYear, string? albumTitle)
+    {
+        return musicBrainzId == null ? IdGenerator.CreateId : SafeParser.Hash(musicBrainzId);
+    }
+        
     
     public override string ToString()
     {

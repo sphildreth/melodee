@@ -5,6 +5,7 @@ using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Enums;
 using Microsoft.CodeAnalysis.Host;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NodaTime;
 
 namespace Melodee.Common.Data;
@@ -16,6 +17,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<AlbumDisc> AlbumDiscs { get; set; }
 
     public DbSet<Artist> Artists { get; set; }
+    
+    public DbSet<ArtistRelation> ArtistRelation { get; set; }
 
     public DbSet<Bookmark> Bookmarks { get; set; }
     
@@ -788,6 +791,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         optionsBuilder.EnableSensitiveDataLogging();
     }
     

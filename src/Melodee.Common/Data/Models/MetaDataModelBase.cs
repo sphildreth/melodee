@@ -21,6 +21,8 @@ public abstract class MetaDataModelBase : DataModelBase
     public string? AmgId { get; set; }
 
     public string? DiscogsId { get; set; }
+    
+    public string? WikiDataId { get; set; }
 
     public Guid? MusicBrainzId { get; set; }
 
