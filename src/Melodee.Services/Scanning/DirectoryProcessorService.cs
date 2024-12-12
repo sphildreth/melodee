@@ -80,10 +80,10 @@ public sealed class DirectoryProcessorService(
 
         _albumValidator = new AlbumValidator(_configuration);
         _imageValidator = new ImageValidator(_configuration);
-        
+
         _songPlugins =
         [
-            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageValidator,  _configuration)
+            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageValidator, _configuration)
         ];
 
         _conversionPlugins =
@@ -91,7 +91,7 @@ public sealed class DirectoryProcessorService(
             new ImageConvertor(_configuration),
             new MediaConvertor(_configuration)
         ];
-        
+
         _directoryPlugins =
         [
             new CueSheet(serializer, _songPlugins, _configuration)
@@ -883,7 +883,7 @@ public sealed class DirectoryProcessorService(
 
             var fileInfo = new FileInfo(imageFile);
             var fileNameNormalized = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
-            var isArtistImage = fileNameNormalized.Contains(album.Artist.NameNormalized, StringComparison.InvariantCultureIgnoreCase);
+            var isArtistImage = fileNameNormalized.Contains(album.Artist.NameNormalized, StringComparison.OrdinalIgnoreCase);
             if (isArtistImage || ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
             {
                 if (!(await imageValidator.ValidateImage(fileInfo, cancellationToken)).Data.IsValid)
@@ -951,8 +951,8 @@ public sealed class DirectoryProcessorService(
                 var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);
                 var artistNormalized = album.Artist.NameNormalized;
                 var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;
-                var isAlbumImage = fileNameNormalized.Contains(artistNormalized, StringComparison.InvariantCultureIgnoreCase) &&
-                                   fileNameNormalized.Contains(albumNameNormalized, StringComparison.InvariantCultureIgnoreCase);
+                var isAlbumImage = fileNameNormalized.Contains(artistNormalized, StringComparison.OrdinalIgnoreCase) &&
+                                   fileNameNormalized.Contains(albumNameNormalized, StringComparison.OrdinalIgnoreCase);
                 if (isAlbumImage ||
                     ImageHelper.IsAlbumImage(fileInfo) ||
                     ImageHelper.IsAlbumSecondaryImage(fileInfo))

@@ -63,7 +63,7 @@ public class OpenSubsonicApiService(
     ILibraryService libraryService,
     ArtistSearchEngineService artistSearchEngineService,
     IEventPublisher<UserLoginEvent> userEventPublisher
-    )
+)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
@@ -712,7 +712,7 @@ public class OpenSubsonicApiService(
                 AlbumDate = album.ReleaseDate.ToItemDate(),
                 Artist = album.Artist.Name,
                 ArtistId = album.Artist.ToApiKey(),
-                Artists =  album.ContributingArtists(),
+                Artists = album.ContributingArtists(),
                 CoverArt = album.ToApiKey(),
                 Created = album.CreatedAt.ToString(),
                 DiscTitles = album.Discs.Select(x => new DiscTitle(x.DiscNumber, x.Title ?? string.Empty)).ToArray(),
@@ -843,6 +843,7 @@ public class OpenSubsonicApiService(
                             return await File.ReadAllBytesAsync(userAvatarFilename, cancellationToken).ConfigureAwait(false);
                         }
                     }
+
                     return null;
                 }
             }, cancellationToken).ConfigureAwait(false);
@@ -1184,7 +1185,7 @@ public class OpenSubsonicApiService(
                     if (authUsingToken)
                     {
                         var userMd5 = HashHelper.CreateMd5($"{usersPassword}{apiRequest.Salt}");
-                        isAuthenticated = string.Equals(userMd5, apiRequest.Token, StringComparison.InvariantCultureIgnoreCase);
+                        isAuthenticated = string.Equals(userMd5, apiRequest.Token, StringComparison.OrdinalIgnoreCase);
                     }
                     else
                     {
@@ -1837,11 +1838,6 @@ public class OpenSubsonicApiService(
             libraryId = library?.Id ?? 0;
             lastModified = library?.LastUpdatedAt.ToString() ?? string.Empty;
         }
-
-        //TODO looks like these are values removed from sortName when sorting
-        // see https://github.com/navidrome/navidrome/blob/9ae898d071e32cf56261f3b13a639fd01092c201/utils/str/sanitize_strings.go#L52
-        var ignoredArticles = (await Configuration.Value).GetValue<string>(SettingRegistry.ProcessingIgnoredArticles) ?? string.Empty;
-
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -1857,6 +1853,8 @@ public class OpenSubsonicApiService(
                       """;
             var indexes = await dbConn.QueryAsync<DatabaseDirectoryInfo>(sql, new { libraryId, modifiedSince = ifModifiedSince ?? 0, userId = authResponse.UserInfo.Id }).ConfigureAwait(false);
 
+            var configuration = (await Configuration.Value);
+            
             var artists = new List<ArtistIndex>();
             foreach (var grouped in indexes.GroupBy(x => x.Index))
             {
@@ -1869,14 +1867,18 @@ public class OpenSubsonicApiService(
                         info.UserRatingValue,
                         info.CalculatedRating,
                         info.CoverArt,
-                        "Url", // TODO ?
+                        configuration.GetBuildImageUrl(info.CoverArt, ImageSize.Large),
                         info.UserStarred?.ToString()));
                 }
 
                 artists.Add(new ArtistIndex(grouped.Key, aa.Take(indexLimit).ToArray()));
             }
 
-            data = new Indexes(ignoredArticles, lastModified, [], artists.ToArray(), []);
+            data = new Indexes(
+                (await Configuration.Value).GetValue<string>(SettingRegistry.ProcessingIgnoredArticles) ?? string.Empty, lastModified,
+                [],
+                artists.ToArray(),
+                []);
         }
 
         return new ResponseModel
@@ -1938,6 +1940,7 @@ public class OpenSubsonicApiService(
             var artistInfo = await DatabaseArtistInfoForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false);
             if (artistInfo != null)
             {
+                var configuration = (await Configuration.Value);
                 data = new Artist(
                     id,
                     artistInfo.Name,
@@ -1945,7 +1948,7 @@ public class OpenSubsonicApiService(
                     artistInfo.UserRating,
                     artistInfo.CalculatedRating,
                     artistInfo.CoverArt,
-                    "Url", // TODO ?
+                    configuration.GetBuildImageUrl(id, ImageSize.Large),
                     artistInfo.UserStarred?.ToString(),
                     await AlbumListForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false));
             }

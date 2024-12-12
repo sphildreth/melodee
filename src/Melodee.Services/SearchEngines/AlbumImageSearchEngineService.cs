@@ -21,7 +21,7 @@ public class AlbumImageSearchEngineService(
     ISerializer serializer,
     ISettingService settingService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    MusicBrainzRepository musicBrainzRepository,    
+    MusicBrainzRepository musicBrainzRepository,
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {

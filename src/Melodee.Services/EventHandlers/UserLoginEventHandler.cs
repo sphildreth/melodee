@@ -28,7 +28,7 @@ public sealed class UserLoginEventHandler(
                         .Where(x => x.Id == eventData.UserId)
                         .ExecuteUpdateAsync(setters =>
                             setters.SetProperty(x => x.LastActivityAt, now)
-                                   .SetProperty(x => x.LastLoginAt, now), cancellationToken).ConfigureAwait(false);
+                                .SetProperty(x => x.LastLoginAt, now), cancellationToken).ConfigureAwait(false);
                 }
             }
         }

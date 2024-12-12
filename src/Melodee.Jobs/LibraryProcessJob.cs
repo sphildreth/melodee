@@ -413,7 +413,7 @@ public class LibraryProcessJob(
                             OriginalReleaseDate = melodeeAlbum.OriginalAlbumYear() == null ? null : new LocalDate(melodeeAlbum.OriginalAlbumYear()!.Value, 1, 1),
                             ReleaseDate = new LocalDate(melodeeAlbum.AlbumYear() ?? throw new Exception("Album year is required."), 1, 1),
                             SongCount = SafeParser.ToNumber<short>(melodeeAlbum.Songs?.Count() ?? 0),
-                            SortName = albumTitle.CleanString(true)
+                            SortName = _configuration.RemoveUnwantedArticles(albumTitle.CleanString(true))
                         };
                         for (short i = 1; i <= melodeeAlbum.MediaCountValue(); i++)
                         {
@@ -786,7 +786,7 @@ public class LibraryProcessJob(
             }
         }
 
-        foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.InvariantCultureIgnoreCase)) ?? [])
+        foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.OrdinalIgnoreCase)) ?? [])
         {
             var subRole = tmclTag.Value!.ToString()!.Substring(6).Trim();
             var contributorForTag = await CreateContributorForSongAndTag(song, tmclTag.Identifier, artistId, albumId, songId, _now, subRole, null, token);

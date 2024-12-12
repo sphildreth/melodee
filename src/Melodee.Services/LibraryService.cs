@@ -478,9 +478,9 @@ public sealed class LibraryService(
         }
 
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
-        
+
         var imageValidator = new ImageValidator(configuration);
-        
+
         ISongPlugin[] songPlugins =
         [
             new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageValidator, configuration)

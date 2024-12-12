@@ -21,6 +21,27 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
     
     public static int BatchSizeMaximum = 1000;
 
+    public string? RemoveUnwantedArticles(string? input)
+    {
+        if (input == null)
+        {
+            return null;
+        }
+        var ignoredArticles = GetValue<string>(SettingRegistry.ProcessingIgnoredArticles);
+        if (ignoredArticles.Nullify() != null)
+        {
+            foreach (var ignoredArticle in ignoredArticles!.ToTags() ?? [])
+            {
+                var ia = $"{ignoredArticle} ";
+                if (input.StartsWith(ia, StringComparison.OrdinalIgnoreCase))
+                {
+                    input = input.Replace(ia, string.Empty, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+        }
+        return input.Nullify();
+    }
+
     public string GetBuildImageUrl(string apiKey, ImageSize imageSize)
     {
         var baseUrl = GetValue<string>(SettingRegistry.SystemBaseUrl);

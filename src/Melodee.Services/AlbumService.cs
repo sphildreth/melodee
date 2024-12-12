@@ -25,7 +25,7 @@ public class AlbumService(
     public async Task ClearCacheAsync(int albumId, CancellationToken cancellationToken = default)
     {
         var album = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);
-        if (album?.Data != null)
+        if (album.Data != null)
         {
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey));
             CacheManager.Remove(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(album.Data.MediaUniqueId));
@@ -130,9 +130,8 @@ public class AlbumService(
                 return await scopedContext
                     .Albums
                     .Include(x => x.Artist)
-                    .Include(x => x.Discs)
-                    .ThenInclude(x => x.Songs)
-                    .ThenInclude(x => x.Contributors).ThenInclude(x => x.Artist)
+                    .Include(x => x.Contributors).ThenInclude(x => x.Artist)
+                    .Include(x => x.Discs).ThenInclude(x => x.Songs).ThenInclude(x => x.Contributors).ThenInclude(x => x.Artist)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                     .ConfigureAwait(false);
@@ -146,7 +145,7 @@ public class AlbumService(
 
     public async Task<MelodeeModels.OperationResult<Album?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+        Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {

@@ -34,12 +34,12 @@ public sealed class MediaEditService(
     ISerializer serializer,
     IHttpClientFactory httpClientFactory) : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private string _directoryLibrary = null!;
 
     private ISongPlugin _editSongPlugin = new NullSongPlugin();
+    private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private bool _initialized;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)

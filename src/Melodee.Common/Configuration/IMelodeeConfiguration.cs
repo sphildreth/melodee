@@ -8,6 +8,8 @@ public interface IMelodeeConfiguration
     
     T? GetValue<T>(string key, Func<T?, T>? returnValue = null);
 
+    string? RemoveUnwantedArticles(string? input);
+
     int BatchProcessingSize();
 
     void SetSetting<T>(string key, T? value);

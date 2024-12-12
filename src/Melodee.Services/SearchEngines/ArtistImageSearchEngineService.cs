@@ -4,8 +4,6 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.SearchEngine;
-using Melodee.Plugins.SearchEngine.MusicBrainz;
-using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;

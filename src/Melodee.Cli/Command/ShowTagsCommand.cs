@@ -77,7 +77,7 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
                 foreach (var tag in settings.OnlyTags!.Split(','))
                 {
                     var t = tag.ToNormalizedString() ?? string.Empty;
-                    var value = tagResult.Data?.Tags?.FirstOrDefault(x => x.IdentifierDescription.ToNormalizedString()?.Contains(t, StringComparison.InvariantCultureIgnoreCase) ?? false)?.Value;
+                    var value = tagResult.Data?.Tags?.FirstOrDefault(x => x.IdentifierDescription.ToNormalizedString()?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false)?.Value;
                     onlyTags.TryAdd(t, value);
                 }
 
