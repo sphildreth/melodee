@@ -9,11 +9,11 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 /// </summary>
 public sealed record Release
 {
-    public bool IsValid => MusicBrainzId != Guid.Empty && Name.Nullify() != null;
+    public bool IsValid => MusicBrainzId.Nullify() != null && Name.Nullify() != null;
 
     public long Id { get; init; }
 
-    public required Guid MusicBrainzId { get; init; }
+    public required string MusicBrainzId { get; init; }
 
     public required string Name { get; init; }
 

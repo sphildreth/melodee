@@ -25,14 +25,14 @@ public class ArtistHousekeepingJob(
     ArtistService artistService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ArtistImageSearchEngineService imageSearchEngine,
-    IHttpClientFactory httpClientFactory,
-    IImageValidator imageValidator) : JobBase(logger, configurationFactory)
+    IHttpClientFactory httpClientFactory) : JobBase(logger, configurationFactory)
 {
     public override async Task Execute(IJobExecutionContext context)
     {
         var configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
         var httpClient = httpClientFactory.CreateClient();
+        var imageValidator = new ImageValidator(configuration);
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(context.CancellationToken))
         {
             var readyToProcessStatus = SafeParser.ToNumber<int>(MetaDataModelStatus.ReadyToProcess);

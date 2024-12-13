@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Enums;
 using ServiceStack.DataAnnotations;
@@ -29,9 +30,13 @@ public sealed record Album
                                            ReleaseTypeValue != Enums.ReleaseType.Single &&
                                            ReleaseTypeValue != Enums.ReleaseType.Broadcast;
 
-    [Index] public required Guid MusicBrainzId { get; init; }
+    [Index] public required string MusicBrainzIdRaw { get; init; }
 
-    public required Guid ReleaseGroupMusicBrainzId { get; init; }
+    [NotMapped] public Guid MusicBrainzId => SafeParser.ToGuid(MusicBrainzIdRaw) ?? Guid.Empty;
+
+    public required string ReleaseGroupMusicBrainzIdRaw { get; init; }
+    
+    [NotMapped] public Guid ReleaseGroupMusicBrainzId => SafeParser.ToGuid(ReleaseGroupMusicBrainzIdRaw) ?? Guid.Empty;
 
     public required DateTime ReleaseDate { get; init; }
 

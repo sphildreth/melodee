@@ -45,7 +45,6 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
         try
         {
             var imageInfo = await Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
-            //var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
             if (imageInfo.Width != imageInfo.Height)
             {
                 _validationMessages.Add(new ValidationResultMessage

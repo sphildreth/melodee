@@ -54,9 +54,9 @@
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.1" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.13.1" />
     <PackageVersion Include="Serilog" Version="4.2.0" />
-    <PackageVersion Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Settings.AppSettings" Version="3.0.0" />
-    <PackageVersion Include="Serilog.Settings.Configuration" Version="8.0.4" />
+    <PackageVersion Include="Serilog.Settings.Configuration" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.SQLite" Version="6.0.0" />
@@ -70,7 +70,7 @@
     <PackageVersion Include="Spectre.Console.Cli" Version="0.49.1" />
     <PackageVersion Include="Spectre.Console.Json" Version="0.49.1" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
-    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.5.0" />
+    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.5.1" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
     <PackageVersion Include="Toolbelt.Blazor.HotKeys2" Version="5.1.0" />

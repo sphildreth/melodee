@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
 using ServiceStack.DataAnnotations;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized;
@@ -23,9 +25,12 @@ public sealed record Artist
 
     [Index(false)] public required string NameNormalized { get; init; }
 
-    [Index] public required Guid MusicBrainzId { get; init; }
+    [Index] public required string MusicBrainzIdRaw { get; init; }
+
+    [NotMapped] public Guid MusicBrainzId => SafeParser.ToGuid(MusicBrainzIdRaw) ?? Guid.Empty;
 
     [Index(false)] public string? AlternateNames { get; init; }
 
+    [NotMapped]
     public string[] AlternateNamesValues => _alternateNames ??= AlternateNames?.ToTags()?.ToArray() ?? [];
 }

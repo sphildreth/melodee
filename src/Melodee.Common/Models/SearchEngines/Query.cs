@@ -12,6 +12,8 @@ public record Query
     public string NameReversed => string.Join(string.Empty, Name.Split(' ').Reverse()).ToNormalizedString() ?? Name;
     
     public string NameNormalized => Name.ToNormalizedString() ?? Name;
+    
+    public string QueryNameNormalizedValue => NameNormalized.Nullify() == null ? string.Empty : $"%{NameNormalized}%";
 
     public Guid? MusicBrainzIdValue => SafeParser.ToGuid(MusicBrainzId);
     

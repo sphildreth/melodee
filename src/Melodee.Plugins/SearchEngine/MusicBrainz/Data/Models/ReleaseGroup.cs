@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Enums;
 
@@ -13,7 +14,10 @@ public sealed record ReleaseGroup
 
     public int ReleaseType { get; init; }
 
-    public Guid MusicBrainzId { get; init; }
+    public required string MusicBrainzIdRaw { get; init; }
+
+    [NotMapped]
+    public Guid MusicBrainzId => Guid.Parse(MusicBrainzIdRaw);
 
     public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);
 }
