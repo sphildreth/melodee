@@ -626,6 +626,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },                
                 new Setting
                 {
+                    Id = 909,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineLastFmEnabled,
+                    Comment = "Use Last FM search engine to find images for albums and artists.",
+                    Value = "false",
+                    CreatedAt = now
+                },                
+                new Setting
+                {
                     Id = 400,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingDoLoadEmbeddedImages,
@@ -747,10 +756,19 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1002,
                     Category = (int)SettingCategory.Scrobbling,
                     Key = SettingRegistry.ScrobblingLastFmApiKey,
-                    Comment = "ApiKey used to scrobble to last FM. See https://www.last.fm/api/authentication for more details.",
+                    Comment = "ApiKey used used with last FM. See https://www.last.fm/api/authentication for more details.",
                     Value = "",
                     CreatedAt = now
                 },
+                new Setting
+                {
+                    Id = 1003,
+                    Category = (int)SettingCategory.Scrobbling,
+                    Key = SettingRegistry.ScrobblingLastFmSharedSecret,
+                    Comment = "Shared secret used with last FM. See https://www.last.fm/api/authentication for more details.",
+                    Value = "",
+                    CreatedAt = now
+                },                
                 new Setting
                 {
                     Id = 1100,

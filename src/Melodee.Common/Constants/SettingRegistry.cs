@@ -59,10 +59,12 @@ public static class SettingRegistry
     public const string ScriptingPreDiscoveryScript = "scripting.preDiscoveryScript";
     public const string ScrobblingEnabled = "scrobbling.enabled";
     public const string ScrobblingLastFmApiKey = "scrobbling.lastFm.apikey";
+    public const string ScrobblingLastFmSharedSecret = "scrobbling.lastFm.sharedSecret";
     public const string ScrobblingLastFmEnabled = "scrobbling.lastFm.Enabled";
     public const string SearchEngineBingImageApiKey = "searchEngine.bingImage.apiKey";
     public const string SearchEngineBingImageEnabled = "searchEngine.bingImage.enabled";
     public const string SearchEngineDefaultPageSize = "searchEngine.defaultPageSize";
+    public const string SearchEngineLastFmEnabled = "searchEngine.lastFm.enabled";    
     public const string SearchEngineMusicBrainzEnabled = "searchEngine.musicbrainz.enabled";
     public const string SearchEngineMusicBrainzImportMaximumToProcess = "searchEngine.musicbrainz.importMaximumToProcess";
     public const string SearchEngineMusicBrainzImportBatchSize = "searchEngine.musicbrainz.importBatchSize";

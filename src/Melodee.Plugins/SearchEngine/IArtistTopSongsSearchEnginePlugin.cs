@@ -8,5 +8,5 @@ namespace Melodee.Plugins.SearchEngine;
 /// </summary>
 public interface IArtistTopSongsSearchEnginePlugin : IPlugin
 {
-    Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(IHttpClientFactory httpClientFactory, int forArtist, int maxResults, CancellationToken cancellationToken = default);
+    Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(int forArtist, int maxResults, CancellationToken cancellationToken = default);
 }

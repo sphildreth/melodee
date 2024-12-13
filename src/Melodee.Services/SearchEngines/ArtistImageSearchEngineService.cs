@@ -4,6 +4,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.SearchEngine;
+using Melodee.Plugins.SearchEngine.LastFm;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -30,6 +31,10 @@ public class ArtistImageSearchEngineService(
 
         var searchEngines = new List<IArtistImageSearchEnginePlugin>
         {
+            new LastFm(configuration, serializer, httpClientFactory)
+            {
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineLastFmEnabled)
+            },            
             new BingAlbumImageSearchEngine(configuration, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled)

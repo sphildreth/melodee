@@ -1,5 +1,4 @@
 using Melodee.Common.Extensions;
-using ServiceStack.DataAnnotations;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 
@@ -19,7 +18,7 @@ public sealed record Release
     public required string Name { get; init; }
 
     public string? NameNormalized { get; init; }
-    
+
     public required long ReleaseGroupId { get; init; }
 
     public string? SortName { get; init; }

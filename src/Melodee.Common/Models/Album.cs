@@ -110,7 +110,7 @@ public sealed record Album
 
     public static long GenerateUniqueId(long artistUniqueId, string? musicBrainzId, int? albumYear, string? albumTitle)
     {
-        return musicBrainzId == null ? IdGenerator.CreateId : SafeParser.Hash(musicBrainzId);
+        return musicBrainzId == null ? SafeParser.Hash(artistUniqueId.ToString(), albumYear.ToString(), albumTitle) : SafeParser.Hash(musicBrainzId);
     }
         
     

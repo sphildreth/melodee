@@ -48,6 +48,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration
                         Data = null
                     };
                 }
+
                 result.Add(new ImageSearchResult
                 {
                     FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),

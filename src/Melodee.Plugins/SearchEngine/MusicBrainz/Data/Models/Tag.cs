@@ -1,5 +1,4 @@
 using Melodee.Common.Extensions;
-using ServiceStack.DataAnnotations;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 

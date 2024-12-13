@@ -48,4 +48,9 @@ public sealed record ArtistSearchResult
 
     /// <summary>Collection of releases for artist</summary>
     public AlbumSearchResult[]? Releases { get; init; }
+
+    /// <summary>
+    /// Similar Artists
+    /// </summary>
+    public ArtistSearchInfoResult[]? SimilarArtists { get; init; }
 }

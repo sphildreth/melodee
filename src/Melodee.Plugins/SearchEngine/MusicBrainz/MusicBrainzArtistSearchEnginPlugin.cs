@@ -10,13 +10,13 @@ public class MusicBrainzArtistSearchEnginPlugin(MusicBrainzRepository repository
 
     public string Id => "018A798D-7B68-4F3E-80CD-1BAF03998C0B";
 
-    public string DisplayName => "Melodee Database";
+    public string DisplayName => "Music Brainz Database";
 
     public bool IsEnabled { get; set; } = true;
 
     public int SortOrder { get; } = 1;
 
-    public Task<PagedResult<ArtistSearchResult>> DoSearchAsync(IHttpClientFactory httpClientFactory, ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         return repository.SearchArtist(query, maxResults, cancellationToken);
     }

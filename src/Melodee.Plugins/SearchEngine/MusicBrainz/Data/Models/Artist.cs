@@ -1,8 +1,6 @@
-using System.Text.Json.Serialization;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Enums;
-using ServiceStack.DataAnnotations;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 
@@ -20,7 +18,7 @@ public sealed record Artist
     public required string Name { get; init; }
 
     public required string NameNormalized { get; init; }
-    
+
     public int ArtistType { get; init; }
     public ArtistType ArtistTypeValue => SafeParser.ToEnum<ArtistType>(ArtistType);
 

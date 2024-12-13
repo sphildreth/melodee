@@ -17,9 +17,9 @@ using Serilog;
 namespace Melodee.Jobs;
 
 /// <summary>
-/// Housekeeping for Artist Images
+/// Housekeeping for Artist
 /// </summary>
-public class ArtistImageJob(
+public class ArtistHousekeepingJob(
     ILogger logger,
     IMelodeeConfigurationFactory configurationFactory,
     ArtistService artistService,

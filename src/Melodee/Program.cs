@@ -143,10 +143,10 @@ builder.Services.AddQuartz(q =>
         .WithCronSchedule("0 0 1 * * ?") // Once a month, at 00:00
     );        
     
-    q.AddJob<ArtistImageJob>(opts => opts.WithIdentity(JobKeyRegistry.ArtistImageJobKey));
+    q.AddJob<ArtistHousekeepingJob>(opts => opts.WithIdentity(JobKeyRegistry.ArtistHousekeepingJobJobKey));
     q.AddTrigger(opts => opts
-            .ForJob(JobKeyRegistry.ArtistImageJobKey)
-            .WithIdentity("ArtistImageJobKey-trigger")
+            .ForJob(JobKeyRegistry.ArtistHousekeepingJobJobKey)
+            .WithIdentity("ArtistHousekeepingJobJobKey-trigger")
             .WithCronSchedule("0 * * * * ?") // Every hour
     );      
     

@@ -1,5 +1,3 @@
-using ServiceStack.DataAnnotations;
-
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 
 public sealed record ArtistCredit

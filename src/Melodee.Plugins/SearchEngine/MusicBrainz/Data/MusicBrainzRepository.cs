@@ -1,4 +1,3 @@
-using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using Melodee.Common.Configuration;
@@ -9,19 +8,16 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
-using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Enums;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
+using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
-using ServiceStack;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
-using ServiceStack.OrmLite.Dapper;
 using Album = Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized.Album;
 using Artist = Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Artist;
-using StringExtensions = Melodee.Common.Extensions.StringExtensions;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 
@@ -34,6 +30,8 @@ using Release = Release;
 /// <summary>
 ///     SQLite backend database created from MusicBrainz data dumps.
 ///     <remarks>
+///         Worth noting the Service Stack ORM documentation says to 'always use synchronous APIs for SQLite';
+///         https://docs.servicestack.net/ormlite/scalable-sqlite#always-use-synchronous-apis-for-sqlite
 ///         See https://metabrainz.org/datasets/postgres-dumps#musicbrainz
 ///     </remarks>
 /// </summary>
@@ -64,7 +62,7 @@ public class MusicBrainzRepository(
     {
         using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
         {
-            return await db.SingleAsync<Album>(x => x.MusicBrainzId == musicBrainzId, token: cancellationToken).ConfigureAwait(false);
+            return db.Single<Album>(x => x.MusicBrainzId == musicBrainzId);
         }
     }
 
@@ -82,21 +80,19 @@ public class MusicBrainzRepository(
                 if (artist != null)
                 {
                     totalCount = 1;
-                    List<Models.Materialized.Album> allArtistAlbums = await db
-                        .SelectAsync<Models.Materialized.Album>(x => x.ArtistId == artist.Id, token: cancellationToken)
-                        .ConfigureAwait(false) ?? [];
+                    List<Album> allArtistAlbums = db.Select<Album>(x => x.ArtistId == artist.Id) ?? [];
 
                     var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(xx => xx.ReleaseDate).FirstOrDefault()).ToArray();
 
                     if (query.AlbumKeyValues != null)
                     {
                         artistAlbums = artistAlbums
-                            .Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() || 
-                                                                                                x.NameNormalized.Contains(xx.Value ?? string.Empty)))
+                            .Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() ||
+                                                                       x.NameNormalized.Contains(xx.Value ?? string.Empty)))
                             .ToArray();
                     }
 
-                    data.Add(new ArtistSearchResult 
+                    data.Add(new ArtistSearchResult
                     {
                         AlternateNames = artist.AlternateNames?.ToTags()?.ToArray() ?? [],
                         FromPlugin = nameof(MusicBrainzArtistSearchEnginPlugin),
@@ -122,7 +118,7 @@ public class MusicBrainzRepository(
 
             if (data.Count == 0)
             {
-                var artists = await db.SelectAsync<Models.Materialized.Artist>(x => x.NameNormalized.Contains(query.NameNormalized) || x.AlternateNames != null && x.AlternateNames.Contains(query.NameNormalized), token: cancellationToken).ConfigureAwait(false);
+                var artists = db.Select<Models.Materialized.Artist>(x => x.NameNormalized.Contains(query.NameNormalized) || (x.AlternateNames != null && x.AlternateNames.Contains(query.NameNormalized)));
                 foreach (var artist in artists)
                 {
                     var rank = artist.NameNormalized == query.NameNormalized ? 10 : 1;
@@ -130,29 +126,29 @@ public class MusicBrainzRepository(
                     {
                         rank++;
                     }
+
                     if (artist.AlternateNamesValues.Contains(query.Name.CleanString().ToNormalizedString()))
                     {
                         rank++;
                     }
+
                     if (artist.AlternateNamesValues.Contains(query.NameReversed))
                     {
                         rank++;
-                    }                   
-                    
-                    List<Models.Materialized.Album> allArtistAlbums = await db
-                        .SelectAsync<Models.Materialized.Album>(x => x.ArtistId == artist.Id, token: cancellationToken)
-                        .ConfigureAwait(false) ?? [];
+                    }
+
+                    List<Album> allArtistAlbums = db.Select<Album>(x => x.ArtistId == artist.Id) ?? [];
 
                     var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(x => x.ReleaseDate).FirstOrDefault()).ToArray();
 
                     if (query.AlbumKeyValues != null)
                     {
-                        artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() || 
-                                                                                              x.NameNormalized.Equals(xx.Value ?? string.Empty) || 
+                        artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() ||
+                                                                                              x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
                                                                                               x.NameNormalized.Contains(xx.Value ?? string.Empty))).ToArray();
                         rank += artistAlbums.Length;
                     }
-                    
+
                     data.Add(new ArtistSearchResult
                     {
                         AlternateNames = artist.AlternateNames?.ToTags()?.ToArray() ?? [],
@@ -221,6 +217,11 @@ public class MusicBrainzRepository(
                 ArtistCredit[] artistCredits;
                 ArtistCreditName[] artistCreditNames;
                 ArtistAlias[] artistAliases;
+
+                LinkType[] linkTypes;
+                Link[] links;
+                LinkArtistToArtist[] linkArtistToArtists;
+
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artists"))
                 {
                     artists = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist"), parts => new Artist
@@ -268,6 +269,58 @@ public class MusicBrainzRepository(
                     }, cancellationToken).ConfigureAwait(false);
                 }
 
+
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded link_type"))
+                {
+                    linkTypes = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link_type"), parts => new LinkType
+                    {
+                        Id = SafeParser.ToNumber<long>(parts[0]),
+                        ParentId = SafeParser.ToNumber<long>(parts[1]),
+                        ChildOrder = SafeParser.ToNumber<int>(parts[2]),
+                        MusicBrainzId = SafeParser.ToGuid(parts[3]) ?? Guid.Empty,
+                        EntityType0 = parts[4],
+                        EntityType1 = parts[5],
+                        Name = parts[6],
+                        Description = parts[7],
+                        LinkPhrase = parts[8],
+                        ReverseLinkPhrase = parts[9],
+                        HasDates = SafeParser.ToBoolean(parts[13]),
+                        Entity0Cardinality = SafeParser.ToNumber<int>(parts[14]),
+                        Entity1Cardinality = SafeParser.ToNumber<int>(parts[15])
+                    }, cancellationToken).ConfigureAwait(false);
+                }
+
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded link"))
+                {
+                    links = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link"), parts => new Link
+                    {
+                        Id = SafeParser.ToNumber<long>(parts[0]),
+                        LinkTypeId = SafeParser.ToNumber<long>(parts[1]),
+                        BeginDateYear = SafeParser.ToNumber<int?>(parts[2]),
+                        BeginDateMonth = SafeParser.ToNumber<int?>(parts[3]),
+                        BeginDateDay = SafeParser.ToNumber<int?>(parts[4]),
+                        EndDateYear = SafeParser.ToNumber<int?>(parts[5]),
+                        EndDateMonth = SafeParser.ToNumber<int?>(parts[6]),
+                        EndDateDay = SafeParser.ToNumber<int?>(parts[7]),
+                        IsEnded = SafeParser.ToBoolean(parts[10])
+                    }, cancellationToken).ConfigureAwait(false);
+                }
+
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist link"))
+                {
+                    linkArtistToArtists = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/l_artist_artist"), parts => new LinkArtistToArtist
+                    {
+                        Id = SafeParser.ToNumber<long>(parts[0]),
+                        LinkId = SafeParser.ToNumber<long>(parts[1]),
+                        Artist0 = SafeParser.ToNumber<long>(parts[2]),
+                        Artist1 = SafeParser.ToNumber<long>(parts[3]),
+                        LinkOrder = SafeParser.ToNumber<int>(parts[6]),
+                        Artist0Credit = parts[7],
+                        Artist1Credit = parts[8]
+                    }, cancellationToken).ConfigureAwait(false);
+                }
+
+
                 db.CreateTable<Models.Materialized.Artist>();
                 var artistsToInsert = new List<Models.Materialized.Artist>();
                 var artistAliasDictionary = artistAliases.GroupBy(x => x.ArtistId).ToDictionary(x => x.Key, x => x.ToArray());
@@ -286,7 +339,7 @@ public class MusicBrainzRepository(
                     });
                     if (artistsToInsert.Count >= batchSize || artist == artists.Last())
                     {
-                        await db.InsertAllAsync(artistsToInsert, token: cancellationToken).ConfigureAwait(false);
+                        db.InsertAll(artistsToInsert);
                         artistCountInserted += artistsToInsert.Count;
                         artistsToInsert.Clear();
                         logger.Debug("MusicBrainzRepository: ImportData: inserted [{NumberInserted}] of [{NumberToInsert}]", artistCountInserted, artists.Length);
@@ -298,16 +351,56 @@ public class MusicBrainzRepository(
                     }
                 }
 
+                // A dictionary of Artists in Melodee database using the MusicBrainz database Artist.Id as the key.
+                Dictionary<long, Models.Materialized.Artist> dbArtistDictionary;
+                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist from database"))
+                {
+                    dbArtistDictionary = db.Select<Models.Materialized.Artist>(x => x.Id > 0)
+                        .ToDictionary(x => x.MusicBrainzArtistId, x => x);
+                }
+
+                var artistLinks = linkArtistToArtists.GroupBy(x => x.Artist0).ToDictionary(x => x.Key, x => x.ToArray());
+                var associatedArtistRelationType = SafeParser.ToNumber<int>(ArtistRelationType.Associated);
+                var artistRelationsToInsert = new List<ArtistRelation>();
+                foreach (var artistLink in artistLinks)
+                {
+                    if (dbArtistDictionary.TryGetValue(artistLink.Key, out var dbArtist))
+                    {
+                        foreach (var artistLinkRelation in artistLink.Value)
+                        {
+                            if (dbArtistDictionary.TryGetValue(artistLinkRelation.Artist1, out var dbLinkedArtist))
+                            {
+                                var link = links.FirstOrDefault(x => x.Id == artistLink.Key);
+                                var linkType = linkTypes.FirstOrDefault(x => x.Id == artistLinkRelation.LinkId);
+                                if (linkType != null && link != null)
+                                {
+                                    artistRelationsToInsert.Add(new ArtistRelation
+                                    {
+                                        ArtistId = dbArtist.Id,
+                                        RelatedArtistId = dbLinkedArtist.Id,
+                                        ArtistRelationType = associatedArtistRelationType,
+                                        SortOrder = artistLinkRelation.LinkOrder,
+                                        RelationStart = link.BeginDate,
+                                        RelationEnd = link.EndDate
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (artistRelationsToInsert.Count > 0)
+                {
+                    db.InsertAll(artistRelationsToInsert);
+                }
+
                 Release[] releases;
                 ReleaseCountry[] releasesCountries;
                 Tag[] tags;
                 ReleaseTag[] releaseTags;
                 ReleaseGroup[] releaseGroups;
                 ReleaseGroupMeta[] releaseGroupMetas;
-                
-                LinkType[] linkTypes;
-                Link[] links;
-                LinkArtistToArtist[] linkArtistToArtists;
+
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release"))
                 {
@@ -319,7 +412,7 @@ public class MusicBrainzRepository(
                         Name = parts[2],
                         NameNormalized = parts[2].ToNormalizedString() ?? parts[2],
                         SortName = parts[2].CleanString(true),
-                        ReleaseGroupId = SafeParser.ToNumber<long>(parts[4]),
+                        ReleaseGroupId = SafeParser.ToNumber<long>(parts[4])
                     }, cancellationToken).ConfigureAwait(false);
                 }
 
@@ -375,67 +468,9 @@ public class MusicBrainzRepository(
                         DateDay = SafeParser.ToNumber<int>(parts[4])
                     }, cancellationToken).ConfigureAwait(false);
                 }
-                
-                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded link_type"))
-                {
-                    linkTypes = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link_type"), parts => new LinkType
-                    {
-                        Id = SafeParser.ToNumber<long>(parts[0]),
-                        ParentId = SafeParser.ToNumber<long>(parts[1]),
-                        ChildOrder = SafeParser.ToNumber<int>(parts[2]),
-                        MusicBrainzId = SafeParser.ToGuid(parts[3]) ?? Guid.Empty,
-                        EntityType0 = parts[4],
-                        EntityType1 = parts[5],
-                        Name = parts[6],
-                        Description = parts[7],
-                        LinkPhrase = parts[8],
-                        ReverseLinkPhrase = parts[9],
-                        HasDates = SafeParser.ToBoolean(parts[13]),
-                        Entity0Cardinality = SafeParser.ToNumber<int>(parts[14]),
-                        Entity1Cardinality = SafeParser.ToNumber<int>(parts[15]),
-                    }, cancellationToken).ConfigureAwait(false);
-                }           
-                
-                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded link"))
-                {
-                    links = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link"), parts => new Link
-                    {
-                        Id = SafeParser.ToNumber<long>(parts[0]),
-                        LinkTypeId = SafeParser.ToNumber<long>(parts[1]),
-                        BeginDateYear = SafeParser.ToNumber<int>(parts[2]),
-                        BeginDateMonth = SafeParser.ToNumber<int>(parts[3]),
-                        BeginDateDay = SafeParser.ToNumber<int>(parts[4]),
-                        EndDateYear = SafeParser.ToNumber<int>(parts[5]),
-                        EndDateMonth = SafeParser.ToNumber<int>(parts[6]),
-                        EndDateDay = SafeParser.ToNumber<int>(parts[7]),
-                        IsEnded = SafeParser.ToBoolean(parts[10])
-                    }, cancellationToken).ConfigureAwait(false);
-                }                
-                
-                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist link"))
-                {
-                    linkArtistToArtists = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/l_artist_artist"), parts => new LinkArtistToArtist
-                    {
-                        Id = SafeParser.ToNumber<long>(parts[0]),
-                        LinkId = SafeParser.ToNumber<long>(parts[1]),
-                        Artist0 = SafeParser.ToNumber<long>(parts[2]),
-                        Artist1 = SafeParser.ToNumber<long>(parts[3]),
-                        LinkOrder = SafeParser.ToNumber<int>(parts[6]),
-                        Artist0Credit = parts[7],
-                        Artist1Credit = parts[8],
-                    }, cancellationToken).ConfigureAwait(false);
-                }                  
 
-                // A dictionary of Artists in Melodee database using the MusicBrainz database Artist.Id as the key.
-                Dictionary<long, Models.Materialized.Artist> dbArtistDictionary;
-                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist from database"))
-                {
-                    dbArtistDictionary = (await db.SelectAsync<Models.Materialized.Artist>(x => x.Id > 0, token: cancellationToken).ConfigureAwait(false))
-                        .ToDictionary(x => x.MusicBrainzArtistId, x => x);
-                }
-
-                db.CreateTable<Models.Materialized.Album>();
-                var albumsToInsert = new List<Models.Materialized.Album>();
+                db.CreateTable<Album>();
+                var albumsToInsert = new List<Album>();
 
                 var releaseCountriesDictionary = releasesCountries.GroupBy(x => x.ReleaseId).ToDictionary(x => x.Key, x => x.ToList());
                 var releaseGroupsDictionary = releaseGroups.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.ToList());
@@ -503,7 +538,7 @@ public class MusicBrainzRepository(
 
                     if (releaseArtist != null && releaseGroup != null && (releaseCountry?.IsValid ?? false))
                     {
-                        albumsToInsert.Add(new Models.Materialized.Album
+                        albumsToInsert.Add(new Album
                         {
                             ArtistId = releaseArtist.Id,
                             ContributorIds = contributorIds,
@@ -514,7 +549,7 @@ public class MusicBrainzRepository(
                             ReleaseGroupMusicBrainzId = releaseGroup.MusicBrainzId,
                             ReleaseType = releaseGroup.ReleaseType,
                             SortName = release.SortName ?? release.Name,
-                            UniqueId = SafeParser.Hash(release.MusicBrainzId.ToString()),
+                            UniqueId = SafeParser.Hash(release.MusicBrainzId.ToString())
                         });
                     }
                     else
@@ -526,7 +561,7 @@ public class MusicBrainzRepository(
 
                     if (albumsToInsert.Count >= batchSize || release == releases.Last())
                     {
-                        await db.InsertAllAsync(albumsToInsert, token: cancellationToken).ConfigureAwait(false);
+                        db.InsertAll(albumsToInsert);
                         releaseCountInserted += albumsToInsert.Count;
                         albumsToInsert.Clear();
                         logger.Debug("MusicBrainzRepository: ImportData: invalid found [{InvalidCount}], inserted [{NumberInserted}] of [{NumberToInsert}]",

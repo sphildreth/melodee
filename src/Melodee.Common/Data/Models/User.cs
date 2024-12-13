@@ -70,6 +70,9 @@ public class User : DataModelBase
     public bool HasShareRole { get; set; } = true;
 
     public bool IsScrobblingEnabled { get; set; }
+    
+    [MaxLength(MaxLengthDefinitions.HashOrGuidLength)]
+    public string? LastFmSessionKey { get; set; }
 
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 

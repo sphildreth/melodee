@@ -5,11 +5,14 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.SearchEngine;
+using Melodee.Plugins.SearchEngine.LastFm;
 using Melodee.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Serilog.Events;
+using SerilogTimings;
 
 namespace Melodee.Services.SearchEngines;
 
@@ -37,6 +40,13 @@ public class ArtistSearchEngineService(
         [
             new MelodeeArtistSearchEnginPlugin(ContextFactory),
             new MusicBrainzArtistSearchEnginPlugin(musicBrainzRepository)
+            {
+                IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
+            },
+            new LastFm(_configuration, serializer, httpClientFactory)
+            {
+                IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineLastFmEnabled)
+            }, 
         ];
 
         _artistTopSongsSearchEnginePlugins =
@@ -87,7 +97,7 @@ public class ArtistSearchEngineService(
                 break;
             }
 
-            var pluginResult = await plugin.DoArtistTopSongsSearchAsync(httpClientFactory, artistId.Value, maxResultsValue, cancellationToken).ConfigureAwait(false);
+            var pluginResult = await plugin.DoArtistTopSongsSearchAsync(artistId.Value, maxResultsValue, cancellationToken).ConfigureAwait(false);
             if (pluginResult is { IsSuccess: true, Data: not null })
             {
                 result.AddRange(pluginResult.Data);
@@ -118,27 +128,32 @@ public class ArtistSearchEngineService(
         var result = new List<ArtistSearchResult>();
 
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
-
+        
         long operationTime = 0;
         long totalCount = 0;
-        foreach (var plugin in _artistSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
+
+        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] DoSearchAsync [{DirectoryInfo}]", 
+                   nameof(ArtistSearchEngineService), query))
         {
-            if (cancellationToken.IsCancellationRequested)
+            foreach (var plugin in _artistSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
             {
-                break;
-            }
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
 
-            var pluginResult = await plugin.DoSearchAsync(httpClientFactory, query, maxResultsValue, cancellationToken).ConfigureAwait(false);
-            if (pluginResult is { IsSuccess: true, Data: not null })
-            {
-                result.AddRange(pluginResult.Data);
-                totalCount += pluginResult.TotalCount;
-                operationTime += pluginResult.OperationTime ?? 0;
-            }
+                var pluginResult = await plugin.DoArtistSearchAsync(query, maxResultsValue, cancellationToken).ConfigureAwait(false);
+                if (pluginResult is { IsSuccess: true, Data: not null })
+                {
+                    result.AddRange(pluginResult.Data);
+                    totalCount += pluginResult.TotalCount;
+                    operationTime += pluginResult.OperationTime ?? 0;
+                }
 
-            if (result.Count > maxResultsValue || plugin.StopProcessing)
-            {
-                break;
+                if (result.Count > maxResultsValue || plugin.StopProcessing)
+                {
+                    break;
+                }
             }
         }
 

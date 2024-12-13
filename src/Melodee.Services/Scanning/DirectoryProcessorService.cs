@@ -582,13 +582,12 @@ public sealed class DirectoryProcessorService(
                             var albumDirectorySystemInfo = albumDirInfo.ToDirectorySystemInfo();
                             foreach (var songPlugin in _songPlugins)
                             {
-                                foreach (var song in album.Songs)
+                                foreach (var song in album.Songs.Where(x => x.Tags?.Any(t => t.WasModified) ?? false))
                                 {
                                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                                     {
                                         break;
                                     }
-
                                     await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken);
                                 }
                             }
