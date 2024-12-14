@@ -34,6 +34,11 @@ public static class Program
                 add.AddCommand<ParseCommand>("parse")
                     .WithDescription("Parse a given media file (CUE, NFO, SFV, etc.) and show results.");
             });
+            config.AddBranch<ValidateSettings>("validate", add =>
+            {
+                add.AddCommand<ValidateCommand>("album")
+                    .WithDescription("Validate a Melodee album data file (melodee.json).");
+            });            
             config.AddBranch<ShowTagsSettings>("tags", add =>
             {
                 add.AddCommand<ShowTagsCommand>("show")

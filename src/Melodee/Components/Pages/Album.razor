@@ -13,8 +13,6 @@
 @inject NavigationManager NavManager
 @inject Serilog.ILogger Logger
 @inject ISettingService SettingService
-@inject IImageValidator ImageValidator
-
 
 <PageTitle>Album Detail</PageTitle>
 
@@ -316,6 +314,8 @@
     private string? _albumCoverBase64;
     private string? _albumFullPath;
 
+    private IImageValidator _imageValidator;
+
     private EditContext? _editFormEditContext;
     private readonly List<ToastMessage> _messages = [];
     private List<KeyValuePair<string, object?>> _info = [];
@@ -475,7 +475,7 @@
         if (_album.Songs?.Any() ?? false)
         {
             var configuration = await SettingService.GetMelodeeConfigurationAsync();
-            var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), ImageValidator, configuration);
+            var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), _imageValidator, configuration);
             foreach (var song in _album.Songs)
             {
                 await editSongPlugin.RemoveImagesAsync(_album.Directory!, song);
@@ -614,7 +614,7 @@
                 if (album.Songs != null)
                 {
                     var configuration = await SettingService.GetMelodeeConfigurationAsync();
-                    var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), ImageValidator, configuration);
+                    var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), _imageValidator, configuration);
                     foreach (var song in album.Songs)
                     {
                         album.SetSongTagValue(song.SongId, MetaTagIdentifier.Album, _albumEdit.Title);
@@ -660,6 +660,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var configuration = await SettingService.GetMelodeeConfigurationAsync();
+        _imageValidator = new ImageValidator(configuration);
+
         var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
         await AlbumsDiscoverer.InitializeAsync();
         await MediaEditService.InitializeAsync();

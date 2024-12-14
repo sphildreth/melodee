@@ -230,9 +230,11 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         if (result)
         {
             var songsGroupedByArtist = songs.GroupBy(x => x.AlbumArtist()).ToArray();
-            result = songsGroupedByArtist.First().Key.Nullify() == null ||
-                     (string.Equals(songsGroupedByArtist.First().Key, albumArtist) &&
-                      songsGroupedByArtist.Length == 1);
+            if (songsGroupedByArtist.Length > 1)
+            {
+                result = songsGroupedByArtist.First().Key.Nullify() == null ||
+                         (string.Equals(songsGroupedByArtist.First().Key, albumArtist) && songsGroupedByArtist.Length == 1);
+            }
         }
 
         if (!result && !album.IsVariousArtistTypeAlbum())

@@ -24,7 +24,8 @@ public sealed record Album
 
     public int ReleaseType { get; init; }
 
-    public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);
+    
+    [NotMapped] public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);
 
     public bool DoIncludeInArtistSearch => ReleaseDate > DateTime.MinValue &&
                                            ReleaseTypeValue != Enums.ReleaseType.Single &&

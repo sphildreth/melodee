@@ -114,7 +114,52 @@ public class AlbumValidatorTests
                             Value = "She's Got a Way"
                         }
                     }
-                }
+                },
+                new Song
+                {
+                    CrcHash = "TestValue2",
+                    File = new FileSystemFileInfo
+                    {
+                        Name = string.Empty,
+                        Size = 123456
+                    },
+                    MediaAudios = new [] 
+                    {
+                        new MediaAudio<object?>
+                        {
+                            Identifier = MediaAudioIdentifier.BitRate,
+                            Value = ShouldBeBitRate
+                        }  
+                    },
+                    Tags = new[]
+                    {
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.AlbumArtist,
+                            Value = "Billy Joel"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Album,
+                            Value = "Cold Spring Harbor"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.RecordingYear,
+                            Value = "1971"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.TrackNumber,
+                            Value = "2"
+                        },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.Title,
+                            Value = "You Can Make Me Free"
+                        }
+                    }
+                }                
             }
         };
 
@@ -328,6 +373,18 @@ public class AlbumValidatorTests
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
     }
+    
+    [Fact]
+    public void ValidateAlbumWithDifferentArtistsNotVariousArtists()
+    {
+        var testAlbum = TestAlbum;
+        testAlbum.SetSongTagValue(testAlbum.Songs.First().SongId, MetaTagIdentifier.AlbumArtist, Guid.NewGuid().ToString());
+        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
+        var validationResult = validator.ValidateAlbum(testAlbum);
+        Assert.True(validationResult.IsSuccess);
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+    }    
+    
 
     [Fact]
     public void ValidateAlbumWithMissingTitle()

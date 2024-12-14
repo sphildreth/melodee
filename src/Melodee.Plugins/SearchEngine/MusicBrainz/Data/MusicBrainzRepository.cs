@@ -72,6 +72,7 @@ public class MusicBrainzRepository(
         var startTicks = Stopwatch.GetTimestamp();
         var data = new List<ArtistSearchResult>();
 
+        int queryMax = 100;
         long totalCount = 0;
         using (Operation.At(LogEventLevel.Debug).Time("[{Name}] SearchArtist [{ArtistQuery}]", nameof(MusicBrainzRepository), query))
         {
@@ -127,9 +128,9 @@ public class MusicBrainzRepository(
                               where a.NameNormalized LIKE @name
                               OR a.AlternateNames LIKE @name
                               order by a."SortName"
-                              LIMIT @maxResults;
+                              LIMIT @queryMax
                               """;
-                    var artists = (await db.QueryAsync<Models.Materialized.Artist>(sql, new { maxResults, name = query.QueryNameNormalizedValue }).ConfigureAwait(false))?.ToArray() ?? [];
+                    var artists = (await db.QueryAsync<Models.Materialized.Artist>(sql, new { queryMax, name = query.QueryNameNormalizedValue }).ConfigureAwait(false))?.ToArray() ?? [];
 
                     foreach (var artist in artists)
                     {
@@ -152,9 +153,9 @@ public class MusicBrainzRepository(
                               SELECT Id, UniqueId, ArtistId, Name, SortName, NameNormalized, ReleaseType, ReleaseTypeValue, DoIncludeInArtistSearch, MusicBrainzIdRaw, ReleaseGroupMusicBrainzIdRaw, ReleaseDate, ContributorIds
                               FROM "Album"
                               WHERE ArtistId = @artistId
-                              LIMIT @maxResults;    
+                              LIMIT @queryMax;    
                               """;
-                        var allArtistAlbums = (await db.QueryAsync<Models.Materialized.Album>(sql, new { maxResults, artistId = artist.Id }).ConfigureAwait(false))?.ToArray() ?? [];
+                        var allArtistAlbums = (await db.QueryAsync<Models.Materialized.Album>(sql, new { queryMax, artistId = artist.Id }).ConfigureAwait(false))?.ToArray() ?? [];
 
                         var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(x => x.ReleaseDate).FirstOrDefault()).ToArray();
 

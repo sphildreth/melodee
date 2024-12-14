@@ -145,6 +145,7 @@ public sealed class DirectoryProcessorService(
         var processingErrors = new List<Exception>();
         var numberOfAlbumJsonFilesProcessed = 0;
         var numberOfValidAlbumsProcessed = 0;
+        var numberOfAlbumsProcessed = 0;
 
         var conversionPluginsProcessedFileCount = 0;
         var directoryPluginProcessedFileCount = 0;
@@ -164,7 +165,8 @@ public sealed class DirectoryProcessorService(
             NumberOfConversionPluginsProcessed = 0,
             NumberOfConversionPluginsProcessedFileCount = 0,
             NumberOfDirectoryPluginProcessed = 0,
-            NumberOfValidAlbumsProcessed = 0
+            NumberOfValidAlbumsProcessed = 0,
+            NumberOfAlbumsProcessed = 0
         };
 
         var startTicks = Stopwatch.GetTimestamp();
@@ -747,6 +749,8 @@ public sealed class DirectoryProcessorService(
                         processingMessages.Add($"Unable to determine JsonName for Album [{album}]");
                     }
 
+                    numberOfAlbumsProcessed++;
+                    
                     if (album.Status == AlbumStatus.Ok)
                     {
                         numberOfValidAlbumsProcessed++;
@@ -820,7 +824,8 @@ public sealed class DirectoryProcessorService(
                 NumberOfConversionPluginsProcessed = numberOfAlbumFilesProcessed,
                 NumberOfConversionPluginsProcessedFileCount = conversionPluginsProcessedFileCount,
                 NumberOfDirectoryPluginProcessed = directoryPluginProcessedFileCount,
-                NumberOfValidAlbumsProcessed = numberOfValidAlbumsProcessed
+                NumberOfValidAlbumsProcessed = numberOfValidAlbumsProcessed,
+                NumberOfAlbumsProcessed = numberOfAlbumsProcessed
             }
         };
     }
