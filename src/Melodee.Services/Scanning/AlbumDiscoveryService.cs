@@ -291,31 +291,28 @@ public sealed class AlbumDiscoveryService(
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
             if (dirInfo.Exists)
             {
-                using (Operation.At(LogEventLevel.Debug).Time("AllMelodeeAlbumDataFilesForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+                foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
                 {
-                    foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
+                    if (cancellationToken.IsCancellationRequested)
                     {
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
+                        break;
+                    }
 
-                        try
+                    try
+                    {
+                        var r = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
+                        if (r != null)
                         {
-                            var r = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
-                            if (r != null)
-                            {
-                                r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
-                                r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
-                                albums.Add(r);
-                            }
+                            r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
+                            r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
+                            albums.Add(r);
                         }
-                        catch (Exception e)
-                        {
-                            Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
-                            messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
-                            jsonFile.Delete();
-                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
+                        messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
+                        jsonFile.Delete();
                     }
                 }
             }

@@ -4,10 +4,13 @@ using Melodee.Common.Data.Contants;
 using Melodee.Common.Data.Validators;
 using Melodee.Common.Enums;
 using Melodee.Common.Utility;
+using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
+[Index(nameof(ContributorName), nameof(MetaTagIdentifier), nameof(AlbumId), IsUnique = true)]
+[Index(nameof(ArtistId), nameof(MetaTagIdentifier), nameof(AlbumId), IsUnique = true)]
 public class Contributor : DataModelBase
 {
     /// <summary>

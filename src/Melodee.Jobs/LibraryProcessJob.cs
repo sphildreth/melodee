@@ -58,6 +58,9 @@ public class LibraryProcessJob(
     private int _totalArtistsUpdated;
     private int _totalSongsInserted;
     private int _totalSongsUpdated;
+    private string[] _ignorePerformers = [];
+    private string[] _ignoreProduction = [];
+    private string[] _ignorePublishers = [];
 
     private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
     [
@@ -110,6 +113,10 @@ public class LibraryProcessJob(
 
             await albumDiscoveryService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
             await directoryProcessorService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
+
+            _ignorePerformers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredPerformers], serializer);
+            _ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);
+            _ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
 
             ISongPlugin[] songPlugins =
             [
@@ -287,20 +294,20 @@ public class LibraryProcessJob(
                               with performerSongCounts as (
                               	select c."ArtistId" as id, COUNT(*) as count
                               	from "Contributors" c 
-                              	left join "Songs" s on (c."SongId" = s."Id")
-                                left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                left join "Albums" a on (ad."AlbumId" = a."Id")
-                                WHERE a."LibraryId" = {0}
+                              	join "Songs" s on (c."SongId" = s."Id")
+                                join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                join "Albums" aa on (ad."AlbumId" = aa."Id")
+                                join "Artists" a on (a."Id" = aa."ArtistId") 
+                                WHERE a."LibraryId" = @libraryId
                               	group by c."ArtistId"
                               )
                               UPDATE "Artists"
                               set "SongCount" = c.count, "LastUpdatedAt" = NOW()
                               from performerSongCounts c
-                              where c.id = "Artists"."Id"
-                              and c.id in ({1});
+                              where c.id = "Artists"."Id";
                               """;
                         await dbConn
-                            .ExecuteAsync(sql.FormatSmart(library.Id, joinedDbIds), context.CancellationToken)
+                            .ExecuteAsync(sql, new { libraryId = library.Id })
                             .ConfigureAwait(false);
                     }
 
@@ -502,10 +509,20 @@ public class LibraryProcessJob(
                             var dbSong = dbAlbum.Discs.SelectMany(x => x.Songs).FirstOrDefault(x => x.MediaUniqueId == song.UniqueId);
                             if (dbSong != null)
                             {
-                                dbContributorsToAdd.AddRange(await GetContributorsForSong(song, dbAlbum.ArtistId, dbAlbum.Id, dbSong.Id, cancellationToken));
+                                var contributorsForSong = await GetContributorsForSong(song, dbAlbum.ArtistId, dbAlbum.Id, dbSong.Id, cancellationToken);
+                                foreach (var cfs in contributorsForSong)
+                                {
+                                    if (!dbContributorsToAdd.Any(x => x.AlbumId == cfs.AlbumId && 
+                                                                                (x.ArtistId == cfs.ArtistId || x.ContributorName == cfs.ContributorName) && 
+                                                                                x.MetaTagIdentifier == cfs.MetaTagIdentifier))
+                                    {
+                                        dbContributorsToAdd.Add(cfs);
+                                    }
+                                }
                             }
                         }
                     }
+
                     if (dbContributorsToAdd.Count > 0)
                     {
                         try
@@ -518,7 +535,6 @@ public class LibraryProcessJob(
                             Logger.Error(e, "Unable to insert album contributors into db.");
                         }
                     }
-                    
                 }
 
                 var albumsToUpdate = (from a in melodeeAlbumsForDirectory
@@ -603,8 +619,6 @@ public class LibraryProcessJob(
                     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     _totalAlbumsUpdated += albumsToUpdate.Length;
                     UpdateDataMap();
-
-                   
                 }
 
                 //TODO
@@ -779,34 +793,44 @@ public class LibraryProcessJob(
         var dbContributorsToAdd = new List<dbModels.Contributor>();
         foreach (var contributorTag in ContributorMetaTagIdentifiers)
         {
-            var contributorForTag = await CreateContributorForSongAndTag(song, contributorTag, artistId, albumId, songId, _now, null, null, token);
-            if (contributorForTag != null)
+            var tagValue = song.MetaTagValue<string?>(contributorTag)?.CleanStringAsIs();
+            if (!dbContributorsToAdd.Any(x => (x.ArtistId == artistId || x.ContributorName == tagValue) && x.MetaTagIdentifierValue == contributorTag))
             {
-                dbContributorsToAdd.Add(contributorForTag);
+                var contributorForTag = await CreateContributorForSongAndTag(song, contributorTag, artistId, albumId, songId, _now, null, null, token);
+                if (contributorForTag != null)
+                {
+                    dbContributorsToAdd.Add(contributorForTag);
+                }
             }
         }
 
         foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.OrdinalIgnoreCase)) ?? [])
         {
             var subRole = tmclTag.Value!.ToString()!.Substring(6).Trim();
-            var contributorForTag = await CreateContributorForSongAndTag(song, tmclTag.Identifier, artistId, albumId, songId, _now, subRole, null, token);
-            if (contributorForTag != null)
+            var tagValue = song.MetaTagValue<string?>(tmclTag.Identifier)?.CleanStringAsIs();
+            if (!dbContributorsToAdd.Any(x => (x.ArtistId == artistId || x.ContributorName == tagValue) &&
+                                                         x.MetaTagIdentifierValue == tmclTag.Identifier))
             {
-                dbContributorsToAdd.Add(contributorForTag);
+                var contributorForTag = await CreateContributorForSongAndTag(song, tmclTag.Identifier, artistId, albumId, songId, _now, subRole, null, token);
+                if (contributorForTag != null)
+                {
+                    dbContributorsToAdd.Add(contributorForTag);
+                }
             }
         }
-
         var songPublisherTag = song.MetaTagValue<string?>(MetaTagIdentifier.Publisher);
         if (songPublisherTag != null)
         {
-            var publisherName = songPublisherTag.Trim();
-            var publisherTag = await CreateContributorForSongAndTag(song, MetaTagIdentifier.Publisher, artistId, albumId, null, _now, null, publisherName, token);
-            if (publisherTag != null && dbContributorsToAdd.All(x => x.ContributorTypeValue != ContributorType.Publisher))
+            var publisherName = songPublisherTag.CleanStringAsIs();
+            if (!dbContributorsToAdd.Any(x => x.ContributorName == publisherName && x.MetaTagIdentifierValue == MetaTagIdentifier.Publisher))
             {
-                dbContributorsToAdd.Add(publisherTag);
+                var publisherTag = await CreateContributorForSongAndTag(song, MetaTagIdentifier.Publisher, artistId, albumId, null, _now, null, publisherName, token);
+                if (publisherTag != null && dbContributorsToAdd.All(x => x.ContributorTypeValue != ContributorType.Publisher))
+                {
+                    dbContributorsToAdd.Add(publisherTag);
+                }
             }
         }
-
         return dbContributorsToAdd.ToArray();
     }
 
@@ -821,41 +845,64 @@ public class LibraryProcessJob(
         string? contributorName,
         CancellationToken cancellationToken = default)
     {
-        var tagValue = song.MetaTagValue<string?>(tag);
-        if (tagValue != null)
+        var contributorNameValue = contributorName.Nullify()?.CleanStringAsIs() ?? song.MetaTagValue<string?>(tag)?.CleanStringAsIs();
+        if (contributorNameValue.Nullify() != null)
         {
-            var isContributorNameSet = contributorName.Nullify()?.CleanStringAsIs() != null;
-            var artist = isContributorNameSet ? null : await artistService.GetByNameNormalized(tagValue, cancellationToken).ConfigureAwait(false);
-            if ((artist?.IsSuccess ?? false) || isContributorNameSet)
+            var artist = contributorNameValue == null ? null : await artistService.GetByNameNormalized(contributorNameValue, cancellationToken).ConfigureAwait(false);
+            var contributorType = DetermineContributorType(tag);
+            if (DoMakeContributorForTageTypeAndValue(contributorType, tag, contributorNameValue))
             {
-                var artistContributorId = artist?.Data?.Id;
-                if (artistContributorId != dbArtist || isContributorNameSet)
+                return new dbModels.Contributor
                 {
-                    return new dbModels.Contributor
-                    {
-                        AlbumId = dbAlbumId,
-                        ArtistId = artistContributorId,
-                        ContributorName = contributorName,
-                        ContributorType = DetermineContributorType(tag),
-                        CreatedAt = now,
-                        MetaTagIdentifier = SafeParser.ToNumber<int>(tag),
-                        Role = tag.GetEnumDescriptionValue(),
-                        SongUniqueId = song.UniqueId,
-                        SongId = dbSongId,
-                        SubRole = subRole?.CleanStringAsIs()
-                    };
-                }
-            }
-            else
-            {
-                Logger.Warning("Unable to find '{Tag}' by name [{Name}]", tag.ToString(), tagValue);
+                    AlbumId = dbAlbumId,
+                    ArtistId = artist?.Data?.Id,
+                    ContributorName = contributorNameValue,
+                    ContributorType = SafeParser.ToNumber<int>(contributorType),
+                    CreatedAt = now,
+                    MetaTagIdentifier = SafeParser.ToNumber<int>(tag),
+                    Role = tag.GetEnumDescriptionValue(),
+                    SongUniqueId = song.UniqueId,
+                    SongId = dbSongId,
+                    SubRole = subRole?.CleanStringAsIs()
+                };
             }
         }
-
         return null;
     }
 
-    private static int DetermineContributorType(MetaTagIdentifier tag)
+    private bool DoMakeContributorForTageTypeAndValue(ContributorType type, MetaTagIdentifier tag, string? contributorName)
+    {
+        switch (type)
+        {
+            case ContributorType.Performer:
+                if (_ignorePerformers.Contains(contributorName.ToNormalizedString()))
+                {
+                    return false;
+                }
+
+                break;
+
+            case ContributorType.Production:
+                if (_ignoreProduction.Contains(contributorName.ToNormalizedString()))
+                {
+                    return false;
+                }
+
+                break;
+
+            case ContributorType.Publisher:
+                if (_ignorePublishers.Contains(contributorName.ToNormalizedString()))
+                {
+                    return false;
+                }
+
+                break;
+        }
+
+        return true;
+    }
+
+    private static ContributorType DetermineContributorType(MetaTagIdentifier tag)
     {
         switch (tag)
         {
@@ -867,7 +914,7 @@ public class LibraryProcessJob(
             case MetaTagIdentifier.MusicianCredit:
             case MetaTagIdentifier.OriginalArtist:
             case MetaTagIdentifier.OriginalLyricist:
-                return SafeParser.ToNumber<int>(ContributorType.Performer);
+                return ContributorType.Performer;
 
             case MetaTagIdentifier.EncodedBy:
             case MetaTagIdentifier.Engineer:
@@ -878,12 +925,12 @@ public class LibraryProcessJob(
             case MetaTagIdentifier.MixDj:
             case MetaTagIdentifier.MixEngineer:
             case MetaTagIdentifier.Producer:
-                return SafeParser.ToNumber<int>(ContributorType.Production);
+                return ContributorType.Production;
 
             case MetaTagIdentifier.Publisher:
-                return SafeParser.ToNumber<int>(ContributorType.Publisher);
+                return ContributorType.Publisher;
         }
 
-        return SafeParser.ToNumber<int>(ContributorType.NotSet);
+        return ContributorType.NotSet;
     }
 }

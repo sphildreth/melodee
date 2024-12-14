@@ -47,6 +47,9 @@ public static class SettingRegistry
     public const string ProcessingDoOverrideExistingMelodeeDataFiles = "processing.doOverrideExistingMelodeeDataFiles";
     public const string ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue = "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue";
     public const string ProcessingIgnoredArticles = "processing.ignoredArticles";
+    public const string ProcessingIgnoredPerformers = "processing.ignoredPerformers";
+    public const string ProcessingIgnoredProduction = "processing.ignoredProduction";
+    public const string ProcessingIgnoredPublishers = "processing.ignoredPublishers";    
     public const string ProcessingMaximumAlbumDirectoryNameLength = "processing.maximumAlbumDirectoryNameLength";
     public const string ProcessingMaximumArtistDirectoryNameLength = "processing.maximumArtistDirectoryNameLength";
     public const string ProcessingMaximumProcessingCount = "processing.maximumProcessingCount";

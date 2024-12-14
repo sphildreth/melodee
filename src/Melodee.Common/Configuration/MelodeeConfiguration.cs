@@ -161,6 +161,9 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         }
         return serializer.Deserialize<Dictionary<string, string[]>>(ss.Replace("'", "\"")) ?? new Dictionary<string, string[]>();
     }
+    
+    public static string[] FromSerializedJsonArrayNormalized(object? o, ISerializer serializer) 
+        => FromSerializedJsonArray(o, serializer).Select(r => r.ToNormalizedString() ?? r).ToArray();
 
     public static string[] FromSerializedJsonArray(object? o, ISerializer serializer)
     {
@@ -173,6 +176,6 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             return [];
         }
-        return serializer.Deserialize<string[]>(ss.Replace("'", "\"")) ?? Array.Empty<string>();
+        return serializer.Deserialize<string[]>(ss.Replace("'", "\"")) ?? [];
     }    
 }

@@ -457,6 +457,31 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
+                    Id = 45,
+                    Key = SettingRegistry.ProcessingIgnoredPerformers,
+                    Comment = "Don't create performer contributors for these performer names.",
+                    Value = "",
+                    CreatedAt = now
+                },  
+                new Setting
+                {
+                    Id = 46,
+                    Key = SettingRegistry.ProcessingIgnoredProduction,
+                    Comment = "Don't create production contributors for these production names.",
+                    Value = "['www.t.me;pmedia_music']",
+                    CreatedAt = now
+                }, 
+ 
+                new Setting
+                {
+                    Id = 47,
+                    Key = SettingRegistry.ProcessingIgnoredPublishers,
+                    Comment = "Don't create publisher contributors for these artist names.",
+                    Value = "['P.M.E.D.I.A','PMEDIA','PMEDIA GROUP']",
+                    CreatedAt = now
+                },                
+                new Setting
+                {
                     Id = 1300,
                     Category = (int)SettingCategory.Validation,
                     Key = SettingRegistry.ValidationMaximumSongNumber,
