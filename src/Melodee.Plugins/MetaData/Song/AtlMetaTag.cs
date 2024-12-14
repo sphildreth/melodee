@@ -180,7 +180,7 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                                         }
                                     }
 
-                                    if (identifier == MetaTagIdentifier.DiscNumber || 
+                                    if (identifier == MetaTagIdentifier.DiscNumber ||
                                         identifier == MetaTagIdentifier.DiscTotal)
                                     {
                                         // Every album with songs has at least one disc
@@ -357,47 +357,44 @@ public sealed class AtlMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
                 };
             }
 
-            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Updating [{FileName}]", DisplayName, songFileName))
+            try
             {
-                try
+                var doDeleteComment = MelodeeConfiguration.GetValue<bool?>(SettingRegistry.ProcessingDoDeleteComments) ?? true;
+                var fileAtl = new Track(songFileName)
                 {
-                    var doDeleteComment = MelodeeConfiguration.GetValue<bool?>(SettingRegistry.ProcessingDoDeleteComments) ?? true;
-                    var fileAtl = new Track(songFileName)
-                    {
-                        Album = song.AlbumTitle(),
-                        AlbumArtist = song.AlbumArtist(),
-                        Artist = song.SongArtist(),
-                        Comment = doDeleteComment ? null : song.Comment(),
-                        DiscNumber = song.MediaNumber(),
-                        DiscTotal = song.MediaTotalNumber(),
-                        Genre = song.Genre(),
-                        OriginalReleaseDate = song.AlbumDateValue(),
-                        TrackNumber = song.SongNumber(),
-                        TrackTotal = song.SongTotalNumber(),
-                        Year = song.AlbumYear()
-                    };
-                    if (song.Images?.Any() ?? false)
-                    {
-                        var coverImage = song.Images.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
-                        if (coverImage != null && (coverImage.FileInfo?.Exists(directoryInfo) ?? false))
-                        {
-                            fileAtl.EmbeddedPictures.Clear();
-                            fileAtl.EmbeddedPictures.Add(PictureInfo.fromBinaryData(
-                                await File.ReadAllBytesAsync(coverImage.FileInfo!.FullName(directoryInfo), cancellationToken),
-                                PictureInfo.PIC_TYPE.Front));
-                        }
-                    }
-                    else
+                    Album = song.AlbumTitle(),
+                    AlbumArtist = song.AlbumArtist(),
+                    Artist = song.SongArtist(),
+                    Comment = doDeleteComment ? null : song.Comment(),
+                    DiscNumber = song.MediaNumber(),
+                    DiscTotal = song.MediaTotalNumber(),
+                    Genre = song.Genre(),
+                    OriginalReleaseDate = song.AlbumDateValue(),
+                    TrackNumber = song.SongNumber(),
+                    TrackTotal = song.SongTotalNumber(),
+                    Year = song.AlbumYear()
+                };
+                if (song.Images?.Any() ?? false)
+                {
+                    var coverImage = song.Images.FirstOrDefault(x => x.PictureIdentifier is PictureIdentifier.Front or PictureIdentifier.SecondaryFront);
+                    if (coverImage != null && (coverImage.FileInfo?.Exists(directoryInfo) ?? false))
                     {
                         fileAtl.EmbeddedPictures.Clear();
+                        fileAtl.EmbeddedPictures.Add(PictureInfo.fromBinaryData(
+                            await File.ReadAllBytesAsync(coverImage.FileInfo!.FullName(directoryInfo), cancellationToken),
+                            PictureInfo.PIC_TYPE.Front));
                     }
-
-                    result = await fileAtl.SaveAsync();
                 }
-                catch (Exception e)
+                else
                 {
-                    Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
+                    fileAtl.EmbeddedPictures.Clear();
                 }
+
+                result = await fileAtl.SaveAsync();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
             }
         }
 
