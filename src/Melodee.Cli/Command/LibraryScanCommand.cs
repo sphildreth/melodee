@@ -131,6 +131,11 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                 imageValidator
             );
 
+            job.OnProcessingEvent += (sender, e) =>
+            {
+                Log.Information(e.ToString());
+            };
+            
             await job.Execute(new JobExecutionContext(CancellationToken.None));
             return 1;
         }

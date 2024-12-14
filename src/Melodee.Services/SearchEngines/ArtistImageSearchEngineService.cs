@@ -31,23 +31,26 @@ public class ArtistImageSearchEngineService(
 
         var searchEngines = new List<IArtistImageSearchEnginePlugin>
         {
-            new LastFm(configuration, serializer, httpClientFactory)
-            {
-                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineLastFmEnabled)
-            },            
             new BingAlbumImageSearchEngine(configuration, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled)
             }
         };
         var result = new List<ImageSearchResult>();
-        foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled))
+        foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
         {
-            var searchResult = await searchEngine.DoArtistImageSearch(query, maxResultsValue, token);
-            if (searchResult.IsSuccess)
+            try
             {
-                result.AddRange(searchResult.Data ?? []);
+                var searchResult = await searchEngine.DoArtistImageSearch(query, maxResultsValue, token);
+                if (searchResult.IsSuccess)
+                {
+                    result.AddRange(searchResult.Data ?? []);
+                }
             }
+            catch (Exception e)
+            {
+                Logger.Error(e, "[{Plugin}] threw error with query [{Query}]", searchEngine.DisplayName, query);
+            }             
         }
 
         return new OperationResult<ImageSearchResult[]>

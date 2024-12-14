@@ -6,6 +6,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace Melodee.Plugins.Conversion.Image;
@@ -48,19 +49,55 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         }
 
         var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
-        if (fileInfo.Exists && !string.Equals(".jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
+        if (fileInfo.Exists)
         {
+            var smallImageSize = configuration.GetValue<int>(SettingRegistry.ImagingSmallSize);
+            var mediumImageSize = configuration.GetValue<int>(SettingRegistry.ImagingMediumSize);
+            var largeImageSize = configuration.GetValue<int>(SettingRegistry.ImagingLargeSize);
+            
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
-            var convertedBytes = ConvertToJpegFormatViaSixLabors(await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken));
-            var maxSize = MelodeeConfiguration.GetValue<int?>(SettingRegistry.ImagingLargeSize);
-            if (maxSize != null)
+            var imageInfo = await SixLabors.ImageSharp.Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+            
+            var larger = imageInfo.Width;
+            if (larger < smallImageSize)
             {
-                convertedBytes = ResizeImageIfNeeded(convertedBytes, maxSize.Value, maxSize.Value);
+                larger = smallImageSize;
+            }
+            if (larger < imageInfo.Height)
+            {
+                larger = imageInfo.Height;
+            }                
+            var resizeWithPaddingSize = smallImageSize;
+            if (larger > smallImageSize)
+            {
+                resizeWithPaddingSize = mediumImageSize;
+            }
+            if (larger > mediumImageSize)
+            {
+                resizeWithPaddingSize = largeImageSize;
+            }
+            var didModify = false;
+            var imageBytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken);
+            if(!string.Equals(".jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
+            {
+                imageBytes = ConvertToJpegFormatViaSixLabors(imageBytes);
+                didModify = true;
+            }
+            if (imageInfo.Width != imageInfo.Height || imageInfo.Height > largeImageSize)
+            {
+                imageBytes = ResizeAndPadToBeSquare(imageBytes, resizeWithPaddingSize);
+                didModify = true;
             }
 
-            await File.WriteAllBytesAsync(newName, convertedBytes, cancellationToken);
-            fileInfo.Delete();
-            fileInfo = new FileInfo(newName);
+            if (didModify)
+            {
+                await File.WriteAllBytesAsync(newName, imageBytes, cancellationToken);
+                if (newName != fileInfo.FullName)
+                {
+                    fileInfo.Delete();
+                    fileInfo = new FileInfo(newName);
+                }
+            }
         }
 
         return new OperationResult<FileSystemFileInfo>
@@ -68,6 +105,26 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             Data = fileInfo.ToFileSystemInfo()
         };
     }
+    
+    public static byte[] ResizeAndPadToBeSquare(ReadOnlySpan<byte> imageBytes, int width)
+    {
+        if (imageBytes.Length == 0)
+        {
+            return imageBytes.ToArray();
+        }
+        using var outStream = new MemoryStream();
+        using (var image = SixLabors.ImageSharp.Image.Load(imageBytes))
+        {
+            image.Mutate(x =>
+                x.Resize(new ResizeOptions
+                {
+                    Size = new Size(width, width),
+                    Mode = ResizeMode.Pad
+                }).BackgroundColor(new Rgba32(255, 255, 255, 0)));
+            image.SaveAsJpeg(outStream);
+        }
+        return outStream.ToArray();
+    }    
 
     public static byte[] ResizeImageIfNeeded(ReadOnlySpan<byte> imageBytes, int maxWidth, int maxHeight)
     {

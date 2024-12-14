@@ -92,6 +92,9 @@ public abstract class TestsBase
     {
         return MelodeeConfiguration.AllSettings(new Dictionary<string, object?>
         {
+            { SettingRegistry.ImagingSmallSize, "300"},
+            { SettingRegistry.ImagingMinimumImageSize, "600"},
+            { SettingRegistry.ImagingLargeSize, "1600"},
             { SettingRegistry.ProcessingAlbumTitleRemovals, "['^', '~', '#']" },
             { SettingRegistry.ProcessingArtistNameReplacements, "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }" },
             { SettingRegistry.EncryptionPrivateKey, "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y"},

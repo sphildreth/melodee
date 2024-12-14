@@ -1,12 +1,17 @@
+using Hqub.Lastfm;
 using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
+using Serilog;
+using Serilog.Core;
 
 namespace Melodee.Plugins.SearchEngine.LastFm;
 
 public class LastFm(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) 
-    : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin, IAlbumImageSearchEnginePlugin, IArtistImageSearchEnginePlugin
+    : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 
@@ -17,15 +22,7 @@ public class LastFm(IMelodeeConfiguration configuration, ISerializer serializer,
     public bool IsEnabled { get; set; } = false;
 
     public int SortOrder { get; } = 1;
-    public Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken token = default)
-    {
-        throw new NotImplementedException();
-    }
 
-    public Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
-    {
-        throw new NotImplementedException();
-    }
 
     public Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(int forArtist, int maxResults, CancellationToken cancellationToken = default)
     {

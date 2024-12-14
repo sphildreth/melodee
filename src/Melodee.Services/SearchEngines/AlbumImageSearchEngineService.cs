@@ -4,6 +4,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.SearchEngine;
+using Melodee.Plugins.SearchEngine.LastFm;
 using Melodee.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services.Interfaces;
@@ -45,11 +46,18 @@ public class AlbumImageSearchEngineService(
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled))
         {
-            var searchResult = await searchEngine.DoAlbumImageSearch(query, maxResultsValue, token);
-            if (searchResult.IsSuccess)
+            try
             {
-                result.AddRange(searchResult.Data ?? []);
+                var searchResult = await searchEngine.DoAlbumImageSearch(query, maxResultsValue, token);
+                if (searchResult.IsSuccess)
+                {
+                    result.AddRange(searchResult.Data ?? []);
+                }
             }
+            catch (Exception e)
+            {
+                Logger.Error(e, "[{Plugin}] threw error with query [{Query}]", searchEngine.DisplayName, query);
+            }            
         }
 
         return new OperationResult<ImageSearchResult[]>

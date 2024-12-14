@@ -42,11 +42,7 @@ public class ArtistSearchEngineService(
             new MusicBrainzArtistSearchEnginPlugin(musicBrainzRepository)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
-            },
-            new LastFm(_configuration, serializer, httpClientFactory)
-            {
-                IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineLastFmEnabled)
-            }, 
+            }
         ];
 
         _artistTopSongsSearchEnginePlugins =

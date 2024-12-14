@@ -8,6 +8,29 @@ namespace Melodee.Tests.Plugins.Conversion;
 public class ImageConversionTests
 {
     [Fact]
+    public async Task ValidateResizingWithPadding()
+    {
+        var testFile = @"/melodee_test/tests/testjpg.jpg";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var convertor = new ImageConvertor(TestsBase.NewPluginsConfiguration());
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = @"/melodee_test/tests/",
+                Name = "tests"
+            };
+            var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            Assert.NotNull(convertorResult);
+            Assert.True(convertorResult.IsSuccess);
+            Assert.NotNull(convertorResult.Data);
+
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
+            Assert.True(convertedFileInfo.Exists);
+        }
+    }
+    
+    [Fact]
     public async Task ValidateConvertingPngToJpgAsync()
     {
         var testFile = @"/melodee_test/tests/testpng.png";

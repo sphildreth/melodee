@@ -28,12 +28,14 @@ public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configurati
     public bool IsEnabled { get; set; }
 
     public int SortOrder { get; } = 1;
+    
     public Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken token = default)
-    {
-        throw new NotImplementedException();
-    }
+        => DoAlbumImageSearchAction(query.Name.Trim(), maxResults, token);
 
-    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
+    public Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
+        => DoAlbumImageSearchAction(query.Name.Trim(), maxResults, token);
+
+    private async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearchAction(string query, int maxResults, CancellationToken token = default)
     {
         var result = new List<ImageSearchResult>();
 
@@ -51,7 +53,7 @@ public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configurati
             { "count", maxResults.ToString() },
             { "safeSearch", "Off" },
             { "aspect", "Square" },
-            { "q", $"'{Uri.EscapeDataString(query.Name.Trim())}'" }
+            { "q", $"'{Uri.EscapeDataString(query)}'" }
         };
 
         var httpRequestMessage = new HttpRequestMessage(

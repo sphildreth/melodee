@@ -651,13 +651,40 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },                
                 new Setting
                 {
-                    Id = 909,
+                    Id = 910,
                     Category = (int)SettingCategory.SearchEngine,
-                    Key = SettingRegistry.SearchEngineLastFmEnabled,
-                    Comment = "Use Last FM search engine to find images for albums and artists.",
+                    Key = SettingRegistry.SearchEngineSpotifyEnabled,
+                    Comment = "Is Spotify search engine enabled.",
                     Value = "false",
                     CreatedAt = now
-                },                
+                },
+                new Setting
+                {
+                    Id = 911,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineSpotifyApiKey,
+                    Comment = "ApiKey used used with Spotify. See https://developer.spotify.com/ for more details.",
+                    Value = "",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 912,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineSpotifyClientSecret,
+                    Comment = "Shared secret used with Spotify. See https://developer.spotify.com/ for more details.",
+                    Value = "",
+                    CreatedAt = now
+                },      
+                new Setting
+                {
+                    Id = 913,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineSpotifyAccessToken,
+                    Comment = "Token obtained from Spotify using the ApiKey and the Secret, this json contains expiry information.",
+                    Value = "",
+                    CreatedAt = now
+                },                   
                 new Setting
                 {
                     Id = 400,

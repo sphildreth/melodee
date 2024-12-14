@@ -11,6 +11,7 @@ public class SearchEngineController(
     ISerializer serializer,
     EtagRepository etagRepository,
     ArtistSearchEngineService artistSearchEngineService,
+    ArtistImageSearchEngineService artistImageSearchEngineService,
     AlbumImageSearchEngineService albumImageSearchEngineService) : ControllerBase(etagRepository, serializer)
 {
     /// <summary>
@@ -43,4 +44,19 @@ public class SearchEngineController(
     {
         return new JsonStringResult(Serializer.Serialize(await albumImageSearchEngineService.DoSearchAsync(query, maxResult, cancellationToken).ConfigureAwait(false))!);
     }    
+    
+    /// <summary>
+    ///     Perform an artist image search engine search and return results.
+    /// </summary>
+    /// <param name="query">Query request for search</param>
+    /// <param name="maxResult">Maximum number of results to return</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/searchForArtistImage.view")]
+    [Route("/rest/searchForArtistImage")]
+    public async Task<IActionResult> SearchForAlbumImageAsync(ArtistQuery query, int? maxResult, CancellationToken cancellationToken = default)
+    {
+        return new JsonStringResult(Serializer.Serialize(await artistImageSearchEngineService.DoSearchAsync(query, maxResult, cancellationToken).ConfigureAwait(false))!);
+    }     
 }

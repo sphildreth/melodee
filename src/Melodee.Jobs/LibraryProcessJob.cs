@@ -6,6 +6,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.MessageBus;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
