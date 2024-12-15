@@ -69,7 +69,7 @@ public class ArtistHousekeepingJob(
                         if (await httpClient.DownloadFileAsync(
                                 albumImageSearchResult.Data.First().MediaUrl,
                                 imageFileName,
-                                async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, context.CancellationToken)).Data.IsValid,
+                                async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Artist, context.CancellationToken)).Data.IsValid,
                                 context.CancellationToken))
                         {
                             artist.LastUpdatedAt = now;

@@ -1,11 +1,12 @@
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Validation;
 using Melodee.Plugins.Validation.Models;
 using Serilog;
-using Serilog.Core;
 using SixLabors.ImageSharp;
 
 namespace Melodee.Plugins.Validation;
@@ -16,7 +17,7 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
     
     private readonly List<ValidationResultMessage> _validationMessages = [];
     
-    public async Task<OperationResult<ValidationResult>> ValidateImage(FileInfo? fileInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<ValidationResult>> ValidateImage(FileInfo? fileInfo, PictureIdentifier pictureIdentifier, CancellationToken cancellationToken = default)
     {
         if (fileInfo == null)
         {
@@ -45,13 +46,16 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
         try
         {
             var imageInfo = await Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
-            if (imageInfo.Width != imageInfo.Height)
+            if (pictureIdentifier.ValidateIsSquare())
             {
-                _validationMessages.Add(new ValidationResultMessage
+                if (imageInfo.Width != imageInfo.Height)
                 {
-                    Severity = ValidationResultMessageSeverity.Critical,
-                    Message = $"Image is not square [{ imageInfo.Width}x{imageInfo.Height}]."
-                });
+                    _validationMessages.Add(new ValidationResultMessage
+                    {
+                        Severity = ValidationResultMessageSeverity.Critical,
+                        Message = $"Image is not square [{imageInfo.Width}x{imageInfo.Height}]."
+                    });
+                }
             }
             var minSize = configuration.GetValue<int>(SettingRegistry.ImagingMinimumImageSize);
             var smallImageSize = configuration.GetValue<int>(SettingRegistry.ImagingSmallSize);

@@ -11,6 +11,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Validation;
@@ -44,6 +45,7 @@ public class LibraryProcessJob(
     AlbumService albumService,
     AlbumDiscoveryService albumDiscoveryService,
     DirectoryProcessorService directoryProcessorService,
+    ImageConvertor imageConvertor,
     IImageValidator imageValidator) : JobBase(logger, configurationFactory)
 {
     private readonly List<int> _dbAlbumIdsModifiedOrUpdated = [];
@@ -121,7 +123,7 @@ public class LibraryProcessJob(
 
             ISongPlugin[] songPlugins =
             [
-                new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), imageValidator, _configuration)
+                new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), imageConvertor, imageValidator, _configuration)
             ];
             _now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 

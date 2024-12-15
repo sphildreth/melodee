@@ -10,6 +10,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Validation;
@@ -480,10 +481,11 @@ public sealed class LibraryService(
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
 
         var imageValidator = new ImageValidator(configuration);
+        var imageConvertor = new ImageConvertor(configuration);
 
         ISongPlugin[] songPlugins =
         [
-            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageValidator, configuration)
+            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor,  imageValidator, configuration)
         ];
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);

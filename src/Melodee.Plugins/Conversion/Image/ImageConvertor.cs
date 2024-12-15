@@ -51,9 +51,9 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
         if (fileInfo.Exists)
         {
-            var smallImageSize = configuration.GetValue<int>(SettingRegistry.ImagingSmallSize);
-            var mediumImageSize = configuration.GetValue<int>(SettingRegistry.ImagingMediumSize);
-            var largeImageSize = configuration.GetValue<int>(SettingRegistry.ImagingLargeSize);
+            var smallImageSize = MelodeeConfiguration.GetValue<int>(SettingRegistry.ImagingSmallSize);
+            var mediumImageSize = MelodeeConfiguration.GetValue<int>(SettingRegistry.ImagingMediumSize);
+            var largeImageSize = MelodeeConfiguration.GetValue<int>(SettingRegistry.ImagingLargeSize);
             
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
             var imageInfo = await SixLabors.ImageSharp.Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);

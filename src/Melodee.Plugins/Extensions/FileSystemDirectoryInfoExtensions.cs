@@ -27,7 +27,7 @@ public static  class FileSystemDirectoryInfoExtensions
             var fileNameNormalized = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
             if (ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
             {
-                if (!(await imageValidator.ValidateImage(fileInfo, cancellationToken)).Data.IsValid)
+                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
                 {
                     continue;
                 }

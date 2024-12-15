@@ -111,7 +111,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
             ISongPlugin[] songPlugins =
             [
-                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), GetImageValidator(), config)
+                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), GetImageConvertor(), GetImageValidator(), config)
             ];            
             var allAlbums = await processor.AllAlbumsForDirectoryAsync(
                 dirInfo.ToDirectorySystemInfo(),
@@ -177,7 +177,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             var config = TestsBase.NewPluginsConfiguration();
             ISongPlugin[] songPlugins =
             [
-                new AtlMetaTag(new MetaTagsProcessor(config, Serializer),GetImageValidator(), config)
+                new AtlMetaTag(new MetaTagsProcessor(config, Serializer),GetImageConvertor(),GetImageValidator(), config)
             ]; 
             var processor = CreateDirectoryProcessorService();
             await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());

@@ -1,6 +1,7 @@
 ﻿@page "/album/{libraryApiKey:guid}/{uniqueId:long}/{returnUrl}"
 @using System.Security.Principal
 @using Melodee.Common.Models.SearchEngines
+@using Melodee.Plugins.Conversion.Image
 @using Melodee.Plugins.Validation
 
 @inject AlbumDiscoveryService AlbumsDiscoverer
@@ -315,6 +316,7 @@
     private string? _albumFullPath;
 
     private IImageValidator _imageValidator;
+    private ImageConvertor _imageConvertor;
 
     private EditContext? _editFormEditContext;
     private readonly List<ToastMessage> _messages = [];
@@ -475,7 +477,7 @@
         if (_album.Songs?.Any() ?? false)
         {
             var configuration = await SettingService.GetMelodeeConfigurationAsync();
-            var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), _imageValidator, configuration);
+            var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), _imageConvertor, _imageValidator, configuration);
             foreach (var song in _album.Songs)
             {
                 await editSongPlugin.RemoveImagesAsync(_album.Directory!, song);
@@ -614,7 +616,7 @@
                 if (album.Songs != null)
                 {
                     var configuration = await SettingService.GetMelodeeConfigurationAsync();
-                    var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), _imageValidator, configuration);
+                    var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), _imageConvertor, _imageValidator, configuration);
                     foreach (var song in album.Songs)
                     {
                         album.SetSongTagValue(song.SongId, MetaTagIdentifier.Album, _albumEdit.Title);
@@ -662,6 +664,7 @@
     {
         var configuration = await SettingService.GetMelodeeConfigurationAsync();
         _imageValidator = new ImageValidator(configuration);
+        _imageConvertor = new ImageConvertor(configuration);
 
         var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
         await AlbumsDiscoverer.InitializeAsync();

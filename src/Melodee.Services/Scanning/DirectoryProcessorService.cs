@@ -54,6 +54,7 @@ public sealed class DirectoryProcessorService(
 
     private string _directoryStaging = null!;
     private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
+    private ImageConvertor _imageConvertor = new ImageConvertor(new MelodeeConfiguration([]));
     private bool _initialized;
     private int _maxAlbumProcessingCount;
     private short _maxImageCount;
@@ -80,10 +81,10 @@ public sealed class DirectoryProcessorService(
 
         _albumValidator = new AlbumValidator(_configuration);
         _imageValidator = new ImageValidator(_configuration);
-
+        _imageConvertor = new ImageConvertor(_configuration);
         _songPlugins =
         [
-            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageValidator, _configuration)
+            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer),_imageConvertor, _imageValidator, _configuration)
         ];
 
         _conversionPlugins =
@@ -267,18 +268,15 @@ public sealed class DirectoryProcessorService(
 
                         if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
                         {
-                            using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{File}] ", plugin.DisplayName, fileSystemInfo.Name))
+                            var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
+                            if (!pluginResult.IsSuccess)
                             {
-                                var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken);
-                                if (!pluginResult.IsSuccess)
-                                {
-                                    processingErrors.AddRange(pluginResult.Errors ?? []);
-                                    processingMessages.AddRange(pluginResult.Messages ?? []);
-                                }
-                                else
-                                {
-                                    conversionPluginsProcessedFileCount++;
-                                }
+                                processingErrors.AddRange(pluginResult.Errors ?? []);
+                                processingMessages.AddRange(pluginResult.Messages ?? []);
+                            }
+                            else
+                            {
+                                conversionPluginsProcessedFileCount++;
                             }
                         }
 
@@ -590,6 +588,7 @@ public sealed class DirectoryProcessorService(
                                     {
                                         break;
                                     }
+
                                     await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken);
                                 }
                             }
@@ -613,7 +612,7 @@ public sealed class DirectoryProcessorService(
                         if (artistFromSearch != null)
                         {
                             // TODO put this back in the job as this doesn't work well with having local MB be the first result and it doesnt have any images
-                            
+
                             // var artistFromSearchImageFilename = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Artist.ImageType).Item1);
                             // if (artistFromSearch.ImageUrl != null)
                             // {
@@ -755,7 +754,7 @@ public sealed class DirectoryProcessorService(
                     }
 
                     numberOfAlbumsProcessed++;
-                    
+
                     if (album.Status == AlbumStatus.Ok)
                     {
                         numberOfValidAlbumsProcessed++;
@@ -895,7 +894,7 @@ public sealed class DirectoryProcessorService(
             var isArtistImage = fileNameNormalized.Contains(album.Artist.NameNormalized, StringComparison.OrdinalIgnoreCase);
             if (isArtistImage || ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
             {
-                if (!(await imageValidator.ValidateImage(fileInfo, cancellationToken)).Data.IsValid)
+                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
                 {
                     continue;
                 }
@@ -952,7 +951,7 @@ public sealed class DirectoryProcessorService(
             var fileInfo = new FileInfo(imageFile);
             if (album.IsFileForAlbum(fileInfo))
             {
-                if (!(await imageValidator.ValidateImage(fileInfo, cancellationToken)).Data.IsValid)
+                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken)).Data.IsValid)
                 {
                     continue;
                 }

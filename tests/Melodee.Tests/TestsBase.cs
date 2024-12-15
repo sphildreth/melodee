@@ -5,6 +5,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.Validation;
 using Moq;
 using NodaTime;
@@ -23,6 +24,11 @@ public abstract class TestsBase
     private ILogger Logger { get; }
 
     protected ISerializer Serializer { get; }
+    
+    protected ImageConvertor GetImageConvertor()
+    {
+        return new ImageConvertor(TestsBase.NewPluginsConfiguration());
+    }     
     
     protected IImageValidator GetImageValidator()
     {

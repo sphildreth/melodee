@@ -39,6 +39,7 @@ public sealed class MediaEditService(
     private string _directoryLibrary = null!;
 
     private ISongPlugin _editSongPlugin = new NullSongPlugin();
+    private ImageConvertor _imageConvertor = new ImageConvertor(new MelodeeConfiguration([]));
     private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private bool _initialized;
 
@@ -47,7 +48,8 @@ public sealed class MediaEditService(
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
         _albumValidator = new AlbumValidator(_configuration);
         _imageValidator = new ImageValidator(_configuration);
-        _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageValidator, _configuration);
+        _imageConvertor = new ImageConvertor(_configuration);
+        _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer),_imageConvertor, _imageValidator, _configuration);
 
         _directoryLibrary = (await libraryService.GetLibraryAsync(token)).Data.Path;
 

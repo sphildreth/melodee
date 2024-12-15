@@ -4,6 +4,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
+using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
@@ -49,6 +50,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var imageValidator = new ImageValidator(config);
+            var imageConvertor = new ImageConvertor(config);
             
             var fileInfo = new FileInfo(settings.Filename);
             if (!fileInfo.Exists)
@@ -69,7 +71,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             var sfv = new SimpleFileVerification(serializer,
                 new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageValidator, config)
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer),imageConvertor, imageValidator, config)
                 }, new AlbumValidator(config), config);
             if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
@@ -100,7 +102,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             var m3u = new M3UPlaylist(serializer,
                 new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageValidator, config)
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer),imageConvertor, imageValidator, config)
                 }, new AlbumValidator(config)
                 , config);
             if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))

@@ -9,6 +9,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
+using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Plugins.Validation;
@@ -141,6 +142,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockHttpClientFactory());
     }
 
+    protected ImageConvertor GetImageConvertor()
+    {
+        return new ImageConvertor(TestsBase.NewPluginsConfiguration());
+    }
+    
     protected IImageValidator GetImageValidator()
     {
         return new ImageValidator(TestsBase.NewPluginsConfiguration());
