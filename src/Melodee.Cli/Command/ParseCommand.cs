@@ -68,6 +68,56 @@ public class ParseCommand : AsyncCommand<ParseSettings>
 
             var isValid = false;
 
+            var cue = new CueSheet(serializer, new[]
+            {
+                new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
+            }, config);
+            if (cue.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
+            {
+                try
+                {
+                    var parseCueResult = await CueSheet.ParseFileAsync(fileInfo.FullName, config.Configuration);
+                    if (!parseCueResult?.IsValid ?? false)
+                    {
+                        if (settings.Verbose)
+                        {
+                            AnsiConsole.Write(
+                                new Panel(new JsonText(serializer.Serialize(parseCueResult)))
+                                    .Header("Parse Result")
+                                    .Collapse()
+                                    .RoundedBorder()
+                                    .BorderColor(Color.Yellow));
+                        }
+
+                        isValid = false;
+                    }
+                    else
+                    {
+
+                        var cueResult = await cue.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
+
+                        Log.Debug("ℹ️  Processed CUE File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, Stopwatch.GetElapsedTime(startTicks));
+
+                        if (settings.Verbose)
+                        {
+                            AnsiConsole.Write(
+                                new Panel(new JsonText(serializer.Serialize(cueResult)))
+                                    .Header("Parse Result")
+                                    .Collapse()
+                                    .RoundedBorder()
+                                    .BorderColor(Color.Yellow));
+                        }
+                        isValid = cueResult?.IsSuccess ?? false;
+                    }
+                    
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }                
+            }
+
+
             var sfv = new SimpleFileVerification(serializer,
                 new[]
                 {

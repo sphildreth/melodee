@@ -130,6 +130,11 @@ public static class FileSystemDirectoryInfoExtensions
     {
         return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension));
     }
+    
+    public static IEnumerable<FileInfo> AllMediaTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
+    }    
 
     public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null)
     {

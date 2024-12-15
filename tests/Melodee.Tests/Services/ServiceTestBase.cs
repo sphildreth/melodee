@@ -120,7 +120,6 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected MusicBrainzRepository GetMusicBrainzRepository()
     {
         return new MusicBrainzRepository(Log.Logger, 
-            MockFactory(), 
             MockConfigurationFactory(),
             MockDbContextFactory());
     }

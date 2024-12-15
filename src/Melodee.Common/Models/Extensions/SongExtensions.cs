@@ -301,7 +301,14 @@ public static class SongExtensions
         return Path.GetExtension(song.File.Name);
     }
 
-    public static string SongFileName(FileInfo fileInfo, int maximumSongNumber, int songNumber, string? songTitle, int maximumMediaNumber, int mediaNumber, int totalMediaNumber)
+    public static string SongFileName(FileInfo fileInfo,
+        int maximumSongNumber,
+        int songNumber,
+        string? songTitle,
+        int maximumMediaNumber,
+        int mediaNumber,
+        int totalMediaNumber,
+        string? extension = null)
     {
         if (songNumber < 1)
         {
@@ -342,7 +349,7 @@ public static class SongExtensions
                 .ToTitleCase(false);
         }
 
-        return $"{disc}{songNumberValue} {fileNameFromTitle}{fileInfo.Extension}";
+        return $"{disc}{songNumberValue} {fileNameFromTitle}{extension ?? fileInfo.Extension}";
     }
 
     public static string ToSongFileName(this Song song, FileSystemDirectoryInfo directoryInfo, Dictionary<string, object?> configuration)

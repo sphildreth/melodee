@@ -78,7 +78,6 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
 
             var musicBrainzRepository = new MusicBrainzRepository(
                 Log.Logger, 
-                dbFactory, 
                 melodeeConfigurationFactory, 
                 scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>());
             

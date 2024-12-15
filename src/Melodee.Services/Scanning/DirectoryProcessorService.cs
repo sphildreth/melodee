@@ -249,6 +249,41 @@ public sealed class DirectoryProcessorService(
 
                 LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Processing [{0}] Number of files to process [{1}]", null, directoryInfoToProcess.Name, allFilesInDirectory.Length);
 
+                // Run all enabled IDirectoryPlugins to convert MetaData files into Album json files.
+                // e.g. Build Album json file for M3U or NFO or SFV, etc.
+                foreach (var plugin in _directoryPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
+                {
+                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                    {
+                        break;
+                    }
+
+                    var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
+                    if (!pluginResult.IsSuccess && pluginResult.Type != OperationResponseType.NotFound)
+                    {
+                        processingErrors.AddRange(pluginResult.Errors ?? []);
+                        if (plugin.StopProcessing)
+                        {
+                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    if (pluginResult.Data > 0)
+                    {
+                        directoryPluginProcessedFileCount += pluginResult.Data;
+                    }
+
+                    if (plugin.StopProcessing)
+                    {
+                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
+                        break;
+                    }
+                }
+                
+                
                 // Run Enabled Conversion scripts on each file in directory
                 // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
                 foreach (var fileSystemInfo in allFilesInDirectory)
@@ -284,40 +319,6 @@ public sealed class DirectoryProcessorService(
                         {
                             break;
                         }
-                    }
-                }
-
-                // Run all enabled IDirectoryPlugins to convert MetaData files into Album json files.
-                // e.g. Build Album json file for M3U or NFO or SFV, etc.
-                foreach (var plugin in _directoryPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
-                {
-                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                    {
-                        break;
-                    }
-
-                    var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken);
-                    if (!pluginResult.IsSuccess && pluginResult.Type != OperationResponseType.NotFound)
-                    {
-                        processingErrors.AddRange(pluginResult.Errors ?? []);
-                        if (plugin.StopProcessing)
-                        {
-                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
-                            break;
-                        }
-
-                        continue;
-                    }
-
-                    if (pluginResult.Data > 0)
-                    {
-                        directoryPluginProcessedFileCount += pluginResult.Data;
-                    }
-
-                    if (plugin.StopProcessing)
-                    {
-                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
-                        break;
                     }
                 }
 
@@ -435,7 +436,7 @@ public sealed class DirectoryProcessorService(
                         }
 
                         var albumImages = new List<ImageInfo>();
-                        var foundAlbumImages = (await FindImagesForAlbum(album, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
+                        var foundAlbumImages = (await FindImagesForAlbum(album, _imageConvertor, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
                         if (foundAlbumImages.Length != 0)
                         {
                             foreach (var foundAlbumImage in foundAlbumImages)
@@ -457,7 +458,7 @@ public sealed class DirectoryProcessorService(
                         // Look in the album directory and see if there are any artist images. 
                         // Most of the time an artist image is one up from an album folder in the 'artist' folder.
                         var artistImages = new List<ImageInfo>();
-                        var foundArtistImages = (await FindImagesForArtist(album, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
+                        var foundArtistImages = (await FindImagesForArtist(album, _imageConvertor, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
                         if (foundArtistImages.Length != 0)
                         {
                             foreach (var foundArtistImage in foundArtistImages)
@@ -877,7 +878,7 @@ public sealed class DirectoryProcessorService(
     }
 
     //TODO make this use the Artist method to get images for an artist
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToArray();
@@ -896,7 +897,12 @@ public sealed class DirectoryProcessorService(
             {
                 if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
                 {
-                    continue;
+                    // Try converting (resizing and padding if needed) image and then revalidate
+                    await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
+                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken)).Data.IsValid)
+                    {
+                        continue;
+                    }
                 }
 
                 var pictureIdentifier = PictureIdentifier.NotSet;
@@ -936,24 +942,42 @@ public sealed class DirectoryProcessorService(
         return imageInfos;
     }
 
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).Order().ToArray();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
+        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image folders.
+        foreach (var dir in album.ImageDirectories())
+        {
+            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
+        }
         var index = 1;
-        foreach (var imageFile in imageFiles)
+        foreach (var imageFile in imageFiles.Order())
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
-
             var fileInfo = new FileInfo(imageFile);
+            
             if (album.IsFileForAlbum(fileInfo))
             {
+                // Move the image if not in the album directory
+                if (fileInfo.DirectoryName != album.Directory.FullName())
+                {
+                    var newFileInfoName = Path.Combine(album.Directory.FullName(), $"{ Path.GetFileNameWithoutExtension(fileInfo.Name)}-{fileInfo.Directory.Name}{Path.GetExtension(fileInfo.Name)}");
+                    File.Move(fileInfo.FullName, newFileInfoName);
+                    fileInfo = new FileInfo(newFileInfoName);
+                }  
+                
                 if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken)).Data.IsValid)
                 {
-                    continue;
+                    // Try converting (resizing and padding if needed) image and then revalidate
+                    await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
+                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken)).Data.IsValid)
+                    {
+                        continue;
+                    }
                 }
 
                 var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);

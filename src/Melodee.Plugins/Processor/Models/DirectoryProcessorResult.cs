@@ -22,7 +22,7 @@ public record DirectoryProcessorResult
 
     public string FormattedValidPercentageProcessed => $"{((int)Math.Round((double)(100*NumberOfValidAlbumsProcessed) / NumberOfAlbumsProcessed))}%";
 
-    public string SuccessSummary => $"Processed [{NumberOfAlbumsProcessed}] albums and {FormattedValidPercentageProcessed} [{NumberOfValidAlbumsProcessed}] are \'Ok\' status.";
+    public string SuccessSummary => $"Processed [{NumberOfAlbumsProcessed}] albums and {FormattedValidPercentageProcessed} [{NumberOfValidAlbumsProcessed}] are [Ok] status.";
     
     public required int NumberOfConversionPluginsProcessedFileCount { get; init; }
 }

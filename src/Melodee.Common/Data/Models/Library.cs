@@ -52,4 +52,9 @@ public class Library : DataModelBase
 
         return LastScanAt == null || LastScanAt < LastWriteTime();
     }
+
+    public override string ToString()
+    {
+        return $"ApiKey [{ApiKey}] Name [{Name}] Path [{Path}]";
+    }
 }

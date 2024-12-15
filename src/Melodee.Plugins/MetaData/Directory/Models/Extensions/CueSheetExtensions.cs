@@ -80,13 +80,18 @@ public static class CueSheetExtensions
 
     public static string? Artist(this CueSheet cueSheet)
     {
-        return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Artist);
+        return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist) ?? cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Artist);
     }
 
     public static string? AlbumTitle(this CueSheet cueSheet)
     {
         return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Album);
     }
+    
+    public static string? Genre(this CueSheet cueSheet)
+    {
+        return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Genre);
+    }    
 
     public static int SongTotalNumber(this CueSheet cueSheet)
     {

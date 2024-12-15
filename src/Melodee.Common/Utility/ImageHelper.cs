@@ -79,7 +79,7 @@ public static class ImageHelper
         }
 
         return Regex.IsMatch(fileInfo.Name,
-            @"((f[-_\s]*[0-9]*)|00|art|big[art]*|cover|cvr|folder|Album|front[-_\s]*)\.(jpg|jpeg|png|bmp|gif)",
+            @"((f[-_\s]*[0-9]*)|00|art|big[art]*|cover(s)*|cvr|folder|Album|front[-_\s]*)\.(jpg|jpeg|png|bmp|gif)",
             RegexOptions.IgnoreCase);
     }
 

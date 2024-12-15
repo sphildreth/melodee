@@ -375,6 +375,7 @@ public sealed class AtlMetaTag(
                     DiscTotal = song.MediaTotalNumber(),
                     Genre = song.Genre(),
                     OriginalReleaseDate = song.AlbumDateValue(),
+                    Title = song.Title(),
                     TrackNumber = song.SongNumber(),
                     TrackTotal = song.SongTotalNumber(),
                     Year = song.AlbumYear()

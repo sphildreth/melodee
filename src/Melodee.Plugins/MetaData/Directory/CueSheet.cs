@@ -23,11 +23,15 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// <summary>
 ///     If a CUE file is found then split out the MP3 into Songs.
 /// </summary>
-public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> songPlugins, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class CueSheet(
+    ISerializer serializer,
+    IEnumerable<ISongPlugin> songPlugins,
+    IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration),
+    IDirectoryPlugin
 {
     private const string HandlesExtension = "CUE";
 
-    public readonly IEnumerable<ISongPlugin> SongPlugins = songPlugins;
+    private readonly IEnumerable<ISongPlugin> _songPlugins = songPlugins;
 
     public override string Id => "3CAB0527-B13F-4C29-97AD-5541229240DD";
 
@@ -90,7 +94,7 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                                 Log.Error("Error reading CUE [{CUEFileForAlbumDirectory}] [{@Error}", cueFile.FullName, ex2);
                                 return new OperationResult<int>
                                 {
-                                    Errors = new[] { ex2 },
+                                    Errors = [ex2],
                                     Data = 0
                                 };
                             }
@@ -101,7 +105,7 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                             Log.Error("Error reading CUE [{CUEFileForAlbumDirectory}] [{@Error}", cueFile.FullName, ex);
                             return new OperationResult<int>
                             {
-                                Errors = new[] { ex },
+                                Errors = [ex],
                                 Data = 0
                             };
                         }
@@ -115,8 +119,7 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                             var withAudioBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionBitrate]);
                             var withAudioSamplingRate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]);
                             var withVariableBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]);
-                            var albumArtist = theReader.Artist ?? cueModel.Artist() ?? throw new Exception("Invalid Artist");
-                            await Parallel.ForEachAsync(cueModel.Songs.OrderBy(x => x.SortOrder), cancellationToken, async (song, ct) =>
+                            await Parallel.ForEachAsync(cueModel.Songs.OrderBy(x => x.SortOrder), cancellationToken, async (song, _) =>
                             {
                                 var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
                                 var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
@@ -175,27 +178,21 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                                     Severity = ValidationResultMessageSeverity.Critical
                                 });
                             }
-
-                            cueAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
-                            var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueAlbum.ToMelodeeJsonName());
-                            if (File.Exists(stagingAlbumDataName))
+                            
+                            var mp3Plugin = _songPlugins.First(x => x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
+                            foreach (var song in cueModel.Songs)
                             {
-                                var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                                if (existingAlbum != null)
+                                var mp3SongTags = new List<MetaTag<object?>>
                                 {
-                                    cueAlbum = cueAlbum.Merge(existingAlbum);
-                                }
+                                    new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = cueModel.AlbumTitle() },
+                                    new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = cueModel.Artist() },
+                                    new MetaTag<object?> { Identifier = MetaTagIdentifier.OrigAlbumDate, Value = cueModel.AlbumYear() },
+                                    new MetaTag<object?> { Identifier = MetaTagIdentifier.Genre, Value = cueModel.Genre() }
+                                };
+                                mp3SongTags.AddRange(song.Tags ?? []);
+                                var mp3Song = song with { Tags = mp3SongTags };
+                                await mp3Plugin.UpdateSongAsync(cueModel.FileSystemDirectoryInfo, mp3Song, cancellationToken).ConfigureAwait(false);
                             }
-
-                            var serialized = serializer.Serialize(cueAlbum);
-                            await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
-                            {
-                                cueFile.Delete();
-                                Log.Information("Deleted CUE File [{FileName}]", cueFile.Name);
-                            }
-
-                            Log.Debug("[{Plugin}] created [{StagingAlbumDataName}]", DisplayName, cueAlbum.ToMelodeeJsonName());
                             processedFiles++;
                         }
                     }
@@ -231,7 +228,7 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
         {
             return null;
         }
-
+        
         var allLinesFromFile = await File.ReadAllLinesAsync(filePath);
 
         var albumTags = new List<MetaTag<object?>>();
@@ -281,7 +278,16 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                     {
                         cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" BINARY", string.Empty))).ToFileSystemInfo();
                     }
-
+                    var directoryInfo = new DirectoryInfo(fileInfo.DirectoryName!).ToDirectorySystemInfo();
+                    if (!cueSheetDataFile?.Exists(directoryInfo) ?? false)
+                    {
+                        // sometimes the FILE line points to a WAV when there is a MP3 or an APE file
+                        var mediaTypeFilesInDirectory = directoryInfo.AllMediaTypeFileInfos().ToArray();
+                        if (mediaTypeFilesInDirectory.Any())
+                        {
+                            cueSheetDataFile = mediaTypeFilesInDirectory.First().ToFileSystemInfo();
+                        }
+                    }
                     break;
 
                 case CueSheetKeyRegistry.Flags:
@@ -355,10 +361,10 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                     break;
 
                 case CueSheetKeyRegistry.Rem:
-                    var v = kp.Value?.Replace("REM", "").Nullify();
+                    var valueParts = kp.Value?.Split(' ') ?? [];
 
                     var remIdentifier = MetaTagIdentifier.Comment;
-                    switch (v)
+                    switch (valueParts[0])
                     {
                         case CueSheetRemOptionsRegistry.Genre:
                             remIdentifier = MetaTagIdentifier.Genre;
@@ -380,7 +386,7 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                     albumTags.Add(new MetaTag<object?>
                     {
                         Identifier = remIdentifier,
-                        Value = v
+                        Value = valueParts[1]
                     });
                     break;
 
@@ -425,12 +431,12 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                     break;
 
                 case CueSheetKeyRegistry.Song:
+                case CueSheetKeyRegistry.Track:
                     songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     songTitle = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
                     if (songNumber > 0 && !string.IsNullOrWhiteSpace(songTitle))
                     {
                         var mediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 1;
-                        //song.MediaTotalNumber()
                         var totalMediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscTotal)?.Value as int? ?? 1;
                         songTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
                         var songFileName = SongExtensions.SongFileName(
@@ -440,7 +446,8 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                             songTitle,
                             SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
                             mediaNumber,
-                            totalMediaNumber);
+                            totalMediaNumber,
+                            ".mp3");
                         songs.Add(new Common.Models.Song
                         {
                             CrcHash = Crc32.Calculate(fileInfo),
@@ -477,7 +484,8 @@ public sealed class CueSheet(ISerializer serializer, IEnumerable<ISongPlugin> so
                 songTitle,
                 SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
                 mediaNumber,
-                totalMediaNumber);
+                totalMediaNumber, 
+                ".mp3");
             songs.Add(new Common.Models.Song
             {
                 CrcHash = Crc32.Calculate(fileInfo),

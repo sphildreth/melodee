@@ -29,6 +29,8 @@ public sealed class ImageHelperTests
     [InlineData("00-quantic.jpg", "Dancing While Falling", false)]
     [InlineData("front.jpg", null, true)]
     [InlineData("cover.jpg", null, true)]
+    [InlineData("01-cover.jpg", null, true)]
+    [InlineData("02-cover.jpg", null, true)]
     [InlineData("00-quantic--dancing_while_falling_(deluxe_edition)-web-2024-oma.jpg", "Dancing While Falling", true)]
     [InlineData("Mazzy Star-ghost highway-remastered-CD.jpg", "Ghost Highway", true)]
     [InlineData("Mazzy Star-ghost highway-remastered-booklet-front.jpg", "Ghost Highway", true)]

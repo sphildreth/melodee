@@ -3,7 +3,6 @@ using System.Globalization;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
-using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -11,7 +10,6 @@ using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized;
-using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -38,7 +36,6 @@ using Release = Release;
 /// </summary>
 public class MusicBrainzRepository(
     ILogger logger,
-    IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
     IDbConnectionFactory dbConnectionFactory)
 {
@@ -91,7 +88,8 @@ public class MusicBrainzRepository(
                         if (query.AlbumKeyValues != null)
                         {
                             artistAlbums = artistAlbums
-                                .Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() ||
+                                .Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x?.ReleaseDate.Year.ToString() ||
+                                                                           x != null && 
                                                                            x.NameNormalized.Contains(xx.Value ?? string.Empty)))
                                 .ToArray();
                         }
@@ -105,10 +103,10 @@ public class MusicBrainzRepository(
                             Name = artist.Name,
                             SortName = artist.SortName,
                             MusicBrainzId = artist.MusicBrainzId,
-                            AlbumCount = artistAlbums.Count(x => x.DoIncludeInArtistSearch),
-                            Releases = artistAlbums.Where(x => x.DoIncludeInArtistSearch).OrderBy(x => x.ReleaseDate).ThenBy(x => x.SortName).Select(x => new AlbumSearchResult
+                            AlbumCount = artistAlbums.Count(x => x is { DoIncludeInArtistSearch: true}),
+                            Releases = artistAlbums.Where(x => x is { DoIncludeInArtistSearch: true }).OrderBy(x => x!.ReleaseDate).ThenBy(x => x!.SortName).Select(x => new AlbumSearchResult
                             {
-                                AlbumType = SafeParser.ToEnum<AlbumType>(x.ReleaseType),
+                                AlbumType = SafeParser.ToEnum<AlbumType>(x!.ReleaseType),
                                 ReleaseDate = x.ReleaseDate.ToString("o", CultureInfo.InvariantCulture),
                                 UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                                 Name = x.Name,
@@ -130,7 +128,7 @@ public class MusicBrainzRepository(
                               order by a."SortName"
                               LIMIT @queryMax
                               """;
-                    var artists = (await db.QueryAsync<Models.Materialized.Artist>(sql, new { queryMax, name = query.QueryNameNormalizedValue }).ConfigureAwait(false))?.ToArray() ?? [];
+                    var artists = (await db.QueryAsync<Models.Materialized.Artist>(sql, new { queryMax, name = query.QueryNameNormalizedValue }).ConfigureAwait(false)).ToArray();
 
                     foreach (var artist in artists)
                     {
@@ -155,15 +153,15 @@ public class MusicBrainzRepository(
                               WHERE ArtistId = @artistId
                               LIMIT @queryMax;    
                               """;
-                        var allArtistAlbums = (await db.QueryAsync<Models.Materialized.Album>(sql, new { queryMax, artistId = artist.Id }).ConfigureAwait(false))?.ToArray() ?? [];
+                        var allArtistAlbums = (await db.QueryAsync<Album>(sql, new { queryMax, artistId = artist.Id }).ConfigureAwait(false)).ToArray();
 
-                        var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(x => x.ReleaseDate).FirstOrDefault()).ToArray();
+                        var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(xx => xx.ReleaseDate).FirstOrDefault()).ToArray();
 
                         if (query.AlbumKeyValues != null)
                         {
-                            artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() ||
-                                                                                                  x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
-                                                                                                  x.NameNormalized.Contains(xx.Value ?? string.Empty))).ToArray();
+                            artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => x != null && xx.Key == x.ReleaseDate.Year.ToString() ||
+                                                                                                  x != null && x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
+                                                                                                  x != null && x.NameNormalized.Contains(xx.Value ?? string.Empty))).ToArray();
                             rank += artistAlbums.Length;
                         }
 
@@ -176,10 +174,13 @@ public class MusicBrainzRepository(
                             Name = artist.Name,
                             SortName = artist.SortName,
                             MusicBrainzId = artist.MusicBrainzId,
-                            AlbumCount = artistAlbums.Count(x => x.DoIncludeInArtistSearch),
-                            Releases = artistAlbums.Where(x => x.DoIncludeInArtistSearch).OrderBy(x => x.ReleaseDate).ThenBy(x => x.SortName).Select(x => new AlbumSearchResult
+                            AlbumCount = artistAlbums.Count(x => x is { DoIncludeInArtistSearch: true}),
+                            Releases = artistAlbums
+                                .Where(x => x is { DoIncludeInArtistSearch: true})
+                                .OrderBy(x => x!.ReleaseDate)
+                                .ThenBy(x => x!.SortName).Select(x => new AlbumSearchResult
                             {
-                                AlbumType = SafeParser.ToEnum<AlbumType>(x.ReleaseType),
+                                AlbumType = SafeParser.ToEnum<AlbumType>(x!.ReleaseType),
                                 ReleaseDate = x.ReleaseDate.ToString("o", CultureInfo.InvariantCulture),
                                 UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                                 Name = x.Name,
@@ -497,28 +498,23 @@ public class MusicBrainzRepository(
                 var artistCreditsDictionary = artistCredits.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.ToList());
                 var artistCreditsNamesDictionary = artistCreditNames.GroupBy(x => x.ArtistCreditId).ToDictionary(x => x.Key, x => x.ToList());
 
-                ReleaseCountry? releaseCountry = null;
-                ReleaseGroup? releaseGroup = null;
-                ReleaseGroupMeta? releaseGroupMeta = null;
-                ArtistCredit? artistCredit = null;
-                ArtistCreditName? artistCreditName = null;
-                Models.Materialized.Artist? releaseArtist = null;
                 string? contributorIds = null;
                 var invalidCount = 0;
                 logger.Debug("MusicBrainzRepository: Loaded ReleaseCountries [{RcCount}] ReleaseGroups [{RgCount}] ReleaseGroupMetas [{RgMetaCount}] Artists [{ACount}]",
                     releaseCountriesDictionary.Count, releaseGroupsDictionary.Count, releaseGroupsMetaDictionary.Count, dbArtistDictionary.Count);
                 foreach (var release in releases)
                 {
-                    releaseCountriesDictionary.TryGetValue(release.Id, out var releaseCountrys);
+                    releaseCountriesDictionary.TryGetValue(release.Id, out var releaseCountries);
                     releaseGroupsDictionary.TryGetValue(release.ReleaseGroupId, out var releaseReleaseGroups);
-                    releaseCountry = releaseCountrys?.OrderBy(x => x.ReleaseDate).FirstOrDefault();
-                    releaseGroup = releaseReleaseGroups?.FirstOrDefault();
+                    var releaseCountry = releaseCountries?.OrderBy(x => x.ReleaseDate).FirstOrDefault();
+                    var releaseGroup = releaseReleaseGroups?.FirstOrDefault();
+                    Models.Materialized.Artist? releaseArtist;
                     dbArtistDictionary.TryGetValue(release.ArtistCreditId, out releaseArtist);
 
                     if (releaseGroup != null && !(releaseCountry?.IsValid ?? false))
                     {
                         releaseGroupsMetaDictionary.TryGetValue(release.ReleaseGroupId, out var releaseGroupsMeta);
-                        releaseGroupMeta = releaseGroupsMeta?.OrderBy(x => x.ReleaseDate).FirstOrDefault();
+                        var releaseGroupMeta = releaseGroupsMeta?.OrderBy(x => x.ReleaseDate).FirstOrDefault();
                         if (releaseGroupMeta?.IsValid ?? false)
                         {
                             releaseCountry = new ReleaseCountry
@@ -532,11 +528,11 @@ public class MusicBrainzRepository(
                     }
 
                     artistCreditsDictionary.TryGetValue(release.ArtistCreditId, out var releaseArtistCredits);
-                    artistCredit = releaseArtistCredits?.FirstOrDefault();
+                    var artistCredit = releaseArtistCredits?.FirstOrDefault();
                     if (artistCredit != null)
                     {
                         artistCreditsNamesDictionary.TryGetValue(artistCredit.Id, out var releaseArtistCreditNames);
-                        artistCreditName = releaseArtistCreditNames?.OrderBy(x => x.Position).FirstOrDefault();
+                        var artistCreditName = releaseArtistCreditNames?.OrderBy(x => x.Position).FirstOrDefault();
                         if (artistCreditName != null)
                         {
                             // Sometimes there are multiple artists on a release (see https://musicbrainz.org/release/519345af-b328-4d88-98cb-29f1a5d1fe2d) and the ArtistCreditId doesn't point to an ArtistId it points to a ArtistCredit.Id

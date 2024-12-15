@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
@@ -337,6 +338,22 @@ public static class AlbumExtensions
         }
 
         return dirInfo.GetFiles($"*.{extension}", SearchOption.AllDirectories).ToArray();
+    }
+
+    public static DirectoryInfo[] ImageDirectories(this Album album)
+    {
+        var result = new List<DirectoryInfo>();
+        if (album.Directory.Exists())
+        {
+            foreach (var directory in Directory.GetDirectories(album.Directory.FullName(), "*.*", SearchOption.TopDirectoryOnly))
+            {
+                if (ImageHelper.ImageFilesInDirectory(directory, SearchOption.TopDirectoryOnly).Length > 0)
+                {
+                    result.Add(new DirectoryInfo(directory));
+                }
+            }
+        }
+        return result.ToArray();
     }
 
     /// <summary>
