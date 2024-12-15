@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
+using Melodee.Plugins.MetaData.Directory.Nfo;
 
 namespace Melodee.Tests.Plugins.MetaData;
 

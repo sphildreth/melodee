@@ -149,7 +149,7 @@ public sealed class CueSheet(
                             {
                                 fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
                                 fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.HandlesExtension);
+                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.Nfo.HandlesExtension);
                                 File.Delete(cueFile.FullName);
                                 var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
                                 if (cueFileMediaFile.Exists)
@@ -168,7 +168,7 @@ public sealed class CueSheet(
                                 Log.Debug($"\ud83d\ude9b Renamed CUE Media file [{cueFileMediaFile.Name}] => [{Path.GetFileName(movedCueFileMediaFileFileName)}]");
                             }
 
-                            fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.HandlesExtension);
+                            fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.Nfo.HandlesExtension);
                             var isValidCheck = cueAlbum.IsValid(Configuration);
                             if (!isValidCheck.Item1)
                             {

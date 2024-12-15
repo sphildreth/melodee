@@ -13,6 +13,7 @@ using Melodee.Plugins.Conversion;
 using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.Conversion.Media;
 using Melodee.Plugins.MetaData.Directory;
+using Melodee.Plugins.MetaData.Directory.Nfo;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
 using Melodee.Plugins.Processor.Models;

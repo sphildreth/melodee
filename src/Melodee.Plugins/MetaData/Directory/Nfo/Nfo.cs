@@ -8,18 +8,18 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
-using Microsoft.Extensions.Logging;
+using Melodee.Plugins.MetaData.Directory.Nfo.Handlers;
 using Serilog;
-using Serilog.Data;
 using Serilog.Events;
 using SerilogTimings;
 
-namespace Melodee.Plugins.MetaData.Directory;
+namespace Melodee.Plugins.MetaData.Directory.Nfo;
 
 /// <summary>
 ///     Processes NFO and gets tags and Songs for Album.
 /// </summary>
-public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration configuration) 
+    : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
 
@@ -30,6 +30,8 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
     public override bool IsEnabled { get; set; }
 
     public override int SortOrder { get; } = 3;
+
+    private INfoHandler[] _nfoHandlers = [];
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
@@ -45,6 +47,11 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
 
         var processedFiles = 0;
 
+        _nfoHandlers =
+        [
+            new PMediaHandler()
+        ];
+        
         try
         {
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
@@ -62,6 +69,21 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
             {
                 using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
                 {
+                    var doContinue = true;
+                    foreach (var nfoHandler in _nfoHandlers)
+                    {
+                        if (await nfoHandler.IsHandlerForNfoAsync(nfoFile, cancellationToken))
+                        {
+                            if (await nfoHandler.HandleNfoAsync(nfoFile, cancellationToken))
+                            {
+                                doContinue = false;
+                            }
+                        }
+                    }
+                    if (!doContinue)
+                    {
+                        continue;
+                    }
                     var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
                     if (nfoAlbum == null)
                     {
