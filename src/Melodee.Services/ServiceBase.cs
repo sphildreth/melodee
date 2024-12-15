@@ -188,19 +188,14 @@ public abstract class ServiceBase(
 
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
-                            using (Operation.At(LogEventLevel.Debug).Time("File [{File}] Plugin [{Plugin}]", fileSystemInfo.Name, plugin.DisplayName))
+                            var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
+                            if (pluginResult.IsSuccess)
                             {
-                                var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
-                                if (pluginResult.IsSuccess)
-                                {
-                                    songs.Add(pluginResult.Data);
-                                    viaPlugins.Add(plugin.DisplayName);
-                                }
-
-                                messages.AddRange(pluginResult.Messages ?? []);
+                                songs.Add(pluginResult.Data);
+                                viaPlugins.Add(plugin.DisplayName);
                             }
+                            messages.AddRange(pluginResult.Messages ?? []);
                         }
-
                         if (plugin.StopProcessing)
                         {
                             Logger.Warning("[{PluginName}] set stop processing flag.", plugin.DisplayName);

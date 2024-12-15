@@ -116,8 +116,8 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(config.Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))}")
                 .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(config.Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
                 .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(config.Configuration[SettingRegistry.ScriptingPreDiscoveryScript])}")
-                .AddRow("[b]Inbound[/]", $"{directoryInbound}")
-                .AddRow("[b]Staging[/]", $"{directoryStaging}");
+                .AddRow("[b]Inbound[/]", $"{directoryInbound.EscapeMarkup()}")
+                .AddRow("[b]Staging[/]", $"{directoryStaging.EscapeMarkup()}");
 
             AnsiConsole.Write(
                 new Panel(grid)

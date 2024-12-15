@@ -89,20 +89,6 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
         }
 
         var isValid = _validationMessages.All(x => x.Severity != ValidationResultMessageSeverity.Critical);
-        if (isValid)
-        {
-            Log.Debug("\"[{PluginName}] * Image validated [{FileInfo}]",nameof(ImageValidator), fileInfo.FullName);
-        }
-        else
-        {
-            foreach (var validationMessage in _validationMessages)
-            {
-                Log.Warning("[{PluginName}] Image [{FileInfo}] Invalid [{validationMessage.Message}]",
-                    nameof(ImageValidator),
-                    fileInfo.FullName, 
-                    validationMessage.Message);
-            }
-        }
         return new OperationResult<ValidationResult>
         {
             Data = new ValidationResult
