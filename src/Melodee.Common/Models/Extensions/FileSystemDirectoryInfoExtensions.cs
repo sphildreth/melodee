@@ -15,6 +15,8 @@ public static class FileSystemDirectoryInfoExtensions
 {
     public static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|\s?best\s?of|greatest(s*)\s?hit(s*)|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    public static readonly Regex IsDirectoryDiscographyRegex = new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);    
+
     public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         return new DirectoryInfo(fileSystemDirectoryInfo.FullName());
@@ -75,6 +77,25 @@ public static class FileSystemDirectoryInfoExtensions
         }
 
         return null;
+    }
+
+    public static bool IsDiscographyDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var dir = fileSystemDirectoryInfo.Name;
+        return !string.IsNullOrWhiteSpace(dir) && IsDirectoryDiscographyRegex.IsMatch(dir);
+    }
+
+    public static IEnumerable<FileSystemDirectoryInfo> GetParents(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var results = new List<FileSystemDirectoryInfo>();
+        var dirInfo = fileSystemDirectoryInfo.ToDirectoryInfo();
+        var parent = dirInfo.Parent;
+        while (parent != null)
+        {
+            results.Add(parent.ToDirectorySystemInfo());
+            parent = parent.Parent;
+        }
+        return results.ToArray();
     }
 
     public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Instant? modifiedSince, SearchOption searchOption)

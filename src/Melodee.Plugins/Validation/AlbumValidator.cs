@@ -154,7 +154,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _validationMessages.Add(new ValidationResultMessage
             {
-                Message = $"Album media total [{albumMediaTotal}] does not match Song medias [{mediaNumbers}].",
+                Message = $"Album media total [{albumMediaTotal}] does not match Song medias [{string.Join(',', mediaNumbers)}].",
                 Severity = ValidationResultMessageSeverity.Critical
             });
         }

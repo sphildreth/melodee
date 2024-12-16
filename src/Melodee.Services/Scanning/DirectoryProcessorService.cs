@@ -6,7 +6,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Models.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Conversion;
@@ -85,7 +84,7 @@ public sealed class DirectoryProcessorService(
         _imageConvertor = new ImageConvertor(_configuration);
         _songPlugins =
         [
-            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer),_imageConvertor, _imageValidator, _configuration)
+            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration)
         ];
 
         _conversionPlugins =
@@ -283,8 +282,8 @@ public sealed class DirectoryProcessorService(
                         break;
                     }
                 }
-                
-                
+
+
                 // Run Enabled Conversion scripts on each file in directory
                 // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
                 foreach (var fileSystemInfo in allFilesInDirectory)
@@ -882,7 +881,21 @@ public sealed class DirectoryProcessorService(
     private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToArray();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
+        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image folders.
+        foreach (var dir in album.ImageDirectories())
+        {
+            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
+        }
+
+        // Sometimes the album is in a folder like "Albums" or "Studio Albums" part of a Discography.  
+        var parents = album.OriginalDirectory.GetParents();
+        var discographyDirectory = parents.FirstOrDefault(x => x.IsDiscographyDirectory());
+        if (discographyDirectory != null)
+        {
+            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(discographyDirectory.FullName(), SearchOption.TopDirectoryOnly));
+        }
+
         var index = 1;
         foreach (var imageFile in imageFiles.Order())
         {
@@ -896,6 +909,14 @@ public sealed class DirectoryProcessorService(
             var isArtistImage = fileNameNormalized.Contains(album.Artist.NameNormalized, StringComparison.OrdinalIgnoreCase);
             if (isArtistImage || ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
             {
+                // Move the image if not in the album directory
+                if (fileInfo.DirectoryName != album.Directory.FullName())
+                {
+                    var newFileInfoName = Path.Combine(album.Directory.FullName(), $"{Path.GetFileNameWithoutExtension(fileInfo.Name)}-{fileInfo.Directory.Name}{Path.GetExtension(fileInfo.Name)}");
+                    File.Move(fileInfo.FullName, newFileInfoName);
+                    fileInfo = new FileInfo(newFileInfoName);
+                }
+                
                 if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
                 {
                     // Try converting (resizing and padding if needed) image and then revalidate
@@ -906,37 +927,30 @@ public sealed class DirectoryProcessorService(
                     }
                 }
 
-                var pictureIdentifier = PictureIdentifier.NotSet;
-                if (ImageHelper.IsArtistImage(fileInfo))
-                {
-                    pictureIdentifier = PictureIdentifier.Band;
-                }
-                else if (ImageHelper.IsArtistSecondaryImage(fileInfo))
+                var pictureIdentifier = PictureIdentifier.Band;
+                if (ImageHelper.IsArtistSecondaryImage(fileInfo))
                 {
                     pictureIdentifier = PictureIdentifier.BandSecondary;
                 }
 
-                if (pictureIdentifier != PictureIdentifier.NotSet)
+                var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
+                var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
+                imageInfos.Add(new ImageInfo
                 {
-                    var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
-                    var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
-                    imageInfos.Add(new ImageInfo
+                    CrcHash = Crc32.Calculate(fileInfo),
+                    FileInfo = new FileSystemFileInfo
                     {
-                        CrcHash = Crc32.Calculate(fileInfo),
-                        FileInfo = new FileSystemFileInfo
-                        {
-                            Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
-                            Size = fileInfoFileSystemInfo.Size,
-                            OriginalName = fileInfo.Name
-                        },
-                        OriginalFilename = fileInfo.Name,
-                        PictureIdentifier = pictureIdentifier,
-                        Width = imageInfo.Width,
-                        Height = imageInfo.Height,
-                        SortOrder = index
-                    });
-                    index++;
-                }
+                        Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
+                        Size = fileInfoFileSystemInfo.Size,
+                        OriginalName = fileInfo.Name
+                    },
+                    OriginalFilename = fileInfo.Name,
+                    PictureIdentifier = pictureIdentifier,
+                    Width = imageInfo.Width,
+                    Height = imageInfo.Height,
+                    SortOrder = index
+                });
+                index++;
             }
         }
 
@@ -952,6 +966,7 @@ public sealed class DirectoryProcessorService(
         {
             imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
         }
+
         var index = 1;
         foreach (var imageFile in imageFiles.Order())
         {
@@ -959,18 +974,19 @@ public sealed class DirectoryProcessorService(
             {
                 break;
             }
+
             var fileInfo = new FileInfo(imageFile);
-            
+
             if (album.IsFileForAlbum(fileInfo))
             {
                 // Move the image if not in the album directory
                 if (fileInfo.DirectoryName != album.Directory.FullName())
                 {
-                    var newFileInfoName = Path.Combine(album.Directory.FullName(), $"{ Path.GetFileNameWithoutExtension(fileInfo.Name)}-{fileInfo.Directory.Name}{Path.GetExtension(fileInfo.Name)}");
+                    var newFileInfoName = Path.Combine(album.Directory.FullName(), $"{Path.GetFileNameWithoutExtension(fileInfo.Name)}-{fileInfo.Directory.Name}{Path.GetExtension(fileInfo.Name)}");
                     File.Move(fileInfo.FullName, newFileInfoName);
                     fileInfo = new FileInfo(newFileInfoName);
-                }  
-                
+                }
+
                 if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken)).Data.IsValid)
                 {
                     // Try converting (resizing and padding if needed) image and then revalidate
@@ -990,38 +1006,31 @@ public sealed class DirectoryProcessorService(
                     ImageHelper.IsAlbumImage(fileInfo) ||
                     ImageHelper.IsAlbumSecondaryImage(fileInfo))
                 {
-                    var pictureIdentifier = PictureIdentifier.NotSet;
-                    if (ImageHelper.IsAlbumImage(fileInfo) || isAlbumImage)
-                    {
-                        pictureIdentifier = PictureIdentifier.Front;
-                    }
-                    else if (ImageHelper.IsAlbumSecondaryImage(fileInfo))
+                    var pictureIdentifier = PictureIdentifier.Front;
+                    if (ImageHelper.IsAlbumSecondaryImage(fileInfo))
                     {
                         pictureIdentifier = PictureIdentifier.SecondaryFront;
                     }
 
-                    if (pictureIdentifier != PictureIdentifier.NotSet)
+                    var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
+                    var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
+                    imageInfos.Add(new ImageInfo
                     {
-                        var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken);
-                        var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
-                        imageInfos.Add(new ImageInfo
+                        CrcHash = Crc32.Calculate(fileInfo),
+                        FileInfo = new FileSystemFileInfo
                         {
-                            CrcHash = Crc32.Calculate(fileInfo),
-                            FileInfo = new FileSystemFileInfo
-                            {
-                                //TODO use the directory helper to get next image number
-                                Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
-                                Size = fileInfoFileSystemInfo.Size,
-                                OriginalName = fileInfo.Name
-                            },
-                            OriginalFilename = fileInfo.Name,
-                            PictureIdentifier = pictureIdentifier,
-                            Width = imageInfo.Width,
-                            Height = imageInfo.Height,
-                            SortOrder = index
-                        });
-                        index++;
-                    }
+                            //TODO use the directory helper to get next image number
+                            Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
+                            Size = fileInfoFileSystemInfo.Size,
+                            OriginalName = fileInfo.Name
+                        },
+                        OriginalFilename = fileInfo.Name,
+                        PictureIdentifier = pictureIdentifier,
+                        Width = imageInfo.Width,
+                        Height = imageInfo.Height,
+                        SortOrder = index
+                    });
+                    index++;
                 }
             }
         }

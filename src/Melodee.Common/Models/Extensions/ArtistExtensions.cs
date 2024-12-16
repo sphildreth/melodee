@@ -8,11 +8,11 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class ArtistExtensions
 {
-    private static readonly string SoundSongArtistParseRegex = @"(sound\s*Song[s]*)";
+    private const string SoundSongArtistParseRegex = @"(sound\s*Song[s]*)";
 
-    private static readonly string VariousArtistParseRegex = @"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))";
+    private const string VariousArtistParseRegex = @"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))";
 
-    private static readonly string CastRecordingSongArtistParseRegex = @"(original broadway cast|original cast*)";
+    private const string CastRecordingSongArtistParseRegex = @"(original broadway cast|original cast*)";
 
     public static KeyValue ToKeyValue(this Artist artist) => new KeyValue(artist.UniqueId().ToString(), artist.Name.ToNormalizedString() ?? artist.Name);
     

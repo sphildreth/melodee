@@ -6,7 +6,6 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Validation;
 using Melodee.Plugins.Validation.Models;
-using Serilog;
 using SixLabors.ImageSharp;
 
 namespace Melodee.Plugins.Validation;
@@ -19,6 +18,7 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
     
     public async Task<OperationResult<ValidationResult>> ValidateImage(FileInfo? fileInfo, PictureIdentifier pictureIdentifier, CancellationToken cancellationToken = default)
     {
+        _validationMessages.Clear();
         if (fileInfo == null)
         {
             _validationMessages.Add(new ValidationResultMessage

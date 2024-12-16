@@ -5,6 +5,38 @@ namespace Melodee.Tests.Extensions;
 
 public class FileSystemDirectoryInfoExtensionTests
 {
+    
+    [Theory]
+    [InlineData("Bobs Discography", true)]
+    [InlineData("Bobs Discography (1940-1999)", true)]
+    [InlineData("02 Singles", false)]
+    [InlineData("Bootlegs", false)]
+    [InlineData("Boxset & Compilations", false)]
+    [InlineData("Boxset", false)]
+    [InlineData("Boxset, Compilations and EP", false)]
+    [InlineData("Compilations", false)]
+    [InlineData("Demos", false)]
+    [InlineData("Ep, Singles", false)]
+    [InlineData("LIVE", false)]
+    [InlineData("Live Albums", false)]
+    [InlineData("Single & EP's", false)]
+    [InlineData("Singles", false)]
+    [InlineData("Singles, EPs, Fan Club & Promo", false)]
+    [InlineData("Bobs Greatest Hits Vol 2", false)]
+    [InlineData("Bobs Greatest Hits", false)]
+    [InlineData("Greatest Hits and Misses and Just Garbage", false)]
+    [InlineData("The best of Bob", false)]
+    [InlineData("[1985] Best Of, The", false)]
+    [InlineData("[1994] American Legends Best Of The Early Years", false)]
+    public void IsDirectoryDiscography(string input, bool shouldBe)
+    {
+        Assert.Equal(shouldBe, new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = input
+        }.IsDiscographyDirectory());
+    }    
+    
     [Theory]
     [InlineData("Albums", true)]
     [InlineData("EP", true)]
@@ -44,6 +76,26 @@ public class FileSystemDirectoryInfoExtensionTests
             Name = input
         }.IsDirectoryStudioAlbums());
     }
+
+    [Fact]
+    public void GetParents()
+    { 
+        var testPath = @"/melodee_test/tests/image_number_tests/";
+        if (Directory.Exists(testPath))
+        {
+
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = testPath,
+                Name = testPath
+            };
+            var parents = dirInfo.GetParents();
+            Assert.NotNull(parents);
+            Assert.NotEmpty(parents);   
+            Assert.Equal(3, parents.Count());
+        }
+    }
+    
 
     [Fact]
     public void NextImageNumberInFolder()
