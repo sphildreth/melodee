@@ -33,14 +33,33 @@ public static class AlbumExtensions
     public static ArtistID3[] ContributingArtists(this Album album)
     {
         var result = new List<ArtistID3>();
-        var songsWithContributors = album.Discs.SelectMany(x => x.Songs).Where(x => x.Contributors.Any()).ToArray();
+        var songsWithContributors = album.Discs.SelectMany(x => x.Songs).Where(x => x.Contributors.Count != 0).ToArray();
         if (songsWithContributors.Length > 0)
         {
             foreach (var song in songsWithContributors)
             {
                 foreach (var artistContributor in song.Contributors.Where(x => x.ContributorTypeValue == ContributorType.Performer))
                 {
-                    result.Add(artistContributor.Artist!.ToApiArtistID3());
+                    if (artistContributor.Artist != null)
+                    {
+                        result.Add(artistContributor.Artist!.ToApiArtistID3());
+                    }
+                    else
+                    {
+                        var id = $"contributor_{artistContributor.ContributorName.ToNormalizedString()}";
+                        result.Add(new Common.Models.OpenSubsonic.ArtistID3(
+                            id,
+                            artistContributor.ContributorName,
+                            id,
+                             0,
+                            0,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null
+                        ));
+                    }
                 }
             }
         }
