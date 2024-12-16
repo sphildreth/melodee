@@ -154,12 +154,11 @@ internal class JobExecutionContext : IJobExecutionContext
     
     public void Put(object key, object objectValue)
     {
-        throw new NotImplementedException();
     }
 
     public object? Get(object key)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public IScheduler Scheduler { get; }
