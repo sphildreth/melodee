@@ -135,21 +135,22 @@ public abstract class ServiceBase(
         }
     }
 
-    protected async Task<DatabaseSongScrobbleInfo?> DatabaseSongScrobbleInfoForSongApiKey(Guid apiKeyId, CancellationToken cancellationToken = default)
+    protected async Task<DatabaseSongScrobbleInfo?> DatabaseSongScrobbleInfoForSongApiKey(Guid apiKey, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
                       select s."ApiKey" as SongApiKey, aa."Name" as ArtistName, a."Name" as AlbumTitle, now() as TimePlayed, 
-                             s."Title" as "SongTitle", s."Duration" as SongDuration, s."MusicBrainzId" as SongMusicBrainzId, s."SongNumber" as SongNumber
+                             s."Title" as "SongTitle", s."Duration" as SongDuration, s."MusicBrainzId" as SongMusicBrainzId, s."SongNumber" as SongNumber,
+                             a."Id" as ArtistId, aa."Id" as AlbumId, s."Id" as SongId 
                       from "Songs" s 
                       left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
                       left join "Albums" a on (ad."AlbumId" = a."Id")
                       left join "Artists" aa on (a."ArtistId" = aa."Id")
                       where s."ApiKey" = @apiKeyId;
                       """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongScrobbleInfo>(sql, new { apiKeyId }).ConfigureAwait(false);
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongScrobbleInfo>(sql, new { apiKeyId = apiKey }).ConfigureAwait(false);
         }
     }
 

@@ -19,6 +19,6 @@ public sealed class NullScript : IScriptPlugin
 
     public Task<OperationResult<bool>> ProcessAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(new OperationResult<bool> { Data = true });
     }
 }

@@ -11,6 +11,7 @@ using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
+using ServiceStack;
 
 namespace Melodee.Services;
 
@@ -37,7 +38,7 @@ public class ScrobbleService(
 
         _scrobblers =
         [
-            new MelodeeScrobbler(_configuration)
+            new MelodeeScrobbler(ContextFactory, nowPlayingRepository, _configuration)
             {
                 IsEnabled = true
             },
@@ -68,12 +69,16 @@ public class ScrobbleService(
 
     public async Task<OperationResult<bool>> NowPlaying(UserInfo user, Guid id, double? time, string playerName, CancellationToken cancellationToken = default)
     {
+        var result = true;
         var databaseSongScrobbleInfo = await DatabaseSongScrobbleInfoForSongApiKey(id, cancellationToken).ConfigureAwait(false);
         if (databaseSongScrobbleInfo != null)
         {
             var scrobble = new ScrobbleInfo
             (
                 databaseSongScrobbleInfo.SongApiKey,
+                databaseSongScrobbleInfo.ArtistId,
+                databaseSongScrobbleInfo.AlbumId,
+                databaseSongScrobbleInfo.SongId,
                 databaseSongScrobbleInfo.SongTitle,
                 databaseSongScrobbleInfo.ArtistName,
                 false,
@@ -88,55 +93,59 @@ public class ScrobbleService(
             {
                 LastScrobbledAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             };
-            await nowPlayingRepository.AddOrUpdateNowPlayingAsync(new NowPlayingInfo(user, scrobble), cancellationToken).ConfigureAwait(false);
+            foreach (var scrobbler in _scrobblers.OrderBy(x => x.SortOrder).Where(x => x.IsEnabled))
+            {
+                var nowPlayingResult = await scrobbler.NowPlaying(user, scrobble, cancellationToken).ConfigureAwait(false);
+                result &= nowPlayingResult.IsSuccess;
+            }            
         }
 
         return new OperationResult<bool>
         {
-            Data = true
+            Data = result
         };
     }
 
-    public async Task<OperationResult<bool>> Scrobble(UserInfo user, Guid songId, double? time, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> Scrobble(UserInfo user, Guid songId, double? time, bool isRandomizedScrobble, string playerName, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
-        var result = false;
+        var result = true;
 
         var songIds = await DatabaseSongIdsInfoForSongApiKey(songId, cancellationToken).ConfigureAwait(false);
         if (songIds != null)
         {
             //TODO what about Contributors? 
 
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            var databaseSongScrobbleInfo = await DatabaseSongScrobbleInfoForSongApiKey(songId, cancellationToken).ConfigureAwait(false);
+            if (databaseSongScrobbleInfo != null)
             {
-                var dbConn = scopedContext.Database.GetDbConnection();
-
-                var sql = """
-                          update "Artists" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
-                          where "Id" = @artistId;
-                          update "Albums" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
-                          where "Id" = @albumId;
-                          update "Songs" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
-                          where "Id" = @songId;
-                          """;
-                await dbConn.ExecuteAsync(sql, new { artistId = songIds.AlbumArtistId, albumId = songIds.AlbumId, songId = songIds.SongId }).ConfigureAwait(false);
-
-                await artistService.ClearCacheAsync(songIds.AlbumArtistId, cancellationToken).ConfigureAwait(false);
-                await albumService.ClearCacheAsync(songIds.AlbumId, cancellationToken).ConfigureAwait(false);
-                await songService.ClearCacheAsync(songIds.SongId, cancellationToken).ConfigureAwait(false);
-
-                sql = """
-                      insert INTO "UserSongs" ("UserId", "SongId", "PlayedCount", "LastPlayedAt", "IsStarred", "Rating", "IsLocked", "SortOrder", "ApiKey", "CreatedAt") 
-                      values (@userId, @songId, 1, now(), false, 0, false, 0, gen_random_uuid(), now())
-                      on CONFLICT("UserId", "SongId") do update
-                        set "PlayedCount" = (select "PlayedCount" + 1 from "UserSongs" where "UserId" = @userId and "SongId" = @songId),
-                            "LastPlayedAt" = now();
-                      """;
-                await dbConn.ExecuteAsync(sql, new { userId = user.Id, songId = songIds.SongId }).ConfigureAwait(false);
-                await nowPlayingRepository.RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), songId.ToString()), cancellationToken).ConfigureAwait(false);
+                var scrobble = new ScrobbleInfo
+                (
+                    databaseSongScrobbleInfo.SongApiKey,
+                    databaseSongScrobbleInfo.ArtistId,
+                    databaseSongScrobbleInfo.AlbumId,
+                    databaseSongScrobbleInfo.SongId,
+                    databaseSongScrobbleInfo.SongTitle,
+                    databaseSongScrobbleInfo.ArtistName,
+                    isRandomizedScrobble,
+                    databaseSongScrobbleInfo.AlbumTitle,
+                    databaseSongScrobbleInfo.SongDuration.ToSeconds(),
+                    databaseSongScrobbleInfo.SongMusicBrainzId,
+                    databaseSongScrobbleInfo.SongNumber,
+                    null,
+                    Instant.FromDateTimeUtc(DateTime.UtcNow),
+                    playerName
+                )
+                {
+                    LastScrobbledAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+                };
+                foreach (var scrobbler in _scrobblers.OrderBy(x => x.SortOrder).Where(x => x.IsEnabled))
+                {
+                    var scrobbleResult = await scrobbler.Scrobble(user, scrobble, cancellationToken).ConfigureAwait(false);
+                    result &= scrobbleResult.IsSuccess;
+                }
                 Logger.Information("[{ServiceName}] Scrobbled song [{SongId}] for User [{User}]", nameof(ScrobbleService), user.ToString(), songId.ToString());
-                result = true;
             }
         }
 

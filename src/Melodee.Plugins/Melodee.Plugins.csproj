@@ -12,12 +12,14 @@
 
   <ItemGroup>
     <PackageReference Include="Crc32.NET"/>
+    <PackageReference Include="Dapper"/>
     <PackageReference Include="FFMpegCore"/>
     <PackageReference Include="Hqub.Last.fm"/>
     <PackageReference Include="IdSharp.Common"/>
     <PackageReference Include="IdSharp.Tagging"/>
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities"/>
     <PackageReference Include="Microsoft.Extensions.Http"/>
+    <PackageReference Include="Microsoft.Net.Http.Headers" />
     <PackageReference Include="Serilog"/>
     <PackageReference Include="Serilog.Sinks.Console"/>
     <PackageReference Include="Serilog.Sinks.File"/>
@@ -26,19 +28,5 @@
     <PackageReference Include="SixLabors.ImageSharp"/>
     <PackageReference Include="SmartFormat"/>
   </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Dapper">
-      <HintPath>..\..\..\..\.nuget\packages\dapper\2.1.35\lib\net7.0\Dapper.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Net.Http.Headers">
-      <HintPath>..\..\..\..\..\..\usr\share\dotnet\shared\Microsoft.AspNetCore.App\8.0.8\Microsoft.Net.Http.Headers.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageVersion Update="ServiceStack.OrmLite.Sqlite.Data" Version="8.5.0" />
-  </ItemGroup>
-
 
 </Project>

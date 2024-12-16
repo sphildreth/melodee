@@ -1,3 +1,4 @@
+using System.Net;
 using Melodee.Common.Serialization;
 using Melodee.Services;
 using Melodee.Utils;
@@ -7,13 +8,22 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class BrowsingController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
-    //getArtists
+    //TODO
     //getSimilarSongs
     //getSimilarSongs2
-    //getTopSongs
-    //getVideoInfo
-    //getVideos
 
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getVideoInfo.view")]
+    [Route("/rest/getVideos.view")]
+    [Route("/rest/getVideoInfo")]
+    [Route("/rest/getVideos")]    
+    public IActionResult NotImplemented()
+    {
+        HttpContext.Response.Headers.Append("Cache-Control", "no-cache");
+        return StatusCode((int)HttpStatusCode.NotImplemented);
+    }    
+    
     /// <summary>
     ///     Returns album info.
     /// </summary>
@@ -25,7 +35,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     [Route("/rest/getAlbumInfo.view")]
     [Route("/rest/getAlbumInfo2.view")]
     [Route("/rest/getAlbumInfo")]
-    [Route("/rest/getAlbumInfo2")]    
+    [Route("/rest/getAlbumInfo2")]
     public Task<IActionResult> GetAlbumInfo(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetAlbumInfoAsync(id, ApiRequest, cancellationToken));
@@ -42,7 +52,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     [Route("/rest/getArtistInfo.view")]
     [Route("/rest/getArtistInfo2.view")]
     [Route("/rest/getArtistInfo")]
-    [Route("/rest/getArtistInfo2")]    
+    [Route("/rest/getArtistInfo2")]
     public Task<IActionResult> GetArtistInfo(string id, int? count, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetArtistInfoAsync(id, count, ApiRequest, cancellationToken));

@@ -16,6 +16,9 @@ namespace Melodee.Common.Models.Scrobbling;
 /// <param name="SongArtist">The album artist - if this differs from the song artist.</param>
 public record ScrobbleInfo(
     Guid SongApiKey,
+    int ArtistId,
+    int AlbumId, 
+    int SongId,
     string SongTitle,
     string ArtistName,
     bool IsRandomizedScrobble,

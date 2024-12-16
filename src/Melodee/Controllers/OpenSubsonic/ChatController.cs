@@ -6,6 +6,7 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class ChatController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
+    //TODO
     // getChatMessages
     // addChatMessage
 }

@@ -6,6 +6,7 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class InternetRadioController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
+    //TODO
     // getInternetRadioStations
     // createInternetRadioStation
     // updateInternetRadioStation

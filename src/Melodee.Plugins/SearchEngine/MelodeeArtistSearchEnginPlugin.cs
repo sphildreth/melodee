@@ -1,12 +1,16 @@
 using System.Diagnostics;
+using System.Globalization;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.Melodee.DTOs;
 using Microsoft.EntityFrameworkCore;
+using ServiceStack;
 using Song = Melodee.Common.Data.Models.Song;
 
 namespace Melodee.Plugins.SearchEngine;
@@ -34,22 +38,39 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
             if (query.MusicBrainzId != null)
             {
                 var artistByMusicBrainz = await scopedContext.Artists
-                    .Select(x => new { x.Id, x.Name, x.ApiKey, x.MusicBrainzId, x.SortName, x.RealName })
+                    .Select(x => new { x.Id, x.Name, x.ApiKey, x.MusicBrainzId, x.SortName, x.RealName, x.AlbumCount, x.AlternateNames })
                     .FirstOrDefaultAsync(x => x.MusicBrainzId == query.MusicBrainzIdValue, cancellationToken)
                     .ConfigureAwait(false);
 
                 if (artistByMusicBrainz != null)
                 {
+                    var artistAlbums = await scopedContext
+                        .Albums
+                        .Where(x => x.ArtistId == artistByMusicBrainz.Id)
+                        .ToArrayAsync(cancellationToken)
+                        .ConfigureAwait(false);
                     data.Add(new ArtistSearchResult
                     {
                         ApiKey = artistByMusicBrainz.ApiKey,
-                        Id = artistByMusicBrainz.Id,
+                        AlternateNames = artistByMusicBrainz.AlternateNames?.ToTags()?.ToArray() ?? [],
                         FromPlugin = DisplayName,
-                        MusicBrainzId = artistByMusicBrainz.MusicBrainzId,
+                        UniqueId = SafeParser.Hash(artistByMusicBrainz.MusicBrainzId.ToString()),
+                        Rank = short.MaxValue,
                         Name = artistByMusicBrainz.Name,
-                        Rank = byte.MaxValue,
                         SortName = artistByMusicBrainz.SortName,
-                        UniqueId = SafeParser.Hash(artistByMusicBrainz.ApiKey.ToString())
+                        MusicBrainzId = artistByMusicBrainz.MusicBrainzId,
+                        AlbumCount = artistByMusicBrainz.AlbumCount,
+                        Releases = artistAlbums.OrderBy(x => x!.ReleaseDate).ThenBy(x => x!.SortName).Select(x => new AlbumSearchResult
+                        {
+                            ApiKey = x.ApiKey,
+                            AlbumType = x!.AlbumTypeValue,
+                            ReleaseDate = x.ReleaseDate.ToString(),
+                            UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
+                            Name = x.Name,
+                            NameNormalized = x.NameNormalized,
+                            SortName = x.SortName ?? x.Name,
+                            MusicBrainzId = x.MusicBrainzId
+                        }).ToArray()                        
                     });
                 }
             }
@@ -60,16 +81,8 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                 var artistsByNamedNormalizedWithMatchingAlbums = await scopedContext.Artists
                     .Select(x => new
                     {
-                        x.Id,
-                        x.Name,
-                        x.NameNormalized,
-                        x.AlternateNames,
-                        x.ApiKey,
-                        x.MusicBrainzId,
-                        x.SortName,
-                        x.RealName,
-                        AlbumNames = x.Albums.Select(a => a.NameNormalized),
-                        AlbumAlternateNames = x.Albums.Select(a => a.AlternateNames)
+                        x.Id, x.Name, x.ApiKey, x.MusicBrainzId, x.SortName, x.RealName, x.AlbumCount, x.AlternateNames, x.NameNormalized,
+                        Albums = x.Albums.Select(a => new {  a.AlbumType, a.AlternateNames, a.ReleaseDate, a.MusicBrainzId, a.NameNormalized, a.Name, a.SortName, a.ApiKey })
                     })
                     .Where(x => x.NameNormalized == query.NameNormalized || (x.AlternateNames != null && x.AlternateNames.Contains(query.NameNormalized)))
                     .OrderBy(x => x.SortName)
@@ -81,21 +94,34 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                 {
                     var matchingWithAlbums = artistsByNamedNormalizedWithMatchingAlbums
                         .Where(x => query.AlbumNamesNormalized != null &&
-                                    (x.AlbumNames.Any(a => query.AlbumNamesNormalized.Contains(a)) ||
-                                     x.AlbumAlternateNames.Any(a => query.AlbumNamesNormalized.Contains(a))))
+                                    (x.Albums.Any(a => query.AlbumNamesNormalized.Contains(a.NameNormalized)) ||
+                                     x.Albums.Any(a => a.AlternateNames != null && a.AlternateNames.ContainsAny(query.AlbumNamesNormalized))))
                         .ToArray();
 
                     if (matchingWithAlbums.Length != 0)
                     {
                         data.AddRange(matchingWithAlbums.Select(x => new ArtistSearchResult
                         {
-                            FromPlugin = DisplayName,
-                            UniqueId = SafeParser.Hash(x.ApiKey.ToString()),
-                            Rank = matchingWithAlbums.Length + 1,
-                            Name = x.Name,
                             ApiKey = x.ApiKey,
+                            AlternateNames = x.AlternateNames?.ToTags()?.ToArray() ?? [],
+                            FromPlugin = DisplayName,
+                            UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
+                            Rank = matchingWithAlbums.Length + 5,
+                            Name = x.Name,
                             SortName = x.SortName,
-                            MusicBrainzId = x.MusicBrainzId
+                            MusicBrainzId = x.MusicBrainzId,
+                            AlbumCount = x.AlbumCount,
+                            Releases = x.Albums.Where(a => query.AlbumNamesNormalized.Contains(a.NameNormalized) || a.AlternateNames != null && a.AlternateNames.ContainsAny(query.AlbumNamesNormalized)).OrderBy(a => a!.ReleaseDate).ThenBy(a => a!.SortName).Select(a => new AlbumSearchResult
+                            {
+                                ApiKey = a.ApiKey,
+                                AlbumType = SafeParser.ToEnum<AlbumType>(a.AlbumType),
+                                ReleaseDate = a.ReleaseDate.ToString(),
+                                UniqueId = SafeParser.Hash(a.MusicBrainzId.ToString()),
+                                Name = a.Name,
+                                NameNormalized = a.NameNormalized,
+                                SortName = a.SortName ?? x.Name,
+                                MusicBrainzId = a.MusicBrainzId
+                            }).ToArray()                               
                         }));
                     }
                 }
@@ -104,7 +130,11 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
             if (data.Count == 0)
             {
                 var artistsByNamedNormalized = await scopedContext.Artists
-                    .Select(x => new { x.Id, x.Name, x.NameNormalized, x.AlternateNames, x.ApiKey, x.MusicBrainzId, x.SortName, x.RealName })
+                    .Select(x => new
+                    {
+                        x.Id, x.Name, x.ApiKey, x.MusicBrainzId, x.SortName, x.RealName, x.AlbumCount, x.AlternateNames, x.NameNormalized,
+                        Albums = x.Albums.Select(a => new { a.AlbumType, a.AlternateNames, a.ReleaseDate, a.MusicBrainzId, a.NameNormalized, a.Name, a.SortName, a.ApiKey })
+                    })
                     .Where(x => x.NameNormalized == query.NameNormalized || (x.AlternateNames != null && x.AlternateNames.Contains(query.NameNormalized)))
                     .OrderBy(x => x.SortName)
                     .Take(maxResults)
@@ -115,13 +145,26 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                 {
                     data.AddRange(artistsByNamedNormalized.Select(x => new ArtistSearchResult
                     {
+                        ApiKey = x.ApiKey,
+                        AlternateNames = x.AlternateNames?.ToTags()?.ToArray() ?? [],
                         FromPlugin = DisplayName,
-                        UniqueId = SafeParser.Hash(x.ApiKey.ToString()),
+                        UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                         Rank = 1,
                         Name = x.Name,
-                        ApiKey = x.ApiKey,
                         SortName = x.SortName,
-                        MusicBrainzId = x.MusicBrainzId
+                        MusicBrainzId = x.MusicBrainzId,
+                        AlbumCount = x.AlbumCount,
+                        Releases = x.Albums.OrderBy(a => a!.ReleaseDate).ThenBy(a => a!.SortName).Select(a => new AlbumSearchResult
+                        {
+                            ApiKey = a.ApiKey,
+                            AlbumType = SafeParser.ToEnum<AlbumType>(a.AlbumType),
+                            ReleaseDate = a.ReleaseDate.ToString(),
+                            UniqueId = SafeParser.Hash(a.MusicBrainzId.ToString()),
+                            Name = a.Name,
+                            NameNormalized = a.NameNormalized,
+                            SortName = a.SortName ?? x.Name,
+                            MusicBrainzId = a.MusicBrainzId
+                        }).ToArray()                             
                     }));
                 }
             }

@@ -8,8 +8,6 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class PlaylistController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
-    //deletePlaylist
-
     /// <summary>
     ///     Deletes a saved playlist.
     /// </summary>

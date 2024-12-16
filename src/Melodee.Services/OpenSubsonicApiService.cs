@@ -1416,8 +1416,6 @@ public class OpenSubsonicApiService(
         // If not provided then default to this is a "submission" versus a "now playing" notification.
         var isSubmission = submission ?? true;
 
-        Console.WriteLine($"** Scrobble: isSubmission [{isSubmission}] ids [{string.Join(",", ids)}] times [{string.Join(",", times ?? [])}] Request [{apiRequest}]");
-
         if (!isSubmission)
         {
             foreach (var idAndIndex in ids.Select((id, index) => new { id, index }))
@@ -1435,7 +1433,7 @@ public class OpenSubsonicApiService(
                 var nowPlayingInfo = (await scrobbleService.GetNowPlaying(cancellationToken).ConfigureAwait(false)).Data.FirstOrDefault(x => x.UniqueId == uniqueId);
                 if (nowPlayingInfo != null)
                 {
-                    await scrobbleService.Scrobble(authResponse.UserInfo, id, time, cancellationToken).ConfigureAwait(false);
+                    await scrobbleService.Scrobble(authResponse.UserInfo, id, time, false, apiRequest.ApiRequestPlayer.Client ?? string.Empty, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {

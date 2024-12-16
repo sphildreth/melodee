@@ -21,7 +21,7 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
 
     public int SortOrder { get; } = 1;
 
-    public async Task<OperationResult<bool>> NowPlaying(User user, ScrobbleInfo scrobble, CancellationToken token = default)
+    public async Task<OperationResult<bool>> NowPlaying(UserInfo user, ScrobbleInfo scrobble, CancellationToken token = default)
     {
         // TODO this should use user.LastFmSessionKey or get a new one from last fm
         
@@ -29,7 +29,7 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
         var apiKey = configuration.GetValue<string>(SettingRegistry.ScrobblingLastFmApiKey);
         if (apiKey.Nullify() != null)
         {
-            var client = new LastfmClient(apiKey);
+            var client = new LastfmClient(apiKey, configuration.GetValue<string>(SettingRegistry.ScrobblingLastFmSharedSecret));
             result = await client.Track.UpdateNowPlayingAsync(
                 scrobble.SongTitle,
                 scrobble.SongArtist,
@@ -44,7 +44,7 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
         };
     }
 
-    public async Task<OperationResult<bool>> Scrobble(User user, ScrobbleInfo scrobble, CancellationToken token = default)
+    public async Task<OperationResult<bool>> Scrobble(UserInfo user, ScrobbleInfo scrobble, CancellationToken token = default)
     {
         var result = true;
         var apiKey = SettingRegistry.ScrobblingLastFmApiKey;

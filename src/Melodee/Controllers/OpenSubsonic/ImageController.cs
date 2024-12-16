@@ -1,5 +1,4 @@
 using Melodee.Common.Serialization;
-using Melodee.Filters;
 using Melodee.Services;
 using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;

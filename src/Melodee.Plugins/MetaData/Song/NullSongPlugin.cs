@@ -11,20 +11,30 @@ public class NullSongPlugin : ISongPlugin
     public bool IsEnabled { get; set; } = false;
 
     public int SortOrder => 0;
-    public bool StopProcessing { get; }
+
+    public bool StopProcessing { get; } = false;
 
     public bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        throw new NotImplementedException();
+        return false;
     }
 
     public Task<OperationResult<Common.Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(new OperationResult<Common.Models.Song> { Data = new Common.Models.Song
+            {
+                CrcHash = string.Empty,
+                File = new FileSystemFileInfo
+                {
+                    Name = string.Empty,
+                    Size = 0
+                }
+            }
+        });
     }
 
     public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(new OperationResult<bool> { Data = true });
     }
 }

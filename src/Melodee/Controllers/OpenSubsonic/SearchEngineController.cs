@@ -29,7 +29,7 @@ public class SearchEngineController(
         await artistSearchEngineService.InitializeAsync(null, cancellationToken);
         return new JsonStringResult(Serializer.Serialize(await artistSearchEngineService.DoSearchAsync(query, maxResult, cancellationToken).ConfigureAwait(false))!);
     }
-    
+
     /// <summary>
     ///     Perform an album image search engine search and return results.
     /// </summary>
@@ -43,8 +43,8 @@ public class SearchEngineController(
     public async Task<IActionResult> SearchForAlbumImageAsync(AlbumQuery query, int? maxResult, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(Serializer.Serialize(await albumImageSearchEngineService.DoSearchAsync(query, maxResult, cancellationToken).ConfigureAwait(false))!);
-    }    
-    
+    }
+
     /// <summary>
     ///     Perform an artist image search engine search and return results.
     /// </summary>
@@ -58,5 +58,5 @@ public class SearchEngineController(
     public async Task<IActionResult> SearchForAlbumImageAsync(ArtistQuery query, int? maxResult, CancellationToken cancellationToken = default)
     {
         return new JsonStringResult(Serializer.Serialize(await artistImageSearchEngineService.DoSearchAsync(query, maxResult, cancellationToken).ConfigureAwait(false))!);
-    }     
+    }
 }

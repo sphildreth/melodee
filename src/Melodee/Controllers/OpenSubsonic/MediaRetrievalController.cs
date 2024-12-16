@@ -12,12 +12,11 @@ namespace Melodee.Controllers.OpenSubsonic;
 
 public class MediaRetrievalController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
-    //download
+    //TODO
     //getCaptions
     //getLyrics
     //getLyricsBySongId //https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
     //hls
-    //stream
 
     /// <summary>
     ///     Returns the avatar (personal image) for a user.
@@ -53,7 +52,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
             ApiRequest,
             cancellationToken));
     }
-    
+
     /// <summary>
     ///     Downloads a given media file.
     /// </summary>
@@ -71,6 +70,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
         {
             return File(streamResult.Bytes, streamResult.ContentType, streamResult.FileName);
         }
+
         Response.StatusCode = (int)HttpStatusCode.NotFound;
         return new JsonStringResult(Serializer.Serialize(new ResponseModel
         {
@@ -82,7 +82,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
                 string.Empty,
                 Error.DataNotFoundError)
         })!);
-    }    
+    }
 
     /// <summary>
     ///     Streams a given media file.
@@ -102,11 +102,13 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
             {
                 Response.Headers[responseHeader.Key] = responseHeader.Value;
             }
+
             await Response.Body
                 .WriteAsync(streamResult.Bytes.AsMemory(0, streamResult.Bytes.Length), cancellationToken)
                 .ConfigureAwait(false);
             return new EmptyResult();
         }
+
         Response.StatusCode = (int)HttpStatusCode.NotFound;
         return new JsonStringResult(Serializer.Serialize(new ResponseModel
         {

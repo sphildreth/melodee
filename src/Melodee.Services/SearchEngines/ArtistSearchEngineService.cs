@@ -146,7 +146,7 @@ public class ArtistSearchEngineService(
                     operationTime += pluginResult.OperationTime ?? 0;
                 }
 
-                if (plugin.StopProcessing)
+                if (plugin.StopProcessing || result.Count >= maxResultsValue)
                 {
                     break;
                 }

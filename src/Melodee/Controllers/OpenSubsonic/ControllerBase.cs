@@ -4,7 +4,6 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
-using Melodee.Common.Utility;
 using Melodee.Results;
 using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
@@ -63,13 +62,13 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
         var model = await action;
         HttpContext.Response.Headers.Append("ETag", model.ResponseData.Etag);
         etagRepository.AddEtag(model.ApiKeyId, model.ResponseData.Etag);
-        return new FileContentResult((byte[])model.ResponseData.Data!, model.ResponseData.ContentType ?? "image/jpeg");        
+        return new FileContentResult((byte[])model.ResponseData.Data!, model.ResponseData.ContentType ?? "image/jpeg");
     }
 
     protected async Task<IActionResult> MakeResult(Task<ResponseModel> modelTask)
     {
         var modelData = await modelTask.ConfigureAwait(false);
-        
+
         Response.Headers.Append("X-Content-Type-Options", "nosniff");
         Response.Headers.Append("X-Frame-Options", "DENY");
         Response.Headers.Append("X-Total-Count", modelData.TotalCount.ToString());
@@ -80,10 +79,12 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
         {
             return new JsonStringResult(Serializer.Serialize(modelData)!);
         }
+
         if (ApiRequest.IsJsonPRequest)
         {
             return new JsonPStringResult($"{ApiRequest.Callback}({Serializer.Serialize(modelData)})");
         }
+
         return new XmlStringResult(Serializer.SerializeOpenSubsonicModelToXml(modelData)!);
     }
 

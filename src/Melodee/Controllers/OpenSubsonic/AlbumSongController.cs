@@ -68,7 +68,7 @@ public class AlbumSongController(ISerializer serializer, EtagRepository etagRepo
     [Route("/rest/getStarred2")]
     public Task<IActionResult> GetStarred2Async(string? musicFolderId, CancellationToken cancellationToken = default)
     {
-        return MakeResult(openSubsonicApiService.GetStarred2Async( musicFolderId, ApiRequest, cancellationToken));
+        return MakeResult(openSubsonicApiService.GetStarred2Async(musicFolderId, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -111,5 +111,4 @@ public class AlbumSongController(ISerializer serializer, EtagRepository etagRepo
     {
         return MakeResult(openSubsonicApiService.GetAlbumListAsync(getAlbumListRequest, ApiRequest, cancellationToken));
     }
-    
 }
