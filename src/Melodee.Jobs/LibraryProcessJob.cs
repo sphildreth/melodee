@@ -232,6 +232,13 @@ public class LibraryProcessJob(
                                 Logger.Error(e, "[{JobName}] Error processing directory [{Dir}]", nameof(LibraryProcessJob), processingDirectory);
                             }
                         }
+                        OnProcessingEvent?.Invoke(
+                            this,
+                            new ProcessingEvent(ProcessingEventType.Start,
+                                nameof(LibraryProcessJob),
+                                librariesToProcess.Count(),
+                                0,
+                                $"Batch [{batch}] of [{batches}] for library [{library.Name}]."));                        
                     }
 
                     var processedArtistsResult = await ProcessArtistsAsync(library, melodeeFilesForDirectory, context.CancellationToken);
@@ -474,15 +481,6 @@ public class LibraryProcessJob(
                                 _totalSongsInserted++;
                             }
                         }
-
-                        if (dbAlbumsToAdd.Any(x => (x.NameNormalized == newAlbum.NameNormalized || x.SortName == newAlbum.SortName) &&
-                                                   x.ArtistId == newAlbum.ArtistId))
-                        {
-                            Logger.Error("[{JobName}] [{MethodName}] Found more than one album with the same name for the same artist [{Album}].",
-                                nameof(LibraryProcessJob), nameof(ProcessAlbumsAsync), newAlbum);
-                            return false;
-                        }
-
                         dbAlbumsToAdd.Add(newAlbum);
                     }
                 }

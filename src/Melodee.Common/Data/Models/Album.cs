@@ -106,4 +106,6 @@ public sealed class Album : MetaDataModelBase
     public ICollection<AlbumDisc> Discs { get; set; } = new List<AlbumDisc>();
 
     public ICollection<UserAlbum> UserAlbums { get; set; } = new List<UserAlbum>();
+
+    public override string ToString() => $"Id [{Id}] ApiKey [{ApiKey}] ArtistId [{ArtistId}] Name [{Name}] Directory [{Directory}]";
 }

@@ -564,19 +564,19 @@ public class OpenSubsonicApiService(
                 switch (albumListRequest.Type)
                 {
                     case ListType.Newest:
-                        orderSql = "ORDER BY a.\"CreatedAt\" DESC";
+                        orderSql = "ORDER BY a.\"CreatedAt\" DESC nulls last";
                         break;
 
                     case ListType.Highest:
-                        orderSql = "ORDER BY a.\"CalculatedRating\" DESC";
+                        orderSql = "ORDER BY a.\"CalculatedRating\" DESC nulls last";
                         break;
 
                     case ListType.Frequent:
-                        orderSql = "ORDER BY a.\"PlayedCount\" DESC";
+                        orderSql = "ORDER BY a.\"PlayedCount\" DESC nulls last";
                         break;
 
                     case ListType.Recent:
-                        orderSql = "ORDER BY a.\"LastPlayedAt\" DESC";
+                        orderSql = "ORDER BY a.\"LastPlayedAt\" DESC nulls last ";
                         break;
 
                     case ListType.AlphabeticalByName:
@@ -588,17 +588,17 @@ public class OpenSubsonicApiService(
                         break;
 
                     case ListType.Starred:
-                        orderSql = "ORDER BY \"Starred\" DESC";
+                        orderSql = "ORDER BY \"Starred\" DESC nulls last";
                         break;
 
                     case ListType.ByYear:
                         whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear";
-                        orderSql = "ORDER BY \"Year\" DESC";
+                        orderSql = "ORDER BY \"Year\" DESC nulls last";
                         break;
 
                     case ListType.ByGenre:
                         whereSql = "where @genre = any(a.\"Genres\")";
-                        orderSql = "ORDER BY \"Genres\" DESC";
+                        orderSql = "ORDER BY \"Genres\" DESC nulls last";
                         break;
 
                     default:
