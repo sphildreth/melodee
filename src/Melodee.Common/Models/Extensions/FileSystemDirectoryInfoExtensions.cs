@@ -120,7 +120,7 @@ public static class FileSystemDirectoryInfoExtensions
             result.Add(fileSystemDirectoryInfo);
         }
 
-        return result;
+        return result.Where(x => !x.Path.Contains("[!SKIP!]")).ToArray();
     }
 
     public static (string, int) GetNextFileNameForType(this FileSystemDirectoryInfo fileSystemDirectoryInfo, short maximumNumberOfImageTypeAllowed, string imageType)

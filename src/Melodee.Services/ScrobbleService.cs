@@ -115,8 +115,6 @@ public class ScrobbleService(
         var songIds = await DatabaseSongIdsInfoForSongApiKey(songId, cancellationToken).ConfigureAwait(false);
         if (songIds != null)
         {
-            //TODO what about Contributors? 
-
             var databaseSongScrobbleInfo = await DatabaseSongScrobbleInfoForSongApiKey(songId, cancellationToken).ConfigureAwait(false);
             if (databaseSongScrobbleInfo != null)
             {

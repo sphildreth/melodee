@@ -76,7 +76,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
             var imageValidator = new ImageValidator(melodeeConfiguration);
             var imageConvertor = new ImageConvertor(melodeeConfiguration);
             
-            var job = new LibraryProcessJob
+            var job = new LibraryInsertJob
             (
                 Log.Logger,
                 configurationFactory,

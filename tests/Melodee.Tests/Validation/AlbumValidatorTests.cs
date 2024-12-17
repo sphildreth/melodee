@@ -250,6 +250,7 @@ public class AlbumValidatorTests
     [InlineData("Escape (Deluxe)", true)]
     [InlineData("Arsenal of Glory (Re-Edition)", true)]
     [InlineData("Arsenal of Glory (2005 Edition)", true)]
+    [InlineData("The Bitch Is Back (Remastered 2017)", true)]
     public void AlbumTitleHasUnwantedText(string? AlbumTitle, bool shouldBe)
     {
         Assert.Equal(shouldBe, AlbumValidator.AlbumTitleHasUnwantedText(AlbumTitle));

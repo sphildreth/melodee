@@ -905,9 +905,7 @@ public sealed class DirectoryProcessorService(
             }
 
             var fileInfo = new FileInfo(imageFile);
-            var fileNameNormalized = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
-            var isArtistImage = fileNameNormalized.Contains(album.Artist.NameNormalized, StringComparison.OrdinalIgnoreCase);
-            if (isArtistImage || ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
+            if (ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
             {
                 // Move the image if not in the album directory
                 if (fileInfo.DirectoryName != album.Directory.FullName())

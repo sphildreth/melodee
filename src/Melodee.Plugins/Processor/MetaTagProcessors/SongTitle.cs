@@ -46,6 +46,11 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
         var metaTagsValue = metaTags?.ToArray() ?? [];
         if (songTitle?.Nullify() != null)
         {
+            var matches1 = Album.UnwantedRemasterWithYearRegex.Match(songTitle);
+            if (matches1.Success)
+            {
+                songTitle = songTitle[..matches1.Index].CleanString();
+            }
             if (ContinueProcessing(songTitle))
             {
                 songNumber = metaTagsValue.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? songTitle.TryToGetSongNumberFromString();

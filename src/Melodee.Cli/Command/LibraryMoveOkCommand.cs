@@ -41,7 +41,6 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSetting>
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
-            var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
             
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,

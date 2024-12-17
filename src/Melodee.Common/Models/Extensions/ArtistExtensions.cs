@@ -8,12 +8,12 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class ArtistExtensions
 {
-    private const string SoundSongArtistParseRegex = @"(sound\s*Song[s]*)";
+    public static readonly Regex SoundSongArtistParseRegex = new(@"(sound\s*Song[s]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
+    public static readonly Regex VariousArtistParseRegex = new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))", RegexOptions.Compiled | RegexOptions.IgnoreCase);    
 
-    private const string VariousArtistParseRegex = @"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))";
-
-    private const string CastRecordingSongArtistParseRegex = @"(original broadway cast|original cast*)";
-
+    public static readonly Regex CastRecordingSongArtistParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
     public static KeyValue ToKeyValue(this Artist artist) => new KeyValue(artist.UniqueId().ToString(), artist.Name.ToNormalizedString() ?? artist.Name);
     
     public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
@@ -66,13 +66,13 @@ public static class ArtistExtensions
     public static bool IsCastRecording(this Artist artist)
     {
         var artistName = artist.Name;
-        return artistName.Nullify() != null && Regex.IsMatch(artistName!, CastRecordingSongArtistParseRegex, RegexOptions.IgnoreCase);
+        return artistName.Nullify() != null && CastRecordingSongArtistParseRegex.IsMatch(artistName);
     }
 
     public static bool IsSoundSongArist(this Artist artist)
     {
         var artistName = artist.Name;
-        return artistName.Nullify() != null && Regex.IsMatch(artistName!, SoundSongArtistParseRegex, RegexOptions.IgnoreCase);
+        return artistName.Nullify() != null && SoundSongArtistParseRegex.IsMatch(artistName);
     }
 
     public static bool IsVariousArtist(this Artist artist)
@@ -87,8 +87,7 @@ public static class ArtistExtensions
         {
             return true;
         }
-
-        return Regex.IsMatch(artistName!, VariousArtistParseRegex, RegexOptions.IgnoreCase);
+        return VariousArtistParseRegex.IsMatch(artistName);
     }
 
     public static string ToDirectoryName(this Artist artist, int processingMaximumArtistDirectoryNameLength)

@@ -42,6 +42,15 @@ public static class AlbumExtensions
             }
         }
 
+        var t = album.Tags?.ToList() ?? [];
+        t.AddRange(album.Songs?.Where(x => x.Tags != null).SelectMany(x => x.Tags!) ?? []);
+        if (t.Any(x => x.Identifier == MetaTagIdentifier.Composer && 
+                       (ArtistExtensions.VariousArtistParseRegex.IsMatch(x.Value?.ToString() ?? string.Empty) || 
+                        x.Value?.ToString().ToNormalizedString() == "VARIOUS" || x.Value?.ToString().ToNormalizedString() == "VARIOUSARTISTS")))
+        {
+            return true;
+        }
+
         return album.Artist.IsVariousArtist() || album.Artist.IsSoundSongArist() || album.Artist.IsCastRecording();
     }
 

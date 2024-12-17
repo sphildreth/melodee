@@ -128,7 +128,7 @@ builder.Services.AddQuartz(q =>
         .WithCronSchedule("0 0/10 * * * ?") // Every 10 minutes
     );
     
-    q.AddJob<LibraryProcessJob>(opts => opts.WithIdentity(JobKeyRegistry.LibraryProcessJobJobKey));
+    q.AddJob<LibraryInsertJob>(opts => opts.WithIdentity(JobKeyRegistry.LibraryProcessJobJobKey));
     q.AddTrigger(opts => opts
         .ForJob(JobKeyRegistry.LibraryProcessJobJobKey)
         .WithIdentity("LibraryProcessJob-trigger")

@@ -16,7 +16,10 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
 {
     private static readonly Regex YearInAlbumTitleRegex = new(@"(\[|\()+[0-9]+(\]|\))+", RegexOptions.Compiled);
 
-    private static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|disk|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|disk|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
+    public static readonly Regex UnwantedRemasterWithYearRegex = new(@"\s[\[\(]*(re(\-*)issue(ed*)|re(\-*)master(ed*)(\s*[0-9]*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
     public override string Id => "B7288065-E229-41A6-9A2C-E14F5F6B0FE7";
 
     public override string DisplayName => nameof(Album);
@@ -51,6 +54,11 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
         var newAlbumTitle = albumTitle;
         try
         {
+            var matches1 = Album.UnwantedRemasterWithYearRegex.Match(albumTitle);
+            if (matches1.Success)
+            {
+                newAlbumTitle = newAlbumTitle[..matches1.Index].CleanString();
+            }            
             var matches = UnwantedAlbumTitleTextRegex.Match(albumTitle);
             if (matches.Length > 0)
             {
