@@ -352,7 +352,7 @@ public sealed class DirectoryProcessorService(
                         var mergedAlbum = albumForDirectory;
 
                         var serialized = string.Empty;
-                        var albumDataName = Path.Combine(directoryInfoToProcess.Path, albumForDirectory.ToMelodeeJsonName());
+                        var albumDataName = Path.Combine(directoryInfoToProcess.Path, albumForDirectory.ToMelodeeJsonName(_configuration));
                         if (File.Exists(albumDataName))
                         {
                             if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles))
@@ -726,7 +726,7 @@ public sealed class DirectoryProcessorService(
                     album.Status = validationResult.Data.AlbumStatus;
 
                     var serialized = serializer.Serialize(album);
-                    var jsonName = album.ToMelodeeJsonName(true);
+                    var jsonName = album.ToMelodeeJsonName(_configuration, true);
                     if (jsonName.Nullify() != null)
                     {
                         await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
@@ -961,7 +961,7 @@ public sealed class DirectoryProcessorService(
         // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image folders.
         foreach (var dir in album.ImageDirectories())
         {
-            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
+            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly).Select(x => $"{dir.Name}-{x}"));
         }
 
         var index = 1;

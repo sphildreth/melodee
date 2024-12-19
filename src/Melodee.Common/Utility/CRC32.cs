@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Serilog;
 
 namespace Melodee.Common.Utility;
 
@@ -55,21 +56,6 @@ public static class Crc32
     }
 
     /// <summary>
-    ///     Returns the CRC32 Checksum of an input stream as a string.
-    /// </summary>
-    /// <param name="stream">Input stream.</param>
-    /// <returns>CRC32 Checksum as a string.</returns>
-    public static string Calculate(Stream stream)
-    {
-        if (stream == null)
-        {
-            throw new ArgumentNullException(nameof(stream));
-        }
-
-        return $"{CalculateInt32(stream):X8}";
-    }
-
-    /// <summary>
     ///     Returns the CRC32 Checksum of a byte array as a string.
     /// </summary>
     /// <param name="data">The byte array.</param>
@@ -113,27 +99,38 @@ public static class Crc32
         {
             throw new ArgumentNullException(nameof(stream));
         }
-
-        unchecked
+        if (stream.Length == 0 || !stream.CanRead)
         {
-            stream.Position = 0;
-            var crc32Result = 0xFFFFFFFF;
-            var buffer = new byte[BufferSize];
-
-            var count = stream.Read(buffer, 0, BufferSize);
-            while (count > 0)
+            return 0;
+        }
+        try
+        {
+            unchecked
             {
-                for (var i = 0; i < count; i++)
+                stream.Position = 0;
+                var crc32Result = 0xFFFFFFFF;
+                var buffer = new byte[BufferSize];
+
+                var count = stream.Read(buffer, 0, BufferSize);
+                while (count > 0)
                 {
-                    crc32Result = (crc32Result >> 8) ^ Crc32Table[buffer[i] ^
-                                                                  (crc32Result & 0x000000FF)];
+                    for (var i = 0; i < count; i++)
+                    {
+                        crc32Result = (crc32Result >> 8) ^ Crc32Table[buffer[i] ^
+                                                                      (crc32Result & 0x000000FF)];
+                    }
+
+                    count = stream.Read(buffer, 0, BufferSize);
                 }
 
-                count = stream.Read(buffer, 0, BufferSize);
+                return ~crc32Result;
             }
-
-            return ~crc32Result;
         }
+        catch (IOException ex)
+        {
+            Log.Error(ex, "Error while calculating CRC32.");
+        }
+        return 0;
     }
 
     /// <summary>

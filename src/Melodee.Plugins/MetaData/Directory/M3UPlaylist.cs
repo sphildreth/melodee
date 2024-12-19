@@ -148,7 +148,7 @@ public sealed class M3UPlaylist(ISerializer serializer, IEnumerable<ISongPlugin>
                         }
 
                         m3UAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
-                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName());
+                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {
                             var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
@@ -166,7 +166,7 @@ public sealed class M3UPlaylist(ISerializer serializer, IEnumerable<ISongPlugin>
                             Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
                         }
 
-                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, m3UAlbum.ToMelodeeJsonName(), m3UAlbum.Status.ToString());
+                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration), m3UAlbum.Status.ToString());
                         processedFiles++;
                     }
                 }

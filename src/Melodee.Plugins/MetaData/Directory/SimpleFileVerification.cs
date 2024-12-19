@@ -172,7 +172,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
 
                     sfvAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
 
-                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName());
+                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                     if (File.Exists(stagingAlbumDataName))
                     {
                         var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
@@ -190,7 +190,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, sfvAlbum.ToMelodeeJsonName(), sfvAlbum.Status.ToString());
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration), sfvAlbum.Status.ToString());
                     processedFiles++;
                 }
             }

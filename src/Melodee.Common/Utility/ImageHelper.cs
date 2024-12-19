@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using Melodee.Common.Enums;
+﻿using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Utility;
@@ -8,7 +7,7 @@ public static class ImageHelper
 {
     private static string[] ImageExtensions()
     {
-        return new string[7] { "*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp" };
+        return ["*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp"];
     }
 
     private static string[] GetFiles(string? path,
@@ -17,7 +16,7 @@ public static class ImageHelper
     {
         if (string.IsNullOrEmpty(path) ||!Directory.Exists(path))
         {
-            return new string[0];
+            return [];
         }
 
         if (patterns == null || patterns.Length == 0)
@@ -38,16 +37,64 @@ public static class ImageHelper
         return GetFiles(directory, ImageExtensions(), searchOption);
     }
 
+    private static string[] ArtistImageFileNames =>
+    [
+        "BAND",
+        "ARTIST",
+        "GROUP",
+        "PHOTO"
+    ];
+
+    private static string[] ArtistSecondaryImageFileNames =>
+    [
+        "ARTISTLOGO",
+        "LOGO"
+    ];    
+
+    private static string[] AlbumImageFileNames =>
+    [
+        "ALBUM",
+        "ART",
+        "BIG",
+        "COVER",
+        "CVR",
+        "FOLDER",
+        "FRONT",
+        "SCAN"
+    ];
+    
+    private static string[] AlbumSecondaryImageFileNames =>
+    [
+        "BACK",
+        "BOOK",
+        "DIGIPACK",
+        "DISC",
+        "DVD",
+        "ENCARTES",
+        "INSIDE",
+        "INLAY",
+        "INSITE",
+        "JEWEL",
+        "MATRIX",
+        "TRAYCARD"
+    ];    
+    
     public static bool IsArtistImage(FileInfo? fileInfo)
     {
         if (fileInfo == null)
         {
             return false;
         }
-
-        return Regex.IsMatch(fileInfo.Name,
-            @"(band|artist|group|photo)(.*[0-9]*.*)*\.(jpg|jpeg|png|bmp|gif)",
-            RegexOptions.IgnoreCase);
+        if (FileHelper.IsFileImageType(fileInfo.Extension))
+        {
+            var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
+            if (ArtistImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            {
+                var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
+                return SafeParser.ToNumber<int>(nameDigits) < 2;
+            }
+        }
+        return false;
     }
 
     public static bool IsArtistSecondaryImage(FileInfo? fileInfo)
@@ -56,12 +103,21 @@ public static class ImageHelper
         {
             return false;
         }
-
-        return Regex.IsMatch(fileInfo.Name,
-            @"(artist_logo|logo|photo[-_\s]*[0-9]+|(artist[\s_-]+[0-9]+)|(band[\s_-]+[0-9]+))\.(jpg|jpeg|png|bmp|gif)",
-            RegexOptions.IgnoreCase);
+        if (FileHelper.IsFileImageType(fileInfo.Extension))
+        {
+            var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
+            if (ArtistImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            {
+                var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
+                return SafeParser.ToNumber<int>(nameDigits) > 1;
+            }
+            if (ArtistSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            {
+                return true;
+            }
+        }
+        return false;        
     }
-
 
     public static bool IsAlbumImage(FileInfo? fileInfo, string? albumName = null)
     {
@@ -78,9 +134,20 @@ public static class ImageHelper
             }
         }
 
-        return Regex.IsMatch(fileInfo.Name,
-            @"((f[-_\s]*[0-9]*)|00|art|big[art]*|cover(s)*|cvr|folder|Album|front[-_\s]*)\.(jpg|jpeg|png|bmp|gif)",
-            RegexOptions.IgnoreCase);
+        if (FileHelper.IsFileImageType(fileInfo.Extension))
+        {
+            var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
+            if (AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            {
+                return false;
+            }
+            if (AlbumImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            {
+                var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
+                return SafeParser.ToNumber<int>(nameDigits) < 2;
+            }
+        }
+        return false;        
     }
 
     public static bool IsAlbumSecondaryImage(FileInfo? fileInfo)
@@ -89,10 +156,21 @@ public static class ImageHelper
         {
             return false;
         }
-
-        return Regex.IsMatch(fileInfo.Name,
-            @"((img[\s-_]*[0-9]*[\s-_]*[0-9]*)|(book[let]*[#-_\s(]*[0-9]*-*[0-9]*(\))*)|(encartes[-_\s]*[(]*[0-9]*[)]*)|sc[an]*(.)?[0-9]*|matrix(.)?[0-9]*|(cover[\s_-]*[0-9]+)|back|dvd|traycard|jewel case|disc|(.*)[in]*side(.*)|in([side|lay|let|site])*[0-9]*|digipack.?\[?\(?([0-9]*)\]?\)?|cd.?\[?\(?([0-9]*)\]?\)?|(Album[\s_-]+[0-9]+))\.(jpg|jpeg|png|bmp|gif)",
-            RegexOptions.IgnoreCase);
+        
+        if (FileHelper.IsFileImageType(fileInfo.Extension))
+        {
+            var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
+            if (AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            {
+                return true;
+            }            
+            if (AlbumImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            {
+                var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
+                return SafeParser.ToNumber<int>(nameDigits) > 1;
+            }
+        }
+        return false;         
     }
 
 

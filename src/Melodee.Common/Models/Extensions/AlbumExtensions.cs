@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -172,7 +173,7 @@ public static class AlbumExtensions
         return (false, $"Album Status is [{album.Status.ToString()}]");
     }
 
-    public static string ToMelodeeJsonName(this Album album, bool? isForAlbumDirectory = null)
+    public static string ToMelodeeJsonName(this Album album, IMelodeeConfiguration configuration, bool? isForAlbumDirectory = null)
     {
         if (album.UniqueId() < 1)
         {
@@ -187,6 +188,11 @@ public static class AlbumExtensions
             artistAndAlbumPart = $"{artist}_{albumTitle}.";
         }
 
+        if (artistAndAlbumPart.Length + Album.JsonFileName.Length > configuration.GetValue<int>(SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength))
+        {
+            // When artist path is too long generate a unique hash and use that.  
+            artistAndAlbumPart = SafeParser.Hash(Guid.NewGuid().ToString()).ToString();
+        }
         return $"{artistAndAlbumPart}{Album.JsonFileName}";
     }
 

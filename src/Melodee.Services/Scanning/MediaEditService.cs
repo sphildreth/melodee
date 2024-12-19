@@ -228,7 +228,7 @@ public sealed class MediaEditService(
 
         var serialized = serializer.Serialize(album);
         var albumStagingDirInfo = new DirectoryInfo(directoryInfo.FullName());
-        var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
+        var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(_configuration, true));
         await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
         return album.UniqueId();
     }
@@ -665,7 +665,7 @@ public sealed class MediaEditService(
                 var albumStagingDirInfo = new DirectoryInfo(Path.Combine(directoryInfo.FullName(), album.ToDirectoryName()));
                 album.Images = [];
                 var serialized = serializer.Serialize(album);
-                await File.WriteAllTextAsync(Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true)), serialized, cancellationToken);
+                await File.WriteAllTextAsync(Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(_configuration, true)), serialized, cancellationToken);
                 foreach (var imageFile in ImageHelper.ImageFilesInDirectory(albumStagingDirInfo.FullName, SearchOption.AllDirectories))
                 {
                     File.Delete(imageFile);

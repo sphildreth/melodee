@@ -510,10 +510,11 @@
             var albumDirectoryName = _album.ToDirectoryName();
             if (albumDirectoryName.Nullify() != null)
             {
+                var configuration = await SettingService.GetMelodeeConfigurationAsync();
                 var serialized = Serializer.Serialize(_album);
                 var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
                 var albumStagingDirInfo = new DirectoryInfo(Path.Combine(library.Path, albumDirectoryName));
-                var jsonName = Path.Combine(albumStagingDirInfo.FullName, _album.ToMelodeeJsonName(true));
+                var jsonName = Path.Combine(albumStagingDirInfo.FullName, _album.ToMelodeeJsonName(configuration, true));
                 await File.WriteAllTextAsync(jsonName, serialized);
                 NavManager.ReloadPage();
             }
@@ -605,6 +606,8 @@
 
             try
             {
+                var configuration = await SettingService.GetMelodeeConfigurationAsync();
+
                 // Save album
                 var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
                 var album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), UniqueId);
@@ -615,7 +618,6 @@
 
                 if (album.Songs != null)
                 {
-                    var configuration = await SettingService.GetMelodeeConfigurationAsync();
                     var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), _imageConvertor, _imageValidator, configuration);
                     foreach (var song in album.Songs)
                     {
@@ -631,7 +633,7 @@
                 if (albumDirectoryName.Nullify() != null)
                 {
                     var albumStagingDirInfo = new DirectoryInfo(Path.Combine(library.Path, albumDirectoryName));
-                    var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(true));
+                    var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(configuration, true));
                     await File.WriteAllTextAsync(jsonName, serialized);
                     NavManager.NavigateTo(ReturnUrl?.FromBase64() ?? "/");
                 }

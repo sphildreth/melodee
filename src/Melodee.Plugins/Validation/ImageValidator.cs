@@ -12,7 +12,7 @@ namespace Melodee.Plugins.Validation;
 
 public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImageValidator
 {
-    private static readonly Regex ImageNameIsProofRegex = new(@"(proof)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private static readonly Regex ImageNameIsProofRegex = new(@"(proof|foto)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
     
     private readonly List<ValidationResultMessage> _validationMessages = [];
     

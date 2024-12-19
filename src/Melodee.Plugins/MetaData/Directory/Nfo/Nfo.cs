@@ -104,7 +104,7 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
 
                     if (nfoAlbum.Status == AlbumStatus.Ok)
                     {
-                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName());
+                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {
                             var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
@@ -132,7 +132,7 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
                         }
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, nfoAlbum.ToMelodeeJsonName(), nfoAlbum.Status.ToString());
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration), nfoAlbum.Status.ToString());
                     processedFiles++;
                 }
             }
