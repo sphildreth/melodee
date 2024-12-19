@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Commons;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -98,7 +99,7 @@ public static class FileSystemDirectoryInfoExtensions
         return results.ToArray();
     }
 
-    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Instant? modifiedSince, SearchOption searchOption)
+    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, IMelodeeConfiguration configuraiton, Instant? modifiedSince, SearchOption searchOption)
     {
         if (string.IsNullOrWhiteSpace(fileSystemDirectoryInfo.Path))
         {
@@ -119,8 +120,12 @@ public static class FileSystemDirectoryInfoExtensions
         {
             result.Add(fileSystemDirectoryInfo);
         }
-
-        return result.Where(x => !x.Path.Contains("[!SKIP!]")).ToArray();
+        var skipDirPrefix = configuraiton.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
+        if (skipDirPrefix.Nullify() != null)
+        {
+            return result.Where(x => !x.Name.StartsWith(skipDirPrefix!)).ToArray();
+        }
+        return result.ToArray();
     }
 
     public static (string, int) GetNextFileNameForType(this FileSystemDirectoryInfo fileSystemDirectoryInfo, short maximumNumberOfImageTypeAllowed, string imageType)

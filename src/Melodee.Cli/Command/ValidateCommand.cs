@@ -65,8 +65,6 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
 
             var albumValidator = new AlbumValidator(config);
             
-            //        NavManager.NavigateTo($"/album/{_libraryApiKey}/{args.Item.UniqueId}/{"/staging".ToBase64()}");
-            
             Album? album = null;
             if (settings.LibraryName != null && settings.UniqueId != null)
             {
@@ -112,7 +110,7 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
                         .Header("Validation Result")
                         .Collapse()
                         .RoundedBorder()
-                        .BorderColor(Color.Yellow));
+                        .BorderColor(Color.Red));
             }
             return isValid ? 0 : 1;
         }

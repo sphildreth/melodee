@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
+using Spectre.Console.Json;
 
 namespace Melodee.Cli.Command;
 
@@ -83,8 +84,18 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSetting>
                     settings.ToLibraryName,
                     b => b.Status == AlbumStatus.Ok,
                     settings.Verbose)
-                .ConfigureAwait(false);          
+                .ConfigureAwait(false);
 
+            if (!result.IsSuccess)
+            {
+                AnsiConsole.Write(
+                    new Panel(new JsonText(serializer.Serialize(result) ?? string.Empty))
+                        .Header("Not successful")
+                        .Collapse()
+                        .RoundedBorder()
+                        .BorderColor(Color.Yellow));                
+            }
+            
             return result.IsSuccess ? 0 : 1;
         }
     }

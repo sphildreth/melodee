@@ -43,6 +43,7 @@ public sealed class CueSheet(
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
+        var resultType = OperationResponseType.Error;
         var processedFiles = 0;
         try
         {
@@ -202,11 +203,13 @@ public sealed class CueSheet(
         catch (Exception e)
         {
             Log.Error(e, "[{Name}] processing directory [{DirName}]", DisplayName, fileSystemDirectoryInfo);
+            resultType = OperationResponseType.Error;
             StopProcessing = true;
         }
 
         return new OperationResult<int>
         {
+            Type = resultType,
             Data = processedFiles
         };
     }

@@ -482,6 +482,14 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },                
                 new Setting
                 {
+                    Id = 48,
+                    Key = SettingRegistry.ProcessingSkippedDirectoryPrefix,
+                    Comment = "Prefix to apply to directories to skip processing. This is also used then a directory throws an error attempting to be processed, to prevent future processing.",
+                    Value = "_skip_ ",
+                    CreatedAt = now
+                },                
+                new Setting
+                {
                     Id = 1300,
                     Category = (int)SettingCategory.Validation,
                     Key = SettingRegistry.ValidationMaximumSongNumber,
@@ -509,7 +517,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
-                    Id = 48,
+                    Id = 49,
                     Key = SettingRegistry.EncryptionPrivateKey,
                     Comment = "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.",
                     Value = "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y",

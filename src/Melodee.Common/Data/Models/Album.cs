@@ -13,6 +13,7 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(ArtistId), nameof(Name), IsUnique = true)]
 [Index(nameof(ArtistId),nameof(NameNormalized), IsUnique = true)]
 [Index(nameof(ArtistId), nameof(SortName), IsUnique = true)]
+[Index(nameof(MediaUniqueId), IsUnique = true)]
 public sealed class Album : MetaDataModelBase
 {
     public const string FrontImageType = "Front";    

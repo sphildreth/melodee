@@ -13,6 +13,7 @@ namespace Melodee.Common.Data.Models;
 [Serializable]
 [Index(nameof(Title))]
 [Index(nameof(AlbumDiscId), nameof(SongNumber), IsUnique = true)]
+[Index(nameof(MediaUniqueId), IsUnique = true)]
 public class Song : MetaDataModelBase
 {
     [RequiredGreaterThanZero] public int AlbumDiscId { get; set; }

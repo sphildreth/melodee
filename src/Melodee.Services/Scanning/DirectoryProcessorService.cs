@@ -156,6 +156,8 @@ public sealed class DirectoryProcessorService(
         var albumsUniqueIdsSeen = new List<long>();
         var songsUniqueIdsSeen = new List<long>();
 
+        var skipPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
+        
         var result = new DirectoryProcessorResult
         {
             DurationInMs = 0,
@@ -227,7 +229,7 @@ public sealed class DirectoryProcessorService(
             }
         }
 
-        var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
+        var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
         if (directoriesToProcess.Count > 0)
         {
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
@@ -265,6 +267,12 @@ public sealed class DirectoryProcessorService(
                         if (plugin.StopProcessing)
                         {
                             Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
+                            if (pluginResult.Type == OperationResponseType.Error && skipPrefix.Nullify() != null)
+                            {
+                                var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
+                                Directory.Move(directoryInfoToProcess.FullName(), Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
+                                LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{Dir}] moved to [{NewName}]", null, directoryInfoToProcess.ToString(), movedTo);                    
+                            }
                             break;
                         }
 
@@ -779,6 +787,13 @@ public sealed class DirectoryProcessorService(
                         Errors = processingErrors,
                         Data = result
                     };
+                }
+
+                if (skipPrefix.Nullify() != null)
+                {
+                    var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
+                    Directory.Move(directoryInfoToProcess.FullName(), Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
+                    LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{Dir}] moved to [{NewName}]", null, directoryInfoToProcess.ToString(), movedTo);                    
                 }
             }
 

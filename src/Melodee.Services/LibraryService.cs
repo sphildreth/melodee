@@ -22,6 +22,7 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using SmartFormat;
+using Log = ATL.Logging.Log;
 using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Services;
@@ -487,15 +488,37 @@ public sealed class LibraryService(
         [
             new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor,  imageValidator, configuration)
         ];
+        var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);        
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
         var albumsToMove = new List<MelodeeModels.Album>();
         foreach (var albumFile in albumsForFromLibrary)
         {
-            var album = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(albumFile, cancellationToken));
-            if (album?.Status == AlbumStatus.Ok && condition(album))
+            if (skipDirPrefix.Nullify() != null)
             {
-                albumsToMove.Add(album);
+                if (Path.GetDirectoryName(albumFile)?.StartsWith(skipDirPrefix!) ?? false)
+                {
+                    continue;
+                }
+            }            
+            var album = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(albumFile, cancellationToken));
+            if (album != null)
+            {
+                if (!album.IsValid(configuration.Configuration).Item1)
+                {
+                    if (skipDirPrefix.Nullify() != null)
+                    {
+                        var dirInfo = new DirectoryInfo(Path.GetDirectoryName(albumFile));
+                        var newName = Path.Combine(dirInfo.Parent.FullName, $"{skipDirPrefix}{dirInfo.Name}");
+                        dirInfo.MoveTo(newName);
+                        Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", dirInfo.FullName, newName);
+                    }
+                    continue;
+                }
+                if (condition(album))
+                {
+                    albumsToMove.Add(album);
+                }
             }
 
             if (albumsToMove.Count >= maxAlbumProcessingCount)
@@ -505,7 +528,7 @@ public sealed class LibraryService(
         }
 
         var numberOfAlbumsToMove = albumsToMove.Count();
-        var result = false;
+
         OnProcessingProgressEvent?.Invoke(this,
             new ProcessingEvent(ProcessingEventType.Start,
                 nameof(MoveAlbumsFromLibraryToLibrary),
@@ -514,8 +537,17 @@ public sealed class LibraryService(
                 "Starting processing"
             ));
 
-        result = (await MoveAlbumsToLibrary(toLibrary, albumsToMove.ToArray(), cancellationToken).ConfigureAwait(false)).IsSuccess;
+        var result = await MoveAlbumsToLibrary(toLibrary, albumsToMove.ToArray(), cancellationToken).ConfigureAwait(false);
 
+        if (!result.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<bool>(result.Messages)
+            {
+                Data = false,
+                Errors = result.Errors
+            };
+        }
+        
         OnProcessingProgressEvent?.Invoke(this,
             new ProcessingEvent(ProcessingEventType.Stop,
                 nameof(MoveAlbumsFromLibraryToLibrary),
@@ -525,7 +557,7 @@ public sealed class LibraryService(
             ));
         return new MelodeeModels.OperationResult<bool>
         {
-            Data = result
+            Data = true
         };
     }
 }

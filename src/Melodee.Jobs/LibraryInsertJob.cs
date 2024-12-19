@@ -94,7 +94,7 @@ public class LibraryInsertJob(
             }
 
             var imageConvertor = new ImageConvertor(_configuration);
-            
+
             DirectoryInfo? processingDirectory = null;
 
             _totalAlbumsInserted = 0;
@@ -145,7 +145,7 @@ public class LibraryInsertJob(
                     "Started library processing libraries."));
             await using (var scopedContext = await contextFactory.CreateDbContextAsync(context.CancellationToken).ConfigureAwait(false))
             {
-                foreach (var libraryIndex in librariesToProcess.Select((library,index) => new { library, index }))
+                foreach (var libraryIndex in librariesToProcess.Select((library, index) => new { library, index }))
                 {
                     if (libraryIndex.library.IsLocked)
                     {
@@ -173,7 +173,7 @@ public class LibraryInsertJob(
                     var batches = (allDirsForLibrary.Length + _batchSize - 1) / _batchSize;
                     for (var batch = 0; batch < batches; batch++)
                     {
-                        var melodeeFilesForDirectory = new List<Album>();                        
+                        var melodeeFilesForDirectory = new List<Album>();
                         foreach (var dir in allDirsForLibrary.Skip(_batchSize * batch).Take(_batchSize))
                         {
                             try
@@ -228,6 +228,7 @@ public class LibraryInsertJob(
                                 Logger.Error(e, "[{JobName}] Error processing directory [{Dir}]", nameof(LibraryInsertJob), processingDirectory);
                             }
                         }
+
                         var processedArtistsResult = await ProcessArtistsAsync(libraryIndex.library, melodeeFilesForDirectory, context.CancellationToken);
                         if (!processedArtistsResult)
                         {
@@ -239,7 +240,7 @@ public class LibraryInsertJob(
                         {
                             continue;
                         }
-                        
+
                         OnProcessingEvent?.Invoke(
                             this,
                             new ProcessingEvent(ProcessingEventType.Processing,
@@ -324,14 +325,14 @@ public class LibraryInsertJob(
                     };
                     scopedContext.LibraryScanHistories.Add(newLibraryScanHistory);
                     await scopedContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
-                    
+
                     OnProcessingEvent?.Invoke(
                         this,
                         new ProcessingEvent(ProcessingEventType.Processing,
                             nameof(LibraryInsertJob),
                             librariesToProcess.Length,
                             libraryIndex.index,
-                            $"Library [{libraryIndex.library.Name}]."));                    
+                            $"Library [{libraryIndex.library.Name}]."));
                 }
             }
 
@@ -378,6 +379,7 @@ public class LibraryInsertJob(
                 var dbAlbumsToAdd = new List<dbModels.Album>();
                 foreach (var melodeeAlbum in melodeeAlbumsForDirectory)
                 {
+                    
                     currentAlbum = melodeeAlbum;
                     var artistName = melodeeAlbum.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                     var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
@@ -393,7 +395,7 @@ public class LibraryInsertJob(
                         Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqueId}].", melodeeAlbum.Artist.UniqueId(), melodeeAlbum.UniqueId);
                         continue;
                     }
-
+                    
                     var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
                     var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
                     var dbAlbumResult = await albumService.GetByMediaUniqueId(melodeeAlbum.UniqueId(), cancellationToken).ConfigureAwait(false);
@@ -401,7 +403,6 @@ public class LibraryInsertJob(
                     {
                         dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist.Id, nameNormalized, cancellationToken).ConfigureAwait(false);
                     }
-
                     var dbAlbum = dbAlbumResult.Data;
 
                     var albumDirectory = melodeeAlbum.AlbumDirectoryName(_configuration.Configuration);
@@ -620,56 +621,6 @@ public class LibraryInsertJob(
                     await scopedContext.Artists.AddRangeAsync(dbArtistsToAdd, cancellationToken).ConfigureAwait(false);
                     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     _totalArtistsInserted += dbArtistsToAdd.Count;
-                    UpdateDataMap();
-                }
-
-                var artistsToUpdate = (from a in artists
-                        join addedArtist in dbArtistsToAdd on a.UniqueId() equals addedArtist.MediaUniqueId into aa
-                        from artist in aa.DefaultIfEmpty()
-                        where artist is null
-                        select a)
-                    .ToArray();
-                foreach (var artist in artistsToUpdate)
-                {
-                    var dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId(), cancellationToken).ConfigureAwait(false);
-                    if (!dbArtistResult.IsSuccess)
-                    {
-                        dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    if (dbArtistResult.Data!.IsLocked)
-                    {
-                        Logger.Warning("[{JobName}] Skipped processing locked artist [{ArtistId}]", nameof(LibraryInsertJob), dbArtistResult.Data);
-                        continue;
-                    }
-
-                    var dbArtist = await scopedContext.Artists.FirstAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
-                    var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
-                    if (!string.Equals(newArtistDirectory, dbArtist.Directory, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // directory has changed then; move artist folder
-                        if (Directory.Exists(newArtistDirectory))
-                        {
-                            Logger.Warning("[{JobName}] Artist [{Artist}] directory [{NewDir}] has changed [{OldDir}] but directory exists. Skipping artist update.",
-                                nameof(LibraryInsertJob), artist, newArtistDirectory, dbArtist.Directory);
-                            continue;
-                        }
-
-                        MediaEditService.MoveDirectory(dbArtist.Directory, newArtistDirectory);
-                        dbArtist.Directory = newArtistDirectory;
-                    }
-
-                    dbArtist.MediaUniqueId = artist.UniqueId();
-                    dbArtist.Name = artist.Name;
-                    dbArtist.NameNormalized = artist.NameNormalized;
-                    dbArtist.SortName = artist.SortName;
-                    dbArtist.LastUpdatedAt = _now;
-                }
-
-                if (artistsToUpdate.Any())
-                {
-                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                    _totalArtistsUpdated += artistsToUpdate.Length;
                     UpdateDataMap();
                 }
             }
