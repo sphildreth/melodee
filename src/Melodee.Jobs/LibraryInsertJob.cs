@@ -42,7 +42,6 @@ public class LibraryInsertJob(
     AlbumService albumService,
     AlbumDiscoveryService albumDiscoveryService,
     DirectoryProcessorService directoryProcessorService,
-    ImageConvertor imageConvertor,
     IImageValidator imageValidator) : JobBase(logger, configurationFactory)
 {
     private int _batchSize;
@@ -94,6 +93,8 @@ public class LibraryInsertJob(
                 return;
             }
 
+            var imageConvertor = new ImageConvertor(_configuration);
+            
             DirectoryInfo? processingDirectory = null;
 
             _totalAlbumsInserted = 0;

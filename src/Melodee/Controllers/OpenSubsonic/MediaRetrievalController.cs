@@ -13,10 +13,21 @@ namespace Melodee.Controllers.OpenSubsonic;
 public class MediaRetrievalController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
     //TODO
-    //getCaptions
     //getLyrics
     //getLyricsBySongId //https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
-    //hls
+
+    
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/hls.view")]
+    [Route("/rest/hls")]
+    [Route("/rest/getCaptions.view")]
+    [Route("/rest/getCaptions")]
+    public IActionResult DeprecatedWontImplement()
+    {
+        HttpContext.Response.Headers.Append("Cache-Control", "no-cache");
+        return StatusCode((int)HttpStatusCode.Gone);
+    }     
 
     /// <summary>
     ///     Returns the avatar (personal image) for a user.

@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Serilog.Events;
 using SerilogTimings;
+using Polly;
+using Polly.Retry;
 
 namespace Melodee.Common.Extensions;
 
@@ -12,9 +14,24 @@ public static class HttpClientExtensions
     /// <returns>True if the file downloaded was kept, false if deleted as failed condition or errored.</returns>
     public static async Task<bool> DownloadFileAsync(this HttpClient httpClient, string url, string filePath, Func<FileInfo, FileInfo, CancellationToken, Task<bool>>? overrideCondition = null, CancellationToken cancellationToken = default)
     {
+        var pipeline = new ResiliencePipelineBuilder()
+            .AddRetry(new RetryStrategyOptions
+            {
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,  
+                MaxRetryAttempts = 4,
+                Delay = TimeSpan.FromMinutes(3),
+            })
+            .Build();
+        return await pipeline.ExecuteAsync(async result => await DownloadFileActionAsync(httpClient, url, filePath, overrideCondition, cancellationToken), cancellationToken);
+
+    }
+    
+    private static async Task<bool> DownloadFileActionAsync(this HttpClient httpClient, string url, string filePath, Func<FileInfo, FileInfo, CancellationToken, Task<bool>>? overrideCondition = null, CancellationToken cancellationToken = default)
+    {
         var fileInfo = new FileInfo(filePath);
         var tempDownloadName = Path.Combine(fileInfo.DirectoryName!, $"{Guid.NewGuid()}{fileInfo.Extension}");
-
+        
         try
         {
             using (Operation.At(LogEventLevel.Debug).Time("\u2584 Downloaded url [{Url}] to file [{File}]", url, filePath))
@@ -53,5 +70,5 @@ public static class HttpClientExtensions
             File.Move(tempDownloadName, filePath);
         }
         return true;
-    }
+    }    
 }

@@ -536,7 +536,6 @@ public sealed class DirectoryProcessorService(
                             {
                                 File.Delete(image.FileInfo!.FullName(albumKvp.Key.Directory));
                             }
-
                             image.FileInfo!.Name = Path.GetFileName(newImageFileName);
                         }
                     }

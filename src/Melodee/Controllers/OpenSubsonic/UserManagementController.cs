@@ -10,10 +10,11 @@ public class UserManagementController(ISerializer serializer, EtagRepository eta
 {
     //TODO
     // getUsers
+    
     // updateUser
     // deleteUser
     // changePassword
-    //
+    
 
     /// <summary>
     ///     Get details about a given user, including which authorization roles and folder access it has.

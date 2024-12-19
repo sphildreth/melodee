@@ -28,6 +28,9 @@ public sealed class ImageHelperTests
     [InlineData("logo.jpg", null, false)]
     [InlineData("00-quantic.jpg", null, false)]    
     [InlineData("00-quantic.jpg", "Dancing While Falling", false)]
+    [InlineData("Booklet2-Scans.jpg", null, false)]
+    [InlineData("Front-Scans.jpg", null, false)]    
+    [InlineData("Back-Scans.jpg", null, false)]
     [InlineData("front.jpg", null, true)]
     [InlineData("cover.jpg", null, true)]
     [InlineData("01-cover.jpg", null, true)]
@@ -35,5 +38,18 @@ public sealed class ImageHelperTests
     [InlineData("00-quantic--dancing_while_falling_(deluxe_edition)-web-2024-oma.jpg", "Dancing While Falling", true)]
     [InlineData("Mazzy Star-ghost highway-remastered-CD.jpg", "Ghost Highway", true)]
     [InlineData("Mazzy Star-ghost highway-remastered-booklet-front.jpg", "Ghost Highway", true)]
-    public void FileIsCoverImage(string fileName, string? albumName, bool expected) => Assert.Equal(expected, ImageHelper.IsAlbumImage(new FileInfo(fileName), albumName));
+    public void FileIsAlbumImage(string fileName, string? albumName, bool expected) => Assert.Equal(expected, ImageHelper.IsAlbumImage(new FileInfo(fileName), albumName));
+    
+    [Theory]
+    [InlineData("logo.jpg",  false)]
+    [InlineData("00-quantic.jpg",  false)]    
+    [InlineData("front.jpg",  false)]
+    [InlineData("cover.jpg",  false)]
+    [InlineData("01-cover.jpg",  false)]
+    [InlineData("02-cover.jpg",  false)]
+    [InlineData("Front-Scans.jpg",  true)]    
+    [InlineData("Back-Scans.jpg",  true)]
+    [InlineData("Booklet2-Scans.jpg",  true)]
+    [InlineData("CD-Scans.jpg",  true)]
+    public void FileIsAlbumSecondaryImage(string fileName, bool expected) => Assert.Equal(expected, ImageHelper.IsAlbumSecondaryImage(new FileInfo(fileName)));    
 }

@@ -26,6 +26,7 @@
     <PackageReference Include="NodaTime"  />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" />
+    <PackageReference Include="Polly.Core" />
     <PackageReference Include="Quartz.Jobs" />
     <PackageReference Include="Serilog"  />
     <PackageReference Include="Serilog.Sinks.Console"  />

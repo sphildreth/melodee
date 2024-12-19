@@ -49,6 +49,7 @@
     <PackageVersion Include="NodaTime" Version="3.2.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" Version="9.0.2" />
+    <PackageVersion Include="Polly.Core" Version="8.5.0" />
     <PackageVersion Include="Quartz.AspNetCore" Version="3.13.1" />
     <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.13.1" />
     <PackageVersion Include="Quartz.Jobs" Version="3.13.1" />

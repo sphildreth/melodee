@@ -74,7 +74,6 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
             
             var imageValidator = new ImageValidator(melodeeConfiguration);
-            var imageConvertor = new ImageConvertor(melodeeConfiguration);
             
             var job = new LibraryInsertJob
             (
@@ -130,7 +129,6 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                     ),
                     httpClientFactory
                 ),
-                imageConvertor,
                 imageValidator
             );
 

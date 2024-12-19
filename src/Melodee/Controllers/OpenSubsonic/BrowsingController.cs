@@ -18,10 +18,10 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     [Route("/rest/getVideos.view")]
     [Route("/rest/getVideoInfo")]
     [Route("/rest/getVideos")]    
-    public IActionResult NotImplemented()
+    public IActionResult DeprecatedWontImplement()
     {
         HttpContext.Response.Headers.Append("Cache-Control", "no-cache");
-        return StatusCode((int)HttpStatusCode.NotImplemented);
+        return StatusCode((int)HttpStatusCode.Gone);
     }    
     
     /// <summary>

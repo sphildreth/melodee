@@ -25,6 +25,8 @@ public class MusicBrainzUpdateDatabaseJob(
 {
     public override async Task Execute(IJobExecutionContext context)
     {
+        Logger.Information("[{JobName}] Starting job.", nameof(MusicBrainzUpdateDatabaseJob));
+        
         var startTicks = Stopwatch.GetTimestamp();
         var configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
         if (!configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled))
@@ -39,17 +41,6 @@ public class MusicBrainzUpdateDatabaseJob(
         string lockfile = string.Empty;
         try
         {
-            var settingResult = await settingService.GetAsync(SettingRegistry.SearchEngineMusicBrainzEnabled, context.CancellationToken).ConfigureAwait(false);
-            setting = settingResult.Data;
-            if (setting == null)
-            {
-                Logger.Error("[{JobName}] unable to get setting for [{SettingName}]", nameof(MusicBrainzUpdateDatabaseJob), SettingRegistry.SearchEngineMusicBrainzEnabled);
-                return;
-            }
-
-            setting.Value = "false";
-            await settingService.UpdateAsync(setting, context.CancellationToken).ConfigureAwait(false);
-
             storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath);
             if (storagePath == null || !Directory.Exists(storagePath))
             {
@@ -66,6 +57,18 @@ public class MusicBrainzUpdateDatabaseJob(
 
             await File.WriteAllTextAsync(lockfile, DateTimeOffset.UtcNow.ToString()).ConfigureAwait(false);
 
+            var settingResult = await settingService.GetAsync(SettingRegistry.SearchEngineMusicBrainzEnabled, context.CancellationToken).ConfigureAwait(false);
+            setting = settingResult.Data;
+            if (setting == null)
+            {
+                Logger.Error("[{JobName}] unable to get setting for [{SettingName}]", nameof(MusicBrainzUpdateDatabaseJob), SettingRegistry.SearchEngineMusicBrainzEnabled);
+                return;
+            }
+
+            setting.Value = "false";
+            await settingService.UpdateAsync(setting, context.CancellationToken).ConfigureAwait(false);
+            
+            
             var dbName = Path.Combine(storagePath, "musicbrainz.db");
             var doesDbExist = File.Exists(dbName);
             if (doesDbExist)
@@ -105,19 +108,29 @@ public class MusicBrainzUpdateDatabaseJob(
                 }
 
                 var mbDumpFileName = Path.Combine(storageStagingDirectory.FullName, "mbdump.tar.bz2");
-                await client.DownloadFileAsync(
+                var downloadedMbDumpFile = await client.DownloadFileAsync(
                     $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump.tar.bz2",
                     mbDumpFileName,
                     null,
                     context.CancellationToken);
 
                 var mbDumpDerivedFileName = Path.Combine(storageStagingDirectory.FullName, "mbdump-derived.tar.bz2");
-                await client.DownloadFileAsync(
+                var downloadedMbDerivedFile = await client.DownloadFileAsync(
                     $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump-derived.tar.bz2",
                     mbDumpDerivedFileName,
                     null,
                     context.CancellationToken);
 
+                if (!downloadedMbDumpFile || !downloadedMbDerivedFile)
+                {
+                    Logger.Warning("[{JobName}] Unable to download files: mbdump.tar.bz2 [{MbDumpFileName}], mbdump-derived.tar.bz2 [{MbDumpDerivedFileName}]", 
+                        nameof(MusicBrainzUpdateDatabaseJob),
+                        mbDumpFileName,
+                        mbDumpDerivedFileName);
+                    return;
+                }
+
+                Logger.Information("[{JobName}] Starting extracted file [{FileName}].", nameof(MusicBrainzUpdateDatabaseJob), mbDumpFileName);
                 using (Operation.At(LogEventLevel.Debug).Time("Extracted downloaded file [{File}]", mbDumpFileName))
                 {
                     await using (Stream mbDumpStream = File.OpenRead(mbDumpFileName))
@@ -134,6 +147,7 @@ public class MusicBrainzUpdateDatabaseJob(
                     }
                 }
 
+                Logger.Information("[{JobName}] Starting extracted file [{FileName}].", nameof(MusicBrainzUpdateDatabaseJob), mbDumpDerivedFileName);                
                 using (Operation.At(LogEventLevel.Debug).Time("Extracted downloaded file [{File}]", mbDumpDerivedFileName))
                 {
                     await using (Stream mbDumpDerivedStream = File.OpenRead(mbDumpDerivedFileName))
@@ -151,6 +165,7 @@ public class MusicBrainzUpdateDatabaseJob(
                 }
             }
             
+            Logger.Information("[{JobName}] Starting importing data.", nameof(MusicBrainzUpdateDatabaseJob));
             var importResult = await repository.ImportData(context.CancellationToken).ConfigureAwait(false);
             if (importResult.IsSuccess)
             {
@@ -174,7 +189,7 @@ public class MusicBrainzUpdateDatabaseJob(
         {
             if (tempDbName != null && storagePath != null)
             {
-                File.Move(tempDbName, Path.Combine(storagePath, $"melodee.db"));
+                File.Move(tempDbName, Path.Combine(storagePath, $"musicbrainz.db"));
             }
 
             Logger.Error(e, "Error updating database");
