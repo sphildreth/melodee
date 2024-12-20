@@ -50,11 +50,8 @@ public class LibraryInsertJob(
     private int _maxSongsToProcess;
     private Instant _now;
     private int _totalAlbumsInserted;
-    private int _totalAlbumsUpdated;
     private int _totalArtistsInserted;
-    private int _totalArtistsUpdated;
     private int _totalSongsInserted;
-    private int _totalSongsUpdated;
     private string[] _ignorePerformers = [];
     private string[] _ignoreProduction = [];
     private string[] _ignorePublishers = [];
@@ -98,10 +95,8 @@ public class LibraryInsertJob(
             DirectoryInfo? processingDirectory = null;
 
             _totalAlbumsInserted = 0;
-            _totalAlbumsUpdated = 0;
             _totalArtistsInserted = 0;
             _totalSongsInserted = 0;
-            _totalSongsUpdated = 0;
             _maxSongsToProcess = _configuration.GetValue<int?>(SettingRegistry.ProcessingMaximumProcessingCount) ?? 0;
             _batchSize = _configuration.BatchProcessingSize();
             var messagesForJobRun = new List<string>();
@@ -153,7 +148,7 @@ public class LibraryInsertJob(
                         continue;
                     }
 
-                    if (_totalSongsInserted + _totalSongsUpdated > _maxSongsToProcess && _maxSongsToProcess > 0)
+                    if (_totalSongsInserted > _maxSongsToProcess && _maxSongsToProcess > 0)
                     {
                         Logger.Warning("[{JobName}] Maximum Processing Count reached. Stopping processing.", nameof(LibraryInsertJob));
                         break;
@@ -162,7 +157,7 @@ public class LibraryInsertJob(
                     var libraryProcessStartTicks = Stopwatch.GetTimestamp();
                     var dirs = new DirectoryInfo(libraryIndex.library.Path).GetDirectories("*", SearchOption.AllDirectories);
                     var lastScanAt = libraryIndex.library.LastScanAt ?? defaultNeverScannedDate;
-                    if (_totalSongsInserted + _totalSongsUpdated > _maxSongsToProcess && _maxSongsToProcess > 0)
+                    if (_totalSongsInserted > _maxSongsToProcess && _maxSongsToProcess > 0)
                     {
                         Logger.Warning("[{JobName}] Maximum Processing Count reached. Stopping processing.", nameof(LibraryInsertJob));
                         break;
@@ -319,9 +314,9 @@ public class LibraryInsertJob(
                         LibraryId = dbLibrary.Id,
                         CreatedAt = _now,
                         DurationInMs = Stopwatch.GetElapsedTime(libraryProcessStartTicks).TotalMilliseconds,
-                        FoundAlbumsCount = _totalAlbumsInserted + _totalAlbumsUpdated,
+                        FoundAlbumsCount = _totalAlbumsInserted,
                         FoundArtistsCount = _totalArtistsInserted,
-                        FoundSongsCount = _totalSongsInserted + _totalSongsUpdated
+                        FoundSongsCount = _totalSongsInserted
                     };
                     scopedContext.LibraryScanHistories.Add(newLibraryScanHistory);
                     await scopedContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
@@ -337,7 +332,7 @@ public class LibraryInsertJob(
             }
 
             _dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString());
-            _dataMap.Put(JobMapNameRegistry.Count, _totalAlbumsInserted + _totalAlbumsUpdated + _totalArtistsInserted + _totalSongsInserted + _totalSongsUpdated);
+            _dataMap.Put(JobMapNameRegistry.Count, _totalAlbumsInserted + _totalArtistsInserted + _totalSongsInserted);
 
             OnProcessingEvent?.Invoke(
                 this,
@@ -345,7 +340,7 @@ public class LibraryInsertJob(
                     nameof(LibraryInsertJob),
                     0,
                     0,
-                    "Processed [{0}] albums, [{1}] songs in [{2}]".FormatSmart(_totalAlbumsUpdated + _totalAlbumsInserted, _totalSongsUpdated + _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks))));
+                    "Processed [{0}] albums, [{1}] songs in [{2}]".FormatSmart(_totalAlbumsInserted, _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks))));
 
             foreach (var message in messagesForJobRun)
             {
@@ -357,7 +352,7 @@ public class LibraryInsertJob(
                 Log.Error(exception, "[{JobName}] Processing Exception", nameof(LibraryInsertJob));
             }
 
-            Log.Debug("ℹ️ [{JobName}] Completed. Processed [{NumberOfAlbumsUpdated}] albums, [{NumberOfSongsUpdated}] songs in [{ElapsedTime}]", nameof(LibraryInsertJob), _totalAlbumsUpdated + _totalAlbumsInserted, _totalSongsUpdated + _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks));
+            Log.Debug("ℹ️ [{JobName}] Completed. Processed [{NumberOfAlbumsUpdated}] albums, [{NumberOfSongsUpdated}] songs in [{ElapsedTime}]", nameof(LibraryInsertJob), _totalAlbumsInserted, _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks));
         }
         catch (Exception e)
         {
@@ -401,13 +396,27 @@ public class LibraryInsertJob(
                     var dbAlbumResult = await albumService.GetByApiKeyAsync(melodeeAlbum.Id, cancellationToken).ConfigureAwait(false);
                     if (!dbAlbumResult.IsSuccess)
                     {
-                        dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist.Id, nameNormalized, cancellationToken).ConfigureAwait(false);
+                        var albumMusicBrainzId = SafeParser.ToGuid(melodeeAlbum.MusicBrainzId);
+                        if (albumMusicBrainzId != null)
+                        {
+                            dbAlbumResult = await albumService.GetByMusicBrainzIdAsync(albumMusicBrainzId.Value, cancellationToken).ConfigureAwait(false);    
+                        }
+                        if (!dbAlbumResult.IsSuccess)
+                        {
+                            dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist.Id, nameNormalized, cancellationToken).ConfigureAwait(false);
+                        }
                     }
                     var dbAlbum = dbAlbumResult.Data;
 
                     var albumDirectory = melodeeAlbum.AlbumDirectoryName(_configuration.Configuration);
                     if (dbAlbum == null)
                     {
+                        Logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] MusicbrainzId [{MusicBrainzId}] NormalizedName [{Name}]",
+                            nameof(LibraryInsertJob),
+                            dbArtist.Id,
+                            melodeeAlbum.Id,
+                            melodeeAlbum.MusicBrainzId,
+                            nameNormalized);
                         var newAlbum = new dbModels.Album
                         {
                             ApiKey = melodeeAlbum.Id,
@@ -551,11 +560,8 @@ public class LibraryInsertJob(
         _dataMap.Put(
             JobMapNameRegistry.Count,
             _totalAlbumsInserted +
-            _totalAlbumsUpdated +
             _totalArtistsInserted +
-            _totalArtistsUpdated +
-            _totalSongsInserted +
-            _totalSongsUpdated);
+            _totalSongsInserted);
     }
 
     /// <summary>
@@ -572,7 +578,7 @@ public class LibraryInsertJob(
                 var artists = melodeeAlbumsForDirectory
                     .Select(x => x.Artist)
                     .Where(x => x.IsValid())
-                    .Distinct()
+                    .DistinctBy(x => x.NameNormalized)
                     .OrderBy(x => x.Name)
                     .ToArray();
                 var dbArtistsToAdd = new List<dbModels.Artist>();
@@ -582,27 +588,37 @@ public class LibraryInsertJob(
                     OperationResult<dbModels.Artist?> dbArtistResult = await artistService.GetByApiKeyAsync(artist.Id, cancellationToken).ConfigureAwait(false);
                     if (!dbArtistResult.IsSuccess)
                     {
-                        dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
+                        var artistMusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId);
+                        if (artistMusicBrainzId != null)
+                        {
+                            dbArtistResult = await artistService.GetByMusicBrainzIdAsync(artistMusicBrainzId.Value, cancellationToken).ConfigureAwait(false);
+                        }
+                        if (!dbArtistResult.IsSuccess)
+                        {
+                            dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
+                        }
                     }
                     var dbArtist = dbArtistResult.Data;
                     if (!dbArtistResult.IsSuccess || dbArtist == null)
                     {
-                        var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
-                        if (dbArtistsToAdd.All(x => x.ApiKey != artist.Id))
+                        Logger.Debug("[{JobName}] Creating new artist for Id [{Id}] MusicbrainzId [{MusicBrainzId}] NormalizedName [{Name}]",
+                            nameof(LibraryInsertJob),
+                            artist.Id,
+                            artist.MusicBrainzId,
+                            artist.NameNormalized);
+                        var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));                        
+                        dbArtistsToAdd.Add(new dbModels.Artist
                         {
-                            dbArtistsToAdd.Add(new dbModels.Artist
-                            {
-                                ApiKey = artist.Id,
-                                Directory = newArtistDirectory,
-                                CreatedAt = _now,
-                                LibraryId = library.Id,
-                                MusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId),
-                                MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
-                                Name = artist.Name,
-                                NameNormalized = artist.NameNormalized,
-                                SortName = artist.SortName
-                            });
-                        }
+                            ApiKey = artist.Id,
+                            Directory = newArtistDirectory,
+                            CreatedAt = _now,
+                            LibraryId = library.Id,
+                            MusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId),
+                            MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
+                            Name = artist.Name,
+                            NameNormalized = artist.NameNormalized,
+                            SortName = artist.SortName
+                        });
                     }
                 }
 
@@ -692,7 +708,6 @@ public class LibraryInsertJob(
             {
                 return new dbModels.Contributor
                 {
-                    ApiKey = song.Id,
                     AlbumId = dbAlbumId,
                     ArtistId = artist?.Data?.Id,
                     ContributorName = contributorNameValue,

@@ -19,6 +19,7 @@ public class AlbumService(
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:album:apikey:{0}";
     private const string CacheKeyDetailByNameNormalizedTemplate = "urn:album:namenormalized:{0}";
+    private const string CacheKeyDetailByMusicBrainzIdTemplate = "urn:album:musicbrainzid:{0}";    
     private const string CacheKeyDetailTemplate = "urn:album:{0}";
 
     public async Task ClearCacheAsync(int albumId, CancellationToken cancellationToken = default)
@@ -29,6 +30,10 @@ public class AlbumService(
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey));
             CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized));
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id));
+            if (album.Data.MusicBrainzId != null)
+            {
+                CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.Data.MusicBrainzId.Value.ToString()));
+            }            
         }
     }
 
@@ -115,6 +120,29 @@ public class AlbumService(
             Data = result
         };
     }
+    
+    public async Task<MelodeeModels.OperationResult<Album?>> GetByMusicBrainzIdAsync(Guid musicBrainzId, CancellationToken cancellationToken = default)
+    {
+        var id = await CacheManager.GetAsync(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(musicBrainzId.ToString()), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();
+                return await dbConn
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Albums\" WHERE \"MusicBrainzId\" = @musicBrainzId", new { musicBrainzId })
+                    .ConfigureAwait(false);
+            }
+        }, cancellationToken);
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Album?>("Unknown album.")
+            {
+                Data = null
+            };
+        }
+
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
+    }    
 
     public async Task<MelodeeModels.OperationResult<Album?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {

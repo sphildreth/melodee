@@ -149,12 +149,7 @@ public static class AlbumExtensions
         {
             return (false, "Album title is invalid.");
         }
-
-        if (album.AlbumDbId == null && album.MusicBrainzId == null)
-        {
-            return (false, "Album in unknown.");
-        }
-
+        
         if (!album.HasValidAlbumYear(configuration))
         {
             return (false, "Album year is invalid.");

@@ -488,15 +488,20 @@ public sealed class LibraryService(
         [
             new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor,  imageValidator, configuration)
         ];
-        var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);        
+        var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify(); 
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
         var albumsToMove = new List<MelodeeModels.Album>();
         foreach (var albumFile in albumsForFromLibrary)
         {
-            if (skipDirPrefix.Nullify() != null)
+            var dirInfo = new DirectoryInfo(Path.GetDirectoryName(albumFile) ?? string.Empty);
+            if (!dirInfo.Exists)
             {
-                if (Path.GetDirectoryName(albumFile)?.StartsWith(skipDirPrefix!) ?? false)
+                continue;
+            }
+            if (skipDirPrefix != null)
+            {
+                if (dirInfo.Name.StartsWith(skipDirPrefix))
                 {
                     continue;
                 }
@@ -506,9 +511,8 @@ public sealed class LibraryService(
             {
                 if (!album.IsValid(configuration.Configuration).Item1)
                 {
-                    if (skipDirPrefix.Nullify() != null)
+                    if (skipDirPrefix != null)
                     {
-                        var dirInfo = new DirectoryInfo(Path.GetDirectoryName(albumFile));
                         var newName = Path.Combine(dirInfo.Parent.FullName, $"{skipDirPrefix}{dirInfo.Name}");
                         dirInfo.MoveTo(newName);
                         Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", dirInfo.FullName, newName);
