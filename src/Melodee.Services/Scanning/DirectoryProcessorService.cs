@@ -271,7 +271,7 @@ public sealed class DirectoryProcessorService(
                             {
                                 var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
                                 Directory.Move(directoryInfoToProcess.FullName(), Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
-                                LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{Dir}] moved to [{NewName}]", null, directoryInfoToProcess.ToString(), movedTo);                    
+                                LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);                    
                             }
                             break;
                         }
@@ -797,7 +797,7 @@ public sealed class DirectoryProcessorService(
                 {
                     var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
                     Directory.Move(directoryInfoToProcess.FullName(), Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
-                    LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{Dir}] moved to [{NewName}]", null, directoryInfoToProcess.ToString(), movedTo);                    
+                    LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);                    
                 }
             }
 
