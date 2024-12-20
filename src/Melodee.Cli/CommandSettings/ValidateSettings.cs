@@ -14,9 +14,9 @@ public class ValidateSettings : Spectre.Console.Cli.CommandSettings
     [CommandOption("--library")]    
     public string? LibraryName { get; init; }
 
-    [Description("UniqueId of Melodee Data File (melodee.json) file to validate.")]
-    [CommandOption("--uniqueId")] 
-    public long? UniqueId { get; init; }
+    [Description("Id of Melodee Data File (melodee.json) file to validate.")]
+    [CommandOption("--id")] 
+    public Guid? Id { get; init; }
     
     [Description("ApiKey of Album to Validate.")]
     [CommandOption("--apiKey")]

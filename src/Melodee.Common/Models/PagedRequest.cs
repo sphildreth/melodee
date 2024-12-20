@@ -24,7 +24,7 @@ public sealed record PagedRequest
     /// </summary>
     public FilterOperatorInfo[]? FilterBy { get; init; }
 
-    public long[] SelectedAlbumIds { get; init; } = Array.Empty<long>();
+    public Guid[] SelectedAlbumIds { get; init; } = [];
 
     public short PageSizeValue
     {

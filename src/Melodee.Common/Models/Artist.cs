@@ -9,15 +9,16 @@ public record Artist(
     string NameNormalized,
     string? SortName,
     IEnumerable<ImageInfo>? Images = null,
+    int? ArtistDbId = null,
     string? MusicBrainzId = null)
 {
     
+    public Guid Id { get; set; } = Guid.NewGuid();
+    
     public long? SearchEngineResultUniqueId { get; init; }
-    
+
     public string? OriginalName { get; init; }
-   
-    public static long GenerateUniqueId(string? musicBrainzId, string name) => SafeParser.Hash(name ?? musicBrainzId);
-    
+
     public static Artist NewArtistFromName(string name) 
         => new Artist(name, name.ToNormalizedString() ?? name, name.ToTitleCase());
 }

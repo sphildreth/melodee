@@ -351,7 +351,7 @@
 
     [Parameter] public Guid LibraryApiKey { get; set; }
 
-    [Parameter] public long UniqueId { get; set; }
+    [Parameter] public Guid Id { get; set; }
 
     [Parameter] public string? ReturnUrl { get; set; }
 
@@ -429,7 +429,7 @@
             await _albumCoverSearchModal.HideAsync();
             return;
         }
-        var saveResult = await MediaEditService.SaveImageUrlAsCoverAsync(_album.Directory, _album.UniqueId(), selectedImageSearchResult.MediaUrl, selectedImageSearchResult.DoDeleteExistingCoverImages);
+        var saveResult = await MediaEditService.SaveImageUrlAsCoverAsync(_album.Directory, _album.Id, selectedImageSearchResult.MediaUrl, selectedImageSearchResult.DoDeleteExistingCoverImages);
         if (saveResult.IsSuccess)
         {
             NavManager.Refresh(true);
@@ -530,7 +530,7 @@
 
         if (confirmation)
         {
-            var result = await MediaEditService.DoMagic(_album.Directory, _album!.UniqueId());
+            var result = await MediaEditService.DoMagic(_album.Directory, _album!.Id);
             if (result.IsSuccess)
             {
                 NavManager.ReloadPage();
@@ -610,7 +610,7 @@
 
                 // Save album
                 var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
-                var album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), UniqueId);
+                var album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), Id);
 
                 album.SetTagValue(MetaTagIdentifier.Album, _albumEdit.Title);
                 album.SetTagValue(MetaTagIdentifier.Artist, _albumEdit.Artist);
@@ -621,9 +621,9 @@
                     var editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, Serializer), _imageConvertor, _imageValidator, configuration);
                     foreach (var song in album.Songs)
                     {
-                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.Album, _albumEdit.Title);
-                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.Artist, _albumEdit.Artist);
-                        album.SetSongTagValue(song.SongId, MetaTagIdentifier.OrigAlbumYear, _albumEdit.Year);
+                        album.SetSongTagValue(song.Id, MetaTagIdentifier.Album, _albumEdit.Title);
+                        album.SetSongTagValue(song.Id, MetaTagIdentifier.Artist, _albumEdit.Artist);
+                        album.SetSongTagValue(song.Id, MetaTagIdentifier.OrigAlbumYear, _albumEdit.Year);
                         await editSongPlugin.UpdateSongAsync(album.Directory!, song);
                     }
                 }
@@ -671,7 +671,7 @@
         var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
         await AlbumsDiscoverer.InitializeAsync();
         await MediaEditService.InitializeAsync();
-        _album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), UniqueId);
+        _album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), Id);
         _albumEdit = new AlbumEdit
         {
             Artist = _album.Artist.Name,
@@ -713,7 +713,7 @@
         _info.Add(new KeyValuePair<string, object?>("Album: Display Summary", _album.DisplaySummary));
         _info.Add(new KeyValuePair<string, object?>("Album: Status", _album.Status.ToString()));
         _info.Add(new KeyValuePair<string, object?>("Album: Sort Name", _album.MetaTagValue<string?>(MetaTagIdentifier.SortAlbum)));
-        _info.Add(new KeyValuePair<string, object?>("Album: Unique Id", _album.UniqueId()));
+        _info.Add(new KeyValuePair<string, object?>("Album: Unique Id", _album.Id));
         _info.Add(new KeyValuePair<string, object?>("Album: Via Plugins", string.Join(", ", _album.ViaPlugins)));
         if (_album.Tags != null)
         {
@@ -727,7 +727,7 @@
                 foreach (var song in _album.Songs.OrderBy(x => x.SortOrder))
                 {
                     _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}: File", song.File.ToString()));
-                    _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}: Unique Id", song.UniqueId));
+                    _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}: Unique Id", song.Id));
                     _info.Add(new KeyValuePair<string, object?>($"Song: {song.SongNumber().ToStringPadLeft(_maximumTrackNumberLength)}", song.DisplaySummary));
                     if (song.Tags != null)
                     {

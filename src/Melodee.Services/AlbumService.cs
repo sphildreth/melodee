@@ -18,7 +18,6 @@ public class AlbumService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:album:apikey:{0}";
-    private const string CacheKeyDetailByMediaUniqueIdTemplate = "urn:album:mediauniqueid:{0}";
     private const string CacheKeyDetailByNameNormalizedTemplate = "urn:album:namenormalized:{0}";
     private const string CacheKeyDetailTemplate = "urn:album:{0}";
 
@@ -28,8 +27,7 @@ public class AlbumService(
         if (album.Data != null)
         {
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey));
-            CacheManager.Remove(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(album.Data.MediaUniqueId));
-            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.MediaUniqueId));
+            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized));
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id));
         }
     }
@@ -80,31 +78,6 @@ public class AlbumService(
                 var dbConn = scopedContext.Database.GetDbConnection();
                 return await dbConn
                     .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Albums\" WHERE \"ArtistId\" = @artistId AND \"NameNormalized\" = @nameNormalized", new { artistId, nameNormalized })
-                    .ConfigureAwait(false);
-            }
-        }, cancellationToken);
-        if (id == null)
-        {
-            return new MelodeeModels.OperationResult<Album?>("Unknown album.")
-            {
-                Data = null
-            };
-        }
-
-        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<MelodeeModels.OperationResult<Album?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
-    {
-        Guard.Against.Expression(x => x < 1, mediaUniqueId, nameof(mediaUniqueId));
-
-        var id = await CacheManager.GetAsync(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(mediaUniqueId), async () =>
-        {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                return await dbConn
-                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Albums\" WHERE \"MediaUniqueId\" = @mediaUniqueId", new { mediaUniqueId })
                     .ConfigureAwait(false);
             }
         }, cancellationToken);

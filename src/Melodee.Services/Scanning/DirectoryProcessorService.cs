@@ -152,9 +152,9 @@ public sealed class DirectoryProcessorService(
         var directoryPluginProcessedFileCount = 0;
         var numberOfAlbumFilesProcessed = 0;
 
-        var artistsUniqueIdsSeen = new List<long>();
-        var albumsUniqueIdsSeen = new List<long>();
-        var songsUniqueIdsSeen = new List<long>();
+        var artistsIdsSeen = new List<Guid>();
+        var albumsIdsSeen = new List<Guid>();
+        var songsIdsSeen = new List<Guid>();
 
         var skipPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
         
@@ -489,7 +489,7 @@ public sealed class DirectoryProcessorService(
                         {
                             // Set SongNumber to invalid range if SongNumber is missing
                             var maximumSongNumber = _configuration.GetValue<int>(SettingRegistry.ValidationMaximumSongNumber);
-                            album.Songs.Where(x => x.SongNumber() < 1).ForEach((x, i) => { album.SetSongTagValue(x.SongId, MetaTagIdentifier.TrackNumber, maximumSongNumber + i + 1); });
+                            album.Songs.Where(x => x.SongNumber() < 1).ForEach((x, i) => { album.SetSongTagValue(x.Id, MetaTagIdentifier.TrackNumber, maximumSongNumber + i + 1); });
                             foreach (var song in album.Songs)
                             {
                                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -649,9 +649,10 @@ public sealed class DirectoryProcessorService(
 
                             album.Artist = album.Artist with
                             {
-                                MusicBrainzId = artistFromSearch.MusicBrainzId?.ToString() ?? album.Artist.MusicBrainzId,
+                                ArtistDbId = artistFromSearch.Id,
                                 Name = artistFromSearch.Name,
                                 NameNormalized = artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
+                                MusicBrainzId = artistFromSearch.MusicBrainzId?.ToString(),
                                 SortName = artistFromSearch.SortName,
                                 SearchEngineResultUniqueId = artistFromSearch.UniqueId,
                                 OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null
@@ -659,9 +660,12 @@ public sealed class DirectoryProcessorService(
 
                             if (artistFromSearch.Releases?.Length != 0)
                             {
+                                album.AlbumDbId = artistFromSearch.Releases!.First().Id;
                                 album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId?.ToString();
                             }
 
+                            album.Status = AlbumStatus.Ok;
+                            
                             LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                         }
                         else
@@ -747,14 +751,14 @@ public sealed class DirectoryProcessorService(
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
                             {
-                                await mediaEditService.DoMagic(album.Directory, album.UniqueId(), cancellationToken);
+                                await mediaEditService.DoMagic(album.Directory, album.Id, cancellationToken);
                             }
                         }
 
-                        artistsUniqueIdsSeen.Add(album.Artist.UniqueId());
-                        artistsUniqueIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId() ?? 0) ?? []);
-                        albumsUniqueIdsSeen.Add(album.UniqueId());
-                        songsUniqueIdsSeen.AddRange(album.Songs?.Select(x => x.UniqueId) ?? []);
+                        artistsIdsSeen.Add(album.Artist.Id);
+                        artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.Id) ?? []);
+                        albumsIdsSeen.Add(album.Id);
+                        songsIdsSeen.AddRange(album.Songs?.Select(x => x.Id) ?? []);
                     }
                     else
                     {
@@ -836,9 +840,9 @@ public sealed class DirectoryProcessorService(
             Data = new DirectoryProcessorResult
             {
                 DurationInMs = Stopwatch.GetElapsedTime(startTicks).TotalMilliseconds,
-                NewAlbumsCount = albumsUniqueIdsSeen.Distinct().Count(),
-                NewArtistsCount = artistsUniqueIdsSeen.Distinct().Count(),
-                NewSongsCount = songsUniqueIdsSeen.Distinct().Count(),
+                NewAlbumsCount = albumsIdsSeen.Distinct().Count(),
+                NewArtistsCount = artistsIdsSeen.Distinct().Count(),
+                NewSongsCount = songsIdsSeen.Distinct().Count(),
                 NumberOfAlbumFilesProcessed = numberOfAlbumJsonFilesProcessed,
                 NumberOfConversionPluginsProcessed = numberOfAlbumFilesProcessed,
                 NumberOfConversionPluginsProcessedFileCount = conversionPluginsProcessedFileCount,

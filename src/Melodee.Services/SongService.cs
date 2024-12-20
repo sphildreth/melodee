@@ -18,8 +18,7 @@ public class SongService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:song:apikey:{0}";
-    private const string CacheKeyDetailByMediaUniqueIdTemplate = "urn:song:mediauniqueid:{0}";
-    private const string CacheKeyDetailByNameNormalizedTemplate = "urn:song:namenormalized:{0}";
+    private const string CacheKeyDetailByTitleNormalizedTemplate = "urn:song:titlenormalized:{0}";
     private const string CacheKeyDetailTemplate = "urn:song:{0}";
 
     public async Task<MelodeeModels.PagedResult<Song>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
@@ -55,31 +54,6 @@ public class SongService(
             TotalPages = pagedRequest.TotalPages(albumCount),
             Data = songs
         };
-    }
-
-    public async Task<MelodeeModels.OperationResult<Song?>> GetByMediaUniqueId(long mediaUniqueId, CancellationToken cancellationToken = default)
-    {
-        Guard.Against.Expression(x => x < 1, mediaUniqueId, nameof(mediaUniqueId));
-
-        var id = await CacheManager.GetAsync(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(mediaUniqueId), async () =>
-        {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                return await dbConn
-                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Songs\" WHERE \"MediaUniqueId\" = @mediaUniqueId", new { mediaUniqueId })
-                    .ConfigureAwait(false);
-            }
-        }, cancellationToken);
-        if (id == null)
-        {
-            return new MelodeeModels.OperationResult<Song?>("Unknown song.")
-            {
-                Data = null
-            };
-        }
-
-        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MelodeeModels.OperationResult<Song?>> GetAsync(int id, CancellationToken cancellationToken = default)
@@ -136,8 +110,7 @@ public class SongService(
         if (song?.Data != null)
         {
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(song.Data.ApiKey));
-            CacheManager.Remove(CacheKeyDetailByMediaUniqueIdTemplate.FormatSmart(song.Data.MediaUniqueId));
-            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(song.Data.MediaUniqueId));
+            CacheManager.Remove(CacheKeyDetailByTitleNormalizedTemplate.FormatSmart(song.Data.TitleNormalized));
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(song.Data.Id));
         }
     }

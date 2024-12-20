@@ -20,7 +20,7 @@ public class AlbumValidatorTests
                 "Billy Joel".ToNormalizedString()!,
                 null,
                 null,
-                "A064BB54-F9B3-42CE-B7F2-E7A8DFF87195")
+                14)
             {
                 SearchEngineResultUniqueId = 12345
             },
@@ -67,7 +67,7 @@ public class AlbumValidatorTests
                     Value = "1971"
                 }
             },
-            MusicBrainzId = "78F60545-4C64-4CD3-A810-89BAD2F5EAB4",
+            Id = Guid.Parse("78F60545-4C64-4CD3-A810-89BAD2F5EAB4"),
             Songs = new[]
             {
                 new Song
@@ -379,7 +379,7 @@ public class AlbumValidatorTests
     public void ValidateAlbumWithDifferentArtistsNotVariousArtists()
     {
         var testAlbum = TestAlbum;
-        testAlbum.SetSongTagValue(testAlbum.Songs.First().SongId, MetaTagIdentifier.AlbumArtist, Guid.NewGuid().ToString());
+        testAlbum.SetSongTagValue(testAlbum.Songs.First().Id, MetaTagIdentifier.AlbumArtist, Guid.NewGuid().ToString());
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(testAlbum);
         Assert.True(validationResult.IsSuccess);

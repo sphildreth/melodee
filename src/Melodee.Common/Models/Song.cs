@@ -8,60 +8,11 @@ namespace Melodee.Common.Models;
 
 public sealed record Song
 {
-    public long AlbumUniqueId 
-    {
-        get
-        {
-            try
-            {
-                return SafeParser.Hash(this.AlbumArtist(), this.AlbumYear().ToString(), this.AlbumTitle());
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine(e);
-            }
-
-            return 0;
-        }
-    }
-
-    /// <summary>
-    ///     Unique SongId on Album
-    /// </summary>
-    public long SongId
-    {
-        get
-        {
-            try
-            {
-                return SafeParser.Hash(this.MediaNumber().ToString(), this.SongNumber().ToString(), this.Title());
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine(e);
-            }
-            return 0;
-        }
-    }
-
-    /// <summary>
-    ///     Globally UniqueId
-    /// </summary>
-    public long UniqueId
-    {
-        get
-        {
-            try
-            {
-                return SafeParser.Hash(AlbumUniqueId.ToString(), this.SongArtist(), this.SongYear().ToString(), this.MediaNumber().ToString(), this.SongNumber().ToString(), this.Title());                
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine(e);
-            }
-            return 0;            
-        }
-    }
+    public Guid? ArtistId { get; set; }
+    
+    public Guid? AlbumId { get; set; }
+   
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     public required string CrcHash { get; init; }
 
@@ -79,6 +30,6 @@ public sealed record Song
 
     public override string ToString()
     {
-        return $"AlbumId [{AlbumUniqueId}] SongId [{UniqueId}] File [{File}]";
+        return $"ArtistId [{ArtistId}] AlbumId [{AlbumId}] SongId [{Id}] File [{File}]";
     }
 }

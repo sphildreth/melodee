@@ -23,6 +23,8 @@ public class NullSongPlugin : ISongPlugin
     {
         return Task.FromResult(new OperationResult<Common.Models.Song> { Data = new Common.Models.Song
             {
+                ArtistId = Guid.Empty,
+                AlbumId = Guid.Empty,
                 CrcHash = string.Empty,
                 File = new FileSystemFileInfo
                 {

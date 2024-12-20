@@ -89,7 +89,7 @@
 
     private void OnRowDoubleClick(GridRowEventArgs<AlbumCard> args)
     {
-        NavManager.NavigateTo($"/album/{_libraryApiKey}/{args.Item.UniqueId}/{"/staging".ToBase64()}");
+        NavManager.NavigateTo($"/album/{_libraryApiKey}/{args.Item.Id}/{"/staging".ToBase64()}");
     }
 
     private Task OnSelectedItemsChanged(HashSet<AlbumCard> albumCards)

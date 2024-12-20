@@ -14,7 +14,6 @@ public static class SongExtensions
         {
             Id = song.Id,
             ApiKey = song.ApiKey,
-            UniqueId = song.MediaUniqueId,
             Name = song.Title,
             MusicBrainzId = song.MusicBrainzId,
             SortName = song.TitleSort ?? song.Title,

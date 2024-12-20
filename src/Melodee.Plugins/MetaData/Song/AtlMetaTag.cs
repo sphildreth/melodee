@@ -222,12 +222,6 @@ public sealed class AtlMetaTag(
                     {
                         try
                         {
-                            var artistUniqueId = Artist.GenerateUniqueId(null, tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value?.ToString() ?? string.Empty);
-                            var albumId = Album.GenerateUniqueId(
-                                artistUniqueId,
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.MusicBrainzId)?.Value?.ToString(),
-                                SafeParser.ToNumber<int?>(tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)?.Value),
-                                tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value?.ToString());
                             var pictureIndex = 0;
                             foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
                             {
@@ -236,7 +230,7 @@ public sealed class AtlMetaTag(
                                 if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
                                 {
                                     var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
-                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{albumId}-{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
+                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
                                     await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
                                     var newImageFileInfo = new FileInfo(newImageFileName).ToFileSystemInfo();
                                     newImageFileInfo = (await imageConverter.ProcessFileAsync(directoryInfo, newImageFileInfo, cancellationToken).ConfigureAwait(false)).Data;

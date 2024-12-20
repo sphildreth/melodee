@@ -383,7 +383,7 @@ public class LibraryInsertJob(
                     currentAlbum = melodeeAlbum;
                     var artistName = melodeeAlbum.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                     var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
-                    var dbArtistResult = await artistService.GetByMediaUniqueId(melodeeAlbum.Artist.UniqueId(), cancellationToken).ConfigureAwait(false);
+                    var dbArtistResult = await artistService.GetByApiKeyAsync(melodeeAlbum.Artist.Id, cancellationToken).ConfigureAwait(false);
                     if (!dbArtistResult.IsSuccess)
                     {
                         dbArtistResult = await artistService.GetByNameNormalized(artistNormalizedName, cancellationToken).ConfigureAwait(false);
@@ -392,13 +392,13 @@ public class LibraryInsertJob(
                     var dbArtist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
                     if (dbArtist == null)
                     {
-                        Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqueId}].", melodeeAlbum.Artist.UniqueId(), melodeeAlbum.UniqueId);
+                        Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqueId}].", melodeeAlbum.Artist.Id, melodeeAlbum.Id);
                         continue;
                     }
                     
                     var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
                     var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
-                    var dbAlbumResult = await albumService.GetByMediaUniqueId(melodeeAlbum.UniqueId(), cancellationToken).ConfigureAwait(false);
+                    var dbAlbumResult = await albumService.GetByApiKeyAsync(melodeeAlbum.Id, cancellationToken).ConfigureAwait(false);
                     if (!dbAlbumResult.IsSuccess)
                     {
                         dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist.Id, nameNormalized, cancellationToken).ConfigureAwait(false);
@@ -410,6 +410,7 @@ public class LibraryInsertJob(
                     {
                         var newAlbum = new dbModels.Album
                         {
+                            ApiKey = melodeeAlbum.Id,
                             AlbumStatus = (short)melodeeAlbum.Status,
                             AlbumType = (int)AlbumType.Album,
                             Artist = dbArtist,
@@ -420,7 +421,6 @@ public class LibraryInsertJob(
                             Genres = melodeeAlbum.Genre() == null ? null : melodeeAlbum.Genre()!.Split('/'),
                             IsCompilation = melodeeAlbum.IsVariousArtistTypeAlbum(),
                             MusicBrainzId = SafeParser.ToGuid(melodeeAlbum.MusicBrainzId),
-                            MediaUniqueId = melodeeAlbum.UniqueId(),
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                             Name = albumTitle,
                             NameNormalized = nameNormalized,
@@ -450,6 +450,7 @@ public class LibraryInsertJob(
                                 var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
                                 disc.Songs.Add(new dbModels.Song
                                 {
+                                    ApiKey = song.Id,
                                     BitDepth = song.BitDepth(),
                                     BitRate = song.BitRate(),
                                     BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
@@ -468,7 +469,6 @@ public class LibraryInsertJob(
                                     Genres = melodeeAlbum.Genre()?.Nullify() == null ? null : song.Genre()!.Split('/'),
                                     IsVbr = song.IsVbr(),
                                     Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
-                                    MediaUniqueId = song.UniqueId,
                                     MusicBrainzId = song.MetaTagValue<Guid>(MetaTagIdentifier.MusicBrainzId),
                                     PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
                                     SortOrder = song.SortOrder,
@@ -501,10 +501,10 @@ public class LibraryInsertJob(
                     var dbContributorsToAdd = new List<dbModels.Contributor>();
                     foreach (var dbAlbum in dbAlbumsToAdd)
                     {
-                        var melodeeAlbum = melodeeAlbumsForDirectory.First(x => x.UniqueId() == dbAlbum.MediaUniqueId);
+                        var melodeeAlbum = melodeeAlbumsForDirectory.First(x => x.Id == dbAlbum.ApiKey);
                         foreach (var song in melodeeAlbum.Songs ?? [])
                         {
-                            var dbSong = dbAlbum.Discs.SelectMany(x => x.Songs).FirstOrDefault(x => x.MediaUniqueId == song.UniqueId);
+                            var dbSong = dbAlbum.Discs.SelectMany(x => x.Songs).FirstOrDefault(x => x.ApiKey == song.Id);
                             if (dbSong != null)
                             {
                                 var contributorsForSong = await GetContributorsForSong(song, dbAlbum.ArtistId, dbAlbum.Id, dbSong.Id, cancellationToken);
@@ -579,33 +579,23 @@ public class LibraryInsertJob(
                 foreach (var artist in artists)
                 {
                     currentArtist = artist;
-                    OperationResult<dbModels.Artist?> dbArtistResult = new OperationResult<dbModels.Artist?> { Data = null };
-                    if (artist.MusicBrainzId != null)
-                    {
-                        dbArtistResult = await artistService.GetByMusicBrainzIdAsync(SafeParser.ToGuid(artist.MusicBrainzId)!.Value, cancellationToken).ConfigureAwait(false);
-                    }
-
+                    OperationResult<dbModels.Artist?> dbArtistResult = await artistService.GetByApiKeyAsync(artist.Id, cancellationToken).ConfigureAwait(false);
                     if (!dbArtistResult.IsSuccess)
                     {
-                        dbArtistResult = await artistService.GetByMediaUniqueId(artist.UniqueId(), cancellationToken).ConfigureAwait(false);
-                        if (!dbArtistResult.IsSuccess)
-                        {
-                            dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
-                        }
+                        dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
                     }
-
                     var dbArtist = dbArtistResult.Data;
                     if (!dbArtistResult.IsSuccess || dbArtist == null)
                     {
                         var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
-                        if (dbArtistsToAdd.All(x => x.MediaUniqueId != artist.UniqueId()))
+                        if (dbArtistsToAdd.All(x => x.ApiKey != artist.Id))
                         {
                             dbArtistsToAdd.Add(new dbModels.Artist
                             {
+                                ApiKey = artist.Id,
                                 Directory = newArtistDirectory,
                                 CreatedAt = _now,
                                 LibraryId = library.Id,
-                                MediaUniqueId = artist.UniqueId(),
                                 MusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId),
                                 MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                                 Name = artist.Name,
@@ -702,6 +692,7 @@ public class LibraryInsertJob(
             {
                 return new dbModels.Contributor
                 {
+                    ApiKey = song.Id,
                     AlbumId = dbAlbumId,
                     ArtistId = artist?.Data?.Id,
                     ContributorName = contributorNameValue,
@@ -709,7 +700,6 @@ public class LibraryInsertJob(
                     CreatedAt = now,
                     MetaTagIdentifier = SafeParser.ToNumber<int>(tag),
                     Role = tag.GetEnumDescriptionValue(),
-                    SongUniqueId = song.UniqueId,
                     SongId = dbSongId,
                     SubRole = subRole?.CleanStringAsIs()
                 };

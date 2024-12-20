@@ -30,7 +30,6 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
                 }, new PagedRequest());
                 Assert.NotNull(albumsForDirectoryAsync);
                 Assert.True(albumsForDirectoryAsync.IsSuccess);
-                Assert.DoesNotContain(albumsForDirectoryAsync.Data, x => x.UniqueId == 0);
 
                 var albums = albumsForDirectoryAsync.Data.ToArray();
                 Assert.NotNull(albums);
@@ -67,7 +66,6 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
             }, new PagedRequest());
             Assert.NotNull(albumsForDirectoryAsync);
             Assert.True(albumsForDirectoryAsync.IsSuccess);
-            Assert.DoesNotContain(albumsForDirectoryAsync.Data, x => x.UniqueId == 0);
 
             var albums = albumsForDirectoryAsync.Data.ToArray();
             Assert.NotNull(albums);

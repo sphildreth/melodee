@@ -233,19 +233,9 @@ public static class SongExtensions
             return false;
         }
 
-        // Only test for AlbumUniqueId validity if the Album Title tag is present.
-        long albumUniqueId = 1;
-        var albumTitle = song.AlbumTitle().Nullify();
-        if (!string.IsNullOrWhiteSpace(albumTitle))
-        {
-            albumUniqueId = song.AlbumUniqueId;
-        }
-
         var songNumber = song.SongNumber();
         var mediaNumber = song.MediaNumber();
-        return song is { SongId: > 0, UniqueId: > 0 } &&
-               albumUniqueId > 0 &&
-               songNumber > 0 &&
+        return songNumber > 0 &&
                songNumber < SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]) &&
                mediaNumber < SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]) &&
                song.Title().Nullify() != null;

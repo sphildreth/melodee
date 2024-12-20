@@ -14,7 +14,7 @@ public static class ArtistExtensions
 
     public static readonly Regex CastRecordingSongArtistParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     
-    public static KeyValue ToKeyValue(this Artist artist) => new KeyValue(artist.UniqueId().ToString(), artist.Name.ToNormalizedString() ?? artist.Name);
+    public static KeyValue ToKeyValue(this Artist artist) => new KeyValue(artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId ?? artist.Name.ToNormalizedString() ?? artist.Name, artist.Name.ToNormalizedString() ?? artist.Name);
     
     public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
     {
@@ -24,11 +24,6 @@ public static class ArtistExtensions
             AlbumKeyValues = albumKeyValues,
             MusicBrainzId = artist.MusicBrainzId
         };
-    }
-    
-    public static long UniqueId(this Artist artist)
-    {
-       return Artist.GenerateUniqueId(artist.MusicBrainzId, artist.Name);
     }
 
     public static AlbumArtistType ArtistType(this Artist artist)
@@ -55,7 +50,7 @@ public static class ArtistExtensions
 
     public static bool IsValid(this Artist artist)
     {
-        return artist.UniqueId() > 0 && artist.Name.Nullify() != null;
+        return (artist.ArtistDbId != null || artist.MusicBrainzId != null) && artist.Name.Nullify() != null;
     }
 
     public static string ToAlphanumericName(this Artist artist, bool stripSpaces = true, bool stripCommas = true)
@@ -98,6 +93,11 @@ public static class ArtistExtensions
             throw new Exception("Neither Artist or ArtistSort tag is set.");
         }
 
+        if (artist.ArtistDbId == null && artist.MusicBrainzId.Nullify() == null)
+        {
+            throw new Exception("Neither ArtistDbId or MusicBrainzId is set.");
+        }
+        
         var artistDirectory = artistNameToUse.ToAlphanumericName(false, false).ToDirectoryNameFriendly()?.ToTitleCase(false);
         if (string.IsNullOrEmpty(artistDirectory))
         {
@@ -127,7 +127,7 @@ public static class ArtistExtensions
         }
 
         var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
-        var fnIdPart = $" [{artist.UniqueId().ToString()}]";
+        var fnIdPart = $" [{SafeParser.Hash(artist.ArtistDbId.ToString(), artist.MusicBrainzId)}]";
         var maxFnLength = processingMaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length) - 2;
         if (artistDirectory.Length > maxFnLength)
         {

@@ -26,7 +26,7 @@ public class SerializerTests : ServiceTestBase
         Assert.NotNull(serialized);
         var deserialized = Serializer.Deserialize<Album>(serialized);
         Assert.NotNull(deserialized);
-        Assert.Equal(album.UniqueId(), deserialized.UniqueId());
+        Assert.Equal(album.Id, deserialized.Id);
         Assert.Equal(album.Status, deserialized.Status);
         Assert.NotNull(deserialized.Songs);
 

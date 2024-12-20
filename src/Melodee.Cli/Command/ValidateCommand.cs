@@ -66,7 +66,7 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
             var albumValidator = new AlbumValidator(config);
             
             Album? album = null;
-            if (settings.LibraryName != null && settings.UniqueId != null)
+            if (settings.LibraryName != null && settings.Id != null)
             {
                 var libraryService = new LibraryService(Log.Logger,
                     cacheManager,
@@ -83,7 +83,7 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
                     settingService,
                     serializer);                
                 await albumDiscoveryService.InitializeAsync();
-                album = await albumDiscoveryService.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), settings.UniqueId.Value);
+                album = await albumDiscoveryService.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), settings.Id.Value);
                 
             }
             else if (settings.ApiKey != null)

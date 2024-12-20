@@ -21,6 +21,10 @@ public sealed record Album
 
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
 
+    public Guid Id { get; set; } = Guid.NewGuid();
+    
+    public int? AlbumDbId { get; set; }
+    
     public string? MusicBrainzId { get; set; }
     
     public DateTimeOffset? Modified { get; set; }
@@ -75,8 +79,6 @@ public sealed record Album
         }
     }
     
-    public string UniqueIdSummary => $"{Artist.UniqueId()} : {MusicBrainzId} : {this.AlbumYear()} : {this.AlbumTitle()}";
-    
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
     
@@ -107,16 +109,10 @@ public sealed record Album
 
         return this with { Songs = songs.ToArray(), Tags = albumTags!.ToArray() };
     }
-
-    public static long GenerateUniqueId(long artistUniqueId, string? musicBrainzId, int? albumYear, string? albumTitle)
-    {
-        return musicBrainzId == null ? SafeParser.Hash(artistUniqueId.ToString(), albumYear.ToString(), albumTitle) : SafeParser.Hash(musicBrainzId);
-    }
-        
     
     public override string ToString()
     {
-        return $"UniqueId [{this.UniqueId()}] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+        return $"AlbumDbId [{ AlbumDbId }] MusicBrainzId [{ MusicBrainzId }] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
     public Album Merge(Album otherAlbum)
@@ -154,7 +150,7 @@ public sealed record Album
         {
             foreach (var song in otherAlbum.Songs)
             {
-                if (Songs != null && !Songs.Select(x => x.UniqueId).Contains(song.UniqueId))
+                if (Songs != null && !Songs.Select(x => x.Id).Contains(song.Id))
                 {
                     songs.Add(song);
                 }
@@ -231,20 +227,20 @@ public sealed record Album
         {
             foreach (var song in Songs ?? [])
             {
-                SetSongTagValue(song.SongId, identifier, value);
+                SetSongTagValue(song.Id, identifier, value);
             }
         }
     }
 
-    public void RemoveSongTagValue(long songId, MetaTagIdentifier identifier)
+    public void RemoveSongTagValue(Guid songId, MetaTagIdentifier identifier)
     {
         SetSongTagValue(songId, identifier, null);
     }
 
-    public void SetSongTagValue(long songId, MetaTagIdentifier identifier, object? value)
+    public void SetSongTagValue(Guid songId, MetaTagIdentifier identifier, object? value)
     {
         var songs = (Songs ?? []).ToList();
-        var song = songs.FirstOrDefault(x => x.SongId == songId);
+        var song = songs.FirstOrDefault(x => x.Id == songId);
         if (song != null)
         {
             var tags = (song.Tags ?? []).ToList();

@@ -16,6 +16,7 @@ using Serilog.Events;
 using SerilogTimings;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
+using SmartFormat;
 using Album = Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized.Album;
 using Artist = Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Artist;
 
@@ -152,22 +153,25 @@ public class MusicBrainzRepository(
                                 rank++;
                             }
                             sql = """
-                                  SELECT Id, UniqueId, ArtistId, Name, SortName, NameNormalized, ReleaseType, ReleaseTypeValue, DoIncludeInArtistSearch, MusicBrainzIdRaw, ReleaseGroupMusicBrainzIdRaw, ReleaseDate, ContributorIds
+                                  SELECT ReleaseType, ReleaseDate, MusicBrainzIdRaw, Name, NameNormalized, SortName, ReleaseGroupMusicBrainzIdRaw 
                                   FROM "Album"
-                                  WHERE ArtistId = @artistId
-                                  LIMIT @queryMax;    
+                                  WHERE ArtistId = {0}
+                                  and ('{1}' = '' OR NameNormalized in ('{1}'))
+                                  and ('{2}' = '' OR SUBSTR(ReleaseDate, 0, 5) in ('{2}'))
+                                  group by ReleaseGroupMusicBrainzIdRaw
+                                  order by ReleaseDate
                                   """;
-                            var allArtistAlbums = (await db.QueryAsync<Album>(sql, new { queryMax, artistId = artist.Id }).ConfigureAwait(false)).ToArray();
-
-                            var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(xx => xx.ReleaseDate).FirstOrDefault()).ToArray();
-
-                            if (query.AlbumKeyValues != null)
-                            {
-                                artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => x != null && xx.Key == x.ReleaseDate.Year.ToString() ||
-                                                                                                      x != null && x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
-                                                                                                      x != null && x.NameNormalized.Contains(xx.Value ?? string.Empty))).ToArray();
-                                rank += artistAlbums.Length;
-                            }
+                            var ssql = sql.FormatSmart(artist.Id, string.Join(",", query.AlbumKeyValues?.Select(x => x.Value) ?? []), string.Join(",", query.AlbumKeyValues?.Select(x => x.Key) ?? []));
+                            var artistAlbums = (await db.QueryAsync<Album>(ssql).ConfigureAwait(false)).ToArray();
+                            rank += artistAlbums.Length;                            
+                            
+                            // if (query.AlbumKeyValues != null)
+                            // {
+                            //     artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => x != null && xx.Key == x.ReleaseDate.Year.ToString() &&
+                            //                                                                           (x != null && x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
+                            //                                                                            x != null && x.NameNormalized.Contains(xx.Value ?? string.Empty)))).ToArray();
+                            //     rank += artistAlbums.Length;
+                            // }
 
                             data.Add(new ArtistSearchResult
                             {

@@ -204,7 +204,7 @@ public abstract class ServiceBase(
                     }
                 }
 
-                foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.AlbumUniqueId))
+                foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.AlbumId))
                 {
                     foreach (var song in songsGroupedByAlbum)
                     {
@@ -213,7 +213,7 @@ public abstract class ServiceBase(
                             break;
                         }
 
-                        var foundAlbum = albums.FirstOrDefault(x => x.UniqueId() == songsGroupedByAlbum.Key);
+                        var foundAlbum = albums.FirstOrDefault(x => x.Id == songsGroupedByAlbum.Key);
                         if (foundAlbum != null)
                         {
                             albums.Remove(foundAlbum);

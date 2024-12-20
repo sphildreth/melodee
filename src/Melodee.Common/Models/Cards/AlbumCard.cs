@@ -7,7 +7,7 @@ public record AlbumCard
 {
     public bool IsValid { get; init; }
 
-    public required long UniqueId { get; init; }
+    public required Guid Id { get; init; }
 
     /// <summary>
     ///     What plugins were utilized in discovering this Album.

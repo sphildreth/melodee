@@ -27,7 +27,7 @@ public sealed record Artist
 
     [Index] public required string MusicBrainzIdRaw { get; init; }
 
-    [NotMapped] public Guid MusicBrainzId => SafeParser.ToGuid(MusicBrainzIdRaw) ?? Guid.Empty;
+    [Ignore][NotMapped] public Guid MusicBrainzId => SafeParser.ToGuid(MusicBrainzIdRaw) ?? Guid.Empty;
 
     [Index(false)] public string? AlternateNames { get; init; }
 

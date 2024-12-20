@@ -13,7 +13,6 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(ArtistId), nameof(Name), IsUnique = true)]
 [Index(nameof(ArtistId),nameof(NameNormalized), IsUnique = true)]
 [Index(nameof(ArtistId), nameof(SortName), IsUnique = true)]
-[Index(nameof(MediaUniqueId), IsUnique = true)]
 public sealed class Album : MetaDataModelBase
 {
     public const string FrontImageType = "Front";    
@@ -31,9 +30,8 @@ public sealed class Album : MetaDataModelBase
     public required string NameNormalized { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    public string? SortName { get; set; }    
+    public string? SortName { get; set; }   
 
-    [RequiredGreaterThanZero] public long MediaUniqueId { get; set; }
 
     public short AlbumStatus { get; set; }
 

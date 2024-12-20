@@ -38,45 +38,7 @@ public class ArtistServiceTests : ServiceTestBase
         Assert.Equal(1, listResult.TotalPages);
         Assert.Equal(1, listResult.TotalCount);
     }
-    
-    [Fact]
-    public async Task GetByMediaUniqueId()
-    {
-        long shouldByMediaUniqueId = 12345;
-
-        await using (var context = await MockFactory().CreateDbContextAsync())
-        {
-            var artistName = "Bob Jones";
-            var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, artistName.CleanString(doPutTheAtEnd: true));
-
-            context.Artists.Add(new Artist
-            {
-                ApiKey = Guid.NewGuid(),
-                Directory = artist.ToDirectoryName(255),
-                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
-                LibraryId = 1,
-                Name = "Bob Jones",
-                NameNormalized = "Bob Jones".ToNormalizedString()!,
-                MediaUniqueId = shouldByMediaUniqueId
-            });
-            context.Artists.Add(new Artist
-            {
-                ApiKey = Guid.NewGuid(),
-                Directory = artist.ToDirectoryName(255),
-                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
-                LibraryId = 1,
-                Name = "Grace Jones",
-                NameNormalized = "Grace Jones".ToNormalizedString()!,
-                MediaUniqueId = shouldByMediaUniqueId + 1
-            });            
-            await context.SaveChangesAsync();
-        }
-
-        var result = await GetArtistService().GetByMediaUniqueId(shouldByMediaUniqueId);
-        AssertResultIsSuccessful(result);
-        Assert.NotNull(result.Data);
-        Assert.Equal(shouldByMediaUniqueId, result.Data.MediaUniqueId);
-    }    
+ 
 
     [Fact]
     public async Task GetByNameNormalizedAsync()

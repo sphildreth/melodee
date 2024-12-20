@@ -13,13 +13,8 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class AlbumExtensions
 {
-    public static KeyValue ToKeyValue(this Album album) => new KeyValue(album.UniqueId().ToString(), album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
-    
-    public static long UniqueId(this Album album)
-    {
-        return Album.GenerateUniqueId(album.Artist.UniqueId(), album.MusicBrainzId, album.AlbumYear(), album.AlbumTitle());
-    }
-
+    public static KeyValue ToKeyValue(this Album album) => new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
+   
     public static bool IsStudioTypeAlbum(this Album album)
     {
         var songs = (album.Songs ?? []).ToArray();
@@ -155,9 +150,9 @@ public static class AlbumExtensions
             return (false, "Album title is invalid.");
         }
 
-        if (album.UniqueId() < 1)
+        if (album.AlbumDbId == null && album.MusicBrainzId == null)
         {
-            return (false, "Album unique id is invalid.");
+            return (false, "Album in unknown.");
         }
 
         if (!album.HasValidAlbumYear(configuration))
@@ -175,11 +170,6 @@ public static class AlbumExtensions
 
     public static string ToMelodeeJsonName(this Album album, IMelodeeConfiguration configuration, bool? isForAlbumDirectory = null)
     {
-        if (album.UniqueId() < 1)
-        {
-            return string.Empty;
-        }
-
         var artist = album.Artist.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
         var albumTitle = album.AlbumTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Title not set on Album.");
         var artistAndAlbumPart = string.Empty;
@@ -198,11 +188,6 @@ public static class AlbumExtensions
 
     public static string ToDirectoryName(this Album album)
     {
-        if (album.UniqueId() < 1)
-        {
-            return string.Empty;
-        }
-
         var artist = album.Artist?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
         var albumTitle = album.AlbumTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Title not set on Album.");
         return $"{artist} - [{album.AlbumYear()}] {albumTitle}".ToFileNameFriendly() ?? throw new Exception($"[{album}] Unable to determine Album Directory name.");
@@ -406,11 +391,10 @@ public static class AlbumExtensions
 
         try
         {
-            var albumId = album.UniqueId().ToString();
             var normalizedArtistName = album.Artist?.ToAlphanumericName() ?? string.Empty;
             var normalizedTitleName = album.AlbumTitle()?.ToAlphanumericName() ?? string.Empty;
 
-            if (normalizedName.StartsWith(albumId) || (normalizedName.Contains(normalizedArtistName) && normalizedName.Contains(normalizedTitleName)))
+            if ((normalizedName.Contains(normalizedArtistName) && normalizedName.Contains(normalizedTitleName)))
             {
                 return true;
             }

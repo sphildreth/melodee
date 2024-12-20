@@ -9,7 +9,7 @@ public sealed record AlbumSearchResult
 {
     public int? Id { get; init; }
     
-    public Guid ApiKey { get; set; }
+    public Guid? ApiKey { get; set; }
         
     public KeyValue KeyValue => new KeyValue(UniqueId.ToString(), NameNormalized);
     

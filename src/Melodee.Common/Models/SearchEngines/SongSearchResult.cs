@@ -8,8 +8,6 @@ public sealed record SongSearchResult
     
     public Guid ApiKey { get; set; }
     
-    public required long UniqueId { get; init; }
-    
     public required string Name { get; init; }
     
     public int SortOrder { get; init; }

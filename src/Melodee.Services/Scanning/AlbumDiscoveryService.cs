@@ -46,14 +46,14 @@ public sealed class AlbumDiscoveryService(
 
     public async Task<Album> AlbumByUniqueIdAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
-        long uniqueId,
+        Guid id,
         CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data?.FirstOrDefault(x => x.UniqueId() == uniqueId);
+        var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data?.FirstOrDefault(x => x.Id == id);
         if (result == null)
         {
-            Log.Error("Unable to find Album by id [{UniqueId}] in [{DirectoryName}]", uniqueId, fileSystemDirectoryInfo.FullName());
+            Log.Error("Unable to find Album by id [{Id}] in [{DirectoryName}]", id, fileSystemDirectoryInfo.FullName());
             return new Album
             {
                 Artist = new Artist(string.Empty, string.Empty, null),
@@ -98,7 +98,7 @@ public sealed class AlbumDiscoveryService(
             {
                 foreach (var r in dataForChildDirResult.Data!)
                 {
-                    if (albums.All(x => x.UniqueId != r.UniqueId))
+                    if (albums.All(x => x.Id != r.Id))
                     {
                         albums.Add(r);
                     }
@@ -119,10 +119,10 @@ public sealed class AlbumDiscoveryService(
             {
                 case AlbumResultFilter.Duplicates:
                     var duplicates = albums
-                        .GroupBy(x => x.UniqueId())
+                        .GroupBy(x => x.Id)
                         .Where(x => x.Count() > 1)
                         .Select(x => x.Key);
-                    albums = albums.Where(x => duplicates.Contains(x.UniqueId())).ToList();
+                    albums = albums.Where(x => duplicates.Contains(x.Id)).ToList();
                     break;
 
                 case AlbumResultFilter.Incomplete:
@@ -149,7 +149,7 @@ public sealed class AlbumDiscoveryService(
                 case AlbumResultFilter.Selected:
                     if (pagedRequest.SelectedAlbumIds.Length > 0)
                     {
-                        albums = albums.Where(x => pagedRequest.SelectedAlbumIds.Contains(x.UniqueId())).ToList();
+                        albums = albums.Where(x => pagedRequest.SelectedAlbumIds.Contains(x.Id)).ToList();
                     }
 
                     break;
@@ -267,7 +267,7 @@ public sealed class AlbumDiscoveryService(
             SongCount = x.SongTotalValue(),
             AlbumStatus = x.Status,
             ViaPlugins = x.ViaPlugins.ToArray(),
-            UniqueId = x.UniqueId()
+            Id = x.Id
         });
         var d = await Task.WhenAll(data);
         return new PagedResult<AlbumCard>
