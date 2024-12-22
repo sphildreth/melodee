@@ -195,6 +195,7 @@ public sealed class CueSheet(
                                 await mp3Plugin.UpdateSongAsync(cueModel.FileSystemDirectoryInfo, mp3Song, cancellationToken).ConfigureAwait(false);
                             }
                             processedFiles++;
+                            resultType = OperationResponseType.Ok;
                         }
                     }
                 }

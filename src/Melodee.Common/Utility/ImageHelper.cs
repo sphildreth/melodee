@@ -67,6 +67,7 @@ public static class ImageHelper
     [
         "BACK",
         "BOOK",
+        "CD",
         "DIGIPACK",
         "DISC",
         "DVD",
@@ -119,19 +120,11 @@ public static class ImageHelper
         return false;        
     }
 
-    public static bool IsAlbumImage(FileInfo? fileInfo, string? albumName = null)
+    public static bool IsAlbumImage(FileInfo? fileInfo)
     {
         if (fileInfo == null)
         {
             return false;
-        }
-
-        if (albumName != null)
-        {
-            if ((fileInfo.Name.ToNormalizedString() ?? string.Empty).Contains(albumName.ToNormalizedString() ?? string.Empty))
-            {
-                return true;
-            }
         }
 
         if (FileHelper.IsFileImageType(fileInfo.Extension))
@@ -144,7 +137,9 @@ public static class ImageHelper
             if (AlbumImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
-                return SafeParser.ToNumber<int>(nameDigits) < 2;
+                var numberInName = SafeParser.ToNumber<int>(nameDigits);
+                // Primary image is 00 and 01, sometimes images have year in them, so if 00 or 01 or greater then minimum year
+                return numberInName is > 1860 or < 2;
             }
         }
         return false;        
@@ -153,6 +148,11 @@ public static class ImageHelper
     public static bool IsAlbumSecondaryImage(FileInfo? fileInfo)
     {
         if (fileInfo == null)
+        {
+            return false;
+        }
+
+        if (IsAlbumImage(fileInfo))
         {
             return false;
         }
