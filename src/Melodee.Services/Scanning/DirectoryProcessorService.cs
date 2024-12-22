@@ -331,6 +331,7 @@ public sealed class DirectoryProcessorService(
                 }
 
                 // Check if any Album json files exist in given directory, if none then create from Song files.
+                Console.WriteLine("Loading Album for directory...");
                 var albumJsonFiles = directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName);
                 if (!albumJsonFiles.Any())
                 {
@@ -416,6 +417,7 @@ public sealed class DirectoryProcessorService(
 
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
                 var albumAndJsonFile = new Dictionary<Album, string>();
+                Console.WriteLine("Loading images for album...");                
                 foreach (var albumJsonFile in albumJsonFiles.Take(_maxAlbumProcessingCount))
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -511,6 +513,7 @@ public sealed class DirectoryProcessorService(
                 }
 
                 // Create directory and move files for each found Album in staging directory.
+                Console.WriteLine("Moving album to destination directory...");
                 foreach (var albumKvp in albumAndJsonFile)
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -584,6 +587,7 @@ public sealed class DirectoryProcessorService(
                             }
                         }
 
+                        Console.WriteLine("Running plugins on songs...");
                         if ((album.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
                             album.Songs!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
                         {
@@ -596,8 +600,10 @@ public sealed class DirectoryProcessorService(
                                     {
                                         break;
                                     }
-
-                                    await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken);
+                                    using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync :: Updating song [{Name}] with plugin [{DisplayName}]", song.File.Name, songPlugin.DisplayName))
+                                    {
+                                        await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken);
+                                    }
                                 }
                             }
                         }
@@ -605,6 +611,7 @@ public sealed class DirectoryProcessorService(
 
                     album.Directory = albumDirInfo.ToDirectorySystemInfo();
 
+                    Console.WriteLine("Querying for artist...");
                     // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
                     var searchRequest = album.Artist.ToArtistQuery([
                         new KeyValue((album.AlbumYear() ?? 0).ToString(),
@@ -733,10 +740,12 @@ public sealed class DirectoryProcessorService(
                     // }
 
                     // Validate using AlbumValidator
+                    Console.WriteLine("Validating album...");
                     var validationResult = _albumValidator.ValidateAlbum(album);
                     album.ValidationMessages = validationResult.Data.Messages ?? [];
                     album.Status = validationResult.Data.AlbumStatus;
 
+                    Console.WriteLine("Serializing album...");
                     var serialized = serializer.Serialize(album);
                     var jsonName = album.ToMelodeeJsonName(_configuration, true);
                     if (jsonName.Nullify() != null)

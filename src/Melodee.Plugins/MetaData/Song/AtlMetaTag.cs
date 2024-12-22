@@ -390,7 +390,10 @@ public sealed class AtlMetaTag(
                     fileAtl.EmbeddedPictures.Clear();
                 }
 
-                result = await fileAtl.SaveAsync();
+                using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Updated Song [{SongName}]", DisplayName, songFileName))
+                {
+                    result = fileAtl.Save();
+                }
             }
             catch (Exception e)
             {
