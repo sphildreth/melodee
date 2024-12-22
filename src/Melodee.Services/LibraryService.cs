@@ -269,6 +269,7 @@ public sealed class LibraryService(
             // if none exist take all images from albumToMove
             if (existingImages.Count == 0)
             {
+                Console.WriteLine("No image found in existing directory. Copying all images from Album...");
                 foreach (var image in albumToMove.Images)
                 {
                     File.Move(image.FileInfo.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, image.FileInfo.Name));
@@ -299,17 +300,25 @@ public sealed class LibraryService(
                         {
                             continue;
                         }
+
+                        var toFile = Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName));
+                        Console.WriteLine($"Existing image [{existingWithSameFileName.ImageFileName}] to be overwritten by image [{toFile}]...");
                         File.Delete(existingWithSameFileName.ImageFileName);
-                        File.Move(imageToMove.ImageFileName, Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName)));
+                        File.Move(imageToMove.ImageFileName, toFile);
                         Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
                         modifiedExistingFolder = true;
                     }
                 }
                 foreach (var imageToMove in imagesToMoveCrc)
                 {
-                    File.Move(imageToMove.ImageFileName, Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName)));
-                    Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
-                    modifiedExistingFolder = true;                    
+                    var toFile = Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName));
+                    if (!File.Exists(toFile))
+                    {
+                        Console.WriteLine($"Moving image [{imageToMove.ImageFileName}] to [{toFile}]...");
+                        File.Move(imageToMove.ImageFileName, toFile);
+                        Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
+                        modifiedExistingFolder = true;
+                    }
                 }
             }
         }
@@ -356,9 +365,13 @@ public sealed class LibraryService(
             // Copy over any song left to move
             foreach (var songToMove in songsToMove)
             {
-                File.Move(songToMove.File.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, songToMove.File.Name));
-                Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService), songToMove.File.Name);
-                modifiedExistingFolder = true;
+                var toFile = Path.Combine(existingDir.FullName, songToMove.File.Name);
+                File.Move(songToMove.File.FullName(albumToMoveDir), toFile);
+                if (!File.Exists(toFile))
+                {
+                    Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService), songToMove.File.Name);
+                    modifiedExistingFolder = true;
+                }
             }            
         }
         // Delete folder to merge as what is wanted has been moved 

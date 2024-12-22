@@ -779,7 +779,7 @@ public sealed class DirectoryProcessorService(
                     if (album.Status == AlbumStatus.Ok)
                     {
                         numberOfValidAlbumsProcessed++;
-                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] * Found valid album [{fileSystemDirectoryInfo}]");
+                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\udc4d Found valid album [{fileSystemDirectoryInfo}]");
                         if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
                         {
                             LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");

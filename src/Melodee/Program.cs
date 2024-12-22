@@ -73,6 +73,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpClient();
 
 builder.Services.AddInMemoryEvent<UserLoginEvent, UserLoginEventHandler>();
+builder.Services.AddInMemoryEvent<AlbumUpdatedEvent, AlbumUpdatedEventHandler>();
 
 builder.Services
     .AddSingleton<ISerializer, Serializer>()

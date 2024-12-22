@@ -8,12 +8,9 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
-using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
-using Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
-using ServiceStack;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
 using SmartFormat;
@@ -108,7 +105,7 @@ public class SQLiteMusicBrainzRepository(
                                   order by a."SortName"
                                   LIMIT @queryMax
                                   """;
-                        var artists = (await db.QueryAsync<Models.Materialized.Artist>(sql, new { queryMax, name = query.QueryNameNormalizedValue }).ConfigureAwait(false)).ToArray();
+                        var artists = db.Query<Models.Materialized.Artist>(sql, new { queryMax, name = query.QueryNameNormalizedValue }).ToArray();
 
                         foreach (var artist in artists)
                         {
@@ -137,14 +134,15 @@ public class SQLiteMusicBrainzRepository(
                                   order by ReleaseDate
                                   """;
                             var ssql = sql.FormatSmart(artist.MusicBrainzArtistId, string.Join(",", query.AlbumKeyValues?.Select(x => x.Value) ?? []), string.Join(",", query.AlbumKeyValues?.Select(x => x.Key) ?? []));
-                            var artistAlbums = (await db.QueryAsync<Models.Materialized.Album>(ssql).ConfigureAwait(false)).ToArray();
+                            var artistAlbums = db.Query<Models.Materialized.Album>(ssql).ToArray();
+                            
                             rank += artistAlbums.Length;                            
                             
                             if (query.AlbumKeyValues != null)
                             {
-                                artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => x != null && xx.Key == x.ReleaseDate.Year.ToString() &&
-                                                                                                      (x != null && x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
-                                                                                                       x != null && x.NameNormalized.Contains(xx.Value ?? string.Empty)))).ToArray();
+                                artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() &&
+                                                                                                      (x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
+                                                                                                       x.NameNormalized.Contains(xx.Value ?? string.Empty)))).ToArray();
                                 rank += artistAlbums.Length;
                             }
 
@@ -160,10 +158,10 @@ public class SQLiteMusicBrainzRepository(
                                 AlbumCount = artistAlbums.Count(x => x is { DoIncludeInArtistSearch: true}),
                                 Releases = artistAlbums
                                     .Where(x => x is { DoIncludeInArtistSearch: true})
-                                    .OrderBy(x => x!.ReleaseDate)
-                                    .ThenBy(x => x!.SortName).Select(x => new AlbumSearchResult
+                                    .OrderBy(x => x.ReleaseDate)
+                                    .ThenBy(x => x.SortName).Select(x => new AlbumSearchResult
                                     {
-                                        AlbumType = SafeParser.ToEnum<AlbumType>(x!.ReleaseType),
+                                        AlbumType = SafeParser.ToEnum<AlbumType>(x.ReleaseType),
                                         ReleaseDate = x.ReleaseDate.ToString("o", CultureInfo.InvariantCulture),
                                         UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                                         Name = x.Name,
@@ -197,7 +195,7 @@ public class SQLiteMusicBrainzRepository(
     {
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: ImportData"))
         {
-            var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+            var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
 
             var batchSize = configuration.GetValue<int>(SettingRegistry.SearchEngineMusicBrainzImportBatchSize);
             var maxToProcess = configuration.GetValue<int>(SettingRegistry.SearchEngineMusicBrainzImportMaximumToProcess);
@@ -233,7 +231,7 @@ public class SQLiteMusicBrainzRepository(
                             break;
                         }                         
                     }
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artists of [{Loaded}] in [{BatchCount}] batches.", await db.CountAsync<Models.Materialized.Artist>(token: cancellationToken), LoadedMaterializedArtists.Count, batches);                    
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artists of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.Artist>(), LoadedMaterializedArtists.Count, batches);                    
                 }
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded artist relations"))
@@ -250,7 +248,7 @@ public class SQLiteMusicBrainzRepository(
                             break;
                         }
                     }
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artist relations of [{Loaded}] in [{BatchCount}] batches.", await db.CountAsync<Models.Materialized.ArtistRelation>(token: cancellationToken), LoadedMaterializedArtistRelations.Count, batches);                    
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artist relations of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.ArtistRelation>(), LoadedMaterializedArtistRelations.Count, batches);                    
                 }
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded albums"))
@@ -266,7 +264,7 @@ public class SQLiteMusicBrainzRepository(
                             break;
                         }  
                     }
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] albums of [{Loaded}] in [{BatchCount}] batches.", await db.CountAsync<Models.Materialized.Album>(token: cancellationToken), LoadedMaterializedAlbums.Count, batches);                    
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] albums of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.Album>(), LoadedMaterializedAlbums.Count, batches);                    
                 }
 
             }
