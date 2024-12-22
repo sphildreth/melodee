@@ -18,6 +18,8 @@
     <PackageReference Include="IdSharp.Common"/>
     <PackageReference Include="IdSharp.Tagging"/>
     <PackageReference Include="LiteDB" />
+    <PackageReference Include="Lucene.Net" />
+    <PackageReference Include="Lucene.Net.Analysis.Common" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities"/>
     <PackageReference Include="Microsoft.Extensions.Http"/>
     <PackageReference Include="Microsoft.Net.Http.Headers" />

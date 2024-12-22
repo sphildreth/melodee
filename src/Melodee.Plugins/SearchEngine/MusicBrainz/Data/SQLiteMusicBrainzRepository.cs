@@ -1,6 +1,12 @@
 using System.Diagnostics;
 using System.Globalization;
 using Dapper;
+using Lucene.Net.Analysis.Standard;
+using Lucene.Net.Documents;
+using Lucene.Net.Index;
+using Lucene.Net.Search;
+using Lucene.Net.Store;
+using Lucene.Net.Util;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
@@ -14,6 +20,8 @@ using SerilogTimings;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
 using SmartFormat;
+using Directory = System.IO.Directory;
+
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 
@@ -30,6 +38,8 @@ public class SQLiteMusicBrainzRepository(
     IMelodeeConfigurationFactory configurationFactory,
     IDbConnectionFactory dbConnectionFactory) : MusicBrainzRepositoryBase(logger, configurationFactory)
 {
+    private const LuceneVersion AppLuceneVersion = LuceneVersion.LUCENE_48;
+
     public override async Task<Models.Materialized.Album?> GetAlbumByMusicBrainzId(Guid musicBrainzId, CancellationToken cancellationToken = default)
     {
         using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
@@ -43,8 +53,32 @@ public class SQLiteMusicBrainzRepository(
         var startTicks = Stopwatch.GetTimestamp();
         var data = new List<ArtistSearchResult>();
 
-        int queryMax = 100;
         long totalCount = 0;
+
+        var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath);
+
+        var musicBrainzIdsFromLucene = new List<string>();
+
+        using (var dir = FSDirectory.Open(Path.Combine(storagePath, "lucene")))
+        {
+            var analyzer = new StandardAnalyzer(AppLuceneVersion);
+            var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
+            using (var writer = new IndexWriter(dir, indexConfig))
+            {
+                using (DirectoryReader reader = writer.GetReader(applyAllDeletes: true))
+                {
+                    IndexSearcher searcher = new IndexSearcher(reader);
+                    BooleanQuery categoryQuery = [];
+                    TermQuery catQuery1 = new TermQuery(new Term(nameof(Models.Materialized.Artist.NameNormalized), query.NameNormalized));
+                    TermQuery catQuery2 = new TermQuery(new Term(nameof(Models.Materialized.Artist.AlternateNames), query.NameNormalized));
+                    categoryQuery.Add(new BooleanClause(catQuery1, Occur.SHOULD));
+                    categoryQuery.Add(new BooleanClause(catQuery2, Occur.SHOULD));
+                    ScoreDoc[] hits = searcher.Search(categoryQuery, maxResults).ScoreDocs;
+                    musicBrainzIdsFromLucene.AddRange(hits.Select(t => searcher.Doc(t.Doc)).Select(hitDoc => hitDoc.Get(nameof(Models.Materialized.Artist.MusicBrainzIdRaw))));
+                }
+            }
+        }
 
         try
         {
@@ -52,38 +86,71 @@ public class SQLiteMusicBrainzRepository(
             {
                 using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
                 {
-                    if (query.MusicBrainzIdValue != null)
+                    var sql = """
+                              SELECT Id, MusicBrainzArtistId, Name, SortName, NameNormalized, MusicBrainzIdRaw, AlternateNames
+                              FROM "Artist" a
+                              where a.MusicBrainzIdRaw in ('{0}')
+                              order by a."SortName"
+                              """;
+                    var pSql = sql.FormatSmart(string.Join(',', musicBrainzIdsFromLucene));
+                    var artists = db.Query<Models.Materialized.Artist>(pSql).ToArray();
+
+                    foreach (var artist in artists)
                     {
-                        var artist = db.Single<Models.Materialized.Artist>(x => x.MusicBrainzId == query.MusicBrainzIdValue);
-                        if (artist != null)
+                        var rank = artist.NameNormalized == query.NameNormalized ? 10 : 1;
+                        if (artist.AlternateNamesValues.Contains(query.NameNormalized))
                         {
-                            totalCount = 1;
-                            List<Models.Materialized.Album> allArtistAlbums = db.Select<Models.Materialized.Album>(x => x.MusicBrainzArtistId == artist.MusicBrainzArtistId) ?? [];
+                            rank++;
+                        }
 
-                            var artistAlbums = allArtistAlbums.GroupBy(x => x.NameNormalized).Select(x => x.OrderBy(xx => xx.ReleaseDate).FirstOrDefault()).ToArray();
+                        if (artist.AlternateNamesValues.Contains(query.Name.CleanString().ToNormalizedString()))
+                        {
+                            rank++;
+                        }
 
-                            if (query.AlbumKeyValues != null)
-                            {
-                                artistAlbums = artistAlbums
-                                    .Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x?.ReleaseDate.Year.ToString() ||
-                                                                               x != null && 
-                                                                               x.NameNormalized.Contains(xx.Value ?? string.Empty)))
-                                    .ToArray();
-                            }
+                        if (artist.AlternateNamesValues.Contains(query.NameReversed))
+                        {
+                            rank++;
+                        }
 
-                            data.Add(new ArtistSearchResult
-                            {
-                                AlternateNames = artist.AlternateNames?.ToTags()?.ToArray() ?? [],
-                                FromPlugin = nameof(MusicBrainzArtistSearchEnginPlugin),
-                                UniqueId = SafeParser.Hash(artist.MusicBrainzId.ToString()),
-                                Rank = short.MaxValue,
-                                Name = artist.Name,
-                                SortName = artist.SortName,
-                                MusicBrainzId = artist.MusicBrainzId,
-                                AlbumCount = artistAlbums.Count(x => x is { DoIncludeInArtistSearch: true}),
-                                Releases = artistAlbums.Where(x => x is { DoIncludeInArtistSearch: true }).OrderBy(x => x!.ReleaseDate).ThenBy(x => x!.SortName).Select(x => new AlbumSearchResult
+                        sql = """
+                              SELECT ReleaseType, ReleaseDate, MusicBrainzIdRaw, Name, NameNormalized, SortName, ReleaseGroupMusicBrainzIdRaw 
+                              FROM "Album"
+                              WHERE MusicBrainzArtistId = {0}
+                              and ('{1}' = '' OR NameNormalized in ('{1}'))
+                              and ('{2}' = '' OR SUBSTR(ReleaseDate, 0, 5) in ('{2}'))
+                              group by ReleaseGroupMusicBrainzIdRaw
+                              order by ReleaseDate
+                              """;
+                        var ssql = sql.FormatSmart(artist.MusicBrainzArtistId, string.Join(",", query.AlbumKeyValues?.Select(x => x.Value) ?? []), string.Join(",", query.AlbumKeyValues?.Select(x => x.Key) ?? []));
+                        var artistAlbums = db.Query<Models.Materialized.Album>(ssql).ToArray();
+
+                        rank += artistAlbums.Length;
+
+                        if (query.AlbumKeyValues != null)
+                        {
+                            artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() &&
+                                                                                                  (x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
+                                                                                                   x.NameNormalized.Contains(xx.Value ?? string.Empty)))).ToArray();
+                            rank += artistAlbums.Length;
+                        }
+
+                        data.Add(new ArtistSearchResult
+                        {
+                            AlternateNames = artist.AlternateNames?.ToTags()?.ToArray() ?? [],
+                            FromPlugin = $"{nameof(MusicBrainzArtistSearchEnginPlugin)}:{nameof(SQLiteMusicBrainzRepository)}",
+                            UniqueId = SafeParser.Hash(artist.MusicBrainzId.ToString()),
+                            Rank = rank,
+                            Name = artist.Name,
+                            SortName = artist.SortName,
+                            MusicBrainzId = artist.MusicBrainzId,
+                            AlbumCount = artistAlbums.Count(x => x is { DoIncludeInArtistSearch: true }),
+                            Releases = artistAlbums
+                                .Where(x => x is { DoIncludeInArtistSearch: true })
+                                .OrderBy(x => x.ReleaseDate)
+                                .ThenBy(x => x.SortName).Select(x => new AlbumSearchResult
                                 {
-                                    AlbumType = SafeParser.ToEnum<AlbumType>(x!.ReleaseType),
+                                    AlbumType = SafeParser.ToEnum<AlbumType>(x.ReleaseType),
                                     ReleaseDate = x.ReleaseDate.ToString("o", CultureInfo.InvariantCulture),
                                     UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                                     Name = x.Name,
@@ -91,89 +158,10 @@ public class SQLiteMusicBrainzRepository(
                                     SortName = x.SortName,
                                     MusicBrainzId = x.MusicBrainzId
                                 }).ToArray()
-                            });
-                        }
+                        });
                     }
 
-                    if (data.Count == 0)
-                    {
-                        var sql = """
-                                  SELECT Id, MusicBrainzArtistId, Name, SortName, NameNormalized, MusicBrainzIdRaw, AlternateNames
-                                  FROM "Artist" a
-                                  where a.NameNormalized LIKE @name
-                                  OR a.AlternateNames LIKE @name
-                                  order by a."SortName"
-                                  LIMIT @queryMax
-                                  """;
-                        var artists = db.Query<Models.Materialized.Artist>(sql, new { queryMax, name = query.QueryNameNormalizedValue }).ToArray();
-
-                        foreach (var artist in artists)
-                        {
-                            var rank = artist.NameNormalized == query.NameNormalized ? 10 : 1;
-                            if (artist.AlternateNamesValues.Contains(query.NameNormalized))
-                            {
-                                rank++;
-                            }
-
-                            if (artist.AlternateNamesValues.Contains(query.Name.CleanString().ToNormalizedString()))
-                            {
-                                rank++;
-                            }
-
-                            if (artist.AlternateNamesValues.Contains(query.NameReversed))
-                            {
-                                rank++;
-                            }
-                            sql = """
-                                  SELECT ReleaseType, ReleaseDate, MusicBrainzIdRaw, Name, NameNormalized, SortName, ReleaseGroupMusicBrainzIdRaw 
-                                  FROM "Album"
-                                  WHERE MusicBrainzArtistId = {0}
-                                  and ('{1}' = '' OR NameNormalized in ('{1}'))
-                                  and ('{2}' = '' OR SUBSTR(ReleaseDate, 0, 5) in ('{2}'))
-                                  group by ReleaseGroupMusicBrainzIdRaw
-                                  order by ReleaseDate
-                                  """;
-                            var ssql = sql.FormatSmart(artist.MusicBrainzArtistId, string.Join(",", query.AlbumKeyValues?.Select(x => x.Value) ?? []), string.Join(",", query.AlbumKeyValues?.Select(x => x.Key) ?? []));
-                            var artistAlbums = db.Query<Models.Materialized.Album>(ssql).ToArray();
-                            
-                            rank += artistAlbums.Length;                            
-                            
-                            if (query.AlbumKeyValues != null)
-                            {
-                                artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() &&
-                                                                                                      (x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
-                                                                                                       x.NameNormalized.Contains(xx.Value ?? string.Empty)))).ToArray();
-                                rank += artistAlbums.Length;
-                            }
-
-                            data.Add(new ArtistSearchResult
-                            {
-                                AlternateNames = artist.AlternateNames?.ToTags()?.ToArray() ?? [],
-                                FromPlugin = $"{ nameof(MusicBrainzArtistSearchEnginPlugin)}:{ nameof(SQLiteMusicBrainzRepository)}",
-                                UniqueId = SafeParser.Hash(artist.MusicBrainzId.ToString()),
-                                Rank = rank,
-                                Name = artist.Name,
-                                SortName = artist.SortName,
-                                MusicBrainzId = artist.MusicBrainzId,
-                                AlbumCount = artistAlbums.Count(x => x is { DoIncludeInArtistSearch: true}),
-                                Releases = artistAlbums
-                                    .Where(x => x is { DoIncludeInArtistSearch: true})
-                                    .OrderBy(x => x.ReleaseDate)
-                                    .ThenBy(x => x.SortName).Select(x => new AlbumSearchResult
-                                    {
-                                        AlbumType = SafeParser.ToEnum<AlbumType>(x.ReleaseType),
-                                        ReleaseDate = x.ReleaseDate.ToString("o", CultureInfo.InvariantCulture),
-                                        UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
-                                        Name = x.Name,
-                                        NameNormalized = x.NameNormalized,
-                                        SortName = x.SortName,
-                                        MusicBrainzId = x.MusicBrainzId
-                                    }).ToArray()
-                            });
-                        }
-
-                        totalCount = artists.Length;
-                    }
+                    totalCount = artists.Length;
                 }
             }
         }
@@ -213,9 +201,36 @@ public class SQLiteMusicBrainzRepository(
                     Data = false
                 };
             }
-            
+
             await LoadDataFromMusicBrainzFiles(cancellationToken).ConfigureAwait(false);
-            
+
+            using (var dir = FSDirectory.Open(Path.Combine(storagePath, "lucene")))
+            {
+                var analyzer = new StandardAnalyzer(AppLuceneVersion);
+                var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
+                using (var writer = new IndexWriter(dir, indexConfig))
+                {
+                    foreach (var artist in LoadedMaterializedArtists)
+                    {
+                        var artistDoc = new Document
+                        {
+                            new StringField(nameof(Models.Materialized.Artist.MusicBrainzIdRaw),
+                                artist.MusicBrainzIdRaw,
+                                Field.Store.YES),
+                            new StringField(nameof(Models.Materialized.Artist.NameNormalized),
+                                artist.NameNormalized,
+                                Field.Store.YES),
+                            new TextField(nameof(Models.Materialized.Artist.AlternateNames),
+                                artist.AlternateNames ?? string.Empty,
+                                Field.Store.YES)
+                        };
+                        writer.AddDocument(artistDoc);
+                    }
+
+                    writer.Flush(triggerMerge: false, applyAllDeletes: false);
+                }
+            }
+
             using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
             {
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded artists"))
@@ -229,9 +244,10 @@ public class SQLiteMusicBrainzRepository(
                         if (batch * batchSize > maxToProcess)
                         {
                             break;
-                        }                         
+                        }
                     }
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artists of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.Artist>(), LoadedMaterializedArtists.Count, batches);                    
+
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artists of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.Artist>(), LoadedMaterializedArtists.Count, batches);
                 }
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded artist relations"))
@@ -248,7 +264,8 @@ public class SQLiteMusicBrainzRepository(
                             break;
                         }
                     }
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artist relations of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.ArtistRelation>(), LoadedMaterializedArtistRelations.Count, batches);                    
+
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artist relations of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.ArtistRelation>(), LoadedMaterializedArtistRelations.Count, batches);
                 }
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded albums"))
@@ -262,11 +279,11 @@ public class SQLiteMusicBrainzRepository(
                         if (batch * batchSize > maxToProcess)
                         {
                             break;
-                        }  
+                        }
                     }
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] albums of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.Album>(), LoadedMaterializedAlbums.Count, batches);                    
-                }
 
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] albums of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.Album>(), LoadedMaterializedAlbums.Count, batches);
+                }
             }
 
             return new OperationResult<bool>

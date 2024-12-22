@@ -19,6 +19,7 @@ public sealed record Album
     /// <summary>
     /// This is the MusicBrainz database Id
     /// </summary>
+    [Index(false)] 
     public required long MusicBrainzArtistId { get; init; }
 
     [Index(false)]
