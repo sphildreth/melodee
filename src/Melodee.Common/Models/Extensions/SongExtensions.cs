@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Melodee.Common.Constants;
@@ -166,7 +167,7 @@ public static class SongExtensions
 
     public static DateTime? AlbumDateValue(this Song song)
     {
-        return song.AlbumDate().Nullify() == null ? null : DateTime.Parse(song.AlbumDate()!);
+        return song.AlbumDate().Nullify() == null ? null : DateTime.Parse(song.AlbumDate()!, CultureInfo.InvariantCulture);
     }
 
     public static int SongNumber(this Song song)

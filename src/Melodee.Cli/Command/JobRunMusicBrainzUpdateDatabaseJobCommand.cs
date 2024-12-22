@@ -44,7 +44,7 @@ public class JobRunMusicBrainzUpdateDatabaseJobCommand : AsyncCommand<JobSetting
         services.AddHttpClient();
         services.AddSingleton<IDbConnectionFactory>(opt =>
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
-        services.AddScoped<MusicBrainzRepository>();
+        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
         
@@ -61,7 +61,7 @@ public class JobRunMusicBrainzUpdateDatabaseJobCommand : AsyncCommand<JobSetting
                 melodeeConfigurationFactory,
                 settingService,
                 scope.ServiceProvider.GetRequiredService<IHttpClientFactory>(),
-                scope.ServiceProvider.GetRequiredService<MusicBrainzRepository>()
+                scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>()
             );
             await job.Execute(new JobExecutionContext(CancellationToken.None));
             return 1;

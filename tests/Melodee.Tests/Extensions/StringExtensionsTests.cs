@@ -210,5 +210,18 @@ public class StringExtensionsTests
         Assert.Contains("TAG2", tagNoLower.ToTags() ?? throw new InvalidOperationException());
 
     }
+    
+    [Theory]
+    [InlineData(null, 0, null)]    
+    [InlineData(null, 6, null)]
+    [InlineData("", 0,null)]
+    [InlineData("1234", 4, "1234")]
+    [InlineData("12345", 4, "1234")]
+    [InlineData("12345", 2, "12")]
+    [InlineData("12345", 999, "12345")]
+    public void ValidateTruncateLength(string? input, int length, string? shouldBe)
+    {
+        Assert.Equal(shouldBe, input?.TruncateLongString(length));
+    }     
 
 }

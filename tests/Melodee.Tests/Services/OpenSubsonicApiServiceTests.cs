@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Mail;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Models;
@@ -43,7 +44,7 @@ public class OpenSubsonicApiServiceTests : ServiceTestBase
         Assert.NotNull(licenseResult.ResponseData);
         var license = licenseResult.ResponseData?.Data as License;
         Assert.NotNull(license);
-        Assert.True(DateTime.Parse(license.LicenseExpires) > DateTime.Now);
+        Assert.True(DateTime.Parse(license.LicenseExpires, CultureInfo.InvariantCulture) > DateTime.Now);
     }
     
     [Fact]

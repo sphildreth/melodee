@@ -10,15 +10,20 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized;
 /// </summary>
 public sealed record ArtistRelation
 {
-    [AutoIncrement] public long Id { get; init; }
+    [AutoIncrement] 
+    public long Id { get; init; }
 
-    [Index] public required long ArtistId { get; init; }
+    [Index] 
+    public required long ArtistId { get; init; }
 
-    [Index] public required long RelatedArtistId { get; init; }
+    [Index] 
+    public required long RelatedArtistId { get; init; }
 
     public required int ArtistRelationType { get; set; }
 
-    [NotMapped] public ArtistRelationType ArtistRelationTypeValue => SafeParser.ToEnum<ArtistRelationType>(ArtistRelationType);
+    [Ignore]
+    [NotMapped]
+    public ArtistRelationType ArtistRelationTypeValue => SafeParser.ToEnum<ArtistRelationType>(ArtistRelationType);
 
     public int SortOrder { get; init; }
 

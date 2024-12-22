@@ -84,7 +84,16 @@ public static partial class StringExtensions
         }
         return inputValue;
     }
-    
+
+    public static string? TruncateLongString(this string? input, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return null;
+        }
+        return input?[0..Math.Min(input.Length, maxLength)];
+    }
+
     public static string ToBase64(this string text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     public static string FromBase64(this string text)

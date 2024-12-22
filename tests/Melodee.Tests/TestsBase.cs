@@ -21,7 +21,7 @@ public abstract class TestsBase
         Serializer = new Serializer(Logger);
     }
 
-    private ILogger Logger { get; }
+    protected ILogger Logger { get; }
 
     protected ISerializer Serializer { get; }
     
@@ -39,6 +39,13 @@ public abstract class TestsBase
     {
         return new MelodeeConfiguration(NewConfiguration());
     }
+    
+    protected IMelodeeConfigurationFactory MockConfigurationFactory()
+    {
+        var mock = new Mock<IMelodeeConfigurationFactory>();
+        mock.Setup(f => f.GetConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
+        return mock.Object;
+    }    
     
     public static OperationResult<Library> TestStagingLibrary()
     {
@@ -116,6 +123,7 @@ public abstract class TestsBase
             { SettingRegistry.ProcessingMaximumArtistDirectoryNameLength, 255 },
             { SettingRegistry.ProcessingSongTitleRemovals, "[';', '(Remaster)', 'Remaster']" },
             { SettingRegistry.ScriptingPreDiscoveryScript, "/melodee_test/scripts/PreDiscoveryWrapper.sh" },
+            { SettingRegistry.SearchEngineMusicBrainzStoragePath, "/melodee_test/search-engine-storage/musicbrainz/" },
             { SettingRegistry.ValidationMaximumAlbumYear, 2035 },
             { SettingRegistry.ValidationMaximumMediaNumber, 99 },
             { SettingRegistry.ValidationMaximumSongNumber, 999 },

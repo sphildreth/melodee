@@ -140,7 +140,7 @@ public static class SafeParser
     {
         if (input == null)
         {
-            return default;
+            return null;
         }
 
         try
@@ -200,7 +200,7 @@ public static class SafeParser
         }
         catch
         {
-            return default;
+            return null;
         }
     }
 

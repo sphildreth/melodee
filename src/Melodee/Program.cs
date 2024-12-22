@@ -92,7 +92,7 @@ builder.Services
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>()
     .AddSingleton<EtagRepository>()
-    .AddScoped<MusicBrainzRepository>()
+    .AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>()
     .AddScoped<LocalStorageService>()
     .AddScoped<ISettingService, SettingService>()
     .AddScoped<ArtistService>()

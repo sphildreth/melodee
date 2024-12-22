@@ -1,3 +1,4 @@
+using System.Globalization;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz.Data.Models;
@@ -6,7 +7,7 @@ public sealed record ReleaseGroupMeta
 {
     public long ReleaseGroupId { get; init; }
 
-    public DateTime ReleaseDate => DateTime.Parse($"{DateYearValue.ToStringPadLeft(4)}-{DateMonthValue.ToStringPadLeft(2)}-{DateDayValue.ToStringPadLeft(2)}T00:00:00");
+    public DateTime ReleaseDate => DateTime.Parse($"{DateYearValue.ToStringPadLeft(4)}-{DateMonthValue.ToStringPadLeft(2)}-{DateDayValue.ToStringPadLeft(2)}T00:00:00", CultureInfo.InvariantCulture);
 
     public int DateYearValue => DateYear > DateTime.MinValue.Year && DateYear < DateTime.MaxValue.Year ? DateYear : DateTime.MinValue.Year;
 

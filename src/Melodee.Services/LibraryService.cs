@@ -1,3 +1,4 @@
+using System.Reflection;
 using Ardalis.GuardClauses;
 using Dapper;
 using IdSharp.Common.Utils;
@@ -21,6 +22,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
+using ServiceStack;
+using SixLabors.ImageSharp;
 using SmartFormat;
 using Log = ATL.Logging.Log;
 using MelodeeModels = Melodee.Common.Models;
@@ -244,6 +247,116 @@ public sealed class LibraryService(
         };
     }
 
+    public async Task ProcessExistingDirectoryMoveMergeAsync(string libraryAlbumPath, MelodeeModels.Album albumToMove, string existingAlbumPath, CancellationToken cancellationToken = default)
+    {
+        var albumToMoveDir = albumToMove.Directory;
+        var existingDir = new DirectoryInfo(existingAlbumPath);
+        
+        Logger.Debug("[{ServiceName}] :\u2552: processing existing directory merge from [{ExistingDirectoryPath}] to [{NewDirectoryPath}]", nameof(LibraryService),
+            albumToMove.Directory.Name, existingDir.Name);
+        
+        if (albumToMove.Images?.Any() == true)
+        {
+            var existingImages = ImageHelper.ImageFilesInDirectory(existingDir.FullName, SearchOption.TopDirectoryOnly).ToList();
+            var existingImagesCrc = existingImages.Select(async x => new { Crc = CRC32.Calculate(await File.ReadAllBytesAsync(x, cancellationToken)), ImageFileName = x }).ToArray();
+            var imagesToMoveCrc = albumToMove.Images.Select(x => new { Crc = x.CrcHash, ImageFileName = x.FileInfo!.FullName(albumToMoveDir) }).ToList();
+            
+            // if none exist take all images from albumToMove
+            if (existingImages.Count == 0)
+            {
+                foreach (var image in albumToMove.Images)
+                {
+                    File.Move(image.FileInfo.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, image.FileInfo.Name));
+                    Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);                    
+                }
+            }
+            else
+            {
+                var existingImageInfos = await Task.WhenAll(existingImagesCrc.Select(x => x)).ConfigureAwait(false);
+                foreach (var imageToMove in imagesToMoveCrc.ToArray())
+                {
+                    if (existingImageInfos.Any(x => x.Crc == imageToMove.Crc))
+                    {
+                        // Exact duplicate found, dont do anything
+                        imagesToMoveCrc.Remove(imageToMove);
+                        continue;
+                    }
+                    var existingWithSameFileNames = existingImageInfos.Where(x => string.Equals(x.ImageFileName, imageToMove.ImageFileName, StringComparison.OrdinalIgnoreCase)).ToArray(); 
+                    foreach(var existingWithSameFileName  in existingWithSameFileNames)
+                    {
+                        imagesToMoveCrc.Remove(imageToMove);
+                        
+                        // If some exist, not duplicate CRC, same name, keep the higher resolution
+                        var existingInfoSizeInfo = await Image.IdentifyAsync(existingWithSameFileName.ImageFileName, cancellationToken).ConfigureAwait(false);
+                        var toMoveInfoSizeInfo = await Image.IdentifyAsync(imageToMove.ImageFileName, cancellationToken).ConfigureAwait(false);
+                        if (existingInfoSizeInfo.Width > toMoveInfoSizeInfo.Width)
+                        {
+                            continue;
+                        }
+                        File.Delete(existingWithSameFileName.ImageFileName);
+                        File.Move(imageToMove.ImageFileName, Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName)));
+                        Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));                        
+                    }
+                }
+                foreach (var imageToMove in imagesToMoveCrc)
+                {
+                    File.Move(imageToMove.ImageFileName, Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName)));
+                    Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));                    
+                }
+            }
+        }
+
+        var songsToMove = albumToMove.Songs?.ToList() ?? [];
+        if (songsToMove.Any())
+        {
+            var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+            var imageValidator = new ImageValidator(configuration);
+            var imageConvertor = new ImageConvertor(configuration);
+            var atlMetTag = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor, imageValidator, configuration);
+            var existingSongsFileInfos = albumToMoveDir.AllMediaTypeFileInfos().ToArray();
+            var existingSongs = new List<Common.Models.Song>();
+            foreach (var song in existingSongsFileInfos)
+            {
+                var songLoadResult = await atlMetTag.ProcessFileAsync(existingDir.ToDirectorySystemInfo(), song.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
+                if (songLoadResult.IsSuccess)
+                {
+                    existingSongs.Add(songLoadResult.Data);
+                }
+            }
+            foreach (var songToMove in songsToMove.ToArray())
+            {
+                var existingForSongToMove = existingSongs.FirstOrDefault(x => x.MediaNumber() == songToMove.MediaNumber() && 
+                                                                                   x.SongNumber() == songToMove.SongNumber());
+                if (existingForSongToMove != null)
+                {
+                    // TODO for some reason the song.CrcHash is wrong? 
+                    var songToMoveCrcHash = Crc32.Calculate(songToMove.File.ToFileInfo(albumToMoveDir));
+                    if (existingForSongToMove.CrcHash == songToMoveCrcHash)
+                    {
+                        // Duplicate dont do anything
+                        songsToMove.Remove(songToMove);
+                        continue;
+                    }
+                    if (existingForSongToMove.File.Size > songToMove.File.Size || 
+                        (existingForSongToMove.BitRate() > songToMove.BitRate() && existingForSongToMove.BitDepth() > songToMove.BitDepth()))
+                    {
+                        // existing song is better don't do anything
+                        songsToMove.Remove(songToMove);
+                    }
+                }
+            }
+            // Copy over any song left to move
+            foreach (var songToMove in songsToMove)
+            {
+                File.Move(songToMove.File.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, songToMove.File.Name));
+                Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService), songToMove.File.Name);
+            }            
+        }
+        // Delete folder to merge as what is wanted has been moved 
+        Directory.Delete(albumToMove.Directory.FullName(), true);
+        Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService), albumToMove.Directory);        
+    }
+    
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
@@ -269,8 +382,7 @@ public sealed class LibraryService(
             }
             else
             {
-                //TODO if data album exists for model album if so determine which is better quality
-                Logger.Warning("Existing directory found. Skipping album moving.");
+                await ProcessExistingDirectoryMoveMergeAsync(libraryAlbumPath, album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
                 continue;
             }
 

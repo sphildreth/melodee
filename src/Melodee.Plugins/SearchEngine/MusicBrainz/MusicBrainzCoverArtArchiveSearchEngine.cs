@@ -11,7 +11,7 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz;
 /// <summary>
 ///     https://musicbrainz.org/doc/Cover_Art_Archive/API
 /// </summary>
-public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration configuration, MusicBrainzRepository repository, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
+public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration configuration, IMusicBrainzRepository repository, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 

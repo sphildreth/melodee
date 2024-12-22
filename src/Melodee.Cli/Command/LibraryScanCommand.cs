@@ -51,7 +51,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
         services.AddHttpClient();
         services.AddSingleton<IDbConnectionFactory>(opt => 
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
-        services.AddScoped<MusicBrainzRepository>();    
+        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();    
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
         
@@ -114,7 +114,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                         serializer,
                         settingService,
                         dbFactory,
-                        scope.ServiceProvider.GetRequiredService<MusicBrainzRepository>(),
+                        scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
                         httpClientFactory
                     ),
                     new AlbumImageSearchEngineService
@@ -124,7 +124,7 @@ public class LibraryScanCommand : AsyncCommand<LibrarySetting>
                         serializer,
                         settingService,
                         dbFactory,
-                        scope.ServiceProvider.GetRequiredService<MusicBrainzRepository>(),
+                        scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
                         httpClientFactory
                     ),
                     httpClientFactory

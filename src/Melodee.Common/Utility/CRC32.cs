@@ -116,10 +116,8 @@ public static class Crc32
                 {
                     for (var i = 0; i < count; i++)
                     {
-                        crc32Result = (crc32Result >> 8) ^ Crc32Table[buffer[i] ^
-                                                                      (crc32Result & 0x000000FF)];
+                        crc32Result = (crc32Result >> 8) ^ Crc32Table[buffer[i] ^ (crc32Result & 0x000000FF)];
                     }
-
                     count = stream.Read(buffer, 0, BufferSize);
                 }
 
