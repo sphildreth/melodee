@@ -8,6 +8,8 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.MessageBus;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
@@ -35,7 +37,8 @@ public sealed class LibraryService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ISettingService settingService,
-    ISerializer serializer)
+    ISerializer serializer,
+    IEventPublisher<AlbumUpdatedEvent>? albumUpdatedEvent)
     : ServiceBase(logger, cacheManager, contextFactory), ILibraryService
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
@@ -247,8 +250,10 @@ public sealed class LibraryService(
         };
     }
 
-    public async Task ProcessExistingDirectoryMoveMergeAsync(string libraryAlbumPath, MelodeeModels.Album albumToMove, string existingAlbumPath, CancellationToken cancellationToken = default)
+    public async Task ProcessExistingDirectoryMoveMergeAsync(MelodeeModels.Album albumToMove, string existingAlbumPath, CancellationToken cancellationToken = default)
     {
+        var modifiedExistingFolder = false;
+        
         var albumToMoveDir = albumToMove.Directory;
         var existingDir = new DirectoryInfo(existingAlbumPath);
         
@@ -267,7 +272,8 @@ public sealed class LibraryService(
                 foreach (var image in albumToMove.Images)
                 {
                     File.Move(image.FileInfo.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, image.FileInfo.Name));
-                    Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);                    
+                    Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);
+                    modifiedExistingFolder = true;
                 }
             }
             else
@@ -295,13 +301,15 @@ public sealed class LibraryService(
                         }
                         File.Delete(existingWithSameFileName.ImageFileName);
                         File.Move(imageToMove.ImageFileName, Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName)));
-                        Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));                        
+                        Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
+                        modifiedExistingFolder = true;
                     }
                 }
                 foreach (var imageToMove in imagesToMoveCrc)
                 {
                     File.Move(imageToMove.ImageFileName, Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName)));
-                    Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));                    
+                    Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
+                    modifiedExistingFolder = true;                    
                 }
             }
         }
@@ -350,11 +358,16 @@ public sealed class LibraryService(
             {
                 File.Move(songToMove.File.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, songToMove.File.Name));
                 Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService), songToMove.File.Name);
+                modifiedExistingFolder = true;
             }            
         }
         // Delete folder to merge as what is wanted has been moved 
         Directory.Delete(albumToMove.Directory.FullName(), true);
-        Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService), albumToMove.Directory);        
+        Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService), albumToMove.Directory);
+        if (modifiedExistingFolder && albumUpdatedEvent != null)
+        {
+            await albumUpdatedEvent.Publish(new Event<AlbumUpdatedEvent>(new AlbumUpdatedEvent(null, existingAlbumPath)), cancellationToken).ConfigureAwait(false);
+        }
     }
     
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
@@ -382,7 +395,7 @@ public sealed class LibraryService(
             }
             else
             {
-                await ProcessExistingDirectoryMoveMergeAsync(libraryAlbumPath, album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
+                await ProcessExistingDirectoryMoveMergeAsync(album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
                 continue;
             }
 

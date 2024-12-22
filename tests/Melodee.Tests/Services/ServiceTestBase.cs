@@ -124,9 +124,15 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockDbContextFactory());
     }
 
-    protected IEventPublisher<UserLoginEvent> MockEventPublisher()
+    protected IEventPublisher<UserLoginEvent> MockUserEventPublisher()
     {
         var mockEventPublisher = new Mock<IEventPublisher<UserLoginEvent>>();
+        return mockEventPublisher.Object;
+    }
+    
+    protected IEventPublisher<AlbumUpdatedEvent> MockAlbumUpdatedEventPublisher()
+    {
+        var mockEventPublisher = new Mock<IEventPublisher<AlbumUpdatedEvent>>();
         return mockEventPublisher.Object;
     }
     
@@ -189,7 +195,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetScrobbleService(),
             GetLibraryService(),
             GetArtistSearchEngineService(),
-            MockEventPublisher());
+            MockUserEventPublisher());
     }
 
     protected InMemoryEventBusPublisher<UserLoginEvent> MockUserLoginEventBusPublisher()
@@ -226,7 +232,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             CacheManager,
             MockFactory(),
             MockSettingService(),
-            Serializer
+            Serializer,
+            MockAlbumUpdatedEventPublisher()
         );
     }
     

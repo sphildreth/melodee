@@ -72,7 +72,8 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
                     cacheManager,
                     dbFactory,
                     settingService,
-                    serializer);
+                    serializer,
+                    null);
 
                 var libraryListResult = await libraryService.ListAsync(new PagedRequest()).ConfigureAwait(false);
                 var library = libraryListResult.Data.FirstOrDefault(x => x.Name == settings.LibraryName);

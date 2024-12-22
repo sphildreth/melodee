@@ -1,6 +1,7 @@
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
+using Melodee.Common.MessageBus;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.Validation;
 using Melodee.Services;
@@ -35,7 +36,7 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSetting>
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-
+        
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -47,7 +48,8 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSetting>
                 cacheManager,
                 dbFactory,
                 settingService,
-                serializer);
+                serializer,
+                null);
 
             libraryService.OnProcessingProgressEvent += (sender, e) =>
             {

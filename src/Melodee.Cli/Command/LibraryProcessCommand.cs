@@ -74,7 +74,8 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 cacheManager,
                 dbFactory,
                 settingService,
-                serializer);
+                serializer,
+                null);
 
             var musicBrainzRepository = new SQLiteMusicBrainzRepository(
                 Log.Logger, 
