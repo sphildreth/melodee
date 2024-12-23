@@ -808,12 +808,12 @@ public sealed class LibraryService(
                 message = albumDirectoriesFound == library.AlbumCount ? null : $"Album directory count does not match Library album count.";
                 result.Add(new MelodeeModels.Statistic("Album Directories Found", albumDirectoriesFound.ToStringPadLeft(statPadLength), albumDirectoriesFound == library.AlbumCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
 
-                message = songsFound == library.SongCount ? null : $"Song count does not match Library song count.";
+                message = songsFound == library.SongCount ? null : $"Song count [{songsFound.ToStringPadLeft(statPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(statPadLength)}].";
                 result.Add(new MelodeeModels.Statistic("Songs Found", songsFound.ToStringPadLeft(statPadLength), songsFound == library.SongCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
             }
         }
 
-        return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>
+        return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>(shouldResetLastScan ? "You should run `library scan`" : string.Empty)
         {
             Data = result.ToArray()
         };

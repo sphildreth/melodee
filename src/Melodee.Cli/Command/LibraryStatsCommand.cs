@@ -5,6 +5,7 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Jobs;
 using Melodee.Plugins.Conversion.Image;
@@ -85,6 +86,15 @@ public class LibraryStatsCommand : AsyncCommand<LibrarySetting>
                 table.AddRow(stat.Title, $"[{ stat.DisplayColor}]{(stat.Data?.ToString().EscapeMarkup() ?? string.Empty)}[/]", stat.Message.EscapeMarkup());
             }
             AnsiConsole.Write(table);
+            if (result.Messages?.Any() ?? false)
+            {
+                AnsiConsole.WriteLine();
+                foreach (var message in result.Messages)
+                {
+                    AnsiConsole.WriteLine(message.EscapeMarkup());
+                }
+                AnsiConsole.WriteLine();
+            }
             return 1;
         }
     }
