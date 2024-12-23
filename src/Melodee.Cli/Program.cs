@@ -17,8 +17,11 @@ public static class Program
                 add.AddCommand<JobRunMusicBrainzUpdateDatabaseJobCommand>("musicbrainz-update")
                     .WithDescription("Run MusicBrainz update database job. This downloads MusicBrainz data dump and creates local database for Melodee when scanning metadata.");
             });
-            config.AddBranch<LibrarySetting>("library", add =>
+            config.AddBranch<LibrarySettings>("library", add =>
             {
+                add.AddCommand<LibraryCleanCommand>("clean")
+                    .WithAlias("c")
+                    .WithDescription("Clean library and delete any folders without media files. CAUTION: Destructive!");                
                 add.AddCommand<ProcessInboundCommand>("process")
                     .WithAlias("p")
                     .WithDescription("Process media in given library into staging library.");

@@ -5,13 +5,8 @@ using ValidationResult = Spectre.Console.ValidationResult;
 
 namespace Melodee.Cli.CommandSettings;
 
-public class LibraryProcessSettings : LibrarySetting
+public class LibraryProcessSettings : LibrarySettings
 {
-    [Description("Name of library to process.")] 
-    [CommandArgument(0, "[LIBRARY]")] 
-    [Required]
-    public string LibraryName { get; set; } = string.Empty;
- 
     [Description("Copy or move files from library. If set then processed files are not deleted.")]
     [CommandOption("--copy")]
     [DefaultValue(true)]

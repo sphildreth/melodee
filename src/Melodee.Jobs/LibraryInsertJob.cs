@@ -22,6 +22,7 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Quartz;
 using Serilog;
+using Serilog.Data;
 using SmartFormat;
 using SearchOption = System.IO.SearchOption;
 using dbModels = Melodee.Common.Data.Models;
@@ -467,6 +468,12 @@ public class LibraryInsertJob(
                                 currentSong = song;
                                 var mediaFile = song.File.ToFileInfo(melodeeAlbum.Directory) ?? throw new Exception("Song File is required.");
                                 var mediaFileHash = CRC32.Calculate(mediaFile);
+                                if (mediaFileHash == null)
+                                {
+                                    Logger.Warning("[{JobName}] Unable to calculate CRC for Song file [{FileName}",
+                                        nameof(LibraryInsertJob), mediaFile.FullName);
+                                    continue;
+                                }
                                 var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
                                 disc.Songs.Add(new dbModels.Song
                                 {

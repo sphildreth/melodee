@@ -76,16 +76,24 @@ public class AlbumService(
     {
         Guard.Against.NullOrEmpty(nameNormalized, nameof(nameNormalized));
 
-        var id = await CacheManager.GetAsync(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(nameNormalized), async () =>
+        int? id = null;
+        try
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            id = await CacheManager.GetAsync(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(nameNormalized), async () =>
             {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                return await dbConn
-                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Albums\" WHERE \"ArtistId\" = @artistId AND \"NameNormalized\" = @nameNormalized", new { artistId, nameNormalized })
-                    .ConfigureAwait(false);
-            }
-        }, cancellationToken);
+                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    var dbConn = scopedContext.Database.GetDbConnection();
+                    return await dbConn
+                        .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Albums\" WHERE \"ArtistId\" = @artistId AND \"NameNormalized\" = @nameNormalized", new { artistId, nameNormalized })
+                        .ConfigureAwait(false);
+                }
+            }, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to get album [{Name}] for artistId [{ArtistId}].", nameNormalized, artistId);
+        }
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Album?>("Unknown album.")

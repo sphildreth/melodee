@@ -32,9 +32,9 @@ namespace Melodee.Cli.Command;
 /// <summary>
 /// Generate some statistics for the given Library. 
 /// </summary>
-public class LibraryStatsCommand : AsyncCommand<LibrarySetting>
+public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, LibrarySetting settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, LibraryStatsSettings settings)
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())

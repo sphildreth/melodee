@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Ardalis.GuardClauses;
 using Dapper;
 using IdSharp.Common.Utils;
@@ -43,6 +44,8 @@ public sealed class LibraryService(
     private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
     private const string CacheKeyDetailTemplate = "urn:library:{0}";
 
+    private const int DisplayNumberPadLength = 8;
+    
     public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Inbound;
@@ -717,13 +720,13 @@ public sealed class LibraryService(
         }
 
         var shouldResetLastScan = false;
-        const int statPadLength = 8;
         
-        var result = new List<MelodeeModels.Statistic>();
-        
-        result.Add(new MelodeeModels.Statistic(StatisticType.Information, "Artist Count", library.ArtistCount.ToStringPadLeft(statPadLength) ?? "0", StatisticColorRegistry.Ok));
-        result.Add(new MelodeeModels.Statistic(StatisticType.Information,"Album Count", library.AlbumCount.ToStringPadLeft(statPadLength) ?? "0", StatisticColorRegistry.Ok));
-        result.Add(new MelodeeModels.Statistic(StatisticType.Information,"Song Count", library.SongCount.ToStringPadLeft(statPadLength) ?? "0", StatisticColorRegistry.Ok));
+        var result = new List<MelodeeModels.Statistic>
+        {
+            new MelodeeModels.Statistic(StatisticType.Information, "Artist Count", library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok, "Number of artists on Library db record."),
+            new MelodeeModels.Statistic(StatisticType.Information, "Album Count", library.AlbumCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok, "Number of albums on Library db record."),
+            new MelodeeModels.Statistic(StatisticType.Information,"Song Count", library.SongCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok,"Number of songs on Library db record.")
+        };
 
         if (library.TypeValue == LibraryType.Library)
         {
@@ -814,13 +817,13 @@ public sealed class LibraryService(
                 }
 
                 var message = artistDirectoriesFound == library.ArtistCount ? null : $"Artist directory count does not match Library artist count.";
-                result.Add(new MelodeeModels.Statistic(artistDirectoriesFound == library.ArtistCount ? StatisticType.Information : StatisticType.Warning,"Artist Directories Found", artistDirectoriesFound.ToStringPadLeft(statPadLength), artistDirectoriesFound == library.ArtistCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
+                result.Add(new MelodeeModels.Statistic(artistDirectoriesFound == library.ArtistCount ? StatisticType.Information : StatisticType.Warning,"Artist Directories Found", artistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), artistDirectoriesFound == library.ArtistCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
 
                 message = albumDirectoriesFound == library.AlbumCount ? null : $"Album directory count does not match Library album count.";
-                result.Add(new MelodeeModels.Statistic(albumDirectoriesFound == library.AlbumCount ? StatisticType.Information : StatisticType.Warning,"Album Directories Found", albumDirectoriesFound.ToStringPadLeft(statPadLength), albumDirectoriesFound == library.AlbumCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
+                result.Add(new MelodeeModels.Statistic(albumDirectoriesFound == library.AlbumCount ? StatisticType.Information : StatisticType.Warning,"Album Directories Found", albumDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), albumDirectoriesFound == library.AlbumCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
 
-                message = songsFound == library.SongCount ? null : $"Song count [{songsFound.ToStringPadLeft(statPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(statPadLength)}].";
-                result.Add(new MelodeeModels.Statistic(songsFound == library.SongCount ? StatisticType.Information :StatisticType.Error,"Songs Found", songsFound.ToStringPadLeft(statPadLength), songsFound == library.SongCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
+                message = songsFound == library.SongCount ? null : $"Song count [{songsFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(DisplayNumberPadLength)}].";
+                result.Add(new MelodeeModels.Statistic(songsFound == library.SongCount ? StatisticType.Information :StatisticType.Error,"Songs Found", songsFound.ToStringPadLeft(DisplayNumberPadLength), songsFound == library.SongCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
             }
         }
 
@@ -828,5 +831,60 @@ public sealed class LibraryService(
         {
             Data = result.ToArray()
         };
+    }
+
+    public async Task<MelodeeModels.OperationResult<string[]>> CleanLibraryAsync(string settingsLibraryName, CancellationToken cancellationToken = default)
+    {
+        var result = false;
+        
+        Guard.Against.NullOrEmpty(settingsLibraryName, nameof(settingsLibraryName));
+
+        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
+        var library = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == settingsLibraryName.ToNormalizedString());
+        if (library == null)
+        {
+            return new MelodeeModels.OperationResult<string[]>("Invalid From library Name")
+            {
+                Data = []
+            };
+        }
+        var messages = new List<string>();
+        var allDirectoriesInLibrary = Directory.GetDirectories(library.Path, "*", SearchOption.AllDirectories).ToArray();
+        var libraryDirectoryCountBeforeCleaning = allDirectoriesInLibrary.Length;
+        var directoriesWithoutMediaFiles = new ConcurrentBag<string>();
+        Parallel.ForEach(allDirectoriesInLibrary, directory =>
+        {
+            GetDirectoriesWithoutMediaFiles(directory).ForEach((s, i) => directoriesWithoutMediaFiles.Add(s) );
+        });
+        if (directoriesWithoutMediaFiles.Distinct().Any())
+        {
+            foreach (var directory in directoriesWithoutMediaFiles.Distinct())
+            {
+                Directory.Delete(directory, true);
+                messages.Add($"Directory [{directory}] deleted.");
+            }
+        }
+        allDirectoriesInLibrary = Directory.GetDirectories(library.Path, "*", SearchOption.AllDirectories).ToArray();
+        var libraryDirectoryCountAfterCleaning = allDirectoriesInLibrary.Length;
+        messages.Add($"Deleted [{libraryDirectoryCountBeforeCleaning-libraryDirectoryCountAfterCleaning}] directories from library. Library now has [{libraryDirectoryCountAfterCleaning.ToStringPadLeft(DisplayNumberPadLength)}] directories.");
+        return new MelodeeModels.OperationResult<string[]>
+        {
+            Data = messages.ToArray(),
+        };
+    }
+
+    public static string[] GetDirectoriesWithoutMediaFiles(string directoryName)
+    {
+        var result = new List<string>();
+        var d = new DirectoryInfo(directoryName);
+        foreach (var directory in d.EnumerateDirectories("*.*", SearchOption.AllDirectories))
+        {
+            if (!directory.DoesDirectoryHaveMediaFiles())
+            {
+                result.Add(directory.FullName);
+            }
+            result.AddRange(GetDirectoriesWithoutMediaFiles(directory.FullName));
+        }
+        return result.Distinct().ToArray();
     }
 }

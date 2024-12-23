@@ -28,9 +28,9 @@ namespace Melodee.Cli.Command;
 /// <summary>
 /// This runs the job that scans all the library type libraries 
 /// </summary>
-public class LibraryScanCommand : AsyncCommand<LibrarySetting>
+public class LibraryScanCommand : AsyncCommand<LibrarySettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, LibrarySetting settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, LibrarySettings settingses)
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())

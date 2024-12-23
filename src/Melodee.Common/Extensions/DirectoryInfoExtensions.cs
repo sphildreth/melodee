@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Extensions;
 
@@ -8,6 +9,15 @@ public static class DirectoryInfoExtensions
     {
         foreach(FileInfo file in directory.GetFiles()) file.Delete();
         foreach(DirectoryInfo subDirectory in directory.GetDirectories()) subDirectory.Delete(true);
+    }    
+    
+    public static bool DoesDirectoryHaveMediaFiles(this DirectoryInfo directory)
+    {
+        if (!directory.Exists)
+        {
+            return false;
+        }
+        return directory.EnumerateFiles("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileMediaType(x.Extension));
     }    
     
     public static void DeleteIfEmpty(this DirectoryInfo directory)
