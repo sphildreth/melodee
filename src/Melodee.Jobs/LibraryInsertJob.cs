@@ -215,7 +215,6 @@ public class LibraryInsertJob(
                                     Logger.Warning("[{JobName}] Invalid Melodee file [{Status}]", nameof(LibraryInsertJob), melodeeFile.ToString());
                                     continue;
                                 }
-
                                 melodeeFilesForDirectory.Add(melodeeFile);
                             }
                             catch (Exception e)
@@ -371,10 +370,16 @@ public class LibraryInsertJob(
         {
             await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
+                // var artists = melodeeAlbumsForDirectory
+                //     .Select(x => x.Artist)
+                //     .Where(x => x.IsValid())
+                //     .DistinctBy(x => x.NameNormalized)
+                //     .OrderBy(x => x.Name)
+                //     .ToArray();
+                
                 var dbAlbumsToAdd = new List<dbModels.Album>();
                 foreach (var melodeeAlbum in melodeeAlbumsForDirectory)
                 {
-                    
                     currentAlbum = melodeeAlbum;
                     var artistName = melodeeAlbum.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                     var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
@@ -411,12 +416,6 @@ public class LibraryInsertJob(
                     var albumDirectory = melodeeAlbum.AlbumDirectoryName(_configuration.Configuration);
                     if (dbAlbum == null)
                     {
-                        Logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] MusicbrainzId [{MusicBrainzId}] NormalizedName [{Name}]",
-                            nameof(LibraryInsertJob),
-                            dbArtist.Id,
-                            melodeeAlbum.Id,
-                            melodeeAlbum.MusicBrainzId,
-                            nameNormalized);
                         var newAlbum = new dbModels.Album
                         {
                             ApiKey = melodeeAlbum.Id,
@@ -438,6 +437,18 @@ public class LibraryInsertJob(
                             SongCount = SafeParser.ToNumber<short>(melodeeAlbum.Songs?.Count() ?? 0),
                             SortName = _configuration.RemoveUnwantedArticles(albumTitle.CleanString(true))
                         };
+                        if (dbAlbumsToAdd.Any(x => x.Artist.Id == dbArtist.Id && x.NameNormalized == nameNormalized))
+                        {
+                            Logger.Warning("For artist [{Artist}] found duplicate album [{Album}]", dbArtist, newAlbum);
+                            melodeeAlbum.Directory.AppendPrefix("_duplicate");
+                            continue;
+                        }
+                        Logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] MusicbrainzId [{MusicBrainzId}] NormalizedName [{Name}]",
+                            nameof(LibraryInsertJob),
+                            dbArtist.Id,
+                            melodeeAlbum.Id,
+                            melodeeAlbum.MusicBrainzId,
+                            nameNormalized);                        
                         for (short i = 1; i <= melodeeAlbum.MediaCountValue(); i++)
                         {
                             newAlbum.Discs.Add(new dbModels.AlbumDisc

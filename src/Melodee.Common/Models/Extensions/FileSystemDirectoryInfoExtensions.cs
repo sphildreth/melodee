@@ -16,8 +16,24 @@ public static class FileSystemDirectoryInfoExtensions
 {
     public static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|\s?best\s?of|greatest(s*)\s?hit(s*)|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex IsDirectoryDiscographyRegex = new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);    
+    public static readonly Regex IsDirectoryDiscographyRegex = new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    /// <summary>
+    /// Rename the Directory and prepend the given prefix.
+    /// </summary>
+    public static void AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string prefix)
+    {
+        fileSystemDirectoryInfo.ToDirectoryInfo().MoveTo(Path.Combine(prefix, fileSystemDirectoryInfo.FullName()));
+    }
+
+    /// <summary>
+    /// Rename the Directory and append the given suffix.
+    /// </summary>
+    public static void AppendSuffix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string suffix)
+    {
+        fileSystemDirectoryInfo.ToDirectoryInfo().MoveTo(Path.Combine(fileSystemDirectoryInfo.FullName(), suffix));
+    }
+    
     public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         return new DirectoryInfo(fileSystemDirectoryInfo.FullName());

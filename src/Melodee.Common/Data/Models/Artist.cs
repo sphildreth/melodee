@@ -75,4 +75,6 @@ public sealed class Artist : MetaDataModelBase
     
     [InverseProperty(nameof(ArtistRelation.Artist))]  
     public ICollection<ArtistRelation> RelatedArtists { get; set; } = new List<ArtistRelation>();
+
+    public override string ToString() => $"Id [{Id}] Name [{Name}]";
 }

@@ -28,6 +28,9 @@ public static class Program
                 add.AddCommand<LibraryScanCommand>("scan")
                     .WithAlias("s")
                     .WithDescription("Scan all non inbound and staging libraries for database updates from processed media.");
+                add.AddCommand<LibraryStatsCommand>("stats")
+                    .WithAlias("ss")
+                    .WithDescription("Show statistics for given library and library directory.");                
             });          
             config.AddBranch<ParseSettings>("parser", add =>
             {
