@@ -364,10 +364,10 @@ public sealed class LibraryService(
             foreach (var songToMove in songsToMove)
             {
                 var toFile = Path.Combine(existingDir.FullName, songToMove.File.Name);
-                File.Move(songToMove.File.FullName(albumToMoveDir), toFile);
                 if (!File.Exists(toFile))
                 {
                     Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService), songToMove.File.Name);
+                    File.Move(songToMove.File.FullName(albumToMoveDir), toFile);                    
                     modifiedExistingDirectory = true;
                 }
             }            
