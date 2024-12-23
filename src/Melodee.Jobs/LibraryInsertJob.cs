@@ -379,8 +379,14 @@ public class LibraryInsertJob(
                 //     .ToArray();
                 
                 var dbAlbumsToAdd = new List<dbModels.Album>();
+                var stopProcessingAlbum = false;
                 foreach (var melodeeAlbum in melodeeAlbumsForDirectory)
                 {
+                    if (stopProcessingAlbum)
+                    {
+                        stopProcessingAlbum = false;
+                        continue;
+                    }
                     currentAlbum = melodeeAlbum;
                     var artistName = melodeeAlbum.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                     var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
@@ -462,6 +468,10 @@ public class LibraryInsertJob(
 
                         foreach (var disc in newAlbum.Discs)
                         {
+                            if (stopProcessingAlbum)
+                            {
+                                break;
+                            }
                             var songsForDisc = melodeeAlbum.Songs?.Where(x => x.MediaNumber() == disc.DiscNumber).ToArray() ?? [];
                             foreach (var song in songsForDisc)
                             {
@@ -472,7 +482,8 @@ public class LibraryInsertJob(
                                 {
                                     Logger.Warning("[{JobName}] Unable to calculate CRC for Song file [{FileName}",
                                         nameof(LibraryInsertJob), mediaFile.FullName);
-                                    continue;
+                                    stopProcessingAlbum = true;
+                                    break;
                                 }
                                 var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
                                 disc.Songs.Add(new dbModels.Song

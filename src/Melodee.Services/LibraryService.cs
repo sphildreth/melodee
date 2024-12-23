@@ -706,7 +706,6 @@ public sealed class LibraryService(
 
     public async Task<MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>> Statistics(string settingsLibraryName, CancellationToken cancellationToken = default)
     {
-        
         Guard.Against.NullOrEmpty(settingsLibraryName, nameof(settingsLibraryName));
 
         var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
@@ -769,6 +768,18 @@ public sealed class LibraryService(
                                             .ConfigureAwait(false);
                                         if (dbAlbum == null)
                                         {
+                                            if (library.TypeValue == LibraryType.Library)
+                                            {
+                                                // If album directory has media files, but does not have a melodee data file, and is not found in the db, then move back to inbound
+                                                var melodeeFile = d.GetFileSystemInfos(Melodee.Common.Models.Album.JsonFileName, SearchOption.TopDirectoryOnly).FirstOrDefault();
+                                                if (melodeeFile == null)
+                                                {
+                                                    var inboundLibrary = await GetInboundLibraryAsync(cancellationToken).ConfigureAwait(false);
+                                                    d.MoveTo(Path.Combine(inboundLibrary.Data.Path, Guid.NewGuid().ToString()));
+                                                    result.Add(new MelodeeModels.Statistic(StatisticType.Warning, "~ Moved album directory", albumDirectory, StatisticColorRegistry.Warning, "Moved album folder to incoming"));
+                                                    continue;
+                                                }
+                                            }
                                             result.Add(new MelodeeModels.Statistic(StatisticType.Error,"! Unknown album directory", albumDirectory, StatisticColorRegistry.Error, $"Unable to find album for directory [{d.Name}]"));
                                             shouldResetLastScan = true;
                                         }
