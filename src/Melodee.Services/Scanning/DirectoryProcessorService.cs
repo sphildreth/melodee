@@ -417,7 +417,8 @@ public sealed class DirectoryProcessorService(
 
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
                 var albumAndJsonFile = new Dictionary<Album, string>();
-                Console.WriteLine("Loading images for album...");                
+                Console.WriteLine("Loading images for album...");       
+                var skipDirPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
                 foreach (var albumJsonFile in albumJsonFiles.Take(_maxAlbumProcessingCount))
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -434,7 +435,14 @@ public sealed class DirectoryProcessorService(
                         }
                         catch (Exception e)
                         {
-                            LogAndRaiseEvent(LogEventLevel.Error, "Error Deserialize melodee json file {0}]", e, albumJsonFile.FullName);
+                            if (skipDirPrefix != null)
+                            {
+                                var newName = Path.Combine(albumJsonFile.Directory.Parent.FullName, $"{skipDirPrefix}{albumJsonFile.Name}-{DateTime.UtcNow.Ticks}");
+                                Directory.Move(albumJsonFile.DirectoryName, newName);
+                                Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", albumJsonFile.Name, newName);
+                            }                            
+                            LogAndRaiseEvent(LogEventLevel.Error, "Error Deserializing melodee json file [{0}]", e, albumJsonFile.FullName);
+                            continue;
                         }
 
                         if (album == null)
@@ -905,7 +913,7 @@ public sealed class DirectoryProcessorService(
     }
 
     //TODO make this use the Artist method to get images for an artist
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxImageCount, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
@@ -937,9 +945,9 @@ public sealed class DirectoryProcessorService(
                 // Move the image if not in the album directory
                 if (fileInfo.DirectoryName != album.Directory.FullName())
                 {
-                    var newFileInfoName = Path.Combine(album.Directory.FullName(), $"{Path.GetFileNameWithoutExtension(fileInfo.Name)}-{fileInfo.Directory.Name}{Path.GetExtension(fileInfo.Name)}");
-                    File.Move(fileInfo.FullName, newFileInfoName);
-                    fileInfo = new FileInfo(newFileInfoName);
+                    var imageFileName = album.Directory.GetNextFileNameForType(maxImageCount, Common.Data.Models.Artist.ImageType).Item1;
+                    File.Move(fileInfo.FullName, imageFileName);
+                    fileInfo = new FileInfo(imageFileName);
                 }
                 
                 if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
@@ -965,7 +973,7 @@ public sealed class DirectoryProcessorService(
                     CrcHash = Crc32.Calculate(fileInfo),
                     FileInfo = new FileSystemFileInfo
                     {
-                        Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
+                        Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxImageCount)}-{pictureIdentifier}.jpg",
                         Size = fileInfoFileSystemInfo.Size,
                         OriginalName = fileInfo.Name
                     },

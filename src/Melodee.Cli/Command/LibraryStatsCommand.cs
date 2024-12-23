@@ -76,25 +76,47 @@ public class LibraryStatsCommand : AsyncCommand<LibrarySetting>
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 
             var result = await libraryService.Statistics(settings.LibraryName);
-            
-            var table = new Table();
-            table.AddColumn("Statistic");
-            table.AddColumn("Data");
-            table.AddColumn("Information");
-            foreach (var stat in result.Data ?? [])
+
+            if (!settings.ReturnRaw)
             {
-                table.AddRow(stat.Title, $"[{ stat.DisplayColor}]{(stat.Data?.ToString().EscapeMarkup() ?? string.Empty)}[/]", stat.Message.EscapeMarkup());
-            }
-            AnsiConsole.Write(table);
-            if (result.Messages?.Any() ?? false)
-            {
-                AnsiConsole.WriteLine();
-                foreach (var message in result.Messages)
+                var table = new Table();
+                table.AddColumn("Statistic");
+                table.AddColumn("Data");
+                table.AddColumn("Information");
+                foreach (var stat in result.Data ?? [])
                 {
-                    AnsiConsole.WriteLine(message.EscapeMarkup());
+                    if(!settings.ShowOnlyIssues || (settings.ShowOnlyIssues && stat.Type != StatisticType.Information))
+                    {
+                        table.AddRow(stat.Title, $"[{stat.DisplayColor}]{(stat.Data?.ToString().EscapeMarkup() ?? string.Empty)}[/]", stat.Message.EscapeMarkup());
+                    }
                 }
-                AnsiConsole.WriteLine();
+
+                AnsiConsole.Write(table);
+                if (!settings.ShowOnlyIssues)
+                {
+                    if (result.Messages?.Any() ?? false)
+                    {
+                        AnsiConsole.WriteLine();
+                        foreach (var message in result.Messages)
+                        {
+                            AnsiConsole.WriteLine(message.EscapeMarkup());
+                        }
+
+                        AnsiConsole.WriteLine();
+                    }
+                }
             }
+            else
+            {
+                foreach (var stat in result.Data ?? [])
+                {
+                    if (!settings.ShowOnlyIssues || (settings.ShowOnlyIssues && stat.Type != StatisticType.Information))
+                    {
+                        Console.WriteLine($"{stat.Title}\t{stat.Data}\t{stat.Message}");
+                    }
+                }
+            }
+
             return 1;
         }
     }

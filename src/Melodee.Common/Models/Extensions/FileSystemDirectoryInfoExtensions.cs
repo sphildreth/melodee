@@ -163,7 +163,6 @@ public static class FileSystemDirectoryInfoExtensions
                 }
             }
         }
-
         highestNumberFound++;
         return ($"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maximumNumberOfImageTypeAllowed)}-{imageType}.jpg", highestNumberFound);
     }
