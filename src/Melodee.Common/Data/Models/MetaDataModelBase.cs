@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using Melodee.Common.Data.Contants;
+using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
 namespace Melodee.Common.Data.Models;
 
+[Index(nameof(MusicBrainzId), IsUnique = true)]
 [Serializable]
 public abstract class MetaDataModelBase : DataModelBase
 {
