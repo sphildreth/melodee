@@ -119,7 +119,7 @@ public static class FileSystemDirectoryInfoExtensions
         return results.ToArray();
     }
 
-    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, IMelodeeConfiguration configuraiton, Instant? modifiedSince, SearchOption searchOption)
+    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, IMelodeeConfiguration configuration, Instant? modifiedSince, SearchOption searchOption)
     {
         if (string.IsNullOrWhiteSpace(fileSystemDirectoryInfo.Path))
         {
@@ -140,7 +140,7 @@ public static class FileSystemDirectoryInfoExtensions
         {
             result.Add(fileSystemDirectoryInfo);
         }
-        var skipDirPrefix = configuraiton.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
+        var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
         if (skipDirPrefix.Nullify() != null)
         {
             return result.Where(x => !x.Name.StartsWith(skipDirPrefix!)).ToArray();

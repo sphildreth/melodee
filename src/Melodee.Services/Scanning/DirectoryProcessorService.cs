@@ -240,6 +240,7 @@ public sealed class DirectoryProcessorService(
 
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
+            Console.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
             try
             {
                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
