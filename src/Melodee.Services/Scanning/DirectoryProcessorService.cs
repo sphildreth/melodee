@@ -557,7 +557,7 @@ public sealed class DirectoryProcessorService(
                             File.Copy(oldImageFileName, newImageFileName, true);
                             if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                             {
-                                File.Delete(image.FileInfo!.FullName(albumKvp.Key.Directory));
+                                File.Delete(oldImageFileName);
                             }
                             image.FileInfo!.Name = Path.GetFileName(newImageFileName);
                         }
@@ -1051,6 +1051,7 @@ public sealed class DirectoryProcessorService(
 
     private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
+        var albumTitleNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? throw new Exception("Album title is invalid");
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
         // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image directories.
@@ -1068,7 +1069,7 @@ public sealed class DirectoryProcessorService(
             }
 
             var fileInfo = new FileInfo(imageFile);
-
+            
             if (album.IsFileForAlbum(fileInfo))
             {
                 // Move the image if not in the album directory
@@ -1092,8 +1093,7 @@ public sealed class DirectoryProcessorService(
                 var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);
                 var artistNormalized = album.Artist.NameNormalized;
                 var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;
-                var isAlbumImage = fileNameNormalized.Contains(artistNormalized, StringComparison.OrdinalIgnoreCase) &&
-                                   fileNameNormalized.Contains(albumNameNormalized, StringComparison.OrdinalIgnoreCase);
+                var isAlbumImage = fileNameNormalized.Contains(albumNameNormalized, StringComparison.OrdinalIgnoreCase);
                 if (isAlbumImage ||
                     ImageHelper.IsAlbumImage(fileInfo) ||
                     ImageHelper.IsAlbumSecondaryImage(fileInfo))

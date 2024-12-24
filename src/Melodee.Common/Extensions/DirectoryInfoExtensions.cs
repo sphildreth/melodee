@@ -17,7 +17,7 @@ public static class DirectoryInfoExtensions
         {
             return false;
         }
-        return directory.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension));
+        return directory.EnumerateFiles("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileMediaType(x.Extension));
     }    
     
     public static void DeleteIfEmpty(this DirectoryInfo directory)

@@ -162,11 +162,11 @@ public sealed class CueSheet(
                             {
                                 var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{convertedExtension}");
                                 cueFile.MoveTo(movedFileName);
-                                Log.Debug($"\ud83d\ude9b Renamed CUE file [{cueFile.Name}] => [{Path.GetFileName(movedFileName)}]");
+                                Log.Debug($"-r- Renamed CUE file [{cueFile.Name}] => [{Path.GetFileName(movedFileName)}]");
                                 var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
                                 var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{convertedExtension}");
                                 cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
-                                Log.Debug($"\ud83d\ude9b Renamed CUE Media file [{cueFileMediaFile.Name}] => [{Path.GetFileName(movedCueFileMediaFileFileName)}]");
+                                Log.Debug($"-r- Renamed CUE Media file [{cueFileMediaFile.Name}] => [{Path.GetFileName(movedCueFileMediaFileFileName)}]");
                             }
 
                             fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.Nfo.HandlesExtension);

@@ -73,6 +73,7 @@ public static class ImageHelper
         "DVD",
         "ENCARTES",
         "INSIDE",
+        "INNER",
         "INLAY",
         "INSITE",
         "JEWEL",

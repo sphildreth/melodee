@@ -394,10 +394,9 @@ public static class AlbumExtensions
 
         try
         {
-            var normalizedArtistName = album.Artist?.ToAlphanumericName() ?? string.Empty;
             var normalizedTitleName = album.AlbumTitle()?.ToAlphanumericName() ?? string.Empty;
 
-            if ((normalizedName.Contains(normalizedArtistName) && normalizedName.Contains(normalizedTitleName)))
+            if (normalizedName.Contains(normalizedTitleName))
             {
                 return true;
             }
@@ -408,8 +407,7 @@ public static class AlbumExtensions
                 {
                     var normalizedSongArtist = song.SongArtist()?.ToAlphanumericName() ?? string.Empty;
                     var normalizedSongName = song.Title()?.ToAlphanumericName() ?? string.Empty;
-                    if ((normalizedName.Contains(normalizedArtistName) || normalizedName.Contains(normalizedSongArtist)) &&
-                        normalizedName.Contains(normalizedSongName))
+                    if (normalizedName.Contains(normalizedSongName))
                     {
                         return true;
                     }
