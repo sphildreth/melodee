@@ -860,7 +860,9 @@ public sealed class LibraryService(
             };
         }
         var messages = new List<string>();
-        var allDirectoriesInLibrary = Directory.GetDirectories(library.Path, "*", SearchOption.AllDirectories).ToArray();
+        Console.WriteLine($"Cleaning [{library.Path}]...");
+        var allDirectoriesInLibrary = Directory.GetDirectories(library.Path, "*.*", SearchOption.TopDirectoryOnly).ToArray();
+        Console.WriteLine($"Found [{allDirectoriesInLibrary.Length}] directories...");
         var libraryDirectoryCountBeforeCleaning = allDirectoriesInLibrary.Length;
         var directoriesWithoutMediaFiles = new ConcurrentBag<string>();
         Parallel.ForEach(allDirectoriesInLibrary, directory =>
@@ -869,10 +871,14 @@ public sealed class LibraryService(
         });
         if (directoriesWithoutMediaFiles.Distinct().Any())
         {
+            Console.WriteLine($"Found [{directoriesWithoutMediaFiles.Count}] directories with no media files...");
             foreach (var directory in directoriesWithoutMediaFiles.Distinct())
             {
-                Directory.Delete(directory, true);
-                messages.Add($"Directory [{directory}] deleted.");
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                    messages.Add($"Directory [{directory}] deleted.");
+                }
             }
         }
         allDirectoriesInLibrary = Directory.GetDirectories(library.Path, "*", SearchOption.AllDirectories).ToArray();
@@ -895,6 +901,11 @@ public sealed class LibraryService(
                 result.Add(directory.FullName);
             }
             result.AddRange(GetDirectoriesWithoutMediaFiles(directory.FullName));
+        }
+
+        if (!d.DoesDirectoryHaveMediaFiles())
+        {
+            result.Add(d.FullName);
         }
         return result.Distinct().ToArray();
     }

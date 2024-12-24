@@ -405,6 +405,11 @@ public class LibraryInsertJob(
                     
                     var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
                     var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
+                    if (nameNormalized.Nullify() == null)
+                    {
+                        Logger.Warning("Album [{Album}] has invalid Album title, unable to generate NameNormalized.", melodeeAlbum);
+                        continue;
+                    }
                     var dbAlbumResult = await albumService.GetByApiKeyAsync(melodeeAlbum.Id, cancellationToken).ConfigureAwait(false);
                     if (!dbAlbumResult.IsSuccess)
                     {
@@ -507,7 +512,7 @@ public class LibraryInsertJob(
                                     Genres = melodeeAlbum.Genre()?.Nullify() == null ? null : song.Genre()!.Split('/'),
                                     IsVbr = song.IsVbr(),
                                     Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
-                                    MusicBrainzId = song.MetaTagValue<Guid>(MetaTagIdentifier.MusicBrainzId),
+                                    MusicBrainzId = song.MetaTagValue<Guid?>(MetaTagIdentifier.MusicBrainzId),
                                     PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
                                     SortOrder = song.SortOrder,
                                     TitleSort = songTitle.CleanString(true)

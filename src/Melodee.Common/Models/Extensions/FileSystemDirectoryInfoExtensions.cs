@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Xml.XPath;
 using Commons;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -17,6 +19,8 @@ public static class FileSystemDirectoryInfoExtensions
     public static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|\s?best\s?of|greatest(s*)\s?hit(s*)|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex IsDirectoryDiscographyRegex = new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
+    public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new("(cd|disc|disk|side|media|a|b|c|d|e|f)([0-9]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     /// <summary>
     /// Rename the Directory and prepend the given prefix.
@@ -106,6 +110,28 @@ public static class FileSystemDirectoryInfoExtensions
         return !string.IsNullOrWhiteSpace(dir) && IsDirectoryDiscographyRegex.IsMatch(dir);
     }
 
+    public static bool IsAlbumMediaDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var dir = fileSystemDirectoryInfo.Name;
+        return !string.IsNullOrWhiteSpace(dir) && IsDirectoryAlbumMediaDirectoryRegex.IsMatch(dir);
+    }
+
+    public static IEnumerable<FileSystemDirectoryInfo> AllAlbumMediaDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var result = new List<FileSystemDirectoryInfo>();
+        foreach (var dirInfo in fileSystemDirectoryInfo.AllDirectoryInfos())
+        {
+            if (dirInfo.ToDirectorySystemInfo().IsAlbumMediaDirectory())
+            {
+                result.Add(dirInfo.ToDirectorySystemInfo());
+            }
+        }
+        return result.ToArray();
+    }
+
+    public static FileSystemDirectoryInfo GetParent(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+        => fileSystemDirectoryInfo.GetParents().First();
+
     public static IEnumerable<FileSystemDirectoryInfo> GetParents(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var results = new List<FileSystemDirectoryInfo>();
@@ -191,6 +217,16 @@ public static class FileSystemDirectoryInfoExtensions
 
         return dirInfo.EnumerateFiles(searchPattern ?? "*.*", SearchOption.TopDirectoryOnly);
     }
+    
+    public static IEnumerable<DirectoryInfo> AllDirectoryInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null)
+    {
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+        if (!dirInfo.Exists)
+        {
+            return [];
+        }
+        return dirInfo.EnumerateDirectories(searchPattern ?? "*.*", SearchOption.TopDirectoryOnly);
+    }    
 
     public static void DeleteAllEmptyDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {

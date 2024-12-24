@@ -230,6 +230,9 @@ public sealed class DirectoryProcessorService(
         }
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
+
+        directoriesToProcess = HandleAnyDirectoriesWithMultipleMediaDirectories(directoriesToProcess, cancellationToken);
+        
         if (directoriesToProcess.Count > 0)
         {
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
@@ -475,7 +478,7 @@ public sealed class DirectoryProcessorService(
                         album.Images = albumImages.ToArray();
 
                         // Look in the album directory and see if there are any artist images. 
-                        // Most of the time an artist image is one up from an album folder in the 'artist' folder.
+                        // Most of the time an artist image is one up from an album directory in the 'artist' directory.
                         var artistImages = new List<ImageInfo>();
                         var foundArtistImages = (await FindImagesForArtist(album, _imageConvertor, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
                         if (foundArtistImages.Length != 0)
@@ -871,6 +874,61 @@ public sealed class DirectoryProcessorService(
         };
     }
 
+    private List<FileSystemDirectoryInfo> HandleAnyDirectoriesWithMultipleMediaDirectories(List<FileSystemDirectoryInfo> directoriesToProcess, CancellationToken cancellationToken)
+    {
+        var result = new List<FileSystemDirectoryInfo>();
+        var handledParents = new List<FileSystemDirectoryInfo>();
+        
+        foreach (var directory in directoriesToProcess)
+        {
+            var directoryParent = directory.GetParent();
+            if (directory.IsAlbumMediaDirectory() && !handledParents.Contains(directoryParent))
+            {
+                var allMediaDirectoriesInParentDirectory = directoryParent.AllAlbumMediaDirectories().ToArray();
+                var totalMediaNumber = allMediaDirectoriesInParentDirectory.Count();
+                foreach (var mediaDirectory in allMediaDirectoriesInParentDirectory)
+                {
+                    var mediaNumber = mediaDirectory.Name.TryToGetMediaNumberFromString() ?? 1;                    
+                    foreach (var mediaFile in mediaDirectory.AllMediaTypeFileInfos().ToArray())
+                    {
+                        var fileAtl = new ATL.Track(mediaFile.FullName)
+                        {
+                            DiscNumber = mediaNumber,
+                            DiscTotal = totalMediaNumber
+                        };
+                        fileAtl.Save();
+                        var songFileName = SongExtensions.SongFileName(
+                            mediaFile,
+                            _configuration.GetValue<int>(SettingRegistry.ValidationMaximumSongNumber),
+                            fileAtl.TrackNumber ?? throw new Exception($"Cannot read track number for [{mediaFile}]"),
+                            fileAtl.Title ?? throw new Exception($"Cannot read song title for [{mediaFile}]"),
+                            _configuration.GetValue<int>(SettingRegistry.ValidationMaximumMediaNumber),
+                            mediaNumber,
+                            totalMediaNumber,
+                            ".mp3");
+                        mediaFile.MoveTo(Path.Combine(directoryParent.FullName(), songFileName));
+                    }
+                    foreach (var imageFile in mediaDirectory.AllFileImageTypeFileInfos())
+                    {
+                        var newImageFilename = Path.Combine(directoryParent.FullName(), imageFile.Name);
+                        if (!File.Exists(newImageFilename))
+                        {
+                            imageFile.MoveTo(newImageFilename);
+                        }
+                    }
+                    Directory.Delete(mediaDirectory.FullName());
+                }
+                handledParents.Add(directoryParent);
+                result.Add(directoryParent);
+            }
+            else if (!directory.IsAlbumMediaDirectory())
+            {
+                result.Add(directory);
+            }
+        }
+        return result;
+    }
+
     /// <summary>
     ///     This is raised when a Log event happens to return activity to caller.
     /// </summary>
@@ -918,13 +976,13 @@ public sealed class DirectoryProcessorService(
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
-        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image folders.
+        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image directories.
         foreach (var dir in album.ImageDirectories())
         {
             imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
         }
 
-        // Sometimes the album is in a folder like "Albums" or "Studio Albums" part of a Discography.  
+        // Sometimes the album is in a directory like "Albums" or "Studio Albums" part of a Discography.  
         var parents = album.OriginalDirectory.GetParents();
         var discographyDirectory = parents.FirstOrDefault(x => x.IsDiscographyDirectory());
         if (discographyDirectory != null)
@@ -995,7 +1053,7 @@ public sealed class DirectoryProcessorService(
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
-        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image folders.
+        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image directories.
         foreach (var dir in album.ImageDirectories())
         {
             imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly).Select(x => $"{dir.Name}-{x}"));

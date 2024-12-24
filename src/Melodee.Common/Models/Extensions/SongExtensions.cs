@@ -43,6 +43,12 @@ public static class SongExtensions
                 return (T?)converter.ConvertFrom(short.Parse(vv.ToString() ?? string.Empty));
             }
 
+            if (tType == typeof(Guid) || tType == typeof(Guid?))
+            {
+                var g = Guid.Parse(vv.ToString() ?? string.Empty);
+                return g == Guid.Empty ? d : (T?)converter.ConvertFrom(g);
+            }
+
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)

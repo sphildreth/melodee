@@ -127,6 +127,11 @@ public static class AlbumExtensions
             return (false, "Album has no songs.");
         }
 
+        if (album.MediaCountValue() == 0)
+        {
+            return (false, "Album media count is invalid.");
+        }
+
         if (!album.Artist.IsValid())
         {
             return (false, "Artist is invalid.");
@@ -136,12 +141,15 @@ public static class AlbumExtensions
         {
             return (false, "Album has no valid songs.");
         }
-
-        var songsGroupedByMediaNumber = album.Songs?.GroupBy(x => x.MediaNumber());
-        var songsGroupedByMediaNumberAndSongNumber = songsGroupedByMediaNumber?.SelectMany(x => x).GroupBy(x => x.SongNumber());
-        if (songsGroupedByMediaNumberAndSongNumber?.Where(x => x.Count() > 1)?.Any() ?? false)
+        
+        var songsGroupedByMediaNumber = (album.Songs?.GroupBy(x => x.MediaNumber()) ?? []).ToArray();
+        if (!songsGroupedByMediaNumber.Select(x => SafeParser.ToNumber<int>(x.Key)).Order().ToArray().AreNumbersSequential())
         {
-            return (false, "Album has media and/or song numbers that are duplicated.");
+            return (false, "Album has media numbers that are invalid.");
+        }
+        if (songsGroupedByMediaNumber.Any(mediaGroups => !mediaGroups.Select(x => x.SongNumber()).Order().ToArray().AreNumbersSequential()))
+        {
+            return (false, "Album has song numbers that are invalid.");
         }
 
         var albumTitle = album.AlbumTitle().Nullify();

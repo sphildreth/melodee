@@ -1,5 +1,6 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
+using Melodee.Services;
 
 namespace Melodee.Tests.Services;
 
@@ -14,4 +15,5 @@ public sealed class LibraryServiceTests : ServiceTestBase
         Assert.Equal(1, listResult.TotalPages);
         Assert.Equal(3, listResult.TotalCount);
     }
+    
 }

@@ -38,6 +38,30 @@ public class FileSystemDirectoryInfoExtensionTests
     }    
     
     [Theory]
+    [InlineData("Bobs Discography", false)]
+    [InlineData("Media Madness", false)]
+    [InlineData("Media 2013 Madness", false)]
+    [InlineData("Artist - [2000] Album", false)]
+    [InlineData("CD", false)]
+    [InlineData("A0", true)] // sph; I dont know why, but these are common
+    [InlineData("A1", true)]
+    [InlineData("AA1", true)]
+    [InlineData("AAA1", true)]
+    [InlineData("B2", true)]
+    [InlineData("CD01", true)]
+    [InlineData("CD1", true)]
+    [InlineData("DISC1", true)]
+    [InlineData("media001", true)]
+    public void IsDirectoryAlbumMedia(string input, bool shouldBe)
+    {
+        Assert.Equal(shouldBe, new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = input
+        }.IsAlbumMediaDirectory());
+    }     
+    
+    [Theory]
     [InlineData("Albums", true)]
     [InlineData("EP", true)]
     [InlineData("Eps", true)]
