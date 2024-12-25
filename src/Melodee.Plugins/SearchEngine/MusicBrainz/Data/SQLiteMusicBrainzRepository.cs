@@ -53,6 +53,7 @@ public class SQLiteMusicBrainzRepository(
         var startTicks = Stopwatch.GetTimestamp();
         var data = new List<ArtistSearchResult>();
 
+        int maxLuceneResults = 10;
         long totalCount = 0;
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
@@ -74,7 +75,7 @@ public class SQLiteMusicBrainzRepository(
                     TermQuery catQuery2 = new TermQuery(new Term(nameof(Models.Materialized.Artist.AlternateNames), query.NameNormalized));
                     categoryQuery.Add(new BooleanClause(catQuery1, Occur.SHOULD));
                     categoryQuery.Add(new BooleanClause(catQuery2, Occur.SHOULD));
-                    ScoreDoc[] hits = searcher.Search(categoryQuery, maxResults).ScoreDocs;
+                    ScoreDoc[] hits = searcher.Search(categoryQuery, maxLuceneResults).ScoreDocs;
                     musicBrainzIdsFromLucene.AddRange(hits.Select(t => searcher.Doc(t.Doc)).Select(hitDoc => hitDoc.Get(nameof(Models.Materialized.Artist.MusicBrainzIdRaw))));
                 }
             }
@@ -92,7 +93,7 @@ public class SQLiteMusicBrainzRepository(
                               where a.MusicBrainzIdRaw in ('{0}')
                               order by a."SortName"
                               """;
-                    var pSql = sql.FormatSmart(string.Join(',', musicBrainzIdsFromLucene));
+                    var pSql = sql.FormatSmart(string.Join(@"','", musicBrainzIdsFromLucene));
                     var artists = db.Query<Models.Materialized.Artist>(pSql).ToArray();
 
                     foreach (var artist in artists)
@@ -118,21 +119,21 @@ public class SQLiteMusicBrainzRepository(
                               FROM "Album"
                               WHERE MusicBrainzArtistId = {0}
                               and ('{1}' = '' OR NameNormalized in ('{1}'))
-                              and ('{2}' = '' OR SUBSTR(ReleaseDate, 0, 5) in ('{2}'))
                               group by ReleaseGroupMusicBrainzIdRaw
                               order by ReleaseDate
                               """;
-                        var ssql = sql.FormatSmart(artist.MusicBrainzArtistId, string.Join(",", query.AlbumKeyValues?.Select(x => x.Value) ?? []), string.Join(",", query.AlbumKeyValues?.Select(x => x.Key) ?? []));
+                        var ssql = sql.FormatSmart(artist.MusicBrainzArtistId, string.Join(@"','", query.AlbumKeyValues?.Select(x => x.Value.ToNormalizedString()) ?? []), string.Join(@"','", query.AlbumKeyValues?.Select(x => x.Key) ?? []));
                         var artistAlbums = db.Query<Models.Materialized.Album>(ssql).ToArray();
 
                         rank += artistAlbums.Length;
 
                         if (query.AlbumKeyValues != null)
                         {
-                            artistAlbums = artistAlbums.Where(x => query.AlbumKeyValues.Any(xx => xx.Key == x.ReleaseDate.Year.ToString() &&
-                                                                                                  (x.NameNormalized.Equals(xx.Value ?? string.Empty) ||
-                                                                                                   x.NameNormalized.Contains(xx.Value ?? string.Empty)))).ToArray();
                             rank += artistAlbums.Length;
+                            foreach (var albumKeyValues in query.AlbumKeyValues)
+                            {
+                                rank += artistAlbums.Count(x => x.ReleaseDate.Year.ToString() == albumKeyValues.Key && x.NameNormalized == albumKeyValues.Value.ToNormalizedString());
+                            }
                         }
 
                         data.Add(new ArtistSearchResult
@@ -155,6 +156,7 @@ public class SQLiteMusicBrainzRepository(
                                     UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                                     Name = x.Name,
                                     NameNormalized = x.NameNormalized,
+                                    MusicBrainzResourceGroupId = x.ReleaseGroupMusicBrainzId,
                                     SortName = x.SortName,
                                     MusicBrainzId = x.MusicBrainzId
                                 }).ToArray()

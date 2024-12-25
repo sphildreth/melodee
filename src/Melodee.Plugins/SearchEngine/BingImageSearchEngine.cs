@@ -8,7 +8,9 @@ using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
+using Serilog;
 
 namespace Melodee.Plugins.SearchEngine;
 
@@ -16,7 +18,7 @@ namespace Melodee.Plugins.SearchEngine;
 ///     Bing image search plugin.
 ///     <remarks>https://learn.microsoft.com/en-us/bing/search-apis/bing-image-search/quickstarts/rest/csharp</remarks>
 /// </summary>
-public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) 
+public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory)
     : IAlbumImageSearchEnginePlugin, IArtistImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
@@ -28,7 +30,7 @@ public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configurati
     public bool IsEnabled { get; set; }
 
     public int SortOrder { get; } = 1;
-    
+
     public Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken token = default)
         => DoAlbumImageSearchAction(query.Name.Trim(), maxResults, token);
 
@@ -39,81 +41,88 @@ public sealed class BingAlbumImageSearchEngine(IMelodeeConfiguration configurati
     {
         var result = new List<ImageSearchResult>();
 
-        var bingApiKey = configuration.GetValue<string?>(SettingRegistry.SearchEngineBingImageApiKey);
-        if (bingApiKey.Nullify() == null || !configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled))
+        try
         {
-            return new OperationResult<ImageSearchResult[]?>("Bing image search plugin is disabled.")
+            var bingApiKey = configuration.GetValue<string?>(SettingRegistry.SearchEngineBingImageApiKey);
+            if (bingApiKey.Nullify() == null || !configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled))
             {
-                Data = null
-            };
-        }
-
-        var queryArguments = new Dictionary<string, string?>
-        {
-            { "count", maxResults.ToString() },
-            { "safeSearch", "Off" },
-            { "aspect", "Square" },
-            { "q", $"'{Uri.EscapeDataString(query)}'" }
-        };
-
-        var httpRequestMessage = new HttpRequestMessage(
-            HttpMethod.Get,
-            QueryHelpers.AddQueryString("https://api.bing.microsoft.com/v7.0/images/search", queryArguments))
-        {
-            Headers =
-            {
-                { HeaderNames.Accept, "application/json" },
-                { HeaderNames.UserAgent, configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) },
-                { "Ocp-Apim-Subscription-Key", bingApiKey }
-            }
-        };
-
-        var httpClient = httpClientFactory.CreateClient();
-
-        var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, token);
-
-        var contentString = await httpResponseMessage.Content.ReadAsStringAsync(token);
-        Dictionary<string, object?> searchResponse = serializer.Deserialize<Dictionary<string, object?>>(contentString) ?? new Dictionary<string, object?>();
-
-        if (httpResponseMessage.IsSuccessStatusCode)
-        {
-            var imageResult = serializer.Deserialize<BingImageSearchResult[]>(searchResponse["value"]?.ToString());
-
-            if (imageResult?.Any() ?? false)
-            {
-                result.AddRange(imageResult.Select(x => new ImageSearchResult
-                {
-                    FromPlugin = nameof(BingAlbumImageSearchEngine),
-                    UniqueId = SafeParser.Hash(x.thumbnailUrl ?? string.Empty, x.contentUrl ?? string.Empty),
-                    Width = x.width ?? 0,
-                    Height = x.height ?? 0,
-                    ThumbnailUrl = x.thumbnailUrl ?? string.Empty,
-                    MediaUrl = x.contentUrl ?? string.Empty,
-                    Title = x.hostPageUrl ?? string.Empty
-                }));
-            }
-        }
-        else
-        {
-            if (searchResponse.TryGetValue("error", out var value)) // typically 401, 403
-            {
-                if (value is HttpStatusCode.Unauthorized)
-                {
-                    throw new AuthenticationException("Bing ApiKey is not correct");
-                }
-
-                if (value != null)
-                {
-                    throw new Exception($"Bin request error: {value}.");
-                }
-            }
-            else if (searchResponse.TryGetValue("errors", out value))
-            {
-                return new OperationResult<ImageSearchResult[]?>(searchResponse["errors"] as string ?? string.Empty)
+                return new OperationResult<ImageSearchResult[]?>("Bing image search plugin is disabled.")
                 {
                     Data = null
                 };
             }
+
+            var queryArguments = new Dictionary<string, string?>
+            {
+                { "count", maxResults.ToString() },
+                { "safeSearch", "Off" },
+                { "aspect", "Square" },
+                { "q", $"'{Uri.EscapeDataString(query)}'" }
+            };
+
+            var httpRequestMessage = new HttpRequestMessage(
+                HttpMethod.Get,
+                QueryHelpers.AddQueryString("https://api.bing.microsoft.com/v7.0/images/search", queryArguments))
+            {
+                Headers =
+                {
+                    { HeaderNames.Accept, "application/json" },
+                    { HeaderNames.UserAgent, configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) },
+                    { "Ocp-Apim-Subscription-Key", bingApiKey }
+                }
+            };
+
+            var httpClient = httpClientFactory.CreateClient();
+
+            var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, token);
+
+            var contentString = await httpResponseMessage.Content.ReadAsStringAsync(token);
+            Dictionary<string, object?> searchResponse = serializer.Deserialize<Dictionary<string, object?>>(contentString) ?? new Dictionary<string, object?>();
+
+            if (httpResponseMessage.IsSuccessStatusCode)
+            {
+                var imageResult = serializer.Deserialize<BingImageSearchResult[]>(searchResponse["value"]?.ToString());
+
+                if (imageResult?.Any() ?? false)
+                {
+                    result.AddRange(imageResult.Select(x => new ImageSearchResult
+                    {
+                        FromPlugin = nameof(BingAlbumImageSearchEngine),
+                        UniqueId = SafeParser.Hash(x.thumbnailUrl ?? string.Empty, x.contentUrl ?? string.Empty),
+                        Width = x.width ?? 0,
+                        Height = x.height ?? 0,
+                        ThumbnailUrl = x.thumbnailUrl ?? string.Empty,
+                        MediaUrl = x.contentUrl ?? string.Empty,
+                        Title = x.hostPageUrl ?? string.Empty
+                    }));
+                }
+            }
+            else
+            {
+                if (searchResponse.TryGetValue("error", out var value)) // typically 401, 403
+                {
+                    if (value is HttpStatusCode.Unauthorized)
+                    {
+                        throw new AuthenticationException("Bing ApiKey is not correct");
+                    }
+
+                    if (value != null)
+                    {
+                        throw new Exception($"Bin request error: {value}.");
+                    }
+                }
+                else if (searchResponse.TryGetValue("errors", out value))
+                {
+                    return new OperationResult<ImageSearchResult[]?>(searchResponse["errors"] as string ?? string.Empty)
+                    {
+                        Data = null
+                    };
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "An error occured while searching for bing images. Query [{Query}]", query);
         }
 
         return new OperationResult<ImageSearchResult[]?>

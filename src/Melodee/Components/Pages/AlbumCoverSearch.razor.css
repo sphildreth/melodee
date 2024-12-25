@@ -5,7 +5,7 @@
 }
 
 .cover-search-images-container {
-  max-height: 500px;
+  min-height: 300px;
   overflow: auto;
   border: 1px solid lightgray;
 }

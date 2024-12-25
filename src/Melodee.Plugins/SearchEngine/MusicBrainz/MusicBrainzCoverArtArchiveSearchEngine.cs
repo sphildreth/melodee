@@ -1,7 +1,9 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
+using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Serilog;
 
@@ -38,25 +40,31 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
 
         try
         {
-            if (query.MusicBrainzIdValue != null)
+            var musicBrainzId = SafeParser.ToGuid(query.MusicBrainzId);
+            if (musicBrainzId == null && query.Artist.Nullify() != null && query.Name.Nullify() != null)
             {
-                // Get resource group from Melodee MusicBrainz db for given MusicBrainzId
-                var mbAlbum = await repository.GetAlbumByMusicBrainzId(query.MusicBrainzIdValue.Value, token).ConfigureAwait(false);
-                if (mbAlbum == null)
+                var artistSearchResult = await repository.SearchArtist(new ArtistQuery
                 {
-                    return new OperationResult<ImageSearchResult[]?>($"[{nameof(MusicBrainzCoverArtArchiveSearchEngine)}] unable to find MusicBrainz database Album by Id [{query.MusicBrainzId}]")
+                    Name = query.Artist!,
+                    AlbumKeyValues =
+                    [
+                        new KeyValue(query.Year.ToString(), query.Name)
+                    ]
+                }, 1, token).ConfigureAwait(false);
+                if (artistSearchResult.IsSuccess)
+                {
+                    var rg = artistSearchResult.Data.FirstOrDefault()?.Releases?.FirstOrDefault()?.MusicBrainzResourceGroupId;
+                    if (rg != null)
                     {
-                        Data = null
-                    };
+                        result.Add(new ImageSearchResult
+                        {
+                            FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),
+                            Rank = 10,
+                            ThumbnailUrl = string.Empty,
+                            MediaUrl = $"https://coverartarchive.org/release-group/{rg}/front"
+                        });
+                    }
                 }
-
-                result.Add(new ImageSearchResult
-                {
-                    FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),
-                    Rank = 10,
-                    ThumbnailUrl = string.Empty,
-                    MediaUrl = $"https://coverartarchive.org/release-group/{mbAlbum.ReleaseGroupMusicBrainzId}/front"
-                });
             }
         }
         catch (Exception e)

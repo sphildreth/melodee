@@ -1,3 +1,5 @@
+using Melodee.Common.Extensions;
+
 namespace Melodee.Common.Models.SearchEngines;
 
 public sealed record ImageSearchResult
@@ -17,6 +19,8 @@ public sealed record ImageSearchResult
     public required string ThumbnailUrl { get; init; }
 
     public required string MediaUrl { get; init; }
+
+    public string UrlValue => ThumbnailUrl.Nullify() ?? MediaUrl;
 
     public string? Title { get; init; }
 }
