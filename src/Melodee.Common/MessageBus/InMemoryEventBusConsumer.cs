@@ -65,8 +65,8 @@ public sealed class InMemoryEventBusConsumer<T>(ChannelReader<Event<T>> bus, ISe
         await DisposeAsync().ConfigureAwait(false);
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        //_stoppingToken.Cancel();
+        return default;
     }
 }

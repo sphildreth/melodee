@@ -9,14 +9,17 @@ using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
-using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 
 namespace Melodee.Plugins.MetaData.Directory;
 
-public sealed class M3UPlaylist(ISerializer serializer, IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class M3UPlaylist(
+    ISerializer serializer,
+    IEnumerable<ISongPlugin> songPlugins,
+    IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration),
+    IDirectoryPlugin
 {
     public const string HandlesExtension = "M3U";
 
@@ -111,7 +114,7 @@ public sealed class M3UPlaylist(ISerializer serializer, IEnumerable<ISongPlugin>
                         {
                             Artist = new Artist(
                                 firstSong.AlbumArtist() ?? throw new Exception($"Invalid artist on { nameof(CueSheet) }"),
-                                firstSong.AlbumArtist().ToNormalizedString(),
+                                firstSong.AlbumArtist().ToNormalizedString() ?? firstSong.AlbumArtist()!,
                                 null),                           
                             Directory = fileSystemDirectoryInfo,
                             Files = new[]

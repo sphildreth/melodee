@@ -10,7 +10,7 @@ public class ShowTagsSettings : Spectre.Console.Cli.CommandSettings
     [CommandArgument(0, "[FILENAME]")]
     [Required]
     public string Filename { get; init; } = string.Empty;
-    
+
     [Description("Only display given tag values in seperated comma format, not a sexy website.")]
     [CommandOption("-o|--onlytags")]
     public string? OnlyTags { get; init; }

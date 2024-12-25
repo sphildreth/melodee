@@ -1,12 +1,10 @@
-﻿@page "/album/{libraryApiKey:guid}/{uniqueId:long}/{returnUrl}"
-@using System.Security.Principal
+﻿@page "/album/{libraryApiKey:guid}/{albumId:guid}/{returnUrl}"
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Plugins.Conversion.Image
 @using Melodee.Plugins.Validation
 
 @inject AlbumDiscoveryService AlbumsDiscoverer
 @inject DefaultImages DefaultImages
-@inject DirectoryProcessorService DirectoryProcessorService
 @inject ISerializer Serializer
 @inject ILibraryService LibraryService
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -315,8 +313,8 @@
     private string? _albumCoverBase64;
     private string? _albumFullPath;
 
-    private IImageValidator _imageValidator;
-    private ImageConvertor _imageConvertor;
+    private IImageValidator _imageValidator = null!;
+    private ImageConvertor _imageConvertor = null!;
 
     private EditContext? _editFormEditContext;
     private readonly List<ToastMessage> _messages = [];
@@ -327,11 +325,11 @@
     private DiscEdit _selectedDisc = new DiscEdit();
     private SongEdit _selectedSong = new SongEdit();
 
-    private ConfirmDialog _confirmDialog = default!;
+    private ConfirmDialog _confirmDialog = null!;
 
-    private Modal _changeAlbumImageModal = default!;
+    private Modal _changeAlbumImageModal = null!;
 
-    private Modal _albumCoverSearchModal = default!;
+    private Modal _albumCoverSearchModal = null!;
 
     private AlbumEdit _albumEdit = new AlbumEdit
     {
@@ -351,7 +349,7 @@
 
     [Parameter] public Guid LibraryApiKey { get; set; }
 
-    [Parameter] public Guid Id { get; set; }
+    [Parameter] public Guid AlbumId { get; set; }
 
     [Parameter] public string? ReturnUrl { get; set; }
 
@@ -610,7 +608,7 @@
 
                 // Save album
                 var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
-                var album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), Id);
+                var album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), AlbumId);
 
                 album.SetTagValue(MetaTagIdentifier.Album, _albumEdit.Title);
                 album.SetTagValue(MetaTagIdentifier.Artist, _albumEdit.Artist);
@@ -671,7 +669,7 @@
         var library = (await LibraryService.GetByApiKeyAsync(LibraryApiKey)).Data!;
         await AlbumsDiscoverer.InitializeAsync();
         await MediaEditService.InitializeAsync();
-        _album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), Id);
+        _album = await AlbumsDiscoverer.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), AlbumId);
         _albumEdit = new AlbumEdit
         {
             Artist = _album.Artist.Name,

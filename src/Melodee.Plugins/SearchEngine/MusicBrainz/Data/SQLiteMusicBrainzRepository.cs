@@ -56,7 +56,7 @@ public class SQLiteMusicBrainzRepository(
         long totalCount = 0;
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
-        var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath);
+        var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath) ?? throw new InvalidOperationException($"Invalid setting for [{SettingRegistry.SearchEngineMusicBrainzStoragePath}]");
 
         var musicBrainzIdsFromLucene = new List<string>();
 

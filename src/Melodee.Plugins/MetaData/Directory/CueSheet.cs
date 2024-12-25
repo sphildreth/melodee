@@ -9,7 +9,6 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
-using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Directory.Models.Extensions;
@@ -24,7 +23,6 @@ namespace Melodee.Plugins.MetaData.Directory;
 ///     If a CUE file is found then split out the MP3 into Songs.
 /// </summary>
 public sealed class CueSheet(
-    ISerializer serializer,
     IEnumerable<ISongPlugin> songPlugins,
     IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration),
     IDirectoryPlugin

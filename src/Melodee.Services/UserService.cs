@@ -5,10 +5,12 @@ using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Utility;
 using Melodee.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design.Internal;
 using NodaTime;
 using Serilog;
 using Serilog.Events;
@@ -400,6 +402,33 @@ public sealed class UserService(
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateLastLogin(UserLoginEvent eventData, CancellationToken cancellationToken = default)
+    {
+        using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}]: Data [{EventData}]", nameof(UserService), eventData.ToString()))
+        {
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken))
+            {
+                var user = await GetAsync(eventData.UserId, cancellationToken).ConfigureAwait(false);
+                if (user.Data != null)
+                {
+                    await scopedContext.Users
+                        .Where(x => x.Id == eventData.UserId)
+                        .ExecuteUpdateAsync(setters =>
+                            setters.SetProperty(x => x.LastActivityAt, now)
+                                .SetProperty(x => x.LastLoginAt, now), cancellationToken).ConfigureAwait(false);
+                    ClearCache(user.Data.Email, user.Data.ApiKey, user.Data.Id, user.Data.UserName);
+                    // Prefetch as the user is clearly active
+                    await GetAsync(eventData.UserId, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = true
+        };
+    }
+    
     private void ClearCache(string? emailAddress, Guid? apiKey, int? id, string? username)
     {
         if (emailAddress != null)

@@ -2,7 +2,6 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
-using Melodee.Common.Serialization;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Serilog;
 
@@ -11,7 +10,9 @@ namespace Melodee.Plugins.SearchEngine.MusicBrainz;
 /// <summary>
 ///     https://musicbrainz.org/doc/Cover_Art_Archive/API
 /// </summary>
-public sealed class MusicBrainzCoverArtArchiveSearchEngine(IMelodeeConfiguration configuration, IMusicBrainzRepository repository, ISerializer serializer, IHttpClientFactory httpClientFactory) : IAlbumImageSearchEnginePlugin
+public sealed class MusicBrainzCoverArtArchiveSearchEngine(
+    IMelodeeConfiguration configuration,
+    IMusicBrainzRepository repository) : IAlbumImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 

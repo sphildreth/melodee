@@ -1,25 +1,13 @@
-using System.Net;
-using Lucene.Net.Codecs;
-using Mapster;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
-using Melodee.Common.Enums;
-using Melodee.Common.Extensions;
 using Melodee.Common.Serialization;
-using Melodee.Jobs;
-using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
-using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
-using Melodee.Services.Scanning;
-using Melodee.Services.SearchEngines;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Quartz;
-using Quartz.Impl;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
@@ -30,7 +18,7 @@ using Spectre.Console.Json;
 namespace Melodee.Cli.Command;
 
 /// <summary>
-/// Clean library of folders that don't add value. 
+///     Clean library of folders that don't add value.
 /// </summary>
 public class LibraryCleanCommand : AsyncCommand<LibraryCleanSettings>
 {
@@ -53,12 +41,12 @@ public class LibraryCleanCommand : AsyncCommand<LibraryCleanSettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddHttpClient();
-        services.AddSingleton<IDbConnectionFactory>(opt => 
+        services.AddSingleton<IDbConnectionFactory>(opt =>
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
-        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();    
+        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -66,7 +54,7 @@ public class LibraryCleanCommand : AsyncCommand<LibraryCleanSettings>
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
             var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
-            
+
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
@@ -91,6 +79,3 @@ public class LibraryCleanCommand : AsyncCommand<LibraryCleanSettings>
         }
     }
 }
-
-
-

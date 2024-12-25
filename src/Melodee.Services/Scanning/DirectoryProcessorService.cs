@@ -95,7 +95,7 @@ public sealed class DirectoryProcessorService(
 
         _directoryPlugins =
         [
-            new CueSheet(serializer, _songPlugins, _configuration)
+            new CueSheet(_songPlugins, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledCueSheet)
             },
@@ -103,7 +103,7 @@ public sealed class DirectoryProcessorService(
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledSimpleFileVerification)
             },
-            new M3UPlaylist(serializer, _songPlugins, _albumValidator, _configuration)
+            new M3UPlaylist(serializer, _songPlugins, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledM3u)
             },
@@ -791,7 +791,7 @@ public sealed class DirectoryProcessorService(
                     if (album.Status == AlbumStatus.Ok)
                     {
                         numberOfValidAlbumsProcessed++;
-                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\udc4d Found valid album [{fileSystemDirectoryInfo}]");
+                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\udc4d Found valid album [{album}]");
                         if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
                         {
                             LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");

@@ -34,7 +34,7 @@ public class AlbumImageSearchEngineService(
 
         var searchEngines = new List<IAlbumImageSearchEnginePlugin>
         {
-            new MusicBrainzCoverArtArchiveSearchEngine(configuration, musicBrainzRepository, serializer, httpClientFactory)
+            new MusicBrainzCoverArtArchiveSearchEngine(configuration, musicBrainzRepository)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
             },

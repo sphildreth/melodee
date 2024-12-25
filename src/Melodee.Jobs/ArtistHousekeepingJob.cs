@@ -1,6 +1,7 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -17,7 +18,7 @@ using Serilog;
 namespace Melodee.Jobs;
 
 /// <summary>
-/// Housekeeping for Artist
+///     Housekeeping for Artist
 /// </summary>
 public class ArtistHousekeepingJob(
     ILogger logger,
@@ -48,12 +49,14 @@ public class ArtistHousekeepingJob(
             {
                 maxNumberOfImagesAllowed = short.MaxValue;
             }
+
             foreach (var artist in artists)
             {
                 if (context.CancellationToken.IsCancellationRequested)
                 {
                     break;
                 }
+
                 var artistFileDirectory = artist.ToFileSystemDirectoryInfo();
                 var imageCount = artistFileDirectory.FileInfosForExtension("jpg").Count();
                 if (imageCount == 0)
@@ -65,7 +68,7 @@ public class ArtistHousekeepingJob(
                         .ConfigureAwait(false);
                     if (albumImageSearchResult.IsSuccess)
                     {
-                        var imageFileName = artistFileDirectory.GetNextFileNameForType(maxNumberOfImagesAllowed, Common.Data.Models.Artist.ImageType).Item1;
+                        var imageFileName = artistFileDirectory.GetNextFileNameForType(maxNumberOfImagesAllowed, Artist.ImageType).Item1;
                         if (await httpClient.DownloadFileAsync(
                                 albumImageSearchResult.Data.First().MediaUrl,
                                 imageFileName,
@@ -77,12 +80,9 @@ public class ArtistHousekeepingJob(
                             artist.MetaDataStatus = SafeParser.ToNumber<int>(MetaDataModelStatus.UpdatedImages);
                             artistService.ClearCache(artist);
                         }
-
                     }
                 }
-
             }
-            
         }
     }
 }

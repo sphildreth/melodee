@@ -52,7 +52,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
 
             var imageValidator = new ImageValidator(config);
             var imageConvertor = new ImageConvertor(config);
-            
+
             var fileInfo = new FileInfo(settings.Filename);
             if (!fileInfo.Exists)
             {
@@ -69,10 +69,9 @@ public class ParseCommand : AsyncCommand<ParseSettings>
 
             var isValid = false;
 
-            var cue = new CueSheet(serializer, new[]
-            {
+            var cue = new CueSheet([
                 new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
-            }, config);
+            ], config);
             if (cue.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try
@@ -83,7 +82,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                         if (settings.Verbose)
                         {
                             AnsiConsole.Write(
-                                new Panel(new JsonText(serializer.Serialize(parseCueResult)))
+                                new Panel(new JsonText(serializer.Serialize(parseCueResult)!))
                                     .Header("Parse Result")
                                     .Collapse()
                                     .RoundedBorder()
@@ -94,7 +93,6 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                     }
                     else
                     {
-
                         var cueResult = await cue.ProcessDirectoryAsync(fileInfo.Directory.ToDirectorySystemInfo());
 
                         Log.Debug("ℹ️  Processed CUE File [{NfoFilename}] in [{ElapsedTime}]", settings.Filename, Stopwatch.GetElapsedTime(startTicks));
@@ -102,28 +100,27 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                         if (settings.Verbose)
                         {
                             AnsiConsole.Write(
-                                new Panel(new JsonText(serializer.Serialize(cueResult)))
+                                new Panel(new JsonText(serializer.Serialize(cueResult)!))
                                     .Header("Parse Result")
                                     .Collapse()
                                     .RoundedBorder()
                                     .BorderColor(Color.Yellow));
                         }
-                        isValid = cueResult?.IsSuccess ?? false;
+
+                        isValid = cueResult.IsSuccess;
                     }
-                    
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                }                
+                }
             }
 
 
             var sfv = new SimpleFileVerification(serializer,
-                new[]
-                {
-                    new AtlMetaTag(new MetaTagsProcessor(config, serializer),imageConvertor, imageValidator, config)
-                }, new AlbumValidator(config), config);
+            [
+                new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
+            ], new AlbumValidator(config), config);
             if (sfv.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try
@@ -135,7 +132,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                     if (settings.Verbose)
                     {
                         AnsiConsole.Write(
-                            new Panel(new JsonText(serializer.Serialize(svfResult)))
+                            new Panel(new JsonText(serializer.Serialize(svfResult)!))
                                 .Header("Parse Result")
                                 .Collapse()
                                 .RoundedBorder()
@@ -151,11 +148,9 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             }
 
             var m3u = new M3UPlaylist(serializer,
-                new[]
-                {
-                    new AtlMetaTag(new MetaTagsProcessor(config, serializer),imageConvertor, imageValidator, config)
-                }, new AlbumValidator(config)
-                , config);
+                [
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
+                ], config);
             if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try
@@ -167,7 +162,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                     if (settings.Verbose)
                     {
                         AnsiConsole.Write(
-                            new Panel(new JsonText(serializer.Serialize(svfResult)))
+                            new Panel(new JsonText(serializer.Serialize(svfResult)!))
                                 .Header("Parse Result")
                                 .Collapse()
                                 .RoundedBorder()
@@ -182,7 +177,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 }
             }
 
-            var nfo = new Nfo(serializer,config);
+            var nfo = new Nfo(serializer, config);
             if (nfo.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try
@@ -194,14 +189,14 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                     if (settings.Verbose)
                     {
                         AnsiConsole.Write(
-                            new Panel(new JsonText(serializer.Serialize(nfoParserResult)))
+                            new Panel(new JsonText(serializer.Serialize(nfoParserResult)!))
                                 .Header("Parse Result")
                                 .Collapse()
                                 .RoundedBorder()
                                 .BorderColor(Color.Yellow));
                     }
 
-                    isValid = nfoParserResult.IsValid(config.Configuration).Item1;
+                    isValid = nfoParserResult?.IsValid(config.Configuration).Item1 ?? false;
                 }
                 catch (Exception e)
                 {

@@ -1,36 +1,24 @@
-using System.Net;
-using Lucene.Net.Codecs;
-using Mapster;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
-using Melodee.Common.Extensions;
 using Melodee.Common.Serialization;
-using Melodee.Jobs;
-using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
-using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
-using Melodee.Services.Scanning;
-using Melodee.Services.SearchEngines;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Quartz;
-using Quartz.Impl;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using Spectre.Console.Json;
 
 namespace Melodee.Cli.Command;
 
 /// <summary>
-/// Generate some statistics for the given Library. 
+///     Generate some statistics for the given Library.
 /// </summary>
 public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
 {
@@ -53,12 +41,12 @@ public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddHttpClient();
-        services.AddSingleton<IDbConnectionFactory>(opt => 
+        services.AddSingleton<IDbConnectionFactory>(opt =>
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
-        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();    
+        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -66,7 +54,7 @@ public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
             var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
-            
+
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
@@ -85,9 +73,9 @@ public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
                 table.AddColumn("Information");
                 foreach (var stat in result.Data ?? [])
                 {
-                    if(!settings.ShowOnlyIssues || (settings.ShowOnlyIssues && stat.Type != StatisticType.Information))
+                    if (!settings.ShowOnlyIssues || (settings.ShowOnlyIssues && stat.Type != StatisticType.Information))
                     {
-                        table.AddRow(stat.Title, $"[{stat.DisplayColor}]{(stat.Data?.ToString().EscapeMarkup() ?? string.Empty)}[/]", stat.Message.EscapeMarkup());
+                        table.AddRow(stat.Title, $"[{stat.DisplayColor}]{stat.Data?.ToString().EscapeMarkup() ?? string.Empty}[/]", stat.Message.EscapeMarkup());
                     }
                 }
 
@@ -121,6 +109,3 @@ public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
         }
     }
 }
-
-
-

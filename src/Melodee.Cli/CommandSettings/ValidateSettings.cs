@@ -9,15 +9,15 @@ public class ValidateSettings : Spectre.Console.Cli.CommandSettings
     [CommandOption("--verbose")]
     [DefaultValue(true)]
     public bool Verbose { get; init; }
-    
+
     [Description("Name of Library.")]
-    [CommandOption("--library")]    
+    [CommandOption("--library")]
     public string? LibraryName { get; init; }
 
     [Description("Id of Melodee Data File (melodee.json) file to validate.")]
-    [CommandOption("--id")] 
+    [CommandOption("--id")]
     public Guid? Id { get; init; }
-    
+
     [Description("ApiKey of Album to Validate.")]
     [CommandOption("--apiKey")]
     public string? ApiKey { get; init; }

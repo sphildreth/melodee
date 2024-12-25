@@ -12,12 +12,12 @@ public sealed class AlbumUpdatedEventHandler (
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory) : IEventHandler<AlbumUpdatedEvent>
 {
-    public ValueTask Handle(AlbumUpdatedEvent? eventData, CancellationToken cancellationToken = default)
+    public Task Handle(AlbumUpdatedEvent? eventData, CancellationToken cancellationToken = default)
     {
         if (eventData != null)
         {
             // TODO update db or something
         }
-        return default;
+        return Task.CompletedTask;
     }
 }

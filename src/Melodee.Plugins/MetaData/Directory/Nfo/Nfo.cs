@@ -386,7 +386,7 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
             {
                 Artist = new Artist(
                     artistName ?? throw new Exception($"Invalid artist on {nameof(Nfo)}"),
-                    artistName.ToNormalizedString(),
+                    artistName.ToNormalizedString() ?? artistName!,
                     null),
                 Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ?? new FileSystemDirectoryInfo
                 {

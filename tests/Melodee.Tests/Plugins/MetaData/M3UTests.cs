@@ -3,7 +3,6 @@ using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
 using Melodee.Plugins.Processor;
-using Melodee.Plugins.Validation;
 
 namespace Melodee.Tests.Plugins.MetaData;
 
@@ -19,7 +18,7 @@ public class M3UTests : TestsBase
             var m3U = new M3UPlaylist(Serializer,new[]
                 {
                     new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration())
-                }, new AlbumValidator(NewPluginsConfiguration()),
+                },
                 NewPluginsConfiguration());
             var m3UResult = await m3U.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {

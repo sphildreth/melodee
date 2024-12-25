@@ -47,18 +47,21 @@ public static class AlbumExtensions
                     else
                     {
                         var id = $"contributor_{artistContributor.ContributorName.ToNormalizedString()}";
-                        result.Add(new Common.Models.OpenSubsonic.ArtistID3(
-                            id,
-                            artistContributor.ContributorName,
-                            id,
-                             0,
-                            0,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null
-                        ));
+                        if (artistContributor.ContributorName != null)
+                        {
+                            result.Add(new ArtistID3(
+                                id,
+                                artistContributor.ContributorName,
+                                id,
+                                0,
+                                0,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null
+                            ));
+                        }
                     }
                 }
             }

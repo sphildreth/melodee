@@ -53,13 +53,13 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddHttpClient();
-        
-        services.AddSingleton<IDbConnectionFactory>(opt => 
+
+        services.AddSingleton<IDbConnectionFactory>(opt =>
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
-        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();    
+        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -69,7 +69,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
             var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
             var imageValidator = new ImageValidator(melodeeConfiguration);
-            
+
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
@@ -78,19 +78,19 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 null);
 
             var musicBrainzRepository = new SQLiteMusicBrainzRepository(
-                Log.Logger, 
-                melodeeConfigurationFactory, 
+                Log.Logger,
+                melodeeConfigurationFactory,
                 scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>());
-            
+
             var artistSearchEngineService = new ArtistSearchEngineService(
-                Log.Logger, 
-                cacheManager, 
+                Log.Logger,
+                cacheManager,
                 serializer,
                 settingService,
                 dbFactory,
                 musicBrainzRepository,
                 scope.ServiceProvider.GetRequiredService<IHttpClientFactory>());
-            
+
             var albumImageSearchEngineService = new AlbumImageSearchEngineService
             (
                 Log.Logger,
@@ -100,13 +100,14 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 dbFactory,
                 scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
                 scope.ServiceProvider.GetRequiredService<IHttpClientFactory>());
-            
+
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var libraryToProcess = (await libraryService.ListAsync(new PagedRequest())).Data?.FirstOrDefault(x => x.Name == settings.LibraryName);
             if (libraryToProcess == null)
             {
-                throw new Exception($"Library with name [{settings.LibraryName}] not found."); }
+                throw new Exception($"Library with name [{settings.LibraryName}] not found.");
+            }
 
             var directoryInbound = libraryToProcess.Path;
             var directoryStaging = (await libraryService.GetStagingLibraryAsync().ConfigureAwait(false)).Data!.Path;

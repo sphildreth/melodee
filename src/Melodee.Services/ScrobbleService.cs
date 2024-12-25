@@ -38,7 +38,7 @@ public class ScrobbleService(
 
         _scrobblers =
         [
-            new MelodeeScrobbler(ContextFactory, nowPlayingRepository, _configuration)
+            new MelodeeScrobbler(ContextFactory, nowPlayingRepository)
             {
                 IsEnabled = true
             },

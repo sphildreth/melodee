@@ -6,8 +6,8 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.Conversion.Image;
@@ -22,7 +22,6 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Quartz;
 using Serilog;
-using Serilog.Data;
 using SmartFormat;
 using SearchOption = System.IO.SearchOption;
 using dbModels = Melodee.Common.Data.Models;
@@ -48,14 +47,14 @@ public class LibraryInsertJob(
     private int _batchSize;
     private IMelodeeConfiguration _configuration = null!;
     private JobDataMap _dataMap = null!;
+    private string[] _ignorePerformers = [];
+    private string[] _ignoreProduction = [];
+    private string[] _ignorePublishers = [];
     private int _maxSongsToProcess;
     private Instant _now;
     private int _totalAlbumsInserted;
     private int _totalArtistsInserted;
     private int _totalSongsInserted;
-    private string[] _ignorePerformers = [];
-    private string[] _ignoreProduction = [];
-    private string[] _ignorePublishers = [];
 
     private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
     [
@@ -216,6 +215,7 @@ public class LibraryInsertJob(
                                     Logger.Warning("[{JobName}] Invalid Melodee file [{Status}]", nameof(LibraryInsertJob), melodeeFile.ToString());
                                     continue;
                                 }
+
                                 melodeeFilesForDirectory.Add(melodeeFile);
                             }
                             catch (Exception e)
@@ -377,7 +377,7 @@ public class LibraryInsertJob(
                 //     .DistinctBy(x => x.NameNormalized)
                 //     .OrderBy(x => x.Name)
                 //     .ToArray();
-                
+
                 var dbAlbumsToAdd = new List<dbModels.Album>();
                 var stopProcessingAlbum = false;
                 foreach (var melodeeAlbum in melodeeAlbumsForDirectory)
@@ -387,6 +387,7 @@ public class LibraryInsertJob(
                         stopProcessingAlbum = false;
                         continue;
                     }
+
                     currentAlbum = melodeeAlbum;
                     var artistName = melodeeAlbum.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                     var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
@@ -402,7 +403,7 @@ public class LibraryInsertJob(
                         Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqueId}].", melodeeAlbum.Artist.Id, melodeeAlbum.Id);
                         continue;
                     }
-                    
+
                     var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
                     var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
                     if (nameNormalized.Nullify() == null)
@@ -410,19 +411,22 @@ public class LibraryInsertJob(
                         Logger.Warning("Album [{Album}] has invalid Album title, unable to generate NameNormalized.", melodeeAlbum);
                         continue;
                     }
+
                     var dbAlbumResult = await albumService.GetByApiKeyAsync(melodeeAlbum.Id, cancellationToken).ConfigureAwait(false);
                     if (!dbAlbumResult.IsSuccess)
                     {
                         var albumMusicBrainzId = SafeParser.ToGuid(melodeeAlbum.MusicBrainzId);
                         if (albumMusicBrainzId != null)
                         {
-                            dbAlbumResult = await albumService.GetByMusicBrainzIdAsync(albumMusicBrainzId.Value, cancellationToken).ConfigureAwait(false);    
+                            dbAlbumResult = await albumService.GetByMusicBrainzIdAsync(albumMusicBrainzId.Value, cancellationToken).ConfigureAwait(false);
                         }
+
                         if (!dbAlbumResult.IsSuccess)
                         {
                             dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist.Id, nameNormalized, cancellationToken).ConfigureAwait(false);
                         }
                     }
+
                     var dbAlbum = dbAlbumResult.Data;
 
                     var albumDirectory = melodeeAlbum.AlbumDirectoryName(_configuration.Configuration);
@@ -455,12 +459,13 @@ public class LibraryInsertJob(
                             melodeeAlbum.Directory.AppendPrefix("_duplicate");
                             continue;
                         }
+
                         Logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] MusicbrainzId [{MusicBrainzId}] NormalizedName [{Name}]",
                             nameof(LibraryInsertJob),
                             dbArtist.Id,
                             melodeeAlbum.Id,
                             melodeeAlbum.MusicBrainzId,
-                            nameNormalized);                        
+                            nameNormalized);
                         for (short i = 1; i <= melodeeAlbum.MediaCountValue(); i++)
                         {
                             newAlbum.Discs.Add(new dbModels.AlbumDisc
@@ -477,6 +482,7 @@ public class LibraryInsertJob(
                             {
                                 break;
                             }
+
                             var songsForDisc = melodeeAlbum.Songs?.Where(x => x.MediaNumber() == disc.DiscNumber).ToArray() ?? [];
                             foreach (var song in songsForDisc)
                             {
@@ -490,6 +496,7 @@ public class LibraryInsertJob(
                                     stopProcessingAlbum = true;
                                     break;
                                 }
+
                                 var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
                                 disc.Songs.Add(new dbModels.Song
                                 {
@@ -619,7 +626,7 @@ public class LibraryInsertJob(
                 foreach (var artist in artists)
                 {
                     currentArtist = artist;
-                    OperationResult<dbModels.Artist?> dbArtistResult = await artistService.GetByApiKeyAsync(artist.Id, cancellationToken).ConfigureAwait(false);
+                    var dbArtistResult = await artistService.GetByApiKeyAsync(artist.Id, cancellationToken).ConfigureAwait(false);
                     if (!dbArtistResult.IsSuccess)
                     {
                         var artistMusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId);
@@ -627,11 +634,13 @@ public class LibraryInsertJob(
                         {
                             dbArtistResult = await artistService.GetByMusicBrainzIdAsync(artistMusicBrainzId.Value, cancellationToken).ConfigureAwait(false);
                         }
+
                         if (!dbArtistResult.IsSuccess)
                         {
                             dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
                         }
                     }
+
                     var dbArtist = dbArtistResult.Data;
                     if (!dbArtistResult.IsSuccess || dbArtist == null)
                     {
@@ -640,7 +649,7 @@ public class LibraryInsertJob(
                             artist.Id,
                             artist.MusicBrainzId,
                             artist.NameNormalized);
-                        var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));                        
+                        var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
                         dbArtistsToAdd.Add(new dbModels.Artist
                         {
                             ApiKey = artist.Id,

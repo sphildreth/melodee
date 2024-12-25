@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Globalization;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.Extensions;
@@ -11,7 +10,6 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.SearchEngine.Melodee.DTOs;
 using Microsoft.EntityFrameworkCore;
 using ServiceStack;
-using Song = Melodee.Common.Data.Models.Song;
 
 namespace Melodee.Plugins.SearchEngine;
 
@@ -60,10 +58,10 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                         SortName = artistByMusicBrainz.SortName,
                         MusicBrainzId = artistByMusicBrainz.MusicBrainzId,
                         AlbumCount = artistByMusicBrainz.AlbumCount,
-                        Releases = artistAlbums.OrderBy(x => x!.ReleaseDate).ThenBy(x => x!.SortName).Select(x => new AlbumSearchResult
+                        Releases = artistAlbums.OrderBy(x => x.ReleaseDate).ThenBy(x => x.SortName).Select(x => new AlbumSearchResult
                         {
                             ApiKey = x.ApiKey,
-                            AlbumType = x!.AlbumTypeValue,
+                            AlbumType = x.AlbumTypeValue,
                             ReleaseDate = x.ReleaseDate.ToString(),
                             UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
                             Name = x.Name,
@@ -111,7 +109,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                             SortName = x.SortName,
                             MusicBrainzId = x.MusicBrainzId,
                             AlbumCount = x.AlbumCount,
-                            Releases = x.Albums.Where(a => query.AlbumNamesNormalized.Contains(a.NameNormalized) || a.AlternateNames != null && a.AlternateNames.ContainsAny(query.AlbumNamesNormalized)).OrderBy(a => a!.ReleaseDate).ThenBy(a => a!.SortName).Select(a => new AlbumSearchResult
+                            Releases = x.Albums.Where(a => query.AlbumNamesNormalized != null && (query.AlbumNamesNormalized.Contains(a.NameNormalized) || a.AlternateNames != null && a.AlternateNames.ContainsAny(query.AlbumNamesNormalized))).OrderBy(a => a.ReleaseDate).ThenBy(a => a.SortName).Select(a => new AlbumSearchResult
                             {
                                 ApiKey = a.ApiKey,
                                 AlbumType = SafeParser.ToEnum<AlbumType>(a.AlbumType),
@@ -154,7 +152,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                         SortName = x.SortName,
                         MusicBrainzId = x.MusicBrainzId,
                         AlbumCount = x.AlbumCount,
-                        Releases = x.Albums.OrderBy(a => a!.ReleaseDate).ThenBy(a => a!.SortName).Select(a => new AlbumSearchResult
+                        Releases = x.Albums.OrderBy(a => a.ReleaseDate).ThenBy(a => a.SortName).Select(a => new AlbumSearchResult
                         {
                             ApiKey = a.ApiKey,
                             AlbumType = SafeParser.ToEnum<AlbumType>(a.AlbumType),

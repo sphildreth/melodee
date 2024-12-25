@@ -21,7 +21,7 @@ public static class Program
             {
                 add.AddCommand<LibraryCleanCommand>("clean")
                     .WithAlias("c")
-                    .WithDescription("Clean library and delete any folders without media files. CAUTION: Destructive!");                
+                    .WithDescription("Clean library and delete any folders without media files. CAUTION: Destructive!");
                 add.AddCommand<ProcessInboundCommand>("process")
                     .WithAlias("p")
                     .WithDescription("Process media in given library into staging library.");
@@ -33,8 +33,8 @@ public static class Program
                     .WithDescription("Scan all non inbound and staging libraries for database updates from processed media.");
                 add.AddCommand<LibraryStatsCommand>("stats")
                     .WithAlias("ss")
-                    .WithDescription("Show statistics for given library and library directory.");                
-            });          
+                    .WithDescription("Show statistics for given library and library directory.");
+            });
             config.AddBranch<ParseSettings>("parser", add =>
             {
                 add.AddCommand<ParseCommand>("parse")
@@ -44,7 +44,7 @@ public static class Program
             {
                 add.AddCommand<ValidateCommand>("album")
                     .WithDescription("Validate a Melodee album data file (melodee.json).");
-            });            
+            });
             config.AddBranch<ShowTagsSettings>("tags", add =>
             {
                 add.AddCommand<ShowTagsCommand>("show")

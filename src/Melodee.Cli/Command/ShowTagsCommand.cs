@@ -53,7 +53,7 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
 
             var imageValidator = new ImageValidator(config);
             var imageConvertor = new ImageConvertor(config);
-            
+
             var fileInfo = new FileInfo(settings.Filename);
             if (!fileInfo.Exists)
             {

@@ -70,7 +70,7 @@
     <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.5.2" />
     <PackageVersion Include="SharpZipLib" Version="1.4.2" />
     <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.6" />
-    <PackageVersion Include="SmartFormat" Version="3.5.1" />
+    <PackageVersion Include="SmartFormat" Version="3.5.2" />
     <PackageVersion Include="Spectre.Console" Version="0.49.1" />
     <PackageVersion Include="Spectre.Console.Cli" Version="0.49.1" />
     <PackageVersion Include="Spectre.Console.Json" Version="0.49.1" />
@@ -82,7 +82,10 @@
     <PackageVersion Include="Toolbelt.Blazor.HotKeys2" Version="5.1.0" />
     <PackageVersion Include="Xamarin.UITest" Version="4.3.4" />
     <PackageVersion Include="xunit" Version="2.9.2" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageVersion Include="z440.atl.core" Version="6.10.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageVersion>
+    <PackageVersion Include="z440.atl.core" Version="6.11.0" />
   </ItemGroup>
 </Project>

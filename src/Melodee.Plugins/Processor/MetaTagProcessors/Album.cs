@@ -62,7 +62,7 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
             var matches = UnwantedAlbumTitleTextRegex.Match(albumTitle);
             if (matches.Length > 0)
             {
-                newAlbumTitle = newAlbumTitle[..matches.Index].CleanString();
+                newAlbumTitle = newAlbumTitle?[..matches.Index].CleanString();
                 var lastIndexOfOpenParenthesis = newAlbumTitle?.LastIndexOf('(') ?? 0;
                 var lastIndexOfCloseParenthesis = newAlbumTitle?.LastIndexOf(')') ?? 0;
                 if (newAlbumTitle != null && lastIndexOfOpenParenthesis > 0 && lastIndexOfCloseParenthesis < 0)

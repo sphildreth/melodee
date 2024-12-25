@@ -135,7 +135,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     {
                         Artist = new Artist(
                             artistName ?? throw new Exception($"Invalid artist on { nameof(SimpleFileVerification) }"),
-                            artistName.ToNormalizedString(),
+                            artistName.ToNormalizedString() ?? artistName!,
                             null),
                         Directory = fileSystemDirectoryInfo,
                         Files = new[]

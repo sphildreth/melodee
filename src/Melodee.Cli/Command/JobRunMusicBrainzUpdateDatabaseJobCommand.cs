@@ -1,8 +1,6 @@
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
-using Melodee.Common.Constants;
 using Melodee.Common.Data;
-using Melodee.Common.Enums;
 using Melodee.Common.Serialization;
 using Melodee.Jobs;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
@@ -11,19 +9,16 @@ using Melodee.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Quartz;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
-using Spectre.Console;
 using Spectre.Console.Cli;
-
 
 namespace Melodee.Cli.Command;
 
 public class JobRunMusicBrainzUpdateDatabaseJobCommand : AsyncCommand<JobSettings>
 {
-    public async override Task<int> ExecuteAsync(CommandContext context, JobSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, JobSettings settings)
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -47,7 +42,7 @@ public class JobRunMusicBrainzUpdateDatabaseJobCommand : AsyncCommand<JobSetting
         services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())

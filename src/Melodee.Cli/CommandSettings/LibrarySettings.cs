@@ -6,11 +6,11 @@ namespace Melodee.Cli.CommandSettings;
 
 public class LibrarySettings : Spectre.Console.Cli.CommandSettings
 {
-    [Description("Name of library to process.")] 
-    [CommandArgument(0, "[NAME]")] 
+    [Description("Name of library to process.")]
+    [CommandArgument(0, "[NAME]")]
     [Required]
     public string LibraryName { get; set; } = string.Empty;
-    
+
     [Description("Output verbose debug and timing results to console.")]
     [CommandOption("--verbose")]
     [DefaultValue(true)]

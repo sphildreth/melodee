@@ -1,11 +1,8 @@
-using System.Net;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
-using Melodee.Common.Enums;
 using Melodee.Common.Serialization;
 using Melodee.Jobs;
-using Melodee.Plugins.Conversion.Image;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Plugins.Validation;
 using Melodee.Services;
@@ -20,13 +17,12 @@ using Quartz.Impl;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
-using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Melodee.Cli.Command;
 
 /// <summary>
-/// This runs the job that scans all the library type libraries 
+///     This runs the job that scans all the library type libraries
 /// </summary>
 public class LibraryScanCommand : AsyncCommand<LibrarySettings>
 {
@@ -49,12 +45,12 @@ public class LibraryScanCommand : AsyncCommand<LibrarySettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddHttpClient();
-        services.AddSingleton<IDbConnectionFactory>(opt => 
+        services.AddSingleton<IDbConnectionFactory>(opt =>
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
-        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();    
+        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -62,20 +58,20 @@ public class LibraryScanCommand : AsyncCommand<LibrarySettings>
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
             var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
-            
+
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
                 settingService,
                 serializer,
                 null);
-            
+
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
-            
+
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-            
+
             var imageValidator = new ImageValidator(melodeeConfiguration);
-            
+
             var job = new LibraryInsertJob
             (
                 Log.Logger,
@@ -87,25 +83,25 @@ public class LibraryScanCommand : AsyncCommand<LibrarySettings>
                 new AlbumService(Log.Logger, cacheManager, dbFactory),
                 new AlbumDiscoveryService(Log.Logger, cacheManager, dbFactory, settingService, serializer),
                 new DirectoryProcessorService(
-                    Log.Logger, 
-                    cacheManager, 
-                    dbFactory, 
-                    settingService, 
-                    libraryService, 
+                    Log.Logger,
+                    cacheManager,
+                    dbFactory,
+                    settingService,
+                    libraryService,
                     serializer,
                     new MediaEditService(
-                        Log.Logger, 
-                        cacheManager, 
-                        dbFactory, 
-                        settingService, 
-                        libraryService, 
+                        Log.Logger,
+                        cacheManager,
+                        dbFactory,
+                        settingService,
+                        libraryService,
                         new AlbumDiscoveryService(
-                            Log.Logger, 
-                            cacheManager, 
-                            dbFactory, 
-                            settingService, 
-                            serializer), 
-                        serializer, 
+                            Log.Logger,
+                            cacheManager,
+                            dbFactory,
+                            settingService,
+                            serializer),
+                        serializer,
                         httpClientFactory
                     ),
                     new ArtistSearchEngineService
@@ -133,11 +129,8 @@ public class LibraryScanCommand : AsyncCommand<LibrarySettings>
                 imageValidator
             );
 
-            job.OnProcessingEvent += (sender, e) =>
-            {
-                Log.Information(e.ToString());
-            };
-            
+            job.OnProcessingEvent += (sender, e) => { Log.Information(e.ToString()); };
+
             await job.Execute(new JobExecutionContext(CancellationToken.None));
             return 1;
         }
@@ -150,7 +143,7 @@ internal class JobExecutionContext : IJobExecutionContext
     {
         CancellationToken = cancellation;
     }
-    
+
     public void Put(object key, object objectValue)
     {
     }

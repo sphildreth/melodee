@@ -16,7 +16,6 @@ public static class PictureIdentifierExtensions
             case PictureIdentifier.Artist:
             case PictureIdentifier.ArtistSecondary:
                 return true;
-                break;
         }
         return false;
     }

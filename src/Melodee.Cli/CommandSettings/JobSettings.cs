@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using Spectre.Console.Cli;
 
 namespace Melodee.Cli.CommandSettings;

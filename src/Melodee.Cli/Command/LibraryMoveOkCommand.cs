@@ -1,9 +1,7 @@
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
-using Melodee.Common.MessageBus;
 using Melodee.Common.Serialization;
-using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Microsoft.EntityFrameworkCore;
@@ -36,14 +34,14 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
-            
+
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
@@ -58,30 +56,33 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
                     case ProcessingEventType.Start:
                         if (e.Max == 0)
                         {
-                            AnsiConsole.MarkupLine($"[yellow]No albums found.[/]");
+                            AnsiConsole.MarkupLine("[yellow]No albums found.[/]");
                         }
                         else
                         {
                             AnsiConsole.MarkupLine($"[blue]| {e.Max} albums to move.[/]");
                         }
+
                         break;
-                            
+
                     case ProcessingEventType.Processing:
                         if (e.Max > 0 && e.Current % 10 == 0)
                         {
                             AnsiConsole.MarkupLine($"[blue]- moved {e.Current} albums.[/]");
                         }
+
                         break;
-                    
+
                     case ProcessingEventType.Stop:
                         if (e.Max > 0)
                         {
-                            AnsiConsole.MarkupLine($"[green]= completed moving albums.[/]");
+                            AnsiConsole.MarkupLine("[green]= completed moving albums.[/]");
                         }
+
                         break;
                 }
             };
-            
+
             var result = await libraryService.MoveAlbumsFromLibraryToLibrary(settingses.LibraryName,
                     settingses.ToLibraryName,
                     b => b.Status == AlbumStatus.Ok,
@@ -95,9 +96,9 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
                         .Header("Not successful")
                         .Collapse()
                         .RoundedBorder()
-                        .BorderColor(Color.Yellow));                
+                        .BorderColor(Color.Yellow));
             }
-            
+
             return result.IsSuccess ? 0 : 1;
         }
     }

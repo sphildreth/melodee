@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using Spectre.Console.Cli;
 using ValidationResult = Spectre.Console.ValidationResult;
 
@@ -28,6 +27,7 @@ public class LibraryProcessSettings : LibrarySettings
         {
             return ValidationResult.Error("Library name is required");
         }
+
         return ValidationResult.Success();
     }
 }

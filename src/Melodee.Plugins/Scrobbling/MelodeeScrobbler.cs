@@ -1,5 +1,4 @@
 using Dapper;
-using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Models;
@@ -11,8 +10,7 @@ namespace Melodee.Plugins.Scrobbling;
 
 public class MelodeeScrobbler(
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    INowPlayingRepository nowPlayingRepository,
-    IMelodeeConfiguration configuration) : IScrobbler
+    INowPlayingRepository nowPlayingRepository) : IScrobbler
 {
     public bool StopProcessing { get; } = false;
     public string Id => "D8A07387-87DF-4136-8D3E-C59EABEB501F";

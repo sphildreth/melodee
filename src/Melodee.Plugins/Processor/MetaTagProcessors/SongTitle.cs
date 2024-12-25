@@ -53,10 +53,10 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
             }
             if (ContinueProcessing(songTitle))
             {
-                songNumber = metaTagsValue.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? songTitle.TryToGetSongNumberFromString();
+                songNumber = metaTagsValue.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? songTitle?.TryToGetSongNumberFromString();
                 if ((songNumber ?? 0) > 0)
                 {
-                    songTitle = songTitle.RemoveSongNumberFromString();
+                    songTitle = songTitle?.RemoveSongNumberFromString();
                 }
             }
 
