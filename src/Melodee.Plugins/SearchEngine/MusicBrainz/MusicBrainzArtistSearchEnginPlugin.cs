@@ -1,10 +1,11 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz;
 
-public class MusicBrainzArtistSearchEnginPlugin(IMusicBrainzRepository repository) : IArtistSearchEnginePlugin
+public class MusicBrainzArtistSearchEnginPlugin(IMelodeeConfiguration configuration, IMusicBrainzRepository repository) : IArtistSearchEnginePlugin, IArtistImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 
@@ -15,6 +16,10 @@ public class MusicBrainzArtistSearchEnginPlugin(IMusicBrainzRepository repositor
     public bool IsEnabled { get; set; } = true;
 
     public int SortOrder { get; } = 1;
+    public Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
 
     public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {

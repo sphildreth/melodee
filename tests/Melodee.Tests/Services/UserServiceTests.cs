@@ -115,8 +115,8 @@ public sealed class UserServiceTests : ServiceTestBase
                     ApiKey = Guid.NewGuid(),
                     UserName = "Test User2",
                     UserNameNormalized = "Test User2".ToUpperInvariant(),
-                    Email = "bingobango@local.lan",
-                    EmailNormalized = "bingobango@local.lan".ToNormalizedString()!,
+                    Email = "bango@local.lan",
+                    EmailNormalized = "bango@local.lan".ToNormalizedString()!,
                     PasswordEncrypted = EncryptionHelper.Encrypt(TestsBase.NewPluginsConfiguration().GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, "hopefully_a_good_password2", usersPublicKey2),
                     PublicKey = usersPublicKey2,
                     CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)

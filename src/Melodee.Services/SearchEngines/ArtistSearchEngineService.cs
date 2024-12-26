@@ -39,7 +39,7 @@ public class ArtistSearchEngineService(
         _artistSearchEnginePlugins =
         [
             new MelodeeArtistSearchEnginPlugin(ContextFactory),
-            new MusicBrainzArtistSearchEnginPlugin(musicBrainzRepository)
+            new MusicBrainzArtistSearchEnginPlugin(_configuration, musicBrainzRepository)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
             }

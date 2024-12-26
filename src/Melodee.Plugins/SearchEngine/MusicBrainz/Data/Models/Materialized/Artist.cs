@@ -44,6 +44,7 @@ public sealed record Artist
     [Index(false)] 
     public string? AlternateNames { get; init; }
 
+    [Ignore]
     [NotMapped]
     public string[] AlternateNamesValues => _alternateNames ??= AlternateNames?.ToTags()?.ToArray() ?? [];
 }

@@ -693,70 +693,58 @@ public sealed class DirectoryProcessorService(
                         }
                     }
 
-                    //
-                    // TODO this doesn't work well with search providers, rate limiting and scanning 10k albums
-                    //
-                    // // If album has no images then see if ImageSearchEngine can find any
-                    // if (album.Images?.Count() == 0)
-                    // {
-                    //     var albumImageSearchRequest = album.ToAlbumQuery();
-                    //     var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(albumImageSearchRequest,
-                    //             1,
-                    //             cancellationToken)
-                    //         .ConfigureAwait(false);
-                    //     if (albumImageSearchResult.IsSuccess)
-                    //     {
-                    //         var imageSearchResult = albumImageSearchResult.Data.FirstOrDefault();
-                    //         if (imageSearchResult != null)
-                    //         {
-                    //             var albumImageFromSearchFileName = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Album.FrontImageType).Item1);
-                    //             if (await httpClient.DownloadFileAsync(
-                    //                     imageSearchResult.MediaUrl,
-                    //                     albumImageFromSearchFileName,
-                    //                     async (existingFileInfo, newFileInfo, ct) => (await _imageValidator.ValidateImage(newFileInfo, cancellationToken)).Data.IsValid,
-                    //                     cancellationToken))
-                    //             {
-                    //                 var newImageInfo = new FileInfo(albumImageFromSearchFileName);
-                    //                 var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName, cancellationToken).ConfigureAwait(false);
-                    //                 album.Images = new List<ImageInfo>
-                    //                 {
-                    //                     new()
-                    //                     {
-                    //                         FileInfo = newImageInfo.ToFileSystemInfo(),
-                    //                         PictureIdentifier = PictureIdentifier.Front,
-                    //                         CrcHash = Crc32.Calculate(newImageInfo),
-                    //                         Width = imageInfo.Width,
-                    //                         Height = imageInfo.Height,
-                    //                         SortOrder = 1,
-                    //                         WasEmbeddedInSong = false
-                    //                     }
-                    //                 };
-                    //                 if (imageSearchResult.Rank < 1)
-                    //                 {
-                    //                     // without a positive match, add a validation message to manually review downloaded album image
-                    //                     album.ValidationMessages = album.ValidationMessages.Append(new ValidationResultMessage
-                    //                     {
-                    //                         Message = "Album image needs reviewing.",
-                    //                         Severity = ValidationResultMessageSeverity.Critical
-                    //                     });
-                    //                 }
-                    //
-                    //                 LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
-                    //             }
-                    //         }
-                    //         else
-                    //         {
-                    //             LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from album search engine for album [{albumImageSearchRequest}]");
-                    //         }
-                    //     }
-                    // }
+                    // If album has no images then see if ImageSearchEngine can find any
+                    if (album.Images?.Count() == 0)
+                    {
+                        var albumImageSearchRequest = album.ToAlbumQuery();
+                        var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(albumImageSearchRequest,
+                                1,
+                                cancellationToken)
+                            .ConfigureAwait(false);
+                        if (albumImageSearchResult.IsSuccess)
+                        {
+                            var imageSearchResult = albumImageSearchResult.Data.FirstOrDefault();
+                            if (imageSearchResult != null)
+                            {
+                                var albumImageFromSearchFileName = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Album.FrontImageType).Item1);
+                                if (await httpClient.DownloadFileAsync(
+                                        imageSearchResult.MediaUrl,
+                                        albumImageFromSearchFileName,
+                                        async (existingFileInfo, newFileInfo, ct) => (await _imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front, cancellationToken)).Data.IsValid,
+                                        cancellationToken))
+                                {
+                                    var newImageInfo = new FileInfo(albumImageFromSearchFileName);
+                                    var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName, cancellationToken).ConfigureAwait(false);
+                                    album.Images = new List<ImageInfo>
+                                    {
+                                        new()
+                                        {
+                                            FileInfo = newImageInfo.ToFileSystemInfo(),
+                                            PictureIdentifier = PictureIdentifier.Front,
+                                            CrcHash = Crc32.Calculate(newImageInfo),
+                                            Width = imageInfo.Width,
+                                            Height = imageInfo.Height,
+                                            SortOrder = 1,
+                                            WasEmbeddedInSong = false
+                                        }
+                                    };
+                                    LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
+                                }
+                            }
+                            else
+                            {
+                                LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from album search engine for album [{albumImageSearchRequest}]");
+                            }
+                        }
+                    }
 
                     // Validate using AlbumValidator
                     Console.WriteLine("Validating album...");
                     var validationResult = _albumValidator.ValidateAlbum(album);
                     album.ValidationMessages = validationResult.Data.Messages ?? [];
                     album.Status = validationResult.Data.AlbumStatus;
-
+                    album.StatusReasons = validationResult.Data.AlbumStatusReasons;
+                    
                     Console.WriteLine("Serializing album...");
                     var serialized = serializer.Serialize(album);
                     var jsonName = album.ToMelodeeJsonName(_configuration, true);

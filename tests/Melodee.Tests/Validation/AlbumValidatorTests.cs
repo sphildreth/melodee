@@ -335,7 +335,7 @@ public class AlbumValidatorTests
         });
         var album = new Album
         {
-            Artist = testAlbum.Artist,
+            Artist = new Artist(string.Empty, string.Empty, null, null, null, null),
             Directory = testAlbum.Directory,
             Tags = albumTags,
             Songs = testAlbum.Songs,

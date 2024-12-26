@@ -62,6 +62,9 @@ public sealed record Album
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public AlbumStatus Status { get; set; } = AlbumStatus.New;
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public AlbumNeedsAttentionReasons StatusReasons { get; set; } = AlbumNeedsAttentionReasons.NotSet;
+    
     public IEnumerable<AlbumFile> Files { get; set; } = [];
 
     public int SortOrder { get; set; }

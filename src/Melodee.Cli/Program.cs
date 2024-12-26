@@ -19,6 +19,9 @@ public static class Program
             });
             config.AddBranch<LibrarySettings>("library", add =>
             {
+                add.AddCommand<LibraryAlbumStatusReportCommand>("album-report")
+                    .WithAlias("ar")
+                    .WithDescription("Show report of melodee albums found for library.");
                 add.AddCommand<LibraryCleanCommand>("clean")
                     .WithAlias("c")
                     .WithDescription("Clean library and delete any folders without media files. CAUTION: Destructive!");

@@ -198,6 +198,70 @@ public class StringExtensionsTests
     {
         Assert.Equal(shouldBe, input.ToNormalizedString());
     }
+
+    [Fact]
+    public void ValidateNormalizedLanguageStrings()
+    {
+        //d835dd1fd835dd29d835dd2cd835dd2cd835dd212665fe0fd835dd30d835dd31d835dd1ed835dd26d835dd2bd835dd22d835dd21306f3055307f
+        //8J2Un/CdlKnwnZSs8J2UrPCdlKHimaXvuI/wnZSw8J2UsfCdlJ7wnZSm8J2Uq/CdlKLwnZSh44Gv44GV44G/
+        var test = "𝔟𝔩𝔬𝔬𝔡♥️𝔰𝔱𝔞𝔦𝔫𝔢𝔡はさみ";
+        var testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+        var testNormalized2 = test.ToNormalizedString();
+        Assert.Equal(testNormalized, testNormalized2);
+        
+        test = "            انا خايف اكرهك";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+        Assert.NotEqual(test, testNormalized2);
+        
+        test = "        بسحرولك";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+
+        test = "タクト";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+
+        test = "مهيرة السودان";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+
+        test = "千のナイフ";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+
+        test = "今天再生";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+
+        test = "မြဲနေသေးတဲ့လက်တွဲတစ်ခု";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+
+        test = "ジューシィ・フルーツ ヒットコレクション";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.NotEqual(test, testNormalized);
+
+
+    }
     
     
     [Theory]

@@ -37,10 +37,6 @@ public class AlbumImageSearchEngineService(
             new MusicBrainzCoverArtArchiveSearchEngine(configuration, musicBrainzRepository)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
-            },
-            new BingAlbumImageSearchEngine(configuration, serializer, httpClientFactory)
-            {
-                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled)
             }
         };
         var result = new List<ImageSearchResult>();

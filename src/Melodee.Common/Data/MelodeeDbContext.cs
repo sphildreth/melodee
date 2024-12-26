@@ -578,24 +578,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
-                    Id = 900,
-                    Category = (int)SettingCategory.SearchEngine,
-                    Key = SettingRegistry.SearchEngineBingImageEnabled,
-                    Comment = "Use Bing search engine to find images for albums and artists.",
-                    Value = "false",
-                    CreatedAt = now
-                },
-                new Setting
-                {
-                    Id = 901,
-                    Category = (int)SettingCategory.SearchEngine,
-                    Key = SettingRegistry.SearchEngineBingImageApiKey,
-                    Comment = "Bing search ApiKey (Ocp-Apim-Subscription-Key), leave blank to disable.",
-                    Value = "",
-                    CreatedAt = now
-                },
-                new Setting
-                {
                     Id = 902,
                     Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineUserAgent,

@@ -378,7 +378,8 @@ public static partial class StringExtensions
         var v = input.CleanStringAsIs();
         if (string.IsNullOrWhiteSpace(v))
         {
-            return null;
+            // Cheap way to handle non english, RTL, etc.
+            return input.ToBase64();
         }
 
         v = ReplaceWithCharacter().Replace(v, string.Empty);

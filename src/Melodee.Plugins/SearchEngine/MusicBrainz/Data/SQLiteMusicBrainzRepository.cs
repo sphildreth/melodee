@@ -205,31 +205,39 @@ public class SQLiteMusicBrainzRepository(
             }
 
             await LoadDataFromMusicBrainzFiles(cancellationToken).ConfigureAwait(false);
-
-            using (var dir = FSDirectory.Open(Path.Combine(storagePath, "lucene")))
+            using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Created Lucene Index"))
             {
-                var analyzer = new StandardAnalyzer(AppLuceneVersion);
-                var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
-                using (var writer = new IndexWriter(dir, indexConfig))
+                var lucenePath = Path.Combine(storagePath, "lucene");
+                if (Directory.Exists(lucenePath))
                 {
-                    foreach (var artist in LoadedMaterializedArtists)
-                    {
-                        var artistDoc = new Document
-                        {
-                            new StringField(nameof(Models.Materialized.Artist.MusicBrainzIdRaw),
-                                artist.MusicBrainzIdRaw,
-                                Field.Store.YES),
-                            new StringField(nameof(Models.Materialized.Artist.NameNormalized),
-                                artist.NameNormalized,
-                                Field.Store.YES),
-                            new TextField(nameof(Models.Materialized.Artist.AlternateNames),
-                                artist.AlternateNames ?? string.Empty,
-                                Field.Store.YES)
-                        };
-                        writer.AddDocument(artistDoc);
-                    }
+                    Directory.Delete(lucenePath, true);
+                }
 
-                    writer.Flush(triggerMerge: false, applyAllDeletes: false);
+                using (var dir = FSDirectory.Open(lucenePath))
+                {
+                    var analyzer = new StandardAnalyzer(AppLuceneVersion);
+                    var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
+                    using (var writer = new IndexWriter(dir, indexConfig))
+                    {
+                        foreach (var artist in LoadedMaterializedArtists)
+                        {
+                            var artistDoc = new Document
+                            {
+                                new StringField(nameof(Models.Materialized.Artist.MusicBrainzIdRaw),
+                                    artist.MusicBrainzIdRaw,
+                                    Field.Store.YES),
+                                new StringField(nameof(Models.Materialized.Artist.NameNormalized),
+                                    artist.NameNormalized,
+                                    Field.Store.YES),
+                                new TextField(nameof(Models.Materialized.Artist.AlternateNames),
+                                    artist.AlternateNames ?? string.Empty,
+                                    Field.Store.YES)
+                            };
+                            writer.AddDocument(artistDoc);
+                        }
+
+                        writer.Flush(triggerMerge: false, applyAllDeletes: false);
+                    }
                 }
             }
 

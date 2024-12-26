@@ -156,7 +156,7 @@ public sealed class MediaEditService(
         {
             return new OperationResult<AlbumValidationResult>
             {
-                Data = new AlbumValidationResult(AlbumStatus.NotSet)
+                Data = new AlbumValidationResult(AlbumStatus.NotSet, AlbumNeedsAttentionReasons.NotSet)
             };
         }
 
@@ -167,7 +167,7 @@ public sealed class MediaEditService(
             Logger.Warning($"Album [{album}] is invalid [{albumValidResult.Item2}]");
             return new OperationResult<AlbumValidationResult>
             {
-                Data = new AlbumValidationResult(AlbumStatus.Invalid)
+                Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.NotSet)
             };
         }
 
@@ -176,7 +176,7 @@ public sealed class MediaEditService(
             Logger.Warning("Album directory is invalid.");
             return new OperationResult<AlbumValidationResult>
             {
-                Data = new AlbumValidationResult(AlbumStatus.Invalid)
+                Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.AlbumCannotBeLoaded)
             };
         }
 
@@ -217,6 +217,7 @@ public sealed class MediaEditService(
 
         var validationResult = _albumValidator.ValidateAlbum(album);
         album.Status = validationResult.Data.AlbumStatus;
+        album.StatusReasons = validationResult.Data.AlbumStatusReasons;
         album.Modified = DateTimeOffset.UtcNow;
         await SaveAlbum(directoryInfo, album, cancellationToken);
         return validationResult;

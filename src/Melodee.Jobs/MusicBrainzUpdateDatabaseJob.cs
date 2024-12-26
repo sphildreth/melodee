@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using ICSharpCode.SharpZipLib.BZip2;
 using ICSharpCode.SharpZipLib.Tar;
@@ -95,7 +96,7 @@ public class MusicBrainzUpdateDatabaseJob(
 
                 if (doesDbExist && latest != null)
                 {
-                    var latestTimeStamp = DateTimeOffset.Parse(latest);
+                    var latestTimeStamp = DateTimeOffset.ParseExact(latest, "yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
                     var lastJobRunTimestamp = configuration.GetValue<DateTimeOffset?>(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
                     if (latestTimeStamp < lastJobRunTimestamp)
                     {
@@ -175,15 +176,13 @@ public class MusicBrainzUpdateDatabaseJob(
                 {
                     File.Delete(tempDbName);
                 }
-
-
-                // settingResult = await settingService.GetAsync(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp, context.CancellationToken).ConfigureAwait(false);
-                // setting = settingResult.Data;
-                // if (setting != null)
-                // {
-                //     setting.Value = (lastJobRunTimestamp ??= DateTimeOffset.UtcNow).ToString();
-                //     await settingService.UpdateAsync(setting, context.CancellationToken).ConfigureAwait(false);
-                // }
+                settingResult = await settingService.GetAsync(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp, context.CancellationToken).ConfigureAwait(false);
+                setting = settingResult.Data;
+                if (setting != null)
+                {
+                    setting.Value = DateTimeOffset.UtcNow.ToString();
+                    await settingService.UpdateAsync(setting, context.CancellationToken).ConfigureAwait(false);
+                }
             }
 
             Log.Debug("ℹ️ [{JobName}] Completed in [{ElapsedTime}] minutes.", nameof(MusicBrainzUpdateDatabaseJob), Stopwatch.GetElapsedTime(startTicks).TotalMinutes);

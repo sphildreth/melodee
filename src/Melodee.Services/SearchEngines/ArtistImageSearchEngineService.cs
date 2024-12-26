@@ -5,6 +5,8 @@ using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.SearchEngine;
 using Melodee.Plugins.SearchEngine.LastFm;
+using Melodee.Plugins.SearchEngine.MusicBrainz;
+using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -20,6 +22,7 @@ public class ArtistImageSearchEngineService(
     ISerializer serializer,
     ISettingService settingService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
+    IMusicBrainzRepository musicBrainzRepository,
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -31,10 +34,11 @@ public class ArtistImageSearchEngineService(
 
         var searchEngines = new List<IArtistImageSearchEnginePlugin>
         {
-            new BingAlbumImageSearchEngine(configuration, serializer, httpClientFactory)
+            new MusicBrainzArtistSearchEnginPlugin(configuration, musicBrainzRepository)
             {
-                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineBingImageEnabled)
-            }
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
+            }           
+
         };
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))

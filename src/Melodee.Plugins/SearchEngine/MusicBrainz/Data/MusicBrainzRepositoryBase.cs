@@ -347,12 +347,8 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                         // Sometimes there are multiple artists on a release (see https://musicbrainz.org/release/519345af-b328-4d88-98cb-29f1a5d1fe2d) and the
                         // ArtistCreditId doesn't point to an ArtistId it points to a ArtistCredit.Id when this is true then get ArtistCredit for
                         // that Id then get the ArtistCreditNames and the first one is used for the artist for Melodee
-                        if (releaseArtist == null)
-                        {
-                          loadedMaterializedArtistsDictionary.TryGetValue(artistCreditName.ArtistId, out releaseArtist);
-                        }
+                        loadedMaterializedArtistsDictionary.TryGetValue(artistCreditName.ArtistId, out releaseArtist);
                     }
-
                     var artistCreditNameArtistId = artistCreditName?.ArtistId ?? 0;
                     contributorIds = releaseArtistCreditNames == null
                         ? null
@@ -363,18 +359,21 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
 
                 if (releaseArtist != null && releaseGroup != null && (releaseCountry?.IsValid ?? false))
                 {
-                    LoadedMaterializedAlbums.Add(new Models.Materialized.Album
+                    if (release.Name.Nullify() != null)
                     {
-                        MusicBrainzArtistId = releaseArtist.MusicBrainzArtistId,
-                        ContributorIds = contributorIds,
-                        MusicBrainzIdRaw = release.MusicBrainzId,
-                        Name = release.Name,
-                        NameNormalized = (release.NameNormalized ?? release.Name),
-                        ReleaseDate = releaseCountry.ReleaseDate,
-                        ReleaseGroupMusicBrainzIdRaw = releaseGroup.MusicBrainzIdRaw,
-                        ReleaseType = releaseGroup.ReleaseType,
-                        SortName = release.SortName ?? release.Name
-                    });
+                        LoadedMaterializedAlbums.Add(new Models.Materialized.Album
+                        {
+                            MusicBrainzArtistId = releaseArtist.MusicBrainzArtistId,
+                            ContributorIds = contributorIds,
+                            MusicBrainzIdRaw = release.MusicBrainzId,
+                            Name = release.Name,
+                            NameNormalized = (release.NameNormalized ?? release.Name),
+                            ReleaseDate = releaseCountry.ReleaseDate,
+                            ReleaseGroupMusicBrainzIdRaw = releaseGroup.MusicBrainzIdRaw,
+                            ReleaseType = releaseGroup.ReleaseType,
+                            SortName = release.SortName ?? release.Name
+                        });
+                    }
                 }
             });
         }

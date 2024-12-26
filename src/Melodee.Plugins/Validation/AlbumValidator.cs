@@ -21,6 +21,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
     public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    private AlbumNeedsAttentionReasons _albumNeedsAttentionReasons = AlbumNeedsAttentionReasons.NotSet;
+    
     private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
     private readonly List<ValidationResultMessage> _validationMessages = [];
 
@@ -28,27 +30,33 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
     {
         if (album == null)
         {
+            _albumNeedsAttentionReasons = AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum;
             return new OperationResult<AlbumValidationResult>(["Album is invalid."])
             {
-                Data = new AlbumValidationResult(AlbumStatus.Invalid)
+                Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.AlbumCannotBeLoaded)
             };
         }
 
         _validationMessages.Clear();
-
-        AreAllSongNumbersValid(album);
-        AreSongsUniquelyNumbered(album);
-        AreMediaNumbersValid(album);
-        DoAllSongsHaveSameAlbumArtist(album);
-        AllSongTitlesDoNotHaveUnwantedText(album);
-        AlbumArtistDoesNotHaveUnwantedText(album);
-        AlbumTitleDoesNotHaveUnwantedText(album);
-        DoMediaTotalMatchMediaNumbers(album);
-        DoAllSongsHaveMediaNumberSet(album);
-        DoesSongTotalMatchSongCount(album);
-        DoesAlbumHaveCoverImage(album);
-        ArtistHasSearchEngineResult(album.Artist);
-        AlbumIsStudioTypeAlbum(album);
+        
+        if (!album.Songs?.Any() ?? false)
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
+        }
+        
+        AreAllSongNumbersValid(album);              // AlbumNeedsAttentionReasons.SongsAreNotSequentiallyNumbered
+        AreSongsUniquelyNumbered(album);            // AlbumNeedsAttentionReasons.SongsAreNotUniquelyNumbered
+        AreMediaNumbersValid(album);                // AlbumNeedsAttentionReasons.MediaNumbersAreInvalid
+        DoAllSongsHaveSameAlbumArtist(album);       // AlbumNeedsAttentionReasons.HasMultipleArtistsButNotMultipleAristAlbumType
+        AllSongTitlesDoNotHaveUnwantedText(album);  // AlbumNeedsAttentionReasons.HasSongsWithUnwantedText
+        AlbumArtistDoesNotHaveUnwantedText(album);  // AlbumNeedsAttentionReasons.ArtistNameHasUnwantedText
+        AlbumTitleDoesNotHaveUnwantedText(album);   // AlbumNeedsAttentionReasons.TitleHasUnwantedText
+        DoMediaTotalMatchMediaNumbers(album);       // AlbumNeedsAttentionReasons.MediaTotalNumberDoesntMatchMediaFound
+        DoAllSongsHaveMediaNumberSet(album);        // AlbumNeedsAttentionReasons.HasSongsWithoutMediaNumberSet
+        DoesSongTotalMatchSongCount(album);         // AlbumNeedsAttentionReasons.SongTotalDoesntMatchSongCount
+        DoesAlbumHaveCoverImage(album);             // AlbumNeedsAttentionReasons.HasNoImages
+        ArtistHasSearchEngineResult(album.Artist);  // AlbumNeedsAttentionReasons.HasUnknownArtist
+        AlbumIsStudioTypeAlbum(album);              // AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum
 
         if (_validationMessages.Count == 0)
         {
@@ -57,7 +65,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
         return new OperationResult<AlbumValidationResult>
         {
-            Data = new AlbumValidationResult(_validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid)
+            Data = new AlbumValidationResult(_validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid, _albumNeedsAttentionReasons)
             {
                 Messages = _validationMessages
             }
@@ -73,6 +81,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album is not studio type, will need manual validation.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum;
             return false;
         }
         return true;
@@ -87,6 +96,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album Artist is unknown, will need manual validation.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasUnknownArtist;
             return false;
         }
         return true;
@@ -102,6 +112,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album does not have cover image.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoImages;
         }
 
         return result;
@@ -120,6 +131,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album Song total value does not match Song count.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongTotalDoesntMatchSongCount;
         }
 
         return result;
@@ -139,6 +151,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                     Severity = ValidationResultMessageSeverity.Critical
                 });
                 result = false;
+                _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithoutMediaNumberSet;
             }
         }
         return result;
@@ -157,6 +170,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = $"Album media total [{albumMediaTotal}] does not match Song medias [{string.Join(',', mediaNumbers)}].",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaTotalNumberDoesntMatchMediaFound;
         }
 
         return result;
@@ -173,6 +187,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = validationCheck.Item2 ?? "Album is invalid.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.IsInvalid;
             result = false;
         }
 
@@ -184,6 +199,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         var songs = album.Songs?.ToArray() ?? [];
         if (songs.Length == 0)
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
             return false;
         }
 
@@ -204,6 +220,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album has Songs with invalid Song number.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongsAreNotUniquelyNumbered;
         }
 
         return result;
@@ -218,12 +235,14 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         var songs = album.Songs?.ToArray() ?? [];
         if (songs.Length == 0)
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
             result = false;
         }
 
         var albumArtist = album.Artist.Name;
         if (string.IsNullOrWhiteSpace(albumArtist))
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.ArtistIsNotSet;
             result = false;
         }
 
@@ -244,6 +263,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Songs do not all have the same album artist.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasMultipleArtistsButNotMultipleAristAlbumType;
         }
 
         return result;
@@ -259,6 +279,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album artist has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.ArtistNameHasUnwantedText;
         }
 
         return result;
@@ -274,6 +295,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album title has unwanted text.",
                 Severity = ValidationResultMessageSeverity.Undesired
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.TitleHasUnwantedText;
         }
 
         return result;
@@ -285,6 +307,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         var songs = album.Songs?.ToArray() ?? [];
         if (songs.Length == 0)
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
             result = false;
         }
 
@@ -309,6 +332,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album media numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaNumbersAreInvalid;
         }
 
         return result;
@@ -320,6 +344,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         var songs = album.Songs?.ToArray() ?? [];
         if (songs.Length == 0)
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
             result = false;
         }
 
@@ -343,6 +368,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = messageResult.ToString(),
                 Severity = ValidationResultMessageSeverity.Undesired
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithUnwantedText;
         }
 
         return result;
@@ -355,23 +381,27 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         var songs = album.Songs?.ToArray() ?? [];
         if (songs.Length == 0)
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
             result = false;
         }
 
         var songNumbers = songs.Select(x => x.SongNumber()).Distinct().ToArray();
         if (songNumbers.Length == 0)
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongsAreNotUniquelyNumbered;
             result = false;
         }
 
         if (songNumbers.Contains(0))
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongWithInvalidNumber;
             result = false;
         }
 
         var maximumSongNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumSongNumber]);
         if (songNumbers.Any(x => x > maximumSongNumber))
         {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongWithNumberGreaterThanMaximumAllowed;
             result = false;
         }
 
@@ -383,6 +413,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album Song numbers are invalid.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongsAreNotSequentiallyNumbered;
         }
 
         return result;

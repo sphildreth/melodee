@@ -22,6 +22,7 @@ using Melodee.Services.Models;
 using Melodee.Services.Scanning;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using NodaTime;
 using Serilog;
 using ServiceStack;
@@ -704,6 +705,61 @@ public sealed class LibraryService(
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>> AlbumStatusReport(string libraryName, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrEmpty(libraryName, nameof(libraryName));
+        
+        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
+        var library = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == libraryName.ToNormalizedString());
+        if (library == null)
+        {
+            return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>("Invalid From library Name")
+            {
+                Data = []
+            };
+        }
+        
+        var result = new List<MelodeeModels.Statistic>();
+        
+        // Get all melodee albums in library path
+        var libraryDirectory = new DirectoryInfo(library.Path);
+        var melodeeFileSystemInfosForLibrary = libraryDirectory.GetFileSystemInfos(Common.Models.Album.JsonFileName, SearchOption.AllDirectories).ToArray();
+        if (melodeeFileSystemInfosForLibrary.Length == 0)
+        {
+            return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>("Library has no albums.")
+            {
+                Data = []
+            };
+        }
+
+        var melodeeFilesForLibrary = new List<MelodeeModels.Album>();
+        foreach (var melodeeFileSystemInfo in melodeeFileSystemInfosForLibrary)
+        {
+            var melodeeFile = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(melodeeFileSystemInfo.FullName, cancellationToken));
+            if (melodeeFile != null)
+            {
+                melodeeFilesForLibrary.Add(melodeeFile);
+            }
+        }
+
+        var melodeeFilesGrouped = melodeeFilesForLibrary.GroupBy(x => x.Status);
+        var melodeeFilesGroupedOk = melodeeFilesGrouped.FirstOrDefault(x => x.Key == AlbumStatus.Ok);
+        if (melodeeFilesGroupedOk != null)
+        {
+            result.Add(new MelodeeModels.Statistic(StatisticType.Information, melodeeFilesGroupedOk.Key.ToString(), melodeeFilesGroupedOk.Count(), StatisticColorRegistry.Ok, "These albums are ok!"));
+        }
+
+        foreach (var album in melodeeFilesForLibrary.Where(x => x.Status != AlbumStatus.Ok))
+        {
+            result.Add(new MelodeeModels.Statistic(StatisticType.Warning, album.Directory.Name, album.StatusReasons.ToString(), StatisticColorRegistry.Warning));            
+        }
+        
+        return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>()
+        {
+            Data = result.ToArray()
+        };
+    }
+    
     public async Task<MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>> Statistics(string settingsLibraryName, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(settingsLibraryName, nameof(settingsLibraryName));
