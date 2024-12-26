@@ -11,6 +11,7 @@ using NodaTime;
 using Serilog;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
+using SqlMapper = ServiceStack.OrmLite.Dapper.SqlMapper;
 
 namespace Melodee.Services;
 
@@ -100,6 +101,22 @@ public sealed class SettingService(
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<bool>> SetAsync(string key, string value, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrWhiteSpace(key, nameof(key));
+        
+        var setting = await GetAsync(key, cancellationToken).ConfigureAwait(false);
+        if (setting.Data != null)
+        {
+            setting.Data.Value = value;
+            return await UpdateAsync(setting.Data, cancellationToken).ConfigureAwait(false);
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = false
+        };        
+    }
+    
     public async Task<MelodeeModels.OperationResult<Setting?>> GetAsync(string key, CancellationToken cancellationToken = default)
     {
         try

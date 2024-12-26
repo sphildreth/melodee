@@ -638,34 +638,6 @@ public sealed class DirectoryProcessorService(
                         var artistFromSearch = artistSearchResult.Data.FirstOrDefault();
                         if (artistFromSearch != null)
                         {
-                            // TODO put this back in the job as this doesn't work well with having local MB be the first result and it doesnt have any images
-
-                            // var artistFromSearchImageFilename = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Artist.ImageType).Item1);
-                            // if (artistFromSearch.ImageUrl != null)
-                            // {
-                            //     await httpClient.DownloadFileAsync(
-                            //         artistFromSearch.ImageUrl,
-                            //         artistFromSearchImageFilename,
-                            //         async (existingFileInfo, newFileInfo, ct) =>
-                            //         {
-                            //             if (!(await _imageValidator.ValidateImage(newFileInfo, cancellationToken)).Data.IsValid)
-                            //             {
-                            //                 return false;
-                            //             }
-                            //
-                            //             var existingImageInfo = await Image.LoadAsync(existingFileInfo.FullName, ct);
-                            //             var newImageInfo = await Image.LoadAsync(newFileInfo.FullName, ct);
-                            //             if (newImageInfo.Size.Height > existingImageInfo.Size.Height &&
-                            //                 existingImageInfo.Size.Width > newImageInfo.Size.Width)
-                            //             {
-                            //                 return true;
-                            //             }
-                            //
-                            //             return false;
-                            //         },
-                            //         cancellationToken);
-                            // }
-
                             album.Artist = album.Artist with
                             {
                                 ArtistDbId = artistFromSearch.Id,

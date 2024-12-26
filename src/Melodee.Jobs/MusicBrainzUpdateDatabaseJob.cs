@@ -4,7 +4,6 @@ using ICSharpCode.SharpZipLib.BZip2;
 using ICSharpCode.SharpZipLib.Tar;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
-using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Services.Interfaces;
@@ -38,7 +37,6 @@ public class MusicBrainzUpdateDatabaseJob(
 
         string? storagePath = null;
         string? tempDbName = null;
-        Setting? setting = null;
         var lockfile = string.Empty;
         try
         {
@@ -58,17 +56,7 @@ public class MusicBrainzUpdateDatabaseJob(
 
             await File.WriteAllTextAsync(lockfile, DateTimeOffset.UtcNow.ToString()).ConfigureAwait(false);
 
-            var settingResult = await settingService.GetAsync(SettingRegistry.SearchEngineMusicBrainzEnabled, context.CancellationToken).ConfigureAwait(false);
-            setting = settingResult.Data;
-            if (setting == null)
-            {
-                Logger.Error("[{JobName}] unable to get setting for [{SettingName}]", nameof(MusicBrainzUpdateDatabaseJob), SettingRegistry.SearchEngineMusicBrainzEnabled);
-                return;
-            }
-
-            setting.Value = "false";
-            await settingService.UpdateAsync(setting, context.CancellationToken).ConfigureAwait(false);
-
+            await settingService.SetAsync(SettingRegistry.SearchEngineMusicBrainzEnabled, "false", context.CancellationToken).ConfigureAwait(false);
 
             var dbName = Path.Combine(storagePath, "musicbrainz.db");
             var doesDbExist = File.Exists(dbName);
@@ -176,13 +164,7 @@ public class MusicBrainzUpdateDatabaseJob(
                 {
                     File.Delete(tempDbName);
                 }
-                settingResult = await settingService.GetAsync(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp, context.CancellationToken).ConfigureAwait(false);
-                setting = settingResult.Data;
-                if (setting != null)
-                {
-                    setting.Value = DateTimeOffset.UtcNow.ToString();
-                    await settingService.UpdateAsync(setting, context.CancellationToken).ConfigureAwait(false);
-                }
+                await settingService.SetAsync(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp, DateTimeOffset.UtcNow.ToString(), context.CancellationToken).ConfigureAwait(false);
             }
 
             Log.Debug("ℹ️ [{JobName}] Completed in [{ElapsedTime}] minutes.", nameof(MusicBrainzUpdateDatabaseJob), Stopwatch.GetElapsedTime(startTicks).TotalMinutes);
@@ -199,11 +181,7 @@ public class MusicBrainzUpdateDatabaseJob(
         finally
         {
             File.Delete(lockfile);
-            if (setting != null)
-            {
-                setting.Value = "true";
-                await settingService.UpdateAsync(setting, context.CancellationToken).ConfigureAwait(false);
-            }
+            await settingService.SetAsync(SettingRegistry.SearchEngineMusicBrainzEnabled, "true", context.CancellationToken).ConfigureAwait(false);
         }
     }
 }

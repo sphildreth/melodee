@@ -14,4 +14,5 @@ public sealed record ArtistQuery : Query
     /// </summary>
     public KeyValue[]? AlbumKeyValues { get; init; }
 
+    public Guid[]? AlbumMusicBrainzIds { get; set; }
 }

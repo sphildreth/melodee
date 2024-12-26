@@ -40,12 +40,11 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
 
         try
         {
-            var musicBrainzId = SafeParser.ToGuid(query.MusicBrainzId);
-            if (musicBrainzId == null && query.Artist.Nullify() != null && query.Name.Nullify() != null)
-            {
                 var artistSearchResult = await repository.SearchArtist(new ArtistQuery
                 {
-                    Name = query.Artist!,
+                    MusicBrainzId = query.ArtistMusicBrainzId,
+                    Name = query.Artist,
+                    AlbumMusicBrainzIds = query.MusicBrainzIdValue == null ? null : [query.MusicBrainzIdValue.Value],
                     AlbumKeyValues =
                     [
                         new KeyValue(query.Year.ToString(), query.Name)
@@ -65,7 +64,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
                         });
                     }
                 }
-            }
+
         }
         catch (Exception e)
         {

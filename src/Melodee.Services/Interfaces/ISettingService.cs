@@ -13,6 +13,8 @@ public interface ISettingService
     Task<OperationResult<T?>> GetValueAsync<T>(string key, T? defaultValue = default, CancellationToken cancellationToken = default);
 
     Task<OperationResult<Setting?>> GetAsync(string key, CancellationToken cancellationToken = default);
+    
+    Task<OperationResult<bool>> SetAsync(string key, string value, CancellationToken cancellationToken = default);
 
     Task<IMelodeeConfiguration> GetMelodeeConfigurationAsync(CancellationToken cancellationToken = default);
 
