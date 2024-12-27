@@ -157,7 +157,7 @@ public sealed class DirectoryProcessorService(
         var songsIdsSeen = new List<Guid>();
 
         var skipPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
-        
+
         var result = new DirectoryProcessorResult
         {
             DurationInMs = 0,
@@ -175,6 +175,7 @@ public sealed class DirectoryProcessorService(
         var startTicks = Stopwatch.GetTimestamp();
 
         // Ensure directory to process exists
+        Console.WriteLine($"Ensuring processing path [{fileSystemDirectoryInfo.Path}] exists...");
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
@@ -189,6 +190,7 @@ public sealed class DirectoryProcessorService(
         }
 
         // Ensure that staging directory exists
+        Console.WriteLine($"Ensuring staging path [{_directoryStaging}] exists...");
         if (!Directory.Exists(_directoryStaging))
         {
             return new OperationResult<DirectoryProcessorResult>
@@ -231,8 +233,9 @@ public sealed class DirectoryProcessorService(
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
 
+        Console.WriteLine("Handling multiple media albums...");
         directoriesToProcess = HandleAnyDirectoriesWithMultipleMediaDirectories(directoriesToProcess, cancellationToken);
-        
+
         if (directoriesToProcess.Count > 0)
         {
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
@@ -275,8 +278,9 @@ public sealed class DirectoryProcessorService(
                             {
                                 var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
                                 Directory.Move(directoryInfoToProcess.FullName(), Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
-                                LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);                    
+                                LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);
                             }
+
                             break;
                         }
 
@@ -421,7 +425,7 @@ public sealed class DirectoryProcessorService(
 
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
                 var albumAndJsonFile = new Dictionary<Album, string>();
-                Console.WriteLine("Loading images for album...");       
+                Console.WriteLine("Loading images for album...");
                 var skipDirPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
                 foreach (var albumJsonFile in albumJsonFiles.Take(_maxAlbumProcessingCount))
                 {
@@ -444,7 +448,8 @@ public sealed class DirectoryProcessorService(
                                 var newName = Path.Combine(albumJsonFile.Directory.Parent.FullName, $"{skipDirPrefix}{albumJsonFile.Name}-{DateTime.UtcNow.Ticks}");
                                 Directory.Move(albumJsonFile.DirectoryName, newName);
                                 Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", albumJsonFile.Name, newName);
-                            }                            
+                            }
+
                             LogAndRaiseEvent(LogEventLevel.Error, "Error Deserializing melodee json file [{0}]", e, albumJsonFile.FullName);
                             continue;
                         }
@@ -559,6 +564,7 @@ public sealed class DirectoryProcessorService(
                             {
                                 File.Delete(oldImageFileName);
                             }
+
                             image.FileInfo!.Name = Path.GetFileName(newImageFileName);
                         }
                     }
@@ -612,6 +618,7 @@ public sealed class DirectoryProcessorService(
                                     {
                                         break;
                                     }
+
                                     using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync :: Updating song [{Name}] with plugin [{DisplayName}]", song.File.Name, songPlugin.DisplayName))
                                     {
                                         await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken);
@@ -656,7 +663,7 @@ public sealed class DirectoryProcessorService(
                             }
 
                             album.Status = AlbumStatus.Ok;
-                            
+
                             LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                         }
                         else
@@ -716,7 +723,7 @@ public sealed class DirectoryProcessorService(
                     album.ValidationMessages = validationResult.Data.Messages ?? [];
                     album.Status = validationResult.Data.AlbumStatus;
                     album.StatusReasons = validationResult.Data.AlbumStatusReasons;
-                    
+
                     Console.WriteLine("Serializing album...");
                     var serialized = serializer.Serialize(album);
                     var jsonName = album.ToMelodeeJsonName(_configuration, true);
@@ -778,7 +785,7 @@ public sealed class DirectoryProcessorService(
                 {
                     var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
                     Directory.Move(directoryInfoToProcess.FullName(), Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
-                    LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);                    
+                    LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);
                 }
             }
 
@@ -838,54 +845,65 @@ public sealed class DirectoryProcessorService(
     {
         var result = new List<FileSystemDirectoryInfo>();
         var handledParents = new List<FileSystemDirectoryInfo>();
-        
-        foreach (var directory in directoriesToProcess)
+
+        try
         {
-            var directoryParent = directory.GetParent();
-            if (directory.IsAlbumMediaDirectory() && !handledParents.Contains(directoryParent))
+            foreach (var directory in directoriesToProcess)
             {
-                var allMediaDirectoriesInParentDirectory = directoryParent.AllAlbumMediaDirectories().ToArray();
-                var totalMediaNumber = allMediaDirectoriesInParentDirectory.Count();
-                foreach (var mediaDirectory in allMediaDirectoriesInParentDirectory)
+                var directoryParent = directory.GetParent();
+                if (directory.IsAlbumMediaDirectory() && !handledParents.Contains(directoryParent))
                 {
-                    var mediaNumber = mediaDirectory.Name.TryToGetMediaNumberFromString() ?? 1;                    
-                    foreach (var mediaFile in mediaDirectory.AllMediaTypeFileInfos().ToArray())
+                    var allMediaDirectoriesInParentDirectory = directoryParent.AllAlbumMediaDirectories().ToArray();
+                    var totalMediaNumber = allMediaDirectoriesInParentDirectory.Count();
+                    foreach (var mediaDirectory in allMediaDirectoriesInParentDirectory)
                     {
-                        var fileAtl = new ATL.Track(mediaFile.FullName)
+                        var mediaNumber = mediaDirectory.Name.TryToGetMediaNumberFromString() ?? 1;
+                        foreach (var mediaFile in mediaDirectory.AllMediaTypeFileInfos().ToArray())
                         {
-                            DiscNumber = mediaNumber,
-                            DiscTotal = totalMediaNumber
-                        };
-                        fileAtl.Save();
-                        var songFileName = SongExtensions.SongFileName(
-                            mediaFile,
-                            _configuration.GetValue<int>(SettingRegistry.ValidationMaximumSongNumber),
-                            fileAtl.TrackNumber ?? throw new Exception($"Cannot read track number for [{mediaFile}]"),
-                            fileAtl.Title ?? throw new Exception($"Cannot read song title for [{mediaFile}]"),
-                            _configuration.GetValue<int>(SettingRegistry.ValidationMaximumMediaNumber),
-                            mediaNumber,
-                            totalMediaNumber,
-                            ".mp3");
-                        mediaFile.MoveTo(Path.Combine(directoryParent.FullName(), songFileName));
-                    }
-                    foreach (var imageFile in mediaDirectory.AllFileImageTypeFileInfos())
-                    {
-                        var newImageFilename = Path.Combine(directoryParent.FullName(), imageFile.Name);
-                        if (!File.Exists(newImageFilename))
-                        {
-                            imageFile.MoveTo(newImageFilename);
+                            var fileAtl = new ATL.Track(mediaFile.FullName)
+                            {
+                                DiscNumber = mediaNumber,
+                                DiscTotal = totalMediaNumber
+                            };
+                            fileAtl.Save();
+                            var songFileName = SongExtensions.SongFileName(
+                                mediaFile,
+                                _configuration.GetValue<int>(SettingRegistry.ValidationMaximumSongNumber),
+                                fileAtl.TrackNumber ?? throw new Exception($"Cannot read track number for [{mediaFile}]"),
+                                fileAtl.Title ?? throw new Exception($"Cannot read song title for [{mediaFile}]"),
+                                _configuration.GetValue<int>(SettingRegistry.ValidationMaximumMediaNumber),
+                                mediaNumber,
+                                totalMediaNumber,
+                                ".mp3");
+                            mediaFile.MoveTo(Path.Combine(directoryParent.FullName(), songFileName));
                         }
+
+                        foreach (var imageFile in mediaDirectory.AllFileImageTypeFileInfos())
+                        {
+                            var newImageFilename = Path.Combine(directoryParent.FullName(), imageFile.Name);
+                            if (!File.Exists(newImageFilename))
+                            {
+                                imageFile.MoveTo(newImageFilename);
+                            }
+                        }
+
+                        Directory.Delete(mediaDirectory.FullName());
                     }
-                    Directory.Delete(mediaDirectory.FullName());
+
+                    handledParents.Add(directoryParent);
+                    result.Add(directoryParent);
                 }
-                handledParents.Add(directoryParent);
-                result.Add(directoryParent);
-            }
-            else if (!directory.IsAlbumMediaDirectory())
-            {
-                result.Add(directory);
+                else if (!directory.IsAlbumMediaDirectory())
+                {
+                    result.Add(directory);
+                }
             }
         }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Error occured while handling directories with albums with multiple medias.");
+        }
+
         return result;
     }
 
@@ -968,7 +986,7 @@ public sealed class DirectoryProcessorService(
                     File.Move(fileInfo.FullName, imageFileName);
                     fileInfo = new FileInfo(imageFileName);
                 }
-                
+
                 if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
                 {
                     // Try converting (resizing and padding if needed) image and then revalidate
@@ -1029,7 +1047,7 @@ public sealed class DirectoryProcessorService(
             }
 
             var fileInfo = new FileInfo(imageFile);
-            
+
             if (album.IsFileForAlbum(fileInfo))
             {
                 // Move the image if not in the album directory
