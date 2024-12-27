@@ -90,13 +90,11 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             songFileInfo.Delete();
-                            Log.Debug($"-x- Deleted converted file [{songFileInfo.FullName}]");
                         }
                         else if (convertedRenamedExtension.Nullify() != null)
                         {
                             var movedFileName = Path.Combine(songFileInfo.DirectoryName!, $"{songFileInfo.Name}.{convertedRenamedExtension}");
                             songFileInfo.MoveTo(movedFileName);
-                            Log.Debug($"-r- Renamed converted file [{songFileInfo.Name}] => [{Path.GetFileName(movedFileName)}]");
                         }
                     }
                     else

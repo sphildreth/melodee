@@ -95,7 +95,7 @@ public sealed class DirectoryProcessorService(
 
         _directoryPlugins =
         [
-            new CueSheet(_songPlugins, _configuration)
+            new CueSheet(_songPlugins, _albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledCueSheet)
             },
@@ -103,11 +103,11 @@ public sealed class DirectoryProcessorService(
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledSimpleFileVerification)
             },
-            new M3UPlaylist(serializer, _songPlugins, _configuration)
+            new M3UPlaylist(serializer, _songPlugins, _albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledM3u)
             },
-            new Nfo(serializer, _configuration)
+            new Nfo(serializer,_albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledNfo)
             }
@@ -234,7 +234,7 @@ public sealed class DirectoryProcessorService(
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
 
         Console.WriteLine("Handling multiple media albums...");
-        directoriesToProcess = HandleAnyDirectoriesWithMultipleMediaDirectories(directoriesToProcess, cancellationToken);
+        directoriesToProcess = HandleAnyDirectoriesWithMultipleMediaDirectories(fileSystemDirectoryInfo, directoriesToProcess, cancellationToken);
 
         if (directoriesToProcess.Count > 0)
         {
@@ -345,6 +345,7 @@ public sealed class DirectoryProcessorService(
                 {
                     var albumsForDirectory = await AllAlbumsForDirectoryAsync(
                         directoryInfoToProcess,
+                        _albumValidator,
                         _songPlugins.ToArray(),
                         _configuration,
                         cancellationToken);
@@ -659,6 +660,7 @@ public sealed class DirectoryProcessorService(
                             if (artistFromSearch.Releases?.Length != 0)
                             {
                                 album.AlbumDbId = artistFromSearch.Releases!.First().Id;
+                                album.AlbumType = artistFromSearch.Releases!.First().AlbumType;                                
                                 album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId?.ToString();
                             }
 
@@ -675,6 +677,7 @@ public sealed class DirectoryProcessorService(
                     // If album has no images then see if ImageSearchEngine can find any
                     if (album.Images?.Count() == 0)
                     {
+                        Console.WriteLine("Querying for album image...");
                         var albumImageSearchRequest = album.ToAlbumQuery();
                         var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(albumImageSearchRequest,
                                 1,
@@ -755,7 +758,7 @@ public sealed class DirectoryProcessorService(
 
                     numberOfAlbumsProcessed++;
 
-                    if (album.Status == AlbumStatus.Ok)
+                    if (album.IsValid)
                     {
                         numberOfValidAlbumsProcessed++;
                         LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\udc4d Found valid album [{album}]");
@@ -841,7 +844,7 @@ public sealed class DirectoryProcessorService(
         };
     }
 
-    private List<FileSystemDirectoryInfo> HandleAnyDirectoriesWithMultipleMediaDirectories(List<FileSystemDirectoryInfo> directoriesToProcess, CancellationToken cancellationToken)
+    private List<FileSystemDirectoryInfo> HandleAnyDirectoriesWithMultipleMediaDirectories(FileSystemDirectoryInfo topDirectory, List<FileSystemDirectoryInfo> directoriesToProcess, CancellationToken cancellationToken)
     {
         var result = new List<FileSystemDirectoryInfo>();
         var handledParents = new List<FileSystemDirectoryInfo>();
@@ -853,6 +856,10 @@ public sealed class DirectoryProcessorService(
                 var directoryParent = directory.GetParent();
                 if (directory.IsAlbumMediaDirectory() && !handledParents.Contains(directoryParent))
                 {
+                    if ($"{directoryParent.FullName()}{Path.DirectorySeparatorChar}" == topDirectory.FullName())
+                    {
+                        continue;
+                    }
                     var allMediaDirectoriesInParentDirectory = directoryParent.AllAlbumMediaDirectories().ToArray();
                     var totalMediaNumber = allMediaDirectoriesInParentDirectory.Count();
                     foreach (var mediaDirectory in allMediaDirectoriesInParentDirectory)

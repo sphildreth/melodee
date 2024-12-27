@@ -9,6 +9,7 @@ using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Song;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -18,6 +19,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 public sealed class M3UPlaylist(
     ISerializer serializer,
     IEnumerable<ISongPlugin> songPlugins,
+    IAlbumValidator albumValidator,
     IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration),
     IDirectoryPlugin
 {
@@ -140,17 +142,12 @@ public sealed class M3UPlaylist(
                             Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                         };
-                        var isValidCheck = m3UAlbum.IsValid(Configuration);
-                        if (!isValidCheck.Item1)
-                        {
-                            m3UAlbum.ValidationMessages = m3UAlbum.ValidationMessages.Append(new ValidationResultMessage
-                            {
-                                Message = isValidCheck.Item2 ?? "Album failed validation.",
-                                Severity = ValidationResultMessageSeverity.Critical
-                            });
-                        }
-
-                        m3UAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
+                        
+                        var validationResult = albumValidator.ValidateAlbum(m3UAlbum);
+                        m3UAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                        m3UAlbum.Status = validationResult.Data.AlbumStatus;
+                        m3UAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
+                        
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {

@@ -115,6 +115,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             ];            
             var allAlbums = await processor.AllAlbumsForDirectoryAsync(
                 dirInfo.ToDirectorySystemInfo(),
+                GetAlbumValidator(),
                 songPlugins.ToArray(),
                 config
             );
@@ -183,6 +184,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
             var allAlbums = await processor.AllAlbumsForDirectoryAsync(
                 dirInfo.ToDirectorySystemInfo(),
+                GetAlbumValidator(),
                 songPlugins.ToArray(),
                 config
             );

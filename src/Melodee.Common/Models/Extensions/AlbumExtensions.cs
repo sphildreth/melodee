@@ -17,8 +17,7 @@ public static class AlbumExtensions
    
     public static bool IsStudioTypeAlbum(this Album album)
     {
-        var songs = (album.Songs ?? []).ToArray();
-        return songs.Length != 0 && album.Directory.IsDirectoryStudioAlbums();
+        return album.Directory.IsDirectoryStudioAlbums() && album.AlbumType is AlbumType.Album or AlbumType.EP;
     }
     
     public static bool IsVariousArtistTypeAlbum(this Album album)
@@ -113,62 +112,6 @@ public static class AlbumExtensions
         }
 
         return d;
-    }
-
-    public static (bool, string?) IsValid(this Album album, Dictionary<string, object?> configuration)
-    {
-        if (album.Tags?.Count() == 0)
-        {
-            return (false, "Album has no tags.");
-        }
-
-        if (album.Songs?.Count() == 0)
-        {
-            return (false, "Album has no songs.");
-        }
-
-        if (album.MediaCountValue() == 0)
-        {
-            return (false, "Album media count is invalid.");
-        }
-
-        if (!album.Artist.IsValid())
-        {
-            return (false, "Artist is invalid.");
-        }
-
-        if (album.Songs?.Any(x => !x.IsValid(configuration)) ?? false)
-        {
-            return (false, "Album has no valid songs.");
-        }
-        
-        var songsGroupedByMediaNumber = (album.Songs?.GroupBy(x => x.MediaNumber()) ?? []).ToArray();
-        if (!songsGroupedByMediaNumber.Select(x => SafeParser.ToNumber<int>(x.Key)).Order().ToArray().AreNumbersSequential())
-        {
-            return (false, "Album has media numbers that are invalid.");
-        }
-        if (songsGroupedByMediaNumber.Any(mediaGroups => !mediaGroups.Select(x => x.SongNumber()).Order().ToArray().AreNumbersSequential()))
-        {
-            return (false, "Album has song numbers that are invalid.");
-        }
-
-        var albumTitle = album.AlbumTitle().Nullify();
-        if (albumTitle == null)
-        {
-            return (false, "Album title is invalid.");
-        }
-        
-        if (!album.HasValidAlbumYear(configuration))
-        {
-            return (false, "Album year is invalid.");
-        }
-
-        if (album.Status is AlbumStatus.Ok or AlbumStatus.New)
-        {
-            return (true, null);
-        }
-
-        return (false, $"Album Status is [{album.Status.ToString()}]");
     }
 
     public static string ToMelodeeJsonName(this Album album, IMelodeeConfiguration configuration, bool? isForAlbumDirectory = null)

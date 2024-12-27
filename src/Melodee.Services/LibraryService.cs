@@ -388,19 +388,17 @@ public sealed class LibraryService(
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
-
-        if (albums.Any(x => !x.IsValid(configuration.Configuration).Item1))
-        {
-            return new MelodeeModels.OperationResult<bool>(albums.Where(x => !x.IsValid(configuration.Configuration).Item1).Select(x => $"Album [{x}] is invalid."))
-            {
-                Data = false
-            };
-        }
+        var albumValidator = new AlbumValidator(configuration);
 
         var maxArtistImageCount = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
         var movedCount = 0;
         foreach (var album in albums)
         {
+            if (!albumValidator.ValidateAlbum(album).Data.IsValid)
+            {
+                Logger.Debug("[{ServiceName}] Not moving invalid album [{Album}]", nameof(LibraryService), album.ToString());
+                continue;
+            }
             var artistDirectory = album.Artist.ToDirectoryName(configuration.GetValue<short>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
             var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);
             var libraryAlbumPath = Path.Combine(library.Path, artistDirectory, albumDirectory);
@@ -620,7 +618,8 @@ public sealed class LibraryService(
         }
 
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
-
+        
+        var albumValidator = new AlbumValidator(configuration);
         var imageValidator = new ImageValidator(configuration);
         var imageConvertor = new ImageConvertor(configuration);
 
@@ -649,7 +648,7 @@ public sealed class LibraryService(
             var album = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(albumFile, cancellationToken));
             if (album != null)
             {
-                if (!album.IsValid(configuration.Configuration).Item1)
+                if (!albumValidator.ValidateAlbum(album).Data.IsValid)
                 {
                     if (skipDirPrefix != null)
                     {

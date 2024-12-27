@@ -13,6 +13,7 @@ using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Models;
 using Melodee.Plugins.MetaData.Directory.Models.Extensions;
 using Melodee.Plugins.MetaData.Song;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -24,6 +25,7 @@ namespace Melodee.Plugins.MetaData.Directory;
 /// </summary>
 public sealed class CueSheet(
     IEnumerable<ISongPlugin> songPlugins,
+    IAlbumValidator albumValidator,
     IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration),
     IDirectoryPlugin
 {
@@ -160,23 +162,17 @@ public sealed class CueSheet(
                             {
                                 var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{convertedExtension}");
                                 cueFile.MoveTo(movedFileName);
-                                Log.Debug($"-r- Renamed CUE file [{cueFile.Name}] => [{Path.GetFileName(movedFileName)}]");
                                 var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
                                 var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{convertedExtension}");
                                 cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
-                                Log.Debug($"-r- Renamed CUE Media file [{cueFileMediaFile.Name}] => [{Path.GetFileName(movedCueFileMediaFileFileName)}]");
                             }
 
                             fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.Nfo.HandlesExtension);
-                            var isValidCheck = cueAlbum.IsValid(Configuration);
-                            if (!isValidCheck.Item1)
-                            {
-                                cueAlbum.ValidationMessages = cueAlbum.ValidationMessages.Append(new ValidationResultMessage
-                                {
-                                    Message = isValidCheck.Item2 ?? "Album failed validation.",
-                                    Severity = ValidationResultMessageSeverity.Critical
-                                });
-                            }
+
+                            var validationResult = albumValidator.ValidateAlbum(cueAlbum);
+                            cueAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                            cueAlbum.Status = validationResult.Data.AlbumStatus;
+                            cueAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;                            
                             
                             var mp3Plugin = _songPlugins.First(x => x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
                             foreach (var song in cueModel.Songs)

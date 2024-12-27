@@ -161,17 +161,11 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                         ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                     };
-                    var isValidCheck = sfvAlbum.IsValid(Configuration);
-                    if (!isValidCheck.Item1)
-                    {
-                        sfvAlbum.ValidationMessages = sfvAlbum.ValidationMessages.Append(new ValidationResultMessage
-                        {
-                            Message = isValidCheck.Item2 ?? "Album failed validation.",
-                            Severity = ValidationResultMessageSeverity.Critical
-                        });
-                    }
-
-                    sfvAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
+                    
+                    var validationResult = albumValidator.ValidateAlbum(sfvAlbum);
+                    sfvAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                    sfvAlbum.Status = validationResult.Data.AlbumStatus;
+                    sfvAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;                    
 
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                     if (File.Exists(stagingAlbumDataName))

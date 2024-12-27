@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Melodee.Common.Enums;
 using Melodee.Common.Models.Extensions;
 using Melodee.Plugins.MetaData.Directory;
 using Melodee.Plugins.MetaData.Directory.Nfo;
@@ -14,10 +15,10 @@ public class NfoTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(Serializer, TestsBase.NewPluginsConfiguration());
+            var nfo = new Nfo(Serializer,GetAlbumValidator(), TestsBase.NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
-            Assert.True(nfoParserResult.IsValid(TestsBase.NewConfiguration()).Item1);
+            Assert.True(nfoParserResult.Status == AlbumStatus.Ok);
         }
     }
 
@@ -46,7 +47,7 @@ public class NfoTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(Serializer, TestsBase.NewPluginsConfiguration());
+            var nfo = new Nfo(Serializer, GetAlbumValidator(), TestsBase.NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.NotNull(nfoParserResult.Songs);

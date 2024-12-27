@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
+using Melodee.Common.Enums;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Plugins.Conversion.Image;
@@ -52,6 +53,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
 
             var imageValidator = new ImageValidator(config);
             var imageConvertor = new ImageConvertor(config);
+            var albumValidator = new AlbumValidator(config);
 
             var fileInfo = new FileInfo(settings.Filename);
             if (!fileInfo.Exists)
@@ -71,7 +73,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
 
             var cue = new CueSheet([
                 new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
-            ], config);
+            ], albumValidator, config);
             if (cue.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try
@@ -150,7 +152,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             var m3u = new M3UPlaylist(serializer,
                 [
                     new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
-                ], config);
+                ], albumValidator,  config);
             if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try
@@ -177,7 +179,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 }
             }
 
-            var nfo = new Nfo(serializer, config);
+            var nfo = new Nfo(serializer, albumValidator, config);
             if (nfo.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try
@@ -196,7 +198,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                                 .BorderColor(Color.Yellow));
                     }
 
-                    isValid = nfoParserResult?.IsValid(config.Configuration).Item1 ?? false;
+                    isValid = nfoParserResult?.IsValid ?? false;
                 }
                 catch (Exception e)
                 {

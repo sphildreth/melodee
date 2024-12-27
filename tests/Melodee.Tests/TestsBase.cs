@@ -34,6 +34,11 @@ public abstract class TestsBase
     {
         return new ImageValidator(TestsBase.NewPluginsConfiguration());
     }    
+    
+    protected IAlbumValidator GetAlbumValidator()
+    {
+        return new AlbumValidator(TestsBase.NewPluginsConfiguration());
+    } 
 
     public static IMelodeeConfiguration NewPluginsConfiguration()
     {

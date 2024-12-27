@@ -15,6 +15,7 @@ public class AlbumValidatorTests
     public static Album TestAlbum
         => new()
         {
+            AlbumType = AlbumType.Album,
             Artist = new Artist(
                 "Billy Joel",
                 "Billy Joel".ToNormalizedString()!,

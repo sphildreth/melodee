@@ -43,6 +43,27 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
         }
+        if (album.Tags?.Count() == 0)
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoTags;
+        }
+        if (!album.Artist.IsValid())
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidArtists;
+        }
+        if (album.Songs?.Any(x => !x.IsValid(_configuration)) ?? false)
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidSongs;
+        }
+        if (!album.HasValidAlbumYear(_configuration))
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidYear;
+        }
+        var albumTitle = album.AlbumTitle().Nullify();
+        if (albumTitle == null)
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.TitleIsInvalid;
+        }
         
         AreAllSongNumbersValid(album);              // AlbumNeedsAttentionReasons.SongsAreNotSequentiallyNumbered
         AreSongsUniquelyNumbered(album);            // AlbumNeedsAttentionReasons.SongsAreNotUniquelyNumbered
@@ -58,15 +79,12 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         ArtistHasSearchEngineResult(album.Artist);  // AlbumNeedsAttentionReasons.HasUnknownArtist
         AlbumIsStudioTypeAlbum(album);              // AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum
 
-        if (_validationMessages.Count == 0)
-        {
-            IsValid(album);
-        }
-
+        var albumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid;
         return new OperationResult<AlbumValidationResult>
         {
-            Data = new AlbumValidationResult(_validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid, _albumNeedsAttentionReasons)
+            Data = new AlbumValidationResult(albumStatus, _albumNeedsAttentionReasons)
             {
+                IsValid = albumStatus == AlbumStatus.Ok,
                 Messages = _validationMessages
             }
         };
@@ -138,7 +156,16 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
     }
 
     private bool DoAllSongsHaveMediaNumberSet(Album album)
-    {
+    {  
+        var songsGroupedByMediaNumber = (album.Songs?.GroupBy(x => x.MediaNumber()) ?? []).ToArray();
+        if (!songsGroupedByMediaNumber.Select(x => SafeParser.ToNumber<int>(x.Key)).Order().ToArray().AreNumbersSequential())
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongsAreNotSequentiallyNumbered;
+        }
+        if (songsGroupedByMediaNumber.Any(mediaGroups => !mediaGroups.Select(x => x.SongNumber()).Order().ToArray().AreNumbersSequential()))
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaNumbersAreInvalid;
+        }
         var result = true;
         var songs = album.Songs?.ToArray() ?? [];
         foreach (var song in songs)
@@ -171,24 +198,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Severity = ValidationResultMessageSeverity.Critical
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaTotalNumberDoesntMatchMediaFound;
-        }
-
-        return result;
-    }
-
-    private bool IsValid(Album album)
-    {
-        var result = true;
-        var validationCheck = album.IsValid(_configuration);
-        if (!validationCheck.Item1)
-        {
-            _validationMessages.Add(new ValidationResultMessage
-            {
-                Message = validationCheck.Item2 ?? "Album is invalid.",
-                Severity = ValidationResultMessageSeverity.Critical
-            });
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.IsInvalid;
-            result = false;
         }
 
         return result;
@@ -321,8 +330,10 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             {
                 result = false;
             }
-
-            result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
+            else
+            {
+                result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
+            }
         }
 
         if (!result)

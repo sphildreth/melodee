@@ -62,6 +62,11 @@ public sealed record Album
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public AlbumStatus Status { get; set; } = AlbumStatus.New;
 
+    [JsonIgnore] public bool IsValid => Status == AlbumStatus.Ok;
+    
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public AlbumType AlbumType { get; set; } = AlbumType.NotSet;
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public AlbumNeedsAttentionReasons StatusReasons { get; set; } = AlbumNeedsAttentionReasons.NotSet;
     

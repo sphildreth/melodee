@@ -82,6 +82,8 @@ public class FileSystemDirectoryInfoExtensionTests
     [InlineData("Demos", false)]
     [InlineData("Ep, Singles", false)]
     [InlineData("LIVE", false)]
+    [InlineData("live", false)]
+    [InlineData("Live at Redrock", false)]
     [InlineData("Live Albums", false)]
     [InlineData("Single & EP's", false)]
     [InlineData("Singles", false)]

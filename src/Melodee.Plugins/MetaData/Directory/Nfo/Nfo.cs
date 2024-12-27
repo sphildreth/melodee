@@ -9,6 +9,7 @@ using Melodee.Common.Models.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Plugins.MetaData.Directory.Nfo.Handlers;
+using Melodee.Plugins.Validation;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -18,7 +19,7 @@ namespace Melodee.Plugins.MetaData.Directory.Nfo;
 /// <summary>
 ///     Processes NFO and gets tags and Songs for Album.
 /// </summary>
-public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration configuration) 
+public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) 
     : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
@@ -89,20 +90,12 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
                     {
                         continue;
                     }
+                    var validationResult = albumValidator.ValidateAlbum(nfoAlbum);
+                    nfoAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                    nfoAlbum.Status = validationResult.Data.AlbumStatus;
+                    nfoAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
 
-                    var isValidCheck = nfoAlbum.IsValid(Configuration);
-                    if (!isValidCheck.Item1)
-                    {
-                        nfoAlbum.ValidationMessages = nfoAlbum.ValidationMessages.Append(new ValidationResultMessage
-                        {
-                            Message = isValidCheck.Item2 ?? "Album failed validation.",
-                            Severity = ValidationResultMessageSeverity.Critical
-                        });
-                    }
-
-                    nfoAlbum.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
-
-                    if (nfoAlbum.Status == AlbumStatus.Ok)
+                    if (validationResult.Data.IsValid)
                     {
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
@@ -414,17 +407,10 @@ public sealed partial class Nfo(ISerializer serializer, IMelodeeConfiguration co
                 Songs = songs,
                 SortOrder = 0
             };
-            var isValidCheck = result.IsValid(Configuration);
-            if (!isValidCheck.Item1)
-            {
-                result.ValidationMessages = result.ValidationMessages.Append(new ValidationResultMessage
-                {
-                    Message = isValidCheck.Item2 ?? "Album failed validation.",
-                    Severity = ValidationResultMessageSeverity.Critical
-                });
-            }
-
-            result.Status = isValidCheck.Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
+            var validationResult = albumValidator.ValidateAlbum(result);
+            result.ValidationMessages = validationResult.Data.Messages ?? [];
+            result.Status = validationResult.Data.AlbumStatus;
+            result.StatusReasons = validationResult.Data.AlbumStatusReasons;
             return result;
         }
         catch (Exception e)

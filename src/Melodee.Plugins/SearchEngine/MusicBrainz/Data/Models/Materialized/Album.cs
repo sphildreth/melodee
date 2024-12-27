@@ -39,9 +39,7 @@ public sealed record Album
     [NotMapped] 
     public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);
 
-    public bool DoIncludeInArtistSearch => ReleaseDate > DateTime.MinValue &&
-                                           ReleaseTypeValue != Enums.ReleaseType.Single &&
-                                           ReleaseTypeValue != Enums.ReleaseType.Broadcast;
+    public bool DoIncludeInArtistSearch => ReleaseDate > DateTime.MinValue;
 
     [Index] 
     [ServiceStack.DataAnnotations.StringLength(MusicBrainzRepositoryBase.MaxIndexSize)] 

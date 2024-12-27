@@ -8,6 +8,7 @@ using Melodee.Common.Models.Cards;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using Melodee.Plugins.Validation;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -29,10 +30,12 @@ public sealed class AlbumDiscoveryService(
 {
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private bool _initialized;
+    private IAlbumValidator _albumValidator = null!;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
         _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        _albumValidator = new AlbumValidator(_configuration);
         _initialized = true;
     }
 
@@ -261,7 +264,7 @@ public sealed class AlbumDiscoveryService(
             Duration = x.Duration(),
             MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName),
             ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
-            IsValid = x.IsValid(_configuration.Configuration).Item1,
+            IsValid = _albumValidator.ValidateAlbum(x).Data.IsValid,
             Title = x.AlbumTitle(),
             Year = x.AlbumYear(),
             SongCount = x.SongTotalValue(),

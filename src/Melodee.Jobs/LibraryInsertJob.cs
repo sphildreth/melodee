@@ -46,6 +46,7 @@ public class LibraryInsertJob(
 {
     private int _batchSize;
     private IMelodeeConfiguration _configuration = null!;
+    private IAlbumValidator _albumValidator = null!;
     private JobDataMap _dataMap = null!;
     private string[] _ignorePerformers = [];
     private string[] _ignoreProduction = [];
@@ -83,6 +84,7 @@ public class LibraryInsertJob(
         {
             var startTicks = Stopwatch.GetTimestamp();
             _configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
+            _albumValidator = new AlbumValidator(_configuration);
             var libraries = await libraryService.ListAsync(new PagedRequest(), context.CancellationToken).ConfigureAwait(false);
             if (!libraries.IsSuccess)
             {
@@ -199,6 +201,7 @@ public class LibraryInsertJob(
                                 {
                                     melodeeFile = (await directoryProcessorService.AllAlbumsForDirectoryAsync(
                                             dirFileSystemDirectoryInfo,
+                                            _albumValidator,
                                             songPlugins.ToArray(),
                                             _configuration,
                                             context.CancellationToken)
@@ -210,7 +213,7 @@ public class LibraryInsertJob(
                                     }
                                 }
 
-                                if (!melodeeFile.IsValid(_configuration.Configuration).Item1)
+                                if (!_albumValidator.ValidateAlbum(melodeeFile).Data.IsValid)
                                 {
                                     Logger.Warning("[{JobName}] Invalid Melodee file [{Status}]", nameof(LibraryInsertJob), melodeeFile.ToString());
                                     continue;

@@ -157,6 +157,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return new ImageValidator(TestsBase.NewPluginsConfiguration());
     }
     
+    protected IAlbumValidator GetAlbumValidator()
+    {
+        return new AlbumValidator(TestsBase.NewPluginsConfiguration());
+    }
+    
     protected AlbumImageSearchEngineService GetAlbumImageSearchEngineService()
     {
         return new AlbumImageSearchEngineService(Logger,

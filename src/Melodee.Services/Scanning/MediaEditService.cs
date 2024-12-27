@@ -161,15 +161,17 @@ public sealed class MediaEditService(
         }
 
         var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
-        var albumValidResult = album.IsValid(_configuration.Configuration);
-        if (!albumValidResult.Item1)
+        var albumValidResult = _albumValidator.ValidateAlbum(album);
+        album.ValidationMessages = albumValidResult.Data.Messages ?? [];
+        album.Status = albumValidResult.Data.AlbumStatus;
+        album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;    
+        if (albumValidResult.Data.IsValid)
         {
-            Logger.Warning($"Album [{album}] is invalid [{albumValidResult.Item2}]");
             return new OperationResult<AlbumValidationResult>
             {
                 Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.NotSet)
             };
-        }
+        }        
 
         if (!(album.Directory?.Exists() ?? false))
         {
@@ -428,7 +430,8 @@ public sealed class MediaEditService(
         {
             var year = DateTime.Now.Year;
             var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
-            if (album.IsValid(_configuration.Configuration).Item1)
+            var albumValidResult = _albumValidator.ValidateAlbum(album);
+            if (albumValidResult.Data.IsValid)
             {
                 album.SetTagValue(MetaTagIdentifier.OrigAlbumYear, year);
                 foreach (var song in album.Songs ?? [])

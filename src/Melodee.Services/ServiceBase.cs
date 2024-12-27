@@ -9,6 +9,7 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Plugins.MetaData.Song;
+using Melodee.Plugins.Validation;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -155,6 +156,7 @@ public abstract class ServiceBase(
 
     public async Task<OperationResult<(IEnumerable<Album>, int)>> AllAlbumsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        IAlbumValidator albumValidator,
         ISongPlugin[] songPlugins,
         IMelodeeConfiguration configuration,
         CancellationToken cancellationToken = default)
@@ -276,9 +278,12 @@ public abstract class ServiceBase(
                                 Songs = songsGroupedByAlbum.OrderBy(x => x.SortOrder).ToArray(),
                                 ViaPlugins = viaPlugins.Distinct().ToArray()
                             };
-                            newAlbum.Status = newAlbum.IsValid(configuration.Configuration).Item1 ? AlbumStatus.Ok : AlbumStatus.Invalid;
+                            var validationResult = albumValidator.ValidateAlbum(newAlbum);
+                            newAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                            newAlbum.Status = validationResult.Data.AlbumStatus;
+                            newAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;              
                             albums.Add(newAlbum);
-                            if (albums.Count(x => x.Status == AlbumStatus.Ok) > maxAlbumProcessingCount)
+                            if (albums.Count(x => x.IsValid) > maxAlbumProcessingCount)
                             {
                                 break;
                             }
