@@ -914,10 +914,23 @@ public sealed class LibraryService(
                 Data = []
             };
         }
+        
+        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        var maxNumberOfArtistImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
+        if (maxNumberOfArtistImagesAllowed == 0)
+        {
+            maxNumberOfArtistImagesAllowed = short.MaxValue;
+        }        
+        var maxNumberOfAlbumImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages);
+        if (maxNumberOfAlbumImagesAllowed == 0)
+        {
+            maxNumberOfAlbumImagesAllowed = short.MaxValue;
+        }
+        
         var messages = new List<string>();
         Console.WriteLine($"Cleaning [{library.Path}]...");
         var allDirectoriesInLibrary = Directory.GetDirectories(library.Path, "*.*", SearchOption.TopDirectoryOnly).ToArray();
-        Console.WriteLine($"Found [{allDirectoriesInLibrary.Length}] directories...");
+        Console.WriteLine($"Found [{allDirectoriesInLibrary.Length}] top level directories...");
         var libraryDirectoryCountBeforeCleaning = allDirectoriesInLibrary.Length;
         var directoriesWithoutMediaFiles = new ConcurrentBag<string>();
         Parallel.ForEach(allDirectoriesInLibrary, directory =>
@@ -929,6 +942,31 @@ public sealed class LibraryService(
             Console.WriteLine($"Found [{directoriesWithoutMediaFiles.Count}] directories with no media files...");
             foreach (var directory in directoriesWithoutMediaFiles.Distinct())
             {
+                var d = new DirectoryInfo(directory);
+                if (d.DoesDirectoryHaveImageFiles())
+                {
+                    if (d.Parent?.DoesDirectoryHaveMediaFiles() ?? false)
+                    {
+                       var parentDir = d.Parent.ToDirectorySystemInfo();
+                       foreach (var imageFile in d.ToDirectorySystemInfo().AllFileImageTypeFileInfos())
+                       {
+                           string? newImageFileName = null;
+                           if (ImageHelper.IsAlbumImage(imageFile) || ImageHelper.IsAlbumSecondaryImage(imageFile))
+                           {
+                               newImageFileName = parentDir.GetNextFileNameForType(maxNumberOfAlbumImagesAllowed, ImageHelper.IsAlbumImage(imageFile) ? PictureIdentifier.Front.ToString() : PictureIdentifier.SecondaryFront.ToString()).Item1;
+                           }
+                           else if (ImageHelper.IsArtistImage(imageFile) || ImageHelper.IsArtistSecondaryImage(imageFile))
+                           {
+                               newImageFileName = parentDir.GetNextFileNameForType(maxNumberOfArtistImagesAllowed, ImageHelper.IsArtistImage(imageFile) ? PictureIdentifier.Artist.ToString() : PictureIdentifier.ArtistSecondary.ToString()).Item1;
+                           }
+                           if (newImageFileName != null)
+                           {
+                               File.Move(imageFile.FullName, newImageFileName);
+                               messages.Add($"Moved image file from [{imageFile.FullName}] to [{newImageFileName}]");
+                           }
+                       }
+                    }
+                }
                 if (Directory.Exists(directory))
                 {
                     Directory.Delete(directory, true);
@@ -938,7 +976,26 @@ public sealed class LibraryService(
         }
         allDirectoriesInLibrary = Directory.GetDirectories(library.Path, "*", SearchOption.AllDirectories).ToArray();
         var libraryDirectoryCountAfterCleaning = allDirectoriesInLibrary.Length;
-        messages.Add($"Deleted [{libraryDirectoryCountBeforeCleaning-libraryDirectoryCountAfterCleaning}] directories from library. Library now has [{libraryDirectoryCountAfterCleaning.ToStringPadLeft(DisplayNumberPadLength)}] directories.");
+        var numberDeleted = libraryDirectoryCountBeforeCleaning - libraryDirectoryCountAfterCleaning;
+        if (numberDeleted > 0)
+        {
+            messages.Add($"Deleted [{numberDeleted.ToStringPadLeft(DisplayNumberPadLength)}] directories from library. Library now has [{libraryDirectoryCountAfterCleaning.ToStringPadLeft(DisplayNumberPadLength)}] directories.");
+        }
+        
+        var libDir = library.ToFileSystemDirectoryInfo();
+
+        var melodeeFilesDeleted = 0;
+        foreach (var melodeeJsonFile in Directory.GetFiles(library.Path, $"*{MelodeeModels.Album.JsonFileName}", SearchOption.AllDirectories))
+        {
+            File.Delete(melodeeJsonFile);
+            melodeeFilesDeleted++;
+        }
+
+        if (melodeeFilesDeleted > 0)
+        {
+            messages.Add($"Deleted [{melodeeFilesDeleted}] melodee files from library.");
+        }
+        
         return new MelodeeModels.OperationResult<string[]>
         {
             Data = messages.ToArray(),

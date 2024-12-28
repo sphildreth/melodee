@@ -107,7 +107,7 @@ public sealed class DirectoryProcessorService(
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledM3u)
             },
-            new Nfo(serializer,_albumValidator, _configuration)
+            new Nfo(serializer, _albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledNfo)
             }
@@ -338,86 +338,83 @@ public sealed class DirectoryProcessorService(
                     }
                 }
 
-                // Check if any Album json files exist in given directory, if none then create from Song files.
                 Console.WriteLine("Loading Album for directory...");
-                var albumJsonFiles = directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName);
-                if (!albumJsonFiles.Any())
+
+                var albumsForDirectory = await AllAlbumsForDirectoryAsync(
+                    directoryInfoToProcess,
+                    _albumValidator,
+                    _songPlugins.ToArray(),
+                    _configuration,
+                    cancellationToken);
+                if (!albumsForDirectory.IsSuccess)
                 {
-                    var albumsForDirectory = await AllAlbumsForDirectoryAsync(
-                        directoryInfoToProcess,
-                        _albumValidator,
-                        _songPlugins.ToArray(),
-                        _configuration,
-                        cancellationToken);
-                    if (!albumsForDirectory.IsSuccess)
+                    return new OperationResult<DirectoryProcessorResult>(albumsForDirectory.Messages)
                     {
-                        return new OperationResult<DirectoryProcessorResult>(albumsForDirectory.Messages)
-                        {
-                            Errors = albumsForDirectory.Errors,
-                            Data = result
-                        };
+                        Errors = albumsForDirectory.Errors,
+                        Data = result
+                    };
+                }
+
+                numberOfAlbumFilesProcessed = albumsForDirectory.Data.Item2;
+
+                foreach (var albumForDirectory in albumsForDirectory.Data.Item1.ToArray())
+                {
+                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                    {
+                        break;
                     }
 
-                    numberOfAlbumFilesProcessed = albumsForDirectory.Data.Item2;
+                    var mergedAlbum = albumForDirectory;
 
-                    foreach (var albumForDirectory in albumsForDirectory.Data.Item1.ToArray())
+                    var serialized = string.Empty;
+                    var albumDataName = Path.Combine(directoryInfoToProcess.Path, albumForDirectory.ToMelodeeJsonName(_configuration));
+                    if (File.Exists(albumDataName))
                     {
-                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                        if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles))
                         {
-                            break;
+                            File.Delete(albumDataName);
                         }
-
-                        var mergedAlbum = albumForDirectory;
-
-                        var serialized = string.Empty;
-                        var albumDataName = Path.Combine(directoryInfoToProcess.Path, albumForDirectory.ToMelodeeJsonName(_configuration));
-                        if (File.Exists(albumDataName))
+                        else
                         {
-                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles))
+                            Album? existingAlbum = null;
+                            try
                             {
-                                File.Delete(albumDataName);
+                                existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(albumDataName, cancellationToken));
                             }
-                            else
+                            catch (Exception e)
                             {
-                                Album? existingAlbum = null;
-                                try
-                                {
-                                    existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(albumDataName, cancellationToken));
-                                }
-                                catch (Exception e)
-                                {
-                                    LogAndRaiseEvent(LogEventLevel.Error, "Error Deserialize melodee json file {0}]", e, albumDataName);
-                                }
+                                LogAndRaiseEvent(LogEventLevel.Error, "Error Deserialize melodee json file {0}]", e, albumDataName);
+                            }
 
-                                if (existingAlbum != null)
-                                {
-                                    mergedAlbum = mergedAlbum.Merge(existingAlbum);
-                                }
+                            if (existingAlbum != null)
+                            {
+                                mergedAlbum = mergedAlbum.Merge(existingAlbum);
                             }
                         }
+                    }
 
-                        try
-                        {
-                            serialized = serializer.Serialize(mergedAlbum);
-                        }
-                        catch (Exception e)
-                        {
-                            LogAndRaiseEvent(LogEventLevel.Error, "Error processing [{0}]", e, fileSystemDirectoryInfo);
-                        }
+                    try
+                    {
+                        serialized = serializer.Serialize(mergedAlbum);
+                    }
+                    catch (Exception e)
+                    {
+                        LogAndRaiseEvent(LogEventLevel.Error, "Error processing [{0}]", e, fileSystemDirectoryInfo);
+                    }
 
-                        await File.WriteAllTextAsync(albumDataName, serialized, cancellationToken);
+                    await File.WriteAllTextAsync(albumDataName, serialized, cancellationToken);
 
-                        numberOfAlbumJsonFilesProcessed++;
+                    numberOfAlbumJsonFilesProcessed++;
 
-                        if (numberOfAlbumJsonFilesProcessed > _maxAlbumProcessingCount)
-                        {
-                            break;
-                        }
+                    if (numberOfAlbumJsonFilesProcessed > _maxAlbumProcessingCount)
+                    {
+                        break;
                     }
                 }
 
+
                 // Find all Album json files in given directory, if none bail.
-                albumJsonFiles = directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName).ToArray();
+                var albumJsonFiles = directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName).ToArray();
                 if (!albumJsonFiles.Any())
                 {
                     processingMessages.Add($"No Albums found in directory [{directoryInfoToProcess}]");
@@ -660,7 +657,7 @@ public sealed class DirectoryProcessorService(
                             if (artistFromSearch.Releases?.Length != 0)
                             {
                                 album.AlbumDbId = artistFromSearch.Releases!.First().Id;
-                                album.AlbumType = artistFromSearch.Releases!.First().AlbumType;                                
+                                album.AlbumType = artistFromSearch.Releases!.First().AlbumType;
                                 album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId?.ToString();
                             }
 
@@ -720,12 +717,12 @@ public sealed class DirectoryProcessorService(
                         }
                     }
 
-                    // Validate using AlbumValidator
                     Console.WriteLine("Validating album...");
                     var validationResult = _albumValidator.ValidateAlbum(album);
                     album.ValidationMessages = validationResult.Data.Messages ?? [];
                     album.Status = validationResult.Data.AlbumStatus;
                     album.StatusReasons = validationResult.Data.AlbumStatusReasons;
+                    Console.WriteLine($"Validating album: status [{album.Status.ToString()}] reasons [{(album.StatusReasons == AlbumNeedsAttentionReasons.NotSet ? "None" : album.StatusReasons.ToString())}]");
 
                     Console.WriteLine("Serializing album...");
                     var serialized = serializer.Serialize(album);
@@ -860,6 +857,7 @@ public sealed class DirectoryProcessorService(
                     {
                         continue;
                     }
+
                     var allMediaDirectoriesInParentDirectory = directoryParent.AllAlbumMediaDirectories().ToArray();
                     var totalMediaNumber = allMediaDirectoriesInParentDirectory.Count();
                     foreach (var mediaDirectory in allMediaDirectoriesInParentDirectory)

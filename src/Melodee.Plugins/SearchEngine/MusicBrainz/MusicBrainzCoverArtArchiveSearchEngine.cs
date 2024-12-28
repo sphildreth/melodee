@@ -68,12 +68,12 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
         }
         catch (Exception e)
         {
-            Log.Error(e, "[{PluginName}] attempting to query cover art archive image search plugin failed Query [{Query}]", nameof(MusicBrainzArtistSearchEnginPlugin), query);
+            Log.Error(e, "[{PluginName}] attempting to query cover art archive image search plugin failed Query [{Query}]", nameof(MusicBrainzArtistSearchEnginePlugin), query);
         }
 
         if (result.Count == 0)
         {
-            Log.Debug("[{PluginName}] no MusicBrainz Cover Art response for query[{Query}]", nameof(MusicBrainzArtistSearchEnginPlugin), query);
+            Log.Debug("[{PluginName}] no MusicBrainz Cover Art response for query[{Query}]", nameof(MusicBrainzArtistSearchEnginePlugin), query);
         }
 
         return new OperationResult<ImageSearchResult[]?>

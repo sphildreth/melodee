@@ -1,11 +1,7 @@
-using System.Collections;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using System.Xml.XPath;
-using Commons;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
-using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 using NodaTime;
@@ -169,7 +165,7 @@ public static class FileSystemDirectoryInfoExtensions
         var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
         if (skipDirPrefix.Nullify() != null)
         {
-            return result.Where(x => !x.Name.StartsWith(skipDirPrefix!)).ToArray();
+            return result.Where(x => !x.FullName().StartsWith(skipDirPrefix!) && !x.FullName().Contains($"{ Path.DirectorySeparatorChar }{skipDirPrefix}")).ToArray();
         }
         return result.ToArray();
     }
@@ -177,7 +173,7 @@ public static class FileSystemDirectoryInfoExtensions
     public static (string, int) GetNextFileNameForType(this FileSystemDirectoryInfo fileSystemDirectoryInfo, short maximumNumberOfImageTypeAllowed, string imageType)
     {
         var highestNumberFound = 0;
-        var maxNumberLength = SafeParser.ToNumber<short>(maximumNumberOfImageTypeAllowed.ToString().Length)+1;
+        var maxNumberLength = SafeParser.ToNumber<short>(maximumNumberOfImageTypeAllowed.ToString().Length);
         var allImagesInDirectory = fileSystemDirectoryInfo.AllFileImageTypeFileInfos().ToArray();
         if (allImagesInDirectory.Length != 0)
         {
@@ -194,7 +190,7 @@ public static class FileSystemDirectoryInfoExtensions
             }
         }
         highestNumberFound++;
-        return ($"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maximumNumberOfImageTypeAllowed)}-{imageType}.jpg", highestNumberFound);
+        return (Path.Combine(fileSystemDirectoryInfo.FullName(), $"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maxNumberLength)}-{imageType}.jpg"), highestNumberFound);
     }
 
     public static IEnumerable<FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)

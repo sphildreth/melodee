@@ -21,7 +21,7 @@ public static class Program
             {
                 add.AddCommand<LibraryAlbumStatusReportCommand>("album-report")
                     .WithAlias("ar")
-                    .WithDescription("Show report of melodee albums found for library.");
+                    .WithDescription("Show report of albums found for library.");
                 add.AddCommand<LibraryCleanCommand>("clean")
                     .WithAlias("c")
                     .WithDescription("Clean library and delete any folders without media files. CAUTION: Destructive!");
@@ -30,10 +30,10 @@ public static class Program
                     .WithDescription("Process media in given library into staging library.");
                 add.AddCommand<LibraryMoveOkCommand>("move-ok")
                     .WithAlias("m")
-                    .WithDescription("Move 'Ok' status processed media into the given library.");
+                    .WithDescription("Move 'Ok' status albums into the given library.");
                 add.AddCommand<LibraryScanCommand>("scan")
                     .WithAlias("s")
-                    .WithDescription("Scan all non inbound and staging libraries for database updates from processed media.");
+                    .WithDescription("Scan all non inbound and staging libraries for database updates from albums.");
                 add.AddCommand<LibraryStatsCommand>("stats")
                     .WithAlias("ss")
                     .WithDescription("Show statistics for given library and library directory.");

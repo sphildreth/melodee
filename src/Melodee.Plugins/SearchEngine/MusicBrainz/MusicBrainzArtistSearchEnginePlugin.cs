@@ -5,7 +5,7 @@ using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
 
 namespace Melodee.Plugins.SearchEngine.MusicBrainz;
 
-public class MusicBrainzArtistSearchEnginPlugin(IMelodeeConfiguration configuration, IMusicBrainzRepository repository) : IArtistSearchEnginePlugin, IArtistImageSearchEnginePlugin
+public class MusicBrainzArtistSearchEnginePlugin(IMusicBrainzRepository repository) : IArtistSearchEnginePlugin, IArtistImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 

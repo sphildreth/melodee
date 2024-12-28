@@ -11,6 +11,15 @@ public static class DirectoryInfoExtensions
         foreach(DirectoryInfo subDirectory in directory.GetDirectories()) subDirectory.Delete(true);
     }    
     
+    public static bool DoesDirectoryHaveImageFiles(this DirectoryInfo directory)
+    {
+        if (!directory.Exists)
+        {
+            return false;
+        }
+        return directory.EnumerateFiles("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileImageType(x.Extension));
+    }        
+    
     public static bool DoesDirectoryHaveMediaFiles(this DirectoryInfo directory)
     {
         if (!directory.Exists)

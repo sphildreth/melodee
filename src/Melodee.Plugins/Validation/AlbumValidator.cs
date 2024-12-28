@@ -30,39 +30,69 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
     {
         if (album == null)
         {
-            _albumNeedsAttentionReasons = AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum;
-            return new OperationResult<AlbumValidationResult>(["Album is invalid."])
+            return new OperationResult<AlbumValidationResult>(["Unable to validate album."])
             {
                 Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.AlbumCannotBeLoaded)
             };
         }
 
         _validationMessages.Clear();
+        _albumNeedsAttentionReasons = AlbumNeedsAttentionReasons.NotSet;
         
         if (!album.Songs?.Any() ?? false)
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album has no songs.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });            
         }
         if (album.Tags?.Count() == 0)
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoTags;
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album has no tags.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });             
         }
         if (!album.Artist.IsValid())
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidArtists;
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album artist is invalid.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });              
         }
         if (album.Songs?.Any(x => !x.IsValid(_configuration)) ?? false)
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidSongs;
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album has invalid songs.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });             
         }
         if (!album.HasValidAlbumYear(_configuration))
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidYear;
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album has invalid year.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });             
         }
         var albumTitle = album.AlbumTitle().Nullify();
         if (albumTitle == null)
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.TitleIsInvalid;
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album title is invalid.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });            
         }
         
         AreAllSongNumbersValid(album);              // AlbumNeedsAttentionReasons.SongsAreNotSequentiallyNumbered
@@ -79,7 +109,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         ArtistHasSearchEngineResult(album.Artist);  // AlbumNeedsAttentionReasons.HasUnknownArtist
         AlbumIsStudioTypeAlbum(album);              // AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum
 
-        var albumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0 ? AlbumStatus.Ok : AlbumStatus.Invalid;
+        var albumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0
+            ? AlbumStatus.Ok
+            : AlbumStatus.Invalid;
         return new OperationResult<AlbumValidationResult>
         {
             Data = new AlbumValidationResult(albumStatus, _albumNeedsAttentionReasons)
@@ -107,14 +139,21 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
     private bool ArtistHasSearchEngineResult(Artist albumArtist)
     {
-        if (albumArtist?.SearchEngineResultUniqueId == null)
+        if (albumArtist.SearchEngineResultUniqueId == null)
         {
             _validationMessages.Add(new ValidationResultMessage
             {
                 Message = "Album Artist is unknown, will need manual validation.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasUnknownArtist;
+            if (albumArtist.Name.Nullify() != null)
+            {
+                _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasUnknownArtist;                
+            }
+            else if (!_albumNeedsAttentionReasons.HasFlag(AlbumNeedsAttentionReasons.ArtistIsNotSet))
+            {
+                _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.ArtistIsNotSet;
+            }
             return false;
         }
         return true;
@@ -405,14 +444,14 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
         if (songNumbers.Contains(0))
         {
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongWithInvalidNumber;
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithInvalidNumber;
             result = false;
         }
 
         var maximumSongNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumSongNumber]);
         if (songNumbers.Any(x => x > maximumSongNumber))
         {
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongWithNumberGreaterThanMaximumAllowed;
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithNumberGreaterThanMaximumAllowed;
             result = false;
         }
 

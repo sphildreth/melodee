@@ -34,7 +34,7 @@ public class ArtistImageSearchEngineService(
 
         var searchEngines = new List<IArtistImageSearchEnginePlugin>
         {
-            new MusicBrainzArtistSearchEnginPlugin(configuration, musicBrainzRepository)
+            new MusicBrainzArtistSearchEnginePlugin(musicBrainzRepository)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
             }           

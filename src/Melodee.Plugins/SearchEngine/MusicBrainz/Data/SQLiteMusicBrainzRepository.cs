@@ -163,7 +163,7 @@ public class SQLiteMusicBrainzRepository(
                         data.Add(new ArtistSearchResult
                         {
                             AlternateNames = artist.AlternateNames?.ToTags()?.ToArray() ?? [],
-                            FromPlugin = $"{nameof(MusicBrainzArtistSearchEnginPlugin)}:{nameof(SQLiteMusicBrainzRepository)}",
+                            FromPlugin = $"{nameof(MusicBrainzArtistSearchEnginePlugin)}:{nameof(SQLiteMusicBrainzRepository)}",
                             UniqueId = SafeParser.Hash(artist.MusicBrainzId.ToString()),
                             Rank = rank,
                             Name = artist.Name,

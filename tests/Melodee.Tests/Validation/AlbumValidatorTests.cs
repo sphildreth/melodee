@@ -297,31 +297,27 @@ public class AlbumValidatorTests
     [Fact]
     public void ValidateAlbumWithNoInvalidValidations()
     {
-        var Album = TestAlbum;
+        var album = TestAlbum;
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
-        var validationResult = validator.ValidateAlbum(Album);
+        var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(Album.Status, validationResult.Data.AlbumStatus);
+        Assert.Equal(album.Status, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumNeedsAttentionReasons.NotSet, validationResult.Data.AlbumStatusReasons);
     }
 
     [Fact]
     public void ValidateAlbumWithNoCoverImage()
     {
         var testAlbum = TestAlbum;
-        var album = new Album
+        var album = testAlbum with
         {
-            Artist = testAlbum.Artist,
-            Directory = testAlbum.Directory,
-            Tags = testAlbum.Tags,
-            Songs = testAlbum.Songs,
-            ViaPlugins = testAlbum.ViaPlugins,
-            OriginalDirectory = testAlbum.OriginalDirectory
+            Images = []
         };
-
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
     }
     
     [Fact]
@@ -334,20 +330,20 @@ public class AlbumValidatorTests
             Identifier = MetaTagIdentifier.AlbumArtist,
             Value = "Billy Joel"
         });
-        var album = new Album
+        var album = TestAlbum with
         {
             Artist = new Artist(string.Empty, string.Empty, null, null, null, null),
-            Directory = testAlbum.Directory,
-            Tags = albumTags,
-            Songs = testAlbum.Songs,
-            ViaPlugins = testAlbum.ViaPlugins,
-            OriginalDirectory = testAlbum.OriginalDirectory
+            Tags = albumTags
         };
 
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumNeedsAttentionReasons.ArtistIsNotSet |
+                     AlbumNeedsAttentionReasons.HasInvalidArtists |
+                     AlbumNeedsAttentionReasons.HasMultipleArtistsButNotMultipleAristAlbumType,
+            validationResult.Data.AlbumStatusReasons);
     }
 
     [Fact]
@@ -360,27 +356,23 @@ public class AlbumValidatorTests
             Identifier = MetaTagIdentifier.RecordingYear,
             Value = "1971"
         });
-        var album = new Album
+        var album = testAlbum with
         {
-            Artist = testAlbum.Artist,
-            Directory = testAlbum.Directory,
-            Tags = albumTags,
-            Songs = testAlbum.Songs,
-            ViaPlugins = testAlbum.ViaPlugins,
-            OriginalDirectory = testAlbum.OriginalDirectory
+            Tags = albumTags
         };
 
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidYear, validationResult.Data.AlbumStatusReasons);        
     }
     
     [Fact]
     public void ValidateAlbumWithDifferentArtistsNotVariousArtists()
     {
         var testAlbum = TestAlbum;
-        testAlbum.SetSongTagValue(testAlbum.Songs.First().Id, MetaTagIdentifier.AlbumArtist, Guid.NewGuid().ToString());
+        testAlbum.SetSongTagValue(testAlbum.Songs!.First().Id, MetaTagIdentifier.AlbumArtist, Guid.NewGuid().ToString());
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(testAlbum);
         Assert.True(validationResult.IsSuccess);
