@@ -501,7 +501,7 @@ public class LibraryInsertJob(
                                 }
 
                                 var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
-                                disc.Songs.Add(new dbModels.Song
+                                var s = new dbModels.Song
                                 {
                                     ApiKey = song.Id,
                                     BitDepth = song.BitDepth(),
@@ -519,14 +519,15 @@ public class LibraryInsertJob(
                                     SongNumber = song.SongNumber(),
                                     AlbumDiscId = disc.Id,
                                     ChannelCount = song.ChannelCount(),
-                                    Genres = melodeeAlbum.Genre()?.Nullify() == null ? null : song.Genre()!.Split('/'),
+                                    Genres = (song.Genre()?.Nullify() ?? melodeeAlbum.Genre()?.Nullify())?.Split('/'),
                                     IsVbr = song.IsVbr(),
                                     Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
                                     MusicBrainzId = song.MetaTagValue<Guid?>(MetaTagIdentifier.MusicBrainzId),
                                     PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
                                     SortOrder = song.SortOrder,
                                     TitleSort = songTitle.CleanString(true)
-                                });
+                                };
+                                disc.Songs.Add(s);
 
                                 _totalSongsInserted++;
                             }

@@ -61,7 +61,7 @@ public static class Program
             });
         });
 
-        var version = $"1.0.0-rc1.{ DateTime.UtcNow:yyyyMMddHHmmss}";
+        var version = $"1.0.0-rc2";
         AnsiConsole.MarkupLine($":musical_note: Melodee Command Line Interface v{version}");
         AnsiConsole.MarkupLine("");
         
