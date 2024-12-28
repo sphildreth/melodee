@@ -914,7 +914,7 @@ public sealed class LibraryService(
                 Data = []
             };
         }
-        
+        var libDir = library.ToFileSystemDirectoryInfo();
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
         var maxNumberOfArtistImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
         if (maxNumberOfArtistImagesAllowed == 0)
@@ -948,6 +948,10 @@ public sealed class LibraryService(
                     if (d.Parent?.DoesDirectoryHaveMediaFiles() ?? false)
                     {
                        var parentDir = d.Parent.ToDirectorySystemInfo();
+                       if (parentDir.FullName() == libDir.FullName())
+                       {
+                           continue;
+                       }
                        foreach (var imageFile in d.ToDirectorySystemInfo().AllFileImageTypeFileInfos())
                        {
                            string? newImageFileName = null;
@@ -981,8 +985,6 @@ public sealed class LibraryService(
         {
             messages.Add($"Deleted [{numberDeleted.ToStringPadLeft(DisplayNumberPadLength)}] directories from library. Library now has [{libraryDirectoryCountAfterCleaning.ToStringPadLeft(DisplayNumberPadLength)}] directories.");
         }
-        
-        var libDir = library.ToFileSystemDirectoryInfo();
 
         var melodeeFilesDeleted = 0;
         foreach (var melodeeJsonFile in Directory.GetFiles(library.Path, $"*{MelodeeModels.Album.JsonFileName}", SearchOption.AllDirectories))
