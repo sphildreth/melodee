@@ -13,6 +13,11 @@ public static class Program
 
         app.Configure(config =>
         {
+            config.AddBranch<ConfigurationSetSetting>("configuration", add =>
+            {
+                add.AddCommand<ConfigurationSetCommand>("set")
+                    .WithDescription("Modify Melodee configuration.");
+            });            
             config.AddBranch<JobSettings>("job", add =>
             {
                 add.AddCommand<JobRunMusicBrainzUpdateDatabaseJobCommand>("musicbrainz-update")
