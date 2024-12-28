@@ -61,7 +61,9 @@ public static class Program
             });
         });
 
-        var version = $"1.0.0-rc2";
+        // sph; this seems like a terrible way to do this
+        var version = $"1.0.0-rc8";
+        
         AnsiConsole.MarkupLine($":musical_note: Melodee Command Line Interface v{version}");
         AnsiConsole.MarkupLine("");
         

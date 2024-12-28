@@ -24,9 +24,9 @@ namespace Melodee.Cli.Command;
 /// <summary>
 ///     This runs the job that scans all the library type libraries
 /// </summary>
-public class LibraryScanCommand : AsyncCommand<LibrarySettings>
+public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, LibrarySettings settingses)
+    public override async Task<int> ExecuteAsync(CommandContext context, LibraryScanSettings settings)
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -131,7 +131,10 @@ public class LibraryScanCommand : AsyncCommand<LibrarySettings>
 
             job.OnProcessingEvent += (sender, e) => { Log.Information(e.ToString()); };
 
-            await job.Execute(new JobExecutionContext(CancellationToken.None));
+            var jobExecutionContext = new JobExecutionContext(CancellationToken.None);
+            jobExecutionContext.Put("ForceMode", settings.ForceMode);
+            jobExecutionContext.Put("Verbose", settings.Verbose);
+            await job.Execute(jobExecutionContext);
             return 1;
         }
     }
@@ -139,6 +142,8 @@ public class LibraryScanCommand : AsyncCommand<LibrarySettings>
 
 internal class JobExecutionContext : IJobExecutionContext
 {
+    private Dictionary<object, object> _dataMap = new Dictionary<object, object>();
+    
     public JobExecutionContext(CancellationToken cancellation)
     {
         CancellationToken = cancellation;
@@ -146,11 +151,16 @@ internal class JobExecutionContext : IJobExecutionContext
 
     public void Put(object key, object objectValue)
     {
+        if (!_dataMap.TryAdd(key, objectValue))
+        {
+            _dataMap[key] = objectValue;
+        }
     }
 
     public object? Get(object key)
     {
-        return null;
+        _dataMap.TryGetValue(key, out var value);
+        return value;
     }
 
     public IScheduler Scheduler { get; }

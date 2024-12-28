@@ -23,7 +23,7 @@ public static class FileSystemDirectoryInfoExtensions
     /// </summary>
     public static void AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string prefix)
     {
-        var newDir = Path.Combine(prefix, fileSystemDirectoryInfo.FullName());
+        var newDir = Path.Combine(fileSystemDirectoryInfo.Path, Path.Combine(prefix, fileSystemDirectoryInfo.Name));
         if (newDir != fileSystemDirectoryInfo.FullName())
         {
             fileSystemDirectoryInfo.ToDirectoryInfo().MoveTo(newDir);

@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using HashidsNet;
 using Melodee.Common.Data.Contants;
 using Melodee.Common.Extensions;
+using NodaTime;
 
 namespace Melodee.Common.Utility;
 
@@ -446,4 +447,5 @@ public static class SafeParser
 
     private static bool IsCharTruthy(char value) => value is 'y' or 't' or '1';
 
+    public static LocalDate ToLocalDate(int year, int? month = null, int? day = null) => new(year, month ?? 1, day ?? 1);
 }

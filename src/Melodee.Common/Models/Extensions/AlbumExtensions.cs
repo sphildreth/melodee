@@ -183,9 +183,9 @@ public static class AlbumExtensions
     public static int? AlbumYear(this Album album)
     {
         return album.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
-               album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
-               album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
+               album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear) ?? 
+               album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear);
     }
 
     /// <summary>

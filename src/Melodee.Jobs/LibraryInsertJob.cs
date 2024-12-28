@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Dapper;
 using IdSharp.Common.Utils;
@@ -92,6 +93,9 @@ public class LibraryInsertJob(
                 return;
             }
 
+            var verboseMode = SafeParser.ToBoolean(context.Get("Verbose"));
+            var forceMode = SafeParser.ToBoolean(context.Get("ForceMode"));
+            
             var imageConvertor = new ImageConvertor(_configuration);
 
             DirectoryInfo? processingDirectory = null;
@@ -158,67 +162,47 @@ public class LibraryInsertJob(
 
                     var libraryProcessStartTicks = Stopwatch.GetTimestamp();
                     var dirs = new DirectoryInfo(libraryIndex.library.Path).GetDirectories("*", SearchOption.AllDirectories);
-                    var lastScanAt = libraryIndex.library.LastScanAt ?? defaultNeverScannedDate;
+                    var lastScanAt = forceMode ? defaultNeverScannedDate : libraryIndex.library.LastScanAt ?? defaultNeverScannedDate;
                     if (_totalSongsInserted > _maxSongsToProcess && _maxSongsToProcess > 0)
                     {
                         Logger.Warning("[{JobName}] Maximum Processing Count reached. Stopping processing.", nameof(LibraryInsertJob));
                         break;
                     }
 
-                    // Get a list of modified directories in the Library; remember a library artists album directory should only contain a single album in Melodee
-                    var allDirsForLibrary = dirs.Where(d => d.LastWriteTime >= lastScanAt.ToDateTimeUtc() && d.Name.Length > 3).ToArray();
-                    var batches = (allDirsForLibrary.Length + _batchSize - 1) / _batchSize;
+                    var allMelodeeFilesInLibrary = Directory.GetFiles(libraryIndex.library.Path, Album.JsonFileName, SearchOption.AllDirectories);
+                    ConcurrentBag<FileInfo> melodeeFilesToProcessForLibrary = new ConcurrentBag<FileInfo>();
+                    var lastScanAtUtc = lastScanAt.ToDateTimeUtc();
+                    Parallel.ForEach(allMelodeeFilesInLibrary, melodeeFile =>
+                    {
+                        var f = new FileInfo(melodeeFile);
+                        if (f is { Directory: not null, Name.Length: > 3 } && (f.CreationTimeUtc >= lastScanAtUtc || f.LastWriteTimeUtc >= lastScanAtUtc))
+                        {
+                            melodeeFilesToProcessForLibrary.Add(f);
+                        }
+                    });
+                    Logger.Debug("[{JobName}] Found [{DirName}] melodee files to scan.", nameof(LibraryInsertJob), melodeeFilesToProcessForLibrary.Count);
+                    var batches = (melodeeFilesToProcessForLibrary.Count + _batchSize - 1) / _batchSize;
                     for (var batch = 0; batch < batches; batch++)
                     {
                         var melodeeFilesForDirectory = new List<Album>();
-                        foreach (var dir in allDirsForLibrary.Skip(_batchSize * batch).Take(_batchSize))
+                        foreach (var melodeeFileInfo in melodeeFilesToProcessForLibrary.Skip(_batchSize * batch).Take(_batchSize))
                         {
                             try
                             {
-                                processingDirectory = dir;
+                                processingDirectory = melodeeFileInfo.Directory;
 
-                                var dirFileSystemDirectoryInfo = new FileSystemDirectoryInfo
-                                {
-                                    Path = dir.FullName,
-                                    Name = dir.Name
-                                };
-                                var allDirectoryFiles = dir.GetFiles("*", SearchOption.TopDirectoryOnly);
+                                var allDirectoryFiles = melodeeFileInfo.Directory!.GetFiles("*", SearchOption.TopDirectoryOnly);
                                 var mediaFiles = allDirectoryFiles.Where(x => FileHelper.IsFileMediaType(x.Extension)).ToArray();
-
-                                // Don't continue if there are no media files in the directory.
                                 if (mediaFiles.Length == 0)
                                 {
                                     continue;
                                 }
-
-                                // See if an existing melodee file exists in the directory and if so load it
-                                var melodeeFile = (await albumDiscoveryService
-                                        .AllMelodeeAlbumDataFilesForDirectoryAsync(dirFileSystemDirectoryInfo, context.CancellationToken)
-                                        .ConfigureAwait(false))
-                                    .Data?
-                                    .FirstOrDefault();
-                                if (melodeeFile == null)
+                                var melodeeFile = serializer.Deserialize<Album>(melodeeFileInfo.FullName);
+                                if (melodeeFile == null || !_albumValidator.ValidateAlbum(melodeeFile).Data.IsValid)
                                 {
-                                    melodeeFile = (await directoryProcessorService.AllAlbumsForDirectoryAsync(
-                                            dirFileSystemDirectoryInfo,
-                                            _albumValidator,
-                                            songPlugins.ToArray(),
-                                            _configuration,
-                                            context.CancellationToken)
-                                        .ConfigureAwait(false)).Data.Item1.FirstOrDefault();
-                                    if (melodeeFile == null)
-                                    {
-                                        Logger.Warning("[{JobName}] Unable to find Melodee file for directory [{DirName}]", nameof(LibraryInsertJob), dirFileSystemDirectoryInfo);
-                                        continue;
-                                    }
-                                }
-
-                                if (!_albumValidator.ValidateAlbum(melodeeFile).Data.IsValid)
-                                {
-                                    Logger.Warning("[{JobName}] Invalid Melodee file [{Status}]", nameof(LibraryInsertJob), melodeeFile.ToString());
+                                    Logger.Warning("[{JobName}] Invalid Melodee file [{MelodeeFile}]", nameof(LibraryInsertJob), melodeeFile?.ToString() ?? melodeeFileInfo.FullName);
                                     continue;
                                 }
-
                                 melodeeFilesForDirectory.Add(melodeeFile);
                             }
                             catch (Exception e)
@@ -226,7 +210,6 @@ public class LibraryInsertJob(
                                 Logger.Error(e, "[{JobName}] Error processing directory [{Dir}]", nameof(LibraryInsertJob), processingDirectory);
                             }
                         }
-
                         var processedArtistsResult = await ProcessArtistsAsync(libraryIndex.library, melodeeFilesForDirectory, context.CancellationToken);
                         if (!processedArtistsResult)
                         {
@@ -451,8 +434,8 @@ public class LibraryInsertJob(
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                             Name = albumTitle,
                             NameNormalized = nameNormalized,
-                            OriginalReleaseDate = melodeeAlbum.OriginalAlbumYear() == null ? null : new LocalDate(melodeeAlbum.OriginalAlbumYear()!.Value, 1, 1),
-                            ReleaseDate = new LocalDate(melodeeAlbum.AlbumYear() ?? throw new Exception("Album year is required."), 1, 1),
+                            OriginalReleaseDate = melodeeAlbum.OriginalAlbumYear() == null ? null : SafeParser.ToLocalDate(melodeeAlbum.OriginalAlbumYear()!.Value),
+                            ReleaseDate = SafeParser.ToLocalDate(melodeeAlbum.AlbumYear() ?? throw new Exception("Album year is required.")),
                             SongCount = SafeParser.ToNumber<short>(melodeeAlbum.Songs?.Count() ?? 0),
                             SortName = _configuration.RemoveUnwantedArticles(albumTitle.CleanString(true))
                         };
