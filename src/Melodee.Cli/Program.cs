@@ -1,5 +1,6 @@
 ﻿using Melodee.Cli.Command;
 using Melodee.Cli.CommandSettings;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Melodee.Cli;
@@ -55,12 +56,10 @@ public static class Program
             });
         });
 
-        //:musical_note:
-        //:musical_notes:
-        //AnsiConsole.MarkupLine(":fire: :alien_monster: :sparkles:");
-        // AnsiConsole.Markup("[white on blue]Melodee Command Line Interface[/]");
-        //  AnsiConsole.MarkupLine("");
-
+        var version = $"1.0.0-rc1.{ DateTime.UtcNow:yyyyMMddHHmmss}";
+        AnsiConsole.MarkupLine($":musical_note: Melodee Command Line Interface v{version}");
+        AnsiConsole.MarkupLine("");
+        
         return app.Run(args);
     }
 }
