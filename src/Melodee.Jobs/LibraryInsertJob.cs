@@ -180,8 +180,11 @@ public class LibraryInsertJob(
                             melodeeFilesToProcessForLibrary.Add(f);
                         }
                     });
-                    Logger.Debug("[{JobName}] Found [{DirName}] melodee files to scan.", nameof(LibraryInsertJob), melodeeFilesToProcessForLibrary.Count);
                     var batches = (melodeeFilesToProcessForLibrary.Count + _batchSize - 1) / _batchSize;
+                    Logger.Debug("[{JobName}] Found [{DirName}] melodee files to scan in [{Batches}] batches.",
+                        nameof(LibraryInsertJob),
+                        melodeeFilesToProcessForLibrary.Count,
+                        batches);                    
                     for (var batch = 0; batch < batches; batch++)
                     {
                         var melodeeFilesForDirectory = new List<Album>();
@@ -197,13 +200,30 @@ public class LibraryInsertJob(
                                 {
                                     continue;
                                 }
-                                var melodeeFile = serializer.Deserialize<Album>(melodeeFileInfo.FullName);
-                                if (melodeeFile == null || !_albumValidator.ValidateAlbum(melodeeFile).Data.IsValid)
+
+                                try
                                 {
-                                    Logger.Warning("[{JobName}] Invalid Melodee file [{MelodeeFile}]", nameof(LibraryInsertJob), melodeeFile?.ToString() ?? melodeeFileInfo.FullName);
-                                    continue;
+                                    var melodeeFile = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(melodeeFileInfo.FullName).ConfigureAwait(false));
+                                    if (melodeeFile == null || !_albumValidator.ValidateAlbum(melodeeFile).Data.IsValid)
+                                    {
+                                        Logger.Warning("[{JobName}] Invalid Melodee file [{MelodeeFile}]", nameof(LibraryInsertJob), melodeeFile?.ToString() ?? melodeeFileInfo.FullName);
+                                        continue;
+                                    }
+                                    melodeeFilesForDirectory.Add(melodeeFile);
                                 }
-                                melodeeFilesForDirectory.Add(melodeeFile);
+                                catch (Exception e)
+                                {
+                                    // The melodee data file won't load.
+                                    var albumFolderToMove = melodeeFileInfo.Directory!.Parent;
+                                    var moveFolderTo = Path.Combine(stagingLibrary.Data.Path, albumFolderToMove.Name);
+                                    Directory.Move(albumFolderToMove.FullName, moveFolderTo);
+                                    File.Delete(Path.Combine(moveFolderTo, Album.JsonFileName));
+                                    Logger.Warning(
+                                        "[{JobName}] Invalid Melodee File. Deleted and moved directory [{From}] To Staging [{To}]",
+                                        nameof(LibraryInsertJob),
+                                        albumFolderToMove,
+                                        moveFolderTo);
+                                }                                
                             }
                             catch (Exception e)
                             {
