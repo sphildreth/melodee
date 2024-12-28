@@ -21,21 +21,43 @@ public static class FileSystemDirectoryInfoExtensions
     /// <summary>
     /// Rename the Directory and prepend the given prefix.
     /// </summary>
-    public static void AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string prefix)
+    public static FileSystemDirectoryInfo AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string prefix)
     {
-        var newDir = Path.Combine(fileSystemDirectoryInfo.Path, Path.Combine(prefix, fileSystemDirectoryInfo.Name));
-        if (newDir != fileSystemDirectoryInfo.FullName())
+        var d = fileSystemDirectoryInfo.ToDirectoryInfo();
+        var dirName = Path.GetDirectoryName(d.FullName) ?? string.Empty;
+        var newName = $"{prefix}{fileSystemDirectoryInfo.Name}";
+        var moveTo = Path.Combine(dirName, newName);
+        if (Directory.Exists(moveTo))
         {
-            fileSystemDirectoryInfo.ToDirectoryInfo().MoveTo(newDir);
+            Directory.Move(moveTo, Path.Combine(dirName, $"{moveTo}-{ DateTime.UtcNow.Ticks.ToString()}"));
         }
+        d.MoveTo(moveTo);
+        return new FileSystemDirectoryInfo
+        {
+            Path = dirName,
+            Name = newName
+        };
     }
 
     /// <summary>
     /// Rename the Directory and append the given suffix.
     /// </summary>
-    public static void AppendSuffix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string suffix)
+    public static FileSystemDirectoryInfo AppendSuffix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string suffix)
     {
-        fileSystemDirectoryInfo.ToDirectoryInfo().MoveTo(Path.Combine(fileSystemDirectoryInfo.FullName(), suffix));
+        var d = fileSystemDirectoryInfo.ToDirectoryInfo();
+        var dirName = Path.GetDirectoryName(d.FullName) ?? string.Empty;
+        var newName = $"{fileSystemDirectoryInfo.Name}{suffix}";
+        var moveTo = Path.Combine(dirName, newName);
+        if (Directory.Exists(moveTo))
+        {
+            Directory.Move(moveTo, Path.Combine(dirName, $"{moveTo}-{ DateTime.UtcNow.Ticks.ToString()}"));
+        }
+        d.MoveTo(moveTo);
+        return new FileSystemDirectoryInfo
+        {
+            Path = dirName,
+            Name = newName
+        };
     }
     
     public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
@@ -71,6 +93,11 @@ public static class FileSystemDirectoryInfoExtensions
     {
         return Directory.Exists(fileSystemDirectoryInfo.FullName());
     }
+    
+    public static void Delete(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        Directory.Delete(fileSystemDirectoryInfo.FullName());
+    }    
 
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
