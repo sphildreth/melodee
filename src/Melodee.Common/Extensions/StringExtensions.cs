@@ -91,7 +91,7 @@ public static partial class StringExtensions
         {
             return null;
         }
-        return input?[0..Math.Min(input.Length, maxLength)];
+        return input[0..Math.Min(input.Length, maxLength)];
     }
 
     public static string ToBase64(this string text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -339,8 +339,9 @@ public static partial class StringExtensions
     /// <param name="values">Values to add to Tag result</param>
     /// <param name="tagSplit">Tag split value</param>
     /// <param name="dontLowerCase">Don't return lowercase value, leave value case as is</param>
+    /// <param name="doReorder">Reorder values</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
-    public static string? AddTag(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
+    public static string? AddTag(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false, bool? doReorder = true)
     {
         var vv = values as string[] ?? values?.ToArray() ?? [];
         if (SafeParser.IsNull(str) && vv.Length == 0)
@@ -358,7 +359,12 @@ public static partial class StringExtensions
         {
             tags.Add(value.Nullify());
         }
-        var result = string.Join(ts, tags.Where(x => !string.IsNullOrEmpty(x)).Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(x => x)).Nullify();
+        var tv = tags.Where(x => !string.IsNullOrEmpty(x)).Distinct(StringComparer.CurrentCultureIgnoreCase);
+        if (doReorder ?? true)
+        {
+            tv = tv.Order();
+        }
+        var result = string.Join(ts, tv).Nullify();
         if (dontLowerCase ?? false)
         {
             return result;

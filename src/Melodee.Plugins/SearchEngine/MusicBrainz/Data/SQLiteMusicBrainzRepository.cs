@@ -78,9 +78,11 @@ public class SQLiteMusicBrainzRepository(
                         IndexSearcher searcher = new IndexSearcher(reader);
                         BooleanQuery categoryQuery = [];
                         TermQuery catQuery1 = new TermQuery(new Term(nameof(Models.Materialized.Artist.NameNormalized), query.NameNormalized));
-                        TermQuery catQuery2 = new TermQuery(new Term(nameof(Models.Materialized.Artist.AlternateNames), query.NameNormalized));
+                        TermQuery catQuery2 = new TermQuery(new Term(nameof(Models.Materialized.Artist.NameNormalized), query.NameNormalizedReversed));
+                        TermQuery catQuery3 = new TermQuery(new Term(nameof(Models.Materialized.Artist.AlternateNames), query.NameNormalized));
                         categoryQuery.Add(new BooleanClause(catQuery1, Occur.SHOULD));
                         categoryQuery.Add(new BooleanClause(catQuery2, Occur.SHOULD));
+                        categoryQuery.Add(new BooleanClause(catQuery3, Occur.SHOULD));
                         ScoreDoc[] hits = searcher.Search(categoryQuery, maxLuceneResults).ScoreDocs;
                         musicBrainzIdsFromLucene.AddRange(hits.Select(t => searcher.Doc(t.Doc)).Select(hitDoc => hitDoc.Get(nameof(Models.Materialized.Artist.MusicBrainzIdRaw))));
                     }
@@ -116,7 +118,7 @@ public class SQLiteMusicBrainzRepository(
                             rank++;
                         }
 
-                        if (artist.AlternateNamesValues.Contains(query.NameReversed))
+                        if (artist.AlternateNamesValues.Contains(query.NameNormalizedReversed))
                         {
                             rank++;
                         }

@@ -729,12 +729,11 @@ public sealed class DirectoryProcessorService(
                     var jsonName = album.ToMelodeeJsonName(_configuration, true);
                     if (jsonName.Nullify() != null)
                     {
-                        await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
                         if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
                         {
                             File.Delete(albumKvp.Value);
                         }
-
+                        await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
                         if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                         {
                             using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))

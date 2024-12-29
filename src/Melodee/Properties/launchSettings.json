@@ -22,7 +22,7 @@
         "commandName": "Project",
         "dotnetRunMessages": true,
         "launchBrowser": false,
-        "applicationUrl": "https://roadie.lan:7076;http://roadie.lan:5157",
+        "applicationUrl": "https://batman.lan:7076;http://batman.lan:5157",
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development"
         }

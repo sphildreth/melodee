@@ -11,7 +11,23 @@ public record Query
     [Required]
     public required string Name { get; init; }
 
-    public string NameReversed => string.Join(string.Empty, Name.Split(' ').Reverse()).ToNormalizedString() ?? Name;
+    private string NameInTagFormat
+    {
+        get
+        {
+            if (Name.Contains(','))
+            {
+                return "".AddTag(Name.Split(','), doReorder: false)?.ToNormalizedString() ?? NameNormalized;
+            }
+            if (Name.Contains(' '))
+            {
+                return "".AddTag(Name.Split(' '), doReorder: false)?.ToNormalizedString() ?? NameNormalized;
+            }
+            return NameNormalized;
+        }
+    }
+    
+    public string NameNormalizedReversed => string.Join(string.Empty, NameInTagFormat.ToTags()!.Reverse()).ToNormalizedString() ?? Name;
     
     public string NameNormalized => Name.ToNormalizedString() ?? Name;
     
