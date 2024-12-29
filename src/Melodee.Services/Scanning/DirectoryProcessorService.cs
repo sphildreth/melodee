@@ -890,7 +890,7 @@ public sealed class DirectoryProcessorService(
                             }
                         }
 
-                        Directory.Delete(mediaDirectory.FullName());
+                        Directory.Delete(mediaDirectory.FullName(), true);
                     }
 
                     handledParents.Add(directoryParent);
