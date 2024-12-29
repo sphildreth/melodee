@@ -598,7 +598,6 @@ public sealed class DirectoryProcessorService(
                                         Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
                                     }
                                 }
-
                                 song.File.Name = Path.GetFileName(newSongFileName);
                             }
                         }

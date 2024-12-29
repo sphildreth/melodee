@@ -70,8 +70,6 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
 
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
 
-            var imageValidator = new ImageValidator(melodeeConfiguration);
-
             var job = new LibraryInsertJob
             (
                 Log.Logger,
@@ -125,8 +123,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                         httpClientFactory
                     ),
                     httpClientFactory
-                ),
-                imageValidator
+                )
             );
 
             job.OnProcessingEvent += (sender, e) => { Log.Information(e.ToString()); };

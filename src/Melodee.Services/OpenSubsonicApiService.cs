@@ -87,7 +87,7 @@ public class OpenSubsonicApiService(
 
     private static Guid? ApiKeyFromId(string? id)
     {
-        if (id == null)
+        if (id.Nullify() == null)
         {
             return null;
         }
@@ -102,8 +102,7 @@ public class OpenSubsonicApiService(
         {
             toParse = apiIdParts[1];
         }
-
-        return SafeParser.ToGuid(toParse)!.Value;
+        return SafeParser.ToGuid(toParse);
     }
 
     /// <summary>
@@ -1661,7 +1660,6 @@ public class OpenSubsonicApiService(
                 {
                     { "userId", authResponse.UserInfo.Id },
                     { "normalizedQuery", request.QueryNormalizedValue },
-                    { "query", request.QueryValue },
                     { "artistOffset", request.ArtistOffset ?? 0 },
                     { "artistCount", request.ArtistCount ?? defaultPageSize },
                     { "albumOffset", request.AlbumOffset ?? 0 },
@@ -1673,7 +1671,7 @@ public class OpenSubsonicApiService(
                           select 'artist_' || "ApiKey"::varchar as "Id", "Name", 'artist_' || "ApiKey" as "CoverArt", "AlbumCount"
                           from "Artists" a
                           where a."NameNormalized" like @normalizedQuery
-                          or a."AlternateNames" like @query
+                          or a."AlternateNames" like @normalizedQuery
                           ORDER BY a."SortName" OFFSET @artistOffset ROWS FETCH NEXT @artistCount ROWS ONLY;
                           """;
                 artists = (await dbConn
@@ -1686,7 +1684,7 @@ public class OpenSubsonicApiService(
                       from "Albums" a
                       left join "Artists" aa on (a."ArtistId" = aa."Id")
                       where a."NameNormalized"  like @normalizedQuery
-                      or a."AlternateNames" like @query
+                      or a."AlternateNames" like @normalizedQuery
                       ORDER BY a."SortName" OFFSET @albumOffset ROWS FETCH NEXT @albumCount ROWS ONLY;
                       """;
                 albums = (await dbConn
@@ -1705,7 +1703,7 @@ public class OpenSubsonicApiService(
                       join "Artists" aa on (a."ArtistId" = aa."Id")
                       join "Libraries" l on (aa."LibraryId" = l."Id")
                       where s."TitleNormalized"  like @normalizedQuery
-                      or s."AlternateNames" like @query
+                      or s."AlternateNames" like @normalizedQuery
                       ORDER BY a."SortName" OFFSET @songOffset ROWS FETCH NEXT @songCount ROWS ONLY;
                       """;
                 songs = (await dbConn

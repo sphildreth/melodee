@@ -42,8 +42,7 @@ public class LibraryInsertJob(
     ArtistService artistService,
     AlbumService albumService,
     AlbumDiscoveryService albumDiscoveryService,
-    DirectoryProcessorService directoryProcessorService,
-    IImageValidator imageValidator) : JobBase(logger, configurationFactory)
+    DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
 {
     private int _batchSize;
     private IMelodeeConfiguration _configuration = null!;
@@ -119,6 +118,8 @@ public class LibraryInsertJob(
             _ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);
             _ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
 
+            var imageValidator = new ImageValidator(_configuration);
+            
             ISongPlugin[] songPlugins =
             [
                 new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), imageConvertor, imageValidator, _configuration)
@@ -183,6 +184,13 @@ public class LibraryInsertJob(
                             melodeeFilesToProcessForLibrary.Add(f);
                         }
                     });
+                    if (melodeeFilesToProcessForLibrary.Count == 0)
+                    {
+                        Logger.Information("[{JobName}] found no melodee files to process for library [{Library}].",
+                            nameof(LibraryInsertJob),
+                            libraryIndex.library.ToString());
+                        continue;
+                    }
                     var batches = (melodeeFilesToProcessForLibrary.Count + _batchSize - 1) / _batchSize;
                     Logger.Debug("[{JobName}] Found [{DirName}] melodee files to scan in [{Batches}] batches.",
                         nameof(LibraryInsertJob),

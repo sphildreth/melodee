@@ -14,7 +14,6 @@ using Melodee.Filters;
 using Melodee.Jobs;
 using Melodee.Plugins.Scrobbling;
 using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
-using Melodee.Plugins.Validation;
 using Melodee.Services;
 using Melodee.Services.Caching;
 using Melodee.Services.EventHandlers;
@@ -186,7 +185,14 @@ if (!app.Environment.IsDevelopment())
 
 app.Services.StartConsumersAsync();
 
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+    };    
+});
 
 app.UseStaticFiles();
 app.UseAntiforgery();

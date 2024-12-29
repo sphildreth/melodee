@@ -257,7 +257,7 @@ public sealed class AlbumDiscoveryService(
     {
         CheckInitialized();
         var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
-        var data = albumsForDirectoryInfo.Data.Select(async x => new AlbumCard
+        var data = albumsForDirectoryInfo.Data.ToArray().Select(async x => new AlbumCard
         {
             Artist = x.Artist.Name,
             Created = x.Created,

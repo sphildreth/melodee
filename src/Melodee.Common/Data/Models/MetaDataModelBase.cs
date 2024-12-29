@@ -9,6 +9,9 @@ namespace Melodee.Common.Data.Models;
 [Serializable]
 public abstract class MetaDataModelBase : DataModelBase
 {
+    /// <summary>
+    /// Alternate names should be Normalized and Tags (e.g. 'GOHOMEWITHYOU|GOHOMEWITHU')
+    /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? AlternateNames { get; set; }
 
