@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using Polly;
+using Polly.Retry;
 using Serilog;
 
 namespace Melodee.Common.Utility;
@@ -75,13 +77,26 @@ public static class Crc32
     /// </summary>
     /// <param name="file">The file.</param>
     /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
-    public static uint CalculateInt32(FileInfo file)
+    private static uint CalculateInt32(FileInfo file)
     {
         if (file == null)
         {
             throw new ArgumentNullException(nameof(file));
         }
+        var pipeline = new ResiliencePipelineBuilder()
+            .AddRetry(new RetryStrategyOptions
+            {
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,  
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(10),
+            })
+            .Build();
+      return pipeline.Execute(_ => ReadFileAndCalculateInt32(file));
+    }
 
+    private static uint ReadFileAndCalculateInt32(FileInfo file)
+    {
         using (var fileStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             return CalculateInt32(fileStream);
@@ -93,7 +108,7 @@ public static class Crc32
     /// </summary>
     /// <param name="stream">The stream.</param>
     /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
-    public static uint CalculateInt32(Stream stream)
+    private static uint CalculateInt32(Stream stream)
     {
         if (stream == null)
         {
@@ -136,7 +151,7 @@ public static class Crc32
     /// </summary>
     /// <param name="data">The byte array.</param>
     /// <returns>CRC32 Checksum as a four byte signed integer (Int32).</returns>
-    public static uint CalculateInt32(byte[] data)
+    private static uint CalculateInt32(byte[] data)
     {
         if (data == null)
         {

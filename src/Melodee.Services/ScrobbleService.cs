@@ -143,7 +143,10 @@ public class ScrobbleService(
                     var scrobbleResult = await scrobbler.Scrobble(user, scrobble, cancellationToken).ConfigureAwait(false);
                     result &= scrobbleResult.IsSuccess;
                 }
-                Logger.Information("[{ServiceName}] Scrobbled song [{SongId}] for User [{User}]", nameof(ScrobbleService), user.ToString(), songId.ToString());
+                Logger.Information("[{ServiceName}] Scrobbled song [{Song}] for User [{User}]",
+                    nameof(ScrobbleService),
+                    songId.ToString(),
+                    user.ToString());
             }
         }
 

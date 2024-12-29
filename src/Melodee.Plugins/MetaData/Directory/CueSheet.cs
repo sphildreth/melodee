@@ -120,7 +120,7 @@ public sealed class CueSheet(
                             var withAudioBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionBitrate]);
                             var withAudioSamplingRate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]);
                             var withVariableBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]);
-                            await Parallel.ForEachAsync(cueModel.Songs.OrderBy(x => x.SortOrder), cancellationToken, async (song, _) =>
+                            foreach(var song in cueModel.Songs.OrderBy(x => x.SortOrder))
                             {
                                 var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
                                 var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
@@ -141,7 +141,7 @@ public sealed class CueSheet(
                                         options.WithVariableBitrate(withVariableBitrate);
                                         options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                                     }).ProcessAsynchronously();
-                            });
+                            };
 
                             var cueAlbum = cueModel.ToAlbum(fileSystemDirectoryInfo);
 

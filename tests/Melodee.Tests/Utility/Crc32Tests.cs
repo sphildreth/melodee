@@ -7,7 +7,7 @@ public class Crc32Tests
     [Fact]
     public void ComputeAndCompareCrc32Hash()
     {
-        var mp3File = @"/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3";
+        var mp3File = @"/melodee_test/tests/test.mp3";
         var fileInfo = new FileInfo(mp3File);
         if (fileInfo.Exists)
         {
