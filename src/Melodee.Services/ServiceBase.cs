@@ -143,7 +143,7 @@ public abstract class ServiceBase(
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
-                      select s."ApiKey" as SongApiKey, a."Id" as AlbumId, aa."Id" as ArtistId, s."Id" as SongId, 
+                      select s."ApiKey" as SongApiKey, aa."Id" as ArtistId, a."Id" as AlbumId, s."Id" as SongId, 
                              aa."Name" as ArtistName, a."Name" as AlbumTitle, now() as TimePlayed, 
                              s."Title" as "SongTitle", s."Duration" as SongDuration, s."MusicBrainzId" as SongMusicBrainzId, s."SongNumber" as SongNumber
                       from "Songs" s 
