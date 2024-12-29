@@ -487,7 +487,23 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Prefix to apply to directories to skip processing. This is also used then a directory throws an error attempting to be processed, to prevent future processing.",
                     Value = "_skip_ ",
                     CreatedAt = now
+                },     
+                new Setting
+                {
+                    Id = 49,
+                    Key = SettingRegistry.EncryptionPrivateKey,
+                    Comment = "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.",
+                    Value = "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y",
+                    CreatedAt = now
                 },                
+                new Setting
+                {
+                    Id = 50,
+                    Key = SettingRegistry.ProcessingDuplicateAlbumPrefix,
+                    Comment = "Prefix to apply to indicate an album directory is a duplicate album for an artist. If left blank the default of '__duplicate_' will be used.",
+                    Value = "__duplicate_ ",
+                    CreatedAt = now
+                },                 
                 new Setting
                 {
                     Id = 1300,
@@ -513,14 +529,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ValidationMaximumAlbumYear,
                     Comment = "Maximum allowed year for an album.",
                     Value = "2150",
-                    CreatedAt = now
-                },
-                new Setting
-                {
-                    Id = 49,
-                    Key = SettingRegistry.EncryptionPrivateKey,
-                    Comment = "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.",
-                    Value = "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y",
                     CreatedAt = now
                 },
                 new Setting

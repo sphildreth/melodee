@@ -57,6 +57,7 @@ public class LibraryInsertJob(
     private int _totalAlbumsInserted;
     private int _totalArtistsInserted;
     private int _totalSongsInserted;
+    private string _duplicateAlbumPrefix;
 
     private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
     [
@@ -124,6 +125,8 @@ public class LibraryInsertJob(
             ];
             _now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
+            _duplicateAlbumPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix) ?? "__duplicate_ ";            
+            
             _dataMap = context.JobDetail.JobDataMap;
             var defaultNeverScannedDate = Instant.FromDateTimeUtc(DateTime.MinValue.ToUniversalTime());
             var stagingLibrary = await libraryService.GetStagingLibraryAsync(context.CancellationToken).ConfigureAwait(false);
@@ -462,7 +465,7 @@ public class LibraryInsertJob(
                         if (dbAlbumsToAdd.Any(x => x.Artist.Id == dbArtist.Id && x.NameNormalized == nameNormalized))
                         {
                             Logger.Warning("For artist [{Artist}] found duplicate album [{Album}]", dbArtist, newAlbum);
-                            melodeeAlbum.Directory.AppendPrefix("_duplicate");
+                            melodeeAlbum.Directory.AppendPrefix(_duplicateAlbumPrefix);
                             continue;
                         }
 

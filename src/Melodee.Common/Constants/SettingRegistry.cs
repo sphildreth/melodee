@@ -46,6 +46,7 @@ public static class SettingRegistry
     public const string ProcessingDoDeleteOriginal = "processing.doDeleteOriginal";
     public const string ProcessingDoOverrideExistingMelodeeDataFiles = "processing.doOverrideExistingMelodeeDataFiles";
     public const string ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue = "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue";
+    public const string ProcessingDuplicateAlbumPrefix = "processing.duplicateAlbumPrefix";
     public const string ProcessingIgnoredArticles = "processing.ignoredArticles";
     public const string ProcessingIgnoredPerformers = "processing.ignoredPerformers";
     public const string ProcessingIgnoredProduction = "processing.ignoredProduction";

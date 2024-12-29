@@ -25,6 +25,7 @@ public abstract class ServiceBase(
     IDbContextFactory<MelodeeDbContext> contextFactory)
 {
     public const string CacheName = "melodee";
+    
     protected static TimeSpan DefaultCacheDuration = TimeSpan.FromDays(1);
 
     protected ILogger Logger { get; } = logger;

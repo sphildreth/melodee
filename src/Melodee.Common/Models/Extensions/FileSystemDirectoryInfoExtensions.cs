@@ -23,18 +23,17 @@ public static class FileSystemDirectoryInfoExtensions
     /// </summary>
     public static FileSystemDirectoryInfo AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string prefix)
     {
-        var d = fileSystemDirectoryInfo.ToDirectoryInfo();
-        var dirName = Path.GetDirectoryName(d.FullName) ?? string.Empty;
-        var newName = $"{prefix}{fileSystemDirectoryInfo.Name}";
-        var moveTo = Path.Combine(dirName, newName);
+        var d = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var newName = $"{prefix}{d.Name}";
+        var moveTo = Path.Combine(d.Parent.FullName, newName);
         if (Directory.Exists(moveTo))
         {
-            Directory.Move(moveTo, Path.Combine(dirName, $"{moveTo}-{ DateTime.UtcNow.Ticks.ToString()}"));
+            Directory.Move(moveTo, Path.Combine(d.FullName, $"{moveTo}-{ DateTime.UtcNow.Ticks.ToString()}"));
         }
-        d.MoveTo(moveTo);
+        Directory.Move(d.FullName, moveTo);
         return new FileSystemDirectoryInfo
         {
-            Path = dirName,
+            Path = moveTo,
             Name = newName
         };
     }
@@ -44,18 +43,17 @@ public static class FileSystemDirectoryInfoExtensions
     /// </summary>
     public static FileSystemDirectoryInfo AppendSuffix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string suffix)
     {
-        var d = fileSystemDirectoryInfo.ToDirectoryInfo();
-        var dirName = Path.GetDirectoryName(d.FullName) ?? string.Empty;
+        var dirName = Path.GetDirectoryName(fileSystemDirectoryInfo.Path) ?? string.Empty;
         var newName = $"{fileSystemDirectoryInfo.Name}{suffix}";
         var moveTo = Path.Combine(dirName, newName);
         if (Directory.Exists(moveTo))
         {
             Directory.Move(moveTo, Path.Combine(dirName, $"{moveTo}-{ DateTime.UtcNow.Ticks.ToString()}"));
         }
-        d.MoveTo(moveTo);
+        Directory.Move(fileSystemDirectoryInfo.FullName(), moveTo);
         return new FileSystemDirectoryInfo
         {
-            Path = dirName,
+            Path = moveTo,
             Name = newName
         };
     }
