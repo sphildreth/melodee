@@ -8,6 +8,7 @@ using Melodee.Results;
 using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Serilog;
 
 namespace Melodee.Controllers.OpenSubsonic;
 
@@ -57,12 +58,29 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
         return ip;
     }
 
-    protected async Task<IActionResult> ImageResult(Task<ResponseModel> action)
+    protected async Task<IActionResult> ImageResult(string apiKey, Task<ResponseModel> action)
     {
-        var model = await action;
-        HttpContext.Response.Headers.Append("ETag", model.ResponseData.Etag);
-        etagRepository.AddEtag(model.ApiKeyId, model.ResponseData.Etag);
-        return new FileContentResult((byte[])model.ResponseData.Data!, model.ResponseData.ContentType ?? "image/jpeg");
+        try
+        {
+            var model = await action;
+            if (model.ResponseData.Etag == null || model.ResponseData.Data is not byte[])
+            {
+                Log.Warning("ResponseData is invalid for ApiKey [{ApiKey}]", apiKey);
+                return new EmptyResult();
+            }
+            HttpContext.Response.Headers.Append("ETag", model.ResponseData.Etag);
+            etagRepository.AddEtag(model.ApiKeyId, model.ResponseData.Etag);
+            return new FileContentResult((byte[])model.ResponseData.Data!, model.ResponseData.ContentType ?? "image/jpeg");
+        }
+        catch (OperationCanceledException ex)
+        {
+            // Don't do anything as this happens a lot with TCP connections
+        }
+        catch (Exception ex)
+        {
+            Log.Warning("Error in image result for ApiKey [{ApiKey}]", apiKey);
+        }
+        return new EmptyResult();
     }
 
     protected async Task<IActionResult> MakeResult(Task<ResponseModel> modelTask)
@@ -107,6 +125,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             values.Add(new KeyValue("s", context.HttpContext.Request.Form["s"]));
             values.Add(new KeyValue("c", context.HttpContext.Request.Form["c"]));
             values.Add(new KeyValue("callback", context.HttpContext.Request.Form["callback"]));
+            values.Add(new KeyValue("jwt", context.HttpContext.Request.Form["jwt"]));
         }
         else
         {
@@ -119,8 +138,9 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             values.Add(new KeyValue("s", context.HttpContext.Request.Query["s"].FirstOrDefault()));
             values.Add(new KeyValue("c", context.HttpContext.Request.Query["c"].FirstOrDefault()));
             values.Add(new KeyValue("callback", context.HttpContext.Request.Query["callback"].FirstOrDefault()));
+            values.Add(new KeyValue("jwt", context.HttpContext.Request.Query["jwt"].FirstOrDefault()));
         }
-
+        values.Add(new KeyValue("QueryString", context.HttpContext.Request.QueryString.ToString()));
         ApiRequest = new ApiRequest
         (
             values.ToArray(),
@@ -132,6 +152,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             values.FirstOrDefault(x => x.Key == "t")?.Value,
             values.FirstOrDefault(x => x.Key == "s")?.Value,
             values.FirstOrDefault(x => x.Key == "callback")?.Value,
+            values.FirstOrDefault(x => x.Key == "jwt")?.Value,
             new UserPlayer
             (
                 values.FirstOrDefault(x => x.Key == "User-Agent")?.Value,
@@ -140,7 +161,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
                 GetRequestIp(context.HttpContext)
             )
         );
-        Console.WriteLine($"-*-> User [{ApiRequest.Username}] : {ApiRequest}");
+        Console.WriteLine($"-*-> User [{ApiRequest.Username}] : { Serializer.Serialize(ApiRequest)}");
         return base.OnActionExecutionAsync(context, next);
     }
 }

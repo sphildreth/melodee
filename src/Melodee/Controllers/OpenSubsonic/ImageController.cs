@@ -18,7 +18,7 @@ public class ImageController(ILogger logger, OpenSubsonicApiService openSubsonic
     [Route("/images/{apiKey}/{size}")]
     public Task<IActionResult> GetImageAsync(string id, string size, CancellationToken cancellationToken = default)
     {
-        return ImageResult(openSubsonicApiService.GetImageForApiKeyId(id,
+        return ImageResult(id,openSubsonicApiService.GetImageForApiKeyId(id,
             size,
             ApiRequest,
             cancellationToken));

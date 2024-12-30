@@ -105,6 +105,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             password,
             salt,
             null,
+            null,
             new UserPlayer(null,
                 null,
                 null,

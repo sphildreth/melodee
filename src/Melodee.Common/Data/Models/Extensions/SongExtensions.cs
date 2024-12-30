@@ -48,7 +48,7 @@ public static class SongExtensions
             song.BitDepth,
             song.SamplingRate,
             song.ChannelCount,
-            song.FileName,
+            Path.Combine(album.Directory, song.FileName),
             song.PlayedCount,
             song.LastPlayedAt?.ToString(),
             song.AlbumDisc.DiscNumber,

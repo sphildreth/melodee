@@ -120,7 +120,7 @@ public record Child(
                $"isVideo=\"{ (IsVideo ?? false).ToLowerCaseString() }\" playCount=\"{ PlayCount }\" discNumber=\"{DiscNumber}\" " +
                $"averageRating=\"{ AverageRating ?? 0 }\" userRating=\"{UserRating ?? 0}\" " +
                $"created=\"{Created}\" {starredAttribute} albumId=\"{AlbumId}\" artistId=\"{ArtistId}\" type=\"{Type}\" " +
-               $"coverArt=\"{CoverArt}\" size=\"{Size}\" contentType=\"{ContentType}\" suffix=\"{Suffix}\" " +
-               $"duration=\"{Duration}\" bitRate=\"{BitRate}\" path=\"{Path}\"/>";
+               $"coverArt=\"{CoverArt}\" size=\"{Size}\" contentType=\"{ContentType}\" suffix=\"{Suffix?.Replace(".", string.Empty)}\" " +
+               $"duration=\"{Duration}\" bitRate=\"{BitRate}\" path=\"{Path.ToSafeXmlString()}\"/>";
     }
 }

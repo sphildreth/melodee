@@ -91,8 +91,7 @@ public class OpenSubsonicApiService(
         {
             return null;
         }
-
-        var apiIdParts = id.Nullify() == null ? [] : id.Split(OpenSubsonicServer.ApiIdSeparator);
+        var apiIdParts = id!.Split(OpenSubsonicServer.ApiIdSeparator);
         var toParse = id;
         if (apiIdParts.Length < 2)
         {
@@ -591,8 +590,15 @@ public class OpenSubsonicApiService(
                         break;
 
                     case ListType.ByYear:
-                        whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear";
-                        orderSql = "ORDER BY \"Year\" DESC nulls last";
+                        if (albumListRequest.FromYear < albumListRequest.ToYear)
+                        {
+                            whereSql = "where DATE_PART('year', a.\"ReleaseDate\"::date) between @fromYear AND @toYear";
+                            orderSql = "ORDER BY \"Year\" DESC nulls last";
+                        }
+                        else
+                        {
+                            orderSql = "ORDER BY \"Year\" ASC nulls last";
+                        }
                         break;
 
                     case ListType.ByGenre:
@@ -703,6 +709,8 @@ public class OpenSubsonicApiService(
                 };
             }
 
+            
+            
             var album = albumResponse.Data!;
             var userAlbum = await userService.UserAlbumAsync(apiRequest.Username, apiKey.Value, cancellationToken);
             var userSongsForAlbum = await userService.UserSongsForAlbumAsync(apiRequest.Username, apiKey.Value, cancellationToken) ?? [];
@@ -1150,6 +1158,9 @@ public class OpenSubsonicApiService(
             (apiRequest.Password?.Nullify() == null &&
              apiRequest.Token?.Nullify() == null))
         {
+            Logger.Warning("[{MethodName}] [{ApiRequest}] is invalid",
+                nameof(AuthenticateSubsonicApiAsync),
+                apiRequest.ToString());
             return new ResponseModel
             {
                 UserInfo = new UserInfo(0, Guid.Empty, string.Empty, string.Empty),
@@ -1181,10 +1192,27 @@ public class OpenSubsonicApiService(
                         apiRequestPassword = apiRequestPassword?.FromHexString();
                     }
 
+                    if (apiRequest.Jwt.Nullify() != null)
+                    {
+                        // TODO is this something used by systems other than Navidrome?
+                        // see https://github.com/navidrome/navidrome/blob/acce3c97d5dcf22a005a46d855bb1763a8bb8b66/server/subsonic/middlewares.go#L132
+                        throw new NotImplementedException();
+                    }
+
                     if (authUsingToken)
                     {
                         var userMd5 = HashHelper.CreateMd5($"{usersPassword}{apiRequest.Salt}");
                         isAuthenticated = string.Equals(userMd5, apiRequest.Token, StringComparison.OrdinalIgnoreCase);
+
+                        if (!isAuthenticated)
+                        {
+                            Logger.Warning("[{MethodName}] user client [{Client}] attempted token auth, provided salt [{Salt}] token [{Token}] did not match generated md5 [{Md5}]", 
+                                nameof(AuthenticateSubsonicApiAsync),
+                                apiRequest.ApiRequestPlayer.Client,
+                                apiRequest.Salt,
+                                apiRequest.Token,
+                                userMd5);
+                        }
                     }
                     else
                     {
@@ -1810,7 +1838,9 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> GetIndexesAsync(string dataPropertyName, Guid? musicFolderId, long? ifModifiedSince, ApiRequest apiRequest, CancellationToken cancellationToken)
+  
+
+    public async Task<ResponseModel> GetIndexesAsync(bool isArtistIndex, string dataPropertyName, Guid? musicFolderId, long? ifModifiedSince, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -1824,7 +1854,7 @@ public class OpenSubsonicApiService(
             indexLimit = short.MaxValue;
         }
 
-        Indexes? data;
+        object? data;
         var libraryId = 0;
         var lastModified = string.Empty;
         if (musicFolderId.HasValue)
@@ -1870,11 +1900,20 @@ public class OpenSubsonicApiService(
                 artists.Add(new ArtistIndex(grouped.Key, aa.Take(indexLimit).ToArray()));
             }
 
-            data = new Indexes(
-                (await Configuration.Value).GetValue<string>(SettingRegistry.ProcessingIgnoredArticles) ?? string.Empty, lastModified,
-                [],
-                artists.ToArray(),
-                []);
+            if (!isArtistIndex)
+            {
+                data = new Indexes(
+                    (await Configuration.Value).GetValue<string>(SettingRegistry.ProcessingIgnoredArticles) ?? string.Empty, lastModified,
+                    [],
+                    artists.ToArray(),
+                    []);
+            }
+            else
+            {
+                data = new Artists(
+                    (await Configuration.Value).GetValue<string>(SettingRegistry.ProcessingIgnoredArticles) ?? string.Empty, lastModified,
+                    artists.ToArray());
+            }
         }
 
         return new ResponseModel
@@ -1883,7 +1922,7 @@ public class OpenSubsonicApiService(
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
-                DataPropertyName = dataPropertyName
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : dataPropertyName
             }
         };
     }
@@ -1948,6 +1987,10 @@ public class OpenSubsonicApiService(
                     artistInfo.UserStarred?.ToString(),
                     await AlbumListForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false));
             }
+            else
+            {
+                Logger.Warning("[{MethodName}] invalid artist id [{Id}] ApiRequest [{ApiRequest}]", nameof(GetArtistAsync), id, apiRequest.ToString());
+            }
         }
 
         return new ResponseModel
@@ -1957,7 +2000,7 @@ public class OpenSubsonicApiService(
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
-                DataPropertyName = "artist"
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "artist"
             }
         };
     }
@@ -2291,12 +2334,7 @@ public class OpenSubsonicApiService(
             UserInfo = authResponse.UserInfo,
             ResponseData = await DefaultApiResponse() with
             {
-                Data = new
-                {
-                    Artist = artists,
-                    Album = albums,
-                    Song = songs
-                },
+                Data = new StarredInfo2(artists, albums, songs),
                 DataPropertyName = "starred2"
             }
         };
@@ -2355,12 +2393,7 @@ public class OpenSubsonicApiService(
             UserInfo = authResponse.UserInfo,
             ResponseData = await DefaultApiResponse() with
             {
-                Data = new
-                {
-                    Artist = artists,
-                    Album = albums,
-                    Song = songs
-                },
+                Data = new StarredInfo(artists, albums, songs),
                 DataPropertyName = "starred"
             }
         };
@@ -2604,7 +2637,7 @@ public class OpenSubsonicApiService(
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
-                DataPropertyName = "artistInfo"
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "artistInfo"
             }
         };
     }

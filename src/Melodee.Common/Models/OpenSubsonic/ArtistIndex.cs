@@ -1,4 +1,5 @@
 using System.Text;
+using Mapster;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -13,7 +14,7 @@ public record ArtistIndex(
         var result = new StringBuilder($"<index name=\"{Name.ToSafeXmlString()}\">");
         foreach (var artist in Artist)
         {
-            result.Append($"<artist id=\"{artist.Id}\" name=\"{artist.Name.ToSafeXmlString()}\"/>");
+            result.Append(artist.ToXml());
         }
         result.Append("</index>");
         return result.ToString();

@@ -47,7 +47,7 @@ public sealed class Serializer(ILogger logger) : ISerializer
                 }
                 else
                 {
-                    result.Append(((IOpenSubsonicToXml)model.ResponseData.Data).ToXml());    
+                    result.Append(((IOpenSubsonicToXml)model.ResponseData.Data).ToXml(model.ResponseData.DataPropertyName));    
                 }
                 if (model.ResponseData.DataPropertyName.Nullify() != null)
                 {

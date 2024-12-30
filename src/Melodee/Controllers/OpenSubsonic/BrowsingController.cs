@@ -118,7 +118,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     [Route("/rest/getIndexes")]
     public Task<IActionResult> GetIndexesAsync(Guid? musicFolderId, long? ifModifiedSince, CancellationToken cancellationToken = default)
     {
-        return MakeResult(openSubsonicApiService.GetIndexesAsync("indexes", musicFolderId, ifModifiedSince, ApiRequest, cancellationToken));
+        return MakeResult(openSubsonicApiService.GetIndexesAsync(false, "indexes", musicFolderId, ifModifiedSince, ApiRequest, cancellationToken));
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     [Route("/rest/getArtists")]
     public Task<IActionResult> GetArtistsAsync(Guid? musicFolderId, CancellationToken cancellationToken = default)
     {
-        return MakeResult(openSubsonicApiService.GetIndexesAsync("artists", musicFolderId, null, ApiRequest, cancellationToken));
+        return MakeResult(openSubsonicApiService.GetIndexesAsync(true, "artists", musicFolderId, null, ApiRequest, cancellationToken));
     }
 
     /// <summary>

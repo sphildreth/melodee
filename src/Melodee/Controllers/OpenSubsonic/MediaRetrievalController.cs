@@ -58,7 +58,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
     [Route("/rest/getCoverArt")]
     public Task<IActionResult> GetCoverArtAsync(string id, string? size, CancellationToken cancellationToken = default)
     {
-        return ImageResult(openSubsonicApiService.GetImageForApiKeyId(id,
+        return ImageResult(id ,openSubsonicApiService.GetImageForApiKeyId(id,
             size,
             ApiRequest,
             cancellationToken));
