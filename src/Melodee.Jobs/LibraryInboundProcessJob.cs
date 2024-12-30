@@ -41,7 +41,7 @@ public sealed class LibraryInboundProcessJob(
         if (!inboundLibrary.NeedsScanning())
         {
             Logger.Debug(
-                "[{JobName}] Inbound library does not need scanning. Directory last scanned [{LastScanAt}], Directory last write [{LastWriteTime()}]",
+                "[{JobName}] Inbound library does not need scanning. Directory last scanned [{LastScanAt}], Directory last write [{LastWriteTime}]",
                 nameof(LibraryInboundProcessJob),
                 inboundLibrary.LastScanAt,
                 inboundLibrary.LastWriteTime());

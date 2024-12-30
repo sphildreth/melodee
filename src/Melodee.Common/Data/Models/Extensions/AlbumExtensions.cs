@@ -46,7 +46,7 @@ public static class AlbumExtensions
                     }
                     else
                     {
-                        var id = $"contributor_{artistContributor.ContributorName.ToNormalizedString()}";
+                        var id = $"contributor{OpenSubsonicServer.ApiIdSeparator}{artistContributor.ContributorName.ToNormalizedString()}";
                         if (artistContributor.ContributorName != null)
                         {
                             result.Add(new ArtistID3(

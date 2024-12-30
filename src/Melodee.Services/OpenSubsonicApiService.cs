@@ -737,7 +737,7 @@ public class OpenSubsonicApiService(
                 PlayCount = album.PlayedCount,
                 Played = album.LastPlayedAt.ToString(),
                 RecordLabels = album.RecordLabels(),
-                Song = album.Discs.SelectMany(x => x.Songs)
+                Song = album.Discs.SelectMany(x => x.Songs).OrderBy(x => x.AlbumDisc.DiscNumber).ThenBy(x => x.SongNumber)
                     .Select(x => x.ToApiChild(album, userSongsForAlbum.FirstOrDefault(us => us.SongId == x.Id)))
                     .ToArray(),
                 SongCount = album.SongCount ?? 0,
@@ -883,6 +883,7 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
+        string badEtag = Instant.MinValue.ToEtag();
         string? etag = null;
         var sizeValue = size ?? ImageSizeRegistry.Large;
         var imageBytes = await CacheManager.GetAsync($"urn:openSubsonic:imageForApikey:{apiId}:{sizeValue}", async () =>
@@ -915,6 +916,11 @@ public class OpenSubsonicApiService(
                                 etag = artistInfo.CreatedAt.ToEtag();
                             }
                         }
+                        if(result == null)
+                        {
+                            result = defaultImages.ArtistBytes;
+                            etag = badEtag;
+                        }
                     }
                     else if (IsApiIdForSong(apiId) || IsApiIdForAlbum(apiId))
                     {
@@ -927,7 +933,6 @@ public class OpenSubsonicApiService(
                                 apiKey = songInfo.AlbumApiKey;
                             }
                         }
-
 
                         var albumResponse = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken);
                         if (albumResponse.IsSuccess)
@@ -978,6 +983,11 @@ public class OpenSubsonicApiService(
                                 }
                             }
                         }
+                        if(result == null)
+                        {
+                            result = defaultImages.AlbumCoverBytes;
+                            etag = badEtag;
+                        }                        
                     }
 
                     if (result != null)
@@ -1015,6 +1025,7 @@ public class OpenSubsonicApiService(
                             }
                         }
                     }
+
                 }
                 catch (Exception e)
                 {
@@ -1032,7 +1043,7 @@ public class OpenSubsonicApiService(
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
-                Data = imageBytes ?? defaultImages.AlbumCoverBytes,
+                Data = imageBytes,
                 DataPropertyName = string.Empty,
                 DataDetailPropertyName = string.Empty,
                 Etag = etag,
@@ -2679,7 +2690,7 @@ public class OpenSubsonicApiService(
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
-                DataPropertyName = "albumInfo"
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "albumInfo"
             }
         };
     }
