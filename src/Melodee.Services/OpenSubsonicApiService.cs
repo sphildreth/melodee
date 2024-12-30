@@ -913,7 +913,7 @@ public class OpenSubsonicApiService(
                             if (firstArtistImage != null)
                             {
                                 result = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken).ConfigureAwait(false);
-                                etag = artistInfo.CreatedAt.ToEtag();
+                                etag = (artistInfo.LastUpdatedAt ?? artistInfo.CreatedAt).ToEtag();
                             }
                         }
                         if(result == null)
@@ -1880,7 +1880,7 @@ public class OpenSubsonicApiService(
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
                       select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", 
-                             a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", a."CreatedAt" as "CreatedAt", a."LastPlayedAt" as "Played", a."Directory",
+                             a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", a."CreatedAt" as "CreatedAt", a."LastUpdatedAt" as "LastUpdatedAt", a."LastPlayedAt" as "Played", a."Directory",
                              (SELECT ua."StarredAt" FROM "UserArtists" ua WHERE a."Id" = ua."ArtistId" and ua."UserId" = @userId and ua."IsStarred") as "UserStarred", 
                              (SELECT ua."Rating" FROM "UserArtists" ua WHERE a."Id" = ua."ArtistId" and ua."UserId" = @userId) as "UserRating"
                       from "Artists" a

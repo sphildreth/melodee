@@ -216,7 +216,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Magic,
                     Key = SettingRegistry.MagicDoSetYearToCurrentIfInvalid,
                     Comment = "Set the song year to current year if invalid or missing when doing magic.",
-                    Value = "true",
+                    Value = "false",
                     CreatedAt = now
                 },
                 new Setting
@@ -331,7 +331,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 27,
                     Key = SettingRegistry.ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue,
                     Comment = "If OrigAlbumYear [TOR, TORY, TDOR] value is invalid use current year.",
-                    Value = "true",
+                    Value = "false",
                     CreatedAt = now
                 },
                 new Setting
