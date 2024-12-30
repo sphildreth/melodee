@@ -55,7 +55,7 @@ public record AlbumID3 : IOpenSubsonicToXml
         string starredAttribute = string.Empty;
         if (Starred != null)
         {
-            starredAttribute = $" starred=\"{Starred}\"";
+            starredAttribute = $" starred=\"true\" starredAt=\"{Starred}\"";
         }
         string genreAttribute = string.Empty;
         if (Genre != null)

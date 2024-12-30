@@ -23,7 +23,7 @@ public record Artist(
     string CoverArt,
     string? ArtistImageUrl = null,
     string? UserStarred = null,
-    AlbumList2[]? Album = null
+    AlbumList2[]? Albums = null
 ) : IOpenSubsonicToXml
 {
     /// <summary>
@@ -33,12 +33,18 @@ public record Artist(
 
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<artist id=\"{ Id }\" name=\"{ Name.ToSafeXmlString() }\" coverArt=\"{ CoverArt }\" albumCount=\"{ AlbumCount }\">");
-        if (Album != null)
+        string starredAttribute = string.Empty;
+        if (Starred != null)
         {
-            foreach (var album in Album)
+            starredAttribute = $" starred=\"true\" starredAt=\"{Starred}\"";
+        }
+        var result = new StringBuilder($"<artist id=\"{ Id }\" name=\"{ Name.ToSafeXmlString() }\" { starredAttribute } artistImageUrl=\"{ ArtistImageUrl }\" averageRating=\"{ AverageRating }\" userRating=\"{ UserRating }\" coverArt=\"{ CoverArt }\" albumCount=\"{ AlbumCount }\">");
+        if (Albums != null)
+        {
+            foreach (var album in Albums)
             {
-                result.Append($"<album id=\"{ album.Id }\" name=\"{ album.Name.ToSafeXmlString() }\" coverArt=\"{ album.CoverArt }\" songCount=\"{ album.SongCount }\" created=\"{ album.Created }\" duration=\"{ album.Duration }\" artist=\"{ album.Artist.ToSafeXmlString() }\" artistId=\"{ album.ArtistId }\"/>");
+               // result.Append($"<album id=\"{ album.Id }\" name=\"{ album.Name.ToSafeXmlString() }\" coverArt=\"{ album.CoverArt }\" songCount=\"{ album.SongCount }\" created=\"{ album.Created }\" duration=\"{ album.Duration }\" artist=\"{ album.Artist.ToSafeXmlString() }\" artistId=\"{ album.ArtistId }\"/>");
+                result.Append(album.ToXml());               
             }
         }
         result.Append("</artist>");
