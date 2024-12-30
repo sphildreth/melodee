@@ -178,7 +178,7 @@ public static class AlbumExtensions
     }
 
     /// <summary>
-    ///     Return the value set for the OrigAlbumYear ?? RecordingYear ?? RecordingDateOrYear
+    ///     Return the value set for the Album date.
     /// </summary>
     public static int? AlbumYear(this Album album)
     {
@@ -390,10 +390,11 @@ public static class AlbumExtensions
         }
 
         var minimumAlbumYear = SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMinimumAlbumYear]);
+        var maximumValidAlbumYear = SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumAlbumYear]);
         var albumDate = album.AlbumYear();
-        if (albumDate.HasValue && albumDate < minimumAlbumYear)
+        if (albumDate.HasValue && (albumDate < minimumAlbumYear || albumDate > maximumValidAlbumYear))
         {
-            throw new Exception($"Invalid year [{albumDate}] for Album [{album}], Minimum configured value is [{minimumAlbumYear}]");
+            throw new Exception($"Invalid year [{albumDate}] for Album [{album}], Minimum configured value is [{minimumAlbumYear}], Maximum configured value is [{maximumValidAlbumYear}].");
         }
 
         return $"[{albumDate}] {albumPathTitle}/";

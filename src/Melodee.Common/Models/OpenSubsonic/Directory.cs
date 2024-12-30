@@ -22,7 +22,7 @@ public record Directory(string Id, string? Parent, string Name, string? Starred,
 {
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<directory id=\"{ Id }\" parent=\"{ Parent }\" name=\"{ Name.ToSafeXmlString() }\" starred=\"{Starred}\">");
+        var result = new StringBuilder($"<directory id=\"{ Id }\" parent=\"{ Parent }\" name=\"{ Name.ToSafeXmlString() }\" starred=\"{Starred}\" starredAt=\"{Starred}\">");
         if (Child.Length > 0)
         {
             foreach (var child in Child)

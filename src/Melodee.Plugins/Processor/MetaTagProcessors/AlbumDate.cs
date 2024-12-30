@@ -22,7 +22,7 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
-        return metaTagIdentifier is MetaTagIdentifier.AlbumDate or MetaTagIdentifier.OrigAlbumDate or MetaTagIdentifier.RecordingDateOrYear;
+        return metaTagIdentifier is MetaTagIdentifier.AlbumDate or MetaTagIdentifier.RecordingYear or MetaTagIdentifier.RecordingDateOrYear or MetaTagIdentifier.OrigAlbumYear;
     }
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
@@ -35,7 +35,8 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
         }
 
         var minimumValidAlbumYear = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ValidationMinimumAlbumYear]);
-        if (yearValue < minimumValidAlbumYear)
+        var maximumValidAlbumYear = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ValidationMaximumAlbumYear]);
+        if (yearValue < minimumValidAlbumYear || yearValue > maximumValidAlbumYear)
         {
             yearValue = directoryInfo.FullName().TryToGetYearFromString() ?? fileSystemFileInfo.FullName(directoryInfo).TryToGetYearFromString() ?? 0;
             if (yearValue < minimumValidAlbumYear && SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue]))

@@ -16,6 +16,7 @@ using Melodee.Services.Extensions;
 using Melodee.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using ServiceStack;
 using SixLabors.ImageSharp;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
@@ -431,7 +432,7 @@ public sealed class MediaEditService(
             var year = DateTime.Now.Year;
             var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
             var albumValidResult = _albumValidator.ValidateAlbum(album);
-            if (albumValidResult.Data.IsValid)
+            if (albumValidResult.Data.IsValid && albumValidResult.Data.AlbumStatusReasons.HasFlag(AlbumNeedsAttentionReasons.HasInvalidYear))
             {
                 album.SetTagValue(MetaTagIdentifier.OrigAlbumYear, year);
                 foreach (var song in album.Songs ?? [])

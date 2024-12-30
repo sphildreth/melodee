@@ -112,7 +112,7 @@ public record Child(
         string starredAttribute = string.Empty;
         if (Starred != null)
         {
-            starredAttribute = $" starred=\"true\" starredAt=\"{Starred}\"";
+            starredAttribute = $" starred=\"{Starred}\" starredAt=\"{Starred}\"";
         }    
         
         return $"<{nodeName ?? "song"} id=\"{Id}\" parent=\"{Parent}\" title=\"{Title.ToSafeXmlString()}\" isDir=\"{(IsDir ?? false).ToLowerCaseString()}\" " +

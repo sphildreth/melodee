@@ -36,7 +36,7 @@ public record Artist(
         string starredAttribute = string.Empty;
         if (Starred != null)
         {
-            starredAttribute = $" starred=\"true\" starredAt=\"{Starred}\"";
+            starredAttribute = $" starred=\"{Starred}\" starredAt=\"{Starred}\"";
         }
         var result = new StringBuilder($"<artist id=\"{ Id }\" name=\"{ Name.ToSafeXmlString() }\" { starredAttribute } artistImageUrl=\"{ ArtistImageUrl }\" averageRating=\"{ AverageRating }\" userRating=\"{ UserRating }\" coverArt=\"{ CoverArt }\" albumCount=\"{ AlbumCount }\">");
         if (Albums != null)
