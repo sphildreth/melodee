@@ -1,14 +1,10 @@
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models.Extensions;
-using Melodee.Common.Models;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
-using Melodee.Common.Utility;
-using Melodee.Common.Plugins.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +13,6 @@ using ServiceStack.Data;
 using ServiceStack.OrmLite;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using Spectre.Console.Json;
 
 namespace Melodee.Cli.Command;
 
@@ -41,8 +36,6 @@ public class ConfigurationSetCommand : AsyncCommand<ConfigurationSetSetting>
         var serializer = new Serializer(Log.Logger);
         var cacheManager = new MemoryCacheManager(Log.Logger, TimeSpan.FromDays(1), serializer);
 
-        var isValid = false;
-
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
@@ -56,11 +49,10 @@ public class ConfigurationSetCommand : AsyncCommand<ConfigurationSetSetting>
 
         using (var scope = serviceProvider.CreateScope())
         {
-            var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
 
             var config = await settingService.GetAsync(settings.Key).ConfigureAwait(false);
-            if (!config.IsSuccess)
+            if (!config.IsSuccess || config.Data == null)
             {
                 AnsiConsole.MarkupLine($":warning: Unknown configuration key [{ settings.Key}]");
                 return 1;

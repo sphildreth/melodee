@@ -152,7 +152,7 @@ public sealed class LibraryService(
     {
         Guard.Against.Expression(x => x < 1, libraryId, nameof(libraryId));
 
-        var libraryType = (int)LibraryType.Library;
+        int libraryType;
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbLibrary = await scopedContext
@@ -436,8 +436,12 @@ public sealed class LibraryService(
                 Console.WriteLine("No image found in existing directory. Copying all images from Album...");
                 foreach (var image in albumToMove.Images)
                 {
-                    File.Move(image.FileInfo.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, image.FileInfo.Name));
-                    Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);
+                    if (image.FileInfo != null)
+                    {
+                        File.Move(image.FileInfo.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, image.FileInfo.Name));
+                        Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);
+                    }
+
                     modifiedExistingDirectory = true;
                 }
             }
@@ -625,13 +629,7 @@ public sealed class LibraryService(
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
 
         var albumValidator = new AlbumValidator(configuration);
-        var imageValidator = new ImageValidator(configuration);
-        var imageConvertor = new ImageConvertor(configuration);
 
-        ISongPlugin[] songPlugins =
-        [
-            new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor, imageValidator, configuration)
-        ];
         var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
@@ -668,9 +666,12 @@ public sealed class LibraryService(
                 {
                     if (skipDirPrefix != null)
                     {
-                        var newName = Path.Combine(dirInfo.Parent.FullName, $"{skipDirPrefix}{dirInfo.Name}-{DateTime.UtcNow.Ticks}");
-                        dirInfo.MoveTo(newName);
-                        Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", dirInfo.FullName, newName);
+                        if (dirInfo.Parent != null)
+                        {
+                            var newName = Path.Combine(dirInfo.Parent.FullName, $"{skipDirPrefix}{dirInfo.Name}-{DateTime.UtcNow.Ticks}");
+                            dirInfo.MoveTo(newName);
+                            Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", dirInfo.FullName, newName);
+                        }
                     }
 
                     continue;
@@ -878,16 +879,16 @@ public sealed class LibraryService(
                                             continue;
                                         }
 
-                                        MelodeeModels.Album? album = null;
+                                        MelodeeModels.Album? album;
                                         try
                                         {
                                             album = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFile.FullName, cancellationToken));
                                         }
-                                        catch (Exception e)
+                                        catch (Exception ex)
                                         {
                                             if (skipDirPrefix != null)
                                             {
-                                                Logger.Warning(
+                                                Logger.Warning(ex,
                                                     "! Unable to load melodee album [{FileName}]",
                                                     melodeeFile.FullName);
 
@@ -904,9 +905,12 @@ public sealed class LibraryService(
                                         {
                                             if (skipDirPrefix != null)
                                             {
-                                                var newName = Path.Combine(d.Parent.FullName, $"{skipDirPrefix}{d.Name}-{DateTime.UtcNow.Ticks}");
-                                                d.MoveTo(newName);
-                                                Logger.Warning("~ Moved invalid album directory [{Old}] to [{New}]", d.FullName, newName);
+                                                if (d.Parent != null)
+                                                {
+                                                    var newName = Path.Combine(d.Parent.FullName, $"{skipDirPrefix}{d.Name}-{DateTime.UtcNow.Ticks}");
+                                                    d.MoveTo(newName);
+                                                    Logger.Warning("~ Moved invalid album directory [{Old}] to [{New}]", d.FullName, newName);
+                                                }
                                             }
 
                                             continue;
@@ -998,8 +1002,6 @@ public sealed class LibraryService(
 
     public async Task<MelodeeModels.OperationResult<string[]>> CleanLibraryAsync(string settingsLibraryName, CancellationToken cancellationToken = default)
     {
-        var result = false;
-
         Guard.Against.NullOrEmpty(settingsLibraryName, nameof(settingsLibraryName));
 
         var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
@@ -1032,7 +1034,7 @@ public sealed class LibraryService(
         Console.WriteLine($"Found [{allDirectoriesInLibrary.Length}] top level directories...");
         var libraryDirectoryCountBeforeCleaning = allDirectoriesInLibrary.Length;
         var directoriesWithoutMediaFiles = new ConcurrentBag<string>();
-        Parallel.ForEach(allDirectoriesInLibrary, directory => { GetDirectoriesWithoutMediaFiles(directory).ForEach((s, i) => directoriesWithoutMediaFiles.Add(s)); });
+        Parallel.ForEach(allDirectoriesInLibrary, directory => { GetDirectoriesWithoutMediaFiles(directory).ForEach((s, _) => directoriesWithoutMediaFiles.Add(s)); });
         if (directoriesWithoutMediaFiles.Distinct().Any())
         {
             Console.WriteLine($"Found [{directoriesWithoutMediaFiles.Count}] directories with no media files...");

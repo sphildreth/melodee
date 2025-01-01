@@ -430,7 +430,7 @@ public sealed class UserService(
         using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}]: Data [{EventData}]", nameof(UserService), eventData.ToString()))
         {
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-            await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken))
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken))
             {
                 var user = await GetAsync(eventData.UserId, cancellationToken).ConfigureAwait(false);
                 if (user.Data != null)

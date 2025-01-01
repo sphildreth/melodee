@@ -8,7 +8,6 @@ using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
-using Melodee.Common.Plugins.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +44,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddHttpClient();
-        services.AddSingleton<IDbConnectionFactory>(opt =>
+        services.AddSingleton<IDbConnectionFactory>(_ =>
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
         services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
@@ -57,7 +56,6 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
-            var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
 
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
@@ -126,7 +124,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                 )
             );
 
-            job.OnProcessingEvent += (sender, e) => { Log.Information(e.ToString()); };
+            job.OnProcessingEvent += (_, e) => { Log.Information(e.ToString()); };
 
             var jobExecutionContext = new JobExecutionContext(CancellationToken.None);
             jobExecutionContext.Put("ForceMode", settings.ForceMode);
@@ -137,14 +135,9 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
     }
 }
 
-internal class JobExecutionContext : IJobExecutionContext
+internal class JobExecutionContext(CancellationToken cancellation) : IJobExecutionContext
 {
-    private Dictionary<object, object> _dataMap = new Dictionary<object, object>();
-    
-    public JobExecutionContext(CancellationToken cancellation)
-    {
-        CancellationToken = cancellation;
-    }
+    private readonly Dictionary<object, object> _dataMap = new Dictionary<object, object>();
 
     public void Put(object key, object objectValue)
     {
@@ -160,21 +153,21 @@ internal class JobExecutionContext : IJobExecutionContext
         return value;
     }
 
-    public IScheduler Scheduler { get; }
-    public ITrigger Trigger { get; }
-    public ICalendar? Calendar { get; }
-    public bool Recovering { get; }
-    public TriggerKey RecoveringTriggerKey { get; }
-    public int RefireCount { get; }
-    public JobDataMap MergedJobDataMap { get; }
+    public IScheduler Scheduler { get; } = null!;
+    public ITrigger Trigger { get; } = null!;
+    public ICalendar? Calendar { get; }= null!;
+    public bool Recovering { get; } = false;
+    public TriggerKey RecoveringTriggerKey { get; } = null!;
+    public int RefireCount { get; } = 0;
+    public JobDataMap MergedJobDataMap { get; } = null!;
     public IJobDetail JobDetail { get; } = new JobDetailImpl();
-    public IJob JobInstance { get; }
-    public DateTimeOffset FireTimeUtc { get; }
-    public DateTimeOffset? ScheduledFireTimeUtc { get; }
-    public DateTimeOffset? PreviousFireTimeUtc { get; }
-    public DateTimeOffset? NextFireTimeUtc { get; }
-    public string FireInstanceId { get; }
+    public IJob JobInstance { get; } = null!;
+    public DateTimeOffset FireTimeUtc { get; } = DateTimeOffset.MinValue;
+    public DateTimeOffset? ScheduledFireTimeUtc { get; }= DateTimeOffset.MinValue;
+    public DateTimeOffset? PreviousFireTimeUtc { get; }= DateTimeOffset.MinValue;
+    public DateTimeOffset? NextFireTimeUtc { get; }= DateTimeOffset.MinValue;
+    public string FireInstanceId { get; } = null!;
     public object? Result { get; set; }
-    public TimeSpan JobRunTime { get; }
-    public CancellationToken CancellationToken { get; }
+    public TimeSpan JobRunTime { get; } = TimeSpan.Zero;
+    public CancellationToken CancellationToken { get; } = cancellation;
 }

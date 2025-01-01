@@ -3,8 +3,6 @@ using Melodee.Common.Plugins.MetaData.Directory.Models;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
-using Melodee.Common.Plugins.Processor;
-using Melodee.Common.Plugins.Validation;
 using SimpleFileVerification = Melodee.Common.Plugins.MetaData.Directory.SimpleFileVerification;
 
 namespace Melodee.Tests.Plugins.MetaData;

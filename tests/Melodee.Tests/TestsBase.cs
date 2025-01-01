@@ -7,7 +7,6 @@ using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
-using Melodee.Common.Plugins.Validation;
 using Moq;
 using NodaTime;
 using Serilog;

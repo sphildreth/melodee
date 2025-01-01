@@ -22,7 +22,6 @@ namespace Melodee.Common.Plugins.MetaData.Directory;
 public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "SFV";
-    private readonly IAlbumValidator _albumValidator = albumValidator;
 
     private readonly IEnumerable<ISongPlugin> _songPlugins = songPlugins;
     public override string Id => "6C253D42-F176-4A58-A895-C54BEB1F8A5C";
@@ -67,7 +66,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
             {
                 using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, sfvFile.Name))
                 {
-                    var models = await GetModelsFromSfvFile(fileSystemDirectoryInfo, sfvFile.FullName);
+                    var models = await GetModelsFromSfvFile(sfvFile.FullName);
 
                     Log.Debug("\u2502 Found [{Songs}] valid Songs for Sfv file", models.Count(x => x.IsValid));
 
@@ -81,8 +80,8 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         }
                         else
                         {
-                            songResult.Messages?.ForEach((x, i) => Log.Warning("[{PluginName}] Processing [{SfvModel}] Message: [{Message}]", DisplayName, model, x));
-                            songResult.Errors?.ForEach((x, i) => Log.Error(x, "[{PluginName}] Processing [{SfvModel}]", DisplayName, model));
+                            songResult.Messages?.ForEach((x, _) => Log.Warning("[{PluginName}] Processing [{SfvModel}] Message: [{Message}]", DisplayName, model, x));
+                            songResult.Errors?.ForEach((x, _) => Log.Error(x, "[{PluginName}] Processing [{SfvModel}]", DisplayName, model));
                             Log.Warning("Unable to get Song details for Sfv Model [{SfvModel}]", model);
                         }
                     });
@@ -134,7 +133,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     {
                         Artist = new Artist(
                             artistName ?? throw new Exception($"Invalid artist on {nameof(SimpleFileVerification)}"),
-                            artistName.ToNormalizedString() ?? artistName!,
+                            artistName.ToNormalizedString() ?? artistName,
                             null),
                         Directory = fileSystemDirectoryInfo,
                         Files = new[]
@@ -208,7 +207,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
         return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
     }
 
-    private static async Task<SfvLine[]> GetModelsFromSfvFile(FileSystemDirectoryInfo directoryInfo, string filePath)
+    private static async Task<SfvLine[]> GetModelsFromSfvFile(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {

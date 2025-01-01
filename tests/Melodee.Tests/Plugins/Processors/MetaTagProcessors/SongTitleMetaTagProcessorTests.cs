@@ -1,7 +1,6 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Plugins.Processor.MetaTagProcessors;
-using Melodee.Common.Plugins.Processor.MetaTagProcessors;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 

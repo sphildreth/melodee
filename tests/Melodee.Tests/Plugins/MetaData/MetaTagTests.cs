@@ -5,7 +5,6 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Utility;
-using Melodee.Common.Plugins.Processor;
 
 namespace Melodee.Tests.Plugins.MetaData;
 

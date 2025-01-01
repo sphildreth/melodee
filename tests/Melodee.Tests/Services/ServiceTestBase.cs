@@ -18,18 +18,11 @@ using Melodee.Common.Services.Caching;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
-using Melodee.Common.Plugins.Validation;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.Primitives;
 using Moq;
-using Moq.Protected;
 using Quartz;
 using Serilog;
-using Serilog.Configuration;
-using Serilog.Events;
-using Serilog.Core;
 using ServiceStack.Data;
 
 namespace Melodee.Tests.Services;

@@ -1,6 +1,5 @@
 ﻿using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Utility;
-using Melodee.Common.Plugins.Validation;
 
 namespace Melodee.Tests.Utility;
 

@@ -3,7 +3,6 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Services.Scanning;
-using Melodee.Common.Plugins.Processor;
 using Serilog;
 
 namespace Melodee.Tests.Services;

@@ -435,7 +435,7 @@ public sealed class DirectoryProcessorService(
 
                     try
                     {
-                        Album? album = null;
+                        Album? album;
                         try
                         {
                             album = serializer.Deserialize<Album>(await File.ReadAllTextAsync(albumJsonFile.FullName, cancellationToken));
@@ -444,9 +444,16 @@ public sealed class DirectoryProcessorService(
                         {
                             if (skipDirPrefix != null)
                             {
-                                var newName = Path.Combine(albumJsonFile.Directory.Parent.FullName, $"{skipDirPrefix}{albumJsonFile.Name}-{DateTime.UtcNow.Ticks}");
-                                Directory.Move(albumJsonFile.DirectoryName, newName);
-                                Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", albumJsonFile.Name, newName);
+                                if (albumJsonFile.Directory?.Parent != null)
+                                {
+                                    var newName = Path.Combine(albumJsonFile.Directory.Parent.FullName, $"{skipDirPrefix}{albumJsonFile.Name}-{DateTime.UtcNow.Ticks}");
+                                    if (albumJsonFile.DirectoryName != null)
+                                    {
+                                        Directory.Move(albumJsonFile.DirectoryName, newName);
+                                    }
+
+                                    Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", albumJsonFile.Name, newName);
+                                }
                             }
 
                             LogAndRaiseEvent(LogEventLevel.Error, "Error Deserializing melodee json file [{0}]", e, albumJsonFile.FullName);
@@ -690,7 +697,7 @@ public sealed class DirectoryProcessorService(
                                 if (await httpClient.DownloadFileAsync(
                                         imageSearchResult.MediaUrl,
                                         albumImageFromSearchFileName,
-                                        async (existingFileInfo, newFileInfo, ct) => (await _imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front, cancellationToken)).Data.IsValid,
+                                        async (_, newFileInfo, _) => (await _imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front, cancellationToken)).Data.IsValid,
                                         cancellationToken))
                                 {
                                     var newImageInfo = new FileInfo(albumImageFromSearchFileName);
