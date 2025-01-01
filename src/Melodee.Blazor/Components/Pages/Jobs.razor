@@ -1,4 +1,5 @@
 @page "/jobs"
+@using System.Globalization
 @using Melodee.Blazor.ViewModels
 @using Quartz
 @using Quartz.Impl.Matchers
@@ -6,38 +7,48 @@
 
 @inject IScheduler Scheduler
 
-<div class="job-status-container">
-    <table class="table table-striped">
-        <thead>
-        <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Next Run</th>
-            <th scope="col">Last Run</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var job in _jobs)
-        {
-            <tr>
-                <td>@job.Name</td>
-                <td>@job.NextFireTime</td>
-                <td>@job.PreviousFireTime</td>
-            </tr>
-        }
-        </tbody>
-    </table>
-</div>
+<RadzenDataList
+    AllowVirtualization="false"
+    WrapItems="true"
+    AllowPaging="false"
+    Data="@_jobs"
+    TItem="JobStatus">
+    <Template Context="jobStatus">
+        <RadzenCard Variant="Variant.Outlined" class="rz-p-0" Style="width: 100%; overflow: hidden;">
+            <RadzenRow Gap="0">
+                <RadzenColumn Size="12" SizeLG="3" class="rz-p-4 product-title">
+                    <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-on-secondary-lighter">@(jobStatus.Name)</RadzenText>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeLG="7" class="rz-p-4">
+                    <RadzenRow Gap="0">
+                        <RadzenColumn Size="12" SizeMD="6" SizeLG="2">
+                            <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-mb-0">Last Run</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2">@(jobStatus.PreviousFireTime)</RadzenText>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6" SizeLG="2">
+                            <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-mb-0">Next Run</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2">@(jobStatus.PreviousFireTime)</RadzenText>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeLG="2" class="rz-p-4">
+                    <RadzenButton Text="Run now" Style="width: 100%" Click="@(_ => RunJob(jobStatus))" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenCard>
+    </Template>
+</RadzenDataList>
+
 
 @code {
 
-    private List<JobStatus> _jobs = new List<JobStatus>();
+    private readonly List<JobStatus> _jobs = [];
 
     private async Task RefreshJobs()
     {
         _jobs.Clear();
 
         var jobGroups = await Scheduler.GetJobGroupNames();
-        var triggerGroups = await Scheduler.GetTriggerGroupNames();
 
         foreach (string group in jobGroups)
         {
@@ -45,7 +56,6 @@
             var jobKeys = await Scheduler.GetJobKeys(groupMatcher);
             foreach (var jobKey in jobKeys)
             {
-                var detail = Scheduler.GetJobDetail(jobKey);
                 var triggers = await Scheduler.GetTriggersOfJob(jobKey);
                 foreach (ITrigger trigger in triggers)
                 {
@@ -57,8 +67,8 @@
                         trigger.Key.Group,
                         trigger.GetType().Name,
                         Scheduler.GetTriggerState(trigger.Key).ToString()!,
-                        nextFireTime?.LocalDateTime.ToString() ?? "---",
-                        previousFireTime?.LocalDateTime.ToString() ?? "---"));
+                        nextFireTime?.LocalDateTime.ToString(CultureInfo.InvariantCulture) ?? "---",
+                        previousFireTime?.LocalDateTime.ToString(CultureInfo.InvariantCulture) ?? "---"));
                 }
             }
         }
@@ -69,4 +79,8 @@
         await RefreshJobs();
     }
 
+    private async Task RunJob(JobStatus jobStatus)
+    {
+        await Scheduler.TriggerJob(new JobKey(jobStatus.Name));
+    }
 }
