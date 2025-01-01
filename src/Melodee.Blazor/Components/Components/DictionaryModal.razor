@@ -1,0 +1,24 @@
+<div class="dictionary-modal-container">
+    <table class="table table-striped">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">Property</th>
+            <th scope="col">Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var kp in ModelDictionary)
+        {
+        <tr>
+            <th scope="row">@kp.Key</th>
+            <td>@kp.Value?.ToString()</td>
+        </tr>
+        }
+        </tbody>
+    </table>
+
+</div>
+
+@code {
+    [Parameter] public Dictionary<string, object> ModelDictionary { get; set; } = [];
+}

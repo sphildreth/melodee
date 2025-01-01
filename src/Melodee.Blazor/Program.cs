@@ -2,7 +2,6 @@ using Blazored.SessionStorage;
 using Melodee.Blazor.Components;
 using Melodee.Blazor.Extensions;
 using Melodee.Blazor.Filters;
-using Melodee.Blazor.Security;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
