@@ -1,18 +1,15 @@
 @page "/settings"
 
 @using Common.Data.Models
+@using Melodee.Common.Configuration.Extensions
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
 @inject ISettingService SettingService
+@inject NotificationService NotificationService
 
 <PageTitle>Settings</PageTitle>
 
-@using Melodee.Common.Configuration
-@using Melodee.Common.Constants
-@using Melodee.Common.Extensions
-@using Melodee.Common.Models
-@using Melodee.Common.Utility
 
 <RadzenDataGrid
     @ref="_grid"
@@ -29,39 +26,118 @@
     PagerHorizontalAlign="HorizontalAlign.Center"
     ShowPagingSummary="true"
     PageSizeOptions="@_pageSizeOptions"
-    PagingSummaryFormat="@_pagingSummaryFormat"
-    ColumnWidth="200px">
+    PagingSummaryFormat="@PagingSummaryFormat"
+    ColumnWidth="200px"
+    TItem="Setting"
+    EditMode="@DataGridEditMode.Single"
+    RowUpdate="@OnUpdateRow">
     <Columns>
-        <RadzenDataGridColumn Property="@nameof(Setting.Key)" Title="Key" Width="120px"/>
-        <RadzenDataGridColumn Property="@nameof(Setting.Category)" Title="Category" Width="160px"/>
-        <RadzenDataGridColumn Property="@nameof(Setting.Value)" Title="Value" FormatString="{0:d}" Width="160px"/>
-        <RadzenDataGridColumn Property="@nameof(Setting.Comment)" Title="Comment" Width="300px"/>
+        <RadzenDataGridColumn Property="@nameof(Setting.Key)" Title="Key" Width="150px"/>
+        <RadzenDataGridColumn Property="@nameof(Setting.Value)" Title="Value" Width="250px">
+            <EditTemplate Context="setting">
+                <RadzenTextBox @bind-Value="setting.Value" Style="width:250px; display: block" Name="Value"
+                               aria-label="Edit Value"/>
+            </EditTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Setting.Comment)" Title="Comment" Width="400px"/>
+        <RadzenDataGridColumn
+            Context="setting"
+            Filterable="false"
+            Sortable="false"
+            TextAlign="TextAlign.Right"
+            Frozen="true"
+            Width="75px"
+            FrozenPosition="FrozenColumnPosition.Right">
+            <Template Context="setting">
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
+                              Size="ButtonSize.Medium" Click="@(args => EditRow(setting))"
+                              @onclick:stopPropagation="true">
+                </RadzenButton>
+            </Template>
+            <EditTemplate Context="setting">
+                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat"
+                              Size="ButtonSize.Medium" Click="@((args) => SaveRow(setting))" aria-label="Save">
+                </RadzenButton>
+                <RadzenButton
+                    Icon="close"
+                    ButtonStyle="ButtonStyle.Light"
+                    Variant="Variant.Flat"
+                    Size="ButtonSize.Medium"
+                    class="rz-my-1 rz-ms-1"
+                    Click="@((args) => CancelEdit(setting))"
+                    aria-label="Cancel">
+                </RadzenButton>
+            </EditTemplate>
+        </RadzenDataGridColumn>
     </Columns>
 </RadzenDataGrid>
 
 
 @code {
-    private string _pagingSummaryFormat = "Displaying page {0} of {1} <b>(total {2} records)</b>";
-    private RadzenDataGrid<Setting> _grid = null!;
-    private int _count;
-    private IEnumerable<Setting> _settings;
-    private bool _isLoading = false;
-    private int _currentPage = 1;
-    private short _defaultPageSize = 25;
-    private IEnumerable<int> _pageSizeOptions = [10, 20, 30];
-    private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+    private const string PagingSummaryFormat = "Displaying page {0} of {1} <b>(total {2} records)</b>";
+    RadzenDataGrid<Setting> _grid = null!;
+    int _count;
+    IEnumerable<Setting> _settings;
+    bool _isLoading = false;
+    int _currentPage = 1;
+    short _defaultPageSize = 25;
+    IEnumerable<int> _pageSizeOptions = [10, 20, 30];
+    IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+
+    List<Setting> _settingsToUpdate = new List<Setting>();
+    int _toastTime;
+
+    void Reset()
+    {
+        _settingsToUpdate.Clear();
+    }
+
+    void Reset(Setting setting)
+    {
+        _settingsToUpdate.Remove(setting);
+    }
+
+    async Task EditRow(Setting setting)
+    {
+        if (!_grid.IsValid) return;
+        Reset();
+        _settingsToUpdate.Add(setting);
+        await _grid.EditRow(setting);
+    }
+
+    async Task OnUpdateRow(Setting setting)
+    {
+        Reset(setting);
+        var result = await SettingService.UpdateAsync(setting).ConfigureAwait(false);
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Duration = _toastTime,
+                SummaryContent = ns => @<RadzenText TextStyle="TextStyle.H6">Successfully updated setting!</RadzenText>,
+                DetailContent = ns => @<RadzenButton Text="Ok" Click="@(args => ns.Messages.Clear())"/>
+            });
+        }
+    }
+
+    async Task SaveRow(Setting setting)
+    {
+        await _grid.UpdateRow(setting);
+    }
+
+    void CancelEdit(Setting setting)
+    {
+        Reset(setting);
+        _grid.CancelEditRow(setting);
+    }
 
     protected override async Task OnInitializedAsync()
     {
         _configuration = await SettingService.GetMelodeeConfigurationAsync();
-        _defaultPageSize = _configuration.GetValue<short>(SettingRegistry.DefaultsPageSize);
-        _pageSizeOptions = [_defaultPageSize, _defaultPageSize * 4, _defaultPageSize * 10];
-    }
-
-    async Task Reset()
-    {
-        _grid.Reset(true);
-        await _grid.FirstPage(true);
+        _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
+        _defaultPageSize = _configuration.DefaultPageSize();
+        _pageSizeOptions = _configuration.DefaultPageSizeOptions();
     }
 
     void OnPage(PagerEventArgs args)
@@ -84,11 +160,12 @@
             Common.Filtering.FilterOperatorInfo[]? filters = null;
             if (args.Filters.Any())
             {
-               filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
-                       SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
-                       x.FilterValue))
-                   .ToArray();
+                filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                        x.FilterValue))
+                    .ToArray();
             }
+
             var result = await SettingService.ListAsync(new PagedRequest
             {
                 FilterBy = filters,
@@ -107,11 +184,10 @@
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
+
         _isLoading = false;
     }
-}
-
-
-@code {
 
 }
+
+
