@@ -1,6 +1,7 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
-using Melodee.Plugins.Processor.MetaTagProcessors;
+using Melodee.Common.Plugins.Processor.MetaTagProcessors;
+using Album = Melodee.Common.Plugins.Processor.MetaTagProcessors.Album;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 
@@ -9,7 +10,7 @@ public class AlbumTitleMetaTagProcessorTests : TestsBase
     [Fact]
     public void ValidateAlbumTitleWithRemasteredWithParens()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Album(NewConfiguration(), Serializer);
+        var metatagProcessor = new Album(NewConfiguration(), Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Album,
@@ -32,7 +33,7 @@ public class AlbumTitleMetaTagProcessorTests : TestsBase
     [Fact]
     public void ValidateAlbumTitleWithRemastered()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Album(NewConfiguration(), Serializer);
+        var metatagProcessor = new Album(NewConfiguration(), Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Album,
@@ -55,7 +56,7 @@ public class AlbumTitleMetaTagProcessorTests : TestsBase
     [Fact]
     public void ValidateAlbumTitleWithRemasteredWithDate()
     {
-        var metatagProcessor = new Melodee.Plugins.Processor.MetaTagProcessors.Album(NewConfiguration(), Serializer);
+        var metatagProcessor = new Album(NewConfiguration(), Serializer);
         var tag = new MetaTag<object?>
         {
             Identifier = MetaTagIdentifier.Album,

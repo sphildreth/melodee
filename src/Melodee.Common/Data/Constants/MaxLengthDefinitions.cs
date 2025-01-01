@@ -1,4 +1,4 @@
-namespace Melodee.Common.Data.Contants;
+namespace Melodee.Common.Data.Constants;
 
 public static class MaxLengthDefinitions
 {

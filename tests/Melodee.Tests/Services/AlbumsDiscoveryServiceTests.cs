@@ -1,6 +1,6 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Services.Scanning;
+using Melodee.Common.Services.Scanning;
 
 namespace Melodee.Tests.Services;
 

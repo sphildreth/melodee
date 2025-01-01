@@ -1,7 +1,7 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
-using Melodee.Plugins.Processor.MetaTagProcessors;
-using Artist = Melodee.Plugins.Processor.MetaTagProcessors.Artist;
+using Melodee.Common.Plugins.Processor.MetaTagProcessors;
+using Artist = Melodee.Common.Plugins.Processor.MetaTagProcessors.Artist;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
 

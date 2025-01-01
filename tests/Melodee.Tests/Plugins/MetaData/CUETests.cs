@@ -1,8 +1,9 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.MetaData.Song;
-using Melodee.Plugins.Processor;
+using Melodee.Common.Plugins.MetaData.Song;
+using Melodee.Common.Plugins.Processor;
+using Melodee.Common.Plugins.Processor;
 using Serilog;
-using CueSheet = Melodee.Plugins.MetaData.Directory.CueSheet;
+using CueSheet = Melodee.Common.Plugins.MetaData.Directory.CueSheet;
 
 namespace Melodee.Tests.Plugins.MetaData;
 

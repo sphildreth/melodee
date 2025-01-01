@@ -1,4 +1,4 @@
-using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;

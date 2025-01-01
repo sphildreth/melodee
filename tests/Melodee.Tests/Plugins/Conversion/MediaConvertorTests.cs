@@ -2,7 +2,8 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Plugins.Conversion.Media;
+using Melodee.Common.Plugins.Conversion.Media;
+using Melodee.Common.Plugins.Conversion.Media;
 
 namespace Melodee.Tests.Plugins.Conversion;
 

@@ -1,4 +1,4 @@
-using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;

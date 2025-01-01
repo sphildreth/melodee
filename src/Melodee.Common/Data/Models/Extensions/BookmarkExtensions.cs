@@ -1,4 +1,4 @@
-using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Constants;
 
 namespace Melodee.Common.Data.Models.Extensions;
 

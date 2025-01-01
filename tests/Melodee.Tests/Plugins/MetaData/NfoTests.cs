@@ -1,8 +1,9 @@
 using System.Diagnostics;
 using Melodee.Common.Enums;
 using Melodee.Common.Models.Extensions;
-using Melodee.Plugins.MetaData.Directory;
-using Melodee.Plugins.MetaData.Directory.Nfo;
+using Melodee.Common.Plugins.MetaData.Directory.Nfo;
+using Melodee.Common.Plugins.MetaData.Directory;
+using Melodee.Common.Plugins.MetaData.Directory.Nfo;
 
 namespace Melodee.Tests.Plugins.MetaData;
 

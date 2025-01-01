@@ -1,7 +1,7 @@
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Plugins.Conversion.Image;
+using Melodee.Common.Plugins.Conversion.Image;
 
 namespace Melodee.Tests.Plugins.Conversion;
 

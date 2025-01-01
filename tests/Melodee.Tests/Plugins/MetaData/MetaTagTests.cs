@@ -2,9 +2,10 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Plugins.MetaData.Song;
+using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Utility;
-using Melodee.Plugins.MetaData.Song;
-using Melodee.Plugins.Processor;
+using Melodee.Common.Plugins.Processor;
 
 namespace Melodee.Tests.Plugins.MetaData;
 

@@ -1,7 +1,12 @@
 ﻿@page "/album/{libraryApiKey:guid}/{albumId:guid}/{returnUrl}"
 @using Melodee.Common.Models.SearchEngines
-@using Melodee.Plugins.Conversion.Image
-@using Melodee.Plugins.Validation
+@using Melodee.Common.Plugins.Conversion.Image
+@using Melodee.Common.Plugins.MetaData.Song
+@using Melodee.Common.Plugins.Processor
+@using Melodee.Common.Plugins.Validation
+@using Melodee.Common.Services.Interfaces
+@using Melodee.Common.Services.Scanning
+@using Melodee.Common.Plugins.Validation
 
 @inject AlbumDiscoveryService AlbumsDiscoverer
 @inject DefaultImages DefaultImages

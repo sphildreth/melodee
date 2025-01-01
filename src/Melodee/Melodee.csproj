@@ -21,10 +21,10 @@
       <PackageReference Include="Serilog.AspNetCore" />
       <PackageReference Include="Serilog.Settings.AppSettings" />
       <PackageReference Include="Serilog.Sinks.Console" />
-      <PackageReference Include="Serilog.Sinks.File" />      
-      <PackageReference Include="Serilog.Sinks.SQLite" />      
-      <PackageReference Include="System.IdentityModel.Tokens.Jwt" />      
-      <PackageReference Include="System.Reactive" />      
+      <PackageReference Include="Serilog.Sinks.File" />
+      <PackageReference Include="Serilog.Sinks.SQLite" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+      <PackageReference Include="System.Reactive" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,9 +34,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj" />
-      <ProjectReference Include="..\Melodee.Jobs\Melodee.Jobs.csproj" />
-      <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj" />
-      <ProjectReference Include="..\Melodee.Services\Melodee.Services.csproj" />
     </ItemGroup>
 
     <ItemGroup>

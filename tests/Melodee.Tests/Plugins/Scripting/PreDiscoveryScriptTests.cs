@@ -1,6 +1,6 @@
 using Melodee.Common.Constants;
 using Melodee.Common.Models;
-using Melodee.Plugins.Scripting;
+using Melodee.Common.Plugins.Scripting;
 
 namespace Melodee.Tests.Plugins.Scripting;
 

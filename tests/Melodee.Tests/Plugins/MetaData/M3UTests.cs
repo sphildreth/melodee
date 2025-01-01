@@ -1,8 +1,10 @@
 using Melodee.Common.Models;
-using Melodee.Plugins.MetaData.Directory;
-using Melodee.Plugins.MetaData.Directory.Models;
-using Melodee.Plugins.MetaData.Song;
-using Melodee.Plugins.Processor;
+using Melodee.Common.Plugins.MetaData.Directory;
+using Melodee.Common.Plugins.MetaData.Directory.Models;
+using Melodee.Common.Plugins.MetaData.Song;
+using Melodee.Common.Plugins.Processor;
+using Melodee.Common.Plugins.MetaData.Directory;
+using Melodee.Common.Plugins.Processor;
 
 namespace Melodee.Tests.Plugins.MetaData;
 

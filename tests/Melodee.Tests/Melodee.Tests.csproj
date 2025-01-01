@@ -32,9 +32,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Melodee.Common\Melodee.Common.csproj"/>
-    <ProjectReference Include="..\..\src\Melodee.Jobs\Melodee.Jobs.csproj" />
-    <ProjectReference Include="..\..\src\Melodee.Plugins\Melodee.Plugins.csproj"/>
-    <ProjectReference Include="..\..\src\Melodee.Services\Melodee.Services.csproj"/>
   </ItemGroup>
 
   <ItemGroup>

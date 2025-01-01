@@ -4,7 +4,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.Models;
-using Melodee.Services;
+using Melodee.Common.Services;
 
 namespace Melodee.Tests.Services;
 

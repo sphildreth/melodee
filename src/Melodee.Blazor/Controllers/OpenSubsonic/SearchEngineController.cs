@@ -1,8 +1,8 @@
 using Melodee.Blazor.Filters;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
+using Melodee.Common.Services.SearchEngines;
 using Melodee.Results;
-using Melodee.Services.SearchEngines;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;

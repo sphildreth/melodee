@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using HashidsNet;
-using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
 using NodaTime;
 

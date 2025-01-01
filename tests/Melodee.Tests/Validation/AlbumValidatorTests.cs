@@ -1,9 +1,10 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Plugins.MetaData.Song;
+using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Utility;
-using Melodee.Plugins.MetaData.Song;
-using Melodee.Plugins.Validation;
+using Melodee.Common.Plugins.Validation;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 
 namespace Melodee.Tests.Validation;

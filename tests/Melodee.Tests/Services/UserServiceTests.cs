@@ -3,8 +3,8 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.Models;
+using Melodee.Common.Services;
 using Melodee.Common.Utility;
-using Melodee.Services;
 using NodaTime;
 
 namespace Melodee.Tests.Services;

@@ -1,11 +1,11 @@
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
+using Melodee.Common.Jobs;
+using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
-using Melodee.Jobs;
-using Melodee.Plugins.SearchEngine.MusicBrainz.Data;
-using Melodee.Services;
-using Melodee.Services.Caching;
+using Melodee.Common.Services;
+using Melodee.Common.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

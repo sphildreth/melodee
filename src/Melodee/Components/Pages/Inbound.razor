@@ -1,7 +1,9 @@
 ﻿@page "/inbound"
 
+@using Melodee.Common.Jobs
 @using Melodee.Common.Models.Cards
-@using Melodee.Services.Interfaces
+@using Melodee.Common.Services.Interfaces
+@using Melodee.Common.Services.Scanning
 @using Quartz
 @using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
@@ -110,7 +112,7 @@
             message2: "Do you want to proceed?");
         if (confirmation)
         {
-            await Scheduler.TriggerJob(new JobKey(nameof(Melodee.Jobs.LibraryInboundProcessJob)));
+            await Scheduler.TriggerJob(new JobKey(nameof(LibraryInboundProcessJob)));
         }
     }
 

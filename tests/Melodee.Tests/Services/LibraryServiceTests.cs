@@ -1,6 +1,5 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
-using Melodee.Services;
 
 namespace Melodee.Tests.Services;
 

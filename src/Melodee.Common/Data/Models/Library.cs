@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Melodee.Common.Data.Contants;
+using Melodee.Common.Data.Constants;
 using Melodee.Common.Data.Validators;
 using Melodee.Common.Enums;
 using Melodee.Common.Utility;
