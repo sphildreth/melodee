@@ -209,6 +209,20 @@ public sealed class UserService(
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<User?>> LoginUserByUsernameAsync(string userName, string? password, CancellationToken cancellationToken = default)
+    {
+        var user = await GetByUsernameAsync(userName, cancellationToken).ConfigureAwait(false);
+        if (!user.IsSuccess || user.Data == null)
+        {
+            return new MelodeeModels.OperationResult<User?>
+            {
+                Data = null,
+                Type = MelodeeModels.OperationResponseType.Unauthorized
+            };
+        }
+        return await LoginUserAsync(user.Data.Email, password, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<MelodeeModels.OperationResult<User?>> LoginUserAsync(string emailAddress, string? password, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
@@ -232,8 +246,17 @@ public sealed class UserService(
             };
         }
 
+        var authenticated = false;
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
-        if (user.Data.PasswordEncrypted != user.Data.Encrypt(password!, configuration))
+        if (password?.StartsWith("enc:") ?? false)
+        {
+            authenticated = password[4..] == user.Data.PasswordEncrypted;
+        }
+        else
+        {
+            authenticated = user.Data.PasswordEncrypted == user.Data.Encrypt(password!, configuration);
+        }
+        if (!authenticated)
         {
             return new MelodeeModels.OperationResult<User?>
             {
@@ -241,9 +264,7 @@ public sealed class UserService(
                 Type = MelodeeModels.OperationResponseType.Unauthorized
             };
         }
-
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             await scopedContext.Users

@@ -1,0 +1,17 @@
+@page "/account/logout"
+@using Melodee.Blazor.Services
+
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+
+@attribute [AllowAnonymous]
+
+@code {
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await AuthService.LogoutAsync();
+        StateHasChanged();
+        NavigationManager.NavigateTo("/account/login");
+    }
+}

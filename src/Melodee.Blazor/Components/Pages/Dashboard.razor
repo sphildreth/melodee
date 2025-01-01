@@ -1,0 +1,19 @@
+﻿@page "/"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
+<p>dashboard</p>
+
+<AuthorizeView>
+    <Authorized>
+        <p>User Logged In: @context.User.Identity.Name</p>
+        <p>Role:  @context.User.Claims.First(o => o.Type == ClaimTypes.Role).Value</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>Not logged in</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+}

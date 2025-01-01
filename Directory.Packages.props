@@ -58,6 +58,7 @@
     <PackageVersion Include="Quartz.Jobs" Version="3.13.1" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.1" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.13.1" />
+    <PackageVersion Include="Radzen.Blazor" Version="5.7.2" />
     <PackageVersion Include="Serilog" Version="4.2.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Settings.AppSettings" Version="3.0.0" />

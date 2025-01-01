@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\.dockerignore">
+      <Link>.dockerignore</Link>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj"/>
+    <ProjectReference Include="..\Melodee.Jobs\Melodee.Jobs.csproj"/>
+    <ProjectReference Include="..\Melodee.Plugins\Melodee.Plugins.csproj"/>
+    <ProjectReference Include="..\Melodee.Services\Melodee.Services.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Radzen.Blazor"/>
+    <PackageReference Include="Asp.Versioning.Http"/>
+    <PackageReference Include="Blazored.SessionStorage"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json"/>
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" />    
+    <PackageReference Include="Quartz.AspNetCore"/>
+    <PackageReference Include="Quartz.Jobs"/>
+    <PackageReference Include="Quartz.Plugins.TimeZoneConverter"/>
+    <PackageReference Include="Quartz.Serialization.SystemTextJson"/>
+    <PackageReference Include="Serilog"/>
+    <PackageReference Include="Serilog.AspNetCore"/>
+    <PackageReference Include="Serilog.Settings.AppSettings"/>
+    <PackageReference Include="Serilog.Sinks.Console"/>
+    <PackageReference Include="Serilog.Sinks.File"/>
+    <PackageReference Include="Serilog.Sinks.SQLite"/>
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />    
+    <PackageReference Include="System.Reactive"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Logs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Logs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Logs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Logs\**" />
+  </ItemGroup>
+  
+</Project>

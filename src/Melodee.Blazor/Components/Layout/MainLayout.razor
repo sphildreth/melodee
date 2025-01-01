@@ -1,0 +1,86 @@
+﻿@using System.Security.Claims
+@using Melodee.Blazor.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+
+@implements IDisposable
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<RadzenComponents @rendermode="InteractiveServer" />
+<AuthorizeView>
+    <NotAuthorized>
+        @Body
+    </NotAuthorized>
+    <Authorized>
+        <RadzenLayout>
+            <RadzenHeader>
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+                    <RadzenSidebarToggle Click="@(() => _sidebar1Expanded = !_sidebar1Expanded)"/>
+                    @* <RadzenLabel Text="" /> *@
+                    @context.User?.Identity?.Name
+                </RadzenStack>
+            </RadzenHeader>
+            <RadzenSidebar @bind-Expanded="@_sidebar1Expanded">
+                <RadzenPanelMenu>
+                    <RadzenPanelMenuItem Text="Home" Icon="home"/>
+                    <RadzenPanelMenuItem Text="Users" Icon="account_box"/>
+                </RadzenPanelMenu>
+            </RadzenSidebar>
+            <RadzenBody>
+                <div class="rz-p-4">
+                    @Body
+                </div>
+            </RadzenBody>
+        </RadzenLayout>
+    </Authorized>
+</AuthorizeView>
+
+
+
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    bool _sidebar1Expanded = true;
+
+    protected override void OnInitialized()
+    {
+        MainLayoutProxyService.HeaderChanged += OnHeaderChange;
+        MainLayoutProxyService.SpinnerVisibleChanged += OnSpinnerChange;
+    }
+
+    private void OnHeaderChange(object? sender, EventArgs e)
+        => this.InvokeAsync(StateHasChanged);
+
+    private void OnSpinnerChange(object? sender, EventArgs e)
+        => this.InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        MainLayoutProxyService.HeaderChanged -= OnHeaderChange;
+        MainLayoutProxyService.SpinnerVisibleChanged -= OnSpinnerChange;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !AuthService.IsLoggedIn)
+        {
+            var url = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).ToString();
+            if (url.Contains("/login"))
+            {
+                return;
+            }
+            var restoredFromState = await AuthService.GetStateFromTokenAsync();
+            if (restoredFromState)
+            {
+                NavigationManager.Refresh();
+            }
+        }
+    }
+}
