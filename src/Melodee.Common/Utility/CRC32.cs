@@ -49,11 +49,13 @@ public static class Crc32
         {
             throw new ArgumentNullException(nameof(file));
         }
+
         if (!file.Exists)
         {
             Trace.WriteLine($"Unable to calculate CRC32. File [{file.FullName}] not found. Returning default value.");
             return string.Empty;
         }
+
         return $"{CalculateInt32(file):X8}";
     }
 
@@ -83,16 +85,17 @@ public static class Crc32
         {
             throw new ArgumentNullException(nameof(file));
         }
+
         var pipeline = new ResiliencePipelineBuilder()
             .AddRetry(new RetryStrategyOptions
             {
                 BackoffType = DelayBackoffType.Exponential,
-                UseJitter = true,  
+                UseJitter = true,
                 MaxRetryAttempts = 3,
-                Delay = TimeSpan.FromSeconds(10),
+                Delay = TimeSpan.FromSeconds(10)
             })
             .Build();
-      return pipeline.Execute(_ => ReadFileAndCalculateInt32(file));
+        return pipeline.Execute(_ => ReadFileAndCalculateInt32(file));
     }
 
     private static uint ReadFileAndCalculateInt32(FileInfo file)
@@ -114,10 +117,12 @@ public static class Crc32
         {
             throw new ArgumentNullException(nameof(stream));
         }
+
         if (stream.Length == 0 || !stream.CanRead)
         {
             return 0;
         }
+
         try
         {
             unchecked
@@ -133,6 +138,7 @@ public static class Crc32
                     {
                         crc32Result = (crc32Result >> 8) ^ Crc32Table[buffer[i] ^ (crc32Result & 0x000000FF)];
                     }
+
                     count = stream.Read(buffer, 0, BufferSize);
                 }
 
@@ -143,6 +149,7 @@ public static class Crc32
         {
             Log.Error(ex, "Error while calculating CRC32.");
         }
+
         return 0;
     }
 

@@ -40,12 +40,14 @@ public class OpenSubsonicResponseModelConvertor : JsonConverter<ResponseModel>
         {
             writer.WriteStartObject();
         }
+
         if (value.ResponseData.Data != null)
         {
             if (hasDetailPropertyName)
             {
                 writer.WritePropertyName(value.ResponseData.DataDetailPropertyName!);
             }
+
             writer.WriteRawValue(JsonSerializer.Serialize(value.ResponseData.Data, Serializer.JsonSerializerOptions));
         }
 
@@ -57,7 +59,7 @@ public class OpenSubsonicResponseModelConvertor : JsonConverter<ResponseModel>
         if (value.ResponseData.Error != null)
         {
             writer.WritePropertyName("error");
-            writer.WriteRawValue(JsonSerializer.Serialize(value.ResponseData.Error, Serializer.JsonSerializerOptions));          
+            writer.WriteRawValue(JsonSerializer.Serialize(value.ResponseData.Error, Serializer.JsonSerializerOptions));
         }
 
         writer.WriteEndObject();

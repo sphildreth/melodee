@@ -6,15 +6,18 @@ namespace Melodee.Common.Models;
 public record UserInfo(int Id, Guid ApiKey, string UserName, string Email)
 {
     public List<string>? Roles { get; init; }
-    
-    public ClaimsPrincipal ToClaimsPrincipal() => new(new ClaimsIdentity(new Claim[]
-        {
-            new (ClaimTypes.PrimarySid, Id.ToString()),            
-            new (ClaimTypes.Sid, ApiKey.ToString()),
-            new (ClaimTypes.Name, UserName),
-            new (ClaimTypes.Email, Email)
-        }.Concat(Roles?.Select(r => new Claim(ClaimTypes.Role, r)).ToArray() ?? []),
-        "Melodee"));
+
+    public ClaimsPrincipal ToClaimsPrincipal()
+    {
+        return new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
+            {
+                new(ClaimTypes.PrimarySid, Id.ToString()),
+                new(ClaimTypes.Sid, ApiKey.ToString()),
+                new(ClaimTypes.Name, UserName),
+                new(ClaimTypes.Email, Email)
+            }.Concat(Roles?.Select(r => new Claim(ClaimTypes.Role, r)).ToArray() ?? []),
+            "Melodee"));
+    }
 
     public static UserInfo FromClaimsPrincipal(ClaimsPrincipal principal)
     {
@@ -29,5 +32,4 @@ public record UserInfo(int Id, Guid ApiKey, string UserName, string Email)
             Roles = principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList()
         };
     }
-    
 }

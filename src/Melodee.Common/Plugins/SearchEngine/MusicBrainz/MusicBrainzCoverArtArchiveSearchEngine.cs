@@ -38,31 +38,30 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
 
         try
         {
-                var artistSearchResult = await repository.SearchArtist(new ArtistQuery
+            var artistSearchResult = await repository.SearchArtist(new ArtistQuery
+            {
+                MusicBrainzId = query.ArtistMusicBrainzId,
+                Name = query.Artist,
+                AlbumMusicBrainzIds = query.MusicBrainzIdValue == null ? null : [query.MusicBrainzIdValue.Value],
+                AlbumKeyValues =
+                [
+                    new KeyValue(query.Year.ToString(), query.Name)
+                ]
+            }, 1, token).ConfigureAwait(false);
+            if (artistSearchResult.IsSuccess)
+            {
+                var rg = artistSearchResult.Data.FirstOrDefault()?.Releases?.FirstOrDefault()?.MusicBrainzResourceGroupId;
+                if (rg != null)
                 {
-                    MusicBrainzId = query.ArtistMusicBrainzId,
-                    Name = query.Artist,
-                    AlbumMusicBrainzIds = query.MusicBrainzIdValue == null ? null : [query.MusicBrainzIdValue.Value],
-                    AlbumKeyValues =
-                    [
-                        new KeyValue(query.Year.ToString(), query.Name)
-                    ]
-                }, 1, token).ConfigureAwait(false);
-                if (artistSearchResult.IsSuccess)
-                {
-                    var rg = artistSearchResult.Data.FirstOrDefault()?.Releases?.FirstOrDefault()?.MusicBrainzResourceGroupId;
-                    if (rg != null)
+                    result.Add(new ImageSearchResult
                     {
-                        result.Add(new ImageSearchResult
-                        {
-                            FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),
-                            Rank = 10,
-                            ThumbnailUrl = string.Empty,
-                            MediaUrl = $"https://coverartarchive.org/release-group/{rg}/front"
-                        });
-                    }
+                        FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),
+                        Rank = 10,
+                        ThumbnailUrl = string.Empty,
+                        MediaUrl = $"https://coverartarchive.org/release-group/{rg}/front"
+                    });
                 }
-
+            }
         }
         catch (Exception e)
         {

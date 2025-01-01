@@ -1,4 +1,3 @@
-using System.Text;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -14,6 +13,6 @@ public record NamedInfo(
 {
     public virtual string ToXml(string? nodeName = null)
     {
-        return $"<{nodeName ?? "musicFolder"} id=\"{Id}\" name=\"{Name.ToSafeXmlString() }\"/>";
+        return $"<{nodeName ?? "musicFolder"} id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\"/>";
     }
 }

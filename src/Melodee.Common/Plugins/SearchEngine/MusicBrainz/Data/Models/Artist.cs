@@ -12,7 +12,7 @@ public sealed record Artist
     public bool IsValid => MusicBrainzId != Guid.Empty && Name.Nullify() != null;
 
     /// <summary>
-    /// This is the MusicBrainz database Id
+    ///     This is the MusicBrainz database Id
     /// </summary>
     public long Id { get; init; }
 

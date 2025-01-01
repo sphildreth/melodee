@@ -8,17 +8,17 @@ using Melodee.Common.Utility;
 namespace Melodee.Common.Configuration;
 
 /// <summary>
-/// Configuration of Melodee system.
+///     Configuration of Melodee system.
 /// </summary>
 /// <param name="Configuration">Initial configuration from database.</param>
 public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : IMelodeeConfiguration
 {
     public static string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
-    
+
     public static string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
-    
+
     public static int BatchSizeDefault = 250;
-    
+
     public static int BatchSizeMaximum = 1000;
 
     public string? RemoveUnwantedArticles(string? input)
@@ -27,6 +27,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             return null;
         }
+
         var ignoredArticles = GetValue<string>(SettingRegistry.ProcessingIgnoredArticles);
         if (ignoredArticles.Nullify() != null)
         {
@@ -39,6 +40,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
                 }
             }
         }
+
         return input.Nullify();
     }
 
@@ -49,15 +51,21 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             throw new Exception($"Configuration setting [{SettingRegistry.SystemBaseUrl}] is invalid.");
         }
+
         return $"{baseUrl}/images/{apiKey}/{imageSize.ToString().ToLower()}";
     }
-    
-    public void SetSetting<T>(string key, T? value) => Configuration[key] = value;
 
-    public T? GetValue<T>(string key, Func<T?, T?>? returnValue = null) =>
-        returnValue == null
+    public void SetSetting<T>(string key, T? value)
+    {
+        Configuration[key] = value;
+    }
+
+    public T? GetValue<T>(string key, Func<T?, T?>? returnValue = null)
+    {
+        return returnValue == null
             ? GetSettingValue<T>(Configuration, key)
             : returnValue(GetSettingValue<T>(Configuration, key));
+    }
 
     public int BatchProcessingSize()
     {
@@ -67,16 +75,18 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
             {
                 return BatchSizeDefault;
             }
+
             if (i > BatchSizeMaximum)
             {
                 return BatchSizeMaximum;
             }
+
             return BatchSizeDefault;
         }) ?? BatchSizeDefault;
     }
-    
+
     /// <summary>
-    /// This return all known settings in the SettingsRegistry with the option to set up given values.
+    ///     This return all known settings in the SettingsRegistry with the option to set up given values.
     /// </summary>
     /// <param name="settings">Optional collection of settings to set for result</param>
     /// <returns>All known Settings in SettingsRegistry</returns>
@@ -87,6 +97,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             result.TryAdd(settingName, null);
         }
+
         if (settings != null)
         {
             foreach (var setting in settings)
@@ -97,6 +108,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
                 }
             }
         }
+
         return result;
     }
 
@@ -110,13 +122,15 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
                 {
                     return defaultValue;
                 }
+
                 return SafeParser.ChangeType<T?>(setting);
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"Error converting setting [{ settingName }]: {e.Message}]");
+                Trace.WriteLine($"Error converting setting [{settingName}]: {e.Message}]");
             }
         }
+
         return defaultValue;
     }
 
@@ -130,12 +144,13 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"Error converting setting [{ settingName }]: {e.Message}]");
+                Trace.WriteLine($"Error converting setting [{settingName}]: {e.Message}]");
             }
         }
+
         return false;
     }
-    
+
     public static void SetSetting(Dictionary<string, object?> settings, string key, object? value)
     {
         if (settings.ContainsKey(key))
@@ -146,24 +161,28 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             settings.TryAdd(key, value);
         }
-    }    
-    
+    }
+
     public static Dictionary<string, string[]> FromSerializedJsonDictionary(object? o, ISerializer serializer)
     {
         if (o == null)
         {
             return [];
         }
+
         var ss = SafeParser.ToString(o);
         if (ss.Nullify() == null)
         {
             return [];
         }
+
         return serializer.Deserialize<Dictionary<string, string[]>>(ss.Replace("'", "\"")) ?? new Dictionary<string, string[]>();
     }
-    
-    public static string[] FromSerializedJsonArrayNormalized(object? o, ISerializer serializer) 
-        => FromSerializedJsonArray(o, serializer).Select(r => r.ToNormalizedString() ?? r).ToArray();
+
+    public static string[] FromSerializedJsonArrayNormalized(object? o, ISerializer serializer)
+    {
+        return FromSerializedJsonArray(o, serializer).Select(r => r.ToNormalizedString() ?? r).ToArray();
+    }
 
     public static string[] FromSerializedJsonArray(object? o, ISerializer serializer)
     {
@@ -171,11 +190,13 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         {
             return [];
         }
+
         var ss = SafeParser.ToString(o);
         if (ss.Nullify() == null)
         {
             return [];
         }
+
         return serializer.Deserialize<string[]>(ss.Replace("'", "\"")) ?? [];
-    }    
+    }
 }

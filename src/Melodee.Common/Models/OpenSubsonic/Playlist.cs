@@ -1,5 +1,4 @@
 using System.Text;
-using Mapster;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -76,12 +75,14 @@ public record Playlist : IOpenSubsonicToXml
             {
                 result.Append($"<allowedUser>{allowedUser.ToSafeXmlString()}</allowedUser>");
             }
+
             result.Append("/playlist");
         }
         else
         {
             result.Append("/>");
         }
+
         return result.ToString();
     }
 }

@@ -23,7 +23,7 @@ public static class CueSheetKeyRegistry
     public const string Rem = "REM";
 
     public const string SongWriter = "SONGWRITER";
-    
+
     public const string Track = "TRACK";
 
     public const string Title = "TITLE";

@@ -6,10 +6,10 @@ namespace Melodee.Common.Models;
 public sealed record ImageInfo
 {
     /// <summary>
-    /// This is used so the images sort proper in the directory not mixed with the song names.
+    ///     This is used so the images sort proper in the directory not mixed with the song names.
     /// </summary>
     public const string ImageFilePrefix = "i-";
-    
+
     /// <summary>
     ///     May not exist if album image and the image was extracted from tag.
     /// </summary>
@@ -27,7 +27,7 @@ public sealed record ImageInfo
     public int SortOrder { get; init; }
 
     public bool WasEmbeddedInSong { get; init; }
-    
+
     public string? OriginalFilename { get; init; }
 
     public override string ToString()

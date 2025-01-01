@@ -219,6 +219,7 @@ public sealed class UserService(
                 Type = MelodeeModels.OperationResponseType.Unauthorized
             };
         }
+
         return await LoginUserAsync(user.Data.Email, password, cancellationToken).ConfigureAwait(false);
     }
 
@@ -255,6 +256,7 @@ public sealed class UserService(
         {
             authenticated = user.Data.PasswordEncrypted == user.Data.Encrypt(password!, configuration);
         }
+
         if (!authenticated)
         {
             return new MelodeeModels.OperationResult<User?>
@@ -263,6 +265,7 @@ public sealed class UserService(
                 Type = MelodeeModels.OperationResponseType.Unauthorized
             };
         }
+
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -443,12 +446,13 @@ public sealed class UserService(
                 }
             }
         }
+
         return new MelodeeModels.OperationResult<bool>
         {
             Data = true
         };
     }
-    
+
     private void ClearCache(string? emailAddress, Guid? apiKey, int? id, string? username)
     {
         if (emailAddress != null)

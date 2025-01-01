@@ -8,13 +8,15 @@ public static class IntExtensions
         {
             return false;
         }
+
         if (array.Length == 1)
         {
             return true;
         }
-        return array.Zip(array.Skip(1), (a, b) => (a + 1) == b).All(x => x);
-    }    
-    
+
+        return array.Zip(array.Skip(1), (a, b) => a + 1 == b).All(x => x);
+    }
+
     public static string ToStringPadLeft(this int input, short padLeft, char padWith = '0')
     {
         return ToStringPadLeft(input as int?, padLeft, padWith) ?? string.Empty;

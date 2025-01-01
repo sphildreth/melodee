@@ -164,6 +164,7 @@ public class MusicBrainzUpdateDatabaseJob(
                 {
                     File.Delete(tempDbName);
                 }
+
                 await settingService.SetAsync(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp, DateTimeOffset.UtcNow.ToString(), context.CancellationToken).ConfigureAwait(false);
             }
 

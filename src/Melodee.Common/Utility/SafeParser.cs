@@ -22,19 +22,27 @@ public static class SafeParser
         {
             return true;
         }
+
         var vt = value.GetType();
         if (vt == typeof(string) || vt == typeof(char))
         {
             return string.IsNullOrWhiteSpace(value.ToString()?.Nullify());
         }
+
         return !IsTruthy(value);
-    }    
-    
-    public static bool IsTruthy(bool? value) => value ?? false;
+    }
 
-    public static bool IsTruthy(bool value) => value;
+    public static bool IsTruthy(bool? value)
+    {
+        return value ?? false;
+    }
 
-   
+    public static bool IsTruthy(bool value)
+    {
+        return value;
+    }
+
+
     /// <summary>
     ///     Falsy type checking of given value.
     /// </summary>
@@ -44,6 +52,7 @@ public static class SafeParser
         {
             return false;
         }
+
         try
         {
             var vt = value.GetType();
@@ -100,9 +109,10 @@ public static class SafeParser
         {
             Trace.WriteLine($"Error determining if object is truthy [{value}] [{ex}]", TraceWriteLineCategoryRegistry.Error);
         }
+
         return false;
-    }    
-    
+    }
+
     /// <summary>
     ///     Safely return a Boolean for a given Input.
     ///     <remarks>Has Additional String Operations</remarks>
@@ -253,6 +263,7 @@ public static class SafeParser
             {
                 return ChangeType<T>(input.ToString());
             }
+
             return ChangeType<T>(input);
         }
         catch
@@ -383,13 +394,14 @@ public static class SafeParser
     {
         return Hash(Encoding.UTF8.GetBytes(string.Join(string.Empty, input)));
     }
-    
+
     public static bool IsDigitsOnly(this string? str)
     {
         if (str.Nullify() == null)
         {
             return false;
         }
+
         return str!.All(c => c is >= '0' and <= '9');
     }
 
@@ -445,7 +457,13 @@ public static class SafeParser
         return hash;
     }
 
-    private static bool IsCharTruthy(char value) => value is 'y' or 't' or '1';
+    private static bool IsCharTruthy(char value)
+    {
+        return value is 'y' or 't' or '1';
+    }
 
-    public static LocalDate ToLocalDate(int year, int? month = null, int? day = null) => new(year, month ?? 1, day ?? 1);
+    public static LocalDate ToLocalDate(int year, int? month = null, int? day = null)
+    {
+        return new LocalDate(year, month ?? 1, day ?? 1);
+    }
 }

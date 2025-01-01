@@ -3,10 +3,10 @@ using NodaTime;
 namespace Melodee.Common.Models.Scrobbling;
 
 /// <summary>
-/// Scrobble Info
+///     Scrobble Info
 /// </summary>
 /// <param name="SongApiKey">The ApiKey of the Song to scrobble.</param>
-/// <param name="SongTitle"> The song name.</param> 
+/// <param name="SongTitle"> The song name.</param>
 /// <param name="ArtistName">The album artist name</param>
 /// <param name="IsRandomizedScrobble">Flag if the user selected the song or played via some random operation.</param>
 /// <param name="AlbumTitle">The album name</param>
@@ -17,7 +17,7 @@ namespace Melodee.Common.Models.Scrobbling;
 public record ScrobbleInfo(
     Guid SongApiKey,
     int ArtistId,
-    int AlbumId, 
+    int AlbumId,
     int SongId,
     string SongTitle,
     string ArtistName,
@@ -32,7 +32,6 @@ public record ScrobbleInfo(
 )
 {
     public Instant LastScrobbledAt { get; set; }
-    
+
     public int MinutesAgo => (LastScrobbledAt - CreatedAt).Minutes;
 }
-

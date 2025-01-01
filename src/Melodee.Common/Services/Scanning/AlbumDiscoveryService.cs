@@ -26,9 +26,9 @@ public sealed class AlbumDiscoveryService(
     ISerializer serializer)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
+    private IAlbumValidator _albumValidator = null!;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private bool _initialized;
-    private IAlbumValidator _albumValidator = null!;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {

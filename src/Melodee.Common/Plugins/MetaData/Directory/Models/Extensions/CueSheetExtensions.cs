@@ -25,10 +25,9 @@ public static class CueSheetExtensions
         return new Album
         {
             Artist = new Artist(
-                cueSheet.Artist() ?? throw new Exception($"Invalid artist on { nameof(cueSheet)}"),
+                cueSheet.Artist() ?? throw new Exception($"Invalid artist on {nameof(cueSheet)}"),
                 cueSheet.Artist().ToNormalizedString() ?? cueSheet.Artist()!,
-                cueSheet.Artist().CleanString(doPutTheAtEnd:true),
-                null),
+                cueSheet.Artist().CleanString(true)),
             Directory = directoryInfo,
             Files = new[]
             {
@@ -86,11 +85,11 @@ public static class CueSheetExtensions
     {
         return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Album);
     }
-    
+
     public static string? Genre(this CueSheet cueSheet)
     {
         return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Genre);
-    }    
+    }
 
     public static int SongTotalNumber(this CueSheet cueSheet)
     {

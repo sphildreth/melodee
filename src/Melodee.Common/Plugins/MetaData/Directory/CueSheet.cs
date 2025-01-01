@@ -119,7 +119,7 @@ public sealed class CueSheet(
                             var withAudioBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionBitrate]);
                             var withAudioSamplingRate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]);
                             var withVariableBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]);
-                            foreach(var song in cueModel.Songs.OrderBy(x => x.SortOrder))
+                            foreach (var song in cueModel.Songs.OrderBy(x => x.SortOrder))
                             {
                                 var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
                                 var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
@@ -140,7 +140,9 @@ public sealed class CueSheet(
                                         options.WithVariableBitrate(withVariableBitrate);
                                         options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                                     }).ProcessAsynchronously();
-                            };
+                            }
+
+                            ;
 
                             var cueAlbum = cueModel.ToAlbum(fileSystemDirectoryInfo);
 
@@ -171,22 +173,23 @@ public sealed class CueSheet(
                             var validationResult = albumValidator.ValidateAlbum(cueAlbum);
                             cueAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
                             cueAlbum.Status = validationResult.Data.AlbumStatus;
-                            cueAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;                            
-                            
+                            cueAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
+
                             var mp3Plugin = _songPlugins.First(x => x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
                             foreach (var song in cueModel.Songs)
                             {
                                 var mp3SongTags = new List<MetaTag<object?>>
                                 {
-                                    new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = cueModel.AlbumTitle() },
-                                    new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = cueModel.Artist() },
-                                    new MetaTag<object?> { Identifier = MetaTagIdentifier.OrigAlbumDate, Value = cueModel.AlbumYear() },
-                                    new MetaTag<object?> { Identifier = MetaTagIdentifier.Genre, Value = cueModel.Genre() }
+                                    new() { Identifier = MetaTagIdentifier.Album, Value = cueModel.AlbumTitle() },
+                                    new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = cueModel.Artist() },
+                                    new() { Identifier = MetaTagIdentifier.OrigAlbumDate, Value = cueModel.AlbumYear() },
+                                    new() { Identifier = MetaTagIdentifier.Genre, Value = cueModel.Genre() }
                                 };
                                 mp3SongTags.AddRange(song.Tags ?? []);
                                 var mp3Song = song with { Tags = mp3SongTags };
                                 await mp3Plugin.UpdateSongAsync(cueModel.FileSystemDirectoryInfo, mp3Song, cancellationToken).ConfigureAwait(false);
                             }
+
                             processedFiles++;
                             resultType = OperationResponseType.Ok;
                         }
@@ -225,7 +228,7 @@ public sealed class CueSheet(
         {
             return null;
         }
-        
+
         var allLinesFromFile = await File.ReadAllLinesAsync(filePath);
 
         var albumTags = new List<MetaTag<object?>>();
@@ -275,6 +278,7 @@ public sealed class CueSheet(
                     {
                         cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" BINARY", string.Empty))).ToFileSystemInfo();
                     }
+
                     var directoryInfo = new DirectoryInfo(fileInfo.DirectoryName!).ToDirectorySystemInfo();
                     if (!cueSheetDataFile?.Exists(directoryInfo) ?? false)
                     {
@@ -285,6 +289,7 @@ public sealed class CueSheet(
                             cueSheetDataFile = mediaTypeFilesInDirectory.First().ToFileSystemInfo();
                         }
                     }
+
                     break;
 
                 case CueSheetKeyRegistry.Flags:
@@ -481,7 +486,7 @@ public sealed class CueSheet(
                 songTitle,
                 SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
                 mediaNumber,
-                totalMediaNumber, 
+                totalMediaNumber,
                 ".mp3");
             songs.Add(new Common.Models.Song
             {

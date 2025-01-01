@@ -8,9 +8,9 @@ namespace Melodee.Common.Models;
 
 public record OperationResult<T>
 {
-    private List<Exception> _errors = [];
+    private readonly List<Exception> _errors = [];
 
-    private List<string> _messages = [];
+    private readonly List<string> _messages = [];
 
     public OperationResult()
     {
@@ -60,9 +60,9 @@ public record OperationResult<T>
 
     [XmlIgnore] public Dictionary<string, object>? AdditionalClientData { get; set; }
 
-    [IgnoreDataMember] 
-    [JsonIgnore] 
-    [XmlIgnore] 
+    [IgnoreDataMember]
+    [JsonIgnore]
+    [XmlIgnore]
     public Dictionary<string, object>? AdditionalData { get; set; }
 
     /// <summary>
@@ -77,6 +77,7 @@ public record OperationResult<T>
             {
                 return null;
             }
+
             return Errors.Select(x => new MelodeeException(x.Message));
         }
     }

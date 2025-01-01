@@ -11,6 +11,7 @@ public sealed class UserLoginEventHandler(UserService userService) : IEventHandl
         {
             return userService.UpdateLastLogin(eventData, cancellationToken);
         }
+
         return Task.CompletedTask;
     }
 }

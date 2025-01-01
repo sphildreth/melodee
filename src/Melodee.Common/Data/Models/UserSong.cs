@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -20,12 +19,12 @@ public class UserSong : DataModelBase
     public int PlayedCount { get; set; }
 
     /// <summary>
-    /// Can be null if user is just toggling star.
+    ///     Can be null if user is just toggling star.
     /// </summary>
     public Instant? LastPlayedAt { get; set; }
 
     public bool IsStarred { get; set; }
-    
+
     public Instant? StarredAt { get; set; }
 
     public int Rating { get; set; }

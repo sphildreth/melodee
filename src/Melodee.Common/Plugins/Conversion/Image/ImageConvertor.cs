@@ -54,35 +54,40 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             var smallImageSize = MelodeeConfiguration.GetValue<int>(SettingRegistry.ImagingSmallSize);
             var mediumImageSize = MelodeeConfiguration.GetValue<int>(SettingRegistry.ImagingMediumSize);
             var largeImageSize = MelodeeConfiguration.GetValue<int>(SettingRegistry.ImagingLargeSize);
-            
+
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
             var imageInfo = await SixLabors.ImageSharp.Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
-            
+
             var larger = imageInfo.Width;
             if (larger < smallImageSize)
             {
                 larger = smallImageSize;
             }
+
             if (larger < imageInfo.Height)
             {
                 larger = imageInfo.Height;
-            }                
+            }
+
             var resizeWithPaddingSize = smallImageSize;
             if (larger > smallImageSize)
             {
                 resizeWithPaddingSize = mediumImageSize;
             }
+
             if (larger > mediumImageSize)
             {
                 resizeWithPaddingSize = largeImageSize;
             }
+
             var didModify = false;
             var imageBytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken);
-            if(!string.Equals(".jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(".jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
             {
                 imageBytes = ConvertToJpegFormatViaSixLabors(imageBytes);
                 didModify = true;
             }
+
             if (imageInfo.Width != imageInfo.Height || imageInfo.Height > largeImageSize)
             {
                 imageBytes = ResizeAndPadToBeSquare(imageBytes, resizeWithPaddingSize);
@@ -105,13 +110,14 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             Data = fileInfo.ToFileSystemInfo()
         };
     }
-    
+
     public static byte[] ResizeAndPadToBeSquare(ReadOnlySpan<byte> imageBytes, int width)
     {
         if (imageBytes.Length == 0)
         {
             return imageBytes.ToArray();
         }
+
         using var outStream = new MemoryStream();
         using (var image = SixLabors.ImageSharp.Image.Load(imageBytes))
         {
@@ -123,8 +129,9 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
                 }).BackgroundColor(new Rgba32(255, 255, 255, 0)));
             image.SaveAsJpeg(outStream);
         }
+
         return outStream.ToArray();
-    }    
+    }
 
     public static byte[] ResizeImageIfNeeded(ReadOnlySpan<byte> imageBytes, int maxWidth, int maxHeight)
     {
@@ -132,6 +139,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         {
             return imageBytes.ToArray();
         }
+
         using var outStream = new MemoryStream();
         using (var image = SixLabors.ImageSharp.Image.Load(imageBytes))
         {

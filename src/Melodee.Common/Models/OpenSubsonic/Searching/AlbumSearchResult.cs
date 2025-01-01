@@ -31,11 +31,11 @@ public record AlbumSearchResult : IOpenSubsonicToXml
     public int Duration => DurationMs.ToSeconds();
 
     public string Created => CreatedAt.ToString();
-    
+
     public string[]? Genres { get; init; }
-    
+
     public string ToXml(string? nodeName = null)
     {
-        return $"<album id=\"{ Id }\" name=\"{ Name }\" coverArt=\"{ CoverArt }\" songCount=\"{ SongCount }\" created=\"{ Created }\" duration=\"{ Duration }\" artist=\"{ Artist }\" artistId=\"{ ArtistId }\"/>";
+        return $"<album id=\"{Id}\" name=\"{Name}\" coverArt=\"{CoverArt}\" songCount=\"{SongCount}\" created=\"{Created}\" duration=\"{Duration}\" artist=\"{Artist}\" artistId=\"{ArtistId}\"/>";
     }
 }

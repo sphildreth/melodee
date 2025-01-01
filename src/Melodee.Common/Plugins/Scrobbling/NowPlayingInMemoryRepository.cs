@@ -15,6 +15,7 @@ public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
         {
             Storage.TryRemove(uniqueId, out var existing);
         }
+
         return Task.CompletedTask;
     }
 

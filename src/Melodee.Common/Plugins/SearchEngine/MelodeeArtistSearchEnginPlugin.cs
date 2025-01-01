@@ -13,7 +13,7 @@ using ServiceStack;
 
 namespace Melodee.Common.Plugins.SearchEngine;
 
-public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> contextFactory) 
+public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> contextFactory)
     : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
@@ -68,7 +68,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                             NameNormalized = x.NameNormalized,
                             SortName = x.SortName ?? x.Name,
                             MusicBrainzId = x.MusicBrainzId
-                        }).ToArray()                        
+                        }).ToArray()
                     });
                 }
             }
@@ -80,7 +80,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                     .Select(x => new
                     {
                         x.Id, x.Name, x.ApiKey, x.MusicBrainzId, x.SortName, x.RealName, x.AlbumCount, x.AlternateNames, x.NameNormalized,
-                        Albums = x.Albums.Select(a => new {  a.AlbumType, a.AlternateNames, a.ReleaseDate, a.MusicBrainzId, a.NameNormalized, a.Name, a.SortName, a.ApiKey })
+                        Albums = x.Albums.Select(a => new { a.AlbumType, a.AlternateNames, a.ReleaseDate, a.MusicBrainzId, a.NameNormalized, a.Name, a.SortName, a.ApiKey })
                     })
                     .Where(x => x.NameNormalized == query.NameNormalized || (x.AlternateNames != null && x.AlternateNames.Contains(query.NameNormalized)))
                     .OrderBy(x => x.SortName)
@@ -109,7 +109,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                             SortName = x.SortName,
                             MusicBrainzId = x.MusicBrainzId,
                             AlbumCount = x.AlbumCount,
-                            Releases = x.Albums.Where(a => query.AlbumNamesNormalized != null && (query.AlbumNamesNormalized.Contains(a.NameNormalized) || a.AlternateNames != null && a.AlternateNames.ContainsAny(query.AlbumNamesNormalized))).OrderBy(a => a.ReleaseDate).ThenBy(a => a.SortName).Select(a => new AlbumSearchResult
+                            Releases = x.Albums.Where(a => query.AlbumNamesNormalized != null && (query.AlbumNamesNormalized.Contains(a.NameNormalized) || (a.AlternateNames != null && a.AlternateNames.ContainsAny(query.AlbumNamesNormalized)))).OrderBy(a => a.ReleaseDate).ThenBy(a => a.SortName).Select(a => new AlbumSearchResult
                             {
                                 ApiKey = a.ApiKey,
                                 AlbumType = SafeParser.ToEnum<AlbumType>(a.AlbumType),
@@ -119,7 +119,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                                 NameNormalized = a.NameNormalized,
                                 SortName = a.SortName ?? x.Name,
                                 MusicBrainzId = a.MusicBrainzId
-                            }).ToArray()                               
+                            }).ToArray()
                         }));
                     }
                 }
@@ -162,7 +162,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                             NameNormalized = a.NameNormalized,
                             SortName = a.SortName ?? x.Name,
                             MusicBrainzId = a.MusicBrainzId
-                        }).ToArray()                             
+                        }).ToArray()
                     }));
                 }
             }
@@ -172,7 +172,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                 OperationTime = Stopwatch.GetElapsedTime(startTicks).Microseconds,
                 TotalCount = 0,
                 TotalPages = 0,
-                Data = data                
+                Data = data
             };
         }
     }
@@ -182,14 +182,13 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
-            
+
             var startTicks = Stopwatch.GetTimestamp();
             SongSearchResult[] data = [];
-            
+
             var artist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == forArtist, cancellationToken).ConfigureAwait(false);
             if (artist != null)
             {
-
                 var sql = """
                           select ROW_NUMBER () OVER (
                             ORDER BY
@@ -203,7 +202,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                           order by s."PlayedCount" desc, s."LastPlayedAt" desc, s."SortOrder", s."TitleSort", a."SortOrder"
                           offset 0 rows fetch next @maxResults rows only;
                           """;
-                
+
                 var songs = (await dbConn
                     .QueryAsync<TopSongSearch>(sql, new { artistId = artist.Id, maxResults })
                     .ConfigureAwait(false)).ToArray();
@@ -216,7 +215,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                 OperationTime = Stopwatch.GetElapsedTime(startTicks).Microseconds,
                 TotalCount = 0,
                 TotalPages = 1,
-                Data = data                
+                Data = data
             };
         }
     }

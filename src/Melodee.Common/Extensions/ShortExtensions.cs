@@ -13,7 +13,7 @@ public static class ShortExtensions
         {
             return null;
         }
+
         return input.ToString()!.PadLeft(padLeft, padWith);
-    }    
-    
+    }
 }

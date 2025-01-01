@@ -36,8 +36,7 @@ public class ArtistImageSearchEngineService(
             new MusicBrainzArtistSearchEnginePlugin(musicBrainzRepository)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
-            }           
-
+            }
         };
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
@@ -53,7 +52,7 @@ public class ArtistImageSearchEngineService(
             catch (Exception e)
             {
                 Logger.Error(e, "[{Plugin}] threw error with query [{Query}]", searchEngine.DisplayName, query);
-            }             
+            }
         }
 
         return new OperationResult<ImageSearchResult[]>

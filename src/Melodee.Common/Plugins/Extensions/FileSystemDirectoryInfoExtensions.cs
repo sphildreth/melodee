@@ -9,7 +9,7 @@ using ImageInfo = Melodee.Common.Models.ImageInfo;
 
 namespace Melodee.Common.Plugins.Extensions;
 
-public static  class FileSystemDirectoryInfoExtensions
+public static class FileSystemDirectoryInfoExtensions
 {
     public static async Task<ImageInfo[]> ImagesForTypeAsync(this FileSystemDirectoryInfo directory, int maxNumberOfImagesAllowed, PictureIdentifier[] forPictureIdentifiers, IImageValidator imageValidator, CancellationToken cancellationToken = default)
     {
@@ -23,6 +23,7 @@ public static  class FileSystemDirectoryInfoExtensions
             {
                 break;
             }
+
             var fileInfo = new FileInfo(imageFile);
             var fileNameNormalized = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
             if (ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
@@ -65,8 +66,7 @@ public static  class FileSystemDirectoryInfoExtensions
                 }
             }
         }
+
         return imageInfos.ToArray();
     }
-    
-
 }

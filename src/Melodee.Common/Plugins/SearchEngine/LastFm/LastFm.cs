@@ -5,7 +5,7 @@ using Melodee.Common.Serialization;
 
 namespace Melodee.Common.Plugins.SearchEngine.LastFm;
 
-public class LastFm(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory) 
+public class LastFm(IMelodeeConfiguration configuration, ISerializer serializer, IHttpClientFactory httpClientFactory)
     : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
@@ -18,13 +18,13 @@ public class LastFm(IMelodeeConfiguration configuration, ISerializer serializer,
 
     public int SortOrder { get; } = 1;
 
-
-    public Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(int forArtist, int maxResults, CancellationToken cancellationToken = default)
+    public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+
+    public Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(int forArtist, int maxResults, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

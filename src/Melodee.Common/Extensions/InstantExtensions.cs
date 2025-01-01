@@ -4,5 +4,8 @@ namespace Melodee.Common.Extensions;
 
 public static class InstantExtensions
 {
-    public static string ToEtag(this Instant instant) => instant.ToUnixTimeTicks().ToString();
+    public static string ToEtag(this Instant instant)
+    {
+        return instant.ToUnixTimeTicks().ToString();
+    }
 }

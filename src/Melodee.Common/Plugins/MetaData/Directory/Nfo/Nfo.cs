@@ -18,10 +18,12 @@ namespace Melodee.Common.Plugins.MetaData.Directory.Nfo;
 /// <summary>
 ///     Processes NFO and gets tags and Songs for Album.
 /// </summary>
-public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) 
+public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumValidator, IMelodeeConfiguration configuration)
     : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
+
+    private INfoHandler[] _nfoHandlers = [];
 
     public override string Id => "35A33042-6E57-431C-AF94-F7F803F811C4";
 
@@ -30,8 +32,6 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
     public override bool IsEnabled { get; set; }
 
     public override int SortOrder { get; } = 3;
-
-    private INfoHandler[] _nfoHandlers = [];
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
@@ -51,7 +51,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
         [
             new PMediaHandler()
         ];
-        
+
         try
         {
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
@@ -80,15 +80,18 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                             }
                         }
                     }
+
                     if (!doContinue)
                     {
                         continue;
                     }
+
                     var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
                     if (nfoAlbum == null)
                     {
                         continue;
                     }
+
                     var validationResult = albumValidator.ValidateAlbum(nfoAlbum);
                     nfoAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
                     nfoAlbum.Status = validationResult.Data.AlbumStatus;

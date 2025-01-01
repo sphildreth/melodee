@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -29,37 +28,37 @@ public class Song : MetaDataModelBase
     [Required]
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public required string TitleNormalized { get; set; }
-    
+
     /// <summary>
-    /// These are strictly defined in the Genre enum.
+    ///     These are strictly defined in the Genre enum.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
-    public string[]? Genres { get; set; }    
-    
+    public string[]? Genres { get; set; }
+
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string[]? Moods { get; set; }
 
     /// <summary>
-    /// This is plain text and served to OpenSubsonic clients.
+    ///     This is plain text and served to OpenSubsonic clients.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? Comment { get; set; }
-    
+
     /// <summary>
-    /// The track replay gain value. (In Db)
+    ///     The track replay gain value. (In Db)
     /// </summary>
     public double? ReplayGain { get; set; }
-    
+
     /// <summary>
-    /// The track peak value. (Must be positive)
+    ///     The track peak value. (Must be positive)
     /// </summary>
     public double? ReplayPeak { get; set; }
-    
+
     /// <summary>
-    /// When a song is released as a single, it can have unique images different from the album image.
+    ///     When a song is released as a single, it can have unique images different from the album image.
     /// </summary>
-    public int? ImageCount { get; set; }    
-    
+    public int? ImageCount { get; set; }
+
     [RequiredGreaterThanZero] public required int SongNumber { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
@@ -94,13 +93,13 @@ public class Song : MetaDataModelBase
     [RequiredGreaterThanZero] public required int BitDepth { get; set; }
 
     [RequiredGreaterThanZero] public required int BPM { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string ContentType { get; set; }
 
     public int? ChannelCount { get; set; }
-    
+
     public bool IsVbr { get; set; }
 
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();

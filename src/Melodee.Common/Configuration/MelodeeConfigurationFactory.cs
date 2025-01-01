@@ -13,7 +13,7 @@ public sealed class MelodeeConfigurationFactory(IDbContextFactory<MelodeeDbConte
                 .Settings
                 .ToDictionaryAsync(x => x.Key, object? (x) => x.Value, cancellationToken)
                 .ConfigureAwait(false);
-            return new MelodeeConfiguration(settings);            
+            return new MelodeeConfiguration(settings);
         }
     }
 }

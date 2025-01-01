@@ -11,21 +11,24 @@ public static class EncryptionHelper
         {
             throw new ArgumentNullException(nameof(cipherText));
         }
+
         if (privateKey is not { Length: > 0 })
         {
             throw new ArgumentNullException(nameof(privateKey));
         }
+
         if (publicKey is not { Length: > 0 })
         {
             throw new ArgumentNullException(nameof(publicKey));
         }
+
         using var aesAlg = Aes.Create();
         aesAlg.Mode = CipherMode.CBC;
         aesAlg.Key = CreateAesKey(privateKey);
         aesAlg.IV = Convert.FromBase64String(publicKey);
 
         using (var decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-        { 
+        {
             using var msDecrypt = new MemoryStream(Convert.FromBase64String(cipherText));
             using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
             using var srDecrypt = new StreamReader(csDecrypt);
@@ -34,20 +37,23 @@ public static class EncryptionHelper
         }
     }
 
-    public static string Encrypt(string privateKey,string plainText, string publicKey)
+    public static string Encrypt(string privateKey, string plainText, string publicKey)
     {
         if (plainText is not { Length: > 0 })
         {
             throw new ArgumentNullException(nameof(plainText));
         }
+
         if (privateKey is not { Length: > 0 })
         {
             throw new ArgumentNullException(nameof(privateKey));
         }
+
         if (publicKey is not { Length: > 0 })
         {
             throw new ArgumentNullException(nameof(publicKey));
         }
+
         byte[] encrypted;
 
         using (var aesAlg = Aes.Create())
@@ -76,8 +82,10 @@ public static class EncryptionHelper
     }
 
     public static string GenerateRandomPublicKeyBase64()
-        => Convert.ToBase64String(GenerateRandomPublicKey());
-    
+    {
+        return Convert.ToBase64String(GenerateRandomPublicKey());
+    }
+
     public static byte[] GenerateRandomPublicKey()
     {
         var iv = new byte[16]; // AES > IV > 128 bit

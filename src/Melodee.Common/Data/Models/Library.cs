@@ -21,11 +21,11 @@ public class Library : DataModelBase
     public required string Name { get; set; }
 
     public int? ArtistCount { get; set; }
-    
+
     public int? AlbumCount { get; set; }
 
-    public int? SongCount { get; set; }    
-    
+    public int? SongCount { get; set; }
+
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     [Required]
     public required string Path { get; set; }

@@ -11,49 +11,42 @@ namespace Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data.Models.Materializ
 public sealed record Album
 {
     public const string TableName = "albums";
-    
-    [AutoIncrement]
-    public long Id { get; set; }
+
+    [AutoIncrement] public long Id { get; set; }
 
     /// <summary>
-    /// This is the MusicBrainz database Id
+    ///     This is the MusicBrainz database Id
     /// </summary>
-    [Index(false)] 
+    [Index(false)]
     public required long MusicBrainzArtistId { get; init; }
 
     [Index(false)]
-    [ServiceStack.DataAnnotations.StringLength(MusicBrainzRepositoryBase.MaxIndexSize)] 
+    [StringLength(MusicBrainzRepositoryBase.MaxIndexSize)]
     public required string Name { get; init; }
 
-    [ServiceStack.DataAnnotations.StringLength(MusicBrainzRepositoryBase.MaxIndexSize)]
+    [StringLength(MusicBrainzRepositoryBase.MaxIndexSize)]
     public required string SortName { get; init; }
 
-    [Index(false)] 
-    [ServiceStack.DataAnnotations.StringLength(MusicBrainzRepositoryBase.MaxIndexSize)] 
+    [Index(false)]
+    [StringLength(MusicBrainzRepositoryBase.MaxIndexSize)]
     public required string NameNormalized { get; init; }
 
     public int ReleaseType { get; init; }
-    
-    [Ignore]
-    [NotMapped] 
-    public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);
+
+    [Ignore] [NotMapped] public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);
 
     public bool DoIncludeInArtistSearch => ReleaseDate > DateTime.MinValue;
 
-    [Index] 
-    [ServiceStack.DataAnnotations.StringLength(MusicBrainzRepositoryBase.MaxIndexSize)] 
+    [Index]
+    [StringLength(MusicBrainzRepositoryBase.MaxIndexSize)]
     public required string MusicBrainzIdRaw { get; init; }
 
-    [Ignore]
-    [NotMapped] 
-    public Guid MusicBrainzId => SafeParser.ToGuid(MusicBrainzIdRaw) ?? Guid.Empty;
+    [Ignore] [NotMapped] public Guid MusicBrainzId => SafeParser.ToGuid(MusicBrainzIdRaw) ?? Guid.Empty;
 
-    [ServiceStack.DataAnnotations.StringLength(MusicBrainzRepositoryBase.MaxIndexSize)]
+    [StringLength(MusicBrainzRepositoryBase.MaxIndexSize)]
     public required string ReleaseGroupMusicBrainzIdRaw { get; init; }
-    
-    [Ignore]
-    [NotMapped]
-    public Guid ReleaseGroupMusicBrainzId => SafeParser.ToGuid(ReleaseGroupMusicBrainzIdRaw) ?? Guid.Empty;
+
+    [Ignore] [NotMapped] public Guid ReleaseGroupMusicBrainzId => SafeParser.ToGuid(ReleaseGroupMusicBrainzIdRaw) ?? Guid.Empty;
 
     public required DateTime ReleaseDate { get; init; }
 

@@ -2,9 +2,6 @@ using System.Collections;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Xml.Serialization;
-using Melodee.Common.Configuration;
-using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Responses;
@@ -15,6 +12,13 @@ namespace Melodee.Common.Serialization;
 
 public sealed class Serializer(ILogger logger) : ISerializer
 {
+    public static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new OpenSubsonicResponseModelConvertor() }
+    };
+
     private ILogger Logger { get; } = logger;
 
     public string? SerializeOpenSubsonicModelToXml(ResponseModel? model)
@@ -23,11 +27,12 @@ public sealed class Serializer(ILogger logger) : ISerializer
         {
             return null;
         }
-        var result = new StringBuilder($"<subsonic-response xmlns=\"https://subsonic.org/restapi\" status=\"{( model.IsSuccess ? "ok" : "error") }\" type=\"melodee\" version=\"{model.ResponseData.Version}\" serverVersion=\"{ model.ResponseData.ServerVersion}\" openSubsonic=\"true\">");
+
+        var result = new StringBuilder($"<subsonic-response xmlns=\"https://subsonic.org/restapi\" status=\"{(model.IsSuccess ? "ok" : "error")}\" type=\"melodee\" version=\"{model.ResponseData.Version}\" serverVersion=\"{model.ResponseData.ServerVersion}\" openSubsonic=\"true\">");
 
         if (model.ResponseData.Error != null)
         {
-            result.Append($"<error code=\"{ model.ResponseData.Error.Code}\" message=\"{ model.ResponseData.Error.Message}\"/>");
+            result.Append($"<error code=\"{model.ResponseData.Error.Code}\" message=\"{model.ResponseData.Error.Message}\"/>");
         }
         else
         {
@@ -35,30 +40,32 @@ public sealed class Serializer(ILogger logger) : ISerializer
             {
                 if (model.ResponseData.DataPropertyName.Nullify() != null)
                 {
-                    result.Append($"<{ model.ResponseData.DataPropertyName}>");
+                    result.Append($"<{model.ResponseData.DataPropertyName}>");
                 }
 
                 if (model.ResponseData.Data is IEnumerable data)
                 {
-                    foreach(var element in data)
+                    foreach (var element in data)
                     {
-                        result.Append(((IOpenSubsonicToXml)element).ToXml()); 
+                        result.Append(((IOpenSubsonicToXml)element).ToXml());
                     }
                 }
                 else
                 {
-                    result.Append(((IOpenSubsonicToXml)model.ResponseData.Data).ToXml(model.ResponseData.DataPropertyName));    
+                    result.Append(((IOpenSubsonicToXml)model.ResponseData.Data).ToXml(model.ResponseData.DataPropertyName));
                 }
+
                 if (model.ResponseData.DataPropertyName.Nullify() != null)
                 {
-                    result.Append($"</{ model.ResponseData.DataPropertyName}>");
-                }                
+                    result.Append($"</{model.ResponseData.DataPropertyName}>");
+                }
             }
         }
+
         result.Append("</subsonic-response>");
         return result.ToString();
     }
-    
+
     public string? Serialize(object? o)
     {
         if (o == null)
@@ -76,17 +83,12 @@ public sealed class Serializer(ILogger logger) : ISerializer
             throw;
         }
     }
-    
-    public TOut? Deserialize<TOut>(string? s)
-        => Deserialize<TOut>(Encoding.UTF8.GetBytes(s ?? string.Empty));
 
-    public static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    public TOut? Deserialize<TOut>(string? s)
     {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new OpenSubsonicResponseModelConvertor() }
-    };
-    
+        return Deserialize<TOut>(Encoding.UTF8.GetBytes(s ?? string.Empty));
+    }
+
     public TOut? Deserialize<TOut>(byte[]? bytes)
     {
         if (bytes?.Length == 0)

@@ -3,7 +3,7 @@ using NodaTime;
 namespace Melodee.Common.Data.Models.DTOs;
 
 /// <summary>
-/// Used to populate Artist and Song index "GetIndexes" response.
+///     Used to populate Artist and Song index "GetIndexes" response.
 /// </summary>
 public record DatabaseDirectoryInfo(
     int Id,

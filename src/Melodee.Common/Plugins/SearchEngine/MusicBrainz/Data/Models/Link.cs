@@ -15,21 +15,21 @@ public sealed record Link
     public int? BeginDateYear { get; init; }
 
     public int? BeginDateMonth { get; init; }
-    
+
     public int BeginDateMonthValue => BeginDateMonth ?? 1;
 
     public int BeginDateDayValue => BeginDateDay ?? 1;
-    
+
     public int? BeginDateDay { get; init; }
 
     public int? EndDateYear { get; init; }
 
     public int? EndDateMonth { get; init; }
-    
+
     public int EndDateMonthValue => EndDateMonth ?? 1;
 
     public int? EndDateDay { get; init; }
-    
+
     public int EndDateDayValue => EndDateDay ?? 1;
 
     public bool IsEnded { get; init; }

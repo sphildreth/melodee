@@ -19,9 +19,11 @@ public class NullSongPlugin : ISongPlugin
         return false;
     }
 
-    public Task<OperationResult<Common.Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public Task<OperationResult<Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(new OperationResult<Common.Models.Song> { Data = new Common.Models.Song
+        return Task.FromResult(new OperationResult<Models.Song>
+        {
+            Data = new Models.Song
             {
                 ArtistId = Guid.Empty,
                 AlbumId = Guid.Empty,
@@ -35,7 +37,7 @@ public class NullSongPlugin : ISongPlugin
         });
     }
 
-    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
+    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(new OperationResult<bool> { Data = true });
     }

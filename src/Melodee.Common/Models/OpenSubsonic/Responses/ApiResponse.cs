@@ -21,9 +21,9 @@ public record ApiResponse
     public required string ServerVersion { get; init; }
 
     public Error? Error { get; init; }
-    
+
     public string? Etag { get; init; }
-    
+
     public string? ContentType { get; init; }
 
     public object? Data { get; init; }

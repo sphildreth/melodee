@@ -18,16 +18,16 @@ namespace Melodee.Common.Models.OpenSubsonic.Requests;
 /// <param name="Token">(t) The authentication token computed as md5(password + salt).</param>
 /// <param name="Salt">(s) A random string (“salt”) used as input for computing the password hash</param>
 /// <param name="Callback">(callback) Callback name to use with jsonp requests.</param>
-/// <param name="Jwt">(jwt) JsonWebToken used in auth, seen in the Navidrome source code.</param> 
+/// <param name="Jwt">(jwt) JsonWebToken used in auth, seen in the Navidrome source code.</param>
 /// <param name="ApiRequestPlayer">Details on the request subsonic client application (aka player.)</param>
 public record ApiRequest(KeyValue[] RequestHeaders, string? Username, string? Version, string? Format, string? ApiKey, string? Password, string? Token, string? Salt, string? Callback, string? Jwt, UserPlayer ApiRequestPlayer)
 {
     public bool IsJsonRequest => string.Equals(Format, "json", StringComparison.OrdinalIgnoreCase);
-    
+
     public bool IsJsonPRequest => string.Equals(Format, "jsonp", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(Callback);
-    
+
     /// <summary>
-    /// Defaults to XML
+    ///     Defaults to XML
     /// </summary>
     public bool IsXmlRequest => !IsJsonRequest && !IsJsonPRequest;
 }

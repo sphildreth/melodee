@@ -35,7 +35,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<Common.Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
         using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{fileSystemInfo}]", DisplayName, fileSystemInfo.Name))
         {
@@ -129,10 +129,10 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
             var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemInfo, tags, cancellationToken);
             if (!metaTagsProcessorResult.IsSuccess)
             {
-                return new OperationResult<Common.Models.Song>(metaTagsProcessorResult.Messages)
+                return new OperationResult<Models.Song>(metaTagsProcessorResult.Messages)
                 {
                     Errors = metaTagsProcessorResult.Errors,
-                    Data = new Common.Models.Song
+                    Data = new Models.Song
                     {
                         CrcHash = string.Empty,
                         File = fileSystemInfo
@@ -140,7 +140,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                 };
             }
 
-            var song = new Common.Models.Song
+            var song = new Models.Song
             {
                 CrcHash = Crc32.Calculate(new FileInfo(fileSystemInfo.FullName(directoryInfo))),
                 File = fileSystemInfo,
@@ -149,14 +149,14 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                 MediaAudios = mediaAudios,
                 SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
             };
-            return new OperationResult<Common.Models.Song>
+            return new OperationResult<Models.Song>
             {
                 Data = song
             };
         }
     }
 
-    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
+    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

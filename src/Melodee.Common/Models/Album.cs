@@ -3,7 +3,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
-using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
@@ -13,20 +12,20 @@ namespace Melodee.Common.Models;
 public sealed record Album
 {
     public const string JsonFileName = "melodee.json";
-    
+
     /// <summary>
-    /// Artist for the Album
+    ///     Artist for the Album
     /// </summary>
     public Artist Artist { get; set; } = Artist.NewArtistFromName(string.Empty);
 
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
 
     public Guid Id { get; set; } = Guid.NewGuid();
-    
+
     public int? AlbumDbId { get; set; }
-    
+
     public string? MusicBrainzId { get; set; }
-    
+
     public DateTimeOffset? Modified { get; set; }
 
     /// <summary>
@@ -35,24 +34,26 @@ public sealed record Album
     public required IEnumerable<string> ViaPlugins { get; set; }
 
     /// <summary>
-    ///     This is the directory where the Album was created, it will not be the "Staging" or "Library" directory where the Album is moved to once processed.
+    ///     This is the directory where the Album was created, it will not be the "Staging" or "Library" directory where the
+    ///     Album is moved to once processed.
     /// </summary>
     public required FileSystemDirectoryInfo OriginalDirectory { get; init; }
 
     /// <summary>
-    ///     This is the directory that is holding the melodee.json file. At creation this is likely equal to Original but when moved into another library folder this gets updated and Original does not.
+    ///     This is the directory that is holding the melodee.json file. At creation this is likely equal to Original but when
+    ///     moved into another library folder this gets updated and Original does not.
     /// </summary>
     public required FileSystemDirectoryInfo Directory { get; set; }
-    
+
     /// <summary>
-    /// The full path to the melodee.json file.
+    ///     The full path to the melodee.json file.
     /// </summary>
     public string? MelodeeDataFileName { get; set; }
 
     public IEnumerable<ImageInfo>? Images { get; set; }
 
     public IEnumerable<MetaTag<object?>>? Tags { get; set; }
-    
+
     public KeyValue? SearchEngineResultKeyValue { get; init; }
 
     public IEnumerable<Song>? Songs { get; set; }
@@ -63,13 +64,13 @@ public sealed record Album
     public AlbumStatus Status { get; set; } = AlbumStatus.New;
 
     [JsonIgnore] public bool IsValid => Status == AlbumStatus.Ok;
-    
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public AlbumType AlbumType { get; set; } = AlbumType.NotSet;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public AlbumNeedsAttentionReasons StatusReasons { get; set; } = AlbumNeedsAttentionReasons.NotSet;
-    
+
     public IEnumerable<AlbumFile> Files { get; set; } = [];
 
     public int SortOrder { get; set; }
@@ -86,10 +87,10 @@ public sealed record Album
             return this.ToDirectoryName();
         }
     }
-    
+
     public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
-    
+
     public Album MergeSongs(IEnumerable<Song> pluginResultData)
     {
         var songs = new List<Song>(Songs ?? []);
@@ -117,10 +118,10 @@ public sealed record Album
 
         return this with { Songs = songs.ToArray(), Tags = albumTags!.ToArray() };
     }
-    
+
     public override string ToString()
     {
-        return $"AlbumDbId [{ AlbumDbId }] MusicBrainzId [{ MusicBrainzId }] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+        return $"AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
     public Album Merge(Album otherAlbum)
@@ -191,7 +192,7 @@ public sealed record Album
 
         var isAlbumOk = Status == AlbumStatus.Ok && otherAlbum.Status == AlbumStatus.Ok;
         var isAlbumInvalid = Status == AlbumStatus.Invalid || otherAlbum.Status == AlbumStatus.Invalid;
-        
+
         return new Album
         {
             Artist = Artist,
@@ -275,5 +276,4 @@ public sealed record Album
             Songs = songs.ToArray();
         }
     }
-    
 }

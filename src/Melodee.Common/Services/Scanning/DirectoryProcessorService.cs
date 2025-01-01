@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ATL;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
@@ -53,8 +54,8 @@ public sealed class DirectoryProcessorService(
     private IEnumerable<IDirectoryPlugin> _directoryPlugins = [];
 
     private string _directoryStaging = null!;
+    private ImageConvertor _imageConvertor = new(new MelodeeConfiguration([]));
     private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
-    private ImageConvertor _imageConvertor = new ImageConvertor(new MelodeeConfiguration([]));
     private bool _initialized;
     private int _maxAlbumProcessingCount;
     private short _maxImageCount;
@@ -598,6 +599,7 @@ public sealed class DirectoryProcessorService(
                                         Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
                                     }
                                 }
+
                                 song.File.Name = Path.GetFileName(newSongFileName);
                             }
                         }
@@ -684,7 +686,7 @@ public sealed class DirectoryProcessorService(
                             var imageSearchResult = albumImageSearchResult.Data.FirstOrDefault();
                             if (imageSearchResult != null)
                             {
-                                var albumImageFromSearchFileName = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Common.Data.Models.Album.FrontImageType).Item1);
+                                var albumImageFromSearchFileName = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Data.Models.Album.FrontImageType).Item1);
                                 if (await httpClient.DownloadFileAsync(
                                         imageSearchResult.MediaUrl,
                                         albumImageFromSearchFileName,
@@ -732,6 +734,7 @@ public sealed class DirectoryProcessorService(
                         {
                             File.Delete(albumKvp.Value);
                         }
+
                         await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken);
                         if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                         {
@@ -863,7 +866,7 @@ public sealed class DirectoryProcessorService(
                         var mediaNumber = mediaDirectory.Name.TryToGetMediaNumberFromString() ?? 1;
                         foreach (var mediaFile in mediaDirectory.AllMediaTypeFileInfos().ToArray())
                         {
-                            var fileAtl = new ATL.Track(mediaFile.FullName)
+                            var fileAtl = new Track(mediaFile.FullName)
                             {
                                 DiscNumber = mediaNumber,
                                 DiscTotal = totalMediaNumber
@@ -985,7 +988,7 @@ public sealed class DirectoryProcessorService(
                 // Move the image if not in the album directory
                 if (fileInfo.DirectoryName != album.Directory.FullName())
                 {
-                    var imageFileName = album.Directory.GetNextFileNameForType(maxImageCount, Common.Data.Models.Artist.ImageType).Item1;
+                    var imageFileName = album.Directory.GetNextFileNameForType(maxImageCount, Data.Models.Artist.ImageType).Item1;
                     File.Move(fileInfo.FullName, imageFileName);
                     fileInfo = new FileInfo(imageFileName);
                 }

@@ -11,14 +11,17 @@ public record Search3Result(ArtistSearchResult[] Artist, AlbumSearchResult[] Alb
         {
             result.Append(artist.ToXml());
         }
+
         foreach (var album in Album)
         {
             result.Append(album.ToXml());
         }
+
         foreach (var song in Song)
         {
             result.Append(song.ToXml());
         }
+
         result.Append("</searchResult3>");
         return result.ToString();
     }

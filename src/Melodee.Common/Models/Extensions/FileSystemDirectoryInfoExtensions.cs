@@ -15,11 +15,11 @@ public static class FileSystemDirectoryInfoExtensions
     public static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|\s?best\s?of|greatest(s*)\s?hit(s*)|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex IsDirectoryDiscographyRegex = new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    
+
     public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new("(cd|disc|disk|side|media|a|b|c|d|e|f)([0-9]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     /// <summary>
-    /// Rename the Directory and prepend the given prefix.
+    ///     Rename the Directory and prepend the given prefix.
     /// </summary>
     public static FileSystemDirectoryInfo AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string prefix)
     {
@@ -28,8 +28,9 @@ public static class FileSystemDirectoryInfoExtensions
         var moveTo = Path.Combine(d.Parent.FullName, newName);
         if (Directory.Exists(moveTo))
         {
-            Directory.Move(moveTo, Path.Combine(d.FullName, $"{moveTo}-{ DateTime.UtcNow.Ticks.ToString()}"));
+            Directory.Move(moveTo, Path.Combine(d.FullName, $"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}"));
         }
+
         Directory.Move(d.FullName, moveTo);
         return new FileSystemDirectoryInfo
         {
@@ -39,7 +40,7 @@ public static class FileSystemDirectoryInfoExtensions
     }
 
     /// <summary>
-    /// Rename the Directory and append the given suffix.
+    ///     Rename the Directory and append the given suffix.
     /// </summary>
     public static FileSystemDirectoryInfo AppendSuffix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string suffix)
     {
@@ -48,8 +49,9 @@ public static class FileSystemDirectoryInfoExtensions
         var moveTo = Path.Combine(dirName, newName);
         if (Directory.Exists(moveTo))
         {
-            Directory.Move(moveTo, Path.Combine(dirName, $"{moveTo}-{ DateTime.UtcNow.Ticks.ToString()}"));
+            Directory.Move(moveTo, Path.Combine(dirName, $"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}"));
         }
+
         Directory.Move(fileSystemDirectoryInfo.FullName(), moveTo);
         return new FileSystemDirectoryInfo
         {
@@ -57,7 +59,7 @@ public static class FileSystemDirectoryInfoExtensions
             Name = newName
         };
     }
-    
+
     public static DirectoryInfo ToDirectoryInfo(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         return new DirectoryInfo(fileSystemDirectoryInfo.FullName());
@@ -91,11 +93,11 @@ public static class FileSystemDirectoryInfoExtensions
     {
         return Directory.Exists(fileSystemDirectoryInfo.FullName());
     }
-    
+
     public static void Delete(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         Directory.Delete(fileSystemDirectoryInfo.FullName());
-    }    
+    }
 
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
@@ -147,11 +149,14 @@ public static class FileSystemDirectoryInfoExtensions
                 result.Add(dirInfo.ToDirectorySystemInfo());
             }
         }
+
         return result.ToArray();
     }
 
     public static FileSystemDirectoryInfo GetParent(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
-        => fileSystemDirectoryInfo.GetParents().First();
+    {
+        return fileSystemDirectoryInfo.GetParents().First();
+    }
 
     public static IEnumerable<FileSystemDirectoryInfo> GetParents(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
@@ -163,6 +168,7 @@ public static class FileSystemDirectoryInfoExtensions
             results.Add(parent.ToDirectorySystemInfo());
             parent = parent.Parent;
         }
+
         return results.ToArray();
     }
 
@@ -187,11 +193,13 @@ public static class FileSystemDirectoryInfoExtensions
         {
             result.Add(fileSystemDirectoryInfo);
         }
+
         var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
         if (skipDirPrefix.Nullify() != null)
         {
-            return result.Where(x => !x.FullName().StartsWith(skipDirPrefix!) && !x.FullName().Contains($"{ Path.DirectorySeparatorChar }{skipDirPrefix}")).ToArray();
+            return result.Where(x => !x.FullName().StartsWith(skipDirPrefix!) && !x.FullName().Contains($"{Path.DirectorySeparatorChar}{skipDirPrefix}")).ToArray();
         }
+
         return result.ToArray();
     }
 
@@ -214,6 +222,7 @@ public static class FileSystemDirectoryInfoExtensions
                 }
             }
         }
+
         highestNumberFound++;
         return (Path.Combine(fileSystemDirectoryInfo.FullName(), $"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maxNumberLength)}-{imageType}.jpg"), highestNumberFound);
     }
@@ -222,11 +231,11 @@ public static class FileSystemDirectoryInfoExtensions
     {
         return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension));
     }
-    
+
     public static IEnumerable<FileInfo> AllMediaTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
-    }    
+    }
 
     public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null)
     {
@@ -238,7 +247,7 @@ public static class FileSystemDirectoryInfoExtensions
 
         return dirInfo.EnumerateFiles(searchPattern ?? "*.*", SearchOption.TopDirectoryOnly);
     }
-    
+
     public static IEnumerable<DirectoryInfo> AllDirectoryInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
@@ -246,8 +255,9 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return [];
         }
+
         return dirInfo.EnumerateDirectories(searchPattern ?? "*.*", SearchOption.TopDirectoryOnly);
-    }    
+    }
 
     public static void DeleteAllEmptyDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
@@ -334,7 +344,8 @@ public static class FileSystemDirectoryInfoExtensions
     }
 
     /// <summary>
-    /// This is false then the name of the directory has fragments that test for non studio albums (e.g. 'live', 'compilation')
+    ///     This is false then the name of the directory has fragments that test for non studio albums (e.g. 'live',
+    ///     'compilation')
     /// </summary>
     /// <param name="fileSystemDirectoryInfo"></param>
     /// <returns></returns>

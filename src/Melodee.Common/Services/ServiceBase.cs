@@ -25,7 +25,7 @@ public abstract class ServiceBase(
     IDbContextFactory<MelodeeDbContext> contextFactory)
 {
     public const string CacheName = "melodee";
-    
+
     protected static TimeSpan DefaultCacheDuration = TimeSpan.FromDays(1);
 
     protected ILogger Logger { get; } = logger;
@@ -198,8 +198,10 @@ public abstract class ServiceBase(
                                 songs.Add(pluginResult.Data);
                                 viaPlugins.Add(plugin.DisplayName);
                             }
+
                             messages.AddRange(pluginResult.Messages ?? []);
                         }
+
                         if (plugin.StopProcessing)
                         {
                             Logger.Warning("[{PluginName}] set stop processing flag.", plugin.DisplayName);
@@ -283,7 +285,7 @@ public abstract class ServiceBase(
                             var validationResult = albumValidator.ValidateAlbum(newAlbum);
                             newAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
                             newAlbum.Status = validationResult.Data.AlbumStatus;
-                            newAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;              
+                            newAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
                             albums.Add(newAlbum);
                             if (albums.Count(x => x.IsValid) > maxAlbumProcessingCount)
                             {

@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
-using System.Text;
 using System.Text.Json.Serialization;
 using Melodee.Common.Extensions;
 using NodaTime;
@@ -39,27 +37,27 @@ public record AlbumList2 : IOpenSubsonicToXml
     public int? UserRating { get; init; }
 
     public string[]? Genres { get; init; }
-    
+
     public string? Genre => Genres?.Length > 0 ? Genres[0] : null;
-    
+
     /// <summary>
-    /// ApiKeyId of Library
+    ///     ApiKeyId of Library
     /// </summary>
     public required string Parent { get; set; }
-    
+
     public Guid? MusicBrainzId { get; init; }
-    
+
     public string? Comment { get; init; }
-    
+
     public string? SortName { get; init; }
-    
+
     public virtual string ToXml(string? nodeName = null)
     {
-        return $"<album id=\"{ Id }\" parent=\"{ Parent }\" isDir=\"true\" title=\"{ Name.ToSafeXmlString() }\" " +
-               $"name=\"{ Name.ToSafeXmlString() }\" album=\"{ Name.ToSafeXmlString() }\" artist=\"{ Artist.ToSafeXmlString() }\" year=\"{ Year }\" genre=\"{ Genre.ToSafeXmlString() }\" " +
-               $"coverArt=\"{ CoverArt }\" duration=\"{ Duration }\" " +
-               $"created=\"{ Created }\" artistId=\"{ ArtistId }\" " +
-               $"songCount=\"{ SongCount }\" isVideo=\"false\" bpm=\"0\" comment=\"{ Comment.ToSafeXmlString() }\" sortName=\"{ SortName.ToSafeXmlString() }\" mediaType=\"album\" " +
-               $"musicBrainzId=\"{ MusicBrainzId }\" channelCount=\"0\" samplingRate=\"0\"><replayGain></replayGain></album>";
+        return $"<album id=\"{Id}\" parent=\"{Parent}\" isDir=\"true\" title=\"{Name.ToSafeXmlString()}\" " +
+               $"name=\"{Name.ToSafeXmlString()}\" album=\"{Name.ToSafeXmlString()}\" artist=\"{Artist.ToSafeXmlString()}\" year=\"{Year}\" genre=\"{Genre.ToSafeXmlString()}\" " +
+               $"coverArt=\"{CoverArt}\" duration=\"{Duration}\" " +
+               $"created=\"{Created}\" artistId=\"{ArtistId}\" " +
+               $"songCount=\"{SongCount}\" isVideo=\"false\" bpm=\"0\" comment=\"{Comment.ToSafeXmlString()}\" sortName=\"{SortName.ToSafeXmlString()}\" mediaType=\"album\" " +
+               $"musicBrainzId=\"{MusicBrainzId}\" channelCount=\"0\" samplingRate=\"0\"><replayGain></replayGain></album>";
     }
 }

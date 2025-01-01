@@ -23,7 +23,7 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
     public async Task<OperationResult<bool>> NowPlaying(UserInfo user, ScrobbleInfo scrobble, CancellationToken token = default)
     {
         // TODO this should use user.LastFmSessionKey or get a new one from last fm
-        
+
         var result = true;
         var apiKey = configuration.GetValue<string>(SettingRegistry.ScrobblingLastFmApiKey);
         if (apiKey.Nullify() != null)

@@ -10,7 +10,7 @@ namespace Melodee.Common.Data.Models;
 public abstract class MetaDataModelBase : DataModelBase
 {
     /// <summary>
-    /// Alternate names should be Normalized and Tags (e.g. 'GOHOMEWITHYOU|GOHOMEWITHU')
+    ///     Alternate names should be Normalized and Tags (e.g. 'GOHOMEWITHYOU|GOHOMEWITHU')
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? AlternateNames { get; set; }
@@ -26,7 +26,7 @@ public abstract class MetaDataModelBase : DataModelBase
     public string? AmgId { get; set; }
 
     public string? DiscogsId { get; set; }
-    
+
     public string? WikiDataId { get; set; }
 
     public Guid? MusicBrainzId { get; set; }

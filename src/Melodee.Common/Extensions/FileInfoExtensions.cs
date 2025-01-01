@@ -1,5 +1,4 @@
 using Melodee.Common.Models;
-using Serilog;
 
 namespace Melodee.Common.Extensions;
 

@@ -8,7 +8,9 @@ namespace Melodee.Common.Data.Models.Extensions;
 public static class UserExtensions
 {
     public static Common.Models.OpenSubsonic.User ToApiUser(this User user)
-        => new(user.UserName, user.IsAdmin, user.Email, user.HasStreamRole, user.IsScrobblingEnabled, user.HasDownloadRole, user.HasShareRole, user.HasJukeboxRole, user.LastUpdatedAt?.ToString() ?? user.CreatedAt.ToString());
+    {
+        return new Common.Models.OpenSubsonic.User(user.UserName, user.IsAdmin, user.Email, user.HasStreamRole, user.IsScrobblingEnabled, user.HasDownloadRole, user.HasShareRole, user.HasJukeboxRole, user.LastUpdatedAt?.ToString() ?? user.CreatedAt.ToString());
+    }
 
     public static UserInfo ToUserInfo(this User user)
     {
@@ -68,15 +70,20 @@ public static class UserExtensions
         {
             roles.Add(RoleNameRegistry.Administrator);
         }
+
         return new UserInfo(user.Id, user.ApiKey, user.UserName, user.Email)
         {
-            Roles = roles,
+            Roles = roles
         };
     }
 
     public static string Encrypt(this User user, string plainText, IMelodeeConfiguration configuration)
-        => EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, plainText, user.PublicKey);
+    {
+        return EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, plainText, user.PublicKey);
+    }
 
     public static string Decrypt(this User user, string encryptedText, IMelodeeConfiguration configuration)
-        => EncryptionHelper.Decrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, encryptedText, user.PublicKey);
+    {
+        return EncryptionHelper.Decrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, encryptedText, user.PublicKey);
+    }
 }

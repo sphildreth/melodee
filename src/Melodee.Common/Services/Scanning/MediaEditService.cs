@@ -39,7 +39,7 @@ public sealed class MediaEditService(
     private string _directoryLibrary = null!;
 
     private ISongPlugin _editSongPlugin = new NullSongPlugin();
-    private ImageConvertor _imageConvertor = new ImageConvertor(new MelodeeConfiguration([]));
+    private ImageConvertor _imageConvertor = new(new MelodeeConfiguration([]));
     private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private bool _initialized;
 
@@ -49,7 +49,7 @@ public sealed class MediaEditService(
         _albumValidator = new AlbumValidator(_configuration);
         _imageValidator = new ImageValidator(_configuration);
         _imageConvertor = new ImageConvertor(_configuration);
-        _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer),_imageConvertor, _imageValidator, _configuration);
+        _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
 
         _directoryLibrary = (await libraryService.GetLibraryAsync(token)).Data.Path;
 
@@ -164,14 +164,14 @@ public sealed class MediaEditService(
         var albumValidResult = _albumValidator.ValidateAlbum(album);
         album.ValidationMessages = albumValidResult.Data.Messages ?? [];
         album.Status = albumValidResult.Data.AlbumStatus;
-        album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;    
+        album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;
         if (albumValidResult.Data.IsValid)
         {
             return new OperationResult<AlbumValidationResult>
             {
                 Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.NotSet)
             };
-        }        
+        }
 
         if (!(album.Directory?.Exists() ?? false))
         {

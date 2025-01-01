@@ -3,7 +3,7 @@ using Melodee.Common.Extensions;
 namespace Melodee.Common.Filtering;
 
 /// <summary>
-/// Filter operator to dynamically filter IQueryable results.
+///     Filter operator to dynamically filter IQueryable results.
 /// </summary>
 /// <param name="PropertyName">Name of object type being filtered.</param>
 /// <param name="Operator">Operation of Filter.</param>
@@ -12,19 +12,20 @@ namespace Melodee.Common.Filtering;
 public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, object Value, string? JoinOperator = "&&")
 {
     private const string SqlWildCard = "%";
-    
+
     public string OperatorValue => FilterOperatorToConditionString(Operator);
-    
+
     public object ValuePattern()
     {
         if (Value.IsNumericType())
         {
             return Value;
         }
+
         switch (Operator)
         {
             case FilterOperator.Contains:
-            case FilterOperator.DoesNotContain:                    
+            case FilterOperator.DoesNotContain:
                 return $"{SqlWildCard}{Value}{SqlWildCard}";
             case FilterOperator.StartsWith:
                 return $"{SqlWildCard}{Value}";
@@ -39,7 +40,7 @@ public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, o
 
         return Value;
     }
-    
+
     public static bool IsLikeOperator(FilterOperator filterOperator)
     {
         return filterOperator switch
@@ -48,7 +49,7 @@ public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, o
             _ => false
         };
     }
-    
+
     public static string FilterOperatorToConditionString(FilterOperator filterOperator)
     {
         return filterOperator switch

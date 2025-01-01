@@ -5,6 +5,50 @@ namespace Melodee.Common.Utility;
 
 public static class ImageHelper
 {
+    private static string[] ArtistImageFileNames =>
+    [
+        "BAND",
+        "ARTIST",
+        "GROUP",
+        "PHOTO"
+    ];
+
+    private static string[] ArtistSecondaryImageFileNames =>
+    [
+        "ARTISTLOGO",
+        "LOGO"
+    ];
+
+    private static string[] AlbumImageFileNames =>
+    [
+        "ALBUM",
+        "ART",
+        "BIG",
+        "COVER",
+        "CVR",
+        "FOLDER",
+        "FRONT",
+        "SCAN"
+    ];
+
+    private static string[] AlbumSecondaryImageFileNames =>
+    [
+        "BACK",
+        "BOOK",
+        "CD",
+        "DIGIPACK",
+        "DISC",
+        "DVD",
+        "ENCARTES",
+        "INSIDE",
+        "INNER",
+        "INLAY",
+        "INSITE",
+        "JEWEL",
+        "MATRIX",
+        "TRAYCARD"
+    ];
+
     private static string[] ImageExtensions()
     {
         return ["*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp"];
@@ -14,7 +58,7 @@ public static class ImageHelper
         string[]? patterns = null,
         SearchOption options = SearchOption.TopDirectoryOnly)
     {
-        if (string.IsNullOrEmpty(path) ||!Directory.Exists(path))
+        if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
         {
             return [];
         }
@@ -37,56 +81,13 @@ public static class ImageHelper
         return GetFiles(directory, ImageExtensions(), searchOption);
     }
 
-    private static string[] ArtistImageFileNames =>
-    [
-        "BAND",
-        "ARTIST",
-        "GROUP",
-        "PHOTO"
-    ];
-
-    private static string[] ArtistSecondaryImageFileNames =>
-    [
-        "ARTISTLOGO",
-        "LOGO"
-    ];    
-
-    private static string[] AlbumImageFileNames =>
-    [
-        "ALBUM",
-        "ART",
-        "BIG",
-        "COVER",
-        "CVR",
-        "FOLDER",
-        "FRONT",
-        "SCAN"
-    ];
-    
-    private static string[] AlbumSecondaryImageFileNames =>
-    [
-        "BACK",
-        "BOOK",
-        "CD",
-        "DIGIPACK",
-        "DISC",
-        "DVD",
-        "ENCARTES",
-        "INSIDE",
-        "INNER",
-        "INLAY",
-        "INSITE",
-        "JEWEL",
-        "MATRIX",
-        "TRAYCARD"
-    ];    
-    
     public static bool IsArtistImage(FileInfo? fileInfo)
     {
         if (fileInfo == null)
         {
             return false;
         }
+
         if (FileHelper.IsFileImageType(fileInfo.Extension))
         {
             var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
@@ -96,6 +97,7 @@ public static class ImageHelper
                 return SafeParser.ToNumber<int>(nameDigits) < 2;
             }
         }
+
         return false;
     }
 
@@ -105,6 +107,7 @@ public static class ImageHelper
         {
             return false;
         }
+
         if (FileHelper.IsFileImageType(fileInfo.Extension))
         {
             var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
@@ -113,12 +116,14 @@ public static class ImageHelper
                 var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
                 return SafeParser.ToNumber<int>(nameDigits) > 1;
             }
+
             if (ArtistSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 return true;
             }
         }
-        return false;        
+
+        return false;
     }
 
     public static bool IsAlbumImage(FileInfo? fileInfo)
@@ -135,6 +140,7 @@ public static class ImageHelper
             {
                 return false;
             }
+
             if (AlbumImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
@@ -143,7 +149,8 @@ public static class ImageHelper
                 return numberInName is > 1860 or < 2;
             }
         }
-        return false;        
+
+        return false;
     }
 
     public static bool IsAlbumSecondaryImage(FileInfo? fileInfo)
@@ -157,21 +164,23 @@ public static class ImageHelper
         {
             return false;
         }
-        
+
         if (FileHelper.IsFileImageType(fileInfo.Extension))
         {
             var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
             if (AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 return true;
-            }            
+            }
+
             if (AlbumImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
                 return SafeParser.ToNumber<int>(nameDigits) > 1;
             }
         }
-        return false;         
+
+        return false;
     }
 
 

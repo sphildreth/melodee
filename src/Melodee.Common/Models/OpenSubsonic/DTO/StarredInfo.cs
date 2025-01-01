@@ -11,15 +11,17 @@ public record StarredInfo(Artist[] Artists, Child[] Albums, Child[] Songs) : IOp
         {
             result.Append(artist.ToXml());
         }
+
         foreach (var album in Albums)
         {
             result.Append(album.ToXml());
-        }      
+        }
+
         foreach (var song in Songs)
         {
             result.Append(song.ToXml());
-        }        
+        }
+
         return result.ToString();
     }
 }
- 

@@ -1,5 +1,4 @@
 using System.Text;
-using FFMpegCore.Enums;
 using Melodee.Common.Enums;
 using Melodee.Common.Filtering;
 
@@ -20,7 +19,7 @@ public sealed record PagedRequest
     public AlbumResultFilter? AlbumResultFilter { get; init; }
 
     /// <summary>
-    /// Filter by definitions. 
+    ///     Filter by definitions.
     /// </summary>
     public FilterOperatorInfo[]? FilterBy { get; init; }
 
@@ -46,20 +45,20 @@ public sealed record PagedRequest
     public int PageValue => Page ?? 1;
 
     /// <summary>
-    /// When this is true then only return the count of records for the request, do not return any actual records.
+    ///     When this is true then only return the count of records for the request, do not return any actual records.
     /// </summary>
     public bool IsTotalCountOnlyRequest { get; set; }
-    
+
     /// <summary>
-    /// Sort By definitions. PropertyName and Direction, e.g. 'Id', 'Desc'
+    ///     Sort By definitions. PropertyName and Direction, e.g. 'Id', 'Desc'
     /// </summary>
     public Dictionary<string, string>? OrderBy { get; set; }
 
     /// <summary>
-    /// Only here as syntactical sugar so the LINQ statements look nicer.
+    ///     Only here as syntactical sugar so the LINQ statements look nicer.
     /// </summary>
     public int TakeValue => PageSizeValue;
-    
+
     public int SkipValue
     {
         get
@@ -86,11 +85,12 @@ public sealed record PagedRequest
         var result = new StringBuilder();
         if (OrderBy == null)
         {
-            OrderBy = new Dictionary<string, string>()
+            OrderBy = new Dictionary<string, string>
             {
                 { defaultSortBy ?? DefaultSortField, defaultOrderBy ?? OrderAscDirection }
             };
         }
+
         if (OrderBy != null && OrderBy.Count != 0)
         {
             foreach (var kp in OrderBy)
@@ -103,29 +103,34 @@ public sealed record PagedRequest
                 result.AppendFormat("\"{0}\" {1}", kp.Key, kp.Value);
             }
         }
+
         return result.ToString();
     }
-    
+
     public string FilterByValue()
     {
         if (FilterBy == null || FilterBy.Length == 0)
         {
             return "1 = 1";
         }
+
         var result = new StringBuilder();
         foreach (var kp in FilterBy)
         {
             if (result.Length > 0)
             {
-                result.Append($" {kp.JoinOperator } ");
+                result.Append($" {kp.JoinOperator} ");
             }
+
             result.AppendFormat("\"{0}\" {1} {2}", kp.PropertyName, kp.OperatorValue, kp.ValuePattern());
         }
+
         return result.ToString();
     }
 
     /// <summary>
-    /// Returns a tuple of SQL statement (built off the sql start fragment parameter) and dictionary of parameters for a parameterized query to be executed.
+    ///     Returns a tuple of SQL statement (built off the sql start fragment parameter) and dictionary of parameters for a
+    ///     parameterized query to be executed.
     /// </summary>
     public (string, Dictionary<string, object>?) FilterByParts(string sqlStartFragment)
     {
@@ -133,16 +138,20 @@ public sealed record PagedRequest
         {
             return ($"{sqlStartFragment} WHERE 1 = 1", null);
         }
+
         var sqlResult = new StringBuilder(sqlStartFragment);
         sqlResult.Append(" WHERE ");
         foreach (var fb in FilterBy)
         {
             sqlResult.Append($"\"{fb.PropertyName}\" {fb.OperatorValue} @p_{fb.PropertyName}");
         }
+
         return (sqlResult.ToString(), FilterBy.ToDictionary(x => $"@p_{x.PropertyName}", object (x) => x.ValuePattern()));
     }
 
-    
-    public int TotalPages(int totalRecordsCount) => totalRecordsCount < 1 ? 0 : (totalRecordsCount + PageSizeValue - 1) / PageSizeValue;
 
+    public int TotalPages(int totalRecordsCount)
+    {
+        return totalRecordsCount < 1 ? 0 : (totalRecordsCount + PageSizeValue - 1) / PageSizeValue;
+    }
 }

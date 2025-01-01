@@ -133,7 +133,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     var sfvAlbum = new Album
                     {
                         Artist = new Artist(
-                            artistName ?? throw new Exception($"Invalid artist on { nameof(SimpleFileVerification) }"),
+                            artistName ?? throw new Exception($"Invalid artist on {nameof(SimpleFileVerification)}"),
                             artistName.ToNormalizedString() ?? artistName!,
                             null),
                         Directory = fileSystemDirectoryInfo,
@@ -160,11 +160,11 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                         ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                     };
-                    
+
                     var validationResult = albumValidator.ValidateAlbum(sfvAlbum);
                     sfvAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
                     sfvAlbum.Status = validationResult.Data.AlbumStatus;
-                    sfvAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;                    
+                    sfvAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
 
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                     if (File.Exists(stagingAlbumDataName))

@@ -52,7 +52,7 @@ public class AlbumImageSearchEngineService(
             catch (Exception e)
             {
                 Logger.Error(e, "[{Plugin}] threw error with query [{Query}]", searchEngine.DisplayName, query);
-            }            
+            }
         }
 
         return new OperationResult<ImageSearchResult[]>

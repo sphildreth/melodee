@@ -8,61 +8,61 @@
 
   <ItemGroup>
     <PackageReference Include="Ardalis.GuardClauses"/>
-    <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="BCrypt.Net-Next"/>
     <PackageReference Include="Crc32.NET"/>
     <PackageReference Include="Dapper"/>
     <PackageReference Include="FFMpegCore"/>
-    <PackageReference Include="FluentValidation"  />
-    <PackageReference Include="Hashids.net"  />
+    <PackageReference Include="FluentValidation"/>
+    <PackageReference Include="Hashids.net"/>
     <PackageReference Include="Hqub.Last.fm"/>
     <PackageReference Include="HtmlAgilityPack"/>
-    <PackageReference Include="IdGen" />
+    <PackageReference Include="IdGen"/>
     <PackageReference Include="IdSharp.Common"/>
     <PackageReference Include="IdSharp.Tagging"/>
-    <PackageReference Include="K4os.Hash.xxHash"  />
-    <PackageReference Include="LiteDB" />
-    <PackageReference Include="Lucene.Net" />
-    <PackageReference Include="Lucene.Net.Analysis.Common" />
-    <PackageReference Include="Mapster"  />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="K4os.Hash.xxHash"/>
+    <PackageReference Include="LiteDB"/>
+    <PackageReference Include="Lucene.Net"/>
+    <PackageReference Include="Lucene.Net.Analysis.Common"/>
+    <PackageReference Include="Mapster"/>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore"/>
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json"/>
     <PackageReference Include="Microsoft.Extensions.Http"/>
-    <PackageReference Include="Microsoft.Net.Http.Headers" />
-    <PackageReference Include="NodaTime"  />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" />
-    <PackageReference Include="Polly.Core" />
+    <PackageReference Include="Microsoft.Net.Http.Headers"/>
+    <PackageReference Include="NodaTime"/>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime"/>
+    <PackageReference Include="Polly.Core"/>
     <PackageReference Include="Quartz.Jobs"/>
     <PackageReference Include="Quartz.Serialization.SystemTextJson"/>
     <PackageReference Include="Serilog"/>
     <PackageReference Include="Serilog.Sinks.Console"/>
     <PackageReference Include="Serilog.Sinks.File"/>
-    <PackageReference Include="SerilogTimings"  />
-    <PackageReference Include="ServiceStack" />
-    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Data" />
-    <PackageReference Include="SharpZipLib"/>    
+    <PackageReference Include="SerilogTimings"/>
+    <PackageReference Include="ServiceStack"/>
+    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Data"/>
+    <PackageReference Include="SharpZipLib"/>
     <PackageReference Include="SixLabors.ImageSharp"/>
-    <PackageReference Include="SmartFormat"/>    
-    <PackageReference Include="System.IO.Hashing" />
-    <PackageReference Include="System.Linq.Dynamic.Core"/>    
-    <PackageReference Include="z440.atl.core"  />
+    <PackageReference Include="SmartFormat"/>
+    <PackageReference Include="System.IO.Hashing"/>
+    <PackageReference Include="System.Linq.Dynamic.Core"/>
+    <PackageReference Include="z440.atl.core"/>
     <PackageReference Include="MimeTypes">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>    
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Migrations\" />
-   </ItemGroup>
+    <Folder Include="Migrations\"/>
+  </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Constants\PropertyTypeNameRegistry.cs" />
+    <Compile Remove="Constants\PropertyTypeNameRegistry.cs"/>
   </ItemGroup>
 
   <ItemGroup>

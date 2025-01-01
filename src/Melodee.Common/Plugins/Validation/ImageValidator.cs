@@ -13,9 +13,9 @@ namespace Melodee.Common.Plugins.Validation;
 public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImageValidator
 {
     private static readonly Regex ImageNameIsProofRegex = new(@"(proof|foto)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
-    
+
     private readonly List<ValidationResultMessage> _validationMessages = [];
-    
+
     public async Task<OperationResult<ValidationResult>> ValidateImage(FileInfo? fileInfo, PictureIdentifier pictureIdentifier, CancellationToken cancellationToken = default)
     {
         _validationMessages.Clear();
@@ -27,6 +27,7 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
                 Message = "Image cannot be null."
             });
         }
+
         if (!fileInfo!.Exists)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -35,6 +36,7 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
                 Message = "Image not found."
             });
         }
+
         if (fileInfo.Length == 0)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -42,7 +44,8 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
                 Severity = ValidationResultMessageSeverity.Critical,
                 Message = "Image is empty."
             });
-        }        
+        }
+
         try
         {
             var imageInfo = await Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
@@ -57,6 +60,7 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
                     });
                 }
             }
+
             var minSize = configuration.GetValue<int>(SettingRegistry.ImagingMinimumImageSize);
             var smallImageSize = configuration.GetValue<int>(SettingRegistry.ImagingSmallSize);
             if (minSize > 0 && minSize >= smallImageSize)
@@ -66,7 +70,7 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
                     _validationMessages.Add(new ValidationResultMessage
                     {
                         Severity = ValidationResultMessageSeverity.Critical,
-                        Message = $"Image size [{ imageInfo.Width}] is less than configured minimum image size [{minSize}]."
+                        Message = $"Image size [{imageInfo.Width}] is less than configured minimum image size [{minSize}]."
                     });
                 }
             }
@@ -79,12 +83,13 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
                 Message = $"Unable to load image. [{e}]"
             });
         }
+
         if (IsImageAProofType(fileInfo.FullName))
         {
             _validationMessages.Add(new ValidationResultMessage
             {
                 Severity = ValidationResultMessageSeverity.Critical,
-                Message = $"Image is a proof type image."
+                Message = "Image is a proof type image."
             });
         }
 
@@ -94,11 +99,11 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
             Data = new ValidationResult
             {
                 IsValid = isValid,
-                Messages = _validationMessages,
+                Messages = _validationMessages
             }
         };
     }
-    
+
     public static bool IsImageAProofType(string? imageName)
     {
         return !string.IsNullOrWhiteSpace(imageName) && ImageNameIsProofRegex.IsMatch(imageName);

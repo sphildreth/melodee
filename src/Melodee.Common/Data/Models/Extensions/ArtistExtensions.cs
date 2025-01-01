@@ -1,19 +1,26 @@
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.SearchEngines;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
 public static class ArtistExtensions
 {
-    public static string ToCoverArtId(this Artist artist) => artist.ToApiKey();
-    
-    public static string ToApiKey(this Artist artist) => $"artist{OpenSubsonicServer.ApiIdSeparator}{artist.ApiKey}";
-
-    public static Common.Models.OpenSubsonic.ArtistID3 ToApiArtistID3(this Artist artist, UserArtist? userArtist = null)
+    public static string ToCoverArtId(this Artist artist)
     {
-        return new Common.Models.OpenSubsonic.ArtistID3(
+        return artist.ToApiKey();
+    }
+
+    public static string ToApiKey(this Artist artist)
+    {
+        return $"artist{OpenSubsonicServer.ApiIdSeparator}{artist.ApiKey}";
+    }
+
+    public static ArtistID3 ToApiArtistID3(this Artist artist, UserArtist? userArtist = null)
+    {
+        return new ArtistID3(
             artist.ToApiKey(),
             artist.Name,
             artist.ToCoverArtId(),
@@ -25,8 +32,8 @@ public static class ArtistExtensions
             artist.SortName,
             artist.Roles?.ToTags()?.ToArray()
         );
-    }    
-    
+    }
+
     public static Common.Models.OpenSubsonic.Artist ToApiArtist(this Artist artist, UserArtist? userArtist = null)
     {
         return new Common.Models.OpenSubsonic.Artist(
@@ -38,26 +45,25 @@ public static class ArtistExtensions
             artist.ToCoverArtId(),
             "Url", // TODO ?
             userArtist?.StarredAt.ToString()
-            );
-        
+        );
     }
-    
+
     public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
     {
         return new ArtistQuery
         {
             Name = artist.Name,
             AlbumKeyValues = albumKeyValues,
-            MusicBrainzId = artist.MusicBrainzId?.ToString(),
+            MusicBrainzId = artist.MusicBrainzId?.ToString()
         };
-    }    
+    }
 
     public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this Artist artist)
     {
         return new FileSystemDirectoryInfo
         {
             Path = Path.Combine(artist.Library.Path, artist.Directory),
-            Name = artist.Directory,
+            Name = artist.Directory
         };
     }
 }

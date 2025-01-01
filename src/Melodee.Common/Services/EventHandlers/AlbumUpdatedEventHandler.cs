@@ -7,7 +7,7 @@ using Serilog;
 
 namespace Melodee.Common.Services.EventHandlers;
 
-public sealed class AlbumUpdatedEventHandler (
+public sealed class AlbumUpdatedEventHandler(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory) : IEventHandler<AlbumUpdatedEvent>
@@ -18,6 +18,7 @@ public sealed class AlbumUpdatedEventHandler (
         {
             // TODO update db or something
         }
+
         return Task.CompletedTask;
     }
 }

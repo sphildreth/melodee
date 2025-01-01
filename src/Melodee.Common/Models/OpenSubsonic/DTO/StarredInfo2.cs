@@ -11,15 +11,17 @@ public record StarredInfo2(ArtistID3[] Artists, AlbumID3[] Albums, Child[] Songs
         {
             result.Append(artist.ToXml());
         }
+
         foreach (var album in Albums)
         {
             result.Append(album.ToXml());
-        }      
+        }
+
         foreach (var song in Songs)
         {
             result.Append(song.ToXml());
-        }        
+        }
+
         return result.ToString();
     }
 }
- 

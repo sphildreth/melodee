@@ -16,8 +16,7 @@ public sealed record ReleaseGroup
 
     public required string MusicBrainzIdRaw { get; init; }
 
-    [NotMapped]
-    public Guid MusicBrainzId => Guid.Parse(MusicBrainzIdRaw);
+    [NotMapped] public Guid MusicBrainzId => Guid.Parse(MusicBrainzIdRaw);
 
     public ReleaseType ReleaseTypeValue => SafeParser.ToEnum<ReleaseType>(ReleaseType);
 }

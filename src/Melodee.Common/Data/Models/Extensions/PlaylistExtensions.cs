@@ -1,16 +1,20 @@
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
-using Melodee.Common.Models.OpenSubsonic;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
 public static class PlaylistExtensions
 {
-    
-    public static string ToCoverArtId(this Playlist playlist) => playlist.ToApiKey();
-    
-    public static string ToApiKey(this Playlist playlist) => $"playlist{OpenSubsonicServer.ApiIdSeparator }{playlist.ApiKey}";
-    
+    public static string ToCoverArtId(this Playlist playlist)
+    {
+        return playlist.ToApiKey();
+    }
+
+    public static string ToApiKey(this Playlist playlist)
+    {
+        return $"playlist{OpenSubsonicServer.ApiIdSeparator}{playlist.ApiKey}";
+    }
+
     public static Common.Models.OpenSubsonic.Playlist ToApiPlaylist(this Playlist playlist)
     {
         return new Common.Models.OpenSubsonic.Playlist
@@ -30,7 +34,7 @@ public static class PlaylistExtensions
                 .Songs?
                 .OrderBy(x => x.PlaylistOrder)
                 .Select(x => x.Song.ToApiChild(x.Song.AlbumDisc.Album, x.Song.UserSongs.FirstOrDefault()))
-                .ToArray() 
+                .ToArray()
         };
     }
 }

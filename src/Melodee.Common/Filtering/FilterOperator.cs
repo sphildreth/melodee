@@ -1,79 +1,79 @@
 namespace Melodee.Common.Filtering;
 
 /// <summary>
-/// Copied from Bootstrap Blazor
+///     Copied from Bootstrap Blazor
 /// </summary>
 public enum FilterOperator
 {
     None,
 
     /// <summary>
-    /// Satisfied if the current value equals the specified value.
+    ///     Satisfied if the current value equals the specified value.
     /// </summary>
     Equals,
 
     /// <summary>
-    /// Satisfied if the current value does not equal the specified value.
+    ///     Satisfied if the current value does not equal the specified value.
     /// </summary>
     NotEquals,
 
     /// <summary>
-    /// Satisfied if the current value is less than the specified value.
+    ///     Satisfied if the current value is less than the specified value.
     /// </summary>
     LessThan,
 
     /// <summary>
-    /// Satisfied if the current value is less than or equal to the specified value.
+    ///     Satisfied if the current value is less than or equal to the specified value.
     /// </summary>
     LessThanOrEquals,
 
     /// <summary>
-    /// Satisfied if the current value is greater than the specified value.
+    ///     Satisfied if the current value is greater than the specified value.
     /// </summary>
     GreaterThan,
 
     /// <summary>
-    /// Satisfied if the current value is greater than or equal to the specified value.
+    ///     Satisfied if the current value is greater than or equal to the specified value.
     /// </summary>
     GreaterThanOrEquals,
 
     /// <summary>
-    /// Satisfied if the current value contains the specified value.
+    ///     Satisfied if the current value contains the specified value.
     /// </summary>
     Contains,
 
     /// <summary>
-    /// Satisfied if the current value starts with the specified value.
+    ///     Satisfied if the current value starts with the specified value.
     /// </summary>
     StartsWith,
 
     /// <summary>
-    /// Satisfied if the current value ends with the specified value.
+    ///     Satisfied if the current value ends with the specified value.
     /// </summary>
     EndsWith,
 
     /// <summary>
-    /// Satisfied if the current value does not contain the specified value.
+    ///     Satisfied if the current value does not contain the specified value.
     /// </summary>
     DoesNotContain,
 
     /// <summary>
-    /// Satisfied if the current value is null.
+    ///     Satisfied if the current value is null.
     /// </summary>
     IsNull,
 
     /// <summary>
-    /// Satisfied if the current value is <see cref="string.Empty" />.
+    ///     Satisfied if the current value is <see cref="string.Empty" />.
     /// </summary>
     IsEmpty,
 
     /// <summary>
-    /// Satisfied if the current value is not null.
+    ///     Satisfied if the current value is not null.
     /// </summary>
     IsNotNull,
 
     /// <summary>
-    /// Satisfied if the current value is not <see cref="string.Empty" />.
+    ///     Satisfied if the current value is not <see cref="string.Empty" />.
     /// </summary>
     IsNotEmpty
 }

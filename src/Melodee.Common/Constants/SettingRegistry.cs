@@ -1,20 +1,19 @@
 namespace Melodee.Common.Constants;
 
-
 public static class SettingRegistry
 {
     public const string ConversionBitrate = "conversion.bitrate";
     public const string ConversionEnabled = "conversion.enabled";
     public const string ConversionSamplingRate = "conversion.samplingRate";
     public const string ConversionVbrLevel = "conversion.vbrLevel";
-    public const string DefaultsBatchSize = "defaults.batchSize";    
+    public const string DefaultsBatchSize = "defaults.batchSize";
     public const string DefaultsPageSize = "defaults.pagesize";
     public const string EncryptionPrivateKey = "encryption.privateKey";
     public const string FilteringLessThanDuration = "filtering.lessThanDuration";
     public const string FilteringLessThanSongCount = "filtering.lessThanSongCount";
     public const string FormattingDateTimeDisplayActivityFormat = "formatting.dateTimeDisplayActivityFormat";
     public const string FormattingDateTimeDisplayFormatShort = "formatting.dateTimeDisplayFormatShort";
-    public const string ImagingDoLoadEmbeddedImages = "imaging.doLoadEmbeddedImages";    
+    public const string ImagingDoLoadEmbeddedImages = "imaging.doLoadEmbeddedImages";
     public const string ImagingMaximumNumberOfAlbumImages = "imaging.maximumNumberOfAlbumImages";
     public const string ImagingMaximumNumberOfArtistImages = "imaging.maximumNumberOfArtistImages";
     public const string ImagingMinimumImageSize = "imaging.minimumImageSize";
@@ -50,7 +49,7 @@ public static class SettingRegistry
     public const string ProcessingIgnoredArticles = "processing.ignoredArticles";
     public const string ProcessingIgnoredPerformers = "processing.ignoredPerformers";
     public const string ProcessingIgnoredProduction = "processing.ignoredProduction";
-    public const string ProcessingIgnoredPublishers = "processing.ignoredPublishers";    
+    public const string ProcessingIgnoredPublishers = "processing.ignoredPublishers";
     public const string ProcessingMaximumAlbumDirectoryNameLength = "processing.maximumAlbumDirectoryNameLength";
     public const string ProcessingMaximumArtistDirectoryNameLength = "processing.maximumArtistDirectoryNameLength";
     public const string ProcessingMaximumProcessingCount = "processing.maximumProcessingCount";

@@ -27,7 +27,7 @@ public record SongSearchResult : IOpenSubsonicToXml
     public string Created => CreatedAt.ToString();
 
     public int Duration { get; init; }
-    
+
     public int Size { get; init; }
 
     public int Bitrate { get; init; }
@@ -49,13 +49,13 @@ public record SongSearchResult : IOpenSubsonicToXml
     public required string ArtistId { get; init; }
 
     public string Genre => string.Join(",", Genres ?? []);
-    
+
     public string ToXml(string? nodeName = null)
     {
-        return $"<song id=\"{ Id }\" parent=\"{ Parent }\" title=\"{ Title }\" album=\"{ Album }\" " +
-               $"artist=\"{ Artist }\" isDir=\"{ IsDir.ToLowerCaseString() }\" coverArt=\"{ CoverArt }\" created=\"{ Created }\" " +
-               $"duration=\"{ Duration }\" bitRate=\"{ Bitrate }\" track=\"{ Track }\" genre=\"({ Genre }\" size=\"{ Size }\" suffix=\"{ Suffix }\" " +
-               $"contentType=\"{ ContentType }\" isVideo=\"false\" path=\"{ Path }\" " +
-               $"albumId=\"{ AlbumId }\" artistId=\"{ ArtistId }\" type=\"{ Type }\"/>";
+        return $"<song id=\"{Id}\" parent=\"{Parent}\" title=\"{Title}\" album=\"{Album}\" " +
+               $"artist=\"{Artist}\" isDir=\"{IsDir.ToLowerCaseString()}\" coverArt=\"{CoverArt}\" created=\"{Created}\" " +
+               $"duration=\"{Duration}\" bitRate=\"{Bitrate}\" track=\"{Track}\" genre=\"({Genre}\" size=\"{Size}\" suffix=\"{Suffix}\" " +
+               $"contentType=\"{ContentType}\" isVideo=\"false\" path=\"{Path}\" " +
+               $"albumId=\"{AlbumId}\" artistId=\"{ArtistId}\" type=\"{Type}\"/>";
     }
 }

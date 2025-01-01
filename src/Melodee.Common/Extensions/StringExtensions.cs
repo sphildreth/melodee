@@ -12,13 +12,13 @@ namespace Melodee.Common.Extensions;
 public static partial class StringExtensions
 {
     public const char TagsSeparator = '|';
-    
+
     private static readonly string YearParseRegex = "(19|20)\\d{2}";
 
     private static readonly string SongNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
 
     public static readonly Regex HasWithFragmentsRegex = new(@"(\s*[\(\[]*with\s+)+", RegexOptions.Compiled);
-    
+
     public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static readonly string RomanRegex = @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
@@ -47,6 +47,7 @@ public static partial class StringExtensions
         { 'ù', "u" }, { 'ú', "u" }, { 'û', "u" }, { 'ü', "ue" },
         { 'ý', "y" }, { 'ÿ', "y" }
     }; // ReSharper disable StringLiteralTypo        
+
     private static readonly Dictionary<string, string> MacExceptions = new()
     {
         { @"\bMacEdo", "Macedo" },
@@ -77,11 +78,13 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         var inputValue = input.Trim();
         if (string.Equals("null", inputValue, StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
+
         return inputValue;
     }
 
@@ -91,10 +94,14 @@ public static partial class StringExtensions
         {
             return null;
         }
-        return input[0..Math.Min(input.Length, maxLength)];
+
+        return input[..Math.Min(input.Length, maxLength)];
     }
 
-    public static string ToBase64(this string text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    public static string ToBase64(this string text)
+    {
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(text)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
 
     public static string FromBase64(this string text)
     {
@@ -108,8 +115,9 @@ public static partial class StringExtensions
                 text += "=";
                 break;
         }
+
         return Encoding.UTF8.GetString(Convert.FromBase64String(text));
-    }    
+    }
 
     public static string? ToTitleCase(this string input, bool doPutTheAtEnd = true)
     {
@@ -222,7 +230,7 @@ public static partial class StringExtensions
         nameString = Regex.Replace(nameString, @"'\w\b", x => x.ToString().ToLower()); // Lowercase 's
         return nameString;
     }
-    
+
     public static bool IsValueInDelimitedList(this string input, string value, char delimiter = '|')
     {
         if (string.IsNullOrEmpty(input))
@@ -232,8 +240,8 @@ public static partial class StringExtensions
 
         var p = input.Split(delimiter);
         return p.Any() && p.Any(x => x.Trim().Equals(value, StringComparison.OrdinalIgnoreCase));
-    }    
-    
+    }
+
     public static string? AddToDelimitedList(this string? input, IEnumerable<string>? values, char delimiter = '|')
     {
         var vv = values?.ToArray() ?? [];
@@ -241,36 +249,45 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         if (string.IsNullOrEmpty(input))
         {
             return string.Join(delimiter.ToString(), vv);
         }
+
         if (values == null || vv.Length == 0)
         {
             return input;
         }
+
         foreach (var value in vv)
         {
             if (string.IsNullOrEmpty(value))
             {
                 continue;
             }
+
             if (!input.IsValueInDelimitedList(value, delimiter))
             {
                 if (!input.EndsWith(delimiter.ToString()))
                 {
                     input += delimiter;
                 }
+
                 input += value;
             }
         }
+
         return input;
     }
 
     /// <summary>
-    /// Return the cleaned version of the string without changing chase or manipulating the "THE" part.
+    ///     Return the cleaned version of the string without changing chase or manipulating the "THE" part.
     /// </summary>
-    public static string? CleanStringAsIs(this string input) => CleanString(input, false, false);
+    public static string? CleanStringAsIs(this string input)
+    {
+        return CleanString(input, false, false);
+    }
 
     public static string? CleanString(this string? input, bool? doPutTheAtEnd = false, bool? doTitleCase = true)
     {
@@ -278,16 +295,19 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         var result = input;
         result = result.Trim();
         if (doTitleCase ?? true)
         {
             result = result.ToTitleCase(doPutTheAtEnd ?? false);
         }
+
         if (string.IsNullOrEmpty(result))
         {
             return input;
         }
+
         result = NullAndUnicodeRegex().Replace(result.Replace("\u0026", "&").Replace("\0", string.Empty), string.Empty);
         return WeirdTickAndMoreThanSingleSpacesRegex().Replace(result.Replace("’", "'"), " ").Trim();
     }
@@ -314,13 +334,15 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         if (!str!.Contains(TagsSeparator))
         {
             return [str];
         }
+
         return str.Split(TagsSeparator).Where(x => !SafeParser.IsNull(x));
-    }    
-    
+    }
+
     /// <summary>
     ///     Add tags to the given string value.
     /// </summary>
@@ -330,7 +352,9 @@ public static partial class StringExtensions
     /// <param name="dontLowerCase">Don't return lowercase value, leave value case as is</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
     public static string? AddTag(this string? str, string? value, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
-        => AddTag(str, value?.Split(tagSplit ?? TagsSeparator), tagSplit, dontLowerCase);
+    {
+        return AddTag(str, value?.Split(tagSplit ?? TagsSeparator), tagSplit, dontLowerCase);
+    }
 
     /// <summary>
     ///     Add tags to the given string value.
@@ -348,6 +372,7 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         var ts = tagSplit ?? TagsSeparator;
         var value = string.Join(ts, vv.Where(x => !string.IsNullOrEmpty(x)).Select(x => x));
         var tags = (str ?? value).Nullify()?.Split(ts).Select(x => x.Nullify()).ToList() ?? [];
@@ -359,28 +384,34 @@ public static partial class StringExtensions
         {
             tags.Add(value.Nullify());
         }
+
         var tv = tags.Where(x => !string.IsNullOrEmpty(x)).Distinct(StringComparer.CurrentCultureIgnoreCase);
         if (doReorder ?? true)
         {
             tv = tv.Order();
         }
+
         var result = string.Join(ts, tv).Nullify();
         if (dontLowerCase ?? false)
         {
             return result;
         }
+
         return result?.ToLower();
-    }    
-    
+    }
+
     public static string? TrimAndNullify(this string? value)
-        => value?.Nullify();    
-    
+    {
+        return value?.Nullify();
+    }
+
     public static string? ToNormalizedString(this string? input)
     {
         if (string.IsNullOrWhiteSpace(input))
         {
             return null;
         }
+
         var v = input.CleanStringAsIs();
         if (string.IsNullOrWhiteSpace(v))
         {
@@ -405,6 +436,7 @@ public static partial class StringExtensions
         {
             return input;
         }
+
         input = input.ToLower()
             .Replace("$", "s")
             .Replace("%", "per");
@@ -567,21 +599,23 @@ public static partial class StringExtensions
 
         return null;
     }
-    
+
     public static short? TryToGetMediaNumberFromString(this string input)
     {
         if (input.Nullify() == null)
         {
             return null;
         }
+
         if (FileSystemDirectoryInfoExtensions.IsDirectoryAlbumMediaDirectoryRegex.IsMatch(input))
         {
             var v = input.Where(char.IsDigit).ToArray();
             var n = SafeParser.ToNumber<short?>(new string(v));
             return n < 1 ? 1 : n;
         }
+
         return null;
-    }    
+    }
 
     public static string? RemoveSongNumberFromString(this string input)
     {
@@ -594,25 +628,25 @@ public static partial class StringExtensions
     }
 
 
-
     public static bool HasWithFragments(this string? input)
     {
         return input.Nullify() != null && HasWithFragmentsRegex.IsMatch(input!);
     }
-    
+
     public static bool HasFeaturingFragments(this string? input)
     {
         return input.Nullify() != null && HasFeatureFragmentsRegex.IsMatch(input!);
     }
-    
+
     public static int FeaturingAndWithFragmentsCount(this string? input)
     {
         if (input.Nullify() == null)
         {
             return 0;
         }
+
         return HasWithFragmentsRegex.Matches(input!).Count + HasFeatureFragmentsRegex.Matches(input!).Count;
-    }    
+    }
 
     public static string? RemoveFileExtension(this string? input)
     {
@@ -654,19 +688,21 @@ public static partial class StringExtensions
 
         return result;
     }
-    
+
     public static string? ToHexString(this string? input)
     {
         if (input.Nullify() == null)
         {
             return null;
         }
+
         var sb = new StringBuilder();
         var bytes = Encoding.UTF8.GetBytes(input!);
         foreach (var t in bytes)
         {
             sb.Append(t.ToString("X2"));
         }
+
         return sb.ToString();
     }
 
@@ -676,38 +712,45 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         var inputVal = input?.StartsWith("enc:") ?? false ? input[4..] : input ?? string.Empty;
         if (inputVal.Nullify() == null)
         {
             return null;
         }
+
         var bytes = new byte[inputVal.Length / 2];
         for (var i = 0; i < bytes.Length; i++)
         {
             bytes[i] = Convert.ToByte(inputVal.Substring(i * 2, 2), 16);
         }
+
         return Encoding.UTF8.GetString(bytes);
-    }    
-    
+    }
+
     private static string? RemoveAccents(this string? value)
     {
         if (SafeParser.IsNull(value))
         {
             return null;
         }
+
         return new string(value!.Normalize(NormalizationForm.FormD)
             .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
             .ToArray());
     }
-    
-    public static string? ToSafeXmlString(this string? input) => SecurityElement.Escape(input);
-    
+
+    public static string? ToSafeXmlString(this string? input)
+    {
+        return SecurityElement.Escape(input);
+    }
+
     [GeneratedRegex("[^a-zA-Z0-9 -.:]")]
     private static partial Regex OnlyAlphaNumericRegex();
 
     [GeneratedRegex(@"\s{2,}")]
     private static partial Regex ReplaceMultipleSpacesRegex();
-    
+
     [GeneratedRegex("[^A-Z0-9|]")]
     private static partial Regex RemoveNonAlphanumericCharacters();
 
@@ -716,8 +759,10 @@ public static partial class StringExtensions
 
     [GeneratedRegex("\t+|\r+|\\s+|\r+|@+")]
     public static partial Regex ReplaceWithCharacter();
+
     [GeneratedRegex(@"([\\]+.?[0-9]+)|([^\u0000-\u007F]+)")]
     private static partial Regex NullAndUnicodeRegex();
+
     [GeneratedRegex(@"\s+")]
     private static partial Regex WeirdTickAndMoreThanSingleSpacesRegex();
 }

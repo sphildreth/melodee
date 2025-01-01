@@ -30,11 +30,12 @@ public class LibraryScanHistory
     [RequiredGreaterThanZero] public double DurationInMs { get; set; }
 
     [NotMapped] public Duration DurationInMillisecondsValue => Duration.FromMilliseconds(DurationInMs);
-    
+
     [NotMapped] public ScanStatus ScanStatus { get; set; }
-    
+
     /// <summary>
-    ///  	Scanned item count
+    ///     Scanned item count
     /// </summary>
-    [NotMapped] public int Count => FoundArtistsCount + FoundAlbumsCount + FoundSongsCount;
+    [NotMapped]
+    public int Count => FoundArtistsCount + FoundAlbumsCount + FoundSongsCount;
 }

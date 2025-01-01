@@ -7,10 +7,11 @@ namespace Melodee.Common.Extensions;
 public static class ObjectExtensions
 {
     public static bool IsEnumerable(this object obj)
-        => obj is IEnumerable;    
-    
-    
-    
+    {
+        return obj is IEnumerable;
+    }
+
+
     public static IDictionary<string, object?> ToDictionary(this object source, BindingFlags bindingAttr = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
     {
         var result = new Dictionary<string, object?>();
@@ -43,14 +44,15 @@ public static class ObjectExtensions
 
         return result;
     }
-    
+
     public static object? Convert(this object? value, Type t)
     {
-        Type? underlyingType = Nullable.GetUnderlyingType(t);
+        var underlyingType = Nullable.GetUnderlyingType(t);
         if (underlyingType != null && value == null)
         {
             return null;
         }
+
         var basetype = underlyingType ?? t;
         return System.Convert.ChangeType(value, basetype);
     }
@@ -61,11 +63,12 @@ public static class ObjectExtensions
         {
             return (T?)value;
         }
+
         return value == null ? default : (T)value.Convert(typeof(T))!;
-    }    
-    
+    }
+
     public static bool IsNumericType(this object o)
-    {   
+    {
         switch (Type.GetTypeCode(o.GetType()))
         {
             case TypeCode.Byte:
@@ -83,7 +86,7 @@ public static class ObjectExtensions
             default:
                 return false;
         }
-    }    
+    }
 
     public static bool IsNullOrDefault<T>(this T argument)
     {

@@ -1,17 +1,15 @@
-using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
 public sealed record Song
 {
     public Guid? ArtistId { get; set; }
-    
+
     public Guid? AlbumId { get; set; }
-   
+
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public required string CrcHash { get; init; }

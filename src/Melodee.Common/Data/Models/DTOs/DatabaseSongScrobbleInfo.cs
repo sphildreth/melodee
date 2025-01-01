@@ -2,8 +2,7 @@ using NodaTime;
 
 namespace Melodee.Common.Data.Models.DTOs;
 
-public record DatabaseSongScrobbleInfo
-(
+public record DatabaseSongScrobbleInfo(
     Guid SongApiKey,
     int ArtistId,
     int AlbumId,

@@ -1,9 +1,8 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Models;
-using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Enums;
-using Microsoft.CodeAnalysis.Host;
+using Melodee.Common.Models.OpenSubsonic.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using NodaTime;
@@ -17,11 +16,11 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<AlbumDisc> AlbumDiscs { get; set; }
 
     public DbSet<Artist> Artists { get; set; }
-    
+
     public DbSet<ArtistRelation> ArtistRelation { get; set; }
 
     public DbSet<Bookmark> Bookmarks { get; set; }
-    
+
     public DbSet<Contributor> Contributors { get; set; }
 
     public DbSet<Library> Libraries { get; set; }
@@ -317,7 +316,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "If true then all comments will be removed from media files.",
                     Value = "true",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 26,
@@ -382,7 +381,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Value = "0",
                     CreatedAt = now
                 },
-                 new Setting
+                new Setting
                 {
                     Id = 35,
                     Key = SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength,
@@ -462,7 +461,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Don't create performer contributors for these performer names.",
                     Value = "",
                     CreatedAt = now
-                },  
+                },
                 new Setting
                 {
                     Id = 46,
@@ -470,8 +469,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Don't create production contributors for these production names.",
                     Value = "['www.t.me;pmedia_music']",
                     CreatedAt = now
-                }, 
- 
+                },
                 new Setting
                 {
                     Id = 47,
@@ -479,7 +477,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Don't create publisher contributors for these artist names.",
                     Value = "['P.M.E.D.I.A','PMEDIA','PMEDIA GROUP']",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 48,
@@ -487,7 +485,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Prefix to apply to directories to skip processing. This is also used then a directory throws an error attempting to be processed, to prevent future processing.",
                     Value = "_skip_ ",
                     CreatedAt = now
-                },     
+                },
                 new Setting
                 {
                     Id = 49,
@@ -495,7 +493,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.",
                     Value = "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 50,
@@ -503,7 +501,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Prefix to apply to indicate an album directory is a duplicate album for an artist. If left blank the default of '__duplicate_' will be used.",
                     Value = "__duplicate_ ",
                     CreatedAt = now
-                },                 
+                },
                 new Setting
                 {
                     Id = 1300,
@@ -575,7 +573,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Limit the number of artists to include in an indexes request, set to zero for 32k per index (really not recommended with tens of thousands of artists and mobile clients timeout downloading indexes, a user can find an artist by search)",
                     Value = "1000",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 53,
@@ -646,7 +644,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Timestamp of when last MusicBrainz import was successful.",
                     Value = "",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 910,
@@ -673,7 +671,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Shared secret used with Spotify. See https://developer.spotify.com/ for more details.",
                     Value = "",
                     CreatedAt = now
-                },      
+                },
                 new Setting
                 {
                     Id = 913,
@@ -682,7 +680,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Token obtained from Spotify using the ApiKey and the Secret, this json contains expiry information.",
                     Value = "",
                     CreatedAt = now
-                },                   
+                },
                 new Setting
                 {
                     Id = 400,
@@ -691,7 +689,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Include any embedded images from media files into the Melodee data file.",
                     Value = "true",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 401,
@@ -700,7 +698,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Small image size (square image, this is both width and height).",
                     Value = "300",
                     CreatedAt = now
-                },         
+                },
                 new Setting
                 {
                     Id = 402,
@@ -709,7 +707,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Medium image size (square image, this is both width and height).",
                     Value = "600",
                     CreatedAt = now
-                }, 
+                },
                 new Setting
                 {
                     Id = 403,
@@ -718,7 +716,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Large image size (square image, this is both width and height), if larger than will be resized to this image, leave blank to disable.",
                     Value = "1600",
                     CreatedAt = now
-                },                 
+                },
                 new Setting
                 {
                     Id = 404,
@@ -746,7 +744,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Value = "300",
                     CreatedAt = now
                 },
-
                 new Setting
                 {
                     Id = 1200,
@@ -755,14 +752,14 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Default format for transcoding.",
                     Value = "raw",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 1201,
                     Category = (int)SettingCategory.Transcoding,
                     Key = SettingRegistry.TranscodingCommandMp3,
                     Comment = "Default command to transcode MP3 for streaming.",
-                    Value = $"{{ 'format': '{ TranscodingFormat.Mp3.ToString()}', 'bitrate: 192, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -f mp3 -' }}",
+                    Value = $"{{ 'format': '{TranscodingFormat.Mp3.ToString()}', 'bitrate: 192, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -f mp3 -' }}",
                     CreatedAt = now
                 },
                 new Setting
@@ -771,7 +768,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Transcoding,
                     Key = SettingRegistry.TranscodingCommandOpus,
                     Comment = "Default command to transcode using libopus for streaming.",
-                    Value = $"{{ 'format': '{ TranscodingFormat.Opus.ToString()}', 'bitrate: 128, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a libopus -f opus -' }}",
+                    Value = $"{{ 'format': '{TranscodingFormat.Opus.ToString()}', 'bitrate: 128, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a libopus -f opus -' }}",
                     CreatedAt = now
                 },
                 new Setting
@@ -780,7 +777,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Transcoding,
                     Key = SettingRegistry.TranscodingCommandAac,
                     Comment = "Default command to transcode to aac for streaming.",
-                    Value = $"{{ 'format': '{ TranscodingFormat.Aac.ToString()}', 'bitrate: 256, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a aac -f adts -' }}",
+                    Value = $"{{ 'format': '{TranscodingFormat.Aac.ToString()}', 'bitrate: 256, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a aac -f adts -' }}",
                     CreatedAt = now
                 },
                 new Setting
@@ -818,7 +815,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Shared secret used with last FM. See https://www.last.fm/api/authentication for more details.",
                     Value = "",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 1100,
@@ -856,11 +853,10 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
         //     .HasIndex(u => u.Email)
         //     .HasMethod("GIN");
     }
-    
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         optionsBuilder.EnableSensitiveDataLogging();
     }
-    
 }

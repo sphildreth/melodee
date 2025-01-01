@@ -1,5 +1,4 @@
 using System.Text;
-using NodaTime;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
@@ -24,7 +23,7 @@ public sealed record Indexes(
 {
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<indexes lastModified=\"{ LastModified }\" ignoredArticles=\"{ IgnoredArticles }\">");
+        var result = new StringBuilder($"<indexes lastModified=\"{LastModified}\" ignoredArticles=\"{IgnoredArticles}\">");
         if (ShortCut.Length > 0)
         {
             foreach (var shortCut in ShortCut)
@@ -32,13 +31,15 @@ public sealed record Indexes(
                 result.Append(shortCut.ToXml("shortcut"));
             }
         }
+
         if (Index.Length > 0)
         {
             foreach (var index in Index)
             {
                 result.Append(index.ToXml());
             }
-        }     
+        }
+
         if (Child.Length > 0)
         {
             foreach (var child in Child)
@@ -46,7 +47,8 @@ public sealed record Indexes(
                 result.Append(child.ToXml("child"));
             }
         }
-        result.Append("</indexes>");        
-        return result.ToString();        
+
+        result.Append("</indexes>");
+        return result.ToString();
     }
 }

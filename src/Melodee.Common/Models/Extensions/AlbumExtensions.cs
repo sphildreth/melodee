@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -13,13 +12,16 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class AlbumExtensions
 {
-    public static KeyValue ToKeyValue(this Album album) => new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
-   
+    public static KeyValue ToKeyValue(this Album album)
+    {
+        return new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
+    }
+
     public static bool IsStudioTypeAlbum(this Album album)
     {
         return album.Directory.IsDirectoryStudioAlbums() && album.AlbumType is AlbumType.Album or AlbumType.EP;
     }
-    
+
     public static bool IsVariousArtistTypeAlbum(this Album album)
     {
         var songs = (album.Songs ?? []).ToArray();
@@ -39,8 +41,8 @@ public static class AlbumExtensions
 
         var t = album.Tags?.ToList() ?? [];
         t.AddRange(album.Songs?.Where(x => x.Tags != null).SelectMany(x => x.Tags!) ?? []);
-        if (t.Any(x => x.Identifier == MetaTagIdentifier.Composer && 
-                       (ArtistExtensions.VariousArtistParseRegex.IsMatch(x.Value?.ToString() ?? string.Empty) || 
+        if (t.Any(x => x.Identifier == MetaTagIdentifier.Composer &&
+                       (ArtistExtensions.VariousArtistParseRegex.IsMatch(x.Value?.ToString() ?? string.Empty) ||
                         x.Value?.ToString().ToNormalizedString() == "VARIOUS" || x.Value?.ToString().ToNormalizedString() == "VARIOUSARTISTS")))
         {
             return true;
@@ -129,6 +131,7 @@ public static class AlbumExtensions
             // When artist path is too long generate a unique hash and use that.  
             artistAndAlbumPart = SafeParser.Hash(Guid.NewGuid().ToString()).ToString();
         }
+
         return $"{artistAndAlbumPart}{Album.JsonFileName}";
     }
 
@@ -184,7 +187,7 @@ public static class AlbumExtensions
     {
         return album.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
-               album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear) ?? 
+               album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear) ??
                album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear);
     }
 
@@ -229,10 +232,12 @@ public static class AlbumExtensions
                 discTotal = album.Songs?.FirstOrDefault(x => x.MediaTotalNumber() > 0)?.MediaTotalNumber();
             }
         }
+
         if (discTotal == null || (discTotal < 1 && (album.Songs?.Any() ?? false)))
         {
             discTotal = SafeParser.ToNumber<short>(album.Songs?.GroupBy(x => x.MediaNumber()).Count());
         }
+
         return discTotal ?? SafeParser.ToNumber<short>(album.Songs?.Any() ?? false ? 1 : 0);
     }
 
@@ -299,6 +304,7 @@ public static class AlbumExtensions
                 }
             }
         }
+
         return result.ToArray();
     }
 

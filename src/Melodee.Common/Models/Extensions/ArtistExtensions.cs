@@ -9,13 +9,16 @@ namespace Melodee.Common.Models.Extensions;
 public static class ArtistExtensions
 {
     public static readonly Regex SoundSongArtistParseRegex = new(@"(sound\s*Song[s]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    
-    public static readonly Regex VariousArtistParseRegex = new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))", RegexOptions.Compiled | RegexOptions.IgnoreCase);    
+
+    public static readonly Regex VariousArtistParseRegex = new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex CastRecordingSongArtistParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    
-    public static KeyValue ToKeyValue(this Artist artist) => new KeyValue(artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId ?? artist.Name.ToNormalizedString() ?? artist.Name, artist.Name.ToNormalizedString() ?? artist.Name);
-    
+
+    public static KeyValue ToKeyValue(this Artist artist)
+    {
+        return new KeyValue(artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId ?? artist.Name.ToNormalizedString() ?? artist.Name, artist.Name.ToNormalizedString() ?? artist.Name);
+    }
+
     public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
     {
         return new ArtistQuery
@@ -82,6 +85,7 @@ public static class ArtistExtensions
         {
             return true;
         }
+
         return VariousArtistParseRegex.IsMatch(artistName);
     }
 
@@ -97,7 +101,7 @@ public static class ArtistExtensions
         {
             throw new Exception("Neither ArtistDbId or MusicBrainzId is set.");
         }
-        
+
         var artistDirectory = artistNameToUse.ToAlphanumericName(false, false).ToDirectoryNameFriendly()?.ToTitleCase(false);
         if (string.IsNullOrEmpty(artistDirectory))
         {

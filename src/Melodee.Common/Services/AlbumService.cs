@@ -19,7 +19,7 @@ public class AlbumService(
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:album:apikey:{0}";
     private const string CacheKeyDetailByNameNormalizedTemplate = "urn:album:namenormalized:{0}";
-    private const string CacheKeyDetailByMusicBrainzIdTemplate = "urn:album:musicbrainzid:{0}";    
+    private const string CacheKeyDetailByMusicBrainzIdTemplate = "urn:album:musicbrainzid:{0}";
     private const string CacheKeyDetailTemplate = "urn:album:{0}";
 
     public async Task ClearCacheAsync(int albumId, CancellationToken cancellationToken = default)
@@ -33,7 +33,7 @@ public class AlbumService(
             if (album.Data.MusicBrainzId != null)
             {
                 CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.Data.MusicBrainzId.Value.ToString()));
-            }            
+            }
         }
     }
 
@@ -94,6 +94,7 @@ public class AlbumService(
         {
             Logger.Error(e, "Failed to get album [{Name}] for artistId [{ArtistId}].", nameNormalized, artistId);
         }
+
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Album?>("Unknown album.")
@@ -128,7 +129,7 @@ public class AlbumService(
             Data = result
         };
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Album?>> GetByMusicBrainzIdAsync(Guid musicBrainzId, CancellationToken cancellationToken = default)
     {
         var id = await CacheManager.GetAsync(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(musicBrainzId.ToString()), async () =>
@@ -150,7 +151,7 @@ public class AlbumService(
         }
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
-    }    
+    }
 
     public async Task<MelodeeModels.OperationResult<Album?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {

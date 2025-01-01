@@ -114,9 +114,9 @@ public sealed class M3UPlaylist(
                         var m3UAlbum = new Album
                         {
                             Artist = new Artist(
-                                firstSong.AlbumArtist() ?? throw new Exception($"Invalid artist on { nameof(CueSheet) }"),
+                                firstSong.AlbumArtist() ?? throw new Exception($"Invalid artist on {nameof(CueSheet)}"),
                                 firstSong.AlbumArtist().ToNormalizedString() ?? firstSong.AlbumArtist()!,
-                                null),                           
+                                null),
                             Directory = fileSystemDirectoryInfo,
                             Files = new[]
                             {
@@ -141,12 +141,12 @@ public sealed class M3UPlaylist(
                             Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                         };
-                        
+
                         var validationResult = albumValidator.ValidateAlbum(m3UAlbum);
                         m3UAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
                         m3UAlbum.Status = validationResult.Data.AlbumStatus;
                         m3UAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
-                        
+
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {

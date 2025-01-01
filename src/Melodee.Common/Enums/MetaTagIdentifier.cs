@@ -36,7 +36,7 @@ public enum MetaTagIdentifier
     ///     Comment [COM, COMM]
     /// </summary>
     [Description("[COM, COMM]")] Comment,
-    
+
     /// <summary>
     ///     Musician Credits [TMCL]
     /// </summary>
@@ -54,17 +54,18 @@ public enum MetaTagIdentifier
     [Description("[TALB]")] Album,
 
     /// <summary>
-    /// Disc / Set Subtitle (for multi-disc sets) [TSST] 
+    ///     Disc / Set Subtitle (for multi-disc sets) [TSST]
     /// </summary>
     [Description("[TSST]")] DiscSetSubtitle,
-    
+
     /// <summary>
     ///     The ‘Title/Songname/Content description’ frame is the actual name of the piece [TT2, TIT2]
     /// </summary>
     [Description("[TT2, TIT2]")] Title,
 
     /// <summary>
-    ///     The ‘Subtitle/Description refinement’ frame is used for information directly related to the contents title  [TT3, TIT3]
+    ///     The ‘Subtitle/Description refinement’ frame is used for information directly related to the contents title  [TT3,
+    ///     TIT3]
     /// </summary>
     [Description("[TT3, TIT]")] SubTitle,
 
@@ -152,9 +153,9 @@ public enum MetaTagIdentifier
     ///     Conductor [TP3,TPE3]
     /// </summary>
     [Description("[TP3,TPE3]")] Conductor,
-    
+
     /// <summary>
-    /// Engineer
+    ///     Engineer
     /// </summary>
     [Description("TIPL:ENGINEER")] Engineer,
 
@@ -284,7 +285,8 @@ public enum MetaTagIdentifier
      */
 
     /// <summary>
-    ///     Original date the album was originally released. (when target format supports date), could be a year (TOR, TORY) could be a ISO8601 (TDOR)
+    ///     Original date the album was originally released. (when target format supports date), could be a year (TOR, TORY)
+    ///     could be a ISO8601 (TDOR)
     /// </summary>
     [Description("[TDOR]")] OrigAlbumDate,
 
@@ -324,18 +326,16 @@ public enum MetaTagIdentifier
     /// </summary>
     [MetaTagMultiValue(true)] [Description("[TXT, TEXT]")]
     Lyricist,
-    
+
     /// <summary>
-    /// Mix Engineer 
+    ///     Mix Engineer
     /// </summary>
-    [Description("TIPL:mix")]
-    MixEngineer,
-    
+    [Description("TIPL:mix")] MixEngineer,
+
     /// <summary>
-    /// Mix-DJ
+    ///     Mix-DJ
     /// </summary>
-    [Description("TIPL:DJ-mix")]
-    MixDj,
+    [Description("TIPL:DJ-mix")] MixDj,
 
     /// <summary>
     ///     Mapping between functions (e.g. "producer") and names. Every odd field is a function and every even is a name or a
@@ -458,12 +458,11 @@ public enum MetaTagIdentifier
     /// </summary>
     [MetaTagMultiValue(true)] [Description("[TOL, TOLY]")]
     OriginalLyricist,
-    
+
     /// <summary>
-    /// TIPL:producer
+    ///     TIPL:producer
     /// </summary>
-    [Description("TIPL:producer")]
-    Producer,
+    [Description("TIPL:producer")] Producer,
 
     /// <summary>
     ///     [TP4, TPE4]
@@ -472,14 +471,14 @@ public enum MetaTagIdentifier
 
     /// <summary>
     ///     [TXXX:MusicBrainz Artist Id]
-    /// <remarks>https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html</remarks>
+    ///     <remarks>https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html</remarks>
     /// </summary>
     [Description("[TXX, TXXX]")] MusicBrainzId,
-    
+
     /// <summary>
     ///     [TXX, TXXX]
     /// </summary>
-    [Description("[TXX, TXXX]")] UserDefinedTextInformation,    
+    [Description("[TXX, TXXX]")] UserDefinedTextInformation,
 
     /// <summary>
     ///     [UFI, UFID]

@@ -4,9 +4,15 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class BookmarkExtensions
 {
-    public static string ToCoverArtId(this Bookmark bookmark) => bookmark.ToApiKey();
-    
-    public static string ToApiKey(this Bookmark bookmark) => $"bookmark{OpenSubsonicServer.ApiIdSeparator}{bookmark.ApiKey}";
+    public static string ToCoverArtId(this Bookmark bookmark)
+    {
+        return bookmark.ToApiKey();
+    }
+
+    public static string ToApiKey(this Bookmark bookmark)
+    {
+        return $"bookmark{OpenSubsonicServer.ApiIdSeparator}{bookmark.ApiKey}";
+    }
 
     public static Common.Models.OpenSubsonic.Bookmark ToApiBookmark(this Bookmark bookmark)
     {
@@ -18,6 +24,5 @@ public static class BookmarkExtensions
             bookmark.LastUpdatedAt?.ToString() ?? bookmark.CreatedAt.ToString(),
             bookmark.Song.ToApiChild(bookmark.Song.AlbumDisc.Album, bookmark.Song.UserSongs.FirstOrDefault())
         );
-        
     }
 }

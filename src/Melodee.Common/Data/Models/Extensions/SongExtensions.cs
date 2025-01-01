@@ -2,15 +2,16 @@ using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
+using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
 public static class SongExtensions
 {
-    public static Common.Models.SearchEngines.SongSearchResult ToSearchEngineSongSearchResult(this Song song, int sortOrder)
+    public static SongSearchResult ToSearchEngineSongSearchResult(this Song song, int sortOrder)
     {
-        return new Common.Models.SearchEngines.SongSearchResult
+        return new SongSearchResult
         {
             Id = song.Id,
             ApiKey = song.ApiKey,
@@ -21,11 +22,17 @@ public static class SongExtensions
             PlayCount = song.PlayedCount
         };
     }
-    
-    public static string ToCoverArtId(this Song song) => song.ToApiKey();
-    
-    public static string ToApiKey(this Song song) => $"song{OpenSubsonicServer.ApiIdSeparator }{song.ApiKey}";
-    
+
+    public static string ToCoverArtId(this Song song)
+    {
+        return song.ToApiKey();
+    }
+
+    public static string ToApiKey(this Song song)
+    {
+        return $"song{OpenSubsonicServer.ApiIdSeparator}{song.ApiKey}";
+    }
+
     public static Child ToApiChild(this Song song, Album album, UserSong? userSong, NowPlayingInfo? nowPlayingInfo = null)
     {
         Contributor? albumArtist = null;
@@ -73,11 +80,10 @@ public static class SongExtensions
             null, //TODO,
             SafeParser.ToNumber<int>(song.CalculatedRating),
             userSong?.Rating,
-            Username: nowPlayingInfo?.User.UserName,
-            MinutesAgo: nowPlayingInfo?.Scrobble.MinutesAgo,
-            PlayerId: 0,
-            PlayerName: nowPlayingInfo?.Scrobble.PlayerName
+            nowPlayingInfo?.User.UserName,
+            nowPlayingInfo?.Scrobble.MinutesAgo,
+            0,
+            nowPlayingInfo?.Scrobble.PlayerName
         );
-
     }
 }

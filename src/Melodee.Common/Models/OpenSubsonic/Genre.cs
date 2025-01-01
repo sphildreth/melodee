@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json.Serialization;
 using Melodee.Common.Extensions;
 
@@ -15,11 +14,10 @@ public record Genre : IOpenSubsonicToXml
 
     public int AlbumCount { get; init; }
 
-    [JsonIgnore]
-    public string ValueNormalized => Value.ToNormalizedString() ?? Value;
-    
+    [JsonIgnore] public string ValueNormalized => Value.ToNormalizedString() ?? Value;
+
     public string ToXml(string? nodeName = null)
     {
-        return $"<genre songCount=\"{ SongCount }\" albumCount=\"{ AlbumCount }\">{Value.ToSafeXmlString()}</genre>";
+        return $"<genre songCount=\"{SongCount}\" albumCount=\"{AlbumCount}\">{Value.ToSafeXmlString()}</genre>";
     }
 }

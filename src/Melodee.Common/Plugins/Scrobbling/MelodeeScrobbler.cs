@@ -26,7 +26,7 @@ public class MelodeeScrobbler(
         return new OperationResult<bool>
         {
             Data = true
-        };        
+        };
     }
 
     public async Task<OperationResult<bool>> Scrobble(UserInfo user, ScrobbleInfo scrobble, CancellationToken cancellationToken = default)
@@ -34,7 +34,7 @@ public class MelodeeScrobbler(
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
-            
+
             var sql = """
                       update "Artists" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
                       where "Id" = @artistId;

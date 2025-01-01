@@ -11,16 +11,16 @@ namespace Melodee.Common.Data.Models;
 
 [Serializable]
 [Index(nameof(ArtistId), nameof(Name), IsUnique = true)]
-[Index(nameof(ArtistId),nameof(NameNormalized), IsUnique = true)]
+[Index(nameof(ArtistId), nameof(NameNormalized), IsUnique = true)]
 [Index(nameof(ArtistId), nameof(SortName), IsUnique = true)]
 public sealed class Album : MetaDataModelBase
 {
-    public const string FrontImageType = "Front";    
-    
+    public const string FrontImageType = "Front";
+
     [RequiredGreaterThanZero] public int ArtistId { get; set; }
 
     public Artist Artist { get; set; } = null!;
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Name { get; set; }
@@ -30,7 +30,7 @@ public sealed class Album : MetaDataModelBase
     public required string NameNormalized { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    public string? SortName { get; set; }   
+    public string? SortName { get; set; }
 
 
     public short AlbumStatus { get; set; }
@@ -42,10 +42,10 @@ public sealed class Album : MetaDataModelBase
     [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);
 
     /// <summary>
-    /// Be able to query for albums that need images.
+    ///     Be able to query for albums that need images.
     /// </summary>
-    public int? ImageCount { get; set; }    
-    
+    public int? ImageCount { get; set; }
+
     public short AlbumType { get; set; }
 
     [NotMapped] public AlbumType AlbumTypeValue => SafeParser.ToEnum<AlbumType>(AlbumType);
@@ -69,32 +69,33 @@ public sealed class Album : MetaDataModelBase
     public double Duration { get; set; }
 
     /// <summary>
-    /// These are strictly defined in the Genre enum. 
+    ///     These are strictly defined in the Genre enum.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string[]? Genres { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string[]? Moods { get; set; }
-    
-    /// <summary>
-    /// This is plain text and served to OpenSubsonic clients.
-    /// </summary>
-    [MaxLength(MaxLengthDefinitions.MaxInputLength)]
-    public string? Comment { get; set; }    
-    
-    /// <summary>
-    /// The album replay gain value. (In Db)
-    /// </summary>
-    public double? ReplayGain { get; set; }
-    
-    /// <summary>
-    /// The album peak value. (Must be positive)
-    /// </summary>
-    public double? ReplayPeak { get; set; }    
 
     /// <summary>
-    ///     The directory that holds the files for the Album. This is inside of an artist path and that is inside a library path directory.
+    ///     This is plain text and served to OpenSubsonic clients.
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxInputLength)]
+    public string? Comment { get; set; }
+
+    /// <summary>
+    ///     The album replay gain value. (In Db)
+    /// </summary>
+    public double? ReplayGain { get; set; }
+
+    /// <summary>
+    ///     The album peak value. (Must be positive)
+    /// </summary>
+    public double? ReplayPeak { get; set; }
+
+    /// <summary>
+    ///     The directory that holds the files for the Album. This is inside of an artist path and that is inside a library
+    ///     path directory.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     [Required]
@@ -106,5 +107,8 @@ public sealed class Album : MetaDataModelBase
 
     public ICollection<UserAlbum> UserAlbums { get; set; } = new List<UserAlbum>();
 
-    public override string ToString() => $"Id [{Id}] ApiKey [{ApiKey}] ArtistId [{ArtistId}] Name [{Name}] Directory [{Directory}]";
+    public override string ToString()
+    {
+        return $"Id [{Id}] ApiKey [{ApiKey}] ArtistId [{ArtistId}] Name [{Name}] Directory [{Directory}]";
+    }
 }

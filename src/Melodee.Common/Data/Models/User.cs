@@ -29,12 +29,13 @@ public class User : DataModelBase
     public required string EmailNormalized { get; set; }
 
     /// <summary>
-    /// This is the PublicKey used to encrypt and decrypt the users password for Subsonic clients authentication. When this changes the users password will need reset.
+    ///     This is the PublicKey used to encrypt and decrypt the users password for Subsonic clients authentication. When this
+    ///     changes the users password will need reset.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string PublicKey { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     [DataType(DataType.Password)]
@@ -70,7 +71,7 @@ public class User : DataModelBase
     public bool HasShareRole { get; set; } = true;
 
     public bool IsScrobblingEnabled { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.HashOrGuidLength)]
     public string? LastFmSessionKey { get; set; }
 

@@ -34,21 +34,20 @@ public class Contributor : DataModelBase
     public Artist? Artist { get; set; } = null!;
 
     /// <summary>
-    /// This is populated when no artist is found (or not an artist, like Publisher and Production)
+    ///     This is populated when no artist is found (or not an artist, like Publisher and Production)
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? ContributorName { get; set; }
-    
-    [RequiredGreaterThanZero]
-    public int MetaTagIdentifier { get; set; }
+
+    [RequiredGreaterThanZero] public int MetaTagIdentifier { get; set; }
 
     [NotMapped] public MetaTagIdentifier MetaTagIdentifierValue => SafeParser.ToEnum<MetaTagIdentifier>(MetaTagIdentifier);
-    
+
     /// <summary>
     ///     This is not set when it's an Album level contribution.
     /// </summary>
     public int? SongId { get; set; }
-    
+
     [NotMapped] public long SongUniqueId { get; set; }
 
     public Song? Song { get; set; }

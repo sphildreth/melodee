@@ -5,7 +5,7 @@ namespace Melodee.Common.Extensions;
 public static class PictureIdentifierExtensions
 {
     /// <summary>
-    /// Should the validator check if the image is square for the given image identifier.
+    ///     Should the validator check if the image is square for the given image identifier.
     /// </summary>
     public static bool ValidateIsSquare(this PictureIdentifier identifier)
     {
@@ -17,6 +17,7 @@ public static class PictureIdentifierExtensions
             case PictureIdentifier.ArtistSecondary:
                 return true;
         }
+
         return false;
     }
 }

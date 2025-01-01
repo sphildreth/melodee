@@ -48,7 +48,7 @@ public sealed class AtlMetaTag(
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<Common.Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
     {
         var tags = new List<MetaTag<object?>>();
         var mediaAudios = new List<MediaAudio<object?>>();
@@ -287,9 +287,9 @@ public sealed class AtlMetaTag(
         var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
         if (albumTag == null || artistTag == null)
         {
-            return new OperationResult<Common.Models.Song>($"Song [{fileSystemFileInfo.Name}] is invalid, missing Album and/or Artist tags.")
+            return new OperationResult<Models.Song>($"Song [{fileSystemFileInfo.Name}] is invalid, missing Album and/or Artist tags.")
             {
-                Data = new Common.Models.Song
+                Data = new Models.Song
                 {
                     CrcHash = string.Empty,
                     File = fileSystemFileInfo
@@ -315,10 +315,10 @@ public sealed class AtlMetaTag(
         var metaTagsProcessorResult = await metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
         if (!metaTagsProcessorResult.IsSuccess)
         {
-            return new OperationResult<Common.Models.Song>(metaTagsProcessorResult.Messages)
+            return new OperationResult<Models.Song>(metaTagsProcessorResult.Messages)
             {
                 Errors = metaTagsProcessorResult.Errors,
-                Data = new Common.Models.Song
+                Data = new Models.Song
                 {
                     CrcHash = string.Empty,
                     File = fileSystemFileInfo
@@ -326,7 +326,7 @@ public sealed class AtlMetaTag(
             };
         }
 
-        var song = new Common.Models.Song
+        var song = new Models.Song
         {
             CrcHash = Crc32.Calculate(new FileInfo(fileSystemFileInfo.FullName(directoryInfo))),
             File = fileSystemFileInfo,
@@ -335,13 +335,13 @@ public sealed class AtlMetaTag(
             MediaAudios = mediaAudios.DistinctBy(x => x.Identifier).ToArray(),
             SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
         };
-        return new OperationResult<Common.Models.Song>
+        return new OperationResult<Models.Song>
         {
             Data = song
         };
     }
 
-    public async Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song, CancellationToken cancellationToken = default)
     {
         var result = false;
         if (song.Tags?.Any() ?? false)
@@ -389,6 +389,7 @@ public sealed class AtlMetaTag(
                 {
                     fileAtl.EmbeddedPictures.Clear();
                 }
+
                 result = fileAtl.Save();
             }
             catch (Exception e)
@@ -403,7 +404,7 @@ public sealed class AtlMetaTag(
         };
     }
 
-    public async Task<OperationResult<bool>> RemoveImagesAsync(FileSystemDirectoryInfo directoryInfo, Common.Models.Song song, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> RemoveImagesAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song, CancellationToken cancellationToken = default)
     {
         var result = false;
         if (song.Tags?.Any() ?? false)

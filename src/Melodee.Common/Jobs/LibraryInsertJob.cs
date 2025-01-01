@@ -44,10 +44,11 @@ public class LibraryInsertJob(
     AlbumDiscoveryService albumDiscoveryService,
     DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
 {
+    private IAlbumValidator _albumValidator = null!;
     private int _batchSize;
     private IMelodeeConfiguration _configuration = null!;
-    private IAlbumValidator _albumValidator = null!;
     private JobDataMap _dataMap = null!;
+    private string _duplicateAlbumPrefix;
     private string[] _ignorePerformers = [];
     private string[] _ignoreProduction = [];
     private string[] _ignorePublishers = [];
@@ -56,7 +57,6 @@ public class LibraryInsertJob(
     private int _totalAlbumsInserted;
     private int _totalArtistsInserted;
     private int _totalSongsInserted;
-    private string _duplicateAlbumPrefix;
 
     private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
     [
@@ -95,7 +95,7 @@ public class LibraryInsertJob(
 
             var verboseMode = SafeParser.ToBoolean(context.Get("Verbose"));
             var forceMode = SafeParser.ToBoolean(context.Get("ForceMode"));
-            
+
             var imageConvertor = new ImageConvertor(_configuration);
 
             DirectoryInfo? processingDirectory = null;
@@ -119,15 +119,15 @@ public class LibraryInsertJob(
             _ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
 
             var imageValidator = new ImageValidator(_configuration);
-            
+
             ISongPlugin[] songPlugins =
             [
                 new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), imageConvertor, imageValidator, _configuration)
             ];
             _now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
-            _duplicateAlbumPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix) ?? "__duplicate_ ";            
-            
+            _duplicateAlbumPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix) ?? "__duplicate_ ";
+
             _dataMap = context.JobDetail.JobDataMap;
             var defaultNeverScannedDate = Instant.FromDateTimeUtc(DateTime.MinValue.ToUniversalTime());
             var stagingLibrary = await libraryService.GetStagingLibraryAsync(context.CancellationToken).ConfigureAwait(false);
@@ -174,7 +174,7 @@ public class LibraryInsertJob(
                     }
 
                     var allMelodeeFilesInLibrary = Directory.GetFiles(libraryIndex.library.Path, Album.JsonFileName, SearchOption.AllDirectories);
-                    ConcurrentBag<FileInfo> melodeeFilesToProcessForLibrary = new ConcurrentBag<FileInfo>();
+                    ConcurrentBag<FileInfo> melodeeFilesToProcessForLibrary = new();
                     var lastScanAtUtc = lastScanAt.ToDateTimeUtc();
                     Parallel.ForEach(allMelodeeFilesInLibrary, melodeeFile =>
                     {
@@ -191,11 +191,12 @@ public class LibraryInsertJob(
                             libraryIndex.library.ToString());
                         continue;
                     }
+
                     var batches = (melodeeFilesToProcessForLibrary.Count + _batchSize - 1) / _batchSize;
                     Logger.Debug("[{JobName}] Found [{DirName}] melodee files to scan in [{Batches}] batches.",
                         nameof(LibraryInsertJob),
                         melodeeFilesToProcessForLibrary.Count,
-                        batches);                    
+                        batches);
                     for (var batch = 0; batch < batches; batch++)
                     {
                         var melodeeFilesForDirectory = new List<Album>();
@@ -220,6 +221,7 @@ public class LibraryInsertJob(
                                         Logger.Warning("[{JobName}] Invalid Melodee file [{MelodeeFile}]", nameof(LibraryInsertJob), melodeeFile?.ToString() ?? melodeeFileInfo.FullName);
                                         continue;
                                     }
+
                                     melodeeFilesForDirectory.Add(melodeeFile);
                                 }
                                 catch (Exception e)
@@ -234,13 +236,14 @@ public class LibraryInsertJob(
                                         nameof(LibraryInsertJob),
                                         albumFolderToMove,
                                         moveFolderTo);
-                                }                                
+                                }
                             }
                             catch (Exception e)
                             {
                                 Logger.Error(e, "[{JobName}] Error processing directory [{Dir}]", nameof(LibraryInsertJob), processingDirectory);
                             }
                         }
+
                         var processedArtistsResult = await ProcessArtistsAsync(libraryIndex.library, melodeeFilesForDirectory, context.CancellationToken);
                         if (!processedArtistsResult)
                         {

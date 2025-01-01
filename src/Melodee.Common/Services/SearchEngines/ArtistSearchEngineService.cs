@@ -123,11 +123,11 @@ public class ArtistSearchEngineService(
         var result = new List<ArtistSearchResult>();
 
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
-        
+
         long operationTime = 0;
         long totalCount = 0;
 
-        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] DoSearchAsync [{DirectoryInfo}]", 
+        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] DoSearchAsync [{DirectoryInfo}]",
                    nameof(ArtistSearchEngineService), query))
         {
             foreach (var plugin in _artistSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))

@@ -4,7 +4,7 @@ using Melodee.Common.Models.SearchEngines;
 namespace Melodee.Common.Plugins.SearchEngine;
 
 /// <summary>
-/// Get the top songs by an artist, ordered by popularity
+///     Get the top songs by an artist, ordered by popularity
 /// </summary>
 public interface IArtistTopSongsSearchEnginePlugin : IPlugin
 {

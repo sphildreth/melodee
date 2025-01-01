@@ -7,38 +7,45 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data.Models;
+using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized;
 using Melodee.Common.Utility;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using Album = Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized.Album;
+using Artist = Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized.Artist;
 
 namespace Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 
 public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigurationFactory configurationFactory) : IMusicBrainzRepository
 {
     public const int MaxIndexSize = 255;
-    
-    protected readonly ConcurrentBag<Models.Materialized.Artist> LoadedMaterializedArtists = [];
-    protected readonly ConcurrentBag<Models.Materialized.ArtistRelation> LoadedMaterializedArtistRelations = [];    
-    protected readonly ConcurrentBag<Models.Materialized.Album> LoadedMaterializedAlbums = [];
+    protected readonly ConcurrentBag<Album> LoadedMaterializedAlbums = [];
+    protected readonly ConcurrentBag<ArtistRelation> LoadedMaterializedArtistRelations = [];
+
+    protected readonly ConcurrentBag<Artist> LoadedMaterializedArtists = [];
+    protected ArtistAlias[] LoadedArtistAliases = [];
+    protected ArtistCreditName[] LoadedArtistCreditNames = [];
+    protected ArtistCredit[] LoadedArtistCredits = [];
 
     protected Models.Artist[] LoadedArtists = [];
-    protected ArtistCredit[] LoadedArtistCredits = [];
-    protected ArtistCreditName[] LoadedArtistCreditNames = [];
-    protected ArtistAlias[] LoadedArtistAliases = [];
-    protected LinkType[] LoadedLinkTypes = [];
-    protected Link[] LoadedLinks = [];
     protected LinkArtistToArtist[] LoadedLinkArtistToArtists = [];
+    protected Link[] LoadedLinks = [];
+    protected LinkType[] LoadedLinkTypes = [];
+    protected ReleaseGroupMeta[] LoadedReleaseGroupMetas = [];
+    protected ReleaseGroup[] LoadedReleaseGroups = [];
 
     protected Release[] LoadedReleases = [];
     protected ReleaseCountry[] LoadedReleasesCountries = [];
-    protected Tag[] LoadedTags = [];
     protected ReleaseTag[] LoadedReleaseTags = [];
-    protected ReleaseGroup[] LoadedReleaseGroups = [];
-    protected ReleaseGroupMeta[] LoadedReleaseGroupMetas = [];
+    protected Tag[] LoadedTags = [];
 
     protected ILogger Logger { get; } = logger;
     protected IMelodeeConfigurationFactory ConfigurationFactory { get; } = configurationFactory;
+
+    public abstract Task<Album?> GetAlbumByMusicBrainzId(Guid musicBrainzId, CancellationToken cancellationToken = default);
+    public abstract Task<PagedResult<ArtistSearchResult>> SearchArtist(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default);
+    public abstract Task<OperationResult<bool>> ImportData(CancellationToken cancellationToken = default);
 
     protected static async Task<T[]> LoadDataFromFileAsync<T>(string file, Func<string[], T> constructor, CancellationToken cancellationToken = default) where T : notnull
     {
@@ -56,10 +63,6 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
 
         return result.ToArray();
     }
-
-    public abstract Task<Models.Materialized.Album?> GetAlbumByMusicBrainzId(Guid musicBrainzId, CancellationToken cancellationToken = default);
-    public abstract Task<PagedResult<ArtistSearchResult>> SearchArtist(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default);
-    public abstract Task<OperationResult<bool>> ImportData(CancellationToken cancellationToken = default);
 
     protected async Task<string> StoragePath(CancellationToken cancellationToken = default)
     {
@@ -244,12 +247,12 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
         }
 
         var artistAliasDictionary = LoadedArtistAliases.GroupBy(x => x.ArtistId).ToDictionary(x => x.Key, x => x.ToArray());
-        using (Operation.At(LogEventLevel.Debug).Time($"MusicBrainzRepository: LoadedMaterializedArtists"))
+        using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: LoadedMaterializedArtists"))
         {
             Parallel.ForEach(LoadedArtists, artist =>
             {
                 artistAliasDictionary.TryGetValue(artist.Id, out var aArtistAlias);
-                LoadedMaterializedArtists.Add(new Models.Materialized.Artist
+                LoadedMaterializedArtists.Add(new Artist
                 {
                     MusicBrainzArtistId = artist.Id,
                     Name = artist.Name,
@@ -262,11 +265,11 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
         }
 
         var loadedMaterializedArtistsDictionary = LoadedMaterializedArtists.ToDictionary(x => x.MusicBrainzArtistId, x => x);
-        
-        using (Operation.At(LogEventLevel.Debug).Time($"MusicBrainzRepository: LoadedMaterializedArtistRelations"))
+
+        using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: LoadedMaterializedArtistRelations"))
         {
             var loadedLinkDictionary = LoadedLinks.ToDictionary(x => x.Id, x => x);
-            
+
             var artistLinks = LoadedLinkArtistToArtists.GroupBy(x => x.Artist0).ToDictionary(x => x.Key, x => x.ToArray());
             var associatedArtistRelationType = SafeParser.ToNumber<int>(ArtistRelationType.Associated);
             Parallel.ForEach(artistLinks, artistLink =>
@@ -286,7 +289,7 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                     loadedLinkDictionary.TryGetValue(artistLink.Key, out var link);
                     if (link != null)
                     {
-                        LoadedMaterializedArtistRelations.Add(new Models.Materialized.ArtistRelation
+                        LoadedMaterializedArtistRelations.Add(new ArtistRelation
                         {
                             ArtistId = dbArtist.Id,
                             RelatedArtistId = dbLinkedArtist.Id,
@@ -300,7 +303,7 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
             });
         }
 
-        using (Operation.At(LogEventLevel.Debug).Time($"MusicBrainzRepository: LoadedMaterializedAlbums"))
+        using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: LoadedMaterializedAlbums"))
         {
             var releaseCountriesDictionary = LoadedReleasesCountries.GroupBy(x => x.ReleaseId).ToDictionary(x => x.Key, x => x.ToList());
             var releaseGroupsDictionary = LoadedReleaseGroups.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.ToList());
@@ -348,6 +351,7 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                         // that Id then get the ArtistCreditNames and the first one is used for the artist for Melodee
                         loadedMaterializedArtistsDictionary.TryGetValue(artistCreditName.ArtistId, out releaseArtist);
                     }
+
                     var artistCreditNameArtistId = artistCreditName?.ArtistId ?? 0;
                     contributorIds = releaseArtistCreditNames == null
                         ? null
@@ -360,13 +364,13 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                 {
                     if (release.Name.Nullify() != null)
                     {
-                        LoadedMaterializedAlbums.Add(new Models.Materialized.Album
+                        LoadedMaterializedAlbums.Add(new Album
                         {
                             MusicBrainzArtistId = releaseArtist.MusicBrainzArtistId,
                             ContributorIds = contributorIds,
                             MusicBrainzIdRaw = release.MusicBrainzId,
                             Name = release.Name,
-                            NameNormalized = (release.NameNormalized ?? release.Name),
+                            NameNormalized = release.NameNormalized ?? release.Name,
                             ReleaseDate = releaseCountry.ReleaseDate,
                             ReleaseGroupMusicBrainzIdRaw = releaseGroup.MusicBrainzIdRaw,
                             ReleaseType = releaseGroup.ReleaseType,
@@ -379,7 +383,7 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
     }
 
     /// <summary>
-    /// This is because "1994-02-29" isn't a date.
+    ///     This is because "1994-02-29" isn't a date.
     /// </summary>
     public static DateTime? ParseJackedUpMusicBrainzDate(string? dateRaw)
     {
@@ -387,10 +391,12 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
         {
             return null;
         }
+
         if (DateTime.TryParse(dateRaw, CultureInfo.InvariantCulture, out var date))
         {
             return date;
         }
+
         return null;
     }
 }

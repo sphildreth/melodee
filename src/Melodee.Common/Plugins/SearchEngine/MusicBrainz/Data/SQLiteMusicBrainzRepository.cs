@@ -13,6 +13,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
+using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized;
 using Melodee.Common.Utility;
 using Serilog;
 using Serilog.Events;
@@ -20,6 +21,8 @@ using SerilogTimings;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
 using SmartFormat;
+using Album = Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized.Album;
+using Artist = Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data.Models.Materialized.Artist;
 using Directory = System.IO.Directory;
 
 
@@ -40,11 +43,11 @@ public class SQLiteMusicBrainzRepository(
 {
     private const LuceneVersion AppLuceneVersion = LuceneVersion.LUCENE_48;
 
-    public override async Task<Models.Materialized.Album?> GetAlbumByMusicBrainzId(Guid musicBrainzId, CancellationToken cancellationToken = default)
+    public override async Task<Album?> GetAlbumByMusicBrainzId(Guid musicBrainzId, CancellationToken cancellationToken = default)
     {
         using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
         {
-            return db.Single<Models.Materialized.Album>(x => x.MusicBrainzId == musicBrainzId);
+            return db.Single<Album>(x => x.MusicBrainzId == musicBrainzId);
         }
     }
 
@@ -53,7 +56,7 @@ public class SQLiteMusicBrainzRepository(
         var startTicks = Stopwatch.GetTimestamp();
         var data = new List<ArtistSearchResult>();
 
-        int maxLuceneResults = 10;
+        var maxLuceneResults = 10;
         long totalCount = 0;
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
@@ -73,18 +76,18 @@ public class SQLiteMusicBrainzRepository(
                 var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
                 using (var writer = new IndexWriter(dir, indexConfig))
                 {
-                    using (DirectoryReader reader = writer.GetReader(applyAllDeletes: true))
+                    using (var reader = writer.GetReader(true))
                     {
-                        IndexSearcher searcher = new IndexSearcher(reader);
+                        var searcher = new IndexSearcher(reader);
                         BooleanQuery categoryQuery = [];
-                        TermQuery catQuery1 = new TermQuery(new Term(nameof(Models.Materialized.Artist.NameNormalized), query.NameNormalized));
-                        TermQuery catQuery2 = new TermQuery(new Term(nameof(Models.Materialized.Artist.NameNormalized), query.NameNormalizedReversed));
-                        TermQuery catQuery3 = new TermQuery(new Term(nameof(Models.Materialized.Artist.AlternateNames), query.NameNormalized));
+                        var catQuery1 = new TermQuery(new Term(nameof(Artist.NameNormalized), query.NameNormalized));
+                        var catQuery2 = new TermQuery(new Term(nameof(Artist.NameNormalized), query.NameNormalizedReversed));
+                        var catQuery3 = new TermQuery(new Term(nameof(Artist.AlternateNames), query.NameNormalized));
                         categoryQuery.Add(new BooleanClause(catQuery1, Occur.SHOULD));
                         categoryQuery.Add(new BooleanClause(catQuery2, Occur.SHOULD));
                         categoryQuery.Add(new BooleanClause(catQuery3, Occur.SHOULD));
                         ScoreDoc[] hits = searcher.Search(categoryQuery, maxLuceneResults).ScoreDocs;
-                        musicBrainzIdsFromLucene.AddRange(hits.Select(t => searcher.Doc(t.Doc)).Select(hitDoc => hitDoc.Get(nameof(Models.Materialized.Artist.MusicBrainzIdRaw))));
+                        musicBrainzIdsFromLucene.AddRange(hits.Select(t => searcher.Doc(t.Doc)).Select(hitDoc => hitDoc.Get(nameof(Artist.MusicBrainzIdRaw))));
                     }
                 }
             }
@@ -103,7 +106,7 @@ public class SQLiteMusicBrainzRepository(
                               order by a."SortName"
                               """;
                     var pSql = sql.FormatSmart(string.Join(@"','", musicBrainzIdsFromLucene));
-                    var artists = db.Query<Models.Materialized.Artist>(pSql).ToArray();
+                    var artists = db.Query<Artist>(pSql).ToArray();
 
                     foreach (var artist in artists)
                     {
@@ -123,7 +126,7 @@ public class SQLiteMusicBrainzRepository(
                             rank++;
                         }
 
-                        string ssql = string.Empty;
+                        var ssql = string.Empty;
                         if (query.AlbumMusicBrainzIds != null)
                         {
                             sql = """
@@ -137,7 +140,6 @@ public class SQLiteMusicBrainzRepository(
                         }
                         else
                         {
-
                             sql = """
                                   SELECT ReleaseType, ReleaseDate, MusicBrainzIdRaw, Name, NameNormalized, SortName, ReleaseGroupMusicBrainzIdRaw 
                                   FROM "Album"
@@ -149,7 +151,7 @@ public class SQLiteMusicBrainzRepository(
                             ssql = sql.FormatSmart(artist.MusicBrainzArtistId, string.Join(@"','", query.AlbumKeyValues?.Select(x => x.Value.ToNormalizedString()) ?? []), string.Join(@"','", query.AlbumKeyValues?.Select(x => x.Key) ?? []));
                         }
 
-                        var artistAlbums = db.Query<Models.Materialized.Album>(ssql).ToArray();
+                        var artistAlbums = db.Query<Album>(ssql).ToArray();
 
                         rank += artistAlbums.Length;
 
@@ -249,20 +251,20 @@ public class SQLiteMusicBrainzRepository(
                         {
                             var artistDoc = new Document
                             {
-                                new StringField(nameof(Models.Materialized.Artist.MusicBrainzIdRaw),
+                                new StringField(nameof(Artist.MusicBrainzIdRaw),
                                     artist.MusicBrainzIdRaw,
                                     Field.Store.YES),
-                                new StringField(nameof(Models.Materialized.Artist.NameNormalized),
+                                new StringField(nameof(Artist.NameNormalized),
                                     artist.NameNormalized,
                                     Field.Store.YES),
-                                new TextField(nameof(Models.Materialized.Artist.AlternateNames),
+                                new TextField(nameof(Artist.AlternateNames),
                                     artist.AlternateNames ?? string.Empty,
                                     Field.Store.YES)
                             };
                             writer.AddDocument(artistDoc);
                         }
 
-                        writer.Flush(triggerMerge: false, applyAllDeletes: false);
+                        writer.Flush(false, false);
                     }
                 }
             }
@@ -271,7 +273,7 @@ public class SQLiteMusicBrainzRepository(
             {
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded artists"))
                 {
-                    db.CreateTable<Models.Materialized.Artist>();
+                    db.CreateTable<Artist>();
                     var batches = (LoadedMaterializedArtists.Count + batchSize - 1) / batchSize;
                     Log.Debug("MusicBrainzRepository: Importing [{BatchCount}] Artist batches...", batches);
                     for (var batch = 0; batch < batches; batch++)
@@ -283,12 +285,12 @@ public class SQLiteMusicBrainzRepository(
                         }
                     }
 
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artists of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.Artist>(), LoadedMaterializedArtists.Count, batches);
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artists of [{Loaded}] in [{BatchCount}] batches.", db.Count<Artist>(), LoadedMaterializedArtists.Count, batches);
                 }
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded artist relations"))
                 {
-                    db.CreateTable<Models.Materialized.ArtistRelation>();
+                    db.CreateTable<ArtistRelation>();
 
                     var batches = (LoadedMaterializedArtistRelations.Count + batchSize - 1) / batchSize;
                     Log.Debug("MusicBrainzRepository: Importing [{BatchCount}] Artist Relations batches...", batches);
@@ -301,12 +303,12 @@ public class SQLiteMusicBrainzRepository(
                         }
                     }
 
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artist relations of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.ArtistRelation>(), LoadedMaterializedArtistRelations.Count, batches);
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artist relations of [{Loaded}] in [{BatchCount}] batches.", db.Count<ArtistRelation>(), LoadedMaterializedArtistRelations.Count, batches);
                 }
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded albums"))
                 {
-                    db.CreateTable<Models.Materialized.Album>();
+                    db.CreateTable<Album>();
                     var batches = (LoadedMaterializedAlbums.Count + batchSize - 1) / batchSize;
                     Log.Debug("MusicBrainzRepository: Importing [{BatchCount}] Album batches...", batches);
                     for (var batch = 0; batch < batches; batch++)
@@ -318,7 +320,7 @@ public class SQLiteMusicBrainzRepository(
                         }
                     }
 
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] albums of [{Loaded}] in [{BatchCount}] batches.", db.Count<Models.Materialized.Album>(), LoadedMaterializedAlbums.Count, batches);
+                    Log.Debug("MusicBrainzRepository: Imported [{Count}] albums of [{Loaded}] in [{BatchCount}] batches.", db.Count<Album>(), LoadedMaterializedAlbums.Count, batches);
                 }
             }
 

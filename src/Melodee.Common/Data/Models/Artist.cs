@@ -26,18 +26,19 @@ public sealed class Artist : MetaDataModelBase
     public required string NameNormalized { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    public string? SortName { get; set; }    
-    
+    public string? SortName { get; set; }
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? RealName { get; set; }
 
     /// <summary>
-    ///     The directory that holds the files for the Artist, including Artist images and albums directories. This is inside a library path directory.
+    ///     The directory that holds the files for the Artist, including Artist images and albums directories. This is inside a
+    ///     library path directory.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     [Required]
-    public required string Directory { get; set; }    
-    
+    public required string Directory { get; set; }
+
     /// <summary>
     ///     Pipe seperated list. Example 'artist|albumartist|composer'
     /// </summary>
@@ -49,17 +50,17 @@ public sealed class Artist : MetaDataModelBase
     public int SongCount { get; set; }
 
     [RequiredGreaterThanZero] public required int LibraryId { get; set; }
-    
-    public Library Library { get; set; } = null!;    
-    
+
+    public Library Library { get; set; } = null!;
+
     /// <summary>
     ///     Stored in markdown, will be rendered to HTML or to text depending on consumer.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? Biography { get; set; }
-    
+
     /// <summary>
-    /// Be able to query for artists that need images.
+    ///     Be able to query for artists that need images.
     /// </summary>
     public int? ImageCount { get; set; }
 
@@ -72,9 +73,12 @@ public sealed class Artist : MetaDataModelBase
     public ICollection<Contributor> Contributors { get; set; } = new List<Contributor>();
 
     public ICollection<UserArtist> UserArtists { get; set; } = new List<UserArtist>();
-    
-    [InverseProperty(nameof(ArtistRelation.Artist))]  
+
+    [InverseProperty(nameof(ArtistRelation.Artist))]
     public ICollection<ArtistRelation> RelatedArtists { get; set; } = new List<ArtistRelation>();
 
-    public override string ToString() => $"Id [{Id}] Name [{Name}]";
+    public override string ToString()
+    {
+        return $"Id [{Id}] Name [{Name}]";
+    }
 }

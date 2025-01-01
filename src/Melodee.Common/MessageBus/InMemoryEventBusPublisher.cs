@@ -10,6 +10,7 @@ public class InMemoryEventBusPublisher<T>(ChannelWriter<Event<T>> bus) : IEventP
         {
             return;
         }
+
         await bus.WriteAsync(@event, token).ConfigureAwait(false);
     }
 

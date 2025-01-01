@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.SearchEngines;
@@ -6,9 +5,9 @@ namespace Melodee.Common.Models.SearchEngines;
 public sealed record ImageSearchResult
 {
     public required string FromPlugin { get; init; }
-    
+
     public short Rank { get; init; }
-    
+
     public bool DoDeleteExistingCoverImages { get; set; }
 
     public long UniqueId { get; init; }

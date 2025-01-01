@@ -94,7 +94,7 @@ public class ScrobbleService(
             {
                 var nowPlayingResult = await scrobbler.NowPlaying(user, scrobble, cancellationToken).ConfigureAwait(false);
                 result &= nowPlayingResult.IsSuccess;
-            }            
+            }
         }
 
         return new OperationResult<bool>
@@ -140,6 +140,7 @@ public class ScrobbleService(
                     var scrobbleResult = await scrobbler.Scrobble(user, scrobble, cancellationToken).ConfigureAwait(false);
                     result &= scrobbleResult.IsSuccess;
                 }
+
                 Logger.Information("[{ServiceName}] Scrobbled song [{Song}] for User [{User}]",
                     nameof(ScrobbleService),
                     songId.ToString(),

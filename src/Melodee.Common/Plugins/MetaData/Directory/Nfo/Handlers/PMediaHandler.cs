@@ -7,12 +7,13 @@ public sealed class PMediaHandler : INfoHandler
         var fileContents = await File.ReadAllTextAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
         if (fileContents.Length > 0)
         {
-            if (fileContents.Contains("1BPEgheWBbFzhq3zZephEjESaJVvewBU5R") || 
+            if (fileContents.Contains("1BPEgheWBbFzhq3zZephEjESaJVvewBU5R") ||
                 fileContents.Contains("PMEDIA GROUP"))
             {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -26,8 +27,10 @@ public sealed class PMediaHandler : INfoHandler
             {
                 File.Delete(coverFileName);
             }
+
             fileInfo.Delete();
         }
+
         return isPMediaNfo;
     }
 }

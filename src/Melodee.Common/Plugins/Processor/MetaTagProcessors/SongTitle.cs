@@ -51,6 +51,7 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
             {
                 songTitle = songTitle[..matches1.Index].CleanString();
             }
+
             if (ContinueProcessing(songTitle))
             {
                 songNumber = metaTagsValue.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? songTitle?.TryToGetSongNumberFromString();

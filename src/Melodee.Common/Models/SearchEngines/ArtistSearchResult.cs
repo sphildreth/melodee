@@ -1,5 +1,4 @@
 using Melodee.Common.Extensions;
-using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models.SearchEngines;
 
@@ -9,21 +8,21 @@ namespace Melodee.Common.Models.SearchEngines;
 public sealed record ArtistSearchResult
 {
     public int? Id { get; init; }
-    
-    public KeyValue KeyValue => new KeyValue(UniqueId.ToString(), Name.ToNormalizedString() ?? Name);    
+
+    public KeyValue KeyValue => new(UniqueId.ToString(), Name.ToNormalizedString() ?? Name);
 
     /// <summary>Artist name</summary>
     public required string Name { get; init; }
-    
+
     /// <summary>Artist sort name</summary>
     public string? SortName { get; init; }
 
     /// <summary>Artist real name</summary>
-    public string? RealName { get; init; }    
-    
+    public string? RealName { get; init; }
+
     /// <summary>Name of Plugin who returned result.</summary>
     public required string FromPlugin { get; init; }
-    
+
     public int? AlbumCount { get; init; }
 
     /// <summary>UniqueId for the result</summary>
@@ -37,7 +36,7 @@ public sealed record ArtistSearchResult
 
     /// <summary>Public URL to an image.</summary>
     public string? ImageUrl { get; init; }
-    
+
     public string? ThumbnailUrl { get; init; }
 
     /// <summary>Any found MusicBrainzId</summary>
@@ -50,7 +49,7 @@ public sealed record ArtistSearchResult
     public AlbumSearchResult[]? Releases { get; init; }
 
     /// <summary>
-    /// Similar Artists
+    ///     Similar Artists
     /// </summary>
     public ArtistSearchInfoResult[]? SimilarArtists { get; init; }
 }

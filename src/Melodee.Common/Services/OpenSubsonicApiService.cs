@@ -91,6 +91,7 @@ public class OpenSubsonicApiService(
         {
             return null;
         }
+
         var apiIdParts = id!.Split(OpenSubsonicServer.ApiIdSeparator);
         var toParse = id;
         if (apiIdParts.Length < 2)
@@ -101,6 +102,7 @@ public class OpenSubsonicApiService(
         {
             toParse = apiIdParts[1];
         }
+
         return SafeParser.ToGuid(toParse);
     }
 
@@ -599,6 +601,7 @@ public class OpenSubsonicApiService(
                         {
                             orderSql = "ORDER BY \"Year\" ASC nulls last";
                         }
+
                         break;
 
                     case ListType.ByGenre:
@@ -709,8 +712,7 @@ public class OpenSubsonicApiService(
                 };
             }
 
-            
-            
+
             var album = albumResponse.Data!;
             var userAlbum = await userService.UserAlbumAsync(apiRequest.Username, apiKey.Value, cancellationToken);
             var userSongsForAlbum = await userService.UserSongsForAlbumAsync(apiRequest.Username, apiKey.Value, cancellationToken) ?? [];
@@ -883,7 +885,7 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
-        string badEtag = Instant.MinValue.ToEtag();
+        var badEtag = Instant.MinValue.ToEtag();
         string? etag = null;
         var sizeValue = size ?? ImageSizeRegistry.Large;
         var imageBytes = await CacheManager.GetAsync($"urn:openSubsonic:imageForApikey:{apiId}:{sizeValue}", async () =>
@@ -916,7 +918,8 @@ public class OpenSubsonicApiService(
                                 etag = (artistInfo.LastUpdatedAt ?? artistInfo.CreatedAt).ToEtag();
                             }
                         }
-                        if(result == null)
+
+                        if (result == null)
                         {
                             result = defaultImages.ArtistBytes;
                             etag = badEtag;
@@ -983,11 +986,12 @@ public class OpenSubsonicApiService(
                                 }
                             }
                         }
-                        if(result == null)
+
+                        if (result == null)
                         {
                             result = defaultImages.AlbumCoverBytes;
                             etag = badEtag;
-                        }                        
+                        }
                     }
 
                     if (result != null)
@@ -1025,7 +1029,6 @@ public class OpenSubsonicApiService(
                             }
                         }
                     }
-
                 }
                 catch (Exception e)
                 {
@@ -1127,7 +1130,7 @@ public class OpenSubsonicApiService(
                 var dataMap = libraryProcessJob.JobDetail.JobDataMap;
                 if (dataMap.ContainsKey(JobMapNameRegistry.ScanStatus) && dataMap.ContainsKey(JobMapNameRegistry.Count))
                 {
-                    data = new ScanStatus(dataMap.GetString(JobMapNameRegistry.ScanStatus) == Common.Enums.ScanStatus.InProcess.ToString(), dataMap.GetIntValue(JobMapNameRegistry.Count));
+                    data = new ScanStatus(dataMap.GetString(JobMapNameRegistry.ScanStatus) == Enums.ScanStatus.InProcess.ToString(), dataMap.GetIntValue(JobMapNameRegistry.Count));
                 }
             }
         }
@@ -1217,7 +1220,7 @@ public class OpenSubsonicApiService(
 
                         if (!isAuthenticated)
                         {
-                            Logger.Warning("[{MethodName}] user client [{Client}] attempted token auth, provided salt [{Salt}] token [{Token}] did not match generated md5 [{Md5}]", 
+                            Logger.Warning("[{MethodName}] user client [{Client}] attempted token auth, provided salt [{Salt}] token [{Token}] did not match generated md5 [{Md5}]",
                                 nameof(AuthenticateSubsonicApiAsync),
                                 apiRequest.ApiRequestPlayer.Client,
                                 apiRequest.Salt,
@@ -1849,7 +1852,6 @@ public class OpenSubsonicApiService(
         };
     }
 
-  
 
     public async Task<ResponseModel> GetIndexesAsync(bool isArtistIndex, string dataPropertyName, Guid? musicFolderId, long? ifModifiedSince, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
@@ -1875,6 +1877,7 @@ public class OpenSubsonicApiService(
             libraryId = library?.Id ?? 0;
             lastModified = library?.LastUpdatedAt.ToString() ?? string.Empty;
         }
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -1890,8 +1893,8 @@ public class OpenSubsonicApiService(
                       """;
             var indexes = await dbConn.QueryAsync<DatabaseDirectoryInfo>(sql, new { libraryId, modifiedSince = ifModifiedSince ?? 0, userId = authResponse.UserInfo.Id }).ConfigureAwait(false);
 
-            var configuration = (await Configuration.Value);
-            
+            var configuration = await Configuration.Value;
+
             var artists = new List<ArtistIndex>();
             foreach (var grouped in indexes.GroupBy(x => x.Index))
             {
@@ -1986,7 +1989,7 @@ public class OpenSubsonicApiService(
             var artistInfo = await DatabaseArtistInfoForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false);
             if (artistInfo != null)
             {
-                var configuration = (await Configuration.Value);
+                var configuration = await Configuration.Value;
                 data = new Artist(
                     id,
                     artistInfo.Name,

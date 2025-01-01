@@ -1,6 +1,5 @@
 using System.Text;
 using Melodee.Common.Extensions;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Melodee.Common.Models.OpenSubsonic;
 
@@ -36,9 +35,10 @@ public record ArtistInfo(
         {
             foreach (var artist in SimilarArtist)
             {
-                result.Append($"<similarArtist id=\"{ artist.Id}\" name=\" { artist.Name}\" />");
+                result.Append($"<similarArtist id=\"{artist.Id}\" name=\" {artist.Name}\" />");
             }
         }
+
         result.Append("</artistInfo>");
         return result.ToString();
     }

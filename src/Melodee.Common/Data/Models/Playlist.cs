@@ -14,7 +14,7 @@ public class Playlist : DataModelBase
     public required string Name { get; set; }
 
     /// <summary>
-    /// This is plain text and served to OpenSubsonic clients.
+    ///     This is plain text and served to OpenSubsonic clients.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? Comment { get; set; }
@@ -28,9 +28,9 @@ public class Playlist : DataModelBase
     public short? SongCount { get; set; }
 
     public double Duration { get; set; }
-    
+
     /// <summary>
-    /// This is true when there is a custom image for the playlist, otherwise serve the default playlist image.
+    ///     This is true when there is a custom image for the playlist, otherwise serve the default playlist image.
     /// </summary>
     public bool HasCustomImage { get; set; }
 
