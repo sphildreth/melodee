@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Melodee.Results;
+namespace Melodee.Blazor.Results;
 
 /// <summary>
 /// https://www.rfc-editor.org/rfc/rfc4329.txt

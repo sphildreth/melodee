@@ -1,11 +1,11 @@
+using Melodee.Blazor.Filters;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Results;
 using Melodee.Services.SearchEngines;
-using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Melodee.Controllers.OpenSubsonic;
+namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
 public class SearchEngineController(
     ISerializer serializer,

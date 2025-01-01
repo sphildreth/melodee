@@ -1,3 +1,5 @@
+using Melodee.Blazor.Filters;
+using Melodee.Blazor.Results;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
@@ -5,12 +7,11 @@ using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
 using Melodee.Results;
-using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Serilog;
 
-namespace Melodee.Controllers.OpenSubsonic;
+namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
 public abstract class ControllerBase(EtagRepository etagRepository, ISerializer serializer) : Controller
 {
@@ -72,13 +73,13 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             etagRepository.AddEtag(model.ApiKeyId, model.ResponseData.Etag);
             return new FileContentResult((byte[])model.ResponseData.Data!, model.ResponseData.ContentType ?? "image/jpeg");
         }
-        catch (OperationCanceledException ex)
+        catch (OperationCanceledException)
         {
             // Don't do anything as this happens a lot with TCP connections
         }
         catch (Exception ex)
         {
-            Log.Warning("Error in image result for ApiKey [{ApiKey}]", apiKey);
+            Log.Warning(ex, "Error in image result for ApiKey [{ApiKey}]", apiKey);
         }
         return new EmptyResult();
     }

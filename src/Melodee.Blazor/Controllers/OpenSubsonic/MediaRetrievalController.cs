@@ -1,14 +1,14 @@
 using System.Net;
+using Melodee.Blazor.Filters;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Serialization;
 using Melodee.Results;
 using Melodee.Services;
-using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Melodee.Controllers.OpenSubsonic;
+namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
 public class MediaRetrievalController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
 {
@@ -79,7 +79,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
         var streamResult = await openSubsonicApiService.StreamAsync(request, ApiRequest, cancellationToken).ConfigureAwait(false);
         if (streamResult.IsSuccess)
         {
-            return File(streamResult.Bytes, streamResult.ContentType, streamResult.FileName);
+            return File(streamResult.Bytes, streamResult.ContentType ?? string.Empty, streamResult.FileName);
         }
 
         Response.StatusCode = (int)HttpStatusCode.NotFound;

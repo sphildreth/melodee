@@ -77,7 +77,7 @@
     private const string PagingSummaryFormat = "Displaying page {0} of {1} <b>(total {2} records)</b>";
     RadzenDataGrid<Setting> _grid = null!;
     int _count;
-    IEnumerable<Setting> _settings;
+    IEnumerable<Setting> _settings = null!;
     bool _isLoading = false;
     int _currentPage = 1;
     short _defaultPageSize = 25;

@@ -1,10 +1,9 @@
 using System.Net;
+using Melodee.Blazor.Filters;
 using Melodee.Common.Serialization;
-using Melodee.Services;
-using Melodee.Utils;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Melodee.Controllers.OpenSubsonic;
+namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
 public class ChatController(ISerializer serializer, EtagRepository etagRepository) : ControllerBase(etagRepository, serializer)
 {
