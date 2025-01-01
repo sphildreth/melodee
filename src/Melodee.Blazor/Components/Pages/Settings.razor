@@ -1,0 +1,117 @@
+@page "/settings"
+
+@using Common.Data.Models
+
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject Serilog.ILogger Logger
+@inject ISettingService SettingService
+
+<PageTitle>Settings</PageTitle>
+
+@using Melodee.Common.Configuration
+@using Melodee.Common.Constants
+@using Melodee.Common.Extensions
+@using Melodee.Common.Models
+@using Melodee.Common.Utility
+
+<RadzenDataGrid
+    @ref="_grid"
+    style="height: 600px"
+    IsLoading=@_isLoading
+    Count="@_count"
+    Data="@_settings"
+    LoadData="@LoadData"
+    AllowSorting="true"
+    AllowFiltering="true"
+    AllowPaging="true"
+    Page="OnPage"
+    PageSize="_defaultPageSize"
+    PagerHorizontalAlign="HorizontalAlign.Center"
+    ShowPagingSummary="true"
+    PageSizeOptions="@_pageSizeOptions"
+    PagingSummaryFormat="@_pagingSummaryFormat"
+    ColumnWidth="200px">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(Setting.Key)" Title="Key" Width="120px"/>
+        <RadzenDataGridColumn Property="@nameof(Setting.Category)" Title="Category" Width="160px"/>
+        <RadzenDataGridColumn Property="@nameof(Setting.Value)" Title="Value" FormatString="{0:d}" Width="160px"/>
+        <RadzenDataGridColumn Property="@nameof(Setting.Comment)" Title="Comment" Width="300px"/>
+    </Columns>
+</RadzenDataGrid>
+
+
+@code {
+    private string _pagingSummaryFormat = "Displaying page {0} of {1} <b>(total {2} records)</b>";
+    private RadzenDataGrid<Setting> _grid = null!;
+    private int _count;
+    private IEnumerable<Setting> _settings;
+    private bool _isLoading = false;
+    private int _currentPage = 1;
+    private short _defaultPageSize = 25;
+    private IEnumerable<int> _pageSizeOptions = [10, 20, 30];
+    private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _configuration = await SettingService.GetMelodeeConfigurationAsync();
+        _defaultPageSize = _configuration.GetValue<short>(SettingRegistry.DefaultsPageSize);
+        _pageSizeOptions = [_defaultPageSize, _defaultPageSize * 4, _defaultPageSize * 10];
+    }
+
+    async Task Reset()
+    {
+        _grid.Reset(true);
+        await _grid.FirstPage(true);
+    }
+
+    void OnPage(PagerEventArgs args)
+    {
+        _currentPage = args.PageIndex + 1;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        _isLoading = true;
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            Dictionary<string, string>? sorting = null;
+            if (args.Sorts.Any())
+            {
+                sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
+            }
+
+            Common.Filtering.FilterOperatorInfo[]? filters = null;
+            if (args.Filters.Any())
+            {
+               filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
+                       SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                       x.FilterValue))
+                   .ToArray();
+            }
+            var result = await SettingService.ListAsync(new PagedRequest
+            {
+                FilterBy = filters,
+                Page = _currentPage,
+                PageSize = _defaultPageSize,
+                OrderBy = sorting
+            });
+            _settings = result.Data;
+            _count = SafeParser.ToNumber<int>(result.TotalCount);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Loading Settings");
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+        _isLoading = false;
+    }
+}
+
+
+@code {
+
+}

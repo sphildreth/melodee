@@ -1,7 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Melodee.Common.Extensions;
+using Melodee.Common.Constants;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Melodee.Blazor.Services;
@@ -34,6 +34,8 @@ public class AuthService(
         }
     }
 
+    public bool IsAdmin => CurrentUser.IsInRole(RoleNameRegistry.Administrator);
+    
     public bool IsLoggedIn => CurrentUser.Identity?.IsAuthenticated ?? false;
 
     public async Task LogoutAsync()

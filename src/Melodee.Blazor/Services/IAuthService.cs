@@ -10,4 +10,5 @@ public interface IAuthService
     Task<bool> GetStateFromTokenAsync();
     Task LogoutAsync();
     Task Login(ClaimsPrincipal user, bool? doRememberMe = null);
+    bool IsAdmin { get; }
 }

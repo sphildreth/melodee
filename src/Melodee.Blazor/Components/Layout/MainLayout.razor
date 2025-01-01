@@ -45,7 +45,22 @@
             <RadzenSidebar @bind-Expanded="@_sidebarExpanded">
                 <RadzenPanelMenu>
                     <RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="dashboard"/>
-                    <RadzenPanelMenuItem Text="Jobs" Path="jobs" Icon="checklist"/>
+                    <RadzenPanelMenuItem Text="Artists" Path="artists" Icon="artist"/>
+                    <RadzenPanelMenuItem Text="Albums" Path="albums" Icon="album"/>
+                    <RadzenPanelMenuItem Text="Playlists" Path="playlists" Icon="playlist_play"/>
+                    <RadzenPanelMenuItem Text="Songs" Path="songs" Icon="music_note"/>
+                    <RadzenPanelMenuItem Text="Shares" Path="shares" Icon="share"/>
+                    <RadzenPanelMenuItem Text="Users" Path="users" Icon="group"/>
+                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" Visible="@AuthService.IsAdmin">
+                        <RadzenPanelMenuItem Text="Media" Icon="perm_media">
+                            <RadzenPanelMenuItem Text="Inbound" Path="inbound" Icon="folder"/>
+                            <RadzenPanelMenuItem Text="Library" Path="library" Icon="folder"/>
+                            <RadzenPanelMenuItem Text="Staging" Path="staging" Icon="folder"/>
+                        </RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Jobs" Path="jobs" Icon="checklist"/>
+                        <RadzenPanelMenuItem Text="Settings" Path="settings" Icon="settings"/>
+                    </RadzenPanelMenuItem>
+
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody>
