@@ -9,6 +9,12 @@
 @inject NavigationManager NavigationManager
 
 <RadzenComponents @rendermode="InteractiveServer" />
+
+<RadzenDialog />
+<RadzenNotification />
+<RadzenTooltip />
+<RadzenContextMenu />
+
 <AuthorizeView>
     <NotAuthorized>
         @Body
@@ -16,16 +22,30 @@
     <Authorized>
         <RadzenLayout>
             <RadzenHeader>
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
-                    <RadzenSidebarToggle Click="@(() => _sidebar1Expanded = !_sidebar1Expanded)"/>
-                    @* <RadzenLabel Text="" /> *@
-                    @context.User?.Identity?.Name
-                </RadzenStack>
+                <RadzenRow JustifyContent="JustifyContent.Start" AlignItems="AlignItems.Center" Gap="0">
+                    <RadzenColumn Size="5">
+                        <RadzenSidebarToggle Click="@SidebarToggleClick"></RadzenSidebarToggle>
+                    </RadzenColumn>
+                    <RadzenColumn Size="7">
+                        <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+                            <RadzenAppearanceToggle />
+                            <RadzenProfileMenu Click="@ProfileMenuClick">
+                                <ChildContent>
+                                    <RadzenProfileMenuItem Path="profile" Icon="settings" Text="Profile"/>
+                                    <RadzenProfileMenuItem Text="Logout" Value="Logout" Icon="power_settings_new"/>
+                                </ChildContent>
+                                <Template>
+                                    <RadzenImage Path="/images/avatar.png" style="width:32px;height:32px;border-radius:16px;"/>
+                                </Template>
+                            </RadzenProfileMenu>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
             </RadzenHeader>
-            <RadzenSidebar @bind-Expanded="@_sidebar1Expanded">
+            <RadzenSidebar @bind-Expanded="@_sidebarExpanded">
                 <RadzenPanelMenu>
-                    <RadzenPanelMenuItem Text="Home" Icon="home"/>
-                    <RadzenPanelMenuItem Text="Users" Icon="account_box"/>
+                    <RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="dashboard"/>
+                    <RadzenPanelMenuItem Text="Jobs" Path="jobs" Icon="checklist"/>
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody>
@@ -47,7 +67,7 @@
 </div>
 
 @code {
-    bool _sidebar1Expanded = true;
+    bool _sidebarExpanded = true;
 
     protected override void OnInitialized()
     {
@@ -83,4 +103,18 @@
             }
         }
     }
+
+    private void SidebarToggleClick()
+    {
+        _sidebarExpanded = !_sidebarExpanded;
+    }
+
+    private void ProfileMenuClick(RadzenProfileMenuItem arg)
+    {
+        if (arg.Value == "Logout")
+        {
+            NavigationManager.NavigateTo("/account/logout", true);
+        }
+    }
+
 }
