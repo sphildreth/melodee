@@ -71,7 +71,7 @@ public static class UserExtensions
             roles.Add(RoleNameRegistry.Administrator);
         }
 
-        return new UserInfo(user.Id, user.ApiKey, user.UserName, user.Email)
+        return new UserInfo(user.Id, user.ApiKey, user.UserName, user.Email, user.PublicKey, user.PasswordEncrypted)
         {
             Roles = roles
         };

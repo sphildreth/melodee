@@ -1,11 +1,13 @@
 @page "/data/artists"
 @inherits MelodeeComponentBase
 
+@using Melodee.Blazor.Security.Extensions
+@using Melodee.Common.Data.Models.Extensions
 @using Artist = Melodee.Common.Data.Models.Artist
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
-@inject ISettingService SettingService
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject ArtistService ArtistService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -81,7 +83,12 @@
                             TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Artist.Name)" Title="Name"/>
+                <RadzenDataGridColumn Property="@nameof(Artist.Name)" Title="Name">
+                    <Template Context="data">
+                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}")  Style="margin-right: 5px;" AlternateText="@data.Name"/>
+                        <a href="/data/artistedit/@data.ApiKey">@data.Name</a>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Artist.Directory)" Title="Directory"/>
                 <RadzenDataGridColumn Property="@nameof(Artist.AlbumCount)" Title="Albums" Width="80px"/>
                 <RadzenDataGridColumn Property="@nameof(Artist.SongCount)" Title="Songs" Width="80px"/>
@@ -107,7 +114,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _configuration = await SettingService.GetMelodeeConfigurationAsync();
+        await base.OnInitializedAsync();
+
+        _configuration = await ConfigurationFactory.GetConfigurationAsync();
         _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
         _defaultPageSize = _configuration.DefaultPageSize();
         _pageSizeOptions = _configuration.DefaultPageSizeOptions();

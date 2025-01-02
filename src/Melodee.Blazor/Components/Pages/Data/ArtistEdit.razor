@@ -2,7 +2,9 @@
 
 @inherits MelodeeComponentBase
 
+@using Melodee.Blazor.Security.Extensions
 @using Melodee.Common.Data.Models
+@using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Plugins.SearchEngine.MusicBrainz
@@ -12,7 +14,7 @@
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
-@inject ISettingService SettingService
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject ArtistService ArtistService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -29,73 +31,126 @@
     <RadzenBreadCrumbItem Icon="@(ApiKey == Guid.Empty ? "add" : "edit")" Text="@(ApiKey == Guid.Empty ? "Adding" : "Editing")"/>
 </RadzenBreadCrumb>
 
-
-<RadzenTemplateForm TItem="Artist" Data="@_artist" Submit="@OnSubmit" InvalidSubmit="@OnInvalidSubmit">
-    <RadzenFieldset>
-        <RadzenStack Gap="2rem" class="rz-p-4 rz-p-md-12">
-            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                <RadzenColumn Size="12" SizeMD="4" class="rz-text-align-start rz-text-align-md-end">
-                    <RadzenLabel Text="Library" Component="LibraryId" />
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeMD="8">
-                    <RadzenAutoComplete
-                        @bind-Value="@_libaryName"
-                        name="LibraryId"
-                        Data="@_libraries"
-                        TextProperty="@nameof(Library.Name)"
-                        LoadData="@OnLoadLibraryData"
-                        class="rz-w-100"
-                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Library Name" }})" />
-                </RadzenColumn>
-            </RadzenRow>
-            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                <RadzenColumn Size="12" SizeMD="4" class="rz-text-align-start rz-text-align-md-end">
-                    <RadzenLabel Text="Name" Component="Name"/>
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeMD="8">
-                    <RadzenTextBox style="display: block" Name="Name" @bind-Value="@_artist.Name" class="rz-w-100"/>
-                    <RadzenDataAnnotationValidator Component="Name" Popup="false" Style="position: absolute"/>
-                </RadzenColumn>
-            </RadzenRow>
-            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                <RadzenColumn Size="12" SizeMD="4" class="rz-text-align-start rz-text-align-md-end">
-                    <RadzenLabel Text="Sort Name" Component="SortName"/>
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeMD="8">
-                    <RadzenTextBox style="display: block" Name="SortName" @bind-Value="@_artist.SortName" class="rz-w-100"/>
-                    <RadzenDataAnnotationValidator Component="SortName" Popup="false" Style="position: absolute"/>
-                </RadzenColumn>
-            </RadzenRow>
-            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                <RadzenColumn Size="12" SizeMD="4" class="rz-text-align-start rz-text-align-md-end">
-                    <RadzenLabel Text="MusicBrainz Id" Component="MusicBrainzId"/>
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeMD="8">
-                    <RadzenAutoComplete
-                        @bind-Value="@_musicBrainzId"
-                        name="MusicBrainzId"
-                        Data="@_musicBrainzArtists"
-                        TextProperty="@nameof(KeyValue.Value)"
-                        LoadData="@OnLoadMusicBrainzArtistData"
-                        class="rz-w-100"
-                        InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Artist Name" } })"/>
-                </RadzenColumn>
-            </RadzenRow>
-
-            <RadzenRow AlignItems="AlignItems.Center" class="rz-mt-4">
-                <RadzenColumn Size="12" Offset="0" SizeMD="8" OffsetMD="4">
-                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
-                </RadzenColumn>
-            </RadzenRow>
-        </RadzenStack>
-    </RadzenFieldset>
-</RadzenTemplateForm>
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center"
+                         JustifyContent="JustifyContent.End" Gap="0.5rem">
+                <RadzenButton Icon="image_search" Text="Image" Click="@SearchForImageButtonClicked" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenRow Gap="10px" RowGap="1rem" class="rz-m-0 rz-m-md-2">
+        <RadzenColumn Size="12" SizeMD="4">
+            <RadzenStack>
+                <RadzenImage Path=@($"/images/{_artist.ToApiKey()}/medium?{CurrentUser?.ApiRequestQuery()}")  Style="margin-right: 5px;" AlternateText="@_artist.Name"/>
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenUpload
+                        id="ddUpload"
+                        @ref="_uploader"
+                        ChooseText="Drag and drop here or click to choose file"
+                        Auto="false"
+                        Multiple="false"
+                        Url="upload/multiple"
+                        Complete="@CompleteImageUpload"
+                        InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "select file" } })"
+                        Progress=@(args => OnUploadImageProgress(args, "Drag and drop files to upload")) Style="width: 100%"/>
+                    <RadzenButton Text="Upload" Click=@(args => _uploader.Upload()) class="rz-mt-4"/>
+                </RadzenCard>
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenTemplateForm TItem="Artist" Data="@_artist" Submit="@OnSubmit" InvalidSubmit="@OnInvalidSubmit">
+                <RadzenFieldset>
+                    <RadzenStack Gap="10px" class="rz-p-2 rz-p-md-1">
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Library" Component="LibraryId" />
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenAutoComplete
+                                    @bind-Value="@_libaryName"
+                                    name="LibraryId"
+                                    Data="@_libraries"
+                                    TextProperty="@nameof(Library.Name)"
+                                    LoadData="@OnLoadLibraryData"
+                                    class="rz-w-100"
+                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Library Name" }})" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Name" Component="Name"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextBox style="display: block" Name="Name" @bind-Value="@_artist.Name" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="Name" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Sort Name" Component="SortName"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextBox style="display: block" Name="SortName" @bind-Value="@_artist.SortName" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="SortName" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="MusicBrainz Id" Component="MusicBrainzId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenAutoComplete
+                                    @bind-Value="@_musicBrainzId"
+                                    name="MusicBrainzId"
+                                    Data="@_musicBrainzArtists"
+                                    TextProperty="@nameof(KeyValue.Value)"
+                                    LoadData="@OnLoadMusicBrainzArtistData"
+                                    class="rz-w-100"
+                                    InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Artist Name" } })"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" class="rz-mt-4">
+                            <RadzenColumn Size="12" Offset="0" SizeMD="8" OffsetMD="2">
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenStack>
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
 
 @code {
 
     int _toastTime;
     List<KeyValue> _musicBrainzArtists = [];
     List<Library> _libraries = [];
+    RadzenUpload _uploader;
+
+    void CompleteImageUpload(UploadCompleteEventArgs args)
+    {
+        // if (!args.Cancelled)
+        //     completionMessage = "Upload Complete!";
+        // else
+        //     completionMessage = "Upload Cancelled!";
+        //
+        // showProgress = false;
+        // showComplete = true;
+    }
+
+    void OnUploadImageProgress(UploadProgressArgs args, string name)
+    {
+        if (args.Progress == 100)
+        {
+            foreach (var file in args.Files)
+            {
+//                console.Log($"Uploaded: {file.Name} / {file.Size} bytes");
+            }
+        }
+    }
 
     [Parameter] public Guid ApiKey { get; set; }
 
@@ -113,7 +168,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var configuration = await SettingService.GetMelodeeConfigurationAsync();
+        await base.OnInitializedAsync();
+
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
         _toastTime = configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
 
         var library = await LibraryService.GetLibraryAsync();
@@ -130,6 +187,10 @@
             {
                 _artist = artistResult.Data!;
                 _musicBrainzId = artistResult.Data!.MusicBrainzId?.ToString();
+                if (_musicBrainzId != null)
+                {
+                    _musicBrainzArtists.Add(new KeyValue(_musicBrainzId, _artist.Name));
+                }
             }
         }
     }
@@ -225,6 +286,11 @@
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
+    }
+
+    private Task SearchForImageButtonClicked()
+    {
+        throw new NotImplementedException();
     }
 
 }

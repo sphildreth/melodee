@@ -68,7 +68,7 @@ public class OpenSubsonicApiService(
 {
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
-    public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty);
+    public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 
     private static bool IsApiIdForArtist(string? id)
     {
@@ -873,6 +873,8 @@ public class OpenSubsonicApiService(
             }
         };
     }
+    
+    private record ImageBytesAndEtag(byte[]? Bytes, string? Etag);
 
     /// <summary>
     ///     Returns an artist, album, or song art image.
@@ -886,19 +888,19 @@ public class OpenSubsonicApiService(
         }
 
         var badEtag = Instant.MinValue.ToEtag();
-        string? etag = null;
         var sizeValue = size ?? ImageSizeRegistry.Large;
-        var imageBytes = await CacheManager.GetAsync($"urn:openSubsonic:imageForApikey:{apiId}:{sizeValue}", async () =>
+        var imageBytesAndEtag = await CacheManager.GetAsync($"urn:openSubsonic:imageForApikey:{apiId}:{sizeValue}", async () =>
         {
             using (Operation.At(LogEventLevel.Debug).Time("GetImageForApiKeyId: [{Username}] Size [{Size}]", apiId, sizeValue))
             {
                 byte[]? result = null;
+                string? eTag = string.Empty;
                 try
                 {
                     var apiKey = ApiKeyFromId(apiId);
                     if (apiKey == null)
                     {
-                        return null;
+                        return new ImageBytesAndEtag(null, null);
                     }
 
                     if (IsApiIdForArtist(apiId))
@@ -915,14 +917,14 @@ public class OpenSubsonicApiService(
                             if (firstArtistImage != null)
                             {
                                 result = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken).ConfigureAwait(false);
-                                etag = (artistInfo.LastUpdatedAt ?? artistInfo.CreatedAt).ToEtag();
+                                eTag = (artistInfo.LastUpdatedAt ?? artistInfo.CreatedAt).ToEtag();
                             }
                         }
 
                         if (result == null)
                         {
                             result = defaultImages.ArtistBytes;
-                            etag = badEtag;
+                            eTag = badEtag;
                         }
                     }
                     else if (IsApiIdForSong(apiId) || IsApiIdForAlbum(apiId))
@@ -966,7 +968,7 @@ public class OpenSubsonicApiService(
                                 if (image != null)
                                 {
                                     result = await File.ReadAllBytesAsync(image.FullName, cancellationToken).ConfigureAwait(false);
-                                    etag = melodeeFile!.Created.ToUnixTimeMilliseconds().ToString();
+                                    eTag = melodeeFile!.Created.ToUnixTimeMilliseconds().ToString();
                                 }
                                 else
                                 {
@@ -981,7 +983,7 @@ public class OpenSubsonicApiService(
                                     if (firstFrontImage != null)
                                     {
                                         result = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
-                                        etag = firstFrontImage.LastWriteTimeUtc.Ticks.ToString();
+                                        eTag = firstFrontImage.LastWriteTimeUtc.Ticks.ToString();
                                     }
                                 }
                             }
@@ -990,7 +992,7 @@ public class OpenSubsonicApiService(
                         if (result == null)
                         {
                             result = defaultImages.AlbumCoverBytes;
-                            etag = badEtag;
+                            eTag = badEtag;
                         }
                     }
 
@@ -1004,7 +1006,7 @@ public class OpenSubsonicApiService(
                                 result = ImageConvertor.ResizeImageIfNeeded(result,
                                     sizeValueParsed,
                                     sizeValueParsed);
-                                etag = HashHelper.CreateMd5(etag + sizeValueParsed);
+                                eTag = HashHelper.CreateMd5(eTag + sizeValueParsed);
                             }
                             else
                             {
@@ -1015,7 +1017,7 @@ public class OpenSubsonicApiService(
                                         result = ImageConvertor.ResizeImageIfNeeded(result,
                                             smallSize,
                                             smallSize);
-                                        etag = HashHelper.CreateMd5(etag + ImageSizeRegistry.Small);
+                                        eTag = HashHelper.CreateMd5(eTag + ImageSizeRegistry.Small);
                                         break;
 
                                     case ImageSizeRegistry.Medium:
@@ -1023,7 +1025,7 @@ public class OpenSubsonicApiService(
                                         result = ImageConvertor.ResizeImageIfNeeded(result,
                                             mediumSize,
                                             mediumSize);
-                                        etag = HashHelper.CreateMd5(etag + ImageSizeRegistry.Medium);
+                                        eTag = HashHelper.CreateMd5(eTag + ImageSizeRegistry.Medium);
                                         break;
                                 }
                             }
@@ -1035,21 +1037,21 @@ public class OpenSubsonicApiService(
                     Logger.Error(e, "Failed to get cover image for [{ApiId}]", apiId);
                 }
 
-                return result;
+                return new ImageBytesAndEtag(result, eTag);
             }
         }, cancellationToken, new TimeSpan(0, 0, 120, 0), "urn:openSubsonic:coverArt");
 
         return new ResponseModel
         {
             ApiKeyId = apiId,
-            IsSuccess = true,
+            IsSuccess = imageBytesAndEtag.Bytes != null,
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
-                Data = imageBytes,
+                Data = imageBytesAndEtag.Bytes,
                 DataPropertyName = string.Empty,
                 DataDetailPropertyName = string.Empty,
-                Etag = etag,
+                Etag = imageBytesAndEtag.Etag,
                 ContentType = "image/jpeg"
             }
         };
@@ -1177,7 +1179,7 @@ public class OpenSubsonicApiService(
                 apiRequest.ToString());
             return new ResponseModel
             {
-                UserInfo = new UserInfo(0, Guid.Empty, string.Empty, string.Empty),
+                UserInfo = new UserInfo(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty),
                 IsSuccess = false,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.AuthError)
             };

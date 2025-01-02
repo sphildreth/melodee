@@ -1,3 +1,4 @@
+using Melodee.Common.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Net.Http.Headers;
@@ -27,6 +28,14 @@ public class ETagFilter : IResourceFilter
                     else
                     {
                         apiKey = context.HttpContext.Request.HttpContext.Request.Query[IdKey].FirstOrDefault();
+                    }
+
+                    if (string.IsNullOrEmpty(apiKey))
+                    {
+                        apiKey = context.HttpContext.Request.HttpContext.Request.RouteValues
+                                     .FirstOrDefault(x => x.Key.ToNormalizedString() == IdKey.ToNormalizedString())
+                                     .Value?.ToString() ??
+                                 string.Empty;
                     }
                     var etagRepository = context.HttpContext.RequestServices.GetRequiredService<EtagRepository>();
                     if (etagRepository.EtagMatch(apiKey, incomingEtag))

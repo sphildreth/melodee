@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Constants;
@@ -530,4 +532,24 @@ public sealed class UserService(
                 .ToArray();
         }
     }
+    
+    /// <summary>Generate a salt.</summary>
+    /// <param name="saltLength">Length of the salt to generate</param>
+    /// <param name="logRounds">The log2 of the number of rounds of hashing to apply. The work factor therefore increases as (2 ** logRounds).</param>
+    /// <returns>An encoded salt value.</returns>
+    public static string GenerateSalt(int saltLength = 16, int logRounds = 10)
+    {
+        var randomBytes = new byte[saltLength];
+        RandomNumberGenerator.Create().GetBytes(randomBytes);
+    
+        var rs = new StringBuilder((randomBytes.Length * 2) + 8);
+    
+        rs.Append("$2a$");
+        if (logRounds < 10) rs.Append('0');
+        rs.Append(logRounds);
+        rs.Append('$');
+        rs.Append(Encoding.UTF8.GetString(randomBytes).ToBase64());
+    
+        return rs.ToString();
+    }    
 }

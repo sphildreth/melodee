@@ -1,14 +1,13 @@
 @page "/account/login"
 
-@using Melodee.Blazor.Services
 @using Melodee.Common.Data.Models.Extensions
-@using Melodee.Common.Services
 @using Microsoft.AspNetCore.WebUtilities
 
 @inject UserService UserService
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 
 @attribute [AllowAnonymous]
 
@@ -100,7 +99,7 @@ else
                 ShowNotification("Invalid email or password.", "Melodee is unable to log you in. perhaps you are banned?");
                 return;
             }
-             await AuthService.Login(user.Data.ToUserInfo().ToClaimsPrincipal());
+             await AuthService.Login(user.Data.ToUserInfo().ToClaimsPrincipal(await ConfigurationFactory.GetConfigurationAsync()));
              NavigationManager.NavigateTo(ReturnUrl ?? "/");
         }
         catch (Exception e)

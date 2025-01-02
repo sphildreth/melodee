@@ -27,7 +27,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
         {
             IsSuccess = true,
-            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net", string.Empty, string.Empty),
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
@@ -57,7 +57,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
         {
             IsSuccess = true,
-            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net",string.Empty, string.Empty),
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
@@ -118,7 +118,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
         {
             IsSuccess = true,
-            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net",string.Empty, string.Empty),
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
@@ -199,7 +199,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
         {
             IsSuccess = true,
-            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net",string.Empty, string.Empty),
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
@@ -256,7 +256,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
         {
             IsSuccess = true,
-            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net",string.Empty, string.Empty),
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
@@ -287,7 +287,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
         {
             IsSuccess = true,
-            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net",string.Empty, string.Empty),
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,
@@ -319,7 +319,7 @@ public class OpenSubsonicXmlSerializationTests(ITestOutputHelper testOutputHelpe
         var response = new Melodee.Common.Models.OpenSubsonic.Responses.ResponseModel
         {
             IsSuccess = true,
-            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net"),
+            UserInfo = new Melodee.Common.Models.UserInfo(5, Guid.NewGuid(), "batman", "batman@melodee.net",string.Empty, string.Empty),
             ResponseData = new Melodee.Common.Models.OpenSubsonic.Responses.ApiResponse
             {
                 IsSuccess = true,

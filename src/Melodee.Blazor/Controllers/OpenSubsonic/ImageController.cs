@@ -15,7 +15,7 @@ public class ImageController(OpenSubsonicApiService openSubsonicApiService, Etag
     /// <param name="size">Image size for the image request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
-    [Route("/images/{apiKey}/{size}")]
+    [Route("/images/{id}/{size}")]
     public Task<IActionResult> GetImageAsync(string id, string size, CancellationToken cancellationToken = default)
     {
         return ImageResult(id,openSubsonicApiService.GetImageForApiKeyId(id,
