@@ -28,6 +28,7 @@
                     </RadzenColumn>
                     <RadzenColumn Size="7">
                         <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+                            <RadzenProgressBar Visible="@MainLayoutProxyService.ShowSpinner" Style="width:100px;" ProgressBarStyle="ProgressBarStyle.Info" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
                             <RadzenAppearanceToggle />
                             <RadzenProfileMenu Click="@ProfileMenuClick">
                                 <ChildContent>
@@ -45,13 +46,13 @@
             <RadzenSidebar @bind-Expanded="@_sidebarExpanded">
                 <RadzenPanelMenu>
                     <RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="dashboard"/>
-                    <RadzenPanelMenuItem Text="Artists" Path="artists" Icon="artist"/>
-                    <RadzenPanelMenuItem Text="Albums" Path="albums" Icon="album"/>
-                    <RadzenPanelMenuItem Text="Playlists" Path="playlists" Icon="playlist_play"/>
-                    <RadzenPanelMenuItem Text="Songs" Path="songs" Icon="music_note"/>
-                    <RadzenPanelMenuItem Text="Shares" Path="shares" Icon="share"/>
-                    <RadzenPanelMenuItem Text="Users" Path="users" Icon="group"/>
-                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" Visible="@AuthService.IsAdmin">
+                    <RadzenPanelMenuItem Text="Artists" Path="/data/artists" Icon="artist"/>
+                    <RadzenPanelMenuItem Text="Albums" Path="/data/albums" Icon="album"/>
+                    <RadzenPanelMenuItem Text="Playlists" Path="/data/playlists" Icon="playlist_play"/>
+                    <RadzenPanelMenuItem Text="Songs" Path="/data/songs" Icon="music_note"/>
+                    <RadzenPanelMenuItem Text="Shares" Path="/data/shares" Icon="share"/>
+                    <RadzenPanelMenuItem Text="Users" Path="/data/users" Icon="group"/>
+                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings"  Expanded="true" Visible="@AuthService.IsAdmin">
                         <RadzenPanelMenuItem Text="Media" Icon="perm_media">
                             <RadzenPanelMenuItem Text="Inbound" Path="inbound" Icon="folder"/>
                             <RadzenPanelMenuItem Text="Library" Path="library" Icon="folder"/>

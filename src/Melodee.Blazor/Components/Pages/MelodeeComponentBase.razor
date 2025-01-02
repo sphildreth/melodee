@@ -1,0 +1,34 @@
+@code {
+
+    public NotificationMessage NotificationMessageForResult<T>(OperationResult<T> result, string action, int duration)
+    {
+        string message;
+        string detailMessage;
+        NotificationSeverity severity;
+        switch (result.Type)
+        {
+            case OperationResponseType.Ok:
+                severity = NotificationSeverity.Success;
+                message = $"Successfully {action}";
+                detailMessage = "HUZZAH!";
+                break;
+
+            default:
+                severity = NotificationSeverity.Error;
+                message = $"Error {action}";
+                detailMessage = string.Join("</br>", result.Messages ?? []);
+                break;
+        }
+        return new NotificationMessage
+        {
+            Severity = severity,
+            Duration = duration,
+            SummaryContent = _ => @<RadzenText TextStyle="TextStyle.H6">@message</RadzenText>,
+            DetailContent = ns =>
+                @<RadzenStack>
+                    <RadzenText TextStyle="TextStyle.Subtitle1">@detailMessage</RadzenText>
+                    <RadzenButton Text="Close" Click="@(args => ns.Messages.Clear())"></RadzenButton>
+                </RadzenStack>
+        };
+    }
+}

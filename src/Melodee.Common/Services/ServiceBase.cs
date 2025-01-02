@@ -31,6 +31,41 @@ public abstract class ServiceBase(
     protected ILogger Logger { get; } = logger;
     protected ICacheManager CacheManager { get; } = cacheManager;
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = contextFactory;
+    
+    protected async Task<OperationResult<bool>> UpdateLibraryAggregateStatsByIdAsync(int libraryId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      UPDATE "Libraries" l 
+                      set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
+                          "AlbumCount" = (select count(aa.*) 
+                          	from "Albums" aa 
+                          	join "Artists" a on (a."Id" = aa."ArtistId") 
+                          	where a."LibraryId" = l."Id"),
+                          "SongCount" = (select count(s.*) 
+                          	from "Songs" s
+                          	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                          	join "Albums" aa on (ad."AlbumId" = aa."Id") 
+                          	join "Artists" a on (a."Id" = aa."ArtistId") 
+                          	where a."LibraryId" = l."Id"),
+                      	"LastUpdatedAt" = now()
+                      where l."Id" = @libraryId;
+                      """;
+
+            var result = await dbConn
+                .ExecuteAsync(sql, new { libraryId })
+                .ConfigureAwait(false);
+            
+            return new OperationResult<bool>()
+            {
+                Data = result > 0
+            };            
+        }
+
+    }
+    
 
     protected async Task<AlbumList2[]> AlbumListForArtistApiKey(Guid artistApiKey, int userId, CancellationToken cancellationToken)
     {

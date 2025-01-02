@@ -1,8 +1,6 @@
 @page "/settings"
 
 @using Common.Data.Models
-@using Melodee.Common.Configuration.Extensions
-@using Melodee.Common.Services.Interfaces
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
@@ -11,10 +9,14 @@
 
 <PageTitle>Settings</PageTitle>
 
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+    <RadzenBreadCrumbItem Icon="settings" Text="Settings" />
+</RadzenBreadCrumb>
 
 <RadzenDataGrid
     @ref="_grid"
-    style="height: 600px"
+    style="height: 500px;"
     IsLoading=@_isLoading
     Count="@_count"
     Data="@_settings"
@@ -27,7 +29,7 @@
     PagerHorizontalAlign="HorizontalAlign.Center"
     ShowPagingSummary="true"
     PageSizeOptions="@_pageSizeOptions"
-    PagingSummaryFormat="@PagingSummaryFormat"
+    PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
     ColumnWidth="200px"
     TItem="Setting"
     EditMode="@DataGridEditMode.Single"
@@ -51,13 +53,13 @@
             FrozenPosition="FrozenColumnPosition.Right">
             <Template Context="setting">
                 <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
-                              Size="ButtonSize.Medium" Click="@(args => EditRow(setting))"
+                              Size="ButtonSize.Medium" Click="@(_ => EditRow(setting))"
                               @onclick:stopPropagation="true">
                 </RadzenButton>
             </Template>
             <EditTemplate Context="setting">
                 <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat"
-                              Size="ButtonSize.Medium" Click="@((args) => SaveRow(setting))" aria-label="Save">
+                              Size="ButtonSize.Medium" Click="@((_) => SaveRow(setting))" aria-label="Save">
                 </RadzenButton>
                 <RadzenButton
                     Icon="close"
@@ -65,7 +67,7 @@
                     Variant="Variant.Flat"
                     Size="ButtonSize.Medium"
                     class="rz-my-1 rz-ms-1"
-                    Click="@((args) => CancelEdit(setting))"
+                    Click="@((_) => CancelEdit(setting))"
                     aria-label="Cancel">
                 </RadzenButton>
             </EditTemplate>
@@ -75,40 +77,26 @@
 
 
 @code {
-    private const string PagingSummaryFormat = "Displaying page {0} of {1} <b>(total {2} records)</b>";
     RadzenDataGrid<Setting> _grid = null!;
     int _count;
     IEnumerable<Setting> _settings = null!;
-    bool _isLoading = false;
+    bool _isLoading;
     int _currentPage = 1;
     short _defaultPageSize = 25;
     IEnumerable<int> _pageSizeOptions = [10, 20, 30];
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
 
-    List<Setting> _settingsToUpdate = new List<Setting>();
     int _toastTime;
 
-    void Reset()
-    {
-        _settingsToUpdate.Clear();
-    }
-
-    void Reset(Setting setting)
-    {
-        _settingsToUpdate.Remove(setting);
-    }
 
     async Task EditRow(Setting setting)
     {
         if (!_grid.IsValid) return;
-        Reset();
-        _settingsToUpdate.Add(setting);
         await _grid.EditRow(setting);
     }
 
     async Task OnUpdateRow(Setting setting)
     {
-        Reset(setting);
         var result = await SettingService.UpdateAsync(setting).ConfigureAwait(false);
         if (result.IsSuccess)
         {
@@ -116,8 +104,8 @@
             {
                 Severity = NotificationSeverity.Success,
                 Duration = _toastTime,
-                SummaryContent = ns => @<RadzenText TextStyle="TextStyle.H6">Successfully updated setting!</RadzenText>,
-                DetailContent = ns => @<RadzenButton Text="Ok" Click="@(args => ns.Messages.Clear())"/>
+                SummaryContent = _ => @<RadzenText TextStyle="TextStyle.H6">Successfully updated setting!</RadzenText>,
+                DetailContent = ns => @<RadzenButton Text="Ok" Click="@(_ => ns.Messages.Clear())"/>
             });
         }
     }
@@ -129,7 +117,6 @@
 
     void CancelEdit(Setting setting)
     {
-        Reset(setting);
         _grid.CancelEditRow(setting);
     }
 

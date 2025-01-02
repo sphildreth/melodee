@@ -6,6 +6,7 @@ using Melodee.Common.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using ServiceStack;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -67,6 +68,7 @@ public class ArtistService(
             {
                 return await scopedContext
                     .Artists
+                    .Include(x => x.Library)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                     .ConfigureAwait(false);
@@ -171,5 +173,56 @@ public class ArtistService(
             CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.Data.NameNormalized));
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Data.Id));
         }
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] artistIds, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrEmpty(artistIds, nameof(artistIds));
+
+        bool result;
+
+        var libraryIds = new List<int>();
+        
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            foreach (var artistId in artistIds)
+            {
+                var artist = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
+                if (!artist.IsSuccess)
+                {
+                    return new MelodeeModels.OperationResult<bool>("Unknown artist.")
+                    {
+                        Data = false
+                    };
+                }
+            }
+
+            foreach (var artistId in artistIds)
+            {
+                var artist = await scopedContext
+                    .Artists.Include(x => x.Library)
+                    .FirstAsync(x => x.Id == artistId, cancellationToken)
+                    .ConfigureAwait(false);
+                
+                var artistDirectory = Path.Combine(artist.Library.Path, artist.Directory);
+                if (Directory.Exists(artistDirectory))
+                {
+                    Directory.Delete(artistDirectory, true);
+                }
+                scopedContext.Artists.Remove(artist);
+                libraryIds.Add(artist.LibraryId);
+            }
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var libraryId in libraryIds.Distinct())
+            {
+                await UpdateLibraryAggregateStatsByIdAsync(libraryId, cancellationToken).ConfigureAwait(false);
+            }
+            result = true;
+
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };        
     }
 }

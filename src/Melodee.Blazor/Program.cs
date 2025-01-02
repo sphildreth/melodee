@@ -165,6 +165,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseStatusCodePagesWithRedirects("/Error");
+
 app.UseHttpsRedirection();
 
 app.Services.StartConsumersAsync();
