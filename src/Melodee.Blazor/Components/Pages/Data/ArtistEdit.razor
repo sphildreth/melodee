@@ -1,0 +1,230 @@
+@page "/data/artistedit/{ApiKey:guid}"
+
+@inherits MelodeeComponentBase
+
+@using Melodee.Common.Data.Models
+@using Melodee.Common.Filtering
+@using Melodee.Common.Models.SearchEngines
+@using Melodee.Common.Plugins.SearchEngine.MusicBrainz
+@using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data
+@using Artist = Melodee.Common.Data.Models.Artist
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
+
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject Serilog.ILogger Logger
+@inject ISettingService SettingService
+@inject ArtistService ArtistService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject TooltipService TooltipService
+@inject IMusicBrainzRepository MusicBrainzRepository
+@inject NavigationManager NavigationManager
+@inject ILibraryService LibraryService
+
+<PageTitle>Artist Add/Edit</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Path="/data/artists" Text="Artists"/>
+    <RadzenBreadCrumbItem Icon="@(ApiKey == Guid.Empty ? "add" : "edit")" Text="@(ApiKey == Guid.Empty ? "Adding" : "Editing")"/>
+</RadzenBreadCrumb>
+
+
+<RadzenTemplateForm TItem="Artist" Data="@_artist" Submit="@OnSubmit" InvalidSubmit="@OnInvalidSubmit">
+    <RadzenFieldset>
+        <RadzenStack Gap="2rem" class="rz-p-4 rz-p-md-12">
+            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                <RadzenColumn Size="12" SizeMD="4" class="rz-text-align-start rz-text-align-md-end">
+                    <RadzenLabel Text="Library" Component="LibraryId" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenAutoComplete
+                        @bind-Value="@_libaryName"
+                        name="LibraryId"
+                        Data="@_libraries"
+                        TextProperty="@nameof(Library.Name)"
+                        LoadData="@OnLoadLibraryData"
+                        class="rz-w-100"
+                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Library Name" }})" />
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                <RadzenColumn Size="12" SizeMD="4" class="rz-text-align-start rz-text-align-md-end">
+                    <RadzenLabel Text="Name" Component="Name"/>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenTextBox style="display: block" Name="Name" @bind-Value="@_artist.Name" class="rz-w-100"/>
+                    <RadzenDataAnnotationValidator Component="Name" Popup="false" Style="position: absolute"/>
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                <RadzenColumn Size="12" SizeMD="4" class="rz-text-align-start rz-text-align-md-end">
+                    <RadzenLabel Text="Sort Name" Component="SortName"/>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenTextBox style="display: block" Name="SortName" @bind-Value="@_artist.SortName" class="rz-w-100"/>
+                    <RadzenDataAnnotationValidator Component="SortName" Popup="false" Style="position: absolute"/>
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                <RadzenColumn Size="12" SizeMD="4" class="rz-text-align-start rz-text-align-md-end">
+                    <RadzenLabel Text="MusicBrainz Id" Component="MusicBrainzId"/>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenAutoComplete
+                        @bind-Value="@_musicBrainzId"
+                        name="MusicBrainzId"
+                        Data="@_musicBrainzArtists"
+                        TextProperty="@nameof(KeyValue.Value)"
+                        LoadData="@OnLoadMusicBrainzArtistData"
+                        class="rz-w-100"
+                        InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Artist Name" } })"/>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow AlignItems="AlignItems.Center" class="rz-mt-4">
+                <RadzenColumn Size="12" Offset="0" SizeMD="8" OffsetMD="4">
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+    </RadzenFieldset>
+</RadzenTemplateForm>
+
+@code {
+
+    int _toastTime;
+    List<KeyValue> _musicBrainzArtists = [];
+    List<Library> _libraries = [];
+
+    [Parameter] public Guid ApiKey { get; set; }
+
+    string? _musicBrainzId;
+    string _libaryName;
+
+    Artist _artist = new Artist
+    {
+        Name = string.Empty,
+        NameNormalized = string.Empty,
+        Directory = string.Empty,
+        LibraryId = 0,
+        CreatedAt = default
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var configuration = await SettingService.GetMelodeeConfigurationAsync();
+        _toastTime = configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
+
+        var library = await LibraryService.GetLibraryAsync();
+        _libraries =
+        [
+            library.Data
+        ];
+        _libaryName = library.Data.Name;
+
+        if (ApiKey != Guid.Empty)
+        {
+            var artistResult = await ArtistService.GetByApiKeyAsync(ApiKey);
+            if (artistResult.IsSuccess)
+            {
+                _artist = artistResult.Data!;
+                _musicBrainzId = artistResult.Data!.MusicBrainzId?.ToString();
+            }
+        }
+    }
+
+    async Task OnSubmit(Artist model)
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+
+        try
+        {
+            if (_musicBrainzId != null)
+            {
+                _artist.MusicBrainzId = SafeParser.ToGuid(_musicBrainzArtists.FirstOrDefault(x => x.Value == _musicBrainzId)?.Key);
+            }
+
+            _artist.LibraryId = _libraries.First(x => x.Name == _libaryName).Id;
+
+            if (ApiKey == Guid.Empty)
+            {
+                var addResult = await ArtistService.AddArtistAsync(_artist);
+                if (addResult.IsSuccess)
+                {
+                    NavigationManager.NavigateTo("/data/artists");
+                    return;
+                }
+
+                NotificationService.Notify(NotificationMessageForResult(addResult, "Adding Artist", _toastTime));
+            }
+            else
+            {
+                var saveResult = await ArtistService.UpdateAsync(_artist);
+                if (saveResult.IsSuccess)
+                {
+                    NavigationManager.NavigateTo("/data/artists");
+                    return;
+                }
+
+                NotificationService.Notify(NotificationMessageForResult(saveResult, "Editing Artist", _toastTime));
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Attempting to edit [{ApiKey}]", ApiKey);
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    void OnInvalidSubmit(FormInvalidSubmitEventArgs args)
+    {
+
+    }
+
+    private async Task OnLoadMusicBrainzArtistData(LoadDataArgs arg)
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var searchResult = await MusicBrainzRepository.SearchArtist(new ArtistQuery
+            {
+                Name = arg.Filter,
+            }, 10);
+            _musicBrainzArtists = searchResult.Data
+                .Where(x => x.MusicBrainzId != null)
+                .Select(x => new KeyValue(x.MusicBrainzId!.ToString()!, x.Name))
+                .ToList();
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    private async Task OnLoadLibraryData(LoadDataArgs arg)
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var listResult = await LibraryService.ListAsync(new PagedRequest
+            {
+                PageSize = 10,
+                FilterBy =
+                [
+                    new FilterOperatorInfo(nameof(Library.Name), FilterOperator.Contains, arg.Filter)
+                ]
+            });
+            _libraries = listResult.Data.ToList();
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+}

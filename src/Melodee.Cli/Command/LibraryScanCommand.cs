@@ -75,7 +75,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                 libraryService,
                 serializer,
                 dbFactory,
-                new ArtistService(Log.Logger, cacheManager, dbFactory),
+                new ArtistService(Log.Logger, cacheManager, settingService, dbFactory),
                 new AlbumService(Log.Logger, cacheManager, dbFactory),
                 new AlbumDiscoveryService(Log.Logger, cacheManager, dbFactory, settingService, serializer),
                 new DirectoryProcessorService(

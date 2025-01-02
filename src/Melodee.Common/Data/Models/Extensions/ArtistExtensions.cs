@@ -8,6 +8,16 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class ArtistExtensions
 {
+    public static Melodee.Common.Models.Artist ToMelodeeArtistModel(this Artist artist)
+    {
+        return new Common.Models.Artist(artist.Name,
+            artist.NameNormalized,
+            artist.SortName,
+            null,
+            artist.Id,
+            artist.MusicBrainzId?.ToString());
+    }
+    
     public static string ToCoverArtId(this Artist artist)
     {
         return artist.ToApiKey();

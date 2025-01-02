@@ -362,8 +362,6 @@ public sealed class UserService(
             };
         }
 
-        if (detailToUpdate != null)
-        {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 // Load the detail by DetailToUpdate.Id
@@ -417,7 +415,7 @@ public sealed class UserService(
                     ClearCache(dbDetail.EmailNormalized, dbDetail.ApiKey, dbDetail.Id, dbDetail.UserNameNormalized);
                 }
             }
-        }
+        
 
         return new MelodeeModels.OperationResult<bool>
         {

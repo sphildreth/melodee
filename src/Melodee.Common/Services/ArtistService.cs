@@ -1,12 +1,17 @@
 using Ardalis.GuardClauses;
 using Dapper;
+using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
-using ServiceStack;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -15,6 +20,7 @@ namespace Melodee.Common.Services;
 public class ArtistService(
     ILogger logger,
     ICacheManager cacheManager,
+    ISettingService settingService,
     IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -182,7 +188,7 @@ public class ArtistService(
         bool result;
 
         var libraryIds = new List<int>();
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             foreach (var artistId in artistIds)
@@ -203,26 +209,133 @@ public class ArtistService(
                     .Artists.Include(x => x.Library)
                     .FirstAsync(x => x.Id == artistId, cancellationToken)
                     .ConfigureAwait(false);
-                
+
                 var artistDirectory = Path.Combine(artist.Library.Path, artist.Directory);
                 if (Directory.Exists(artistDirectory))
                 {
                     Directory.Delete(artistDirectory, true);
                 }
+
                 scopedContext.Artists.Remove(artist);
                 libraryIds.Add(artist.LibraryId);
             }
+
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             foreach (var libraryId in libraryIds.Distinct())
             {
                 await UpdateLibraryAggregateStatsByIdAsync(libraryId, cancellationToken).ConfigureAwait(false);
             }
-            result = true;
 
+            result = true;
         }
+
         return new MelodeeModels.OperationResult<bool>
         {
             Data = result
-        };        
+        };
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Artist artist, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(artist, nameof(artist));
+
+        var validationResult = ValidateModel(artist);
+        if (!validationResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            {
+                Data = false,
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
+            };
+        }
+
+        bool result;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbDetail = await scopedContext
+                .Artists
+                .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (dbDetail == null)
+            {
+                return new MelodeeModels.OperationResult<bool>
+                {
+                    Data = false,
+                    Type = MelodeeModels.OperationResponseType.NotFound
+                };
+            }
+            
+            dbDetail.AlternateNames= artist.AlternateNames;
+            dbDetail.AmgId= artist.AmgId; 
+            dbDetail.Biography = artist.Biography;
+            dbDetail.Description = artist.Description;
+            dbDetail.Directory = artist.Directory;
+            dbDetail.DiscogsId= artist.DiscogsId;
+            dbDetail.ImageCount = artist.ImageCount; 
+            dbDetail.IsLocked = artist.IsLocked;
+            dbDetail.ItunesId= artist.ItunesId;
+            dbDetail.LastFmId= artist.LastFmId;
+            dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            dbDetail.LibraryId = artist.LibraryId;
+            dbDetail.MusicBrainzId= artist.MusicBrainzId;
+            dbDetail.Name = artist.Name;
+            dbDetail.NameNormalized = artist.NameNormalized;
+            dbDetail.Notes = artist.Notes;
+            dbDetail.RealName = artist.RealName;
+            dbDetail.Roles = artist.Roles;
+            dbDetail.SortName = artist.SortName;
+            dbDetail.SortOrder = artist.SortOrder;
+            dbDetail.SpotifyId= artist.SpotifyId;
+            dbDetail.Tags = artist.Tags;
+            dbDetail.WikiDataId= artist.WikiDataId;
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+
+            if (result)
+            {
+                ClearCache(dbDetail);
+            }
+        }
+
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+
+    public async Task<MelodeeModels.OperationResult<Artist?>> AddArtistAsync(Artist artist, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(artist, nameof(artist));
+
+        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        
+        artist.ApiKey = Guid.NewGuid();
+        artist.Directory = artist.ToMelodeeArtistModel().ToDirectoryName(configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
+        artist.CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        artist.MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess;
+        artist.NameNormalized = artist.NameNormalized.Nullify() ?? artist.Name.ToNormalizedString() ?? artist.Name;
+        
+        var validationResult = ValidateModel(artist);
+        if (!validationResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<Artist?>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            {
+                Data = null,
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
+            };
+        }
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            scopedContext.Artists.Add(artist);
+            var result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            if (result > 0)
+            {
+                await UpdateLibraryAggregateStatsByIdAsync(artist.LibraryId, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        return await GetAsync(artist.Id, cancellationToken);
     }
 }
