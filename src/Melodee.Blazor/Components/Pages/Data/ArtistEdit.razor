@@ -62,10 +62,18 @@
         <RadzenColumn Size="12" SizeMD="8">
             <RadzenTemplateForm TItem="Artist" Data="@_artist" Submit="@OnSubmit" InvalidSubmit="@OnInvalidSubmit">
                 <RadzenFieldset>
-                    <RadzenStack Gap="10px" class="rz-p-2 rz-p-md-1">
+                    <RadzenStack Gap="20px" class="rz-p-2 rz-p-md-1">
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Library" Component="LibraryId" />
+                                <RadzenLabel Text="Locked" Component="IsLocked" />
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenCheckBox @bind-Value="@_artist.IsLocked" Name="@nameof(Artist.IsLocked)" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Library" Component="LibraryId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
                                 <RadzenAutoComplete
@@ -75,7 +83,7 @@
                                     TextProperty="@nameof(Library.Name)"
                                     LoadData="@OnLoadLibraryData"
                                     class="rz-w-100"
-                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Library Name" }})" />
+                                    InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Library Name" } })"/>
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -87,6 +95,55 @@
                                 <RadzenDataAnnotationValidator Component="Name" Popup="false" Style="position: absolute"/>
                             </RadzenColumn>
                         </RadzenRow>
+                        @* Below is all optional *@
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Biography" Component="Biography"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextArea
+                                    @bind-Value="@_artist.Biography"
+                                    @oninput="@(args => _artist.Biography = $"{args.Value}")"
+                                    MaxLength="@_maxTextLength"
+                                    class="rz-w-100"/>
+                                <span style="font-style: italic;">@($"{_artist.Biography?.Length ?? 0}/{_maxTextLength}")</span>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Description" Component="Description"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextArea
+                                    @bind-Value="@_artist.Description"
+                                    @oninput="@(args => _artist.Description = $"{args.Value}")"
+                                    MaxLength="@_maxTextLength"
+                                    class="rz-w-100"/>
+                                <span style="font-style: italic;">@($"{_artist.Description?.Length ?? 0}/{_maxTextLength}")</span>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Notes" Component="Notes"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextArea
+                                    @bind-Value="@_artist.Notes"
+                                    @oninput="@(args => _artist.Notes = $"{args.Value}")"
+                                    MaxLength="@_maxTextLength"
+                                    class="rz-w-100"/>
+                                <span style="font-style: italic;">@($"{_artist.Notes?.Length ?? 0}/{_maxTextLength}")</span>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Real Name" Component="RealName"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextBox style="display: block" Name="RealName" @bind-Value="@_artist.RealName" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="RealName" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Sort Name" Component="SortName"/>
@@ -94,6 +151,15 @@
                             <RadzenColumn Size="12" SizeMD="10">
                                 <RadzenTextBox style="display: block" Name="SortName" @bind-Value="@_artist.SortName" class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="SortName" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Sort Order" Component="SortOrder"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenNumeric  style="display: block" Name="SortOrder" @bind-Value="@_artist.SortOrder" class="rz-w-100" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "enter value" }})" />
+                                <RadzenDataAnnotationValidator Component="SortOrder" Popup="false" Style="position: absolute"/>
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -129,6 +195,8 @@
     List<KeyValue> _musicBrainzArtists = [];
     List<Library> _libraries = [];
     RadzenUpload _uploader;
+
+    int _maxTextLength = 4000;
 
     void CompleteImageUpload(UploadCompleteEventArgs args)
     {
