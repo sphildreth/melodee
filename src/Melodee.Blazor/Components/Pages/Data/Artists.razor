@@ -40,8 +40,7 @@
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
-    @* <RadzenTextBox Placeholder="Search ..." style="display: block; width: 100%" @oninput="@Search"/> *@
-    <DebounceInput class="rz-w-100"
+    <DebounceInput class="rz-textbox rz-w-100"
                    autocomplete="off"
                    @ref="_searchDebounceInput"
                    @bind-Value="@_debounceInputValue"
