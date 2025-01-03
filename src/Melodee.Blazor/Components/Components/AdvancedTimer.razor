@@ -1,0 +1,181 @@
+@using Microsoft.Extensions.Logging
+@using System.Timers
+
+@implements IDisposable
+@inject ILogger<AdvancedTimer> Logger;
+
+@code {
+	protected override void OnInitialized()
+	{
+		if (DelayInMilisec > 0)
+		{
+			_timer = new Timer(DelayInMilisec);
+			_timer.Elapsed += OnDelay;
+			_timer.AutoReset = false;
+		}
+		else
+		{
+			_timer = new Timer(IntervalInMs);
+			_timer.Elapsed += OnElapsed;
+			_timer.AutoReset = Occurring.Count == 1 ? false : true;
+		}
+
+		if (AutoStart)
+		{
+			_timer.Start();
+		}
+	}
+
+	private double _intervalInMs = 200;
+	/// <summary>
+	/// Notification timeout in ms. If set to 0 or less it set to 1 ms.
+	/// </summary>
+	[Parameter]
+	public double IntervalInMs
+	{
+		get => _intervalInMs;
+		set
+		{
+			if (value == _intervalInMs)
+			{
+				return;
+			}
+
+			_intervalInMs = value > 0 ? value : 1;
+			if (_timer is not null)
+			{
+				_timer.AutoReset = Occurring.Count == 1 ? false : true;
+				_timer.Interval = _intervalInMs;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Delay in ms. before the timer will start. If set to 0 timer will start immediately.
+	/// </summary>
+	[Parameter] public double DelayInMilisec { get; set; }
+
+	/// <summary>
+	/// Number of times elapsed even will be fired. See <see cref="Times"/> record description.
+	/// </summary>
+	[Parameter] public Times Occurring { get; set; } = Times.Once();
+
+	/// <summary>
+	/// If true timer will start when component OnInitialized event run, otherwise timer must be started by IsEnabled property set to true.
+	/// </summary>
+	[Parameter] public bool AutoStart { get; set; } = true;
+
+	/// <summary>
+	/// Timer event this Function called when specified timeout elapsed, parameter is the iteration count.
+	/// </summary>
+	[Parameter] public EventCallback<ulong> OnIntervalElapsed { get; set; }
+
+	private bool _disposedValue;
+	private Timer? _timer;
+	private ulong _eventCount = 0;
+
+	/// <summary>
+	/// Can be set to start `true` or stop `false` timer. Returns the inner state of the timer. `True` if timer is running otherwise `false`.
+	/// </summary>
+	[Parameter] public bool IsEnabled
+	{
+		get => _timer?.Enabled ?? false;
+		set
+		{
+            if (value == _timer?.Enabled)
+            {
+                return;
+            }
+
+            if (value)
+            {
+                Start();
+            }
+            else
+            {
+                Stop();
+            }
+        }
+	}
+
+	/// <summary>
+	/// Starts the internal timer which will start after the set delay and fire event for the given occurrence times.
+	/// </summary>
+	public void Start()
+	{
+		_timer?.Start();
+	}
+
+	/// <summary>
+	/// Stops the internal timer and no more event will be fired.
+	/// </summary>
+	public void Stop()
+	{
+		_timer?.Stop();
+	}
+
+	/// <summary>
+	/// Restarts the internal timer and resets the occurrence counter to 0. Events will be fired for the given occurrence times.
+	/// </summary>
+	public void Reset()
+	{
+		_timer?.Stop();
+		_eventCount = 0;
+		_timer?.Start();
+	}
+
+	private void OnDelay(object? source, ElapsedEventArgs e)
+	{
+        if (_timer is null)
+        {
+            return;
+        }
+        _timer.Stop();
+		_timer.Elapsed -= OnDelay;
+		_timer.Elapsed += OnElapsed;
+
+		_timer.Interval = IntervalInMs;
+		_timer.AutoReset = Occurring.Count == 1 ? false : true;
+
+		_timer.Start();
+	}
+	private void OnElapsed(object? source, ElapsedEventArgs e)
+	{
+		if (_eventCount >= Occurring.Count)
+		{
+			_timer?.Stop();
+			return;
+		}
+
+		_eventCount++;
+
+		InvokeAsync(async () =>
+		{
+			await OnIntervalElapsed.InvokeAsync(_eventCount);
+		});
+	}
+
+	protected virtual void Dispose(bool disposing)
+	{
+		if (!_disposedValue)
+		{
+			if (disposing && _timer is not null)
+			{
+				_timer.Elapsed -= OnElapsed;
+				_timer.Dispose();
+			}
+
+			_disposedValue = true;
+		}
+	}
+
+	/// <summary>
+	/// Dispose component
+	/// </summary>
+	public void Dispose()
+	{
+		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+		Dispose(disposing: true);
+		GC.SuppressFinalize(this);
+	}
+}

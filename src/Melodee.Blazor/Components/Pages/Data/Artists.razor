@@ -4,6 +4,8 @@
 @using Melodee.Blazor.Security.Extensions
 @using Melodee.Common.Data.Models.Extensions
 @using Artist = Melodee.Common.Data.Models.Artist
+@using Melodee.Blazor.Components.Components
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
@@ -38,7 +40,17 @@
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
-    <RadzenTextBox Placeholder="Search ..." style="display: block; width: 100%" @oninput="@Search"/>
+    @* <RadzenTextBox Placeholder="Search ..." style="display: block; width: 100%" @oninput="@Search"/> *@
+    <DebounceInput class="rz-w-100"
+                   autocomplete="off"
+                   @ref="_searchDebounceInput"
+                   @bind-Value="@_debounceInputValue"
+                   @bind-Value:event="OnInput"
+                   DebounceTime="800"
+                   MinLength="3"
+                   OnValueChanged="@DoSearchAsync"
+                   ForceNotifyByEnter="true"
+                   ForceNotifyOnBlur="true" />
     <RadzenRow>
         <RadzenDataGrid
             @ref="_grid"
@@ -68,8 +80,8 @@
                             TriState="false"
                             TValue="bool?"
                             InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
-                            Value="@(_selectedArtists?.Any() != true ? false : !_artists.All(i => _selectedArtists.Contains(i)) ? null : _artists.Any(i => _selectedArtists.Contains(i)))"
-                            Change="@(args => _selectedArtists = args == true ? _selectedArtists.ToList() : null)" />
+                            Value="@(_selectedArtists.Any() != true ? false : !_artists.All(i => _selectedArtists.Contains(i)) ? null : _artists.Any(i => _selectedArtists.Contains(i)))"
+                            Change="@(args => _selectedArtists = args == true ? _selectedArtists.ToList() : [])" />
                     </HeaderTemplate>
                     <Template Context="data">
                         <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)" MouseEnter="@(args => ShowTooltip(args, "Artist is locked. Locked artists cannot be deleted.") )" />
@@ -78,7 +90,7 @@
                             TriState="false"
                             Value="@(_selectedArtists.Contains(data))"
                             InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select item" } })"
-                            Change="@(args => { _grid.SelectRow(data); })"
+                            Change="@(_ => { _grid.SelectRow(data); })"
                             Visible="@(!data.IsLocked)"
                             TValue="bool"/>
                     </Template>
@@ -104,13 +116,16 @@
     RadzenDataGrid<Artist> _grid = null!;
     int _count;
     IEnumerable<Artist> _artists = null!;
-    bool _isLoading = false;
+    bool _isLoading;
     int _currentPage = 1;
     short _defaultPageSize = 25;
     IEnumerable<int> _pageSizeOptions = [10, 20, 30];
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     int _toastTime;
     IList<Artist> _selectedArtists = [];
+
+    string _debounceInputValue = "";
+    DebounceInput _searchDebounceInput = null!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,7 +155,14 @@
             }
 
             Common.Filtering.FilterOperatorInfo[]? filters = null;
-            if (args.Filters.Any())
+            if (_debounceInputValue.Nullify() != null)
+            {
+                filters =
+                [
+                    new Common.Filtering.FilterOperatorInfo(nameof(Artist.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
+                ];
+            }
+            else if (args.Filters.Any())
             {
                 filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
                         SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
@@ -180,11 +202,6 @@
         NavigationManager.NavigateTo($"/data/artistedit/{ Guid.Empty }");
     }
 
-    private Task Search(ChangeEventArgs arg)
-    {
-        throw new NotImplementedException();
-    }
-
     private Task MergeSelectedButtonClick()
     {
         throw new NotImplementedException();
@@ -209,6 +226,11 @@
     private void ShowTooltip(ElementReference elementReference, string message)
     {
         TooltipService.Open(elementReference, message);
+    }
+
+    private async Task DoSearchAsync(string s)
+    {
+        await LoadData(new LoadDataArgs { Sorts = [], Filters = [] });
     }
 
 }
