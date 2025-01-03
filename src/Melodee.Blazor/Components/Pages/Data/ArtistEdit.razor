@@ -95,7 +95,34 @@
                                 <RadzenDataAnnotationValidator Component="Name" Popup="false" Style="position: absolute"/>
                             </RadzenColumn>
                         </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="MusicBrainz Id" Component="MusicBrainzId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenAutoComplete
+                                    @bind-Value="@_musicBrainzId"
+                                    name="MusicBrainzId"
+                                    Data="@_musicBrainzArtists"
+                                    TextProperty="@nameof(KeyValue.Value)"
+                                    LoadData="@OnLoadMusicBrainzArtistData"
+                                    class="rz-w-100"
+                                    InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Artist Name" } })"/>
+                            </RadzenColumn>
+                        </RadzenRow>
                         @* Below is all optional *@
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Amg Id" Component="AmgId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="AmgId" @bind-Value="@_artist.AmgId" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="AmgId" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search" Click="@(() => SearchForExternalButtonClick("AmgId"))" />
+                            </RadzenColumn>
+                        </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Biography" Component="Biography"/>
@@ -120,6 +147,42 @@
                                     MaxLength="@_maxTextLength"
                                     class="rz-w-100"/>
                                 <span style="font-style: italic;">@($"{_artist.Description?.Length ?? 0}/{_maxTextLength}")</span>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Discogs Id" Component="DiscogsId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="DiscogsId" @bind-Value="@_artist.DiscogsId" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="DiscogsId" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search" Click="@(() => SearchForExternalButtonClick("DiscogsId"))" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="ITunes Id" Component="ItunesId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="ItunesId" @bind-Value="@_artist.ItunesId" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="ItunesId" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search" Click="@(() => SearchForExternalButtonClick("ItunesId"))" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="LastFm Id" Component="LastFmId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="LastFmId" @bind-Value="@_artist.LastFmId" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="LastFmId" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search" Click="@(() => SearchForExternalButtonClick("LastFmId"))" />
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -164,17 +227,26 @@
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="MusicBrainz Id" Component="MusicBrainzId"/>
+                                <RadzenLabel Text="Spotify Id" Component="SpotifyId"/>
                             </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenAutoComplete
-                                    @bind-Value="@_musicBrainzId"
-                                    name="MusicBrainzId"
-                                    Data="@_musicBrainzArtists"
-                                    TextProperty="@nameof(KeyValue.Value)"
-                                    LoadData="@OnLoadMusicBrainzArtistData"
-                                    class="rz-w-100"
-                                    InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Artist Name" } })"/>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="SpotifyId" @bind-Value="@_artist.SpotifyId" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="SpotifyId" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search" Click="@(() => SearchForExternalButtonClick("SpotifyId"))" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="WikiData Id" Component="WikiDataId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="WikiDataId" @bind-Value="@_artist.WikiDataId" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="WikiDataId" Popup="false" Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search" Click="@(() => SearchForExternalButtonClick("WikiDataId"))" />
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" class="rz-mt-4">
@@ -357,6 +429,11 @@
     }
 
     private Task SearchForImageButtonClicked()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task SearchForExternalButtonClick(string amgid)
     {
         throw new NotImplementedException();
     }
