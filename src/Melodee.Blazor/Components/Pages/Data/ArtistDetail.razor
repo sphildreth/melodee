@@ -1,0 +1,43 @@
+@page "/data/artist/{ApiKey:guid}"
+
+@using Artist = Melodee.Common.Data.Models.Artist
+@inject ArtistService ArtistService
+
+
+<PageTitle>@_artist.Name</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Path="/data/artists" Text="Artists"/>
+    <RadzenBreadCrumbItem Icon="artist" Text="@_artist.Name"/>
+</RadzenBreadCrumb>
+
+Details go here for @_artist.Name
+
+@code {
+
+    [Parameter] public Guid ApiKey { get; set; }
+
+    Artist _artist = new Artist
+    {
+        Name = string.Empty,
+        NameNormalized = string.Empty,
+        Directory = string.Empty,
+        LibraryId = 0,
+        CreatedAt = default
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (ApiKey != Guid.Empty)
+        {
+            var artistResult = await ArtistService.GetByApiKeyAsync(ApiKey);
+            if (artistResult is { IsSuccess: true, Data: not null })
+            {
+                _artist = artistResult.Data;
+            }
+        }
+    }
+}

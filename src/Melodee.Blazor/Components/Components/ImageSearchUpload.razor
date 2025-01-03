@@ -1,0 +1,191 @@
+@using Melodee.Common.Models.SearchEngines
+@using Melodee.Common.Services.SearchEngines
+
+@inject ISettingService SettingService
+@inject AlbumImageSearchEngineService AlbumImageSearchEngineService
+@inject ArtistSearchEngineService ArtistImageSearchEngineService
+@inject MainLayoutProxyService MainLayoutProxyService
+
+<PageTitle>Image Search</PageTitle>
+
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center"
+                         JustifyContent="JustifyContent.End" Gap="0.5rem">
+                <RadzenSwitch @bind-Value="@_doDeleteExistingImages" Name="@($"Delete other { SearchType.ToString()} images")"/>
+                <RadzenButton Icon="cancel" Text="Cancel" Click="@CancelClicked"/>
+                <RadzenButton Icon="save" Text="Select" Click="@SelectClicked"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenRow>
+        @foreach (var kv in SearchValues)
+        {
+            <DebounceInput class="rz-textbox rz-w-100"
+                           autocomplete="off"
+                           @bind-Value="@kv.Value"
+                           @bind-Value:event="OnInput"
+                           DebounceTime="800"
+                           MinLength="3"
+                           OnValueChanged="@DoSearchAsync"
+                           ForceNotifyByEnter="true"
+                           ForceNotifyOnBlur="true"/>
+        }
+    </RadzenRow>
+    <RadzenRow>
+        <RadzenColumn Size="12">
+            <div class="cover-search-images-container">
+                @if (_loading)
+                {
+                    <RadzenProgressBarCircular
+                        ProgressBarStyle="ProgressBarStyle.Primary"
+                        Value="100"
+                        ShowValue="false"
+                        Mode="ProgressBarMode.Indeterminate"/>
+                }
+                @foreach (var result in _results)
+                {
+                    <div class="@(_selectedResult == result ? "selected" : string.Empty) cover-search-image-container">
+                        <img @onclick="() => _selectedResult = result" class="rounded cover-search-image" src="@result.Url" alt="@result.Title"/>
+                    </div>
+                }
+            </div>
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12">
+            <RadzenCard Variant="Variant.Outlined">
+                @* <RadzenFileInput *@
+                @*     @bind-Value="@_imageBytes" *@
+                @*     @bind-FileName="@_fileName" *@
+                @*     @bind-FileSize="@_fileSize" *@
+                @*     TValue="byte[]" *@
+                @*     Change=@(args => OnChange(args, "FileInput")) *@
+                @*     Error=@(args => OnError(args, "FileInput")) *@
+                @*     InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "select file" } })"/> *@
+
+                <RadzenFileInput
+                    @bind-Value="@_imageBytes"
+                    @bind-FileName="@_fileName"
+                    @bind-FileSize="@_fileSize"
+                    TValue="byte[]"
+                    Style="width: 100%"
+                    Change=@(args => OnChange(args, "FileInput"))
+                    Error=@(args => OnError(args, "FileInput"))
+                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})"/>
+
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+
+    bool _loading;
+    int _maxResults = 10;
+    bool _doDeleteExistingImages = true;
+
+
+    private ImageSearchResult[] _results = [];
+    private ImageSearchResult? _selectedResult;
+
+    [Parameter] public ImageSearchValue[] SearchValues { get; set; } = [];
+
+    [Parameter] public ImageSearchType SearchType { get; set; }
+
+    [Parameter] public EventCallback<ImageSearchResult?> OnUpdateCallback { get; set; }
+
+    private byte[] _imageBytes;
+    private string _fileName;
+    private long? _fileSize;
+
+    private async Task SelectOrCancelClicked(bool clickedSelected)
+    {
+        if (!clickedSelected)
+        {
+            await OnUpdateCallback.InvokeAsync(null);
+        }
+        if (OnUpdateCallback.HasDelegate && _selectedResult != null)
+        {
+            await OnUpdateCallback.InvokeAsync(_selectedResult);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _maxResults = (await SettingService.GetValueAsync<int?>(SettingRegistry.SearchEngineDefaultPageSize)).Data ?? (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
+        await DoSearchAsync();
+    }
+
+    public async Task DoSearchAsync()
+    {
+        try
+        {
+            if (SearchType == ImageSearchType.Artist)
+            {
+                _results = (await ArtistImageSearchEngineService.DoSearchAsync(new ArtistQuery()
+                {
+                    Name = SearchValues.First().Value ?? string.Empty
+                }, _maxResults))
+                .Data
+                .Where(x => x.ImageUrl != null)
+                .Select(x => new ImageSearchResult(x.ImageUrl!, x.Name, _doDeleteExistingImages))
+                .ToArray();
+            }
+            else
+            {
+                _results = (await AlbumImageSearchEngineService.DoSearchAsync(new AlbumQuery
+                {
+                    Artist = SearchValues.OrderBy(x => x.SortOrder).First().Value,
+                    Year = SafeParser.ToNumber<int>(SearchValues.OrderBy(x => x.SortOrder).Skip(1).First().Value),
+                    Name = SearchValues.OrderBy(x => x.SortOrder).Skip(2).First().Value,
+                }, _maxResults))
+                .Data
+                .Select(x => new ImageSearchResult(x.UrlValue, x.Title ?? string.Empty, _doDeleteExistingImages))
+                .ToArray();
+            }
+
+
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e)
+        {
+            //Logger.Error(e, "Artist [{Artist}] Album [{Album}] Year [{Year}]", _artistName, _albumName, _albumYear);
+        }
+    }
+
+
+    private Task CancelClicked()
+    {
+        return SelectOrCancelClicked(false);
+    }
+
+    private Task SelectClicked()
+    {
+        return SelectOrCancelClicked(true);
+    }
+
+    void OnChange(byte[] value, string name)
+    {
+        var t = 1;
+    }
+
+    void OnError(UploadErrorEventArgs args, string name)
+    {
+        var t = 1;
+    }
+
+    // private async Task OnChange(byte[] value, string fileinput)
+    // {
+    //     _selectedResult = new ImageSearchResult(string.Empty, fileinput, _doDeleteExistingImages, value);
+    //     await SelectOrCancelClicked(true);
+    // }
+    //
+    // void OnError(UploadErrorEventArgs args, string name)
+    // {
+    //
+    // }
+
+}

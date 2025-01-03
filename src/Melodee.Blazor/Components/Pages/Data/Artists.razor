@@ -92,8 +92,9 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Artist.Name)" Title="Name">
                     <Template Context="data">
-                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}")  Style="margin-right: 5px;" AlternateText="@data.Name"/>
-                        <a href="/data/artistedit/@data.ApiKey">@data.Name</a>
+                        <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(args => NavigationManager.NavigateTo($"/data/artistedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
+                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}") Style="margin-right: 5px;" AlternateText="@data.Name"/>
+                        <a href="/data/artist/@data.ApiKey">@data.Name</a>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Artist.AlternateNames)"  Title="Alternate Names" Width="200px">

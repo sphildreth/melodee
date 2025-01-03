@@ -7,6 +7,10 @@ using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Plugins.Conversion.Image;
+using Melodee.Common.Plugins.Validation;
+using Melodee.Common.Serialization;
+using Melodee.Common.Services.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +25,9 @@ public class ArtistService(
     ILogger logger,
     ICacheManager cacheManager,
     ISettingService settingService,
-    IDbContextFactory<MelodeeDbContext> contextFactory)
+    IDbContextFactory<MelodeeDbContext> contextFactory,
+    ISerializer serializer,
+    IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:artist:apikey:{0}";
@@ -267,18 +273,18 @@ public class ArtistService(
             }
 
             dbDetail.AlternateNames = artist.AlternateNames;
-            dbDetail.AmgId= artist.AmgId; 
+            dbDetail.AmgId = artist.AmgId;
             dbDetail.Biography = artist.Biography;
             dbDetail.Description = artist.Description;
             dbDetail.Directory = artist.Directory;
-            dbDetail.DiscogsId= artist.DiscogsId;
-            dbDetail.ImageCount = artist.ImageCount; 
+            dbDetail.DiscogsId = artist.DiscogsId;
+            dbDetail.ImageCount = artist.ImageCount;
             dbDetail.IsLocked = artist.IsLocked;
-            dbDetail.ItunesId= artist.ItunesId;
-            dbDetail.LastFmId= artist.LastFmId;
+            dbDetail.ItunesId = artist.ItunesId;
+            dbDetail.LastFmId = artist.LastFmId;
             dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
             dbDetail.LibraryId = artist.LibraryId;
-            dbDetail.MusicBrainzId= artist.MusicBrainzId;
+            dbDetail.MusicBrainzId = artist.MusicBrainzId;
             dbDetail.Name = artist.Name;
             dbDetail.NameNormalized = artist.NameNormalized;
             dbDetail.Notes = artist.Notes;
@@ -286,9 +292,9 @@ public class ArtistService(
             dbDetail.Roles = artist.Roles;
             dbDetail.SortName = artist.SortName;
             dbDetail.SortOrder = artist.SortOrder;
-            dbDetail.SpotifyId= artist.SpotifyId;
+            dbDetail.SpotifyId = artist.SpotifyId;
             dbDetail.Tags = artist.Tags;
-            dbDetail.WikiDataId= artist.WikiDataId;
+            dbDetail.WikiDataId = artist.WikiDataId;
 
             result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
 
@@ -310,13 +316,13 @@ public class ArtistService(
         Guard.Against.Null(artist, nameof(artist));
 
         var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
-        
+
         artist.ApiKey = Guid.NewGuid();
         artist.Directory = artist.ToMelodeeArtistModel().ToDirectoryName(configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
         artist.CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
         artist.MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess;
         artist.NameNormalized = artist.NameNormalized.Nullify() ?? artist.Name.ToNormalizedString() ?? artist.Name;
-        
+
         var validationResult = ValidateModel(artist);
         if (!validationResult.IsSuccess)
         {
@@ -336,6 +342,89 @@ public class ArtistService(
                 await UpdateLibraryAggregateStatsByIdAsync(artist.LibraryId, cancellationToken).ConfigureAwait(false);
             }
         }
+
         return await GetAsync(artist.Id, cancellationToken);
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsArtistImageAsync(int artistId, bool deleteAllImages, byte[] imageBytes, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
+        Guard.Against.NullOrEmpty(imageBytes, nameof(imageBytes));
+        
+        var artist = await GetAsync(artistId, cancellationToken);
+        if (!artist.IsSuccess || artist.Data == null)
+        {
+            return new MelodeeModels.OperationResult<bool>("Unknown artist.")
+            {
+                Data = false
+            };
+        }      
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = await SaveImageBytesAsArtistImageAsync(artist.Data, deleteAllImages, imageBytes, cancellationToken).ConfigureAwait(false)
+        };
+    }
+
+    private async Task<bool> SaveImageBytesAsArtistImageAsync(Artist artist, bool deleteAllImages, byte[] imageBytes, CancellationToken cancellationToken = default)
+    {
+        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        var imageConvertor = new ImageConvertor(configuration);
+        var artistDirectory = artist.ToFileSystemDirectoryInfo();
+        var artistImages = artistDirectory.FileInfosForExtension("jpg").ToArray();
+        if (deleteAllImages && artistImages.Length != 0)
+        {
+            foreach (var fileInAlbumDirectory in artistImages)
+            {
+                if (fileInAlbumDirectory.Name.Contains(PictureIdentifier.Artist.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                    fileInAlbumDirectory.Name.Contains(PictureIdentifier.ArtistSecondary.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    fileInAlbumDirectory.Delete();
+                }
+            }
+            artistImages = artistDirectory.FileInfosForExtension("jpg").ToArray();
+        }
+        var artistImageFileName = Path.Combine(artistDirectory.FullName(), deleteAllImages ? "01-Band.image" : $"{artistImages.Length + 1}-Band.image");
+        var artistImageFileInfo = new FileInfo(artistImageFileName).ToFileSystemInfo();
+        await File.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken);
+        await imageConvertor.ProcessFileAsync(
+            artistDirectory,
+            artistImageFileInfo,
+            cancellationToken);
+        return true;        
+    }
+    
+    public async Task<MelodeeModels.OperationResult<bool>> SaveImageUrlAsArtistImageAsync(int artistId, string imageUrl, bool deleteAllImages, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
+        Guard.Against.NullOrEmpty(imageUrl, nameof(imageUrl));
+
+        var artist = await GetAsync(artistId, cancellationToken);
+        if (!artist.IsSuccess || artist.Data == null)
+        {
+            return new MelodeeModels.OperationResult<bool>("Unknown artist.")
+            {
+                Data = false
+            };
+        }
+
+        bool result = false;
+        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        try
+        {
+            var imageBytes = await httpClientFactory.BytesForImageUrlAsync(configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, imageUrl, cancellationToken);
+            if (imageBytes != null)
+            { 
+                result = await SaveImageBytesAsArtistImageAsync(artist.Data, deleteAllImages, imageBytes, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Error attempting to download mage Url [{Url}] for artist [{Artist}]", imageUrl, artist.Data.ToString());
+        }
+
+        return new MelodeeModels.OperationResult<bool>("An error has occured. OH NOES!")
+        {
+            Data = result
+        };
     }
 }
