@@ -68,7 +68,7 @@
                                 <RadzenLabel Text="Locked" Component="IsLocked" />
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenCheckBox @bind-Value="@_artist.IsLocked" Name="@nameof(Artist.IsLocked)" />
+                                <RadzenSwitch @bind-Value="@_artist.IsLocked"  Name="@nameof(Artist.IsLocked)" />
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
