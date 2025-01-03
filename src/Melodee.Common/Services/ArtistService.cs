@@ -265,8 +265,8 @@ public class ArtistService(
                     Type = MelodeeModels.OperationResponseType.NotFound
                 };
             }
-            
-            dbDetail.AlternateNames= artist.AlternateNames;
+
+            dbDetail.AlternateNames = artist.AlternateNames;
             dbDetail.AmgId= artist.AmgId; 
             dbDetail.Biography = artist.Biography;
             dbDetail.Description = artist.Description;

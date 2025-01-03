@@ -1,0 +1,112 @@
+<RadzenFieldset>
+    <EditForm Model="_model" @onkeydown="OnKeyUp">
+        <div class="@Options.WrapperClass" tabindex="-1">
+            @foreach (var value in Value)
+            {
+                <RadzenBadge  IsPill="true" BadgeStyle="BadgeStyle.Primary" @onclick="() => Value.Remove(value)">
+                    @value <RadzenButton Size="ButtonSize.ExtraSmall" Click=@(args => Value.Remove(value)) Icon="close" ButtonStyle="ButtonStyle.Secondary"></RadzenButton>
+                </RadzenBadge>
+            }
+            <input @ref="_reference"  class="@Options.InputClass" type="text" placeholder="@Options.InputPlaceholder" @bind="Input" @bind:event="oninput">
+            @* <RadzenTextBox *@
+            @*     @ref="_reference" *@
+            @*     class="@Options.InputClass" *@
+            @*     style="display: block" *@
+            @*     @bind="Input" *@
+            @*     @bind:event="oninput" *@
+            @*     @onkeyup="OnKeyUp"/> *@
+        </div>
+    </EditForm>
+</RadzenFieldset>
+
+@code {
+    private dynamic _model = new object();
+    private string _input = string.Empty;
+    public string Input
+    {
+        get => _input;
+        set
+        {
+            _wasSetToEmpty = value == string.Empty;
+            _input = value;
+        }
+    }
+
+    private bool _wasSetToEmpty = false;
+
+    [Parameter]
+    public List<string> Value { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<string> OnTagAdded { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnTagRemoved { get; set; }
+
+    [Parameter]
+    public TagsInputOptions Options { get; set; } = new();
+
+    [Parameter]
+    public Func<string, Task<bool>>? ValidateTag { get; set; }
+
+    private ElementReference? _reference;
+
+    public Guid Guid { get; set; } = Guid.NewGuid();
+
+    private async Task OnKeyUp(KeyboardEventArgs e)
+    {
+
+        if (e.Key == "Enter" || e.Code == "Enter")
+        {
+            if (string.IsNullOrWhiteSpace(Input))
+            {
+                return;
+            }
+            if (Options.MinLength > 0 && Input.Length < Options.MinLength)
+            {
+                return;
+            }
+            if (Options.MaxLength > 0 && Input.Length > Options.MaxLength)
+            {
+                return;
+            }
+            if (!string.IsNullOrWhiteSpace(Input))
+            {
+                Task<bool> validationTask = ValidateTag?.Invoke(Input) ?? Task.FromResult(true);
+
+                bool shouldAdd = await validationTask;
+                if (shouldAdd)
+                {
+                    Value.Add(Input);
+                    await OnTagAdded.InvokeAsync(Input);
+                    Input = string.Empty;
+                    _wasSetToEmpty = false;
+                }
+
+            }
+        }
+        else if (e.Key == "Backspace" || e.Code == "Backspace")
+        {
+            if (Value.Count > 0 && string.IsNullOrWhiteSpace(Input))
+            {
+                if (_wasSetToEmpty)
+                {
+                    // This value is being set everytime the input has changed it's content.
+                    // We need to ignore the first backspace in order to allow the user to delete characters.
+                    _wasSetToEmpty = false;
+                }
+                else
+                {
+                    string removedItem = Value[Value.Count - 1];
+                    Value.RemoveAt(Value.Count - 1);
+                    await OnTagRemoved.InvokeAsync(removedItem);
+                    if (_reference is not null)
+                    {
+                        await _reference.Value.FocusAsync();
+                    }
+                }
+            }
+        }
+
+    }
+}

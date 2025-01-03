@@ -364,8 +364,9 @@ public static partial class StringExtensions
     /// <param name="tagSplit">Tag split value</param>
     /// <param name="dontLowerCase">Don't return lowercase value, leave value case as is</param>
     /// <param name="doReorder">Reorder values</param>
+    /// <param name="doNormalize">Apply normalization to values</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
-    public static string? AddTag(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false, bool? doReorder = true)
+    public static string? AddTag(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false, bool? doReorder = true, bool? doNormalize = false)
     {
         var vv = values as string[] ?? values?.ToArray() ?? [];
         if (SafeParser.IsNull(str) && vv.Length == 0)
@@ -374,7 +375,7 @@ public static partial class StringExtensions
         }
 
         var ts = tagSplit ?? TagsSeparator;
-        var value = string.Join(ts, vv.Where(x => !string.IsNullOrEmpty(x)).Select(x => x));
+        var value = string.Join(ts, vv.Where(x => !string.IsNullOrEmpty(x)).Select(x => doNormalize ?? false ? x.ToNormalizedString() ?? x : x));
         var tags = (str ?? value).Nullify()?.Split(ts).Select(x => x.Nullify()).ToList() ?? [];
         if (value.Contains(ts))
         {
@@ -392,7 +393,7 @@ public static partial class StringExtensions
         }
 
         var result = string.Join(ts, tv).Nullify();
-        if (dontLowerCase ?? false)
+        if ((dontLowerCase ?? false) || (doNormalize ?? false))
         {
             return result;
         }

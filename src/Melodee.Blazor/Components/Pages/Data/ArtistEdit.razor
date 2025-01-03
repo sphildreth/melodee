@@ -2,12 +2,10 @@
 
 @inherits MelodeeComponentBase
 
-@using Melodee.Blazor.Security.Extensions
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.SearchEngines
-@using Melodee.Common.Plugins.SearchEngine.MusicBrainz
 @using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data
 @using Artist = Melodee.Common.Data.Models.Artist
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
@@ -125,6 +123,14 @@
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Alternate Names" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_alternateNames" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Biography" Component="Biography"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
@@ -209,6 +215,14 @@
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Roles" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_roles" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Sort Name" Component="SortName"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
@@ -235,6 +249,14 @@
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenButton Icon="search" Text="Search" Click="@(() => SearchForExternalButtonClick("SpotifyId"))" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Tags" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_tags" />
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -267,6 +289,10 @@
     List<KeyValue> _musicBrainzArtists = [];
     List<Library> _libraries = [];
     RadzenUpload _uploader;
+
+    List<string> _alternateNames = [];
+    List<string> _roles = [];
+    List<string> _tags = [];
 
     int _maxTextLength = 4000;
 
@@ -323,10 +349,14 @@
         if (ApiKey != Guid.Empty)
         {
             var artistResult = await ArtistService.GetByApiKeyAsync(ApiKey);
-            if (artistResult.IsSuccess)
+            if (artistResult is { IsSuccess: true, Data: not null })
             {
-                _artist = artistResult.Data!;
-                _musicBrainzId = artistResult.Data!.MusicBrainzId?.ToString();
+                _artist = artistResult.Data;
+                _musicBrainzId = artistResult.Data.MusicBrainzId?.ToString();
+                _alternateNames = artistResult.Data.AlternateNames?.ToTags()?.ToList() ?? [];
+                _roles = artistResult.Data.Roles?.ToTags()?.ToList() ?? [];
+                _tags = artistResult.Data.Tags?.ToTags()?.ToList() ?? [];
+
                 if (_musicBrainzId != null)
                 {
                     _musicBrainzArtists.Add(new KeyValue(_musicBrainzId, _artist.Name));
@@ -347,6 +377,9 @@
             }
 
             _artist.LibraryId = _libraries.First(x => x.Name == _libaryName).Id;
+            _artist.AlternateNames = "".AddTag(_alternateNames, doNormalize: true);
+            _artist.Roles = "".AddTag(_roles);
+            _artist.Tags = "".AddTag(_tags);
 
             if (ApiKey == Guid.Empty)
             {

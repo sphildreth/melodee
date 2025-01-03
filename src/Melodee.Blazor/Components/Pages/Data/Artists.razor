@@ -1,11 +1,8 @@
 @page "/data/artists"
 @inherits MelodeeComponentBase
 
-@using Melodee.Blazor.Security.Extensions
 @using Melodee.Common.Data.Models.Extensions
 @using Artist = Melodee.Common.Data.Models.Artist
-@using Melodee.Blazor.Components.Components
-@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
@@ -42,7 +39,6 @@
     </RadzenRow>
     <DebounceInput class="rz-textbox rz-w-100"
                    autocomplete="off"
-                   @ref="_searchDebounceInput"
                    @bind-Value="@_debounceInputValue"
                    @bind-Value:event="OnInput"
                    DebounceTime="800"
@@ -100,11 +96,30 @@
                         <a href="/data/artistedit/@data.ApiKey">@data.Name</a>
                     </Template>
                 </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Artist.AlternateNames)"  Title="Alternate Names" Width="200px">
+                    <Template Context="data">
+                        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
+                            @foreach (var name in data.AlternateNames?.ToTags() ?? [])
+                            {
+                                <RadzenBadge IsPill="true" BadgeStyle="BadgeStyle.Primary" Text="@name"/>
+                            }
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Artist.Directory)" Title="Directory"/>
                 <RadzenDataGridColumn Property="@nameof(Artist.AlbumCount)" Title="Albums" Width="80px"/>
                 <RadzenDataGridColumn Property="@nameof(Artist.SongCount)" Title="Songs" Width="80px"/>
                 <RadzenDataGridColumn Property="@nameof(Artist.CreatedAt)" Title="Created" Filterable="false" Width="120px"/>
-                <RadzenDataGridColumn Property="@nameof(Artist.Tags)" Title="Tags" Width="100px"/>
+                <RadzenDataGridColumn Property="@nameof(Artist.Tags)" Title="Tags" Width="100px">
+                    <Template Context="data">
+                        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
+                            @foreach (var name in data.Tags?.ToTags() ?? [])
+                            {
+                                <RadzenBadge IsPill="true" BadgeStyle="BadgeStyle.Primary" Text="@name"/>
+                            }
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
     </RadzenRow>
@@ -124,7 +139,6 @@
     IList<Artist> _selectedArtists = [];
 
     string _debounceInputValue = "";
-    DebounceInput _searchDebounceInput = null!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -158,7 +172,8 @@
             {
                 filters =
                 [
-                    new Common.Filtering.FilterOperatorInfo(nameof(Artist.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
+                    new Common.Filtering.FilterOperatorInfo(nameof(Artist.NameNormalized), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                    new Common.Filtering.FilterOperatorInfo(nameof(Artist.AlternateNames), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, Common.Filtering.FilterOperatorInfo.OrJoinOperator)
                 ];
             }
             else if (args.Filters.Any())

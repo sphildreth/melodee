@@ -8,9 +8,13 @@ namespace Melodee.Common.Filtering;
 /// <param name="PropertyName">Name of object type being filtered.</param>
 /// <param name="Operator">Operation of Filter.</param>
 /// <param name="Value">Value to filter on.</param>
-/// <param name="JoinOperator">The Join condition when more than one filter, e.g. '||' or '&&'</param>
-public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, object Value, string? JoinOperator = "&&")
+/// <param name="JoinOperator">The Join condition when more than one filter, e.g. 'OR' or 'AND'</param>
+public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, object Value, string? JoinOperator = "AND")
 {
+    public const string AndJoinOperator = "AND";
+    
+    public const string OrJoinOperator = "OR";
+    
     private const string SqlWildCard = "%";
 
     public string OperatorValue => FilterOperatorToConditionString(Operator);

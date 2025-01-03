@@ -141,9 +141,13 @@ public sealed record PagedRequest
 
         var sqlResult = new StringBuilder(sqlStartFragment);
         sqlResult.Append(" WHERE ");
-        foreach (var fb in FilterBy)
+        foreach (var fb in FilterBy.Select((x,i) => (x,i)))
         {
-            sqlResult.Append($"\"{fb.PropertyName}\" {fb.OperatorValue} @p_{fb.PropertyName}");
+            if (fb.i > 0)
+            {
+                sqlResult.Append($" {fb.x.JoinOperator} ");
+            }
+            sqlResult.Append($"\"{fb.x.PropertyName}\" {fb.x.OperatorValue} @p_{fb.x.PropertyName}");
         }
 
         return (sqlResult.ToString(), FilterBy.ToDictionary(x => $"@p_{x.PropertyName}", object (x) => x.ValuePattern()));
