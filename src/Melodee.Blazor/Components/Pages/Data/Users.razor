@@ -1,0 +1,234 @@
+@page "/data/users"
+@inherits MelodeeComponentBase
+
+@using User = Melodee.Common.Data.Models.User
+
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject Serilog.ILogger Logger
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject UserService UserService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject TooltipService TooltipService
+@inject NavigationManager NavigationManager
+@inject DefaultImages DefaultImages
+
+<PageTitle>Users</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Icon="group" Text="Users" />
+</RadzenBreadCrumb>
+
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="Users" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                    <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" />
+                    <RadzenButton Icon="delete" Disabled="!_selectedUsers.Any()" Text="Delete" Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <DebounceInput class="rz-textbox rz-w-100"
+                   autocomplete="off"
+                   @bind-Value="@_debounceInputValue"
+                   @bind-Value:event="OnInput"
+                   DebounceTime="800"
+                   MinLength="3"
+                   OnValueChanged="@DoSearchAsync"
+                   ForceNotifyByEnter="true"
+                   ForceNotifyOnBlur="true" />
+    <RadzenRow>
+        <RadzenDataGrid
+            @ref="_grid"
+            style="height: 500px;"
+            IsLoading=@_isLoading
+            Count="@_count"
+            Data="@_users"
+            LoadData="@LoadData"
+            AllowSorting="true"
+            AllowFiltering="true"
+            AllowRowSelectOnRowClick = "false"
+            AllowPaging="true"
+            Page="OnPage"
+            PageSize="_defaultPageSize"
+            PagerHorizontalAlign="HorizontalAlign.Center"
+            ShowPagingSummary="true"
+            PageSizeOptions="@_pageSizeOptions"
+            PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
+            ColumnWidth="200px"
+            SelectionMode="DataGridSelectionMode.Multiple"
+            @bind-Value=@_selectedUsers>
+            <Columns>
+                <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox
+                            TabIndex="-1"
+                            TriState="false"
+                            TValue="bool?"
+                            InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
+                            Value="@(_selectedUsers.Any() != true ? false : !_users.All(i => _selectedUsers.Contains(i)) ? null : _users.Any(i => _selectedUsers.Contains(i)))"
+                            Change="@(args => _selectedUsers = args == true ? _selectedUsers.ToList() : [])" />
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)" MouseEnter="@(args => ShowTooltip(args, "User is locked. Locked users cannot be deleted.") )" />
+                        <RadzenCheckBox
+                            TabIndex="-1"
+                            TriState="false"
+                            Value="@(_selectedUsers.Contains(data))"
+                            InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select item" } })"
+                            Change="@(_ => { _grid.SelectRow(data); })"
+                            Visible="@(!data.IsLocked)"
+                            TValue="bool"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(User.UserName)" Title="Name">
+                    <Template Context="data">
+                        <RadzenButton Style="float:right;margin-top: 7px;" Size="ButtonSize.ExtraSmall" Visible="@(CurrentUser?.IsEditor() ?? false)" Click=@(_ => NavigationManager.NavigateTo($"/data/useredit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
+                        <RadzenIcon Icon="shield_person" IconColor="@Colors.Warning" Visible="@(data.IsAdmin)" MouseEnter="@(args => ShowTooltip(args, "User is administrator."))" />
+                        <a href="/data/user/@data.ApiKey">@data.UserName</a>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(User.Email)" Title="Email"/>
+                <RadzenDataGridColumn Property="@nameof(User.LastLoginAt)" Title="Last Login" Width="120px"/>
+                <RadzenDataGridColumn Property="@nameof(User.LastActivityAt)" Title="Last Activity" Width="120px"/>
+                <RadzenDataGridColumn Property="@nameof(User.CreatedAt)" Title="Created" Filterable="false" Width="120px"/>
+                <RadzenDataGridColumn Property="@nameof(User.Tags)" Title="Tags" Width="100px">
+                    <Template Context="data">
+                        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
+                            @foreach (var name in data.Tags?.ToTags() ?? [])
+                            {
+                                <RadzenBadge IsPill="true" BadgeStyle="BadgeStyle.Primary" Text="@name"/>
+                            }
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+
+    RadzenDataGrid<User> _grid = null!;
+    int _count;
+    IEnumerable<User> _users = null!;
+    bool _isLoading;
+    int _currentPage = 1;
+    short _defaultPageSize = 25;
+    IEnumerable<int> _pageSizeOptions = [10, 20, 30];
+    IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+    int _toastTime;
+    IList<User> _selectedUsers = [];
+
+    string _debounceInputValue = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
+        _defaultPageSize = _configuration.DefaultPageSize();
+        _pageSizeOptions = _configuration.DefaultPageSizeOptions();
+    }
+
+    void OnPage(PagerEventArgs args)
+    {
+        _currentPage = args.PageIndex + 1;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        _isLoading = true;
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            Dictionary<string, string>? sorting = null;
+            if (args.Sorts.Any())
+            {
+                sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
+            }
+
+            Common.Filtering.FilterOperatorInfo[]? filters = null;
+            if (_debounceInputValue.Nullify() != null)
+            {
+                filters =
+                [
+                    new Common.Filtering.FilterOperatorInfo(nameof(User.UserNameNormalized), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                    new Common.Filtering.FilterOperatorInfo(nameof(User.EmailNormalized), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, Common.Filtering.FilterOperatorInfo.OrJoinOperator),
+                ];
+            }
+            else if (args.Filters.Any())
+            {
+                filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                        x.FilterValue))
+                    .ToArray();
+            }
+
+            var result = await UserService.ListAsync(new PagedRequest
+            {
+                FilterBy = filters,
+                Page = _currentPage,
+                PageSize = _defaultPageSize,
+                OrderBy = sorting
+            });
+            _users = result.Data;
+            _count = SafeParser.ToNumber<int>(result.TotalCount);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Loading Users");
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+
+        _isLoading = false;
+    }
+
+    private void AddButtonClick()
+    {
+        NavigationManager.NavigateTo($"/data/useredit/{ Guid.Empty }");
+    }
+
+
+
+    private async Task DeleteSelectedButtonClick()
+    {
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            var deleteResult = await UserService.DeleteUsersAsync(_selectedUsers.Select(x => x.Id).ToArray());
+            if (deleteResult.IsSuccess)
+            {
+                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Users", _toastTime));
+                await _grid.RefreshDataAsync();
+                return;
+            }
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Users", _toastTime));
+        }
+    }
+
+    private void ShowTooltip(ElementReference elementReference, string message)
+    {
+        TooltipService.Open(elementReference, message);
+    }
+
+    private async Task DoSearchAsync(string s)
+    {
+        await LoadData(new LoadDataArgs { Sorts = [], Filters = [] });
+    }
+
+}
+
+

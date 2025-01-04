@@ -72,11 +72,16 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(User currentuser, Guid apiKey, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteUsersAsync(int[] ids, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(User currentUser, Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
-        if (!currentuser.IsAdmin)
+        if (!currentUser.IsAdmin)
         {
             return new MelodeeModels.OperationResult<bool>
             {

@@ -1002,4 +1002,9 @@ public class LibraryService : ServiceBase
 
         return result.Distinct().ToArray();
     }
+
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] ids, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 }

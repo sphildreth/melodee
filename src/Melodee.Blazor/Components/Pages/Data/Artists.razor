@@ -1,10 +1,8 @@
 @page "/data/artists"
 @inherits MelodeeComponentBase
 
-@using Lucene.Net.Index
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Models.Cards
-@using Melodee.Common.Models.Extensions
 @using Artist = Melodee.Common.Data.Models.Artist
 
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -97,7 +95,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Artist.Name)" Title="Name">
                     <Template Context="data">
-                        <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(args => NavigationManager.NavigateTo($"/data/artistedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
+                        <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(_ => NavigationManager.NavigateTo($"/data/artistedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
                         <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}") Style="margin-right: 5px;" AlternateText="@data.Name"/>
                         <a href="/data/artist/@data.ApiKey">@data.Name</a>
                     </Template>
@@ -166,7 +164,7 @@
     readonly Func<ArtistCard, RadzenDropZone<ArtistCard>, bool> _itemSelector = (item, zone)
         => (ArtistMergeState)(item.State ?? ArtistMergeState.ToBeMerged) == (ArtistMergeState)zone.Value;
 
-    readonly Func<RadzenDropZoneItemEventArgs<ArtistCard>, bool> _canDrop = request
+    readonly Func<RadzenDropZoneItemEventArgs<ArtistCard>, bool> _canDrop = _
         => true;
 
     void OnDrop(RadzenDropZoneItemEventArgs<ArtistCard> args)
@@ -314,8 +312,6 @@
         await LoadData(new LoadDataArgs { Sorts = [], Filters = [] });
     }
 
-}
-@code {
     private async Task DoMergeButtonClick()
     {
         MainLayoutProxyService.ToggleSpinnerVisible();
@@ -323,7 +319,7 @@
 
         try
         {
-            var result = await ArtistService.MergeArtistsAsync(_selectedArtistCards.First(x => (ArtistMergeState)x.State == ArtistMergeState.ToMergeInto).Id, _selectedArtistCards.Where(x => (ArtistMergeState)x.State == ArtistMergeState.ToBeMerged).Select(x => x.Id).ToArray());
+            var result = await ArtistService.MergeArtistsAsync(_selectedArtistCards.First(x => x.State != null && (ArtistMergeState)x.State == ArtistMergeState.ToMergeInto).Id, _selectedArtistCards.Where(x => x.State != null && (ArtistMergeState)x.State == ArtistMergeState.ToBeMerged).Select(x => x.Id).ToArray());
             if (result.IsSuccess)
             {
                 await _grid.RefreshDataAsync();
