@@ -536,12 +536,15 @@ public class ArtistService(
                 if (saveResult > 0)
                 {
                     var dbArtistDirectory = dbArtist.ToFileSystemDirectoryInfo();
-                    if (dbArtistToMergeInto.ImageCount == 0 && Directory.Exists(dbArtistDirectory.FullName()))
+                    if ((dbArtistToMergeInto.ImageCount ?? 0) == 0 && Directory.Exists(dbArtistDirectory.FullName()))
                     {
+                        dbArtistToMergeInto.ImageCount = dbArtistToMergeInto.ImageCount ?? 0;
                         foreach(var dbArtistImage in dbArtistDirectory.FileInfosForExtension("jpg"))
                         {
                             dbArtistImage.MoveTo(Path.Combine(dbArtistToMergeIntoDirectory.FullName(), dbArtistImage.Name));
+                            dbArtistToMergeInto.ImageCount++;
                         }
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
                     Directory.Delete(dbArtist.ToFileSystemDirectoryInfo().FullName(), true);
                 }

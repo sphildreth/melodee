@@ -101,7 +101,7 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
-        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
         if (!dirInfo.Exists)
         {
             return [];
