@@ -1,10 +1,11 @@
 ﻿@page "/settings"
+@using Melodee.Common.Services
 @using Melodee.Common.Services.Interfaces
 @using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
-@inject ISettingService SettingService
+@inject SettingService SettingService
 
 <PageTitle>Settings</PageTitle>
 

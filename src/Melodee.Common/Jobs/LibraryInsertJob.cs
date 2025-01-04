@@ -36,7 +36,7 @@ namespace Melodee.Common.Jobs;
 public class LibraryInsertJob(
     ILogger logger,
     IMelodeeConfigurationFactory configurationFactory,
-    ILibraryService libraryService,
+    LibraryService libraryService,
     ISerializer serializer,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ArtistService artistService,

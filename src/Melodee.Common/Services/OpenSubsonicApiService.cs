@@ -52,7 +52,7 @@ public class OpenSubsonicApiService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     DefaultImages defaultImages,
-    ISettingService settingService,
+    SettingService settingService,
     UserService userService,
     ArtistService artistService,
     AlbumService albumService,
@@ -60,12 +60,14 @@ public class OpenSubsonicApiService(
     AlbumDiscoveryService albumDiscoveryService,
     IScheduler schedule,
     ScrobbleService scrobbleService,
-    ILibraryService libraryService,
+    LibraryService libraryService,
     ArtistSearchEngineService artistSearchEngineService,
     IEventPublisher<UserLoginEvent> userEventPublisher
 )
     : ServiceBase(logger, cacheManager, contextFactory)
 {
+    private const string ImageCacheRegion = "urn:openSubsonic:artist-and-album-images";
+    
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
 
     public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
@@ -876,6 +878,15 @@ public class OpenSubsonicApiService(
     
     private record ImageBytesAndEtag(byte[]? Bytes, string? Etag);
 
+    public static string GenerateImageCacheKeyForApiId(string apiId, string size)
+        => $"urn:openSubsonic:imageForApikey:{apiId}:{size}";
+
+    public static void ClearImageCacheForApiId(string apiId, ICacheManager cacheManager)
+    {
+        // TODO this seems really inefficient as this clears all images in the region
+        cacheManager.ClearRegion(ImageCacheRegion);
+    }
+
     /// <summary>
     ///     Returns an artist, album, or song art image.
     /// </summary>
@@ -889,7 +900,7 @@ public class OpenSubsonicApiService(
 
         var badEtag = Instant.MinValue.ToEtag();
         var sizeValue = size ?? ImageSizeRegistry.Large;
-        var imageBytesAndEtag = await CacheManager.GetAsync($"urn:openSubsonic:imageForApikey:{apiId}:{sizeValue}", async () =>
+        var imageBytesAndEtag = await CacheManager.GetAsync(GenerateImageCacheKeyForApiId(apiId, sizeValue), async () =>
         {
             using (Operation.At(LogEventLevel.Debug).Time("GetImageForApiKeyId: [{Username}] Size [{Size}]", apiId, sizeValue))
             {
@@ -1039,7 +1050,7 @@ public class OpenSubsonicApiService(
 
                 return new ImageBytesAndEtag(result, eTag);
             }
-        }, cancellationToken, new TimeSpan(0, 0, 120, 0), "urn:openSubsonic:coverArt");
+        }, cancellationToken, new TimeSpan(0, 0, 120, 0), ImageCacheRegion);
 
         return new ResponseModel
         {

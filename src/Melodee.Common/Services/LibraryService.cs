@@ -34,10 +34,10 @@ public sealed class LibraryService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    ISettingService settingService,
+    SettingService settingService,
     ISerializer serializer,
     IEventPublisher<AlbumUpdatedEvent>? albumUpdatedEvent)
-    : ServiceBase(logger, cacheManager, contextFactory), ILibraryService
+    : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
     private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";

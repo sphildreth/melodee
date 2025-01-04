@@ -6,6 +6,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Common.Services;
 using Melodee.Common.Services.Interfaces;
 using Quartz;
 using Serilog;
@@ -19,7 +20,7 @@ namespace Melodee.Common.Jobs;
 public class MusicBrainzUpdateDatabaseJob(
     ILogger logger,
     IMelodeeConfigurationFactory configurationFactory,
-    ISettingService settingService,
+    SettingService settingService,
     IHttpClientFactory httpClientFactory,
     IMusicBrainzRepository repository) : JobBase(logger, configurationFactory)
 {

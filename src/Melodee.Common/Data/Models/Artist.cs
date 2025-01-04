@@ -16,6 +16,7 @@ namespace Melodee.Common.Data.Models;
 public sealed class Artist : MetaDataModelBase
 {
     public const string ImageType = "Artist";
+    public const string PrimaryImageFileName = "01-Band.jpg";
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]

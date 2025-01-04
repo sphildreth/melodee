@@ -19,7 +19,7 @@ public class ArtistSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     ISerializer serializer,
-    ISettingService settingService,
+    SettingService settingService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMusicBrainzRepository musicBrainzRepository,
     IHttpClientFactory httpClientFactory)

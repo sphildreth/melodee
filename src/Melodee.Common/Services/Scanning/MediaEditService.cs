@@ -28,8 +28,8 @@ public sealed class MediaEditService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    ISettingService settingService,
-    ILibraryService libraryService,
+    SettingService settingService,
+    LibraryService libraryService,
     AlbumDiscoveryService albumDiscoveryService,
     ISerializer serializer,
     IHttpClientFactory httpClientFactory) : ServiceBase(logger, cacheManager, contextFactory)

@@ -4,6 +4,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Services;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
 using NodaTime;
@@ -19,7 +20,7 @@ namespace Melodee.Common.Jobs;
 public sealed class LibraryInboundProcessJob(
     ILogger logger,
     IMelodeeConfigurationFactory configurationFactory,
-    ILibraryService libraryService,
+    LibraryService libraryService,
     DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
 {
     public override async Task Execute(IJobExecutionContext context)

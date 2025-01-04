@@ -9,6 +9,7 @@
 @using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data
 @using Melodee.Common.Services.Scanning
 @using Artist = Melodee.Common.Data.Models.Artist
+@using ArtistCard = Melodee.Common.Models.Cards.ArtistCard
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using ImageSearchResult = Melodee.Blazor.Components.Components.ImageSearchResult
 
@@ -20,7 +21,7 @@
 @inject DialogService DialogService
 @inject IMusicBrainzRepository MusicBrainzRepository
 @inject NavigationManager NavigationManager
-@inject ILibraryService LibraryService
+@inject LibraryService LibraryService
 
 <PageTitle>Artist Add/Edit</PageTitle>
 
@@ -345,6 +346,7 @@
     };
 
     private RadzenImage _image;
+    private IEnumerable<ArtistCard> _selectedArtistCards;
 
     protected override async Task OnInitializedAsync()
     {
@@ -487,19 +489,28 @@
 
     private async Task ArtistSearchImageCallback(ImageSearchResult? selectedImageSearchResult)
     {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+
         DialogService.Close();
 
-        if (selectedImageSearchResult != null)
+        try
         {
-            var saveResult = await ArtistService.SaveImageUrlAsArtistImageAsync(_artist.Id, selectedImageSearchResult.Url, selectedImageSearchResult.DoDeleteAllOtherArtistImages);
-            if (saveResult.IsSuccess)
+            if (selectedImageSearchResult != null)
             {
-                NavigationManager.Refresh(true);
+                var saveResult = await ArtistService.SaveImageAsArtistImageAsync(_artist.Id, selectedImageSearchResult.DoDeleteAllOtherArtistImages, selectedImageSearchResult.ImageBytes);
+                if (saveResult.IsSuccess)
+                {
+                    NavigationManager.Refresh(true);
+                }
+                else
+                {
+                    NotificationService.Notify(NotificationMessageForResult(saveResult, "Saving Artist image", _toastTime));
+                }
             }
-            else
-            {
-                NotificationService.Notify(NotificationMessageForResult(saveResult, "Saving Artist image", _toastTime));
-            }
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
         }
     }
 

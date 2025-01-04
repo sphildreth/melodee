@@ -1,7 +1,7 @@
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Services.SearchEngines
 
-@inject ISettingService SettingService
+@inject SettingService SettingService
 @inject AlbumImageSearchEngineService AlbumImageSearchEngineService
 @inject ArtistSearchEngineService ArtistImageSearchEngineService
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -65,15 +65,21 @@
                 @*     Error=@(args => OnError(args, "FileInput")) *@
                 @*     InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "select file" } })"/> *@
 
-                <RadzenFileInput
-                    @bind-Value="@_imageBytes"
-                    @bind-FileName="@_fileName"
-                    @bind-FileSize="@_fileSize"
-                    TValue="byte[]"
-                    Style="width: 100%"
-                    Change=@(args => OnChange(args, "FileInput"))
-                    Error=@(args => OnError(args, "FileInput"))
-                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})"/>
+                <InputFile OnChange="@SingleUpload" />
+                @if (_imageBytes?.Length > 0)
+                {
+                    <img style="width:100px;height: auto;" alt="Selected image" src="data:image;base64, @System.Convert.ToBase64String(_imageBytes)"/>
+                }
+
+                @* <RadzenFileInput *@
+                @*     @bind-Value="@_imageBytes" *@
+                @*     @bind-FileName="@_fileName" *@
+                @*     @bind-FileSize="@_fileSize" *@
+                @*     TValue="byte[]" *@
+                @*     Style="width: 100%" *@
+                @*     Change=@(args => OnChange(args, "FileInput")) *@
+                @*     Error=@(args => OnError(args, "FileInput")) *@
+                @*     InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})"/> *@
 
             </RadzenCard>
         </RadzenColumn>
@@ -96,9 +102,18 @@
 
     [Parameter] public EventCallback<ImageSearchResult?> OnUpdateCallback { get; set; }
 
-    private byte[] _imageBytes;
-    private string _fileName;
-    private long? _fileSize;
+    private byte[]? _imageBytes;
+
+    private async Task SingleUpload(InputFileChangeEventArgs e)
+    {
+        await using (MemoryStream ms = new MemoryStream())
+        {
+            await e.File.OpenReadStream().CopyToAsync(ms);
+            _imageBytes = ms.ToArray();
+            _selectedResult = new ImageSearchResult(string.Empty, e.File.Name, _doDeleteExistingImages, _imageBytes);
+            StateHasChanged();
+        }
+    }
 
     private async Task SelectOrCancelClicked(bool clickedSelected)
     {

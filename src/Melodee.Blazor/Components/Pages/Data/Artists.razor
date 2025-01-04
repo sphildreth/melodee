@@ -1,17 +1,22 @@
 @page "/data/artists"
 @inherits MelodeeComponentBase
 
+@using Lucene.Net.Index
 @using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Models.Cards
+@using Melodee.Common.Models.Extensions
 @using Artist = Melodee.Common.Data.Models.Artist
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject ArtistService ArtistService
+@inject LibraryService LibraryService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject TooltipService TooltipService
 @inject NavigationManager NavigationManager
+@inject DefaultImages DefaultImages
 
 <PageTitle>Artists</PageTitle>
 
@@ -19,21 +24,21 @@
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
     <RadzenBreadCrumbItem Icon="artist" Text="Artists"/>
 </RadzenBreadCrumb>
+
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
             <RadzenText Text="Artists" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
         </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="6">
-            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center"
-                         JustifyContent="JustifyContent.End" Gap="0.5rem">
-                <RadzenSplitButton Icon="get_app" Text="Export" Click="@ExportClick" Shade="Shade.Lighter">
-                    <RadzenSplitButtonItem Text="Excel" Value="xlsx"/>
-                    <RadzenSplitButtonItem Text="CSV" Value="csv"/>
-                </RadzenSplitButton>
-                <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" />
-                <RadzenButton Icon="cell_merge" Disabled="_selectedArtists.Count < 2" Text="Merge" Click="@MergeSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
-                <RadzenButton Icon="delete" Disabled="!_selectedArtists.Any()" Text="Delete" Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
+        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                    <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" />
+                    <RadzenButton Icon="cell_merge" Disabled="_selectedArtists.Count < 2" Text="Merge" Click="@MergeSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
+                    <RadzenButton Icon="delete" Disabled="!_selectedArtists.Any()" Text="Delete" Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -138,6 +143,7 @@
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     int _toastTime;
     IList<Artist> _selectedArtists = [];
+    IList<ArtistCard> _selectedArtistCards = [];
 
     string _debounceInputValue = "";
 
@@ -149,6 +155,32 @@
         _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
         _defaultPageSize = _configuration.DefaultPageSize();
         _pageSizeOptions = _configuration.DefaultPageSizeOptions();
+    }
+
+    private enum ArtistMergeState
+    {
+        ToBeMerged,
+        ToMergeInto
+    }
+
+    readonly Func<ArtistCard, RadzenDropZone<ArtistCard>, bool> _itemSelector = (item, zone)
+        => (ArtistMergeState)(item.State ?? ArtistMergeState.ToBeMerged) == (ArtistMergeState)zone.Value;
+
+    readonly Func<RadzenDropZoneItemEventArgs<ArtistCard>, bool> _canDrop = request
+        => true;
+
+    void OnDrop(RadzenDropZoneItemEventArgs<ArtistCard> args)
+    {
+        if (args.FromZone != args.ToZone)
+        {
+            args.Item.State = (ArtistMergeState)args.ToZone.Value;
+        }
+
+        if (args.ToItem != null && args.ToItem != args.Item)
+        {
+            _selectedArtistCards.Remove(args.Item);
+            _selectedArtistCards.Insert(_selectedArtistCards.IndexOf(args.ToItem), args.Item);
+        }
     }
 
     void OnPage(PagerEventArgs args)
@@ -207,19 +239,50 @@
         _isLoading = false;
     }
 
-    private Task ExportClick()
-    {
-        throw new NotImplementedException();
-    }
-
     private void AddButtonClick()
     {
         NavigationManager.NavigateTo($"/data/artistedit/{ Guid.Empty }");
     }
 
-    private Task MergeSelectedButtonClick()
+    private async Task MergeSelectedButtonClick()
     {
-        throw new NotImplementedException();
+        _selectedArtistCards = new List<ArtistCard>();
+        foreach (var selectedArtist in _selectedArtists)
+        {
+            var library = await LibraryService.GetAsync(selectedArtist.LibraryId);
+            if (library is { IsSuccess: true, Data: not null })
+            {
+                var artistDirectory = selectedArtist.ToFileSystemDirectoryInfo(library.Data.Path);
+                _selectedArtistCards.Add(await selectedArtist.ToMelodeeArtistCardModelAsync(artistDirectory, DefaultImages.ArtistBytes, ArtistMergeState.ToBeMerged));
+            }
+        }
+        await DialogService.OpenAsync("Merge Artists", ds =>
+            @<RadzenDropZoneContainer TItem="ArtistCard"
+                                         Data="_selectedArtistCards"
+                                         ItemSelector="@_itemSelector"
+                                         CanDrop="@_canDrop"
+                                         Drop="@OnDrop">
+                    <ChildContent>
+                        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap">
+                            <RadzenDropZone Value="ArtistMergeState.ToBeMerged" class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2" Style="flex: 1;">
+                                <RadzenText Text="Merge these artists" TextStyle="TextStyle.Subtitle2" />
+                            </RadzenDropZone>
+                            <RadzenDropZone Value="ArtistMergeState.ToMergeInto" class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2" Style="flex: 1;">
+                                <RadzenText Text="Into this artist" TextStyle="TextStyle.Subtitle2" />
+                            </RadzenDropZone>
+                        </RadzenStack>
+                    </ChildContent>
+                    <Template>
+                        <ArtistCardComponent Artist="@context" />
+                    </Template>
+                </RadzenDropZoneContainer>
+            , new DialogOptions
+            {
+                Resizable = true,
+                Width = "800px",
+                Height = "600px"
+            }
+            );
     }
 
     private async Task DeleteSelectedButtonClick()

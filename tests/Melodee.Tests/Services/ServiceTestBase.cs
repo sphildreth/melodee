@@ -278,9 +278,9 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return factoryMock.Object;
     }
 
-    protected ILibraryService MockLibraryService()
+    protected LibraryService MockLibraryService()
     {
-        var mock = new Mock<ILibraryService>();
+        var mock = new Mock<LibraryService>();
         mock.Setup(f
             => f.ListAsync(It.IsAny<PagedRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestLibraries());
         mock.Setup(f
@@ -302,9 +302,9 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return mock.Object;
     }
 
-    protected ISettingService MockSettingService()
+    protected SettingService MockSettingService()
     {
-       var mock = new Mock<ISettingService>();
+       var mock = new Mock<SettingService>();
        mock.Setup(f => f.GetMelodeeConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
        mock.Setup(f => f.GetAllSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewConfiguration());
 

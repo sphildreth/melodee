@@ -2,6 +2,7 @@
 
 @using Melodee.Common.Jobs
 @using Melodee.Common.Models.Cards
+@using Melodee.Common.Services
 @using Melodee.Common.Services.Interfaces
 @using Melodee.Common.Services.Scanning
 @using Quartz
@@ -9,8 +10,8 @@
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
-@inject ISettingService SettingService
-@inject ILibraryService LibraryService
+@inject SettingService SettingService
+@inject LibraryService LibraryService
 @inject AlbumDiscoveryService AlbumsDiscoverer
 @inject IScheduler Scheduler
 @inject DefaultImages DefaultImages

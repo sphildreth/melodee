@@ -3,6 +3,7 @@
 @using Melodee.Common.Plugins.Conversion.Image
 @using Melodee.Common.Plugins.MetaData.Song
 @using Melodee.Common.Plugins.Validation
+@using Melodee.Common.Services
 @using Melodee.Common.Services.Interfaces
 @using Melodee.Common.Services.Scanning
 
@@ -10,12 +11,12 @@
 @inject AlbumDiscoveryService AlbumsDiscoverer
 @inject DefaultImages DefaultImages
 @inject ISerializer Serializer
-@inject ILibraryService LibraryService
+@inject LibraryService LibraryService
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject MediaEditService MediaEditService
 @inject NavigationManager NavManager
 @inject Serilog.ILogger Logger
-@inject ISettingService SettingService
+@inject SettingService SettingService
 
 <PageTitle>Album Detail</PageTitle>
 

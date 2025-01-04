@@ -16,7 +16,7 @@ public class ScrobbleService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    ISettingService settingService,
+    SettingService settingService,
     INowPlayingRepository nowPlayingRepository,
     ArtistService artistService,
     AlbumService albumService,

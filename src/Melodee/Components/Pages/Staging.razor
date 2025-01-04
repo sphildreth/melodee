@@ -1,18 +1,19 @@
 ﻿@page "/staging"
 
 @using Melodee.Common.Models.Cards
+@using Melodee.Common.Services
 @using Melodee.Common.Services.Interfaces
 @using Melodee.Common.Services.Scanning
 @using FilterOperator = Melodee.Common.Filtering.FilterOperatorInfo
 
 @inject AlbumDiscoveryService AlbumsDiscoverer
 @inject DefaultImages DefaultImages
-@inject ILibraryService LibraryService
+@inject LibraryService LibraryService
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject NavigationManager NavManager
 @inject Serilog.ILogger Logger
 @inject ISerializer Serializer
-@inject ISettingService SettingService
+@inject SettingService SettingService
 
 <PageTitle>Staging</PageTitle>
 

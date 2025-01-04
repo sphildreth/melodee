@@ -24,7 +24,7 @@ namespace Melodee.Common.Services;
 public class ArtistService(
     ILogger logger,
     ICacheManager cacheManager,
-    ISettingService settingService,
+    SettingService settingService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ISerializer serializer,
     IHttpClientFactory httpClientFactory)
@@ -358,7 +358,8 @@ public class ArtistService(
             {
                 Data = false
             };
-        }      
+        }    
+
         return new MelodeeModels.OperationResult<bool>
         {
             Data = await SaveImageBytesAsArtistImageAsync(artist.Data, deleteAllImages, imageBytes, cancellationToken).ConfigureAwait(false)
@@ -390,6 +391,8 @@ public class ArtistService(
             artistDirectory,
             artistImageFileInfo,
             cancellationToken);
+        ClearCache(artist);
+        OpenSubsonicApiService.ClearImageCacheForApiId(artist.ToApiKey(), CacheManager);
         return true;        
     }
     

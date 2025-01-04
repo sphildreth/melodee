@@ -22,7 +22,7 @@ public sealed class AlbumDiscoveryService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    ISettingService settingService,
+    SettingService settingService,
     ISerializer serializer)
     : ServiceBase(logger, cacheManager, contextFactory)
 {

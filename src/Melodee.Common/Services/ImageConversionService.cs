@@ -12,7 +12,7 @@ public class ImageConversionService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    ISettingService settingService)
+    SettingService settingService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     public async Task<MelodeeModels.OperationResult<bool>> ConvertImageAsync(FileInfo imageFileInfo, CancellationToken cancellationToken = default)
