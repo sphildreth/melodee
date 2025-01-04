@@ -318,8 +318,23 @@
 @code {
     private async Task DoMergeButtonClick()
     {
-        var result = await ArtistService.MergeArtistsAsync(_selectedArtistCards.First(x => (ArtistMergeState)x.State == ArtistMergeState.ToMergeInto).Id, _selectedArtistCards.Where(x => (ArtistMergeState)x.State == ArtistMergeState.ToBeMerged).Select(x => x.Id).ToArray());
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        DialogService.Close();
 
+        try
+        {
+            var result = await ArtistService.MergeArtistsAsync(_selectedArtistCards.First(x => (ArtistMergeState)x.State == ArtistMergeState.ToMergeInto).Id, _selectedArtistCards.Where(x => (ArtistMergeState)x.State == ArtistMergeState.ToBeMerged).Select(x => x.Id).ToArray());
+            if (result.IsSuccess)
+            {
+                await _grid.RefreshDataAsync();
+
+            }
+            NotificationService.Notify(NotificationMessageForResult(result, "Merged Artists", _toastTime));
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
     }
 }
 

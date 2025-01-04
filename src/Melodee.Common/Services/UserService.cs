@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Ardalis.GuardClauses;
 using Dapper;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
@@ -28,7 +29,7 @@ public sealed class UserService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService)
+    IMelodeeConfigurationFactory configurationFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:user:apikey:{0}";
@@ -249,7 +250,7 @@ public sealed class UserService(
         }
 
         var authenticated = false;
-        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
         if (password?.StartsWith("enc:") ?? false)
         {
             authenticated = password[4..] == user.Data.PasswordEncrypted;
@@ -304,7 +305,7 @@ public sealed class UserService(
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+            var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
             var usersPublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64();
             var emailNormalized = emailAddress.ToNormalizedString() ?? emailAddress.ToUpperInvariant();
             var newUser = new User

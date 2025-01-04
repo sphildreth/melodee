@@ -136,7 +136,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return new ArtistSearchEngineService(Logger,
             CacheManager,
             Serializer,
-            MockSettingService(),
+            MockConfigurationFactory(),
             MockFactory(),
             GetMusicBrainzRepository(),
             MockHttpClientFactory());
@@ -162,7 +162,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return new AlbumImageSearchEngineService(Logger,
             CacheManager,
             Serializer,
-            MockSettingService(),
+            MockConfigurationFactory(),
             MockFactory(),
             GetMusicBrainzRepository(),
             MockHttpClientFactory());
@@ -180,7 +180,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
                 ArtistBytes = [],
                 UserAvatarBytes = []
             },
-            MockSettingService(),
+            MockConfigurationFactory(),
             GetUserService(),
             GetArtistService(),
             GetAlbumService(),
@@ -189,7 +189,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
                 Logger, 
                 CacheManager, 
                 MockFactory(), 
-                MockSettingService(), 
+                MockConfigurationFactory(), 
                 Serializer),
             new Mock<IScheduler>().Object,
             GetScrobbleService(),
@@ -206,7 +206,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     
     protected ArtistService GetArtistService()
     {
-        return new ArtistService(Logger, CacheManager, MockSettingService(), MockFactory(), Serializer, MockHttpClientFactory());
+        return new ArtistService(Logger, CacheManager, MockConfigurationFactory(), MockFactory(), Serializer, MockHttpClientFactory());
     }
 
     protected AlbumService GetAlbumService()
@@ -231,7 +231,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             Logger,
             CacheManager,
             MockFactory(),
-            MockSettingService(),
+            MockConfigurationFactory(),
             Serializer,
             MockAlbumUpdatedEventPublisher()
         );
@@ -243,7 +243,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             Logger,
             CacheManager,
             MockFactory(),
-            MockSettingService(),
+            MockConfigurationFactory(),
             GetNowPlayingRepository(),
             GetArtistService(),
             GetAlbumService(),
@@ -281,18 +281,22 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected LibraryService MockLibraryService()
     {
         var mock = new Mock<LibraryService>();
+        // mock.Setup(f
+        //     => f.ListAsync(It.IsAny<PagedRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestLibraries());
+        mock.Setup(f => f.ListAsync(
+                It.Is<PagedRequest>(_ => true),
+                It.Is<CancellationToken>(_ => true)))
+            .ReturnsAsync(TestsBase.TestLibraries()); 
         mock.Setup(f
-            => f.ListAsync(It.IsAny<PagedRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestLibraries());
+            => f.GetLibraryAsync(It.Is<CancellationToken>(_ => true))).ReturnsAsync(TestsBase.TestLibrary());
         mock.Setup(f
-            => f.GetLibraryAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestLibrary());
-        mock.Setup(f
-            => f.GetStagingLibraryAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestStagingLibrary());         
+            => f.GetStagingLibraryAsync(It.Is<CancellationToken>(_ => true))).ReturnsAsync(TestsBase.TestStagingLibrary());         
         return mock.Object;        
     }
 
     protected UserService GetUserService()
     {
-        return new UserService(Logger, CacheManager, MockFactory(), MockSettingService());
+        return new UserService(Logger, CacheManager, MockFactory(), MockConfigurationFactory());
     }
 
     protected IMelodeeConfigurationFactory MockConfigurationFactory()

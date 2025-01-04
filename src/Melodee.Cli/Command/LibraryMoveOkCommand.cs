@@ -1,4 +1,5 @@
 using Melodee.Cli.CommandSettings;
+using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Serialization;
@@ -34,18 +35,19 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-
+        services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
+        
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
-            var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
+            var configFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
 
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
-                settingService,
+                configFactory,
                 serializer,
                 null);
 

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Ardalis.GuardClauses;
 using Dapper;
 using IdSharp.Common.Utils;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
@@ -30,15 +31,27 @@ using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Common.Services;
 
-public sealed class LibraryService(
-    ILogger logger,
-    ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService,
-    ISerializer serializer,
-    IEventPublisher<AlbumUpdatedEvent>? albumUpdatedEvent)
-    : ServiceBase(logger, cacheManager, contextFactory)
+public class LibraryService : ServiceBase
 {
+    private readonly IMelodeeConfigurationFactory _configurationFactory;
+    private readonly ISerializer _serializer;
+    private readonly IEventPublisher<AlbumUpdatedEvent>? _albumUpdatedEvent;
+
+    public LibraryService()
+    {}
+    
+    public LibraryService(ILogger logger,
+        ICacheManager cacheManager,
+        IDbContextFactory<MelodeeDbContext> contextFactory,
+        IMelodeeConfigurationFactory configurationFactory,
+        ISerializer serializer,
+        IEventPublisher<AlbumUpdatedEvent>? albumUpdatedEvent) : base(logger, cacheManager, contextFactory)
+    {
+        _configurationFactory = configurationFactory;
+        _serializer = serializer;
+        _albumUpdatedEvent = albumUpdatedEvent;
+    }
+
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
     private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
     private const string CacheKeyDetailTemplate = "urn:library:{0}";
@@ -129,7 +142,7 @@ public sealed class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Library>> GetLibraryAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<MelodeeModels.OperationResult<Library>> GetLibraryAsync(CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Library;
         var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
@@ -189,7 +202,7 @@ public sealed class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Staging;
         var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
@@ -208,7 +221,7 @@ public sealed class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public virtual async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         var librariesCount = 0;
         Library[] libraries = [];
@@ -252,7 +265,7 @@ public sealed class LibraryService(
 
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
-        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
         var albumValidator = new AlbumValidator(configuration);
 
         var maxArtistImageCount = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
@@ -274,7 +287,11 @@ public sealed class LibraryService(
             }
             else
             {
-                await ProcessExistingDirectoryMoveMergeAsync(album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
+                var processExistingDirectoryResult = await ProcessExistingDirectoryMoveMergeAsync(configuration, _serializer, album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
+                if (processExistingDirectoryResult != null && _albumUpdatedEvent != null)
+                {
+                    await _albumUpdatedEvent.Publish(new Event<AlbumUpdatedEvent>(processExistingDirectoryResult), cancellationToken).ConfigureAwait(false);
+                }                
                 continue;
             }
 
@@ -282,7 +299,7 @@ public sealed class LibraryService(
             var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
             MediaEditService.MoveDirectory(album.Directory.FullName(), libraryAlbumPath);
             var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
-            var melodeeFile = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFileName, cancellationToken));
+            var melodeeFile = _serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFileName, cancellationToken));
             melodeeFile!.Directory.Path = libraryAlbumPath;
             if (album.Artist.Images?.Any() ?? false)
             {
@@ -331,7 +348,7 @@ public sealed class LibraryService(
                 melodeeFile.Artist = melodeeFile.Artist with { Images = null };
             }
 
-            await File.WriteAllTextAsync(melodeeFileName, serializer.Serialize(melodeeFile), cancellationToken);
+            await File.WriteAllTextAsync(melodeeFileName, _serializer.Serialize(melodeeFile), cancellationToken);
 
             movedCount++;
 
@@ -414,149 +431,6 @@ public sealed class LibraryService(
         }
     }
 
-    public async Task ProcessExistingDirectoryMoveMergeAsync(MelodeeModels.Album albumToMove, string existingAlbumPath, CancellationToken cancellationToken = default)
-    {
-        var modifiedExistingDirectory = false;
-
-        var albumToMoveDir = albumToMove.Directory;
-        var existingDir = new DirectoryInfo(existingAlbumPath);
-
-        Logger.Debug("[{ServiceName}] :\u2552: processing existing directory merge from [{ExistingDirectoryPath}] to [{NewDirectoryPath}]", nameof(LibraryService),
-            albumToMove.Directory.Name, existingDir.Name);
-
-        if (albumToMove.Images?.Any() == true)
-        {
-            var existingImages = ImageHelper.ImageFilesInDirectory(existingDir.FullName, SearchOption.TopDirectoryOnly).ToList();
-            var existingImagesCrc = existingImages.Select(async x => new { Crc = CRC32.Calculate(await File.ReadAllBytesAsync(x, cancellationToken)), ImageFileName = x }).ToArray();
-            var imagesToMoveCrc = albumToMove.Images.Select(x => new { Crc = x.CrcHash, ImageFileName = x.FileInfo!.FullName(albumToMoveDir) }).ToList();
-
-            // if none exist take all images from albumToMove
-            if (existingImages.Count == 0)
-            {
-                Console.WriteLine("No image found in existing directory. Copying all images from Album...");
-                foreach (var image in albumToMove.Images)
-                {
-                    if (image.FileInfo != null)
-                    {
-                        File.Move(image.FileInfo.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, image.FileInfo.Name));
-                        Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);
-                    }
-
-                    modifiedExistingDirectory = true;
-                }
-            }
-            else
-            {
-                var existingImageInfos = await Task.WhenAll(existingImagesCrc.Select(x => x)).ConfigureAwait(false);
-                foreach (var imageToMove in imagesToMoveCrc.ToArray())
-                {
-                    if (existingImageInfos.Any(x => x.Crc == imageToMove.Crc))
-                    {
-                        // Exact duplicate found, dont do anything
-                        imagesToMoveCrc.Remove(imageToMove);
-                        continue;
-                    }
-
-                    var existingWithSameFileNames = existingImageInfos.Where(x => string.Equals(x.ImageFileName, imageToMove.ImageFileName, StringComparison.OrdinalIgnoreCase)).ToArray();
-                    foreach (var existingWithSameFileName in existingWithSameFileNames)
-                    {
-                        imagesToMoveCrc.Remove(imageToMove);
-
-                        // If some exist, not duplicate CRC, same name, keep the higher resolution
-                        var existingInfoSizeInfo = await Image.IdentifyAsync(existingWithSameFileName.ImageFileName, cancellationToken).ConfigureAwait(false);
-                        var toMoveInfoSizeInfo = await Image.IdentifyAsync(imageToMove.ImageFileName, cancellationToken).ConfigureAwait(false);
-                        if (existingInfoSizeInfo.Width > toMoveInfoSizeInfo.Width)
-                        {
-                            continue;
-                        }
-
-                        var toFile = Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName));
-                        Console.WriteLine($"Existing image [{existingWithSameFileName.ImageFileName}] to be overwritten by image [{toFile}]...");
-                        File.Delete(existingWithSameFileName.ImageFileName);
-                        File.Move(imageToMove.ImageFileName, toFile);
-                        Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
-                        modifiedExistingDirectory = true;
-                    }
-                }
-
-                foreach (var imageToMove in imagesToMoveCrc)
-                {
-                    var toFile = Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName));
-                    if (!File.Exists(toFile))
-                    {
-                        Console.WriteLine($"Moving image [{imageToMove.ImageFileName}] to [{toFile}]...");
-                        File.Move(imageToMove.ImageFileName, toFile);
-                        Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
-                        modifiedExistingDirectory = true;
-                    }
-                }
-            }
-        }
-
-        var songsToMove = albumToMove.Songs?.ToList() ?? [];
-        if (songsToMove.Any())
-        {
-            var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
-            var imageValidator = new ImageValidator(configuration);
-            var imageConvertor = new ImageConvertor(configuration);
-            var atlMetTag = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor, imageValidator, configuration);
-            var existingSongsFileInfos = albumToMoveDir.AllMediaTypeFileInfos().ToArray();
-            var existingSongs = new List<MelodeeModels.Song>();
-            foreach (var song in existingSongsFileInfos)
-            {
-                var songLoadResult = await atlMetTag.ProcessFileAsync(existingDir.ToDirectorySystemInfo(), song.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
-                if (songLoadResult.IsSuccess)
-                {
-                    existingSongs.Add(songLoadResult.Data);
-                }
-            }
-
-            foreach (var songToMove in songsToMove.ToArray())
-            {
-                var existingForSongToMove = existingSongs.FirstOrDefault(x => x.MediaNumber() == songToMove.MediaNumber() &&
-                                                                              x.SongNumber() == songToMove.SongNumber());
-                if (existingForSongToMove != null)
-                {
-                    // TODO for some reason the song.CrcHash is wrong? 
-                    var songToMoveCrcHash = Crc32.Calculate(songToMove.File.ToFileInfo(albumToMoveDir));
-                    if (existingForSongToMove.CrcHash == songToMoveCrcHash)
-                    {
-                        // Duplicate dont do anything
-                        songsToMove.Remove(songToMove);
-                        continue;
-                    }
-
-                    if (existingForSongToMove.File.Size > songToMove.File.Size ||
-                        (existingForSongToMove.BitRate() > songToMove.BitRate() && existingForSongToMove.BitDepth() > songToMove.BitDepth()))
-                    {
-                        // existing song is better don't do anything
-                        songsToMove.Remove(songToMove);
-                    }
-                }
-            }
-
-            // Copy over any song left to move
-            foreach (var songToMove in songsToMove)
-            {
-                var toFile = Path.Combine(existingDir.FullName, songToMove.File.Name);
-                if (!File.Exists(toFile))
-                {
-                    Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService), songToMove.File.Name);
-                    File.Move(songToMove.File.FullName(albumToMoveDir), toFile);
-                    modifiedExistingDirectory = true;
-                }
-            }
-        }
-
-        // Delete directory to merge as what is wanted has been moved 
-        Directory.Delete(albumToMove.Directory.FullName(), true);
-        Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService), albumToMove.Directory);
-        if (modifiedExistingDirectory && albumUpdatedEvent != null)
-        {
-            await albumUpdatedEvent.Publish(new Event<AlbumUpdatedEvent>(new AlbumUpdatedEvent(null, existingAlbumPath)), cancellationToken).ConfigureAwait(false);
-        }
-    }
-
     public event EventHandler<ProcessingEvent>? OnProcessingProgressEvent;
 
     private async Task<Library?> LibraryByType(int type, CancellationToken cancellationToken = default)
@@ -626,7 +500,7 @@ public sealed class LibraryService(
             };
         }
 
-        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
 
         var albumValidator = new AlbumValidator(configuration);
 
@@ -659,7 +533,7 @@ public sealed class LibraryService(
                 }
             }
 
-            var album = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(albumFile, cancellationToken));
+            var album = _serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(albumFile, cancellationToken));
             if (album != null)
             {
                 if (!albumValidator.ValidateAlbum(album).Data.IsValid)
@@ -753,7 +627,7 @@ public sealed class LibraryService(
         var melodeeFilesForLibrary = new List<MelodeeModels.Album>();
         foreach (var melodeeFileSystemInfo in melodeeFileSystemInfosForLibrary)
         {
-            var melodeeFile = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(melodeeFileSystemInfo.FullName, cancellationToken));
+            var melodeeFile = _serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(melodeeFileSystemInfo.FullName, cancellationToken));
             if (melodeeFile != null)
             {
                 melodeeFilesForLibrary.Add(melodeeFile);
@@ -794,7 +668,7 @@ public sealed class LibraryService(
 
         var shouldResetLastScan = false;
 
-        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
         var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
         var albumValidator = new AlbumValidator(configuration);
@@ -882,7 +756,7 @@ public sealed class LibraryService(
                                         MelodeeModels.Album? album;
                                         try
                                         {
-                                            album = serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFile.FullName, cancellationToken));
+                                            album = _serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFile.FullName, cancellationToken));
                                         }
                                         catch (Exception ex)
                                         {
@@ -1015,7 +889,7 @@ public sealed class LibraryService(
         }
 
         var libDir = library.ToFileSystemDirectoryInfo();
-        var configuration = await settingService.GetMelodeeConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
         var maxNumberOfArtistImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
         if (maxNumberOfArtistImagesAllowed == 0)
         {

@@ -39,7 +39,7 @@ public sealed class DirectoryProcessorService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,
     LibraryService libraryService,
     ISerializer serializer,
     MediaEditService mediaEditService,
@@ -73,7 +73,7 @@ public sealed class DirectoryProcessorService(
             return;
         }
 
-        _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(token).ConfigureAwait(false);
 
         _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         _maxImageCount = _configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages, value => value < 1 ? SafeParser.ToNumber<short>(short.MaxValue.ToString().Length) : SafeParser.ToNumber<short>(value.ToString().Length));

@@ -28,7 +28,7 @@ public sealed class MediaEditService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,    
     LibraryService libraryService,
     AlbumDiscoveryService albumDiscoveryService,
     ISerializer serializer,
@@ -45,7 +45,7 @@ public sealed class MediaEditService(
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
-        _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(token).ConfigureAwait(false);
         _albumValidator = new AlbumValidator(_configuration);
         _imageValidator = new ImageValidator(_configuration);
         _imageConvertor = new ImageConvertor(_configuration);

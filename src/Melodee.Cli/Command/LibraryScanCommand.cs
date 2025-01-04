@@ -55,12 +55,12 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
         using (var scope = serviceProvider.CreateScope())
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
-            var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
+            var configFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
 
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
-                settingService,
+                configFactory,
                 serializer,
                 null);
 
@@ -75,27 +75,27 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                 libraryService,
                 serializer,
                 dbFactory,
-                new ArtistService(Log.Logger, cacheManager, settingService, dbFactory, serializer, httpClientFactory),
+                new ArtistService(Log.Logger, cacheManager, configFactory, dbFactory, serializer, httpClientFactory),
                 new AlbumService(Log.Logger, cacheManager, dbFactory),
-                new AlbumDiscoveryService(Log.Logger, cacheManager, dbFactory, settingService, serializer),
+                new AlbumDiscoveryService(Log.Logger, cacheManager, dbFactory, configFactory, serializer),
                 new DirectoryProcessorService(
                     Log.Logger,
                     cacheManager,
                     dbFactory,
-                    settingService,
+                    configFactory,
                     libraryService,
                     serializer,
                     new MediaEditService(
                         Log.Logger,
                         cacheManager,
                         dbFactory,
-                        settingService,
+                        configFactory,
                         libraryService,
                         new AlbumDiscoveryService(
                             Log.Logger,
                             cacheManager,
                             dbFactory,
-                            settingService,
+                            configFactory,
                             serializer),
                         serializer,
                         httpClientFactory
@@ -105,7 +105,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                         Log.Logger,
                         cacheManager,
                         serializer,
-                        settingService,
+                        configFactory,
                         dbFactory,
                         scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
                         httpClientFactory
@@ -115,7 +115,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                         Log.Logger,
                         cacheManager,
                         serializer,
-                        settingService,
+                        configFactory,
                         dbFactory,
                         scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
                         httpClientFactory

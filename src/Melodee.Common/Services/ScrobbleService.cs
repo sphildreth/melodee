@@ -16,7 +16,7 @@ public class ScrobbleService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,
     INowPlayingRepository nowPlayingRepository,
     ArtistService artistService,
     AlbumService albumService,
@@ -31,7 +31,7 @@ public class ScrobbleService(
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken cancellationToken = default)
     {
-        _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
 
         _scrobblers =
         [

@@ -19,7 +19,7 @@ public class ArtistSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     ISerializer serializer,
-    SettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMusicBrainzRepository musicBrainzRepository,
     IHttpClientFactory httpClientFactory)
@@ -33,7 +33,7 @@ public class ArtistSearchEngineService(
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken cancellationToken = default)
     {
-        _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
 
         _artistSearchEnginePlugins =
         [

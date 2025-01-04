@@ -52,13 +52,12 @@ public class LibraryAlbumStatusReportCommand : AsyncCommand<LibraryAlbumStatusRe
         using (var scope = serviceProvider.CreateScope())
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
-            var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
-            var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
-
+            var configFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
+            
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
-                settingService,
+                configFactory,
                 serializer,
                 null);
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);

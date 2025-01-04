@@ -66,14 +66,14 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var melodeeConfigurationFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
-            var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
-            var melodeeConfiguration = await settingService.GetMelodeeConfigurationAsync().ConfigureAwait(false);
+            
+            var melodeeConfiguration = await melodeeConfigurationFactory.GetConfigurationAsync().ConfigureAwait(false);
             var imageValidator = new ImageValidator(melodeeConfiguration);
 
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
-                settingService,
+                melodeeConfigurationFactory,
                 serializer,
                 null);
 
@@ -86,7 +86,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 Log.Logger,
                 cacheManager,
                 serializer,
-                settingService,
+                melodeeConfigurationFactory,
                 dbFactory,
                 musicBrainzRepository,
                 scope.ServiceProvider.GetRequiredService<IHttpClientFactory>());
@@ -96,12 +96,10 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 Log.Logger,
                 cacheManager,
                 serializer,
-                settingService,
+                melodeeConfigurationFactory,
                 dbFactory,
                 scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
                 scope.ServiceProvider.GetRequiredService<IHttpClientFactory>());
-
-            var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var libraryToProcess = (await libraryService.ListAsync(new PagedRequest())).Data?.FirstOrDefault(x => x.Name == settings.LibraryName);
             if (libraryToProcess == null)
@@ -115,9 +113,9 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
             var grid = new Grid()
                 .AddColumn(new GridColumn().NoWrap().PadRight(4))
                 .AddColumn()
-                .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(config.Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))}")
-                .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(config.Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
-                .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(config.Configuration[SettingRegistry.ScriptingPreDiscoveryScript])}")
+                .AddRow("[b]Copy Mode?[/]", $"{YesNo(!SafeParser.ToBoolean(melodeeConfiguration.Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))}")
+                .AddRow("[b]Force Mode?[/]", $"{YesNo(SafeParser.ToBoolean(melodeeConfiguration.Configuration[SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles]))}")
+                .AddRow("[b]PreDiscovery Script[/]", $"{SafeParser.ToString(melodeeConfiguration.Configuration[SettingRegistry.ScriptingPreDiscoveryScript])}")
                 .AddRow("[b]Inbound[/]", $"{directoryInbound.EscapeMarkup()}")
                 .AddRow("[b]Staging[/]", $"{directoryStaging.EscapeMarkup()}");
 
@@ -129,20 +127,20 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 Log.Logger,
                 cacheManager,
                 dbFactory,
-                settingService,
+                melodeeConfigurationFactory,
                 libraryService,
                 serializer,
                 new MediaEditService(
                     Log.Logger,
                     cacheManager,
                     dbFactory,
-                    settingService,
+                    melodeeConfigurationFactory,
                     libraryService,
                     new AlbumDiscoveryService(
                         Log.Logger,
                         cacheManager,
                         dbFactory,
-                        settingService,
+                        melodeeConfigurationFactory,
                         serializer),
                     serializer,
                     scope.ServiceProvider.GetRequiredService<IHttpClientFactory>()

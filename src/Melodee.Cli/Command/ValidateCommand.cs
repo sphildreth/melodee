@@ -58,8 +58,9 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
         using (var scope = serviceProvider.CreateScope())
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
-            var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
-            var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
+            var configFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
+
+            var config = await configFactory.GetConfigurationAsync();
 
             var albumValidator = new AlbumValidator(config);
 
@@ -69,7 +70,7 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
                 var libraryService = new LibraryService(Log.Logger,
                     cacheManager,
                     dbFactory,
-                    settingService,
+                    configFactory,
                     serializer,
                     null);
 
@@ -84,7 +85,7 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
                     Log.Logger,
                     cacheManager,
                     dbFactory,
-                    settingService,
+                    configFactory,
                     serializer);
                 await albumDiscoveryService.InitializeAsync();
                 album = await albumDiscoveryService.AlbumByUniqueIdAsync(library.ToFileSystemDirectoryInfo(), settings.Id.Value);

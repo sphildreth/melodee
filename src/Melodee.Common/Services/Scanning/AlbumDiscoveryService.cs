@@ -22,7 +22,7 @@ public sealed class AlbumDiscoveryService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    SettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,
     ISerializer serializer)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -32,7 +32,7 @@ public sealed class AlbumDiscoveryService(
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
-        _configuration = configuration ?? await settingService.GetMelodeeConfigurationAsync(token).ConfigureAwait(false);
+        _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(token).ConfigureAwait(false);
         _albumValidator = new AlbumValidator(_configuration);
         _initialized = true;
     }

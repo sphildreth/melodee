@@ -52,7 +52,7 @@ public class OpenSubsonicApiService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     DefaultImages defaultImages,
-    SettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,    
     UserService userService,
     ArtistService artistService,
     AlbumService albumService,
@@ -68,7 +68,7 @@ public class OpenSubsonicApiService(
 {
     private const string ImageCacheRegion = "urn:openSubsonic:artist-and-album-images";
     
-    private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => settingService.GetMelodeeConfigurationAsync());
+    private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => configurationFactory.GetConfigurationAsync());
 
     public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 

@@ -227,15 +227,15 @@ public class LibraryInsertJob(
                                 catch (Exception e)
                                 {
                                     // The melodee data file won't load.
-                                    var albumFolderToMove = melodeeFileInfo.Directory!.Parent;
-                                    var moveFolderTo = Path.Combine(stagingLibrary.Data.Path, albumFolderToMove.Name);
-                                    Directory.Move(albumFolderToMove.FullName, moveFolderTo);
-                                    File.Delete(Path.Combine(moveFolderTo, Album.JsonFileName));
+                                    var albumDirectoryToMove = melodeeFileInfo.Directory!.Parent;
+                                    var moveDirectoryTo = Path.Combine(stagingLibrary.Data.Path, albumDirectoryToMove.Name);
+                                    Directory.Move(albumDirectoryToMove.FullName, moveDirectoryTo);
+                                    File.Delete(Path.Combine(moveDirectoryTo, Album.JsonFileName));
                                     Logger.Warning(
                                         "[{JobName}] Invalid Melodee File. Deleted and moved directory [{From}] To Staging [{To}]",
                                         nameof(LibraryInsertJob),
-                                        albumFolderToMove,
-                                        moveFolderTo);
+                                        albumDirectoryToMove,
+                                        moveDirectoryTo);
                                 }
                             }
                             catch (Exception e)

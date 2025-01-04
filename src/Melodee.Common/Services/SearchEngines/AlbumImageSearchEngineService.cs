@@ -1,3 +1,4 @@
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
@@ -19,7 +20,7 @@ public class AlbumImageSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     ISerializer serializer,
-    SettingService settingService,
+    IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMusicBrainzRepository musicBrainzRepository,
     IHttpClientFactory httpClientFactory)
@@ -27,7 +28,7 @@ public class AlbumImageSearchEngineService(
 {
     public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(AlbumQuery query, int? maxResults, CancellationToken token = default)
     {
-        var configuration = await settingService.GetMelodeeConfigurationAsync(token);
+        var configuration = await configurationFactory.GetConfigurationAsync(token);
 
         var maxResultsValue = maxResults ?? configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
 
