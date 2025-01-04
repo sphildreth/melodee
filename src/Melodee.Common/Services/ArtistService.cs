@@ -430,4 +430,27 @@ public class ArtistService(
             Data = result
         };
     }
+
+    public async Task<object> MergeArtistsAsync(Guid artistApiKeyToMergeInto, Guid[] artistApiKeysToMerge, CancellationToken cancellationToken = default)
+    {
+        // TODO
+        
+        // Guard that parameters are setup proper
+        
+        // Get the artist to merge into
+        
+        // For each artist to merge
+        // \
+        // Move artist albums and change artist to be artistToMergeInto artist
+        // Configuration option to merge artist images, I would think this should not be done if the artistToMergeInto has images
+        // Update any Contributor records with artist to be merged to now have artistToMergeInfo PkId
+        // Delete the artist to merge
+        // /
+        
+        // Update the artistToMergeInto aggregate values
+        
+        // Update all libraries aggregate values from all artists in this method
+        
+        throw new NotImplementedException();
+    }
 }

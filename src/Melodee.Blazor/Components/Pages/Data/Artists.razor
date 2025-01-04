@@ -257,25 +257,28 @@
             }
         }
         await DialogService.OpenAsync("Merge Artists", ds =>
-            @<RadzenDropZoneContainer TItem="ArtistCard"
-                                         Data="_selectedArtistCards"
-                                         ItemSelector="@_itemSelector"
-                                         CanDrop="@_canDrop"
-                                         Drop="@OnDrop">
-                    <ChildContent>
-                        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap">
-                            <RadzenDropZone Value="ArtistMergeState.ToBeMerged" class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2" Style="flex: 1;">
-                                <RadzenText Text="Merge these artists" TextStyle="TextStyle.Subtitle2" />
-                            </RadzenDropZone>
-                            <RadzenDropZone Value="ArtistMergeState.ToMergeInto" class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2" Style="flex: 1;">
-                                <RadzenText Text="Into this artist" TextStyle="TextStyle.Subtitle2" />
-                            </RadzenDropZone>
-                        </RadzenStack>
-                    </ChildContent>
-                    <Template>
-                        <ArtistCardComponent Artist="@context" />
-                    </Template>
-                </RadzenDropZoneContainer>
+                @<RadzenStack>
+                    <RadzenDropZoneContainer TItem="ArtistCard"
+                                             Data="_selectedArtistCards"
+                                             ItemSelector="@_itemSelector"
+                                             CanDrop="@_canDrop"
+                                             Drop="@OnDrop">
+                        <ChildContent>
+                            <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap">
+                                <RadzenDropZone Value="ArtistMergeState.ToBeMerged" class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2" Style="flex: 1;">
+                                    <RadzenText Text="Merge these artists" TextStyle="TextStyle.Subtitle2"/>
+                                </RadzenDropZone>
+                                <RadzenDropZone Value="ArtistMergeState.ToMergeInto" class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2" Style="flex: 1;">
+                                    <RadzenText Text="Into this artist" TextStyle="TextStyle.Subtitle2"/>
+                                </RadzenDropZone>
+                            </RadzenStack>
+                        </ChildContent>
+                        <Template>
+                            <ArtistCardComponent Artist="@context"/>
+                        </Template>
+                    </RadzenDropZoneContainer>
+                    <RadzenButton Icon="cell_merge"  Text="Merge" Click="@DoMergeButtonClick" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenStack>
             , new DialogOptions
             {
                 Resizable = true,
@@ -312,3 +315,11 @@
     }
 
 }
+@code {
+    private async Task DoMergeButtonClick()
+    {
+        var result = await ArtistService.MergeArtistsAsync(_selectedArtistCards.First(x => (ArtistMergeState)x.State == ArtistMergeState.ToMergeInto).Id, _selectedArtistCards.Where(x => (ArtistMergeState)x.State == ArtistMergeState.ToBeMerged).Select(x => x.Id).ToArray());
+
+    }
+}
+
