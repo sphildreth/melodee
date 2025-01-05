@@ -16,6 +16,9 @@ public static class ClaimsPrincipalExtensions
     public static string? FormatNumber(this ClaimsPrincipal principal, short? number)
         => number?.ToStringPadLeft(5);
     
+    public static string? FormatNumber(this ClaimsPrincipal principal, int? number)
+        => number?.ToStringPadLeft(5);    
+    
     public static string? FormatDateTime(this ClaimsPrincipal principal, Instant? dateTime)
         => dateTime?.ToString("yyyy-MM-dd HH:mm:ss", principal.GetCulture());
     

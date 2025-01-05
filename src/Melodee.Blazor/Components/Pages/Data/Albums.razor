@@ -89,14 +89,14 @@
                             TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Name)" Title="Name">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Name)" Title="Name" Width="300px">
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(_ => NavigationManager.NavigateTo($"/data/albumedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
                         <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}") Style="margin-right: 5px;" AlternateText="@data.Name"/>
-                        <a href="/data/album/@data.ApiKey">@data.Name</a>
+                        <RadzenLink text="@data.Name" class="rz-text-wrap" Path = "@($"/data/album/{@data.ApiKey}")" />
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.AlternateNames)"  Title="Alternate Names" Width="200px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.AlternateNames)"  Title="Alt Names" Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.AlternateNames?.ToTags() ?? [])
@@ -106,29 +106,29 @@
                         </RadzenStack>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Album.Artist.Name)" Title="Artist">
+                <RadzenDataGridColumn Property="@nameof(Album.Artist.Name)" Title="Artist" Width="150px">
                     <Template Context="data">
-                        <a href="/data/artist/@data.ArtistApiKey">@data.ArtistName</a>
+                        <RadzenLink Text="@data.ArtistName" Path="@($"/data/artist/{data.ArtistApiKey}")" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.DiscCount)" Title="Discs" Width="90px">
                     <Template Context="data">
-                        @CurrentUser?.FormatNumber(data.DiscCount)
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.DiscCount)" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Title="Songs" Width="90px">
                     <Template Context="data">
-                        @CurrentUser?.FormatNumber(data.SongCount)
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.SongCount)" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Duration)" Title="Duration" Width="120px">
                     <Template Context="data">
-                        @data.Duration.ToFormattedDateTimeOffset()
+                        <RadzenText Text="@data.Duration.ToFormattedDateTimeOffset()" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.CreatedAt)" Title="Created" Filterable="false" Width="120px">
                     <Template Context="data">
-                        @CurrentUser?.FormatDateTime(data.CreatedAt)
+                        <RadzenText Text="@CurrentUser?.FormatDateTime(data.CreatedAt)" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Tags)" Title="Tags" Width="100px">

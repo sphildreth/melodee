@@ -3,6 +3,8 @@
 
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Models.Cards
+@using Melodee.Common.Models.Collection
+@using Melodee.Common.Models.Collection.Extensions
 @using Artist = Melodee.Common.Data.Models.Artist
 
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -93,14 +95,14 @@
                             TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Artist.Name)" Title="Name">
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.Name)" Title="Name">
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(_ => NavigationManager.NavigateTo($"/data/artistedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
                         <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}") Style="margin-right: 5px;" AlternateText="@data.Name"/>
-                        <a href="/data/artist/@data.ApiKey">@data.Name</a>
+                        <RadzenLink Text="@data.Name" Path="@($"/data/artist/{data.ApiKey}")" />
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Artist.AlternateNames)"  Title="Alternate Names" Width="200px">
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.AlternateNames)"  Title="Alternate Names" Width="200px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.AlternateNames?.ToTags() ?? [])
@@ -110,11 +112,23 @@
                         </RadzenStack>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Artist.Directory)" Title="Directory"/>
-                <RadzenDataGridColumn Property="@nameof(Artist.AlbumCount)" Title="Albums" Width="80px"/>
-                <RadzenDataGridColumn Property="@nameof(Artist.SongCount)" Title="Songs" Width="80px"/>
-                <RadzenDataGridColumn Property="@nameof(Artist.CreatedAt)" Title="Created" Filterable="false" Width="120px"/>
-                <RadzenDataGridColumn Property="@nameof(Artist.Tags)" Title="Tags" Width="100px">
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.Directory)" Title="Directory"/>
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.AlbumCount)" Title="Albums" Width="80px">
+                    <Template Context="data">
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.AlbumCount)" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.SongCount)" Title="Songs" Width="80px">
+                    <Template Context="data">
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.SongCount)" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.CreatedAt)" Title="Created" Filterable="false" Width="120px">
+                    <Template Context="data">
+                        <RadzenText Text="@CurrentUser?.FormatDateTime(data.CreatedAt)" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.Tags)" Title="Tags" Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.Tags?.ToTags() ?? [])
@@ -131,16 +145,16 @@
 
 @code {
 
-    RadzenDataGrid<Artist> _grid = null!;
+    RadzenDataGrid<ArtistDataInfo> _grid = null!;
     int _count;
-    IEnumerable<Artist> _artists = null!;
+    IEnumerable<ArtistDataInfo> _artists = null!;
     bool _isLoading;
     int _currentPage = 1;
     short _defaultPageSize = 25;
     IEnumerable<int> _pageSizeOptions = [10, 20, 30];
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     int _toastTime;
-    IList<Artist> _selectedArtists = [];
+    IList<ArtistDataInfo> _selectedArtists = [];
     IList<ArtistCard> _selectedArtistCards = [];
 
     string _debounceInputValue = "";
