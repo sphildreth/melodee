@@ -20,6 +20,7 @@ namespace Melodee.Common.Services;
 public class SettingService(
     ILogger logger,
     ICacheManager cacheManager,
+    IMelodeeConfigurationFactory melodeeConfigurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -203,6 +204,7 @@ public class SettingService(
             if (result)
             {
                 CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(dbDetail.Id));
+                melodeeConfigurationFactory.Reset();
             }
         }
 

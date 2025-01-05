@@ -72,6 +72,66 @@ public class AlbumService(
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] albumIds, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrEmpty(albumIds, nameof(albumIds));
+
+        bool result;
+
+        var artistIds = new List<int>();
+        var libraryIds = new List<int>();
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            foreach (var albumId in albumIds)
+            {
+                var artist = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);
+                if (!artist.IsSuccess)
+                {
+                    return new MelodeeModels.OperationResult<bool>("Unknown album.")
+                    {
+                        Data = false
+                    };
+                }
+            }
+
+            foreach (var albuMid in albumIds)
+            {
+                var album = await scopedContext
+                    .Albums.Include(x => x.Artist).ThenInclude(x => x.Library)
+                    .FirstAsync(x => x.Id == albuMid, cancellationToken)
+                    .ConfigureAwait(false);
+
+                var albumDirectory = Path.Combine(album.Artist.Library.Path, album.Artist.Directory, album.Directory);
+                if (Directory.Exists(albumDirectory))
+                {
+                    Directory.Delete(albumDirectory, true);
+                }
+
+                scopedContext.Albums.Remove(album);
+                artistIds.Add(album.ArtistId);
+                libraryIds.Add(album.Artist.LibraryId);
+            }
+
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var artistId in artistIds.Distinct())
+            {
+                await UpdateArtistAggregateValuesByIdAsync(artistId, cancellationToken).ConfigureAwait(false);
+            }            
+            foreach (var libraryId in libraryIds.Distinct())
+            {
+                await UpdateLibraryAggregateStatsByIdAsync(libraryId, cancellationToken).ConfigureAwait(false);
+            }
+
+            result = true;
+        }
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }    
+    
     public async Task<MelodeeModels.OperationResult<Album?>> GetByArtistIdAndNameNormalized(int artistId, string nameNormalized, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(nameNormalized, nameof(nameNormalized));

@@ -43,12 +43,17 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-
+        services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
+        
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
         {
-            var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
+            var settingService = new SettingService(
+                Log.Logger,
+                cacheManager,
+                scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),                
+                scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
             var imageValidator = new ImageValidator(config);

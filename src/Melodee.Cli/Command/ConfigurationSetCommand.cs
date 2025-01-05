@@ -49,7 +49,11 @@ public class ConfigurationSetCommand : AsyncCommand<ConfigurationSetSetting>
 
         using (var scope = serviceProvider.CreateScope())
         {
-            var settingService = new SettingService(Log.Logger, cacheManager, scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
+            var settingService = new SettingService(
+                Log.Logger,
+                cacheManager,
+                scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),
+                scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
 
             var config = await settingService.GetAsync(settings.Key).ConfigureAwait(false);
             if (!config.IsSuccess || config.Data == null)

@@ -165,7 +165,6 @@ public class LibraryService : ServiceBase
     {
         Guard.Against.Expression(x => x < 1, libraryId, nameof(libraryId));
 
-        int libraryType;
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbLibrary = await scopedContext
@@ -181,25 +180,31 @@ public class LibraryService : ServiceBase
                 };
             }
 
-            libraryType = dbLibrary.Type;
             dbLibrary.PurgePath();
-
+            
+            await scopedContext
+                .Artists
+                .Where(x => x.LibraryId == libraryId)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+            
             await scopedContext
                 .LibraryScanHistories
                 .Where(x => x.LibraryId == libraryId)
                 .ExecuteDeleteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
+            dbLibrary.ArtistCount = 0;
+            dbLibrary.AlbumCount = 0;
+            dbLibrary.SongCount = 0;
             dbLibrary.LastScanAt = null;
             dbLibrary.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            ClearCache();
+            ClearCache(dbLibrary);
         }
+        return await GetAsync(libraryId, cancellationToken);
 
-        return new MelodeeModels.OperationResult<Library?>
-        {
-            Data = await LibraryByType(libraryType, cancellationToken).ConfigureAwait(false)
-        };
     }
 
     public virtual async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(CancellationToken cancellationToken = default)
@@ -423,7 +428,7 @@ public class LibraryService : ServiceBase
                 };
             }
 
-            ClearCache();
+            ClearCache(dbLibrary);
             return new MelodeeModels.OperationResult<LibraryScanHistory?>
             {
                 Data = newLibraryScanHistory
@@ -445,11 +450,11 @@ public class LibraryService : ServiceBase
         }
     }
 
-    private void ClearCache()
+    private void ClearCache(Library library)
     {
-        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Inbound));
-        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Library));
-        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart((int)LibraryType.Staging));
+        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(library.ApiKey));
+        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(library.Id));
+        CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart(library.Type));
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(string fromLibraryName, string toLibraryName, Func<MelodeeModels.Album, bool> condition, bool verboseSet, CancellationToken cancellationToken = default)
@@ -1006,5 +1011,62 @@ public class LibraryService : ServiceBase
     public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] ids, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Library library, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(library, nameof(library));
+
+        var validationResult = ValidateModel(library);
+        if (!validationResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            {
+                Data = false,
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
+            };
+        }
+
+        bool result;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbDetail = await scopedContext
+                .Libraries
+                .FirstOrDefaultAsync(x => x.Id == library.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (dbDetail == null)
+            {
+                return new MelodeeModels.OperationResult<bool>
+                {
+                    Data = false,
+                    Type = MelodeeModels.OperationResponseType.NotFound
+                };
+            }
+
+            dbDetail.Description = library.Description;
+            dbDetail.IsLocked = library.IsLocked;
+            dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            dbDetail.Name = library.Name;
+            dbDetail.Notes = library.Notes;
+            dbDetail.Path = library.Path;
+            dbDetail.Notes = library.Notes;
+            dbDetail.SortOrder = library.SortOrder;
+            dbDetail.Type = library.Type;
+            dbDetail.Tags = library.Tags;
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+
+            if (result)
+            {
+                ClearCache(dbDetail);
+            }
+        }
+
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };        
     }
 }

@@ -49,7 +49,7 @@ public class JobRunMusicBrainzUpdateDatabaseJobCommand : AsyncCommand<JobSetting
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var melodeeConfigurationFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
-            var settingService = new SettingService(Log.Logger, cacheManager, dbFactory);
+            var settingService = new SettingService(Log.Logger, cacheManager, melodeeConfigurationFactory, dbFactory);
             var job = new MusicBrainzUpdateDatabaseJob
             (
                 Log.Logger,

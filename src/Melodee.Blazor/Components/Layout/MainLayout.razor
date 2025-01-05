@@ -1,12 +1,11 @@
-﻿@using System.Security.Claims
-@using Melodee.Blazor.Services
-@using Microsoft.AspNetCore.Components.Authorization
+﻿@using Microsoft.AspNetCore.Components.Authorization
 @inherits LayoutComponentBase
 
 @implements IDisposable
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
+@inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
 
 <RadzenComponents @rendermode="InteractiveServer" />
 
@@ -24,16 +23,19 @@
             <RadzenHeader>
                 <RadzenRow JustifyContent="JustifyContent.Start" AlignItems="AlignItems.Center" Gap="0">
                     <RadzenColumn Size="5">
-                        <RadzenSidebarToggle Click="@SidebarToggleClick"></RadzenSidebarToggle>
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0">
+                            <RadzenSidebarToggle Click="@SidebarToggleClick"></RadzenSidebarToggle>
+                            <RadzenText Text="@_siteTitle" TextStyle="TextStyle.H6" Style="margin-top:13px;"/>
+                        </RadzenStack>
                     </RadzenColumn>
                     <RadzenColumn Size="7">
                         <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
                             <RadzenProgressBar Visible="@MainLayoutProxyService.ShowSpinner" Style="width:100px;" ProgressBarStyle="ProgressBarStyle.Info" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
                             <RadzenAppearanceToggle />
-                            <RadzenProfileMenu Click="@ProfileMenuClick">
+                            <RadzenProfileMenu>
                                 <ChildContent>
-                                    <RadzenProfileMenuItem Path="profile" Icon="settings" Text="Profile"/>
-                                    <RadzenProfileMenuItem Text="Logout" Value="Logout" Icon="power_settings_new"/>
+                                    <RadzenProfileMenuItem Path="/account/profile" Icon="settings" Text="Profile"/>
+                                    <RadzenProfileMenuItem Path="/account/logout" Text="Logout" Value="Logout" Icon="power_settings_new"/>
                                 </ChildContent>
                                 <Template>
                                     <RadzenImage Path="/images/avatar.png" style="width:32px;height:32px;border-radius:16px;"/>
@@ -59,8 +61,8 @@
                             <RadzenPanelMenuItem Text="Library" Path="library" Icon="folder"/>
                             <RadzenPanelMenuItem Text="Staging" Path="staging" Icon="folder"/>
                         </RadzenPanelMenuItem>
-                        <RadzenPanelMenuItem Text="Jobs" Path="jobs" Icon="checklist"/>
-                        <RadzenPanelMenuItem Text="Settings" Path="settings" Icon="settings"/>
+                        <RadzenPanelMenuItem Text="Jobs" Path="/admin/jobs" Icon="checklist"/>
+                        <RadzenPanelMenuItem Text="Settings" Path="/admin/settings" Icon="settings"/>
                     </RadzenPanelMenuItem>
 
                 </RadzenPanelMenu>
@@ -85,6 +87,7 @@
 
 @code {
     bool _sidebarExpanded = true;
+    string _siteTitle = string.Empty;
 
     protected override void OnInitialized()
     {
@@ -118,6 +121,7 @@
             {
                 NavigationManager.Refresh();
             }
+            _siteTitle = (await MelodeeConfigurationFactory.GetConfigurationAsync()).GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? string.Empty;
         }
     }
 
@@ -126,12 +130,5 @@
         _sidebarExpanded = !_sidebarExpanded;
     }
 
-    private void ProfileMenuClick(RadzenProfileMenuItem arg)
-    {
-        if (arg.Value == "Logout")
-        {
-            NavigationManager.NavigateTo("/account/logout", true);
-        }
-    }
 
 }

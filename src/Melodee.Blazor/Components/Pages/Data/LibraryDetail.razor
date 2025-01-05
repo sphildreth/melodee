@@ -1,0 +1,167 @@
+@page "/data/library/{ApiKey:guid}"
+@inherits MelodeeComponentBase
+
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
+@using Melodee.Common.Services.Scanning
+@using Library = Melodee.Common.Data.Models.Library
+
+@inject DialogService DialogService
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject LibraryService LibraryService
+@inject NotificationService NotificationService
+@inject DirectoryProcessorService DirectoryProcessorService
+
+
+<PageTitle>@_library.Name</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Path="/data/libraries" Text="Libraries"/>
+    <RadzenBreadCrumbItem Icon="library_music" Text="@_library.Name"/>
+</RadzenBreadCrumb>
+
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="@_library.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenButton Icon="mop" Text="Clean" Visible="!_library.IsLocked" title="Clean library, removing any empty folders." Click="@CleanButtonClick" />
+                @if (_library.IsLocked)
+                {
+                    <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning" title="Unlock library, will allow modifications." Click="@UnlockButtonClick"/>
+                }
+                else
+                {
+                    <RadzenButton Icon="lock" Text="Lock" ButtonStyle="ButtonStyle.Warning" title="Lock library, will prevent modifications." Click="@LockButtonClick"/>
+                }
+                <RadzenButton Icon="delete_sweep" Visible="!_library.IsLocked" ButtonStyle="ButtonStyle.Danger" Text="Purge" title="Delete everything in the library. BEWARE!" Click="@PurgeButtonClick"/>
+                <RadzenButton Icon="update" Visible="!_library.IsLocked" Text="Scan" title="Run scan job on this library." Click="@ScanButtonClick"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+Details go here for @_library.Name
+
+@code {
+
+    int _toastTime;
+
+    [Parameter] public Guid ApiKey { get; set; }
+
+    Library _library = new()
+    {
+        Name = string.Empty,
+        CreatedAt = default,
+        Path = string.Empty,
+        Type = (int)LibraryType.NotSet
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _toastTime = configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
+
+        if (ApiKey != Guid.Empty)
+        {
+            var dataResult = await LibraryService.GetByApiKeyAsync(ApiKey);
+            if (dataResult is { IsSuccess: true, Data: not null })
+            {
+                _library = dataResult.Data;
+            }
+        }
+    }
+
+    private async Task PurgeButtonClick()
+    {
+        var confirm = await DialogService.Confirm("<p>Purging a library deletes all artists, albums and songs.</p><p>There is no undo</p>", "Purge confirmation", new ConfirmOptions() { OkButtonText = "Proceed to purge", CancelButtonText = "Cancel" });
+        if (confirm ?? false)
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+            try
+            {
+                var result = await LibraryService.PurgeLibraryAsync(_library.Id);
+                NotificationService.Notify(NotificationMessageForResult(result, "purged library", _toastTime));
+            }
+            finally
+            {
+                MainLayoutProxyService.ToggleSpinnerVisible();
+            }
+        }
+    }
+
+    private async Task LockButtonClick()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            _library.IsLocked = true;
+            var result = await LibraryService.UpdateAsync(_library);
+            NotificationService.Notify(NotificationMessageForResult(result, "locked library", _toastTime));
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    private async Task ScanButtonClick()
+    {
+        var confirm = await DialogService.Confirm("<p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions() { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
+        if (confirm ?? false)
+        {
+
+            MainLayoutProxyService.ToggleSpinnerVisible();
+            try
+            {
+                await DirectoryProcessorService.InitializeAsync();
+                var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), _library.LastScanAt);
+                NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", _toastTime));
+            }
+            finally
+            {
+                MainLayoutProxyService.ToggleSpinnerVisible();
+            }
+        }
+    }
+
+    private async Task CleanButtonClick()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var result = await LibraryService.CleanLibraryAsync(_library.Name);
+            NotificationService.Notify(NotificationMessageForResult(result, "cleaned library", _toastTime));
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    private async Task UnlockButtonClick()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            _library.IsLocked = false;
+            var result = await LibraryService.UpdateAsync(_library);
+            NotificationService.Notify(NotificationMessageForResult(result, "unlocked library", _toastTime));
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+}

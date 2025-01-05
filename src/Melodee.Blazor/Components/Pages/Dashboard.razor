@@ -2,9 +2,111 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 
-<p>dashboard</p>
+<PageTitle>Dashboard</PageTitle>
 
-Put something here that is nifty and useful.
+<RadzenStack>
+    <RadzenPanel AllowCollapse="false">
+        <HeaderTemplate>
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                Statistics
+            </RadzenText>
+        </HeaderTemplate>
+        <ChildContent>
+            <RadzenStack>
+                <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap"
+                             JustifyContent="JustifyContent.Left"
+                             class="rz-p-12" Gap="2rem">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="artist"/>
+                            Artists | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="contacts_product"/>
+                            Contributors | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="album"/>
+                            Albums | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="music_note"/>
+                            Songs | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="genres"/>
+                            Genres | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="group"/>
+                            Users | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="share"/>
+                            Shares | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="library_music"/>
+                            Libraries | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
+                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
+                            <RadzenIcon Icon="playlist_play"/>
+                            Playlists | 000000000
+                        </RadzenStack>
+                    </RadzenBadge>
+                </RadzenStack>
+            </RadzenStack>
+        </ChildContent>
+    </RadzenPanel>
+    <RadzenPanel AllowCollapse="false">
+        <HeaderTemplate>
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                <RadzenIcon Icon="artist" class="rz-me-1"/>
+                Most recently added artists
+            </RadzenText>
+        </HeaderTemplate>
+        <ChildContent>
+            Something here
+        </ChildContent>
+    </RadzenPanel>
+    <RadzenPanel AllowCollapse="false">
+        <HeaderTemplate>
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                <RadzenIcon Icon="album" class="rz-me-1"/>
+                Most recently added albums
+            </RadzenText>
+        </HeaderTemplate>
+        <ChildContent>
+            Something here
+        </ChildContent>
+    </RadzenPanel>
+</RadzenStack>
 
 @code {
 
