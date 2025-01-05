@@ -208,7 +208,7 @@
         var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
-            var deleteResult = await UserService.DeleteUsersAsync(_selectedUsers.Select(x => x.Id).ToArray());
+            var deleteResult = await UserService.DeleteAsync(_selectedUsers.Select(x => x.Id).ToArray());
             if (deleteResult.IsSuccess)
             {
                 NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Users", _toastTime));

@@ -81,6 +81,11 @@ public class OpenSubsonicApiService(
     {
         return id.Nullify() != null && (id?.StartsWith($"album{OpenSubsonicServer.ApiIdSeparator}") ?? false);
     }
+    
+    private static bool IsApiIdForUser(string? id)
+    {
+        return id.Nullify() != null && (id?.StartsWith($"user{OpenSubsonicServer.ApiIdSeparator}") ?? false);
+    }    
 
     private static bool IsApiIdForSong(string? id)
     {
@@ -848,7 +853,7 @@ public class OpenSubsonicApiService(
                     var userLibraryResult = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
                     if (userLibraryResult.IsSuccess)
                     {
-                        var userAvatarFilename = authResponse.UserInfo.ToAvatarFilename(userLibraryResult.Data.Path);
+                        var userAvatarFilename = authResponse.UserInfo.ToAvatarFileName(userLibraryResult.Data.Path);
                         if (File.Exists(userAvatarFilename))
                         {
                             return await File.ReadAllBytesAsync(userAvatarFilename, cancellationToken).ConfigureAwait(false);
@@ -892,8 +897,10 @@ public class OpenSubsonicApiService(
     /// </summary>
     public async Task<ResponseModel> GetImageForApiKeyId(string apiId, string? size, ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
+        var isUserImageRequest = IsApiIdForUser(apiId);
+        // If a user image request don't auth as it's used in the UI in the header (before auth'ed).
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
-        if (!authResponse.IsSuccess)
+        if (!authResponse.IsSuccess && !isUserImageRequest)
         {
             return authResponse with { UserInfo = BlankUserInfo };
         }
@@ -935,6 +942,23 @@ public class OpenSubsonicApiService(
                         if (result == null)
                         {
                             result = defaultImages.ArtistBytes;
+                            eTag = badEtag;
+                        }
+                    }
+                    else if (isUserImageRequest)
+                    {
+                        var userResult = await userService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+                        var userImageLibrary = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
+                        var userImageFileName = userResult.Data.ToAvatarFileName(userImageLibrary.Data.Path);
+                        var userImageFileInfo = new FileInfo(userImageFileName);
+                        if (userImageFileInfo.Exists)
+                        {
+                            result = await File.ReadAllBytesAsync(userImageFileInfo.FullName, cancellationToken).ConfigureAwait(false);
+                            eTag = userImageFileInfo.LastWriteTimeUtc.ToEtag();
+                        }
+                        else
+                        {
+                            result = defaultImages.UserAvatarBytes;
                             eTag = badEtag;
                         }
                     }
@@ -1016,7 +1040,7 @@ public class OpenSubsonicApiService(
                             {
                                 result = ImageConvertor.ResizeImageIfNeeded(result,
                                     sizeValueParsed,
-                                    sizeValueParsed);
+                                    sizeValueParsed, isUserImageRequest);
                                 eTag = HashHelper.CreateMd5(eTag + sizeValueParsed);
                             }
                             else
@@ -1027,7 +1051,8 @@ public class OpenSubsonicApiService(
                                         var smallSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingSmallSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
                                         result = ImageConvertor.ResizeImageIfNeeded(result,
                                             smallSize,
-                                            smallSize);
+                                            smallSize,
+                                            isUserImageRequest);
                                         eTag = HashHelper.CreateMd5(eTag + ImageSizeRegistry.Small);
                                         break;
 
@@ -1035,7 +1060,8 @@ public class OpenSubsonicApiService(
                                         var mediumSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingMediumSize) ?? throw new Exception($"Invalid configuration [{SettingRegistry.ImagingMediumSize}] not found.");
                                         result = ImageConvertor.ResizeImageIfNeeded(result,
                                             mediumSize,
-                                            mediumSize);
+                                            mediumSize,
+                                            isUserImageRequest);
                                         eTag = HashHelper.CreateMd5(eTag + ImageSizeRegistry.Medium);
                                         break;
                                 }

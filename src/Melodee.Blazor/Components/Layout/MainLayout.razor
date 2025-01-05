@@ -38,7 +38,7 @@
                                     <RadzenProfileMenuItem Path="/account/logout" Text="Logout" Value="Logout" Icon="power_settings_new"/>
                                 </ChildContent>
                                 <Template>
-                                    <RadzenImage Path="/images/avatar.png" style="width:32px;height:32px;border-radius:16px;"/>
+                                    <RadzenImage Path="@($"/images/{context.User.ToApiKey()}/32")" style="border-radius:16px;"/>
                                 </Template>
                             </RadzenProfileMenu>
                         </RadzenStack>
@@ -75,15 +75,6 @@
         </RadzenLayout>
     </Authorized>
 </AuthorizeView>
-
-
-
-
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
 
 @code {
     bool _sidebarExpanded = true;

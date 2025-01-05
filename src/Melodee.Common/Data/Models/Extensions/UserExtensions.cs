@@ -1,5 +1,6 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Utility;
 
@@ -7,6 +8,11 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class UserExtensions
 {
+    public static string ToAvatarFileName(this User user, string libraryPath)
+    {
+        return Path.Combine(libraryPath, $"{user.Id.ToStringPadLeft(8)}.gif");
+    }
+    
     public static Common.Models.OpenSubsonic.User ToApiUser(this User user)
     {
         return new Common.Models.OpenSubsonic.User(user.UserName, user.IsAdmin, user.Email, user.HasStreamRole, user.IsScrobblingEnabled, user.HasDownloadRole, user.HasShareRole, user.HasJukeboxRole, user.LastUpdatedAt?.ToString() ?? user.CreatedAt.ToString());

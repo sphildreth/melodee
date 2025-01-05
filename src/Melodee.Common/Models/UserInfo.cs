@@ -13,7 +13,7 @@ public record UserInfo(int Id, Guid ApiKey, string UserName, string Email, strin
 {
     public List<string>? Roles { get; init; }
 
-    public ClaimsPrincipal ToClaimsPrincipal(IMelodeeConfiguration configuration)
+    public ClaimsPrincipal ToClaimsPrincipal(IMelodeeConfiguration configuration, string userAvatarPath)
     {
         var userSalt = UserService.GenerateSalt();
         var usersPassword = this.Decrypt(PasswordEncrypted, configuration);

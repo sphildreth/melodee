@@ -133,7 +133,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         return outStream.ToArray();
     }
 
-    public static byte[] ResizeImageIfNeeded(ReadOnlySpan<byte> imageBytes, int maxWidth, int maxHeight)
+    public static byte[] ResizeImageIfNeeded(ReadOnlySpan<byte> imageBytes, int maxWidth, int maxHeight, bool isForUserAvatar)
     {
         if (imageBytes.Length == 0)
         {
@@ -148,7 +148,14 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
                 image.Mutate(x => x.Resize(maxWidth, maxHeight));
             }
 
-            image.SaveAsJpeg(outStream);
+            if (isForUserAvatar)
+            {
+                image.SaveAsGif(outStream);   
+            }
+            else
+            {
+                image.SaveAsJpeg(outStream);
+            }
         }
 
         return outStream.ToArray();

@@ -9,6 +9,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Utility;
 using Microsoft.Data.Sqlite;
@@ -29,7 +30,8 @@ public sealed class UserService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMelodeeConfigurationFactory configurationFactory)
+    IMelodeeConfigurationFactory configurationFactory,
+    LibraryService libraryService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:user:apikey:{0}";
@@ -72,45 +74,48 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteUsersAsync(int[] ids, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(User currentUser, Guid apiKey, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] userIds, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+        Guard.Against.NullOrEmpty(userIds, nameof(userIds));
 
-        if (!currentUser.IsAdmin)
+        bool result;
+        
+        foreach (var userId in userIds)
         {
-            return new MelodeeModels.OperationResult<bool>
+            var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+            if (user.Data == null || !user.IsSuccess)
             {
-                Data = false,
-                Type = MelodeeModels.OperationResponseType.Unauthorized
-            };
+                return new MelodeeModels.OperationResult<bool>
+                {
+                    Data = false,
+                    Type = MelodeeModels.OperationResponseType.NotFound
+                };
+            }
         }
 
-        var user = await GetByApiKeyAsync(apiKey, cancellationToken).ConfigureAwait(false);
-        if (user.Data == null || !user.IsSuccess)
-        {
-            return new MelodeeModels.OperationResult<bool>
-            {
-                Data = false,
-                Type = MelodeeModels.OperationResponseType.NotFound
-            };
-        }
-
+        var userImageLibrary = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
+        
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var deletedResult = await scopedContext.Users
-                .Where(x => x.Id == user.Data.Id)
-                .ExecuteDeleteAsync(cancellationToken)
-                .ConfigureAwait(false);
-            return new MelodeeModels.OperationResult<bool>
+            foreach (var userId in userIds)
             {
-                Data = deletedResult > 0
-            };
+                var user = scopedContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken).Result;
+                var userAvatarFullname = user.ToAvatarFileName(userImageLibrary.Data.Path);
+                if (File.Exists(userAvatarFullname))
+                {
+                    File.Delete(userAvatarFullname);
+                }
+                scopedContext.Users.Remove(user);
+            }
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            result = true;
         }
+        
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };        
     }
 
     public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(string emailAddress, CancellationToken cancellationToken = default)
@@ -338,7 +343,7 @@ public sealed class UserService(
             // See if user is first user to register, is so then set to administrator
             var dbUserCount = await scopedContext
                 .Users
-                .CountAsync(x => x.Email == emailAddress, cancellationToken)
+                .CountAsync(cancellationToken)
                 .ConfigureAwait(false);
             if (dbUserCount == 1)
             {
@@ -351,6 +356,8 @@ public sealed class UserService(
 
             ClearCache(newUser.EmailNormalized, newUser.ApiKey, newUser.Id, newUser.UserNameNormalized);
 
+            await LoginUserAsync(emailAddress, plainTextPassword, cancellationToken).ConfigureAwait(false);
+            
             return GetByEmailAddressAsync(emailAddress, cancellationToken).Result;
         }
     }

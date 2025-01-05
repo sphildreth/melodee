@@ -12,8 +12,7 @@ public static class UserInfoExtensions
         return EncryptionHelper.Decrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, encryptedText, user.PublicKey);
     }    
     
-    public static string ToAvatarFilename(this UserInfo user, string libraryPath)
-    {
-        return Path.Combine(libraryPath, $"{user.Id.ToStringPadLeft(8)}.png");
-    }
+    public static string ToAvatarFileName(this UserInfo user, string libraryPath)
+        => Path.Combine(libraryPath, $"{user.Id.ToStringPadLeft(8)}.gif");
+
 }

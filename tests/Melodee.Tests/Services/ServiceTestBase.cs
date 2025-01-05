@@ -296,7 +296,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected UserService GetUserService()
     {
-        return new UserService(Logger, CacheManager, MockFactory(), MockConfigurationFactory());
+        return new UserService(Logger, CacheManager, MockFactory(), MockConfigurationFactory(), GetLibraryService());
     }
 
     protected IMelodeeConfigurationFactory MockConfigurationFactory()

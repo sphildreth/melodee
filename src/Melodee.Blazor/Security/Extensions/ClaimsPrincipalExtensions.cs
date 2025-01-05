@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Claims;
 using Melodee.Common.Constants;
+using Melodee.Common.Data.Constants;
 using ServiceStack;
 
 namespace Melodee.Blazor.Security.Extensions;
@@ -8,9 +9,10 @@ namespace Melodee.Blazor.Security.Extensions;
 public static class ClaimsPrincipalExtensions
 {
     public static bool IsAdmin(this ClaimsPrincipal principal)
-    {
-        return principal.IsInRole(RoleNameRegistry.Administrator);
-    }
+        => principal.IsInRole(RoleNameRegistry.Administrator);
+
+    public static string ToApiKey(this ClaimsPrincipal principal)
+        => $"user{OpenSubsonicServer.ApiIdSeparator}{principal.FindFirstValue(ClaimTypes.Sid)}";
     
     public static bool IsEditor(this ClaimsPrincipal principal)
     {

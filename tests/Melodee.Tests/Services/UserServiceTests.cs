@@ -177,7 +177,7 @@ public sealed class UserServiceTests : ServiceTestBase
 
         Assert.NotEqual(userByEmailAddress.Data.LastLoginAt, authResult.Data!.LastLoginAt);
 
-        var deleteResult = await userService.DeleteAsync(ServiceUser.Instance.Value, userByEmailAddress.Data.ApiKey);
+        var deleteResult = await userService.DeleteAsync([userByEmailAddress.Data.Id]);
         AssertResultIsSuccessful(deleteResult);
         Assert.True(deleteResult.Data);
 
