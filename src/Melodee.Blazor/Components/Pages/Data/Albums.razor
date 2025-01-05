@@ -1,8 +1,9 @@
 @page "/data/albums"
 @inherits MelodeeComponentBase
 
-@using Melodee.Common.Data.Models.Extensions
-@using Album = Melodee.Common.Data.Models.Album
+@using System.Globalization
+@using Melodee.Common.Models.Collection
+@using Melodee.Common.Models.Collection.Extensions
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
@@ -10,9 +11,7 @@
 @inject AlbumService AlbumService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject TooltipService TooltipService
 @inject NavigationManager NavigationManager
-@inject DefaultImages DefaultImages
 
 <PageTitle>Albums</PageTitle>
 
@@ -79,7 +78,7 @@
                             Change="@(args => _selectedAlbums = args == true ? _selectedAlbums.ToList() : [])" />
                     </HeaderTemplate>
                     <Template Context="data">
-                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)" MouseEnter="@(args => ShowTooltip(args, "Album is locked. Locked albums cannot be deleted.") )" />
+                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)" title="Album is locked. Locked albums cannot be deleted." />
                         <RadzenCheckBox
                             TabIndex="-1"
                             TriState="false"
@@ -90,14 +89,14 @@
                             TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Album.Name)" Title="Name">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Name)" Title="Name">
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(_ => NavigationManager.NavigateTo($"/data/albumedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
                         <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}") Style="margin-right: 5px;" AlternateText="@data.Name"/>
                         <a href="/data/album/@data.ApiKey">@data.Name</a>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Album.AlternateNames)"  Title="Alternate Names" Width="200px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.AlternateNames)"  Title="Alternate Names" Width="200px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.AlternateNames?.ToTags() ?? [])
@@ -109,14 +108,30 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Album.Artist.Name)" Title="Artist">
                     <Template Context="data">
-                        <a href="/data/artist/@data.Artist.ApiKey">@data.Artist.Name</a>
+                        <a href="/data/artist/@data.ArtistApiKey">@data.ArtistName</a>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Album.DiscCount)" Title="Discs" Width="90px"/>
-                <RadzenDataGridColumn Property="@nameof(Album.SongCount)" Title="Songs" Width="90px"/>
-                <RadzenDataGridColumn Property="@nameof(Album.Duration)" Title="Duration" Width="120px"/>
-                <RadzenDataGridColumn Property="@nameof(Album.CreatedAt)" Title="Created" Filterable="false" Width="120px"/>
-                <RadzenDataGridColumn Property="@nameof(Album.Tags)" Title="Tags" Width="100px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.DiscCount)" Title="Discs" Width="90px">
+                    <Template Context="data">
+                        @CurrentUser?.FormatNumber(data.DiscCount)
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Title="Songs" Width="90px">
+                    <Template Context="data">
+                        @CurrentUser?.FormatNumber(data.SongCount)
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Duration)" Title="Duration" Width="120px">
+                    <Template Context="data">
+                        @data.Duration.ToFormattedDateTimeOffset()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.CreatedAt)" Title="Created" Filterable="false" Width="120px">
+                    <Template Context="data">
+                        @CurrentUser?.FormatDateTime(data.CreatedAt)
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Tags)" Title="Tags" Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.Tags?.ToTags() ?? [])
@@ -133,16 +148,16 @@
 
 @code {
 
-    RadzenDataGrid<Album> _grid = null!;
+    RadzenDataGrid<AlbumDataInfo> _grid = null!;
     int _count;
-    IEnumerable<Album> _albums = null!;
+    IEnumerable<AlbumDataInfo> _albums = null!;
     bool _isLoading;
     int _currentPage = 1;
     short _defaultPageSize = 25;
     IEnumerable<int> _pageSizeOptions = [10, 20, 30];
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     int _toastTime;
-    IList<Album> _selectedAlbums = [];
+    IList<AlbumDataInfo> _selectedAlbums = [];
 
     string _debounceInputValue = "";
 
@@ -178,8 +193,8 @@
             {
                 filters =
                 [
-                    new Common.Filtering.FilterOperatorInfo(nameof(Album.NameNormalized), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
-                    new Common.Filtering.FilterOperatorInfo(nameof(Album.AlternateNames), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, Common.Filtering.FilterOperatorInfo.OrJoinOperator)
+                    new Common.Filtering.FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                    new Common.Filtering.FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, Common.Filtering.FilterOperatorInfo.OrJoinOperator)
                 ];
             }
             else if (args.Filters.Any())
@@ -233,11 +248,6 @@
             }
             NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Libraries", _toastTime));
         }
-    }
-
-    private void ShowTooltip(ElementReference elementReference, string message)
-    {
-        TooltipService.Open(elementReference, message);
     }
 
     private async Task DoSearchAsync(string s)

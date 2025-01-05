@@ -2,6 +2,7 @@ using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -37,10 +38,10 @@ public class AlbumService(
         }
     }
 
-    public async Task<MelodeeModels.PagedResult<Album>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int albumCount;
-        Album[] albums = [];
+        AlbumDataInfo[] albums = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
@@ -51,7 +52,14 @@ public class AlbumService(
                 .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Albums\"");
+                var sqlStartFragment = """
+                                       SELECT a."Id", a."ApiKey", a."IsLocked", a."Name", a."NameNormalized", a."AlternateNames",
+                                              ar."ApiKey" as "ArtistApiKey", ar."Name" as "ArtistName",
+                                              a."DiscCount", a."SongCount", a."Duration", a."CreatedAt", a."Tags"
+                                       FROM "Albums" a
+                                       JOIN "Artists" ar ON (a."ArtistId" = ar."Id")
+                                       """;                
+                var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment);
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 if (dbConn is SqliteConnection)
                 {
@@ -59,12 +67,12 @@ public class AlbumService(
                 }
 
                 albums = (await dbConn
-                    .QueryAsync<Album>(listSql, listSqlParts.Item2)
+                    .QueryAsync<AlbumDataInfo>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
             }
         }
 
-        return new MelodeeModels.PagedResult<Album>
+        return new MelodeeModels.PagedResult<AlbumDataInfo>
         {
             TotalCount = albumCount,
             TotalPages = pagedRequest.TotalPages(albumCount),
