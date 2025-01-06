@@ -43,7 +43,8 @@
             <RadzenColumn Size="12" SizeMD="6">
                 <RadzenStack Orientation="Orientation.Horizontal">
                     <RadzenIcon icon="filter_alt" IconColor="@Colors.Secondary" />
-                    <RadzenText Text="@($"Showing albums for artist: {_filterToArtist.Name}")"/>
+                    <RadzenText Text="Showing albums for artist:"/>
+                    <RadzenLink Text="@_filterToArtist.Name" Path="@($"/data/artist/{_filterToArtist.ApiKey}")" />
                     <RadzenButton Size="ButtonSize.ExtraSmall" Click="ClearFilterToArtist" Icon="close" ButtonStyle="ButtonStyle.Secondary"/>
                 </RadzenStack>
             </RadzenColumn>
