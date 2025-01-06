@@ -14,7 +14,7 @@ public static class ClaimsPrincipalExtensions
         => CultureInfo.CurrentCulture;
 
     public static string? FormatNumber(this ClaimsPrincipal principal, short? number)
-        => number?.ToStringPadLeft(5);
+        => number?.ToStringPadLeft(3);
     
     public static string? FormatNumber(this ClaimsPrincipal principal, int? number)
         => number?.ToStringPadLeft(5);    

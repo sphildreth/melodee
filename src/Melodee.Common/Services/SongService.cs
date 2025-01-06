@@ -2,6 +2,7 @@ using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -21,10 +22,10 @@ public class SongService(
     private const string CacheKeyDetailByTitleNormalizedTemplate = "urn:song:titlenormalized:{0}";
     private const string CacheKeyDetailTemplate = "urn:song:{0}";
 
-    public async Task<MelodeeModels.PagedResult<Song>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int albumCount;
-        Song[] songs = [];
+        SongDataInfo[] songs = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
@@ -43,12 +44,12 @@ public class SongService(
                 }
 
                 songs = (await dbConn
-                    .QueryAsync<Song>(listSql, listSqlParts.Item2)
+                    .QueryAsync<SongDataInfo>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
             }
         }
 
-        return new MelodeeModels.PagedResult<Song>
+        return new MelodeeModels.PagedResult<SongDataInfo>
         {
             TotalCount = albumCount,
             TotalPages = pagedRequest.TotalPages(albumCount),
@@ -113,5 +114,10 @@ public class SongService(
             CacheManager.Remove(CacheKeyDetailByTitleNormalizedTemplate.FormatSmart(song.Data.TitleNormalized));
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(song.Data.Id));
         }
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] toArray, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
     }
 }
