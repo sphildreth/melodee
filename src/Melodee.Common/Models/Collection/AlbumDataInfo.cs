@@ -8,11 +8,11 @@ public sealed record AlbumDataInfo(
     bool IsLocked,
     string Name,
     string NameNormalized,
-    string AlternateNames,
+    string? AlternateNames,
     Guid ArtistApiKey,
     string ArtistName,
     short DiscCount,
     short SongCount,
     double Duration,
     Instant CreatedAt,
-    string Tags);
+    string? Tags);

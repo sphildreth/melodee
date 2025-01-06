@@ -8,6 +8,7 @@
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject Serilog.ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject ArtistService ArtistService
 @inject AlbumService AlbumService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -32,19 +33,34 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenButton Icon="cell_merge" Disabled="_selectedAlbums.Count < 2" Text="Merge" Click="@MergeSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
-                    <RadzenButton Icon="delete" Disabled="!_selectedAlbums.Any()" Text="Delete" Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
+                <RadzenButton Icon="delete" Disabled="!_selectedAlbums.Any()" Text="Delete" Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
-    <DebounceInput class="rz-textbox rz-w-100"
-                   autocomplete="off"
-                   @bind-Value="@_debounceInputValue"
-                   @bind-Value:event="OnInput"
-                   DebounceTime="800"
-                   MinLength="3"
-                   OnValueChanged="@DoSearchAsync"
-                   ForceNotifyByEnter="true"
-                   ForceNotifyOnBlur="true" />
+    @if (_filterToArtist != null)
+    {
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenStack Orientation="Orientation.Horizontal">
+                    <RadzenIcon icon="filter_alt" IconColor="@Colors.Secondary" />
+                    <RadzenText Text="@($"Showing albums for artist: {_filterToArtist.Name}")"/>
+                    <RadzenButton Size="ButtonSize.ExtraSmall" Click="ClearFilterToArtist" Icon="close" ButtonStyle="ButtonStyle.Secondary"/>
+                </RadzenStack>
+            </RadzenColumn>
+        </RadzenRow>
+    }
+    else
+    {
+        <DebounceInput class="rz-textbox rz-w-100"
+                       autocomplete="off"
+                       @bind-Value="@_debounceInputValue"
+                       @bind-Value:event="OnInput"
+                       DebounceTime="800"
+                       MinLength="3"
+                       OnValueChanged="@DoSearchAsync"
+                       ForceNotifyByEnter="true"
+                       ForceNotifyOnBlur="true"/>
+    }
     <RadzenRow>
         <RadzenDataGrid
             @ref="_grid"
@@ -159,7 +175,10 @@
     int _toastTime;
     IList<AlbumDataInfo> _selectedAlbums = [];
 
+    Common.Data.Models.Artist? _filterToArtist;
     string _debounceInputValue = "";
+
+    [SupplyParameterFromQuery][Parameter] public Guid? FilterToArtistApiKey { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,6 +188,14 @@
         _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
         _defaultPageSize = _configuration.DefaultPageSize();
         _pageSizeOptions = _configuration.DefaultPageSizeOptions();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (FilterToArtistApiKey != null)
+        {
+            _filterToArtist = (await ArtistService.GetByApiKeyAsync(FilterToArtistApiKey.Value))?.Data;
+        }
     }
 
     void OnPage(PagerEventArgs args)
@@ -205,13 +232,27 @@
                     .ToArray();
             }
 
-            var result = await AlbumService.ListAsync(new PagedRequest
+            PagedResult<AlbumDataInfo> result;
+            if (FilterToArtistApiKey != null)
             {
-                FilterBy = filters,
-                Page = _currentPage,
-                PageSize = _defaultPageSize,
-                OrderBy = sorting
-            });
+                result = await AlbumService.ListForArtistApiKeyAsync(new PagedRequest
+                {
+                    FilterBy = filters,
+                    Page = _currentPage,
+                    PageSize = SafeParser.ToNumber<short>(args.Top),
+                    OrderBy = sorting
+                }, FilterToArtistApiKey.Value);
+            }
+            else
+            {
+                result = await AlbumService.ListAsync(new PagedRequest
+                {
+                    FilterBy = filters,
+                    Page = _currentPage,
+                    PageSize = SafeParser.ToNumber<short>(args.Top),
+                    OrderBy = sorting
+                });
+            }
             _albums = result.Data;
             _count = SafeParser.ToNumber<int>(result.TotalCount);
         }
@@ -258,6 +299,13 @@
     private void MergeSelectedButtonClick()
     {
         throw new NotImplementedException();
+    }
+
+    private async Task ClearFilterToArtist()
+    {
+        _filterToArtist = null;
+        FilterToArtistApiKey = null;
+        await _grid.RefreshDataAsync();
     }
 
 }

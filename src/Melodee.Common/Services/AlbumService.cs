@@ -2,6 +2,7 @@ using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.Data.Sqlite;
@@ -36,6 +37,39 @@ public class AlbumService(
                 CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.Data.MusicBrainzId.Value.ToString()));
             }
         }
+    }
+
+    public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListForArtistApiKeyAsync(MelodeeModels.PagedRequest pagedRequest, Guid filterToArtistApiKey, CancellationToken cancellationToken = default)
+    {
+        int albumCount;
+        AlbumDataInfo[] albums = [];
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            albumCount = await scopedContext
+                .Albums
+                .CountAsync(x => x.Artist.ApiKey == filterToArtistApiKey, cancellationToken)
+                .ConfigureAwait(false);
+            if (!pagedRequest.IsTotalCountOnlyRequest)
+            {
+                var aristAlbums = await scopedContext
+                    .Albums.Include(x => x.Artist)
+                    .Where(x => x.Artist.ApiKey == filterToArtistApiKey)
+                    .OrderByDescending(x => x.ReleaseDate).ThenBy(x => x.Name)
+                    .Skip(pagedRequest.SkipValue)
+                    .Take(pagedRequest.TakeValue)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                albums = aristAlbums.Select(x => x.ToAlbumDataInfo()).ToArray();
+            }
+        }
+
+        return new MelodeeModels.PagedResult<AlbumDataInfo>
+        {
+            TotalCount = albumCount,
+            TotalPages = pagedRequest.TotalPages(albumCount),
+            Data = albums
+        };
+
     }
 
     public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)

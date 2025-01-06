@@ -2,6 +2,7 @@ using Melodee.Common.Data.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
@@ -23,6 +24,23 @@ public static class AlbumExtensions
     public static string ToApiKey(this Album album)
     {
         return $"album{OpenSubsonicServer.ApiIdSeparator}{album.ApiKey}";
+    }
+
+    public static AlbumDataInfo ToAlbumDataInfo(this Album album)
+    {
+        return new AlbumDataInfo(album.Id,
+            album.ApiKey,
+            album.IsLocked,
+            album.Name,
+            album.NameNormalized,
+            album.AlternateNames,
+            album.Artist.ApiKey,
+            album.Artist.Name,
+            album.DiscCount ?? 0,
+            album.SongCount ?? 0,
+            album.Duration,
+            album.CreatedAt,
+            album.Tags);
     }
 
     public static RecordLabel[]? RecordLabels(this Album album)

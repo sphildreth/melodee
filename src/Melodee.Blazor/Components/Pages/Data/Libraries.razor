@@ -178,7 +178,7 @@
             {
                 FilterBy = filters,
                 Page = _currentPage,
-                PageSize = _defaultPageSize,
+                PageSize = SafeParser.ToNumber<short>(args.Top),
                 OrderBy = sorting
             });
             _libraries = result.Data;

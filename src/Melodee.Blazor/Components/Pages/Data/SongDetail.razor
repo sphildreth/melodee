@@ -1,0 +1,54 @@
+@page "/data/song/{ApiKey:guid}"
+@inherits MelodeeComponentBase
+
+@using Song = Melodee.Common.Data.Models.Song
+@inject SongService SongService
+
+
+<PageTitle>@_song.Title</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Path="@($"/data/artist/{_song.AlbumDisc.Album.Artist.ApiKey}")" Text="@_song.AlbumDisc.Album.Artist.Name"/>
+    <RadzenBreadCrumbItem Path="@($"/data/album/{_song.AlbumDisc.Album.ApiKey}")" Text="@_song.AlbumDisc.Album.Name"/>
+    <RadzenBreadCrumbItem Path="/data/songs" Text="Songs"/>
+    <RadzenBreadCrumbItem Icon="music_note" Text="@_song.Title"/>
+</RadzenBreadCrumb>
+
+Details go here for @_song.Title
+
+@code {
+
+    [Parameter] public Guid ApiKey { get; set; }
+
+    Song _song = new Song
+    {
+        CreatedAt = default,
+        Title = string.Empty,
+        TitleNormalized = string.Empty,
+        SongNumber = 0,
+        FileName = string.Empty,
+        FileSize = 0,
+        FileHash = string.Empty,
+        Duration = 0,
+        SamplingRate = 0,
+        BitRate = 0,
+        BitDepth = 0,
+        BPM = 0,
+        ContentType = string.Empty
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (ApiKey != Guid.Empty)
+        {
+            var songResult = await SongService.GetByApiKeyAsync(ApiKey);
+            if (songResult is { IsSuccess: true, Data: not null })
+            {
+                _song = songResult.Data;
+            }
+        }
+    }
+}

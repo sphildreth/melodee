@@ -36,7 +36,16 @@ public class SongService(
                 .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Songs\"");
+                var sqlStartFragment = """
+                                       SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber",
+                                              a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
+                                              ad."DiscNumber" as "DiscNumber", s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                                       FROM "Songs" s
+                                       join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                                       join "Albums" a on (ad."AlbumId" = a."Id")
+                                       join "Artists" ar on (a."ArtistId" = ar."Id")
+                                       """;
+                var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment);
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 if (dbConn is SqliteConnection)
                 {

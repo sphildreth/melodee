@@ -1,0 +1,44 @@
+@page "/data/album/{ApiKey:guid}"
+@inherits MelodeeComponentBase
+
+@using Album = Melodee.Common.Data.Models.Album
+@inject AlbumService AlbumService
+
+
+<PageTitle>@_album.Name</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
+    <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")" Text="Albums"/>
+    <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
+</RadzenBreadCrumb>
+
+Details go here for @_album.Name
+
+@code {
+
+    [Parameter] public Guid ApiKey { get; set; }
+
+    Album _album = new Album
+    {
+        Name = string.Empty,
+        NameNormalized = string.Empty,
+        Directory = string.Empty,
+        CreatedAt = default
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (ApiKey != Guid.Empty)
+        {
+            var albumResult = await AlbumService.GetByApiKeyAsync(ApiKey);
+            if (albumResult is { IsSuccess: true, Data: not null })
+            {
+                _album = albumResult.Data;
+            }
+        }
+    }
+}
