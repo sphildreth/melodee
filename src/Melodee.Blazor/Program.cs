@@ -37,8 +37,6 @@ builder.Host.UseSerilog((hostingContext, loggerConfiguration)
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-//builder.Services.AddServerSideBlazor();
-
 builder.Services.AddControllers(options => { options.Filters.Add<ETagFilter>(); });
 
 builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
@@ -72,6 +70,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 
 #region Melodee Services
+
 builder.Services
     .AddScoped<MainLayoutProxyService>()
     .AddSingleton<ISerializer, Serializer>()
@@ -106,7 +105,8 @@ builder.Services
     .AddScoped<OpenSubsonicApiService>()
     .AddScoped<AlbumImageSearchEngineService>()
     .AddScoped<ArtistImageSearchEngineService>()
-    .AddScoped<ArtistSearchEngineService>();
+    .AddScoped<ArtistSearchEngineService>()
+    .AddScoped<StatisticsService>();
 #endregion
 
 #region Quartz Related
@@ -167,7 +167,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStatusCodePagesWithRedirects("/Error");
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.Services.StartConsumersAsync();
 

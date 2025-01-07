@@ -1,90 +1,44 @@
 ﻿@page "/"
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Authorization
+@using Melodee.Blazor.Components.Pages.Data
+@using Melodee.Common.Models.Collection
+@using Melodee.Common.Models.Collection.Extensions
+
+@inject StatisticsService StatisticsService
+@inject ArtistService ArtistService
+@inject AlbumService AlbumService
 
 <PageTitle>Dashboard</PageTitle>
 
 <RadzenStack>
-    <RadzenPanel AllowCollapse="false">
-        <HeaderTemplate>
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
-                <RadzenIcon Icon="monitoring" class="rz-me-1"/>
-                Statistics
-            </RadzenText>
-        </HeaderTemplate>
-        <ChildContent>
-            <RadzenStack>
-                <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap"
-                             JustifyContent="JustifyContent.Left"
-                             class="rz-p-12" Gap="2rem">
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="artist"/>
-                            Artists | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="contacts_product"/>
-                            Contributors | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="album"/>
-                            Albums | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="music_note"/>
-                            Songs | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="genres"/>
-                            Genres | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="group"/>
-                            Users | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="share"/>
-                            Shares | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="library_music"/>
-                            Libraries | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.25rem"
-                                     Style="padding: 0 0.25rem 0 0; text-transform: none;">
-                            <RadzenIcon Icon="playlist_play"/>
-                            Playlists | 000000000
-                        </RadzenStack>
-                    </RadzenBadge>
-                </RadzenStack>
-            </RadzenStack>
-        </ChildContent>
-    </RadzenPanel>
-    <RadzenPanel AllowCollapse="false">
+    <RadzenRow>
+            <RadzenPanel AllowCollapse="true">
+                <HeaderTemplate>
+                    <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                        <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                        Statistics
+                    </RadzenText>
+                </HeaderTemplate>
+                <ChildContent>
+                    <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap"
+                                 JustifyContent="JustifyContent.Left"
+                                 class="rz-p-6" Gap="2rem">
+                        @foreach (var statistic in _statistics)
+                        {
+                            <RadzenBadge  BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
+                                <RadzenIcon Icon="@statistic.Icon"/>
+                                <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                    @($"{statistic.Title}")
+                                </div>
+                                <div style="width:65px;display:inline-block;text-align:right;">
+                                    @($"{((int)statistic.Data).ToStringPadLeft(PadLeftValue)}")
+                                </div>
+                            </RadzenBadge>
+                        }
+                    </RadzenStack>
+                </ChildContent>
+            </RadzenPanel>
+    </RadzenRow>
+    <RadzenPanel AllowCollapse="true">
         <HeaderTemplate>
             <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
                 <RadzenIcon Icon="artist" class="rz-me-1"/>
@@ -92,10 +46,13 @@
             </RadzenText>
         </HeaderTemplate>
         <ChildContent>
-            Something here
+            @foreach (var artist in _latestArtists)
+            {
+                @artist.Name
+            }
         </ChildContent>
     </RadzenPanel>
-    <RadzenPanel AllowCollapse="false">
+    <RadzenPanel AllowCollapse="true">
         <HeaderTemplate>
             <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
                 <RadzenIcon Icon="album" class="rz-me-1"/>
@@ -103,11 +60,47 @@
             </RadzenText>
         </HeaderTemplate>
         <ChildContent>
-            Something here
+            @foreach (var album in _latestAlbums)
+            {
+                @album.Name
+            }
         </ChildContent>
     </RadzenPanel>
 </RadzenStack>
 
 @code {
+
+    const short PadLeftValue = 8;
+
+    Statistic[] _statistics = [];
+
+    AlbumDataInfo[] _latestAlbums = [];
+    ArtistDataInfo[] _latestArtists = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var statResult = await StatisticsService.GetStatisticsAsync();
+        _statistics = statResult?.Data ?? [];
+
+        var albumLatestResult = await AlbumService.ListAsync(new PagedRequest
+        {
+            PageSize = 12,
+            OrderBy = new Dictionary<string, string>
+            {
+                { nameof(AlbumDataInfo.CreatedAt), PagedRequest.OrderDescDirection }
+            }
+        });
+        _latestAlbums = albumLatestResult.Data.ToArray();
+
+        var artistLatestResult = await ArtistService.ListAsync(new PagedRequest
+        {
+            PageSize = 12,
+            OrderBy = new Dictionary<string, string>
+            {
+                { nameof(ArtistDataInfo.CreatedAt), PagedRequest.OrderDescDirection }
+            }
+        });
+        _latestArtists = artistLatestResult.Data.ToArray();
+    }
 
 }

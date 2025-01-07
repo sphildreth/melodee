@@ -27,6 +27,7 @@ public class SystemController(EtagRepository etagRepository, ISerializer seriali
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
     [HttpPost]
+    [Route("/ping")]
     [Route("/rest/ping")]
     [Route("/rest/ping.view")]
     public Task<IActionResult> Ping(CancellationToken cancellationToken = default)

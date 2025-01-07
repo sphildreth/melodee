@@ -9,7 +9,7 @@
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
+    <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist?.ApiKey}")" Text="@_album.Artist?.Name"/>
     <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")" Text="Albums"/>
     <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
 </RadzenBreadCrumb>

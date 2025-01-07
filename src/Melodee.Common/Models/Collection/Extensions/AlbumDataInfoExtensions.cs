@@ -1,4 +1,5 @@
 using Melodee.Common.Data.Constants;
+using Melodee.Common.Models.Cards;
 
 namespace Melodee.Common.Models.Collection.Extensions;
 

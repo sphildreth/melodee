@@ -8,5 +8,7 @@ public enum StatisticType
 
     Warning,
 
-    Error
+    Error,
+    
+    Count
 }
