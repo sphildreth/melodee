@@ -1,5 +1,6 @@
 using System.Text;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 
 namespace Melodee.Common.Models;
@@ -134,13 +135,21 @@ public sealed record PagedRequest
     /// </summary>
     public (string, Dictionary<string, object>?) FilterByParts(string sqlStartFragment)
     {
+        var sqlStarFragmentHaveWhere = sqlStartFragment.ToNormalizedString()!.Contains("WHERE");
         if (FilterBy == null || FilterBy.Length == 0)
         {
-            return ($"{sqlStartFragment} WHERE 1 = 1", null);
+            if (!sqlStarFragmentHaveWhere)
+            {
+                return ($"{sqlStartFragment} WHERE 1 = 1", null);
+            }
+            return (sqlStartFragment, null);
         }
 
         var sqlResult = new StringBuilder(sqlStartFragment);
-        sqlResult.Append(" WHERE ");
+        if (!sqlStarFragmentHaveWhere)
+        {
+            sqlResult.Append(" WHERE ");
+        }
         foreach (var fb in FilterBy.Select((x,i) => (x,i)))
         {
             if (fb.i > 0)

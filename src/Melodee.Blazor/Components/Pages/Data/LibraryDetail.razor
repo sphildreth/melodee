@@ -3,9 +3,11 @@
 
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
+@using Melodee.Common.Models.Collection
 @using Melodee.Common.Services.Scanning
 @using Library = Melodee.Common.Data.Models.Library
 
+@inject Serilog.ILogger Logger
 @inject DialogService DialogService
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -33,17 +35,24 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
-                <RadzenButton Icon="mop" Text="Clean" Visible="!_library.IsLocked" title="Clean library, removing any empty folders." Click="@CleanButtonClick" />
+                <RadzenButton Icon="mop" Text="Clean" Visible="!_library.IsLocked"
+                              title="Clean library, removing any empty folders." Click="@CleanButtonClick"/>
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Text="Edit" title="Edit the library"
+                              Click="@EditButtonClick"/>
                 @if (_library.IsLocked)
                 {
-                    <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning" title="Unlock library, will allow modifications." Click="@UnlockButtonClick"/>
+                    <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning"
+                                  title="Unlock library, will allow modifications." Click="@UnlockButtonClick"/>
                 }
                 else
                 {
-                    <RadzenButton Icon="lock" Text="Lock" ButtonStyle="ButtonStyle.Warning" title="Lock library, will prevent modifications." Click="@LockButtonClick"/>
+                    <RadzenButton Icon="lock" Text="Lock" ButtonStyle="ButtonStyle.Warning"
+                                  title="Lock library, will prevent modifications." Click="@LockButtonClick"/>
                 }
-                <RadzenButton Icon="delete_sweep" Visible="!_library.IsLocked" ButtonStyle="ButtonStyle.Danger" Text="Purge" title="Delete everything in the library. BEWARE!" Click="@PurgeButtonClick"/>
-                <RadzenButton Icon="update" Visible="!_library.IsLocked" Text="Scan" title="Run scan job on this library." Click="@ScanButtonClick"/>
+                <RadzenButton Icon="delete_sweep" Visible="!_library.IsLocked" ButtonStyle="ButtonStyle.Danger"
+                              Text="Purge" title="Delete everything in the library. BEWARE!" Click="@PurgeButtonClick"/>
+                <RadzenButton Icon="update" Visible="!_library.IsLocked" Text="Scan"
+                              title="Run scan job on this library." Click="@ScanButtonClick"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -53,20 +62,158 @@
     <RadzenRow>
         <RadzenColumn Size="4" SizeMD="2">
             <RadzenCard>
-                Tree Goes here
+                <RadzenTree Change="@OnShowItemChange">
+                    <RadzenTreeItem Text="Overview" Selected="true">
+                        <Template>
+                            <RadzenIcon Icon="overview"/>
+                            @context.Text
+                        </Template>
+                    </RadzenTreeItem>
+                    <RadzenTreeItem Text="Scan History">
+                        <Template>
+                            <RadzenIcon Icon="history"/>
+                            @context.Text
+                        </Template>
+                    </RadzenTreeItem>
+                </RadzenTree>
             </RadzenCard>
         </RadzenColumn>
         <RadzenColumn Size="8" SizeMD="9">
-            <RadzenCard>
-                Tree details Goes here
-            </RadzenCard>
+            @if (_showItem == ShowItem.Overview)
+            {
+                <RadzenPanel AllowCollapse="true">
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                            Statistics
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Horizontal"
+                            Wrap="FlexWrap.Wrap"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-p-6"
+                            Gap="2rem">
+                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
+                                <RadzenIcon Icon="artist"/>
+                                <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                    Artist Count
+                                </div>
+                                <div style="width:65px;display:inline-block;text-align:right;">
+                                    @(_library.ArtistCount.ToStringPadLeft(PadLeftValue))
+                                </div>
+                            </RadzenBadge>
+                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
+                                <RadzenIcon Icon="album"/>
+                                <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                    Album Count
+                                </div>
+                                <div style="width:65px;display:inline-block;text-align:right;">
+                                    @(_library.AlbumCount.ToStringPadLeft(PadLeftValue))
+                                </div>
+                            </RadzenBadge>
+                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
+                                <RadzenIcon Icon="music_note"/>
+                                <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                    Song Count
+                                </div>
+                                <div style="width:65px;display:inline-block;text-align:right;">
+                                    @(_library.SongCount.ToStringPadLeft(PadLeftValue))
+                                </div>
+                            </RadzenBadge>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+            }
+            @if (_showItem == ShowItem.ScanHistory)
+            {
+                <RadzenDataGrid
+                    @ref="_grid"
+                    style="height: 500px;"
+                    IsLoading=@_isLoading
+                    Count="@_count"
+                    Data="@_data"
+                    LoadData="@LoadData"
+                    AllowSorting="true"
+                    AllowFiltering="true"
+                    AllowRowSelectOnRowClick="false"
+                    AllowPaging="true"
+                    Page="OnPage"
+                    PageSize="_defaultPageSize"
+                    PagerHorizontalAlign="HorizontalAlign.Center"
+                    ShowPagingSummary="true"
+                    PageSizeOptions="@_pageSizeOptions"
+                    PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
+                    ColumnWidth="200px"
+                    SelectionMode="DataGridSelectionMode.Single"
+                    @bind-Value=@_selectedData>
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.CreatedAt)" Title="Scan Date"
+                                              Filterable="false" Width="120px">
+                            <Template Context="data">
+                                <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.Duration)" Title="Duration"
+                                              Filterable="false" Width="100px">
+                            <Template Context="data">
+                                <RadzenText Text="@CurrentUser?.FormatDuration(data.Duration)"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.ForArtistName)" Title="For Artist"
+                                              Filterable="true" Width="120px">
+                            <Template Context="data">
+                                <RadzenText Text="@data.ForArtistName"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.ForAlbumName)" Title="For Album"
+                                              Filterable="true" Width="120px">
+                            <Template Context="data">
+                                <RadzenText Text="@data.ForAlbumName"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundArtistsCount)" Title="Found Artist #"
+                                              Filterable="false" Width="100px">
+                            <Template Context="data">
+                                <RadzenText Text="@data.FoundArtistsCount.ToStringPadLeft(PadLeftValue)"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundAlbumsCount)" Title="Found Album #"
+                                              Filterable="false" Width="100px">
+                            <Template Context="data">
+                                <RadzenText Text="@data.FoundAlbumsCount.ToStringPadLeft(PadLeftValue)"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundSongsCount)" Title="Found Song #"
+                                              Filterable="false" Width="100px">
+                            <Template Context="data">
+                                <RadzenText Text="@data.FoundSongsCount.ToStringPadLeft(PadLeftValue)"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            }
         </RadzenColumn>
     </RadzenRow>
 </RadzenStack>
 
 @code {
 
+    RadzenDataGrid<LibraryScanHistoryDataInfo> _grid = null!;
+    int _count;
+    IEnumerable<LibraryScanHistoryDataInfo> _data = null!;
+    bool _isLoading;
+    int _currentPage = 1;
+    short _defaultPageSize = 25;
+    IEnumerable<int> _pageSizeOptions = [10, 20, 30];
+    IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+    IList<LibraryScanHistoryDataInfo> _selectedData = [];
+
+    const short PadLeftValue = 6;
     int _toastTime;
+    ShowItem _showItem = ShowItem.Overview;
 
     [Parameter] public Guid ApiKey { get; set; }
 
@@ -78,12 +225,68 @@
         Type = (int)LibraryType.NotSet
     };
 
+    private enum ShowItem
+    {
+        Overview = 1,
+        ScanHistory
+    }
+
+    void OnPage(PagerEventArgs args)
+    {
+        _currentPage = args.PageIndex + 1;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        _isLoading = true;
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            Dictionary<string, string>? sorting = null;
+            if (args.Sorts.Any())
+            {
+                sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
+            }
+
+            Common.Filtering.FilterOperatorInfo[]? filters = null;
+            if (args.Filters.Any())
+            {
+                filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                        x.FilterValue))
+                    .ToArray();
+            }
+
+            var result = await LibraryService.ListLibraryHistoriesAsync(_library.Id, new PagedRequest
+            {
+                FilterBy = filters,
+                Page = _currentPage,
+                PageSize = SafeParser.ToNumber<short>(args.Top),
+                OrderBy = sorting
+            });
+
+            _data = result.Data;
+            _count = SafeParser.ToNumber<int>(result.TotalCount);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Loading Albums");
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+
+        _isLoading = false;
+    }
+
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        var configuration = await ConfigurationFactory.GetConfigurationAsync();
-        _toastTime = configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
+        _configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
 
         if (ApiKey != Guid.Empty)
         {
@@ -133,7 +336,6 @@
         var confirm = await DialogService.Confirm("<p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions() { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
         if (confirm ?? false)
         {
-
             MainLayoutProxyService.ToggleSpinnerVisible();
             try
             {
@@ -175,6 +377,17 @@
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
+    }
+
+    private Task EditButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+
+    private void OnShowItemChange(TreeEventArgs arg)
+    {
+        _showItem = arg.Text == null || arg.Text == "Overview" ? ShowItem.Overview : ShowItem.ScanHistory;
     }
 
 }

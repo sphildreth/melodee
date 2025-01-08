@@ -19,8 +19,11 @@ public static class ClaimsPrincipalExtensions
     public static string? FormatNumber(this ClaimsPrincipal principal, int? number)
         => number?.ToStringPadLeft(5);    
     
-    public static string? FormatDateTime(this ClaimsPrincipal principal, Instant? dateTime)
-        => dateTime?.ToString("yyyy-MM-dd HH:mm:ss", principal.GetCulture());
+    public static string? FormatInstant(this ClaimsPrincipal principal, Instant? instant)
+        => instant?.ToString("yyyy-MM-dd HH:mm:ss", principal.GetCulture());
+    
+    public static string? FormatDuration(this ClaimsPrincipal principal, Duration? duration)
+        => duration?.ToString("-H", principal.GetCulture());    
     
     public static bool IsAdmin(this ClaimsPrincipal principal)
         => principal.IsInRole(RoleNameRegistry.Administrator);

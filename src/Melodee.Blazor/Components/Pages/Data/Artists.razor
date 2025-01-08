@@ -124,7 +124,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.CreatedAt)" Title="Created" Filterable="false" Width="120px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatDateTime(data.CreatedAt)" />
+                        <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.Tags)" Title="Tags" Width="100px">

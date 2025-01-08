@@ -100,17 +100,17 @@
                 <RadzenDataGridColumn Property="@nameof(User.Email)" Title="Email"/>
                 <RadzenDataGridColumn Property="@nameof(User.LastLoginAt)" Title="Last Login" Width="120px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatDateTime(data.LastLoginAt)" />
+                        <RadzenText Text="@CurrentUser?.FormatInstant(data.LastLoginAt)" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(User.LastActivityAt)" Title="Last Activity" Width="120px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatDateTime(data.LastActivityAt)" />
+                        <RadzenText Text="@CurrentUser?.FormatInstant(data.LastActivityAt)" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(User.CreatedAt)" Title="Created" Filterable="false" Width="120px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatDateTime(data.CreatedAt)" />
+                        <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(User.Tags)" Title="Tags" Width="100px">

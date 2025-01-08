@@ -11,6 +11,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus;
 using Melodee.Common.MessageBus.Events;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.MetaData.Song;
@@ -224,6 +225,56 @@ public class LibraryService : ServiceBase
         {
             Data = result
         };
+    }
+
+    public virtual async Task<MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>> ListLibraryHistoriesAsync(int libraryId, MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    {
+        var librariesCount = 0;
+        LibraryScanHistoryDataInfo[] histories = [];
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            try
+            {
+                var orderBy = pagedRequest.OrderByValue();
+                var dbConn = scopedContext.Database.GetDbConnection();
+                var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Libraries\"");
+                librariesCount = await dbConn
+                    .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
+                    .ConfigureAwait(false);
+                if (!pagedRequest.IsTotalCountOnlyRequest)
+                {
+                    var sqlStartFragment = """
+                                           SELECT l."Id", l."CreatedAt", ar."Name" as "ForArtistName", ar."ApiKey" as "ForArtistApiKey", a."Name" as "ForAlbumName",
+                                                  a."ApiKey" as "ForAlbumApiKey", l."FoundArtistsCount", l."FoundAlbumsCount", l."FoundSongsCount", l."DurationInMs"
+                                           FROM "LibraryScanHistories" l
+                                           left join "Artists" ar on (l."ForArtistId" = ar."Id")
+                                           left join "Albums" a on (L."ForAlbumId" = a."Id")
+                                           where l."LibraryId" = {0} 
+                                           """;                    
+                    var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment.FormatSmart(libraryId));
+                    var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                    if (dbConn is SqliteConnection)
+                    {
+                        listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                    }
+
+                    histories = (await dbConn
+                        .QueryAsync<LibraryScanHistoryDataInfo>(listSql, listSqlParts.Item2)
+                        .ConfigureAwait(false)).ToArray();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to get libraries from database");
+            }
+        }
+
+        return new MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>
+        {
+            TotalCount = librariesCount,
+            TotalPages = pagedRequest.TotalPages(librariesCount),
+            Data = histories
+        }; 
     }
 
     public virtual async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
