@@ -4,13 +4,14 @@ using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Cards;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
 
 namespace Melodee.Common.Services.Scanning;
@@ -248,30 +249,50 @@ public sealed class AlbumDiscoveryService(
         };
     }
 
-    public async Task<PagedResult<AlbumCard>> AlbumsGridsForDirectoryAsync(
+    public async Task<PagedResult<AlbumDataInfo>> AlbumsDataInfosForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
         CheckInitialized();
         var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
-        var data = albumsForDirectoryInfo.Data.ToArray().Select(async x => new AlbumCard
-        {
-            Artist = x.Artist.Name,
-            Created = x.Created,
-            Duration = x.Duration(),
-            MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName),
-            ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
-            IsValid = _albumValidator.ValidateAlbum(x).Data.IsValid,
-            Title = x.AlbumTitle(),
-            Year = x.AlbumYear(),
-            SongCount = x.SongTotalValue(),
-            AlbumStatus = x.Status,
-            ViaPlugins = x.ViaPlugins.ToArray(),
-            Id = x.Id
-        });
-        var d = await Task.WhenAll(data);
-        return new PagedResult<AlbumCard>
+        // var data = albumsForDirectoryInfo.Data.ToArray().Select(async x => new AlbumDataInfo
+        // (
+        //     Artist = x.Artist.Name,
+        //     Created = x.Created,
+        //     Duration = x.Duration(),
+        //     MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName),
+        //     ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
+        //     IsValid = _albumValidator.ValidateAlbum(x).Data.IsValid,
+        //     Title = x.AlbumTitle(),
+        //     Year = x.AlbumYear(),
+        //     SongCount = x.SongTotalValue(),
+        //     AlbumStatus = x.Status,
+        //     ViaPlugins = x.ViaPlugins.ToArray(),
+        //     Id = x.Id
+        // );
+
+        var data = albumsForDirectoryInfo.Data.ToArray().Select(async x => new AlbumDataInfo(
+            0,
+            Guid.Empty,
+            false,
+            x.AlbumTitle() ?? string.Empty,
+            x.AlbumTitle().ToNormalizedString() ?? x.AlbumTitle() ?? string.Empty,
+            null,
+            Guid.Empty,
+            x.Artist.Name,
+            x.MediaCountValue(),
+            x.SongTotalValue(),
+            x.TotalDuration(),
+            Instant.FromDateTimeOffset(x.Created),
+            null,
+            SafeParser.ToLocalDate(x.AlbumYear() ?? 0),
+            SafeParser.ToNumber<short>(_albumValidator.ValidateAlbum(x).Data.AlbumStatus)
+            ) { ImageBytes = await x.CoverImageBytesAsync(cancellationToken)});
+        
+        var d = await Task.WhenAll(data);        
+
+        return new PagedResult<AlbumDataInfo>
         {
             TotalCount = albumsForDirectoryInfo.TotalCount,
             TotalPages = albumsForDirectoryInfo.TotalPages,

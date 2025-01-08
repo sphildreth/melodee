@@ -83,7 +83,7 @@ public sealed class M3UPlaylist(
                         {
                             if (models.Length == songs.Count)
                             {
-                                songTotal = models.Length;
+                                songTotal = SafeParser.ToNumber<short>(models.Length);
                             }
                         }
 

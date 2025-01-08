@@ -5,11 +5,10 @@
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Filtering
+@using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data
-@using Melodee.Common.Services.Scanning
 @using Artist = Melodee.Common.Data.Models.Artist
-@using ArtistCard = Melodee.Common.Models.Cards.ArtistCard
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using ImageSearchResult = Melodee.Blazor.Components.Components.ImageSearchResult
 
@@ -346,7 +345,7 @@
     };
 
     private RadzenImage _image;
-    private IEnumerable<ArtistCard> _selectedArtistCards;
+    private IEnumerable<ArtistDataInfo> _selectedArtistCards;
 
     protected override async Task OnInitializedAsync()
     {

@@ -241,9 +241,9 @@ public static class AlbumExtensions
         return discTotal ?? SafeParser.ToNumber<short>(album.Songs?.Any() ?? false ? 1 : 0);
     }
 
-    public static int SongTotalValue(this Album album)
+    public static short SongTotalValue(this Album album)
     {
-        var songTotalFromAlbum = album.MetaTagValue<int?>(MetaTagIdentifier.SongTotal);
+        var songTotalFromAlbum = album.MetaTagValue<short?>(MetaTagIdentifier.SongTotal);
         if (songTotalFromAlbum is > 0)
         {
             return songTotalFromAlbum.Value;
@@ -255,10 +255,10 @@ public static class AlbumExtensions
             var total = songTotalFromSongNumberTotal.Split('/');
             if (total.Length > 1)
             {
-                return SafeParser.ToNumber<int?>(total[1]) ?? 0;
+                return SafeParser.ToNumber<short?>(total[1]) ?? 0;
             }
 
-            return SafeParser.ToNumber<int?>(songTotalFromSongNumberTotal) ?? 0;
+            return SafeParser.ToNumber<short?>(songTotalFromSongNumberTotal) ?? 0;
         }
 
         var songTotalFromSongs = album.Songs?.FirstOrDefault(x => x.SongTotalNumber() > 0);
@@ -266,8 +266,7 @@ public static class AlbumExtensions
         {
             return songTotalFromSongs.SongTotalNumber();
         }
-
-        return album.Songs?.Count() ?? 0;
+        return SafeParser.ToNumber<short>(album.Songs?.Count() ?? 0);
     }
 
     public static string? Genre(this Album album)

@@ -471,7 +471,7 @@ public abstract class ServiceBase
                             var songTotal = song.SongTotalNumber();
                             if (songTotal < 1)
                             {
-                                songTotal = songsGroupedByAlbum.Count();
+                                songTotal = SafeParser.ToNumber<short>(songsGroupedByAlbum.Count());
                             }
 
                             var newAlbumTags = new List<MetaTag<object?>>

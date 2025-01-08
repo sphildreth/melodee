@@ -23,7 +23,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
                     MockConfigurationFactory(),
                     Serializer);
                 await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
-                var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
+                var albumsForDirectoryAsync = await rd.AlbumsDataInfosForDirectoryAsync(new FileSystemDirectoryInfo
                 {
                     Path = @"/melodee_test/staging",
                     Name = "staging"
@@ -38,8 +38,8 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
                 var firstAlbum = albums.First();
 
                 Assert.True(firstAlbum.SongCount > 1);
-                Assert.True(firstAlbum.Year > 0);
-                Assert.NotNull(firstAlbum.Duration?.Nullify());
+                Assert.True(firstAlbum.ReleaseDate.Year > 0);
+                Assert.True(firstAlbum.Duration > 0);
             }
         }
     }
@@ -59,7 +59,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
                 MockConfigurationFactory(),
                 Serializer);
             await rd.InitializeAsync(TestsBase.NewPluginsConfiguration());
-            var albumsForDirectoryAsync = await rd.AlbumsGridsForDirectoryAsync(new FileSystemDirectoryInfo
+            var albumsForDirectoryAsync = await rd.AlbumsDataInfosForDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/staging",
                 Name = "staging"
@@ -74,8 +74,8 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
             var firstAlbum = albums.First();
 
             Assert.True(firstAlbum.SongCount > 1);
-            Assert.True(firstAlbum.Year > 0);
-            Assert.NotNull(firstAlbum.Duration?.Nullify());
+            Assert.True(firstAlbum.ReleaseDate.Year > 0);
+            Assert.True(firstAlbum.Duration > 0);
         }
     }
 }

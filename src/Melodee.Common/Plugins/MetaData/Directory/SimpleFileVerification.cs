@@ -100,7 +100,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     {
                         if (models.Length == songs.Count)
                         {
-                            songTotal = models.Length;
+                            songTotal = SafeParser.ToNumber<short>(models.Length);
                         }
                     }
 

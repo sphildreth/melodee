@@ -181,9 +181,9 @@ public static class SongExtensions
         return song.MetaTagValue<int?>(MetaTagIdentifier.TrackNumber) ?? 0;
     }
 
-    public static int SongTotalNumber(this Song song)
+    public static short SongTotalNumber(this Song song)
     {
-        return song.MetaTagValue<int?>(MetaTagIdentifier.SongTotal) ?? 0;
+        return song.MetaTagValue<short?>(MetaTagIdentifier.SongTotal) ?? 0;
     }
 
     public static short MediaNumber(this Song song)

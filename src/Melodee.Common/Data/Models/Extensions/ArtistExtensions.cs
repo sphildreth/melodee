@@ -1,8 +1,6 @@
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
-using Melodee.Common.Models.Cards;
-using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.SearchEngines;
 
@@ -18,28 +16,6 @@ public static class ArtistExtensions
             null,
             artist.Id,
             artist.MusicBrainzId?.ToString());
-    }
-
-    public static async Task<ArtistCard> ToMelodeeArtistCardModelAsync(this Artist artist, FileSystemDirectoryInfo artistDirectory, byte[] defaultImageBytes, object? state = null)
-    {
-        byte[] artistPrimaryImageBytes = defaultImageBytes;
-        var primaryImage = artistDirectory.AllFileImageTypeFileInfos().FirstOrDefault(x => x.Name == Artist.PrimaryImageFileName);
-        if (primaryImage != null)
-        {
-            artistPrimaryImageBytes = await File.ReadAllBytesAsync(primaryImage.FullName);
-        }
-        return new ArtistCard
-        {
-            AlbumCount = artist.AlbumCount,
-            ApiKeyId = artist.ToApiKey(),
-            Created = artist.CreatedAt,
-            Id = artist.ApiKey,
-            ImageBytes = artistPrimaryImageBytes,
-            IsValid = artist.ApiKey != Guid.Empty && artist.Name.Nullify() != null,
-            Name = artist.Name,
-            SongCount = artist.SongCount,
-            State = state
-        };
     }
     
     public static string ToCoverArtId(this Artist artist)

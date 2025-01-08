@@ -40,7 +40,10 @@ public static class AlbumExtensions
             album.SongCount ?? 0,
             album.Duration,
             album.CreatedAt,
-            album.Tags);
+            album.Tags,
+            album.ReleaseDate,
+            album.AlbumStatus
+            );
     }
 
     public static RecordLabel[]? RecordLabels(this Album album)
