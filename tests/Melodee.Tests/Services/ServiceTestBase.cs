@@ -91,6 +91,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         return new ApiRequest(
             [],
+            false,
             username,
             "1.16.1",
             "json",

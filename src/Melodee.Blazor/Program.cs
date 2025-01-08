@@ -2,6 +2,7 @@ using Blazored.SessionStorage;
 using Melodee.Blazor.Components;
 using Melodee.Blazor.Extensions;
 using Melodee.Blazor.Filters;
+using Melodee.Blazor.Middleware;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -49,6 +50,12 @@ builder.Services.AddSingleton<IDbConnectionFactory>(_ =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
+
+builder.Services.AddAntiforgery(opt =>
+{
+    opt.Cookie.Name = "melodee_csrf";
+    opt.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 
 builder.Services.AddInMemoryEvent<UserLoginEvent, UserLoginEventHandler>();
 builder.Services.AddInMemoryEvent<AlbumUpdatedEvent, AlbumUpdatedEventHandler>();
@@ -195,6 +202,8 @@ app.MapRazorComponents<App>()
 app.UseCors(
     options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
 );
+
+app.UseMelodeeBlazorHeader();
 
 app.MapControllers();
 

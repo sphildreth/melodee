@@ -1207,6 +1207,14 @@ public class OpenSubsonicApiService(
 
     public async Task<ResponseModel> AuthenticateSubsonicApiAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
+        if (!apiRequest.RequiresAuthentication)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
+            };
+        }
         if (apiRequest.Username?.Nullify() == null ||
             (apiRequest.Password?.Nullify() == null &&
              apiRequest.Token?.Nullify() == null))

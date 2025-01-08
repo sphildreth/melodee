@@ -1,4 +1,5 @@
 using Melodee.Blazor.Filters;
+using Melodee.Common.Configuration;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.SearchEngines;
@@ -12,7 +13,8 @@ public class SearchEngineController(
     EtagRepository etagRepository,
     ArtistSearchEngineService artistSearchEngineService,
     ArtistImageSearchEngineService artistImageSearchEngineService,
-    AlbumImageSearchEngineService albumImageSearchEngineService) : ControllerBase(etagRepository, serializer)
+    AlbumImageSearchEngineService albumImageSearchEngineService,
+    IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     /// <summary>
     ///     Perform an artist search engine search and return results.

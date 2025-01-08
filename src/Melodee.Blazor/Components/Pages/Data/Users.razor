@@ -93,7 +93,7 @@
                 <RadzenDataGridColumn Property="@nameof(User.UserName)" Title="UserName">
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;" Size="ButtonSize.ExtraSmall" Visible="@(CurrentUser?.IsEditor() ?? false)" Click=@(_ => NavigationManager.NavigateTo($"/data/useredit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
-                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}") Style="margin-right: 5px;" AlternateText="@data.UserName"/>
+                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35") Style="margin-right: 5px;" AlternateText="@data.UserName"/>
                         <RadzenLink Text="@data.UserName" Path="@($"/data/user/{data.ApiKey}")"  />
                     </Template>
                 </RadzenDataGridColumn>

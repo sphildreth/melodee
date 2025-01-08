@@ -1,10 +1,11 @@
 using Melodee.Blazor.Filters;
+using Melodee.Common.Configuration;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class JukeboxController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
+public class JukeboxController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     //TODO
     // jukeboxControl

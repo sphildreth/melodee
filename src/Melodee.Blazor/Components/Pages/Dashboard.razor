@@ -11,59 +11,76 @@
 
 <RadzenStack>
     <RadzenRow>
-            <RadzenPanel AllowCollapse="true">
-                <HeaderTemplate>
-                    <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
-                        <RadzenIcon Icon="monitoring" class="rz-me-1"/>
-                        Statistics
-                    </RadzenText>
-                </HeaderTemplate>
-                <ChildContent>
-                    <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap"
-                                 JustifyContent="JustifyContent.Left"
-                                 class="rz-p-6" Gap="2rem">
-                        @foreach (var statistic in _statistics)
-                        {
-                            <RadzenBadge  BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
-                                <RadzenIcon Icon="@statistic.Icon"/>
-                                <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
-                                    @($"{statistic.Title}")
-                                </div>
-                                <div style="width:65px;display:inline-block;text-align:right;">
-                                    @($"{((int)statistic.Data).ToStringPadLeft(PadLeftValue)}")
-                                </div>
-                            </RadzenBadge>
-                        }
-                    </RadzenStack>
-                </ChildContent>
-            </RadzenPanel>
+        <RadzenPanel AllowCollapse="true">
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                    <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                    Statistics
+                </RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack
+                    Orientation="Orientation.Horizontal"
+                    Wrap="FlexWrap.Wrap"
+                    JustifyContent="JustifyContent.Left"
+                    class="rz-p-6"
+                    Gap="2rem">
+                    @foreach (var statistic in _statistics)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
+                            <RadzenIcon Icon="@statistic.Icon"/>
+                            <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                @($"{statistic.Title}")
+                            </div>
+                            <div style="width:65px;display:inline-block;text-align:right;">
+                                @($"{((int)statistic.Data).ToStringPadLeft(PadLeftValue)}")
+                            </div>
+                        </RadzenBadge>
+                    }
+                </RadzenStack>
+            </ChildContent>
+        </RadzenPanel>
     </RadzenRow>
     <RadzenPanel AllowCollapse="true">
         <HeaderTemplate>
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">
                 <RadzenIcon Icon="artist" class="rz-me-1"/>
                 Most recently added artists
             </RadzenText>
         </HeaderTemplate>
         <ChildContent>
-            @foreach (var artist in _latestArtists)
-            {
-                @artist.Name
-            }
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                Wrap="FlexWrap.Wrap"
+                JustifyContent="JustifyContent.Left"
+                class="rz-p-6"
+                Gap="2rem">
+                @foreach (var artist in _latestArtists)
+                {
+                    <ArtistDataInfoCardComponent Artist="@artist"/>
+                }
+            </RadzenStack>
         </ChildContent>
     </RadzenPanel>
     <RadzenPanel AllowCollapse="true">
         <HeaderTemplate>
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">
                 <RadzenIcon Icon="album" class="rz-me-1"/>
                 Most recently added albums
             </RadzenText>
         </HeaderTemplate>
         <ChildContent>
-            @foreach (var album in _latestAlbums)
-            {
-                @album.Name
-            }
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                Wrap="FlexWrap.Wrap"
+                JustifyContent="JustifyContent.Left"
+                class="rz-p-6"
+                Gap="2rem">
+                @foreach (var album in _latestAlbums)
+                {
+                    <AlbumDataInfoCardComponent Album="@album"/>
+                }
+            </RadzenStack>
         </ChildContent>
     </RadzenPanel>
 </RadzenStack>

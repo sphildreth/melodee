@@ -1,5 +1,6 @@
 using System.Net;
 using Melodee.Blazor.Filters;
+using Melodee.Common.Configuration;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
@@ -10,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class MediaRetrievalController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
+public class MediaRetrievalController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     //TODO
     //getLyrics

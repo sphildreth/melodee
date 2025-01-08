@@ -1,11 +1,12 @@
 using Melodee.Blazor.Filters;
+using Melodee.Common.Configuration;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class MediaAnnotationController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
+public class MediaAnnotationController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     /// <summary>
     ///     Sets the rating for a music file.

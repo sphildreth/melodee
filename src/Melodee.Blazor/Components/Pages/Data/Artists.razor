@@ -98,7 +98,7 @@
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.Name)" Title="Name">
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(_ => NavigationManager.NavigateTo($"/data/artistedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
-                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35?{CurrentUser?.ApiRequestQuery()}") Style="margin-right: 5px;" AlternateText="@data.Name"/>
+                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35") Style="margin-right: 5px;" AlternateText="@data.Name"/>
                         <RadzenLink Text="@data.Name" Path="@($"/data/artist/{data.ApiKey}")" />
                     </Template>
                 </RadzenDataGridColumn>
@@ -155,7 +155,7 @@
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     int _toastTime;
     IList<ArtistDataInfo> _selectedArtists = [];
-    IList<ArtistCard> _selectedArtistCards = [];
+    IList<ArtistDataInfo> _selectedArtistDataInfos = [];
 
     string _debounceInputValue = "";
 
@@ -175,13 +175,13 @@
         ToMergeInto
     }
 
-    readonly Func<ArtistCard, RadzenDropZone<ArtistCard>, bool> _itemSelector = (item, zone)
+    readonly Func<ArtistDataInfo, RadzenDropZone<ArtistDataInfo>, bool> _itemSelector = (item, zone)
         => (ArtistMergeState)(item.State ?? ArtistMergeState.ToBeMerged) == (ArtistMergeState)zone.Value;
 
-    readonly Func<RadzenDropZoneItemEventArgs<ArtistCard>, bool> _canDrop = _
+    readonly Func<RadzenDropZoneItemEventArgs<ArtistDataInfo>, bool> _canDrop = _
         => true;
 
-    void OnDrop(RadzenDropZoneItemEventArgs<ArtistCard> args)
+    void OnDrop(RadzenDropZoneItemEventArgs<ArtistDataInfo> args)
     {
         if (args.FromZone != args.ToZone)
         {
@@ -190,8 +190,8 @@
 
         if (args.ToItem != null && args.ToItem != args.Item)
         {
-            _selectedArtistCards.Remove(args.Item);
-            _selectedArtistCards.Insert(_selectedArtistCards.IndexOf(args.ToItem), args.Item);
+            _selectedArtistDataInfos.Remove(args.Item);
+            _selectedArtistDataInfos.Insert(_selectedArtistDataInfos.IndexOf(args.ToItem), args.Item);
         }
     }
 
@@ -258,20 +258,19 @@
 
     private async Task MergeSelectedButtonClick()
     {
-        _selectedArtistCards = new List<ArtistCard>();
+        _selectedArtistDataInfos = new List<ArtistDataInfo>();
         foreach (var selectedArtist in _selectedArtists)
         {
             var library = await LibraryService.GetAsync(selectedArtist.LibraryId);
             if (library is { IsSuccess: true, Data: not null })
             {
-                var artistDirectory = selectedArtist.ToFileSystemDirectoryInfo(library.Data.Path);
-                _selectedArtistCards.Add(await selectedArtist.ToMelodeeArtistCardModelAsync(artistDirectory, DefaultImages.ArtistBytes, ArtistMergeState.ToBeMerged));
+                _selectedArtistDataInfos.Add(selectedArtist);
             }
         }
         await DialogService.OpenAsync("Merge Artists", ds =>
                 @<RadzenStack>
-                    <RadzenDropZoneContainer TItem="ArtistCard"
-                                             Data="_selectedArtistCards"
+                    <RadzenDropZoneContainer TItem="ArtistDataInfo"
+                                             Data="_selectedArtistDataInfos"
                                              ItemSelector="@_itemSelector"
                                              CanDrop="@_canDrop"
                                              Drop="@OnDrop">
@@ -286,7 +285,7 @@
                             </RadzenStack>
                         </ChildContent>
                         <Template>
-                            <ArtistCardComponent Artist="@context"/>
+                            <ArtistDataInfoCardComponent Artist="@context"/>
                         </Template>
                     </RadzenDropZoneContainer>
                     <RadzenButton Icon="cell_merge"  Text="Merge" Click="@DoMergeButtonClick" ButtonStyle="ButtonStyle.Primary" />
@@ -333,7 +332,11 @@
 
         try
         {
-            var result = await ArtistService.MergeArtistsAsync(_selectedArtistCards.First(x => x.State != null && (ArtistMergeState)x.State == ArtistMergeState.ToMergeInto).Id, _selectedArtistCards.Where(x => x.State != null && (ArtistMergeState)x.State == ArtistMergeState.ToBeMerged).Select(x => x.Id).ToArray());
+            var result = await ArtistService.MergeArtistsAsync(
+                _selectedArtistDataInfos.First(x => x.State != null && (ArtistMergeState)x.State == ArtistMergeState.ToMergeInto).Id,
+                _selectedArtistDataInfos.Where(x => x.State != null && (ArtistMergeState)x.State == ArtistMergeState.ToBeMerged)
+                    .Select(x => x.Id)
+                    .ToArray());
             if (result.IsSuccess)
             {
                 await _grid.RefreshDataAsync();

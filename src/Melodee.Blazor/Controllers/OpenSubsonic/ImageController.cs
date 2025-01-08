@@ -1,4 +1,5 @@
 using Melodee.Blazor.Filters;
+using Melodee.Common.Configuration;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +7,7 @@ using ILogger = Serilog.ILogger;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class ImageController(OpenSubsonicApiService openSubsonicApiService, EtagRepository etagRepository, ISerializer serializer) : ControllerBase(etagRepository, serializer)
+public class ImageController(OpenSubsonicApiService openSubsonicApiService, EtagRepository etagRepository, ISerializer serializer,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     /// <summary>
     ///     Returns an image based on id and size.

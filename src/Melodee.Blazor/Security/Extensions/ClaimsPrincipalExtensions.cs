@@ -32,12 +32,4 @@ public static class ClaimsPrincipalExtensions
     {
         return principal.IsInRole(RoleNameRegistry.Editor) || principal.IsAdmin();
     }
-    
-    public static string ApiRequestQuery(this ClaimsPrincipal principal)
-    {
-        var userName = WebUtility.UrlEncode(principal.FindFirstValue(ClaimTypes.Name));
-        var userSalt = WebUtility.UrlEncode(principal.FindFirstValue(ClaimTypeRegistry.UserSalt));
-        var userToken = WebUtility.UrlEncode(principal.FindFirstValue(ClaimTypeRegistry.UserToken));
-        return $"u={userName}&s={userSalt}&t={userToken}";
-    }
 }

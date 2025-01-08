@@ -1,19 +1,25 @@
 using Melodee.Blazor.Filters;
+using Melodee.Blazor.Middleware;
 using Melodee.Blazor.Results;
+using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 using Melodee.Results;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.WebUtilities;
 using Serilog;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public abstract class ControllerBase(EtagRepository etagRepository, ISerializer serializer) : Controller
+public abstract class ControllerBase(EtagRepository etagRepository, ISerializer serializer, IMelodeeConfigurationFactory configurationFactory) : Controller
 {
     protected readonly ISerializer Serializer = serializer;
 
@@ -107,7 +113,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
         return new XmlStringResult(Serializer.SerializeOpenSubsonicModelToXml(modelData)!);
     }
 
-    public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+    public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var values = new List<KeyValue>();
         foreach (var header in context.HttpContext.Request.Headers)
@@ -141,10 +147,21 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             values.Add(new KeyValue("callback", context.HttpContext.Request.Query["callback"].FirstOrDefault()));
             values.Add(new KeyValue("jwt", context.HttpContext.Request.Query["jwt"].FirstOrDefault()));
         }
+
+        var requiresAuth = true;
+        context.HttpContext.Request.Cookies.TryGetValue("melodee_blazor_token", out var melodeeBlazorTokenCookie);
+        if (!string.IsNullOrWhiteSpace(melodeeBlazorTokenCookie))
+        {
+            var configuration = await configurationFactory.GetConfigurationAsync();
+            var cookieHash = HashHelper.CreateMd5(DateTime.UtcNow.ToString(MelodeeBlazorCookieMiddleware.DateFormat) + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) ?? string.Empty;
+            requiresAuth = melodeeBlazorTokenCookie != cookieHash;
+        }
+        
         values.Add(new KeyValue("QueryString", context.HttpContext.Request.QueryString.ToString()));
         ApiRequest = new ApiRequest
         (
             values.ToArray(),
+            requiresAuth,
             values.FirstOrDefault(x => x.Key == "u")?.Value,
             values.FirstOrDefault(x => x.Key == "v")?.Value,
             values.FirstOrDefault(x => x.Key == "f")?.Value,
@@ -163,6 +180,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             )
         );
         Console.WriteLine($"-*-> User [{ApiRequest.Username}] : { Serializer.Serialize(ApiRequest)}");
-        return base.OnActionExecutionAsync(context, next);
+        //return base.OnActionExecutionAsync(context, next);
+        await next().ConfigureAwait(false);
     }
 }

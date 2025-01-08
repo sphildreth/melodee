@@ -456,13 +456,13 @@ public class ArtistService(
     /// <summary>
     /// Merge all artists to merge into the merge into artist
     /// </summary>
-    /// <param name="artistApiKeyToMergeInto">The artist to merge the other artists into.</param>
-    /// <param name="artistApiKeysToMerge">Artists to merge.</param>
+    /// <param name="artistIdToMergeInfo">The artist to merge the other artists into.</param>
+    /// <param name="artistIdsToMerge">Artists to merge.</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    public async Task<MelodeeModels.OperationResult<bool>> MergeArtistsAsync(Guid artistApiKeyToMergeInto, Guid[] artistApiKeysToMerge, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> MergeArtistsAsync(int artistIdToMergeInfo, int[] artistIdsToMerge, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => artistApiKeyToMergeInto == Guid.Empty, artistApiKeyToMergeInto, nameof(artistApiKeyToMergeInto));
-        Guard.Against.NullOrEmpty(artistApiKeysToMerge, nameof(artistApiKeysToMerge));
+        Guard.Against.Expression(x => x < 1, artistIdToMergeInfo, nameof(artistIdToMergeInfo));
+        Guard.Against.NullOrEmpty(artistIdsToMerge, nameof(artistIdsToMerge));
         
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -471,12 +471,12 @@ public class ArtistService(
             var dbArtistToMergeInto = await scopedContext
                 .Artists
                 .Include(x => x.Library)
-                .FirstOrDefaultAsync(x => x.ApiKey == artistApiKeyToMergeInto, cancellationToken)
+                .FirstOrDefaultAsync(x => x.Id == artistIdToMergeInfo, cancellationToken)
                 .ConfigureAwait(false);
             
             if (dbArtistToMergeInto == null)
             {
-                return new MelodeeModels.OperationResult<bool>($"Unknown artist to merge into [{artistApiKeyToMergeInto}].")
+                return new MelodeeModels.OperationResult<bool>($"Unknown artist to merge into [{artistIdToMergeInfo}].")
                 {
                     Data = false
                 };
@@ -488,14 +488,14 @@ public class ArtistService(
             }
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
             var libraryIdsToUpdate = new List<int>();
-            foreach (var artistApiKeyToMerge in artistApiKeysToMerge)
+            foreach (var artistApiKeyToMerge in artistIdsToMerge)
             {
                 var dbArtist = await scopedContext
                     .Artists
                     .Include(x => x.Library)
                     .Include(x => x.Albums)
                     .Include(x => x.UserArtists)
-                    .FirstOrDefaultAsync(x => x.ApiKey == artistApiKeyToMerge, cancellationToken)
+                    .FirstOrDefaultAsync(x => x.Id == artistApiKeyToMerge, cancellationToken)
                     .ConfigureAwait(false);
                 if (dbArtist == null)
                 {

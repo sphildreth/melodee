@@ -1,11 +1,12 @@
 using Melodee.Blazor.Filters;
+using Melodee.Common.Configuration;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class MediaLibraryScanning(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService) : ControllerBase(etagRepository, serializer)
+public class MediaLibraryScanning(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     /// <summary>
     ///     Initiates a rescan of the media libraries.

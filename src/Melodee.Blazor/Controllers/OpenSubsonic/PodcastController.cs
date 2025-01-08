@@ -1,5 +1,6 @@
 using System.Net;
 using Melodee.Blazor.Filters;
+using Melodee.Common.Configuration;
 using Melodee.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace Melodee.Blazor.Controllers.OpenSubsonic;
 /// <summary>
 ///     No plans on implementing Podcasts in Melodee.
 /// </summary>
-public class PodcastController(ISerializer serializer, EtagRepository etagRepository) : ControllerBase(etagRepository, serializer)
+public class PodcastController(ISerializer serializer, EtagRepository etagRepository,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     [HttpGet]
     [HttpPost]
