@@ -19,7 +19,7 @@ Details go here for @_artist.Name
 
     [Parameter] public Guid ApiKey { get; set; }
 
-    Artist _artist = new Artist
+    Artist _artist = new()
     {
         Name = string.Empty,
         NameNormalized = string.Empty,
@@ -41,4 +41,5 @@ Details go here for @_artist.Name
             }
         }
     }
+
 }

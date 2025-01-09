@@ -1,9 +1,13 @@
 @page "/admin/settings"
 
-@using Common.Data.Models
+@using Melodee.Common.Data.Models
+@using Melodee.Common.Filtering
+@using Serilog
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
+@inherits MelodeeComponentBase
 
 @inject MainLayoutProxyService MainLayoutProxyService
-@inject Serilog.ILogger Logger
+@inject ILogger Logger
 @inject SettingService SettingService
 @inject NotificationService NotificationService
 
@@ -28,7 +32,7 @@
     <RadzenDataGrid
         @ref="_grid"
         style="height: 500px;"
-        IsLoading=@_isLoading
+        IsLoading="@_isLoading"
         Count="@_count"
         Data="@_settings"
         LoadData="@LoadData"
@@ -36,10 +40,10 @@
         AllowFiltering="true"
         AllowPaging="true"
         Page="OnPage"
-        PageSize="_defaultPageSize"
+        PageSize="@DefaultPageSize"
         PagerHorizontalAlign="HorizontalAlign.Center"
         ShowPagingSummary="true"
-        PageSizeOptions="@_pageSizeOptions"
+        PageSizeOptions="@PageSizeOptions"
         PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
         ColumnWidth="200px"
         TItem="Setting"
@@ -70,7 +74,7 @@
                 </Template>
                 <EditTemplate Context="setting">
                     <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat"
-                                  Size="ButtonSize.Medium" Click="@((_) => SaveRow(setting))" aria-label="Save">
+                                  Size="ButtonSize.Medium" Click="@(_ => SaveRow(setting))" aria-label="Save">
                     </RadzenButton>
                     <RadzenButton
                         Icon="close"
@@ -78,7 +82,7 @@
                         Variant="Variant.Flat"
                         Size="ButtonSize.Medium"
                         class="rz-my-1 rz-ms-1"
-                        Click="@((_) => CancelEdit(setting))"
+                        Click="@(_ => CancelEdit(setting))"
                         aria-label="Cancel">
                     </RadzenButton>
                 </EditTemplate>
@@ -93,12 +97,10 @@
     IEnumerable<Setting> _settings = null!;
     bool _isLoading;
     int _currentPage = 1;
-    short _defaultPageSize = 25;
-    IEnumerable<int> _pageSizeOptions = [10, 20, 30];
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
 
     string _debounceInputValue = "";
-    int _toastTime;
+    int ToastTime;
 
     async Task EditRow(Setting setting)
     {
@@ -119,7 +121,7 @@
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
-                Duration = _toastTime,
+                Duration = ToastTime,
                 SummaryContent = _ => @<RadzenText TextStyle="TextStyle.H6">Successfully updated setting!</RadzenText>,
                 DetailContent = ns => @<RadzenButton Text="Ok" Click="@(_ => ns.Messages.Clear())"/>
             });
@@ -134,14 +136,6 @@
     void CancelEdit(Setting setting)
     {
         _grid.CancelEditRow(setting);
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        _configuration = await SettingService.GetMelodeeConfigurationAsync();
-        _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
-        _defaultPageSize = _configuration.DefaultPageSize();
-        _pageSizeOptions = _configuration.DefaultPageSizeOptions();
     }
 
     void OnPage(PagerEventArgs args)
@@ -161,20 +155,20 @@
                 sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
             }
 
-            Common.Filtering.FilterOperatorInfo[]? filters = null;
+            FilterOperatorInfo[]? filters = null;
             if (_debounceInputValue.Nullify() != null)
             {
                 filters =
                 [
-                    new Common.Filtering.FilterOperatorInfo(nameof(Setting.Key), Common.Filtering.FilterOperator.Contains, _debounceInputValue),
-                    new Common.Filtering.FilterOperatorInfo(nameof(Setting.Comment), Common.Filtering.FilterOperator.Contains, _debounceInputValue, Common.Filtering.FilterOperatorInfo.OrJoinOperator),
-                    new Common.Filtering.FilterOperatorInfo(nameof(Setting.Value), Common.Filtering.FilterOperator.Contains, _debounceInputValue, Common.Filtering.FilterOperatorInfo.OrJoinOperator)
+                    new FilterOperatorInfo(nameof(Setting.Key), FilterOperator.Contains, _debounceInputValue),
+                    new FilterOperatorInfo(nameof(Setting.Comment), FilterOperator.Contains, _debounceInputValue, FilterOperatorInfo.OrJoinOperator),
+                    new FilterOperatorInfo(nameof(Setting.Value), FilterOperator.Contains, _debounceInputValue, FilterOperatorInfo.OrJoinOperator)
                 ];
             }
             else if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
                         x.FilterValue))
                     .ToArray();
             }

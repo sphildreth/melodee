@@ -1,13 +1,14 @@
 @page "/data/artists"
 @inherits MelodeeComponentBase
-
-@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
+@using Serilog
 @using Artist = Melodee.Common.Data.Models.Artist
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 
 @inject MainLayoutProxyService MainLayoutProxyService
-@inject Serilog.ILogger Logger
+@inject ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject ArtistService ArtistService
 @inject LibraryService LibraryService
@@ -35,9 +36,11 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
-                    <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" />
-                    <RadzenButton Icon="cell_merge" Disabled="_selectedArtists.Count < 2" Text="Merge" Click="@MergeSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
-                    <RadzenButton Icon="delete" Disabled="!_selectedArtists.Any()" Text="Delete" Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
+                <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick"/>
+                <RadzenButton Icon="cell_merge" Disabled="_selectedArtists.Count < 2" Text="Merge"
+                              Click="@MergeSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
+                <RadzenButton Icon="delete" Disabled="!_selectedArtists.Any()" Text="Delete"
+                              Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -49,28 +52,28 @@
                    MinLength="3"
                    OnValueChanged="@DoSearchAsync"
                    ForceNotifyByEnter="true"
-                   ForceNotifyOnBlur="true" />
+                   ForceNotifyOnBlur="true"/>
     <RadzenRow>
         <RadzenDataGrid
             @ref="_grid"
             style="height: 500px;"
-            IsLoading=@_isLoading
+            IsLoading="@_isLoading"
             Count="@_count"
             Data="@_artists"
             LoadData="@LoadData"
             AllowSorting="true"
             AllowFiltering="true"
-            AllowRowSelectOnRowClick = "false"
+            AllowRowSelectOnRowClick="false"
             AllowPaging="true"
             Page="OnPage"
-            PageSize="_defaultPageSize"
+            PageSize="DefaultPageSize"
             PagerHorizontalAlign="HorizontalAlign.Center"
             ShowPagingSummary="true"
-            PageSizeOptions="@_pageSizeOptions"
+            PageSizeOptions="@PageSizeOptions"
             PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
             ColumnWidth="200px"
             SelectionMode="DataGridSelectionMode.Multiple"
-            @bind-Value=@_selectedArtists>
+            @bind-Value="@_selectedArtists">
             <Columns>
                 <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
                     <HeaderTemplate>
@@ -78,17 +81,18 @@
                             TabIndex="-1"
                             TriState="false"
                             TValue="bool?"
-                            InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select all items" } })"
                             Value="@(_selectedArtists.Any() != true ? false : !_artists.All(i => _selectedArtists.Contains(i)) ? null : _artists.Any(i => _selectedArtists.Contains(i)))"
-                            Change="@(args => _selectedArtists = args == true ? _selectedArtists.ToList() : [])" />
+                            Change="@(args => _selectedArtists = args == true ? _selectedArtists.ToList() : [])"/>
                     </HeaderTemplate>
                     <Template Context="data">
-                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)" MouseEnter="@(args => ShowTooltip(args, "Artist is locked. Locked artists cannot be deleted.") )" />
+                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)"
+                                    MouseEnter="@(args => ShowTooltip(args, "Artist is locked. Locked artists cannot be deleted."))"/>
                         <RadzenCheckBox
                             TabIndex="-1"
                             TriState="false"
                             Value="@(_selectedArtists.Contains(data))"
-                            InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select item" } })"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select item" } })"
                             Change="@(_ => { _grid.SelectRow(data); })"
                             Visible="@(!data.IsLocked)"
                             TValue="bool"/>
@@ -96,12 +100,17 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.Name)" Title="Name">
                     <Template Context="data">
-                        <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(_ => NavigationManager.NavigateTo($"/data/artistedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
-                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35") Style="margin-right: 5px;" AlternateText="@data.Name"/>
-                        <RadzenLink Text="@data.Name" Path="@($"/data/artist/{data.ApiKey}")" />
+                        <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)"
+                                      Size="ButtonSize.ExtraSmall"
+                                      Click=@(_ => NavigationManager.NavigateTo($"/data/artistedit/{data.ApiKey}"))
+                                      Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
+                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35") Style="margin-right: 5px;"
+                                     AlternateText="@data.Name"/>
+                        <RadzenLink Text="@data.Name" Path="@($"/data/artist/{data.ApiKey}")"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.AlternateNames)"  Title="Alternate Names" Width="200px">
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.AlternateNames)" Title="Alternate Names"
+                                      Width="200px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.AlternateNames?.ToTags() ?? [])
@@ -114,17 +123,18 @@
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.Directory)" Title="Directory"/>
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.AlbumCount)" Title="Albums" Width="80px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatNumber(data.AlbumCount)" />
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.AlbumCount)"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.SongCount)" Title="Songs" Width="80px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatNumber(data.SongCount)" />
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.SongCount)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.CreatedAt)" Title="Created" Filterable="false" Width="120px">
+                <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.CreatedAt)" Title="Created" Filterable="false"
+                                      Width="120px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)" />
+                        <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.Tags)" Title="Tags" Width="100px">
@@ -149,24 +159,10 @@
     IEnumerable<ArtistDataInfo> _artists = null!;
     bool _isLoading;
     int _currentPage = 1;
-    short _defaultPageSize = 25;
-    IEnumerable<int> _pageSizeOptions = [10, 20, 30];
-    IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
-    int _toastTime;
     IList<ArtistDataInfo> _selectedArtists = [];
     IList<ArtistDataInfo> _selectedArtistDataInfos = [];
 
     string _debounceInputValue = "";
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        _configuration = await ConfigurationFactory.GetConfigurationAsync();
-        _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
-        _defaultPageSize = _configuration.DefaultPageSize();
-        _pageSizeOptions = _configuration.DefaultPageSizeOptions();
-    }
 
     private enum ArtistMergeState
     {
@@ -211,19 +207,19 @@
                 sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
             }
 
-            Common.Filtering.FilterOperatorInfo[]? filters = null;
+            FilterOperatorInfo[]? filters = null;
             if (_debounceInputValue.Nullify() != null)
             {
                 filters =
                 [
-                    new Common.Filtering.FilterOperatorInfo(nameof(Artist.NameNormalized), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
-                    new Common.Filtering.FilterOperatorInfo(nameof(Artist.AlternateNames), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, Common.Filtering.FilterOperatorInfo.OrJoinOperator)
+                    new FilterOperatorInfo(nameof(Artist.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                    new FilterOperatorInfo(nameof(Artist.AlternateNames), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, FilterOperatorInfo.OrJoinOperator)
                 ];
             }
             else if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
                         x.FilterValue))
                     .ToArray();
             }
@@ -252,7 +248,7 @@
 
     private void AddButtonClick()
     {
-        NavigationManager.NavigateTo($"/data/artistedit/{ Guid.Empty }");
+        NavigationManager.NavigateTo($"/data/artistedit/{Guid.Empty}");
     }
 
     private async Task MergeSelectedButtonClick()
@@ -266,6 +262,7 @@
                 _selectedArtistDataInfos.Add(selectedArtist);
             }
         }
+
         await DialogService.OpenAsync("Merge Artists", ds =>
                 @<RadzenStack>
                     <RadzenDropZoneContainer TItem="ArtistDataInfo"
@@ -275,10 +272,14 @@
                                              Drop="@OnDrop">
                         <ChildContent>
                             <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap">
-                                <RadzenDropZone Value="ArtistMergeState.ToBeMerged" class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2" Style="flex: 1;">
+                                <RadzenDropZone Value="ArtistMergeState.ToBeMerged"
+                                                class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2"
+                                                Style="flex: 1;">
                                     <RadzenText Text="Merge these artists" TextStyle="TextStyle.Subtitle2"/>
                                 </RadzenDropZone>
-                                <RadzenDropZone Value="ArtistMergeState.ToMergeInto" class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2" Style="flex: 1;">
+                                <RadzenDropZone Value="ArtistMergeState.ToMergeInto"
+                                                class="rz-display-flex rz-flex-column rz-border-base-300 rz-border-radius-2"
+                                                Style="flex: 1;">
                                     <RadzenText Text="Into this artist" TextStyle="TextStyle.Subtitle2"/>
                                 </RadzenDropZone>
                             </RadzenStack>
@@ -287,7 +288,8 @@
                             <ArtistDataInfoCardComponent Artist="@context"/>
                         </Template>
                     </RadzenDropZoneContainer>
-                    <RadzenButton Icon="cell_merge"  Text="Merge" Click="@DoMergeButtonClick" ButtonStyle="ButtonStyle.Primary" />
+                    <RadzenButton Icon="cell_merge" Text="Merge" Click="@DoMergeButtonClick"
+                                  ButtonStyle="ButtonStyle.Primary"/>
                 </RadzenStack>
             , new DialogOptions
             {
@@ -295,22 +297,23 @@
                 Width = "800px",
                 Height = "600px"
             }
-            );
+        );
     }
 
     private async Task DeleteSelectedButtonClick()
     {
-        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
             var deleteResult = await ArtistService.DeleteAsync(_selectedArtists.Select(x => x.Id).ToArray());
             if (deleteResult.IsSuccess)
             {
-                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", _toastTime));
+                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
                 await _grid.RefreshDataAsync();
                 return;
             }
-            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", _toastTime));
+
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
         }
     }
 
@@ -339,14 +342,15 @@
             if (result.IsSuccess)
             {
                 await _grid.RefreshDataAsync();
-
             }
-            NotificationService.Notify(NotificationMessageForResult(result, "Merged Artists", _toastTime));
+
+            NotificationService.Notify(NotificationMessageForResult(result, "Merged Artists", ToastTime));
         }
         finally
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
     }
+
 }
 

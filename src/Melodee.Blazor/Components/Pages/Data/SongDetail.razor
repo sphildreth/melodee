@@ -9,8 +9,10 @@
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Path="@($"/data/artist/{_song.AlbumDisc?.Album?.Artist?.ApiKey}")" Text="@_song.AlbumDisc?.Album?.Artist?.Name"/>
-    <RadzenBreadCrumbItem Path="@($"/data/album/{_song.AlbumDisc?.Album?.ApiKey}")" Text="@_song.AlbumDisc?.Album?.Name"/>
+    <RadzenBreadCrumbItem Path="@($"/data/artist/{_song.AlbumDisc?.Album?.Artist?.ApiKey}")"
+                          Text="@_song.AlbumDisc?.Album?.Artist?.Name"/>
+    <RadzenBreadCrumbItem Path="@($"/data/album/{_song.AlbumDisc?.Album?.ApiKey}")"
+                          Text="@_song.AlbumDisc?.Album?.Name"/>
     <RadzenBreadCrumbItem Path="/data/songs" Text="Songs"/>
     <RadzenBreadCrumbItem Icon="music_note" Text="@_song.Title"/>
 </RadzenBreadCrumb>
@@ -21,7 +23,7 @@ Details go here for @_song.Title
 
     [Parameter] public Guid ApiKey { get; set; }
 
-    Song _song = new Song
+    Song _song = new()
     {
         CreatedAt = default,
         Title = string.Empty,
@@ -51,4 +53,5 @@ Details go here for @_song.Title
             }
         }
     }
+
 }

@@ -20,7 +20,7 @@ Details go here for @_album.Name
 
     [Parameter] public Guid ApiKey { get; set; }
 
-    Album _album = new Album
+    Album _album = new()
     {
         Name = string.Empty,
         NameNormalized = string.Empty,
@@ -41,4 +41,5 @@ Details go here for @_album.Name
             }
         }
     }
+
 }

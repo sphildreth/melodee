@@ -1,12 +1,12 @@
 @page "/data/songs"
+@using Melodee.Common.Filtering
+@using Melodee.Common.Models.Collection
+@using Serilog
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @inherits MelodeeComponentBase
 
-@using System.Globalization
-@using Melodee.Common.Models.Collection
-@using Melodee.Common.Models.Collection.Extensions
-
 @inject MainLayoutProxyService MainLayoutProxyService
-@inject Serilog.ILogger Logger
+@inject ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject SongService SongService
 @inject NotificationService NotificationService
@@ -17,7 +17,7 @@
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Icon="music_note" Text="Songs" />
+    <RadzenBreadCrumbItem Icon="music_note" Text="Songs"/>
 </RadzenBreadCrumb>
 
 <RadzenStack>
@@ -31,7 +31,8 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
-                <RadzenButton Icon="delete" Disabled="!_selectedSongs.Any()" Text="Delete" Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
+                <RadzenButton Icon="delete" Disabled="!_selectedSongs.Any()" Text="Delete"
+                              Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -43,28 +44,28 @@
                    MinLength="3"
                    OnValueChanged="@DoSearchAsync"
                    ForceNotifyByEnter="true"
-                   ForceNotifyOnBlur="true" />
+                   ForceNotifyOnBlur="true"/>
     <RadzenRow>
         <RadzenDataGrid
             @ref="_grid"
             style="height: 500px;"
-            IsLoading=@_isLoading
+            IsLoading="@_isLoading"
             Count="@_count"
             Data="@_songs"
             LoadData="@LoadData"
             AllowSorting="true"
             AllowFiltering="true"
-            AllowRowSelectOnRowClick = "false"
+            AllowRowSelectOnRowClick="false"
             AllowPaging="true"
             Page="OnPage"
-            PageSize="_defaultPageSize"
+            PageSize="DefaultPageSize"
             PagerHorizontalAlign="HorizontalAlign.Center"
             ShowPagingSummary="true"
-            PageSizeOptions="@_pageSizeOptions"
+            PageSizeOptions="@PageSizeOptions"
             PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
             ColumnWidth="200px"
             SelectionMode="DataGridSelectionMode.Multiple"
-            @bind-Value=@_selectedSongs>
+            @bind-Value="@_selectedSongs">
             <Columns>
                 <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
                     <HeaderTemplate>
@@ -72,17 +73,18 @@
                             TabIndex="-1"
                             TriState="false"
                             TValue="bool?"
-                            InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select all items" } })"
                             Value="@(_selectedSongs.Any() != true ? false : !_songs.All(i => _selectedSongs.Contains(i)) ? null : _songs.Any(i => _selectedSongs.Contains(i)))"
-                            Change="@(args => _selectedSongs = args == true ? _selectedSongs.ToList() : [])" />
+                            Change="@(args => _selectedSongs = args == true ? _selectedSongs.ToList() : [])"/>
                     </HeaderTemplate>
                     <Template Context="data">
-                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)" title="Album is locked. Locked albums cannot be deleted." />
+                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)"
+                                    title="Album is locked. Locked albums cannot be deleted."/>
                         <RadzenCheckBox
                             TabIndex="-1"
                             TriState="false"
                             Value="@(_selectedSongs.Contains(data))"
-                            InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select item" } })"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select item" } })"
                             Change="@(_ => { _grid.SelectRow(data); })"
                             Visible="@(!data.IsLocked)"
                             TValue="bool"/>
@@ -90,43 +92,49 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.Title)" Title="Title" Width="300px">
                     <Template Context="data">
-                        <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)" Size="ButtonSize.ExtraSmall" Click=@(_ => NavigationManager.NavigateTo($"/data/songedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
-                        <RadzenLink text="@data.Title" class="rz-text-wrap" Path = "@($"/data/song/{@data.ApiKey}")" />
+                        <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)"
+                                      Size="ButtonSize.ExtraSmall"
+                                      Click=@(_ => NavigationManager.NavigateTo($"/data/songedit/{data.ApiKey}"))
+                                      Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
+                        <RadzenLink text="@data.Title" class="rz-text-wrap" Path="@($"/data/song/{data.ApiKey}")"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.AlbumName)" Title="Album" Width="150px">
                     <Template Context="data">
-                        <RadzenLink text="@data.AlbumName" class="rz-text-wrap" Path = "@($"/data/album/{@data.AlbumApiKey}")" />
+                        <RadzenLink text="@data.AlbumName" class="rz-text-wrap"
+                                    Path="@($"/data/album/{data.AlbumApiKey}")"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.ArtistName)" Title="Artist" Width="150px">
                     <Template Context="data">
-                        <RadzenLink text="@data.ArtistName" class="rz-text-wrap" Path = "@($"/data/artist/{@data.ArtistApiKey}")" />
+                        <RadzenLink text="@data.ArtistName" class="rz-text-wrap"
+                                    Path="@($"/data/artist/{data.ArtistApiKey}")"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.SongNumber)" Title="Song #" Width="90px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatNumber(data.SongNumber)" />
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.SongNumber)"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.DiscNumber)" Title="Disc #" Width="90px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatNumber(data.DiscNumber)" />
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.DiscNumber)"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.FileSize)" Title="File size" Width="120px">
                     <Template Context="data">
-                        <RadzenText Text="@data.FileSize.FormatFileSize()" />
+                        <RadzenText Text="@data.FileSize.FormatFileSize()"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.Duration)" Title="Duration" Width="120px">
                     <Template Context="data">
-                        <RadzenText Text="@data.Duration.ToFormattedDateTimeOffset()" />
+                        <RadzenText Text="@data.Duration.ToFormattedDateTimeOffset()"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(SongDataInfo.CreatedAt)" Title="Created" Filterable="false" Width="120px">
+                <RadzenDataGridColumn Property="@nameof(SongDataInfo.CreatedAt)" Title="Created" Filterable="false"
+                                      Width="120px">
                     <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)" />
+                        <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.Tags)" Title="Tags" Width="100px">
@@ -151,23 +159,9 @@
     IEnumerable<SongDataInfo> _songs = null!;
     bool _isLoading;
     int _currentPage = 1;
-    short _defaultPageSize = 25;
-    IEnumerable<int> _pageSizeOptions = [10, 20, 30];
-    IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
-    int _toastTime;
     IList<SongDataInfo> _selectedSongs = [];
 
     string _debounceInputValue = "";
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        _configuration = await ConfigurationFactory.GetConfigurationAsync();
-        _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
-        _defaultPageSize = _configuration.DefaultPageSize();
-        _pageSizeOptions = _configuration.DefaultPageSizeOptions();
-    }
 
     void OnPage(PagerEventArgs args)
     {
@@ -186,18 +180,18 @@
                 sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
             }
 
-            Common.Filtering.FilterOperatorInfo[]? filters = null;
+            FilterOperatorInfo[]? filters = null;
             if (_debounceInputValue.Nullify() != null)
             {
                 filters =
                 [
-                    new Common.Filtering.FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
+                    new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
                 ];
             }
             else if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
                         x.FilterValue))
                     .ToArray();
             }
@@ -226,24 +220,24 @@
 
     private void AddButtonClick()
     {
-        NavigationManager.NavigateTo($"/data/albumedit/{ Guid.Empty }");
+        NavigationManager.NavigateTo($"/data/albumedit/{Guid.Empty}");
     }
-
 
 
     private async Task DeleteSelectedButtonClick()
     {
-        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
             var deleteResult = await SongService.DeleteAsync(_selectedSongs.Select(x => x.Id).ToArray());
             if (deleteResult.IsSuccess)
             {
-                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Songs", _toastTime));
+                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Songs", ToastTime));
                 await _grid.RefreshDataAsync();
                 return;
             }
-            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Songs", _toastTime));
+
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Songs", ToastTime));
         }
     }
 

@@ -1,19 +1,19 @@
 @page "/data/artistedit/{ApiKey:guid}"
 
 @inherits MelodeeComponentBase
-
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data
+@using Serilog
 @using Artist = Melodee.Common.Data.Models.Artist
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using ImageSearchResult = Melodee.Blazor.Components.Components.ImageSearchResult
 
 @inject MainLayoutProxyService MainLayoutProxyService
-@inject Serilog.ILogger Logger
+@inject ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject ArtistService ArtistService
 @inject NotificationService NotificationService
@@ -87,7 +87,7 @@
                                     TextProperty="@nameof(Library.Name)"
                                     LoadData="@OnLoadLibraryData"
                                     class="rz-w-100"
-                                    InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Library Name" } })"/>
+                                    InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Library Name" } })"/>
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -113,7 +113,7 @@
                                     TextProperty="@nameof(KeyValue.Value)"
                                     LoadData="@OnLoadMusicBrainzArtistData"
                                     class="rz-w-100"
-                                    InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Artist Name" } })"/>
+                                    InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Artist Name" } })"/>
                             </RadzenColumn>
                         </RadzenRow>
                         @* Below is all optional *@
@@ -264,7 +264,7 @@
                             <RadzenColumn Size="12" SizeMD="10">
                                 <RadzenNumeric style="display: block" Name="SortOrder" @bind-Value="@_artist.SortOrder"
                                                class="rz-w-100"
-                                               InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "enter value" } })"/>
+                                               InputAttributes="@(new Dictionary<string, object> { { "aria-label", "enter value" } })"/>
                                 <RadzenDataAnnotationValidator Component="SortOrder" Popup="false"
                                                                Style="position: absolute"/>
                             </RadzenColumn>
@@ -322,7 +322,7 @@
 @code {
 
     bool _loading = true;
-    int _toastTime;
+    int ToastTime;
     List<KeyValue> _musicBrainzArtists = [];
     List<Library> _libraries = [];
 
@@ -335,7 +335,7 @@
     string? _musicBrainzId;
     string _libaryName;
 
-    Artist _artist = new Artist
+    Artist _artist = new()
     {
         Name = string.Empty,
         NameNormalized = string.Empty,
@@ -352,7 +352,7 @@
         await base.OnInitializedAsync();
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync();
-        _toastTime = configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
+        ToastTime = configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
 
         var library = await LibraryService.GetLibraryAsync();
         _libraries =
@@ -407,7 +407,7 @@
                     return;
                 }
 
-                NotificationService.Notify(NotificationMessageForResult(addResult, "Adding Artist", _toastTime));
+                NotificationService.Notify(NotificationMessageForResult(addResult, "Adding Artist", ToastTime));
             }
             else
             {
@@ -418,7 +418,7 @@
                     return;
                 }
 
-                NotificationService.Notify(NotificationMessageForResult(saveResult, "Editing Artist", _toastTime));
+                NotificationService.Notify(NotificationMessageForResult(saveResult, "Editing Artist", ToastTime));
             }
         }
         catch (Exception ex)
@@ -442,7 +442,7 @@
         {
             var searchResult = await MusicBrainzRepository.SearchArtist(new ArtistQuery
             {
-                Name = arg.Filter,
+                Name = arg.Filter
             }, 10);
             _musicBrainzArtists = searchResult.Data
                 .Where(x => x.MusicBrainzId != null)
@@ -478,7 +478,7 @@
 
     private ImageSearchValue[] SearchValues =>
     [
-        new ImageSearchValue
+        new()
         {
             Key = nameof(Artist.Name),
             Value = _artist.Name,
@@ -503,7 +503,7 @@
                 }
                 else
                 {
-                    NotificationService.Notify(NotificationMessageForResult(saveResult, "Saving Artist image", _toastTime));
+                    NotificationService.Notify(NotificationMessageForResult(saveResult, "Saving Artist image", ToastTime));
                 }
             }
         }

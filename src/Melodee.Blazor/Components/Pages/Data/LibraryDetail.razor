@@ -1,13 +1,15 @@
 @page "/data/library/{ApiKey:guid}"
 @inherits MelodeeComponentBase
-
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
+@using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Services.Scanning
+@using Serilog
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using Library = Melodee.Common.Data.Models.Library
 
-@inject Serilog.ILogger Logger
+@inject ILogger Logger
 @inject DialogService DialogService
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -140,16 +142,17 @@
                     AllowRowSelectOnRowClick="false"
                     AllowPaging="true"
                     Page="OnPage"
-                    PageSize="_defaultPageSize"
+                    PageSize="DefaultPageSize"
                     PagerHorizontalAlign="HorizontalAlign.Center"
                     ShowPagingSummary="true"
-                    PageSizeOptions="@_pageSizeOptions"
+                    PageSizeOptions="@PageSizeOptions"
                     PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
                     ColumnWidth="200px"
                     SelectionMode="DataGridSelectionMode.Single"
                     @bind-Value=@_selectedData>
                     <Columns>
-                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.CreatedAt)" Title="Scan Date"
+                        <RadzenDataGridColumn SortOrder="SortOrder.Descending"
+                                              Property="@nameof(LibraryScanHistoryDataInfo.CreatedAt)" Title="Scan Date"
                                               Filterable="false" Width="120px">
                             <Template Context="data">
                                 <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
@@ -162,31 +165,36 @@
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.ForArtistName)" Title="For Artist"
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.ForArtistName)"
+                                              Title="For Artist"
                                               Filterable="true" Width="120px">
                             <Template Context="data">
                                 <RadzenText Text="@data.ForArtistName"/>
                             </Template>
                         </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.ForAlbumName)" Title="For Album"
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.ForAlbumName)"
+                                              Title="For Album"
                                               Filterable="true" Width="120px">
                             <Template Context="data">
                                 <RadzenText Text="@data.ForAlbumName"/>
                             </Template>
                         </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundArtistsCount)" Title="Found Artist #"
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundArtistsCount)"
+                                              Title="Found Artist #"
                                               Filterable="false" Width="100px">
                             <Template Context="data">
                                 <RadzenText Text="@data.FoundArtistsCount.ToStringPadLeft(PadLeftValue)"/>
                             </Template>
                         </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundAlbumsCount)" Title="Found Album #"
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundAlbumsCount)"
+                                              Title="Found Album #"
                                               Filterable="false" Width="100px">
                             <Template Context="data">
                                 <RadzenText Text="@data.FoundAlbumsCount.ToStringPadLeft(PadLeftValue)"/>
                             </Template>
                         </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundSongsCount)" Title="Found Song #"
+                        <RadzenDataGridColumn Property="@nameof(LibraryScanHistoryDataInfo.FoundSongsCount)"
+                                              Title="Found Song #"
                                               Filterable="false" Width="100px">
                             <Template Context="data">
                                 <RadzenText Text="@data.FoundSongsCount.ToStringPadLeft(PadLeftValue)"/>
@@ -206,13 +214,12 @@
     IEnumerable<LibraryScanHistoryDataInfo> _data = null!;
     bool _isLoading;
     int _currentPage = 1;
-    short _defaultPageSize = 25;
-    IEnumerable<int> _pageSizeOptions = [10, 20, 30];
+
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     IList<LibraryScanHistoryDataInfo> _selectedData = [];
 
     const short PadLeftValue = 6;
-    int _toastTime;
+    int ToastTime;
     ShowItem _showItem = ShowItem.Overview;
 
     [Parameter] public Guid ApiKey { get; set; }
@@ -248,11 +255,11 @@
                 sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
             }
 
-            Common.Filtering.FilterOperatorInfo[]? filters = null;
+            FilterOperatorInfo[]? filters = null;
             if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
                         x.FilterValue))
                     .ToArray();
             }
@@ -286,7 +293,7 @@
         await base.OnInitializedAsync();
 
         _configuration = await ConfigurationFactory.GetConfigurationAsync();
-        _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
+        ToastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
 
         if (ApiKey != Guid.Empty)
         {
@@ -300,14 +307,14 @@
 
     private async Task PurgeButtonClick()
     {
-        var confirm = await DialogService.Confirm("<p>Purging a library deletes all artists, albums and songs.</p><p>There is no undo</p>", "Purge confirmation", new ConfirmOptions() { OkButtonText = "Proceed to purge", CancelButtonText = "Cancel" });
+        var confirm = await DialogService.Confirm("<p>Purging a library deletes all artists, albums and songs.</p><p>There is no undo</p>", "Purge confirmation", new ConfirmOptions { OkButtonText = "Proceed to purge", CancelButtonText = "Cancel" });
         if (confirm ?? false)
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
             try
             {
                 var result = await LibraryService.PurgeLibraryAsync(_library.Id);
-                NotificationService.Notify(NotificationMessageForResult(result, "purged library", _toastTime));
+                NotificationService.Notify(NotificationMessageForResult(result, "purged library", ToastTime));
             }
             finally
             {
@@ -323,7 +330,7 @@
         {
             _library.IsLocked = true;
             var result = await LibraryService.UpdateAsync(_library);
-            NotificationService.Notify(NotificationMessageForResult(result, "locked library", _toastTime));
+            NotificationService.Notify(NotificationMessageForResult(result, "locked library", ToastTime));
         }
         finally
         {
@@ -333,7 +340,7 @@
 
     private async Task ScanButtonClick()
     {
-        var confirm = await DialogService.Confirm("<p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions() { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
+        var confirm = await DialogService.Confirm("<p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
         if (confirm ?? false)
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
@@ -341,7 +348,7 @@
             {
                 await DirectoryProcessorService.InitializeAsync();
                 var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), _library.LastScanAt);
-                NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", _toastTime));
+                NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", ToastTime));
             }
             finally
             {
@@ -356,7 +363,7 @@
         try
         {
             var result = await LibraryService.CleanLibraryAsync(_library.Name);
-            NotificationService.Notify(NotificationMessageForResult(result, "cleaned library", _toastTime));
+            NotificationService.Notify(NotificationMessageForResult(result, "cleaned library", ToastTime));
         }
         finally
         {
@@ -371,7 +378,7 @@
         {
             _library.IsLocked = false;
             var result = await LibraryService.UpdateAsync(_library);
-            NotificationService.Notify(NotificationMessageForResult(result, "unlocked library", _toastTime));
+            NotificationService.Notify(NotificationMessageForResult(result, "unlocked library", ToastTime));
         }
         finally
         {

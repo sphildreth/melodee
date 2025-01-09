@@ -1,8 +1,5 @@
 @page "/account/login"
-
-@using System.Net
 @using Melodee.Common.Data.Models.Extensions
-@using Melodee.Common.Models.Extensions
 @using Microsoft.AspNetCore.WebUtilities
 
 @inject UserService UserService
@@ -50,8 +47,8 @@ else
 }
 
 @code {
-    private string _userName = string.Empty;
-    private string _password = string.Empty;
+    private readonly string _userName = string.Empty;
+    private readonly string _password = string.Empty;
     private bool _loading = true;
 
     [SupplyParameterFromQuery] [Parameter] public string? ReturnUrl { get; set; }
@@ -110,6 +107,7 @@ else
                 ShowNotification("Invalid email or password.", "Melodee is unable to log you in. perhaps you are banned?");
                 return;
             }
+
             var userImageLibrary = await LibraryService.GetUserImagesLibraryAsync();
             await AuthService.Login(user.Data.ToUserInfo().ToClaimsPrincipal(await ConfigurationFactory.GetConfigurationAsync(), userImageLibrary.Data.Path));
             NavigationManager.NavigateTo(ReturnUrl ?? "/");

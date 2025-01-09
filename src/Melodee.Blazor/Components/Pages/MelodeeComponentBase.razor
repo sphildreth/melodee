@@ -1,16 +1,29 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
-
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 
 @code {
 
-    public const int MaxTextLength = 4000;
+    protected short DefaultPageSize { get; private set; } = 25;
+
+    protected IEnumerable<int> PageSizeOptions { get; private set; } = [10, 20, 30];
+
+    protected int ToastTime { get; private set; } = 1000;
+
+    protected const int MaxTextLength = 4000;
 
     protected ClaimsPrincipal? CurrentUser { get; private set; }
 
+    protected IMelodeeConfiguration Configuration { get; private set; } = new MelodeeConfiguration(new Dictionary<string, object?>());
+
     protected override async Task OnInitializedAsync()
     {
+        Configuration = await ConfigurationFactory.GetConfigurationAsync();
+        ToastTime = Configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
+        DefaultPageSize = Configuration.DefaultPageSize();
+        PageSizeOptions = Configuration.DefaultPageSizeOptions();
+
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         CurrentUser = authState.User;
     }
@@ -34,6 +47,7 @@
                 detailMessage = string.Join("</br>", result.Messages ?? []);
                 break;
         }
+
         return new NotificationMessage
         {
             Severity = severity,
@@ -46,4 +60,5 @@
                 </RadzenStack>
         };
     }
+
 }

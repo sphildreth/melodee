@@ -1,23 +1,24 @@
 @page "/data/libraries"
 @inherits MelodeeComponentBase
 
+@using Melodee.Common.Filtering
+@using Serilog
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using Library = Melodee.Common.Data.Models.Library
 
 @inject MainLayoutProxyService MainLayoutProxyService
-@inject Serilog.ILogger Logger
-@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject ILogger Logger
 @inject LibraryService LibraryService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject TooltipService TooltipService
 @inject NavigationManager NavigationManager
-@inject DefaultImages DefaultImages
 
 <PageTitle>Libraries</PageTitle>
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Icon="library_music" Text="Libraries" />
+    <RadzenBreadCrumbItem Icon="library_music" Text="Libraries"/>
 </RadzenBreadCrumb>
 
 <RadzenStack>
@@ -31,8 +32,9 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
-                    <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" />
-                    <RadzenButton Icon="delete" Disabled="!_selectedLibraries.Any()" Text="Delete" Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning" />
+                <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick"/>
+                <RadzenButton Icon="delete" Disabled="!_selectedLibraries.Any()" Text="Delete"
+                              Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -44,28 +46,28 @@
                    MinLength="3"
                    OnValueChanged="@DoSearchAsync"
                    ForceNotifyByEnter="true"
-                   ForceNotifyOnBlur="true" />
+                   ForceNotifyOnBlur="true"/>
     <RadzenRow>
         <RadzenDataGrid
             @ref="_grid"
             style="height: 500px;"
-            IsLoading=@_isLoading
+            IsLoading="@_isLoading"
             Count="@_count"
             Data="@_libraries"
             LoadData="@LoadData"
             AllowSorting="true"
             AllowFiltering="true"
-            AllowRowSelectOnRowClick = "false"
+            AllowRowSelectOnRowClick="false"
             AllowPaging="true"
             Page="OnPage"
-            PageSize="_defaultPageSize"
+            PageSize="DefaultPageSize"
             PagerHorizontalAlign="HorizontalAlign.Center"
             ShowPagingSummary="true"
-            PageSizeOptions="@_pageSizeOptions"
+            PageSizeOptions="@PageSizeOptions"
             PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
             ColumnWidth="200px"
             SelectionMode="DataGridSelectionMode.Multiple"
-            @bind-Value=@_selectedLibraries>
+            @bind-Value="@_selectedLibraries">
             <Columns>
                 <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
                     <HeaderTemplate>
@@ -73,17 +75,18 @@
                             TabIndex="-1"
                             TriState="false"
                             TValue="bool?"
-                            InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select all items" } })"
                             Value="@(_selectedLibraries.Any() != true ? false : !_libraries.All(i => _selectedLibraries.Contains(i)) ? null : _libraries.Any(i => _selectedLibraries.Contains(i)))"
-                            Change="@(args => _selectedLibraries = args == true ? _selectedLibraries.ToList() : [])" />
+                            Change="@(args => _selectedLibraries = args == true ? _selectedLibraries.ToList() : [])"/>
                     </HeaderTemplate>
                     <Template Context="data">
-                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)" MouseEnter="@(args => ShowTooltip(args, "Library is locked. Locked libraries cannot be deleted.") )" />
+                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)"
+                                    MouseEnter="@(args => ShowTooltip(args, "Library is locked. Locked libraries cannot be deleted."))"/>
                         <RadzenCheckBox
                             TabIndex="-1"
                             TriState="false"
                             Value="@(_selectedLibraries.Contains(data))"
-                            InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Select item" } })"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select item" } })"
                             Change="@(_ => { _grid.SelectRow(data); })"
                             Visible="@(!data.IsLocked)"
                             TValue="bool"/>
@@ -91,7 +94,10 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Library.Name)" Title="Name">
                     <Template Context="data">
-                        <RadzenButton Style="float:right;margin-top: 7px;" Size="ButtonSize.ExtraSmall" Visible="@(CurrentUser?.IsEditor() ?? false)" Click=@(_ => NavigationManager.NavigateTo($"/data/libraryedit/{data.ApiKey}")) Icon="edit" ButtonStyle="ButtonStyle.Secondary" />
+                        <RadzenButton Style="float:right;margin-top: 7px;" Size="ButtonSize.ExtraSmall"
+                                      Visible="@(CurrentUser?.IsEditor() ?? false)"
+                                      Click=@(_ => NavigationManager.NavigateTo($"/data/libraryedit/{data.ApiKey}"))
+                                      Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
                         <a href="/data/library/@data.ApiKey">@data.Name</a>
                     </Template>
                 </RadzenDataGridColumn>
@@ -100,7 +106,8 @@
                 <RadzenDataGridColumn Property="@nameof(Library.ArtistCount)" Title="Artists" Width="80px"/>
                 <RadzenDataGridColumn Property="@nameof(Library.AlbumCount)" Title="Albums" Width="80px"/>
                 <RadzenDataGridColumn Property="@nameof(Library.SongCount)" Title="Songs" Width="80px"/>
-                <RadzenDataGridColumn Property="@nameof(Library.CreatedAt)" Title="Created" Filterable="false" Width="120px"/>
+                <RadzenDataGridColumn Property="@nameof(Library.CreatedAt)" Title="Created" Filterable="false"
+                                      Width="120px"/>
                 <RadzenDataGridColumn Property="@nameof(Library.Tags)" Title="Tags" Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
@@ -123,23 +130,10 @@
     IEnumerable<Library> _libraries = null!;
     bool _isLoading;
     int _currentPage = 1;
-    short _defaultPageSize = 25;
-    IEnumerable<int> _pageSizeOptions = [10, 20, 30];
-    IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
-    int _toastTime;
     IList<Library> _selectedLibraries = [];
 
     string _debounceInputValue = "";
 
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        _configuration = await ConfigurationFactory.GetConfigurationAsync();
-        _toastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
-        _defaultPageSize = _configuration.DefaultPageSize();
-        _pageSizeOptions = _configuration.DefaultPageSizeOptions();
-    }
 
     void OnPage(PagerEventArgs args)
     {
@@ -158,18 +152,18 @@
                 sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
             }
 
-            Common.Filtering.FilterOperatorInfo[]? filters = null;
+            FilterOperatorInfo[]? filters = null;
             if (_debounceInputValue.Nullify() != null)
             {
                 filters =
                 [
-                    new Common.Filtering.FilterOperatorInfo(nameof(Library.Name), Common.Filtering.FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                    new FilterOperatorInfo(nameof(Library.Name), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
                 ];
             }
             else if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new Common.Filtering.FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<Common.Filtering.FilterOperator>(x.FilterOperator.ToDictionary()),
+                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
                         x.FilterValue))
                     .ToArray();
             }
@@ -198,24 +192,24 @@
 
     private void AddButtonClick()
     {
-        NavigationManager.NavigateTo($"/data/libraryedit/{ Guid.Empty }");
+        NavigationManager.NavigateTo($"/data/libraryedit/{Guid.Empty}");
     }
-
 
 
     private async Task DeleteSelectedButtonClick()
     {
-        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
             var deleteResult = await LibraryService.DeleteAsync(_selectedLibraries.Select(x => x.Id).ToArray());
             if (deleteResult.IsSuccess)
             {
-                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Libraries", _toastTime));
+                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Libraries", ToastTime));
                 await _grid.RefreshDataAsync();
                 return;
             }
-            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Libraries", _toastTime));
+
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Libraries", ToastTime));
         }
     }
 

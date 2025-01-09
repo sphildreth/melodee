@@ -1,5 +1,4 @@
 @page "/account/register"
-@using Melodee.Common.Data.Models.Extensions
 
 @attribute [AllowAnonymous]
 
@@ -61,8 +60,11 @@
                                 </RadzenColumn>
                             </RadzenRow>
                             <RadzenRow>
-                                <RadzenProgressBar Visible="@_loading" Style="width:100px;" ProgressBarStyle="ProgressBarStyle.Info" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-                                <RadzenButton Disabled="@(_loading)" ButtonType="ButtonType.Submit" Text="Register" Style="width: 100%"/>
+                                <RadzenProgressBar Visible="@_loading" Style="width:100px;"
+                                                   ProgressBarStyle="ProgressBarStyle.Info" Value="100"
+                                                   ShowValue="false" Mode="ProgressBarMode.Indeterminate"/>
+                                <RadzenButton Disabled="@(_loading)" ButtonType="ButtonType.Submit" Text="Register"
+                                              Style="width: 100%"/>
                             </RadzenRow>
                         </RadzenStack>
                     </RadzenFieldset>
@@ -75,7 +77,7 @@
 @code {
 
     bool _loading;
-    ViewModels.Register _model = new();
+    readonly ViewModels.Register _model = new();
 
     void ShowErrorMessage()
     {
@@ -86,7 +88,9 @@
             SummaryContent = _ => @<RadzenText TextStyle="TextStyle.H6">Unable to register.</RadzenText>,
             DetailContent = ns =>
                 @<RadzenStack>
-                    <RadzenText TextStyle="TextStyle.Subtitle1">Melodee is unable to create a new user account for you. Perhaps your email is banned?</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Subtitle1">Melodee is unable to create a new user account for you.
+                        Perhaps your email is banned?
+                    </RadzenText>
                     <RadzenButton Text="Close" Click="@(args => ns.Messages.Clear())"></RadzenButton>
                 </RadzenStack>
         });
@@ -107,7 +111,9 @@
                     SummaryContent = _ => @<RadzenText TextStyle="TextStyle.H6">Successfully registered!</RadzenText>,
                     DetailContent = ns =>
                         @<RadzenStack>
-                            <RadzenText TextStyle="TextStyle.Subtitle1">Registered new account, you should get an email, be sure and click the validate button.</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Subtitle1">Registered new account, you should get an email,
+                                be sure and click the validate button.
+                            </RadzenText>
                             <RadzenButton Text="Close" Click="@(args => ns.Messages.Clear())"></RadzenButton>
                         </RadzenStack>
                 });
@@ -118,6 +124,7 @@
         {
             _loading = false;
         }
+
         ShowErrorMessage();
     }
 

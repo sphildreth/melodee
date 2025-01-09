@@ -1,7 +1,7 @@
 ﻿@page "/"
-@using Melodee.Blazor.Components.Pages.Data
+@inherits MelodeeComponentBase
+
 @using Melodee.Common.Models.Collection
-@using Melodee.Common.Models.Collection.Extensions
 
 @inject StatisticsService StatisticsService
 @inject ArtistService ArtistService
@@ -96,6 +96,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         var statResult = await StatisticsService.GetStatisticsAsync();
         _statistics = statResult?.Data ?? [];
 
@@ -118,6 +119,11 @@
             }
         });
         _latestArtists = artistLatestResult.Data.ToArray();
+    }
+
+    private Task ProcessInbound()
+    {
+        throw new NotImplementedException();
     }
 
 }

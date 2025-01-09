@@ -1,5 +1,4 @@
 @page "/account/logout"
-@using Melodee.Blazor.Services
 
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
@@ -14,4 +13,5 @@
         StateHasChanged();
         NavigationManager.NavigateTo("/account/login");
     }
+
 }
