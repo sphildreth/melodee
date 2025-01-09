@@ -1,9 +1,11 @@
 @page "/data/album/{ApiKey:guid}"
 @inherits MelodeeComponentBase
 
+@using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
 @using Album = Melodee.Common.Data.Models.Album
+@using Artist = Melodee.Common.Data.Models.Artist
 @inject AlbumService AlbumService
 
 
@@ -11,7 +13,7 @@
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist?.ApiKey}")" Text="@_album.Artist?.Name"/>
+    <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
     <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")" Text="Albums"/>
     <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
 </RadzenBreadCrumb>
@@ -41,7 +43,6 @@
                 }
                 <RadzenButton Icon="delete" Visible="!_album.IsLocked" ButtonStyle="ButtonStyle.Danger"
                               Text="Delete" title="Delete the album and all album files. BEWARE!" Click="@DeleteButtonClick"/>
-                <RadzenBadge BadgeStyle="@_albumStatusBadgeStyle" class="rz-ml-5" Text="@($"Status: {_album.AlbumStatusValue.ToString()}")"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -183,7 +184,10 @@
 
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="3">
-                        <RadzenImage Path=@($"/images/{_album.ToApiKey()}/300") AlternateText="@_album.Name"/>
+                        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
+                            <RadzenImage Path=@($"/images/{_album.ToApiKey()}/300") AlternateText="@_album.Name"/>
+                            <RadzenBadge BadgeStyle="@AlbumStatusBadgeStyle" Style="width:100%;" Text="@($"Status: {_album.AlbumStatusValue.ToString()}")"/>
+                        </RadzenStack>
                     </RadzenColumn>
                 </RadzenRow>
             }
@@ -196,7 +200,7 @@
 
     [Parameter] public Guid ApiKey { get; set; }
 
-    BadgeStyle _albumStatusBadgeStyle { get; set; }
+    BadgeStyle AlbumStatusBadgeStyle { get; set; }
 
     ShowItem _showItem = ShowItem.Overview;
 
@@ -212,6 +216,21 @@
 
     Album _album = new()
     {
+        Artist = new Artist
+        {
+            Library = new Library
+            {
+                Name = string.Empty,
+                Path = string.Empty,
+                Type = 0,
+                CreatedAt = default
+            },
+            Name = string.Empty,
+            NameNormalized = string.Empty,
+            Directory = string.Empty,
+            LibraryId = 0,
+            CreatedAt = default
+        },
         Name = string.Empty,
         NameNormalized = string.Empty,
         Directory = string.Empty,
@@ -232,13 +251,13 @@
                 switch (_album.AlbumStatusValue)
                 {
                     case AlbumStatus.New:
-                        _albumStatusBadgeStyle = BadgeStyle.Info;
+                        AlbumStatusBadgeStyle = BadgeStyle.Info;
                         break;
                     case AlbumStatus.Invalid:
-                        _albumStatusBadgeStyle = BadgeStyle.Warning;
+                        AlbumStatusBadgeStyle = BadgeStyle.Warning;
                         break;
                     default:
-                        _albumStatusBadgeStyle = BadgeStyle.Primary;
+                        AlbumStatusBadgeStyle = BadgeStyle.Primary;
                         break;
                 }
             }
