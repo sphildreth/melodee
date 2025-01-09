@@ -219,7 +219,7 @@
     IList<LibraryScanHistoryDataInfo> _selectedData = [];
 
     const short PadLeftValue = 6;
-    int ToastTime;
+
     ShowItem _showItem = ShowItem.Overview;
 
     [Parameter] public Guid ApiKey { get; set; }
@@ -291,9 +291,6 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-
-        _configuration = await ConfigurationFactory.GetConfigurationAsync();
-        ToastTime = _configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
 
         if (ApiKey != Guid.Empty)
         {

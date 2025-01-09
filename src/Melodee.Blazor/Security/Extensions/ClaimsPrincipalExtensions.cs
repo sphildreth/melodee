@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Security.Claims;
+using Melodee.Common.Configuration;
 using Melodee.Common.Extensions;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Constants;
@@ -14,16 +15,16 @@ public static class ClaimsPrincipalExtensions
         => CultureInfo.CurrentCulture;
 
     public static string? FormatNumber(this ClaimsPrincipal principal, short? number)
-        => number?.ToStringPadLeft(3);
+        => number?.ToStringPadLeft(3) ?? MelodeeConfiguration.DefaultNoValuePlaceHolder;
     
     public static string? FormatNumber(this ClaimsPrincipal principal, int? number)
-        => number?.ToStringPadLeft(5);    
+        => number?.ToStringPadLeft(5) ?? MelodeeConfiguration.DefaultNoValuePlaceHolder;    
     
     public static string? FormatInstant(this ClaimsPrincipal principal, Instant? instant)
-        => instant?.ToString("yyyy-MM-dd HH:mm:ss", principal.GetCulture());
+        => instant?.ToString("yyyy-MM-dd HH:mm:ss", principal.GetCulture()) ?? MelodeeConfiguration.DefaultNoValuePlaceHolder;
     
     public static string? FormatDuration(this ClaimsPrincipal principal, Duration? duration)
-        => duration?.ToString("-H", principal.GetCulture());    
+        => duration?.ToString("-H", principal.GetCulture())?? MelodeeConfiguration.DefaultNoValuePlaceHolder;    
     
     public static bool IsAdmin(this ClaimsPrincipal principal)
         => principal.IsInRole(RoleNameRegistry.Administrator);

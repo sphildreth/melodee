@@ -1,6 +1,8 @@
 @page "/data/album/{ApiKey:guid}"
 @inherits MelodeeComponentBase
 
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
 @using Album = Melodee.Common.Data.Models.Album
 @inject AlbumService AlbumService
 
@@ -14,11 +16,199 @@
     <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
 </RadzenBreadCrumb>
 
-Details go here for @_album.Name
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="@_album.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Text="Edit" title="Edit the album"
+                              Click="@EditButtonClick"/>
+                @if (_album.IsLocked)
+                {
+                    <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning"
+                                  title="Unlock library, will allow modifications." Click="@UnlockButtonClick"/>
+                }
+                else
+                {
+                    <RadzenButton Icon="lock" Text="Lock" ButtonStyle="ButtonStyle.Warning"
+                                  title="Lock library, will prevent modifications." Click="@LockButtonClick"/>
+                }
+                <RadzenButton Icon="delete" Visible="!_album.IsLocked" ButtonStyle="ButtonStyle.Danger"
+                              Text="Delete" title="Delete the album and all album files. BEWARE!" Click="@DeleteButtonClick"/>
+                <RadzenBadge BadgeStyle="@_albumStatusBadgeStyle" class="rz-ml-5" Text="@($"Status: {_album.AlbumStatusValue.ToString()}")"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+<RadzenStack class="rz-mt-3">
+    <RadzenRow>
+        <RadzenColumn Size="4" SizeMD="2">
+            <RadzenCard>
+                <RadzenTree Change="@OnShowItemChange">
+                    <RadzenTreeItem Text="Overview" Selected="true">
+                        <Template>
+                            <RadzenIcon Icon="overview"/>
+                            @context.Text
+                        </Template>
+                    </RadzenTreeItem>
+                    <RadzenTreeItem Text="Contributors">
+                        <Template>
+                            <RadzenIcon Icon="groups"/>
+                            @context.Text
+                        </Template>
+                    </RadzenTreeItem>
+                    <RadzenTreeItem Text="Discs">
+                        <Template>
+                            <RadzenIcon Icon="album"/>
+                            @context.Text
+                        </Template>
+                    </RadzenTreeItem>
+                    <RadzenTreeItem Text="Files">
+                        <Template>
+                            <RadzenIcon Icon="folder_data"/>
+                            @context.Text
+                        </Template>
+                    </RadzenTreeItem>
+                    <RadzenTreeItem Text="Images">
+                        <Template>
+                            <RadzenIcon Icon="image"/>
+                            @context.Text
+                        </Template>
+                    </RadzenTreeItem>
+                    <RadzenTreeItem Text="Songs">
+                        <Template>
+                            <RadzenIcon Icon="music_note"/>
+                            @context.Text
+                        </Template>
+                    </RadzenTreeItem>
+                </RadzenTree>
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="8" SizeMD="9">
+            @if (_showItem == ShowItem.Overview)
+            {
+                <RadzenRow class="rz-pb-3">
+                    <RadzenColumn Size="12" SizeMD="9">
+                        <RadzenPanel AllowCollapse="true">
+                            <HeaderTemplate>
+                                <RadzenText TextStyle="TextStyle.H6"
+                                            class="rz-display-flex rz-align-items-center rz-m-0">
+                                    <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                                    Statistics
+                                </RadzenText>
+                            </HeaderTemplate>
+                            <ChildContent>
+                                <RadzenStack
+                                    Orientation="Orientation.Horizontal"
+                                    Wrap="FlexWrap.Wrap"
+                                    JustifyContent="JustifyContent.Left"
+                                    class="rz-p-6"
+                                    Gap="2rem">
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
+                                                 Style="min-width: 200px;">
+                                        <RadzenIcon Icon="artist"/>
+                                        <div
+                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                            Disc Count
+                                        </div>
+                                        <div style="width:110px;display:inline-block;text-align:right;">
+                                            @(_album.DiscCount.ToStringPadLeft(3))
+                                        </div>
+                                    </RadzenBadge>
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
+                                                 Style="min-width: 200px;">
+                                        <RadzenIcon Icon="artist"/>
+                                        <div
+                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                            Played Total
+                                        </div>
+                                        <div style="width:110px;display:inline-block;text-align:right;">
+                                            @(_album.PlayedCount.ToStringPadLeft(6))
+                                        </div>
+                                    </RadzenBadge>
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
+                                                 Style="min-width: 200px;">
+                                        <RadzenIcon Icon="album"/>
+                                        <div
+                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                            Song Count
+                                        </div>
+                                        <div style="width:110px;display:inline-block;text-align:right;">
+                                            @(_album.SongCount.ToStringPadLeft(4))
+                                        </div>
+                                    </RadzenBadge>
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
+                                                 Style="min-width: 200px;">
+                                        <RadzenIcon Icon="history"/>
+                                        <div
+                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                            Created
+                                        </div>
+                                        <div style="width:110px;display:inline-block;text-align:right;">
+                                            @(CurrentUser?.FormatInstant(_album.CreatedAt))
+                                        </div>
+                                    </RadzenBadge>
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
+                                                 Style="min-width: 200px;">
+                                        <RadzenIcon Icon="history"/>
+                                        <div
+                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                            Last Played
+                                        </div>
+                                        <div style="width:110px;display:inline-block;text-align:right;">
+                                            @(CurrentUser?.FormatInstant(_album.LastPlayedAt))
+                                        </div>
+                                    </RadzenBadge>
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
+                                                 Style="min-width: 200px;">
+                                        <RadzenIcon Icon="history"/>
+                                        <div
+                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                            Last Updated
+                                        </div>
+                                        <div style="width:110px;display:inline-block;text-align:right;">
+                                            @(CurrentUser?.FormatInstant(_album.LastUpdatedAt))
+                                        </div>
+                                    </RadzenBadge>
+                                </RadzenStack>
+                            </ChildContent>
+                        </RadzenPanel>
+
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenImage Path=@($"/images/{_album.ToApiKey()}/300") AlternateText="@_album.Name"/>
+                    </RadzenColumn>
+                </RadzenRow>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
 
 @code {
 
     [Parameter] public Guid ApiKey { get; set; }
+
+    BadgeStyle _albumStatusBadgeStyle { get; set; }
+
+    ShowItem _showItem = ShowItem.Overview;
+
+    private enum ShowItem
+    {
+        Overview = 1,
+        Contributors,
+        Discs,
+        Files,
+        Images,
+        Songs
+    }
 
     Album _album = new()
     {
@@ -38,8 +228,51 @@ Details go here for @_album.Name
             if (albumResult is { IsSuccess: true, Data: not null })
             {
                 _album = albumResult.Data;
+
+                switch (_album.AlbumStatusValue)
+                {
+                    case AlbumStatus.New:
+                        _albumStatusBadgeStyle = BadgeStyle.Info;
+                        break;
+                    case AlbumStatus.Invalid:
+                        _albumStatusBadgeStyle = BadgeStyle.Warning;
+                        break;
+                    default:
+                        _albumStatusBadgeStyle = BadgeStyle.Primary;
+                        break;
+                }
             }
         }
+    }
+
+    private void OnShowItemChange(TreeEventArgs arg)
+    {
+        switch (arg.Text)
+        {
+            default:
+                _showItem = ShowItem.Overview;
+                break;
+        }
+    }
+
+    private Task EditButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task UnlockButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task LockButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task DeleteButtonClick()
+    {
+        throw new NotImplementedException();
     }
 
 }

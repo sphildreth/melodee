@@ -13,13 +13,16 @@ namespace Melodee.Common.Configuration;
 /// <param name="Configuration">Initial configuration from database.</param>
 public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : IMelodeeConfiguration
 {
-    public static string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
+    public const string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
 
-    public static string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
+    public const string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
 
-    public static int BatchSizeDefault = 250;
+    public const int BatchSizeDefault = 250;
 
-    public static int BatchSizeMaximum = 1000;
+    public const int BatchSizeMaximum = 1000;
+
+    public const string DefaultNoValuePlaceHolder = "---";
+
 
     public string? RemoveUnwantedArticles(string? input)
     {
