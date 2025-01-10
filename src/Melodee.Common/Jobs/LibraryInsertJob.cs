@@ -139,7 +139,7 @@ public class LibraryInsertJob(
                 return;
             }
 
-            var librariesToProcess = libraries.Data.Where(x => x.TypeValue == LibraryType.Library).ToArray();
+            var librariesToProcess = libraries.Data.Where(x => x.TypeValue == LibraryType.Storage).ToArray();
             _dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.InProcess.ToString());
             OnProcessingEvent?.Invoke(
                 this,

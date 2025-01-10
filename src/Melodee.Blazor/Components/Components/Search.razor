@@ -77,14 +77,14 @@
 
     [Parameter] public required string SearchTerm { get; set; }
 
-    SearchResult _searchResult = new SearchResult([], [], []);
+    SearchResult _searchResult = new([], [], [], []);
 
     protected override async Task OnParametersSetAsync()
     {
         MainLayoutProxyService.ToggleSpinnerVisible();
         try
         {
-            var searchResult = await SearchService.DoSearchAsync(SearchTerm, 50, SearchInclude.Everything);
+            var searchResult = await SearchService.DoSearchAsync(SearchTerm, 50, SearchInclude.Data);
             if (searchResult.IsSuccess)
             {
                 _searchResult = searchResult.Data;

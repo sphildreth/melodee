@@ -52,8 +52,13 @@
                 }
                 <RadzenButton Icon="delete_sweep" Visible="!_library.IsLocked" ButtonStyle="ButtonStyle.Danger"
                               Text="Purge" title="Delete everything in the library. BEWARE!" Click="@PurgeButtonClick"/>
-                <RadzenButton Icon="update" Visible="!_library.IsLocked" Text="Scan"
-                              title="Run scan job on this library." Click="@ScanButtonClick"/>
+                @* <RadzenButton Icon="update" Visible="!_library.IsLocked" Text="Scan" *@
+                @*               title="Run scan job on this library." Click="@ScanButtonClick"/> *@
+                <RadzenSplitButton Click="@ScanSplitButtonClick" Text="Scan" ButtonStyle="ButtonStyle.Secondary">
+                    <ChildContent>
+                        <RadzenSplitButtonItem Text="Force" Value="2" />
+                    </ChildContent>
+                </RadzenSplitButton>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -334,25 +339,6 @@
         }
     }
 
-    private async Task ScanButtonClick()
-    {
-        var confirm = await DialogService.Confirm("<p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
-        if (confirm ?? false)
-        {
-            MainLayoutProxyService.ToggleSpinnerVisible();
-            try
-            {
-                await DirectoryProcessorService.InitializeAsync();
-                var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), _library.LastScanAt);
-                NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", ToastTime));
-            }
-            finally
-            {
-                MainLayoutProxyService.ToggleSpinnerVisible();
-            }
-        }
-    }
-
     private async Task CleanButtonClick()
     {
         MainLayoutProxyService.ToggleSpinnerVisible();
@@ -391,6 +377,26 @@
     private void OnShowItemChange(TreeEventArgs arg)
     {
         _showItem = arg.Text == null || arg.Text == "Overview" ? ShowItem.Overview : ShowItem.ScanHistory;
+    }
+
+    private async Task ScanSplitButtonClick(RadzenSplitButtonItem? arg)
+    {
+        var confirm = await DialogService.Confirm("<p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
+        if (confirm ?? false)
+        {
+            var force = arg?.Text == "Force";
+            MainLayoutProxyService.ToggleSpinnerVisible();
+            try
+            {
+                await DirectoryProcessorService.InitializeAsync();
+                var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), force ? null : _library.LastScanAt);
+                NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", ToastTime));
+            }
+            finally
+            {
+                MainLayoutProxyService.ToggleSpinnerVisible();
+            }
+        }
     }
 
 }

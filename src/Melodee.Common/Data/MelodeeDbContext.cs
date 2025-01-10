@@ -81,7 +81,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Name = "Library",
                     Description = "The library directory to place processed, reviewed and ready to use music files into.",
                     Path = "/storage/library/",
-                    Type = (int)LibraryType.Library,
+                    Type = (int)LibraryType.Storage,
                     CreatedAt = now
                 },
                 new Library

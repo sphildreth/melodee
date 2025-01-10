@@ -10,7 +10,7 @@ public sealed class LibraryServiceTests : ServiceTestBase
     {
         var listResult = await MockLibraryService().ListAsync(new PagedRequest());
         AssertResultIsSuccessful(listResult);
-        Assert.Contains(listResult.Data, x => x.Type == (int)LibraryType.Library);
+        Assert.Contains(listResult.Data, x => x.Type == (int)LibraryType.Storage);
         Assert.Equal(1, listResult.TotalPages);
         Assert.Equal(3, listResult.TotalCount);
     }

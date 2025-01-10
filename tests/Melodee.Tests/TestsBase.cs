@@ -64,7 +64,7 @@ public abstract class TestsBase
     {
         return new OperationResult<Library>
         {
-            Data = TestLibraries().Data.First(x => x.TypeValue == LibraryType.Library)
+            Data = TestLibraries().Data.First(x => x.TypeValue == LibraryType.Storage)
         };
     }
     
@@ -91,7 +91,7 @@ public abstract class TestsBase
                     Id = 2,
                     Name = "Library",
                     Path = "/melodee_test/library",
-                    Type = SafeParser.ToNumber<int>(LibraryType.Library),
+                    Type = SafeParser.ToNumber<int>(LibraryType.Storage),
                     CreatedAt = now
                 },
                 new Library

@@ -2,7 +2,9 @@
 @inherits MelodeeComponentBase
 
 
+@using Ardalis.GuardClauses
 @using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
@@ -331,11 +333,31 @@
         }
     }
 
-    private Task MoveOkButtonClick()
+    private async Task MoveOkButtonClick()
     {
-        // TODO If more than one Library type library then prompt for which library to move into
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var librariesResult = await LibraryService.GetStorageLibrariesAsync();
+            if (librariesResult.Data.Length > 1)
+            {
+                // TODO If more than one Library type library then prompt for which library to move into
+                throw new NotImplementedException();
+            }
 
-        throw new NotImplementedException();
+            var storageLibrary = librariesResult.Data.First();
+            var moveResult = await LibraryService.MoveAlbumsFromLibraryToLibrary(
+                _library.Name,
+                storageLibrary.Name,
+                a => a.Status == AlbumStatus.Ok,
+                true);
+            NotificationService.Notify(NotificationMessageForResult(moveResult, "Moving Ok Albums", ToastTime));
+            if (_grid != null) await _grid.RefreshDataAsync();
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
     }
 
     private Task DeleteNotOkSelectedButtonClick()

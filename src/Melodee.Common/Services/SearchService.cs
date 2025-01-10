@@ -8,6 +8,8 @@ using Serilog;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.Models.Collection;
+using Melodee.Common.Models.SearchEngines;
+using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 
 namespace Melodee.Common.Services;
 
@@ -18,7 +20,8 @@ public sealed class SearchService(
     IMelodeeConfigurationFactory configurationFactory,
     ArtistService artistService,
     AlbumService albumService,
-    SongService songService)
+    SongService songService,
+    IMusicBrainzRepository musicBrainzRepository)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
 
@@ -27,12 +30,13 @@ public sealed class SearchService(
         List<ArtistDataInfo> artists = new();
         List<AlbumDataInfo> albums = new();
         List<SongDataInfo> songs = new();
+        List<ArtistDataInfo> musicBrainzArtists = new();
 
         if (searchTerm.Nullify() == null)
         {
             return new OperationResult<SearchResult>("No Search Term Provided")
             {
-                Data = new SearchResult(artists.ToArray(), albums.ToArray(), songs.ToArray())
+                Data = new SearchResult([], [], [], [])
             };
         }
         
@@ -77,10 +81,27 @@ public sealed class SearchService(
                     new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains, searchTermNormalized)                ]
             }, cancellationToken);
             songs = songResult.Data.ToList() ?? [];
-        }         
+        }
+
+        if (include.HasFlag(SearchInclude.MusicBrainz))
+        {
+            var searchResult = await musicBrainzRepository.SearchArtist(new ArtistQuery
+            {
+                Name = searchTerm,
+            }, maxResults, cancellationToken);
+            musicBrainzArtists = searchResult.Data
+                .Where(x => x.MusicBrainzId != null)
+                .Select(x => ArtistDataInfo.BlankArtistDataInfo with
+                {
+                    ApiKey = x.MusicBrainzId!.Value, 
+                    Name = x.Name, 
+                    NameNormalized = x.Name.ToNormalizedString() ?? x.Name
+                })
+                .ToList();
+        }
         return new OperationResult<SearchResult>
         {
-            Data = new SearchResult(artists.ToArray(), albums.ToArray(), songs.ToArray())
+            Data = new SearchResult(artists.ToArray(), albums.ToArray(), songs.ToArray(), musicBrainzArtists.ToArray())
         };
     }
 }

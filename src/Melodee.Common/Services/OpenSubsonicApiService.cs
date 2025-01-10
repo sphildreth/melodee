@@ -2004,7 +2004,7 @@ public class OpenSubsonicApiService(
         var libraryResult = await libraryService.ListAsync(new PagedRequest(), cancellationToken).ConfigureAwait(false);
         if (libraryResult.IsSuccess)
         {
-            data = libraryResult.Data.Where(x => x.TypeValue == LibraryType.Library).Select(x => new NamedInfo(x.ToApiKey(), x.Name)).ToArray();
+            data = libraryResult.Data.Where(x => x.TypeValue == LibraryType.Storage).Select(x => new NamedInfo(x.ToApiKey(), x.Name)).ToArray();
         }
 
         return new ResponseModel

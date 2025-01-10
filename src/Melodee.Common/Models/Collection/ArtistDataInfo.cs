@@ -23,4 +23,19 @@ public sealed record ArtistDataInfo(
     public static string InfoLineTitle => $"Album Count | Song Count";
 
     public string InfoLineData => $"{AlbumCount.ToStringPadLeft(4)} | {SongCount.ToStringPadLeft(5)}";       
+    
+    public static ArtistDataInfo BlankArtistDataInfo =>
+        new ArtistDataInfo(0,
+            Guid.Empty,
+            false,
+            0,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            0,
+            0,
+            Instant.MinValue,
+            string.Empty);
 }

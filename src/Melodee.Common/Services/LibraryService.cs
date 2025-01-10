@@ -78,6 +78,32 @@ public class LibraryService : ServiceBase
             Data = result
         };
     }
+    
+    public async Task<MelodeeModels.OperationResult<Library[]>> GetStorageLibrariesAsync(CancellationToken cancellationToken = default)
+    {
+        const int libraryType = (int)LibraryType.Storage;
+        var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var storageLibraryType = (int)LibraryType.Storage;
+                var library = await scopedContext
+                    .Libraries
+                    .Where(x => x.Type == storageLibraryType)
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                if (library == null)
+                {
+                    throw new Exception("No storage library found. At least one Library record must be setup with a type of '3' (Storage).");
+                }
+                return library;
+            }
+        }, cancellationToken).ConfigureAwait(false);
+        return new MelodeeModels.OperationResult<Library[]>
+        {
+            Data = result
+        };
+    }    
 
     public async Task<MelodeeModels.OperationResult<Library>> GetUserImagesLibraryAsync(CancellationToken cancellationToken = default)
     {
@@ -146,7 +172,7 @@ public class LibraryService : ServiceBase
 
     public virtual async Task<MelodeeModels.OperationResult<Library>> GetLibraryAsync(CancellationToken cancellationToken = default)
     {
-        const int libraryType = (int)LibraryType.Library;
+        const int libraryType = (int)LibraryType.Storage;
         var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
         {
             var library = await LibraryByType(libraryType, cancellationToken);
@@ -559,9 +585,9 @@ public class LibraryService : ServiceBase
             };
         }
 
-        if (toLibrary.TypeValue != LibraryType.Library)
+        if (toLibrary.TypeValue != LibraryType.Storage)
         {
-            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this move process requires a library type of 'Library' ({(int)LibraryType.Library}).")
+            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this move process requires a library type of 'Library' ({(int)LibraryType.Storage}).")
             {
                 Data = false
             };
@@ -755,7 +781,7 @@ public class LibraryService : ServiceBase
             new(StatisticType.Information, "Song Count", library.SongCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok, "Number of songs on Library db record.")
         };
 
-        if (library.TypeValue == LibraryType.Library)
+        if (library.TypeValue == LibraryType.Storage)
         {
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -872,7 +898,7 @@ public class LibraryService : ServiceBase
                                             .ConfigureAwait(false);
                                         if (dbAlbum == null)
                                         {
-                                            if (library.TypeValue == LibraryType.Library)
+                                            if (library.TypeValue == LibraryType.Storage)
                                             {
                                                 // If album directory has media files, but does not have a melodee data file, and is not found in the db, then move back to inbound
                                                 var inboundLibrary = await GetInboundLibraryAsync(cancellationToken).ConfigureAwait(false);
@@ -923,7 +949,7 @@ public class LibraryService : ServiceBase
                     result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Album directory missing Melodee data file", albumDirectoriesWithoutMelodeeDataFile, StatisticColorRegistry.Error, "When scanning media without a Melodee data file, media files will not get processed."));
                 }
 
-                shouldResetLastScan = shouldResetLastScan && library.TypeValue == LibraryType.Library;
+                shouldResetLastScan = shouldResetLastScan && library.TypeValue == LibraryType.Storage;
 
                 if (shouldResetLastScan)
                 {
