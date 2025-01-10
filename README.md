@@ -26,10 +26,10 @@ Melodee is a music system designed to handle libraries with tens of millions of 
 * Plugin based architecture.
 * Job engine
   * Uses cron like scheduling.
-  * Scans inbound, staging and library for new media and updates.
+  * Scans inbound, staging and libraries for new media and updates.
 * Multiple media library support
   * Allows for configuration of multiple music libraries (e.g. across many NAS storage points)
-* Web UI Editor
+* Web (Blazor Server) UI Editor
   * Edit meta data.
   * Edit album and band photos.
 * Robust configuration system
