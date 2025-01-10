@@ -23,6 +23,8 @@ Melodee is a music system designed to handle libraries with tens of millions of 
 * Job engine
   * Uses cron like scheduling.
   * Scans inbound, staging and library for new media and updates.
+* Multiple media library support
+  * Allows for configuration of multiple music libraries (e.g. across many NAS storage points)
 * Web UI Editor
   * Edit meta data.
   * Edit album and band photos.
@@ -30,5 +32,8 @@ Melodee is a music system designed to handle libraries with tens of millions of 
 * OpenSubsonic API server
   * Real time transcoding. Including Ogg and Opus formats.
   * Tested with several Subsonic clients
+    * Airsonic
     * Feishin
     * Symphonium
+    * Sublime Music
+    * Supersonic
