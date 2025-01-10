@@ -7,7 +7,7 @@ Melodee is under development, very much a work in progress.
 Melodee is a music system designed to handle libraries with tens of millions of songs with ease and speed.
 
 ## Components
-* Melodee - Blazor and OpenSubsonic API server.
+* Melodee.Blazor - Blazor and OpenSubsonic API server.
 * Melodee.Cli - Command line interface for scanning media files.
 
 ## Features
