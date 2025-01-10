@@ -54,7 +54,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddAntiforgery(opt =>
 {
     opt.Cookie.Name = "melodee_csrf";
-    opt.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    opt.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
 builder.Services.AddInMemoryEvent<UserLoginEvent, UserLoginEventHandler>();

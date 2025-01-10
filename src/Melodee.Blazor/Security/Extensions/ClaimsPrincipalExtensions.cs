@@ -23,6 +23,9 @@ public static class ClaimsPrincipalExtensions
     public static string? FormatInstant(this ClaimsPrincipal principal, Instant? instant)
         => instant?.ToString("yyyy-MM-dd HH:mm:ss", principal.GetCulture()) ?? MelodeeConfiguration.DefaultNoValuePlaceHolder;
     
+    public static string? FormatDateTimeOffset(this ClaimsPrincipal principal, DateTimeOffset? dateTime)
+        => dateTime?.ToString("yyyy-MM-dd HH:mm:ss", principal.GetCulture())?? MelodeeConfiguration.DefaultNoValuePlaceHolder;      
+    
     public static string? FormatDuration(this ClaimsPrincipal principal, Duration? duration)
         => duration?.ToString("-H", principal.GetCulture())?? MelodeeConfiguration.DefaultNoValuePlaceHolder;    
     

@@ -1,0 +1,76 @@
+@page "/media/album/{LibraryApiKey:guid}/{ApiKey:guid}"
+
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Models.Extensions
+@using Melodee.Common.Services.Scanning
+@inherits MelodeeComponentBase
+
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject ILogger Logger
+@inject LibraryService LibraryService
+@inject AlbumDiscoveryService AlbumDiscoveryService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject DefaultImages DefaultImages
+
+<PageTitle>@_album.AlbumTitle()</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Path="@($"/media/library/{_library.ApiKey}")" Icon="folder" Text="@_library.Name"/>
+    <RadzenBreadCrumbItem Icon="album" Text="@_album.AlbumTitle()"/>
+</RadzenBreadCrumb>
+
+@code {
+
+    [Parameter] public Guid LibraryApiKey { get; set; }
+
+    [Parameter] public Guid ApiKey { get; set; }
+
+    Common.Data.Models.Library _library = new()
+    {
+        Name = string.Empty,
+        Path = string.Empty,
+        Type = 0,
+        CreatedAt = default
+    };
+
+    Album _album = new()
+    {
+        ViaPlugins = [],
+        OriginalDirectory = new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        },
+        Directory = new FileSystemDirectoryInfo
+        {
+            Path = string.Empty,
+            Name = string.Empty
+        }
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var libraryResult = await LibraryService.GetByApiKeyAsync(LibraryApiKey);
+            _library = libraryResult.Data!;
+
+            _album = await AlbumDiscoveryService.AlbumByUniqueIdAsync(_library.ToFileSystemDirectoryInfo(), ApiKey);
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await AlbumDiscoveryService.InitializeAsync();
+    }
+
+}

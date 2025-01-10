@@ -17,7 +17,7 @@ public class MelodeeBlazorCookieMiddleware(RequestDelegate next, IMelodeeConfigu
             new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
+            Secure = false,
             SameSite = SameSiteMode.Strict,
             Expires = DateTime.UtcNow.AddDays(1)
         });

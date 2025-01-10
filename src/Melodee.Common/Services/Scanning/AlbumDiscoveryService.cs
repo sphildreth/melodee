@@ -274,7 +274,7 @@ public sealed class AlbumDiscoveryService(
 
         var data = albumsForDirectoryInfo.Data.ToArray().Select(async x => new AlbumDataInfo(
             0,
-            Guid.Empty,
+            x.Id,
             false,
             x.AlbumTitle() ?? string.Empty,
             x.AlbumTitle().ToNormalizedString() ?? x.AlbumTitle() ?? string.Empty,
@@ -288,7 +288,11 @@ public sealed class AlbumDiscoveryService(
             null,
             SafeParser.ToLocalDate(x.AlbumYear() ?? 0),
             SafeParser.ToNumber<short>(_albumValidator.ValidateAlbum(x).Data.AlbumStatus)
-            ) { ImageBytes = await x.CoverImageBytesAsync(cancellationToken)});
+            )
+        {
+            ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
+            MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName)
+        });
         
         var d = await Task.WhenAll(data);        
 

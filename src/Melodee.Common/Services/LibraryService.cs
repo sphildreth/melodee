@@ -56,6 +56,7 @@ public class LibraryService : ServiceBase
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
     private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
     private const string CacheKeyDetailTemplate = "urn:library:{0}";
+    private const string CacheKeyMediaLibraries = "urn:libraries:media-libraries";
 
     private const int DisplayNumberPadLength = 8;
 
@@ -276,6 +277,23 @@ public class LibraryService : ServiceBase
             Data = histories
         }; 
     }
+
+    public virtual async Task<MelodeeModels.PagedResult<Library>> ListMediaLibrariesAsync(CancellationToken cancellationToken = default)
+    {
+        return await CacheManager.GetAsync(CacheKeyMediaLibraries, async () =>
+        {
+            var data = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
+            return new MelodeeModels.PagedResult<Library>
+            {
+                Data = data
+                    .Data
+                    .OrderBy(x => x.SortOrder).ThenBy(x => x.Name)
+                    .Where(x => x.TypeValue is LibraryType.Inbound or LibraryType.Staging)
+                    .ToArray()
+            };
+        }, cancellationToken).ConfigureAwait(false);
+    }
+    
 
     public virtual async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
@@ -506,6 +524,7 @@ public class LibraryService : ServiceBase
         CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(library.ApiKey));
         CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(library.Id));
         CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart(library.Type));
+        CacheManager.Remove(CacheKeyMediaLibraries);
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(string fromLibraryName, string toLibraryName, Func<MelodeeModels.Album, bool> condition, bool verboseSet, CancellationToken cancellationToken = default)

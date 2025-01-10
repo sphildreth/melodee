@@ -22,6 +22,14 @@ public sealed record AlbumDataInfo(
     LocalDate ReleaseDate,
     short AlbumStatus)
 {
+    /// <summary>
+    /// This is populated when the record is created from a Media Album File.
+    /// </summary>
+    public string? MelodeeDataFileName { get; set; }
+    
+    /// <summary>
+    /// This is populated when the record is created from a Media Album file.
+    /// </summary>
     public byte[]? ImageBytes { get; set; }
     
     public int? NeedsAttentionReasons { get; set; }
@@ -36,5 +44,6 @@ public sealed record AlbumDataInfo(
 
     public static string InfoLineTitle => $"Year | Song Count | Duration";
 
-    public string InfoLineData => $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()}"; 
+    public string InfoLineData => $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()}";
+    
 }

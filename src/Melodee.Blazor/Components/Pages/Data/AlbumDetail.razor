@@ -1,6 +1,5 @@
 @page "/data/album/{ApiKey:guid}"
 @inherits MelodeeComponentBase
-
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
@@ -42,7 +41,8 @@
                                   title="Lock library, will prevent modifications." Click="@LockButtonClick"/>
                 }
                 <RadzenButton Icon="delete" Visible="!_album.IsLocked" ButtonStyle="ButtonStyle.Danger"
-                              Text="Delete" title="Delete the album and all album files. BEWARE!" Click="@DeleteButtonClick"/>
+                              Text="Delete" title="Delete the album and all album files. BEWARE!"
+                              Click="@DeleteButtonClick"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -97,7 +97,7 @@
             {
                 <RadzenRow class="rz-pb-3">
                     <RadzenColumn Size="12" SizeMD="9">
-                        <RadzenPanel AllowCollapse="true">
+                        <RadzenPanel>
                             <HeaderTemplate>
                                 <RadzenText TextStyle="TextStyle.H6"
                                             class="rz-display-flex rz-align-items-center rz-m-0">
@@ -181,12 +181,13 @@
                                 </RadzenStack>
                             </ChildContent>
                         </RadzenPanel>
-
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="3">
-                        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
-                            <RadzenImage Path=@($"/images/{_album.ToApiKey()}/300") AlternateText="@_album.Name"/>
-                            <RadzenBadge BadgeStyle="@AlbumStatusBadgeStyle" Style="width:100%;" Text="@($"Status: {_album.AlbumStatusValue.ToString()}")"/>
+                        <RadzenStack Orientation="Orientation.Vertical">
+                            <RadzenBadge BadgeStyle="@AlbumStatusBadgeStyle" Style="width:305px;"
+                                         Text="@($"Status: {_album.AlbumStatusValue.ToString()}")"/>
+                            <RadzenImage Path=@($"/images/{_album.ToApiKey()}/300") Style="margin:auto;display: block;"
+                                         AlternateText="@_album.Name"/>
                         </RadzenStack>
                     </RadzenColumn>
                 </RadzenRow>
