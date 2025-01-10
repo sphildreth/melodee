@@ -1,4 +1,4 @@
-<img src="graphics/melodee_gh_card.png" alt="Melodee logo" title="melodee" style="height:200px;margin:auto;display:flex;" />
+![Melodee](graphics/melodee_gh_card.png)
 
 # NOTE
 Melodee is under development, very much a work in progress.
@@ -7,8 +7,12 @@ Melodee is under development, very much a work in progress.
 Melodee is a music system designed to handle libraries with tens of millions of songs with ease and speed.
 
 ## Components
-* Melodee.Blazor - Blazor and OpenSubsonic API server.
-* Melodee.Cli - Command line interface for scanning media files.
+* Melodee.Blazor - Blazor and OpenSubsonic API server
+  * Both OpenSubsonic and Subsonic 1.16.1.
+  * Blazor adminisrative front end.
+* Melodee.Cli - Command line interface
+  * Library management.
+  * Manage configuration values.
 
 ## Features
 * Process inbound music to prepare for adding to library.
