@@ -60,7 +60,7 @@ public class ArtistService(
                                        FROM "Artists" a
                                        JOIN "Libraries" l ON (a."LibraryId" = l."Id") 
                                        """;
-                var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment);
+                var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment, "a");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 if (dbConn is SqliteConnection)
                 {

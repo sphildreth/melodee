@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee", "src\Melodee\Melodee.csproj", "{FE484681-E1F0-4BB0-AEA2-20744BC94D0D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Cli", "src\Melodee.Cli\Melodee.Cli.csproj", "{9D6AB4DB-318C-4E1D-924F-3E089511D233}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Melodee.Common", "src\Melodee.Common\Melodee.Common.csproj", "{F8FE5E96-7D01-403F-89CD-DEAE75B9FB9F}"
@@ -23,10 +21,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FE484681-E1F0-4BB0-AEA2-20744BC94D0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FE484681-E1F0-4BB0-AEA2-20744BC94D0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FE484681-E1F0-4BB0-AEA2-20744BC94D0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FE484681-E1F0-4BB0-AEA2-20744BC94D0D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9D6AB4DB-318C-4E1D-924F-3E089511D233}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9D6AB4DB-318C-4E1D-924F-3E089511D233}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D6AB4DB-318C-4E1D-924F-3E089511D233}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -113,7 +113,8 @@ builder.Services
     .AddScoped<AlbumImageSearchEngineService>()
     .AddScoped<ArtistImageSearchEngineService>()
     .AddScoped<ArtistSearchEngineService>()
-    .AddScoped<StatisticsService>();
+    .AddScoped<StatisticsService>()
+    .AddScoped<SearchService>();
 #endregion
 
 #region Quartz Related

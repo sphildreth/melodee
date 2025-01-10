@@ -1,3 +1,4 @@
+using Melodee.Common.Extensions;
 using NodaTime;
 
 namespace Melodee.Common.Models.Collection;
@@ -14,7 +15,12 @@ public sealed record SongDataInfo(
     string ArtistName,
     Guid ArtistApiKey,
     short DiscNumber,
-    long FileSize,    
+    long FileSize,
     double Duration,
     Instant CreatedAt,
-    string Tags);
+    string Tags)
+{
+    public static string InfoLineTitle => $"Song Number | Duration";
+
+    public string InfoLineData => $"{ SongNumber.ToStringPadLeft(3)} | {Duration.ToFormattedDateTimeOffset()}";    
+}

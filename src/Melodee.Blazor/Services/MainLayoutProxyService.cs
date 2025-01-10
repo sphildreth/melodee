@@ -6,7 +6,7 @@ namespace Melodee.Blazor.Services;
 public sealed class MainLayoutProxyService
 {
     public bool ShowSpinner { get; set; }
-    
+   
     public string Header { get; set; } = "Loading...";
 
     public event EventHandler? HeaderChanged;

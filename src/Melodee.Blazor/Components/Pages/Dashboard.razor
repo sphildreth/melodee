@@ -22,7 +22,7 @@
                     Orientation="Orientation.Horizontal"
                     Wrap="FlexWrap.Wrap"
                     JustifyContent="JustifyContent.Left"
-                    class="rz-p-6"
+                    class="rz-p-2"
                     Gap="2rem">
                     @foreach (var statistic in _statistics)
                     {
@@ -52,8 +52,8 @@
                 Orientation="Orientation.Horizontal"
                 Wrap="FlexWrap.Wrap"
                 JustifyContent="JustifyContent.Left"
-                class="rz-p-6"
-                Gap="2rem">
+                class="rz-p-2"
+                Gap="10px">
                 @foreach (var artist in _latestArtists)
                 {
                     <ArtistDataInfoCardComponent Artist="@artist"/>
@@ -73,8 +73,8 @@
                 Orientation="Orientation.Horizontal"
                 Wrap="FlexWrap.Wrap"
                 JustifyContent="JustifyContent.Left"
-                class="rz-p-6"
-                Gap="2rem">
+                class="rz-p-2"
+                Gap="10px">
                 @foreach (var album in _latestAlbums)
                 {
                     <AlbumDataInfoCardComponent Album="@album"/>

@@ -1,0 +1,100 @@
+@using Melodee.Common.Models.Search
+
+@inject SearchService SearchService
+@inject MainLayoutProxyService MainLayoutProxyService
+
+<PageTitle>Search Results</PageTitle>
+
+<RadzenStack>
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">Results for: @SearchTerm</RadzenText>
+    </RadzenStack>
+    <RadzenPanel AllowCollapse="true">
+        <HeaderTemplate>
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">
+                <RadzenIcon Icon="artist" class="rz-me-1"/>
+                Artists
+            </RadzenText>
+        </HeaderTemplate>
+        <ChildContent>
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                Wrap="FlexWrap.Wrap"
+                JustifyContent="JustifyContent.Left"
+                class="rz-p-2"
+                Gap="10px">
+                @foreach (var artist in _searchResult.Artists)
+                {
+                    <ArtistDataInfoCardComponent Artist="@artist"/>
+                }
+            </RadzenStack>
+        </ChildContent>
+    </RadzenPanel>
+    <RadzenPanel AllowCollapse="true">
+        <HeaderTemplate>
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">
+                <RadzenIcon Icon="album" class="rz-me-1"/>
+                Albums
+            </RadzenText>
+        </HeaderTemplate>
+        <ChildContent>
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                Wrap="FlexWrap.Wrap"
+                JustifyContent="JustifyContent.Left"
+                class="rz-p-2"
+                Gap="10px">
+                @foreach (var album in _searchResult.Albums)
+                {
+                    <AlbumDataInfoCardComponent Album="@album"/>
+                }
+            </RadzenStack>
+        </ChildContent>
+    </RadzenPanel>
+    <RadzenPanel AllowCollapse="true">
+        <HeaderTemplate>
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">
+                <RadzenIcon Icon="album" class="rz-me-1"/>
+                Songs
+            </RadzenText>
+        </HeaderTemplate>
+        <ChildContent>
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                Wrap="FlexWrap.Wrap"
+                JustifyContent="JustifyContent.Left"
+                class="rz-p-2"
+                Gap="10px">
+                @foreach (var song in _searchResult.Songs)
+                {
+                    <SongDataInfoCardComponent Song="@song"/>
+                }
+            </RadzenStack>
+        </ChildContent>
+    </RadzenPanel>
+</RadzenStack>
+@code {
+
+    [Parameter] public required string SearchTerm { get; set; }
+
+    SearchResult _searchResult = new SearchResult([], [], []);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var searchResult = await SearchService.DoSearchAsync(SearchTerm, 50, SearchInclude.Everything);
+            if (searchResult.IsSuccess)
+            {
+                _searchResult = searchResult.Data;
+            }
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+
+    }
+
+}

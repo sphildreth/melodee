@@ -1,4 +1,5 @@
-﻿@using Melodee.Common.Enums
+﻿@using System.Web
+@using Melodee.Common.Enums
 @using Microsoft.AspNetCore.Components.Authorization
 @inherits LayoutComponentBase
 
@@ -33,6 +34,16 @@
                     <RadzenColumn Size="7">
                         <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
                             <RadzenProgressBar Visible="@MainLayoutProxyService.ShowSpinner" Style="width:100px;" ProgressBarStyle="ProgressBarStyle.Info" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                            <DebounceInput class="rz-textbox"
+                                           style="width:200px;"
+                                           autocomplete="off"
+                                           @bind-Value="@_debounceInputValue"
+                                           @bind-Value:event="OnInput"
+                                           DebounceTime="1000"
+                                           MinLength="2"
+                                           OnValueChanged="@DoSearchAsync"
+                                           ForceNotifyByEnter="true"
+                                           ForceNotifyOnBlur="true"/>
                             <RadzenAppearanceToggle />
                             <RadzenProfileMenu>
                                 <ChildContent>
@@ -71,7 +82,14 @@
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody Style="margin: 10px; padding:3px;">
-                @Body
+                @if (_showSearchResults)
+                {
+                    <Search SearchTerm="@_debounceInputValue" />
+                }
+                else
+                {
+                    @Body
+                }
             </RadzenBody>
         </RadzenLayout>
     </Authorized>
@@ -80,6 +98,9 @@
 @code {
     bool _sidebarExpanded = true;
     string _siteTitle = string.Empty;
+
+    string _debounceInputValue = "";
+    bool _showSearchResults = false;
 
     MediaLibraryInfo[] _mediaLibraryInfos = [];
 
@@ -132,5 +153,11 @@
         _sidebarExpanded = !_sidebarExpanded;
     }
 
+
+    private void DoSearchAsync()
+    {
+        _showSearchResults = _debounceInputValue.Nullify() != null;
+        StateHasChanged();
+    }
 
 }

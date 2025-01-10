@@ -133,7 +133,7 @@ public sealed record PagedRequest
     ///     Returns a tuple of SQL statement (built off the sql start fragment parameter) and dictionary of parameters for a
     ///     parameterized query to be executed.
     /// </summary>
-    public (string, Dictionary<string, object>?) FilterByParts(string sqlStartFragment)
+    public (string, Dictionary<string, object>?) FilterByParts(string sqlStartFragment, string? columnNamePrefix = null)
     {
         var sqlStarFragmentHaveWhere = sqlStartFragment.ToNormalizedString()!.Contains("WHERE");
         if (FilterBy == null || FilterBy.Length == 0)
@@ -150,13 +150,22 @@ public sealed record PagedRequest
         {
             sqlResult.Append(" WHERE ");
         }
+
+        if (columnNamePrefix != null)
+        {
+            columnNamePrefix = $"{columnNamePrefix.Replace(".", string.Empty).Replace("\"", string.Empty)}.\"";
+        }
+        else
+        {
+            columnNamePrefix = "\"";
+        }
         foreach (var fb in FilterBy.Select((x,i) => (x,i)))
         {
             if (fb.i > 0)
             {
                 sqlResult.Append($" {fb.x.JoinOperator} ");
             }
-            sqlResult.Append($"\"{fb.x.PropertyName}\" {fb.x.OperatorValue} @p_{fb.x.PropertyName}");
+            sqlResult.Append($"{columnNamePrefix}{fb.x.PropertyName}\" {fb.x.OperatorValue} @p_{fb.x.PropertyName}");
         }
 
         return (sqlResult.ToString(), FilterBy.ToDictionary(x => $"@p_{x.PropertyName}", object (x) => x.ValuePattern()));
