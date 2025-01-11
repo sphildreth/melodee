@@ -1,5 +1,3 @@
-using System.Xml.Linq;
-using IdSharp.Common.Utils;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -26,7 +24,7 @@ public sealed class JellyfinHandler : INfoHandler
                 var deserializer = new JellyfinXmlDeserializer<Models.Jellyfin.Album>();
                 return deserializer.Deserialize(fileContents).Title != null;
             }
-            catch(Exception ex)
+            catch
             {
                 // Likely invalid XML
             }
@@ -52,7 +50,7 @@ public sealed class JellyfinHandler : INfoHandler
                 new()
                 {
                     Identifier = MetaTagIdentifier.OrigAlbumYear,
-                    Value = jfAlbum.ReleaseDate
+                    Value = jfAlbum.Year ?? jfAlbum.ReleaseDate?.Year
                 },
                 new()
                 {
@@ -82,8 +80,8 @@ public sealed class JellyfinHandler : INfoHandler
             var mediaTypeFilesInDirectory = albumDirectory.AllMediaTypeFileInfos().ToArray();
             foreach (var track in jfAlbum.Track ?? [])
             {
-                var trackFileNameWithoutExtension = $"{track.Position.ToStringPadLeft(2)} {track.Title}";
-                var mediaTrackForTrack = mediaTypeFilesInDirectory.FirstOrDefault(x => x.Name.StartsWith(trackFileNameWithoutExtension));
+                var trackFileNameWithoutExtension = $"{track.Position.ToStringPadLeft(2)} {track.Title}".ToNormalizedString() ?? string.Empty;
+                var mediaTrackForTrack = mediaTypeFilesInDirectory.FirstOrDefault(x => x.Name.ToNormalizedString()!.StartsWith(trackFileNameWithoutExtension));
                 if (mediaTrackForTrack != null)
                 {
                     var songTags = new List<MetaTag<object?>>
@@ -109,7 +107,7 @@ public sealed class JellyfinHandler : INfoHandler
                     };
                     songs.Add(new Common.Models.Song
                     {
-                        CrcHash = CRC32.Calculate(mediaTrackForTrack),
+                        CrcHash = Crc32.Calculate(mediaTrackForTrack),
                         File = mediaTrackForTrack.ToFileSystemInfo(),
                         Tags = songTags,
                         MediaAudios = mediaAudios,
@@ -122,11 +120,15 @@ public sealed class JellyfinHandler : INfoHandler
             foreach (var art in jfAlbum.Art?.Where(x => x.Poster != null) ?? [])
             {
                 var artFileInfo = new FileInfo(art.Poster!);
+                if (!artFileInfo.Exists)
+                {
+                    artFileInfo = new FileInfo(Path.Combine(albumDirectory.FullName(), artFileInfo.Name));
+                }
                 if (artFileInfo.Exists)
                 {
                     images.Add(new ImageInfo
                     {
-                        CrcHash = CRC32.Calculate(artFileInfo),
+                        CrcHash = Crc32.Calculate(artFileInfo),
                         FileInfo = artFileInfo.ToFileSystemInfo()
                     });
                 }
@@ -156,16 +158,8 @@ public sealed class JellyfinHandler : INfoHandler
                 Songs = songs,
                 SortOrder = 0,
                 ViaPlugins = [nameof(JellyfinHandler)],
-                OriginalDirectory = new FileSystemDirectoryInfo
-                {
-                    Path = fileInfo.FullName,
-                    Name = fileInfo.Name
-                },
-                Directory = new FileSystemDirectoryInfo
-                {
-                    Path = fileInfo.FullName,
-                    Name = fileInfo.Name
-                }
+                OriginalDirectory = albumDirectory,
+                Directory = albumDirectory
             };
 
             if (doDeleteOriginal)

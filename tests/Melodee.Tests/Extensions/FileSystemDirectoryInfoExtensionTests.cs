@@ -1,11 +1,11 @@
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Moq;
 
 namespace Melodee.Tests.Extensions;
 
 public class FileSystemDirectoryInfoExtensionTests
 {
-    
     [Theory]
     [InlineData("Bobs Discography", true)]
     [InlineData("Bobs Discography (1940-1999)", true)]

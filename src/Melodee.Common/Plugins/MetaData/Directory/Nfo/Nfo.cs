@@ -80,37 +80,24 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     nfoAlbum.Status = validationResult.Data.AlbumStatus;
                     nfoAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
 
-                    if (validationResult.Data.IsValid)
+                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration));
+                    if (File.Exists(stagingAlbumDataName))
                     {
-                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration));
-                        if (File.Exists(stagingAlbumDataName))
+                        var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                        if (existingAlbum != null)
                         {
-                            var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                            if (existingAlbum != null)
-                            {
-                                nfoAlbum = nfoAlbum.Merge(existingAlbum);
-                            }
-                        }
-
-                        var serialized = serializer.Serialize(nfoAlbum);
-                        await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
-                        {
-                            nfoFile.Delete();
-                            Log.Information("[{Plugin}] Deleted NFO File [{FileName}]", DisplayName, nfoFile.Name);
-                        }
-                    }
-                    else
-                    {
-                        Log.Warning("[{Plugin}] Could not create Album from NFO data [{nfoFile}]. Artist [{Artist}] Album Title [{AlbumTitle}] Album Year [{AlbumYear}]", DisplayName, nfoFile.Name, nfoAlbum.Artist, nfoAlbum.AlbumTitle(), nfoAlbum.AlbumYear());
-                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
-                        {
-                            nfoFile.Delete();
-                            Log.Information("[{Plugin}] Deleted NFO File [{FileName}]", DisplayName, nfoFile.Name);
+                            nfoAlbum = nfoAlbum.Merge(existingAlbum);
                         }
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration), nfoAlbum.Status.ToString());
+                    var serialized = serializer.Serialize(nfoAlbum);
+                    await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
+                    if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
+                    {
+                        nfoFile.Delete();
+                        Log.Information("[{Plugin}] Deleted NFO File [{FileName}]", DisplayName, nfoFile.Name);
+                    }
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Album [{Album}]", DisplayName, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration), nfoAlbum.ToString());
                     processedFiles++;
                 }
             }
@@ -215,16 +202,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
             {
                 if (await nfoHandler.IsHandlerForNfoAsync(fileInfo, cancellationToken))
                 {
-                    var handlersAlbum = await nfoHandler.HandleNfoAsync(fileInfo, MelodeeConfiguration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),  cancellationToken);
-                    if (handlersAlbum != null)
-                    {
-                        var handlersAlbumValidationResult = albumValidator.ValidateAlbum(handlersAlbum);
-                        handlersAlbum.ValidationMessages = handlersAlbumValidationResult.Data.Messages ?? [];
-                        handlersAlbum.Status = handlersAlbumValidationResult.Data.AlbumStatus;
-                        handlersAlbum.StatusReasons = handlersAlbumValidationResult.Data.AlbumStatusReasons;
-                        return handlersAlbum;
-                    }
-                    return null;
+                    return await nfoHandler.HandleNfoAsync(fileInfo, MelodeeConfiguration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),  cancellationToken);
                 }
             }
             

@@ -397,6 +397,9 @@ public abstract class ServiceBase
         }
     }
 
+    /// <summary>
+    /// Returns all albums created by reading songs and the total number of songs
+    /// </summary>
     public async Task<OperationResult<(IEnumerable<Album>, int)>> AllAlbumsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         IAlbumValidator albumValidator,

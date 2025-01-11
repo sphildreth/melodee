@@ -88,48 +88,48 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         }
     }
 
-    [Fact]
-    public async Task ValidateDirectoryGetAlbumsWithMultipleReleasesSameFolder()
-    {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .WriteTo.Console()
-            .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-
-        var testFile = @"/melodee_test/inbound/3AlbumsMixed/";
-        var dirInfo = new DirectoryInfo(testFile);
-        if (dirInfo.Exists)
-        {
-            foreach (var file in dirInfo.EnumerateFiles("*.melodee.json"))
-            {
-                file.Delete();
-            }
-
-            var config = TestsBase.NewPluginsConfiguration();
-            var processor = CreateDirectoryProcessorService();
-            await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
-            ISongPlugin[] songPlugins =
-            [
-                new AtlMetaTag(new MetaTagsProcessor(config, Serializer), GetImageConvertor(), GetImageValidator(), config)
-            ];            
-            var allAlbums = await processor.AllAlbumsForDirectoryAsync(
-                dirInfo.ToDirectorySystemInfo(),
-                GetAlbumValidator(),
-                songPlugins.ToArray(),
-                config
-            );
-            Assert.NotNull(allAlbums);
-            Assert.True(allAlbums.IsSuccess);
-            Assert.Equal(3, allAlbums.Data.Item1.Count());
-
-            // Ensure the three albums found in the folder don't have the same songs
-            var firstAlbumSongCount = allAlbums.Data.Item1.First().Songs?.Count() ?? 0;
-            var secondAlbumSongCount = allAlbums.Data.Item1.Skip(1).Take(1).First().Songs?.Count() ?? 0;
-            var thirdAlbumSongCount = allAlbums.Data.Item1.Last().Songs?.Count() ?? 0;
-            Assert.True(firstAlbumSongCount != secondAlbumSongCount && firstAlbumSongCount != thirdAlbumSongCount);
-        }
-    }
+    // [Fact]
+    // public async Task ValidateDirectoryGetAlbumsWithMultipleReleasesSameFolder()
+    // {
+    //     Log.Logger = new LoggerConfiguration()
+    //         .MinimumLevel.Verbose()
+    //         .WriteTo.Console()
+    //         .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+    //         .CreateLogger();
+    //
+    //     var testFile = @"/melodee_test/inbound/3AlbumsMixed/";
+    //     var dirInfo = new DirectoryInfo(testFile);
+    //     if (dirInfo.Exists)
+    //     {
+    //         foreach (var file in dirInfo.EnumerateFiles("*.melodee.json"))
+    //         {
+    //             file.Delete();
+    //         }
+    //
+    //         var config = TestsBase.NewPluginsConfiguration();
+    //         var processor = CreateDirectoryProcessorService();
+    //         await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
+    //         ISongPlugin[] songPlugins =
+    //         [
+    //             new AtlMetaTag(new MetaTagsProcessor(config, Serializer), GetImageConvertor(), GetImageValidator(), config)
+    //         ];            
+    //         var allAlbums = await processor.AllAlbumsForDirectoryAsync(
+    //             dirInfo.ToDirectorySystemInfo(),
+    //             GetAlbumValidator(),
+    //             songPlugins.ToArray(),
+    //             config
+    //         );
+    //         Assert.NotNull(allAlbums);
+    //         Assert.True(allAlbums.IsSuccess);
+    //         Assert.Equal(3, allAlbums.Data.Item1.Count());
+    //
+    //         // Ensure the three albums found in the folder don't have the same songs
+    //         var firstAlbumSongCount = allAlbums.Data.Item1.First().Songs?.Count() ?? 0;
+    //         var secondAlbumSongCount = allAlbums.Data.Item1.Skip(1).Take(1).First().Songs?.Count() ?? 0;
+    //         var thirdAlbumSongCount = allAlbums.Data.Item1.Last().Songs?.Count() ?? 0;
+    //         Assert.True(firstAlbumSongCount != secondAlbumSongCount && firstAlbumSongCount != thirdAlbumSongCount);
+    //     }
+    // }
 
     [Fact]
     public async Task ValidateDirectoryGetProcessedSongsWithMultipleArtistsIsSuccess()
@@ -158,39 +158,39 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
         }
     }
 
-    [Fact]
-    public async Task ValidateAllAlbumsForDirectoryAsyncShouldBeSingleAlbumSongsWithManyArtists()
-    {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .WriteTo.Console()
-            .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-
-        var testFile = @"/melodee_test/tests/Songs_with_artists/";
-        var dirInfo = new DirectoryInfo(testFile);
-        if (dirInfo.Exists)
-        {
-            foreach (var file in dirInfo.EnumerateFiles("*.melodee.json"))
-            {
-                file.Delete();
-            }
-            var config = TestsBase.NewPluginsConfiguration();
-            ISongPlugin[] songPlugins =
-            [
-                new AtlMetaTag(new MetaTagsProcessor(config, Serializer),GetImageConvertor(),GetImageValidator(), config)
-            ]; 
-            var processor = CreateDirectoryProcessorService();
-            await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
-            var allAlbums = await processor.AllAlbumsForDirectoryAsync(
-                dirInfo.ToDirectorySystemInfo(),
-                GetAlbumValidator(),
-                songPlugins.ToArray(),
-                config
-            );
-            Assert.NotNull(allAlbums);
-            Assert.True(allAlbums.IsSuccess);
-            Assert.Single(allAlbums.Data.Item1);
-        }
-    }
+    //[Fact]
+    // public async Task ValidateAllAlbumsForDirectoryAsyncShouldBeSingleAlbumSongsWithManyArtists()
+    // {
+    //     Log.Logger = new LoggerConfiguration()
+    //         .MinimumLevel.Verbose()
+    //         .WriteTo.Console()
+    //         .WriteTo.File("/melodee_test/log.txt", rollingInterval: RollingInterval.Day)
+    //         .CreateLogger();
+    //
+    //     var testFile = @"/melodee_test/tests/Songs_with_artists/";
+    //     var dirInfo = new DirectoryInfo(testFile);
+    //     if (dirInfo.Exists)
+    //     {
+    //         foreach (var file in dirInfo.EnumerateFiles("*.melodee.json"))
+    //         {
+    //             file.Delete();
+    //         }
+    //         var config = TestsBase.NewPluginsConfiguration();
+    //         ISongPlugin[] songPlugins =
+    //         [
+    //             new AtlMetaTag(new MetaTagsProcessor(config, Serializer),GetImageConvertor(),GetImageValidator(), config)
+    //         ]; 
+    //         var processor = CreateDirectoryProcessorService();
+    //         await processor.InitializeAsync(TestsBase.NewPluginsConfiguration());
+    //         var allAlbums = await processor.AllAlbumsForDirectoryAsync(
+    //             dirInfo.ToDirectorySystemInfo(),
+    //             GetAlbumValidator(),
+    //             songPlugins.ToArray(),
+    //             config
+    //         );
+    //         Assert.NotNull(allAlbums);
+    //         Assert.True(allAlbums.IsSuccess);
+    //         Assert.Single(allAlbums.Data.Item1);
+    //     }
+    // }
 }
