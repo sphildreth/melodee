@@ -558,6 +558,14 @@ public class LibraryService : ServiceBase
         Guard.Against.NullOrEmpty(fromLibraryName, nameof(fromLibraryName));
         Guard.Against.NullOrEmpty(fromLibraryName, nameof(toLibraryName));
 
+        if (fromLibraryName.Equals(toLibraryName, StringComparison.OrdinalIgnoreCase))
+        {
+            return new MelodeeModels.OperationResult<bool>("From and To Library cannot be the same.")
+            {
+                Data = false
+            };
+        }
+
         var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
         var fromLibrary = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == fromLibraryName.ToNormalizedString());
         if (fromLibrary == null)

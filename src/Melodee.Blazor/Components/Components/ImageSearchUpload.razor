@@ -1,3 +1,4 @@
+@using Ardalis.GuardClauses
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Services.SearchEngines
 
@@ -68,7 +69,7 @@
                 <InputFile OnChange="@SingleUpload" />
                 @if (_imageBytes?.Length > 0)
                 {
-                    <img style="width:100px;height: auto;" alt="Selected image" src="data:image;base64, @System.Convert.ToBase64String(_imageBytes)"/>
+                    <img style="width:100px;height: auto;" alt="Selected image" src="data:image;base64, @Convert.ToBase64String(_imageBytes)"/>
                 }
 
                 @* <RadzenFileInput *@
@@ -184,12 +185,12 @@
 
     void OnChange(byte[] value, string name)
     {
-        var t = 1;
+        throw new NotImplementedException();
     }
 
     void OnError(UploadErrorEventArgs args, string name)
     {
-        var t = 1;
+        throw new NotImplementedException();
     }
 
     // private async Task OnChange(byte[] value, string fileinput)

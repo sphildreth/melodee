@@ -38,6 +38,21 @@ public class NfoTests : TestsBase
     }
     
     [Fact]
+    public async Task ParseJellyfinNfoFile()
+    {
+        var testFile = @"/melodee_test/tests/jellyfin_album.nfo";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var nfo = new Nfo(Serializer,GetAlbumValidator(), TestsBase.NewPluginsConfiguration());
+            var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
+            Assert.NotNull(nfoParserResult);
+            Assert.Equal("Chris Young", nfoParserResult.Artist.Name);
+            Assert.True(nfoParserResult.Status == AlbumStatus.Invalid);
+        }
+    }  
+    
+    [Fact]
     public async Task ParseNfoFile01()
     {
         Trace.Listeners.Add(new ConsoleTraceListener());

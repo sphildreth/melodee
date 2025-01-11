@@ -314,21 +314,22 @@ public static class SafeParser
         return null;
     }
 
-    public static T? ChangeType<T>(object? value)
+    public static T? ChangeType<T>(object? value) => (T?)ChangeType(typeof(T), value);
+    
+    public static object? ChangeType(Type toType, object? value)
     {
-        var t = typeof(T);
-        if (!t.IsGenericType || (t.GetGenericTypeDefinition() != typeof(Nullable<>) && value != null))
+        if (!toType.IsGenericType || (toType.GetGenericTypeDefinition() != typeof(Nullable<>) && value != null))
         {
-            return (T)Convert.ChangeType(value!, t);
+            return Convert.ChangeType(value!, toType);
         }
 
         if (value == null)
         {
-            return default;
+            return null;
         }
 
-        t = Nullable.GetUnderlyingType(t);
-        return t == null ? default : (T)Convert.ChangeType(value, t);
+        var tt = Nullable.GetUnderlyingType(toType);
+        return tt == null ? default : Convert.ChangeType(value, tt);
     }
 
     public static string? ToToken(string input)

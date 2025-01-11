@@ -18,6 +18,21 @@ public static class DirectoryInfoExtensions
         }
     }
 
+    public static bool FileIsLikelyDuplicateByCrcAndExtension(this DirectoryInfo directory, FileInfo file)
+    {
+        if (!directory.Exists || !file.Exists)
+        {
+            return false;
+        }
+
+        var crc = Crc32.Calculate(file);
+        if (crc.Nullify() == null)
+        {
+            return false;
+        }
+        return directory.EnumerateFiles($"*{ file.Extension}", SearchOption.AllDirectories).Any(file => Crc32.Calculate(file) == crc);
+    }
+
     public static bool DoesDirectoryHaveImageFiles(this DirectoryInfo directory)
     {
         if (!directory.Exists)

@@ -1,3 +1,5 @@
+using Melodee.Common.Models;
+
 namespace Melodee.Common.Plugins.MetaData.Directory.Nfo.Handlers;
 
 public sealed class PMediaHandler : INfoHandler
@@ -17,10 +19,10 @@ public sealed class PMediaHandler : INfoHandler
         return false;
     }
 
-    public async Task<bool> HandleNfoAsync(FileInfo fileInfo, CancellationToken cancellationToken = default)
+    public async Task<Album?> HandleNfoAsync(FileInfo fileInfo, bool doDeleteOriginal, CancellationToken cancellationToken = default)
     {
         var isPMediaNfo = await IsHandlerForNfoAsync(fileInfo, cancellationToken);
-        if (isPMediaNfo && fileInfo.DirectoryName != null)
+        if (isPMediaNfo && fileInfo.DirectoryName != null && doDeleteOriginal)
         {
             var coverFileName = Path.Combine(fileInfo.DirectoryName, "cover.jpg");
             if (File.Exists(coverFileName))
@@ -31,6 +33,6 @@ public sealed class PMediaHandler : INfoHandler
             fileInfo.Delete();
         }
 
-        return isPMediaNfo;
+        return null;
     }
 }

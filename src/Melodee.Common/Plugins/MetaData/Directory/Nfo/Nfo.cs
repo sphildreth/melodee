@@ -6,6 +6,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.MetaData.Directory.Nfo.Handlers;
+using Melodee.Common.Plugins.MetaData.Directory.Nfo.Handlers.Jellyfin;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
@@ -23,7 +24,11 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
 {
     public const string HandlesExtension = "NFO";
 
-    private INfoHandler[] _nfoHandlers = [];
+    private INfoHandler[] _nfoHandlers =
+    [
+        new PMediaHandler(),
+        new JellyfinHandler()
+    ];
 
     public override string Id => "35A33042-6E57-431C-AF94-F7F803F811C4";
 
@@ -47,11 +52,6 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
 
         var processedFiles = 0;
 
-        _nfoHandlers =
-        [
-            new PMediaHandler()
-        ];
-
         try
         {
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
@@ -69,23 +69,6 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
             {
                 using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
                 {
-                    var doContinue = true;
-                    foreach (var nfoHandler in _nfoHandlers)
-                    {
-                        if (await nfoHandler.IsHandlerForNfoAsync(nfoFile, cancellationToken))
-                        {
-                            if (await nfoHandler.HandleNfoAsync(nfoFile, cancellationToken))
-                            {
-                                doContinue = false;
-                            }
-                        }
-                    }
-
-                    if (!doContinue)
-                    {
-                        continue;
-                    }
-
                     var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
                     if (nfoAlbum == null)
                     {
@@ -228,6 +211,23 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
     {
         try
         {
+            foreach (var nfoHandler in _nfoHandlers)
+            {
+                if (await nfoHandler.IsHandlerForNfoAsync(fileInfo, cancellationToken))
+                {
+                    var handlersAlbum = await nfoHandler.HandleNfoAsync(fileInfo, MelodeeConfiguration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),  cancellationToken);
+                    if (handlersAlbum != null)
+                    {
+                        var handlersAlbumValidationResult = albumValidator.ValidateAlbum(handlersAlbum);
+                        handlersAlbum.ValidationMessages = handlersAlbumValidationResult.Data.Messages ?? [];
+                        handlersAlbum.Status = handlersAlbumValidationResult.Data.AlbumStatus;
+                        handlersAlbum.StatusReasons = handlersAlbumValidationResult.Data.AlbumStatusReasons;
+                        return handlersAlbum;
+                    }
+                    return null;
+                }
+            }
+            
             var splitChar = ':';
             var albumTags = new List<MetaTag<object?>>();
             var songs = new List<Common.Models.Song>();

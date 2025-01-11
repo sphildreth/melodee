@@ -100,19 +100,27 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
         }
 
-        AreAllSongNumbersValid(album); // AlbumNeedsAttentionReasons.SongsAreNotSequentiallyNumbered
-        AreSongsUniquelyNumbered(album); // AlbumNeedsAttentionReasons.SongsAreNotUniquelyNumbered
-        AreMediaNumbersValid(album); // AlbumNeedsAttentionReasons.MediaNumbersAreInvalid
-        DoAllSongsHaveSameAlbumArtist(album); // AlbumNeedsAttentionReasons.HasMultipleArtistsButNotMultipleAristAlbumType
-        AllSongTitlesDoNotHaveUnwantedText(album); // AlbumNeedsAttentionReasons.HasSongsWithUnwantedText
-        AlbumArtistDoesNotHaveUnwantedText(album); // AlbumNeedsAttentionReasons.ArtistNameHasUnwantedText
-        AlbumTitleDoesNotHaveUnwantedText(album); // AlbumNeedsAttentionReasons.TitleHasUnwantedText
-        DoMediaTotalMatchMediaNumbers(album); // AlbumNeedsAttentionReasons.MediaTotalNumberDoesntMatchMediaFound
-        DoAllSongsHaveMediaNumberSet(album); // AlbumNeedsAttentionReasons.HasSongsWithoutMediaNumberSet
-        DoesSongTotalMatchSongCount(album); // AlbumNeedsAttentionReasons.SongTotalDoesntMatchSongCount
-        DoesAlbumHaveCoverImage(album); // AlbumNeedsAttentionReasons.HasNoImages
-        ArtistHasSearchEngineResult(album.Artist); // AlbumNeedsAttentionReasons.HasUnknownArtist
-        AlbumIsStudioTypeAlbum(album); // AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum
+        try
+        {
+            AreAllSongNumbersValid(album); 
+            AreSongsUniquelyNumbered(album); 
+            AreMediaNumbersValid(album); 
+            DoAllSongsHaveSameAlbumArtist(album); 
+            AllSongTitlesDoNotHaveUnwantedText(album);
+            AlbumArtistDoesNotHaveUnwantedText(album);
+            AlbumTitleDoesNotHaveUnwantedText(album); 
+            DoMediaTotalMatchMediaNumbers(album); 
+            DoAllSongsHaveMediaNumberSet(album); 
+            DoesSongTotalMatchSongCount(album); 
+            DoesAlbumHaveCoverImage(album);
+            ArtistHasSearchEngineResult(album.Artist);
+            AlbumIsStudioTypeAlbum(album);
+            AllSongsHaveAnArtist(album);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
 
         var albumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0
             ? AlbumStatus.Ok
@@ -127,7 +135,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         };
     }
 
-    private bool AlbumIsStudioTypeAlbum(Album album)
+    private void AlbumIsStudioTypeAlbum(Album album)
     {
         if (!album.IsStudioTypeAlbum())
         {
@@ -137,13 +145,25 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Severity = ValidationResultMessageSeverity.Critical
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum;
-            return false;
         }
-
-        return true;
     }
 
-    private bool ArtistHasSearchEngineResult(Artist albumArtist)
+    private void AllSongsHaveAnArtist(Album album)
+    {
+        var anySongsWithoutArtists = album.Songs?.Any(x => x.AlbumArtist().Nullify() == null) ?? false;
+        if (anySongsWithoutArtists)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album has songs with no artist, will need manual validation.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithoutArtists;
+        }
+        
+    }
+
+    private void ArtistHasSearchEngineResult(Artist albumArtist)
     {
         if (albumArtist.SearchEngineResultUniqueId == null)
         {
@@ -160,14 +180,10 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             {
                 _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.ArtistIsNotSet;
             }
-
-            return false;
         }
-
-        return true;
     }
 
-    private bool DoesAlbumHaveCoverImage(Album album)
+    private void DoesAlbumHaveCoverImage(Album album)
     {
         var result = album.CoverImage() != null;
         if (!result)
@@ -179,11 +195,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoImages;
         }
-
-        return result;
     }
 
-    private bool DoesSongTotalMatchSongCount(Album album)
+    private void DoesSongTotalMatchSongCount(Album album)
     {
         var songs = album.Songs?.ToArray() ?? [];
         var songCount = songs.Length;
@@ -198,11 +212,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongTotalDoesntMatchSongCount;
         }
-
-        return result;
     }
 
-    private bool DoAllSongsHaveMediaNumberSet(Album album)
+    private void DoAllSongsHaveMediaNumberSet(Album album)
     {
         var songsGroupedByMediaNumber = (album.Songs?.GroupBy(x => x.MediaNumber()) ?? []).ToArray();
         if (!songsGroupedByMediaNumber.Select(x => SafeParser.ToNumber<int>(x.Key)).Order().ToArray().AreNumbersSequential())
@@ -215,7 +227,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaNumbersAreInvalid;
         }
 
-        var result = true;
         var songs = album.Songs?.ToArray() ?? [];
         foreach (var song in songs)
         {
@@ -226,15 +237,12 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                     Message = $"Song [{song.DisplaySummary}] has invalid media number.",
                     Severity = ValidationResultMessageSeverity.Critical
                 });
-                result = false;
                 _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithoutMediaNumberSet;
             }
         }
-
-        return result;
     }
 
-    private bool DoMediaTotalMatchMediaNumbers(Album album)
+    private void DoMediaTotalMatchMediaNumbers(Album album)
     {
         var songs = album.Songs?.ToArray() ?? [];
         var mediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
@@ -249,17 +257,15 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaTotalNumberDoesntMatchMediaFound;
         }
-
-        return result;
     }
 
-    private bool AreSongsUniquelyNumbered(Album album)
+    private void AreSongsUniquelyNumbered(Album album)
     {
         var songs = album.Songs?.ToArray() ?? [];
         if (songs.Length == 0)
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
-            return false;
+            return;
         }
 
         var result = true;
@@ -281,14 +287,12 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongsAreNotUniquelyNumbered;
         }
-
-        return result;
     }
 
     /// <summary>
     ///     Check if all the Songs have the same Album Artist. This is an issue if not a VA type Album.
     /// </summary>
-    private bool DoAllSongsHaveSameAlbumArtist(Album album)
+    private void DoAllSongsHaveSameAlbumArtist(Album album)
     {
         var result = true;
         var songs = album.Songs?.ToArray() ?? [];
@@ -324,11 +328,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasMultipleArtistsButNotMultipleAristAlbumType;
         }
-
-        return result;
     }
 
-    private bool AlbumArtistDoesNotHaveUnwantedText(Album album)
+    private void AlbumArtistDoesNotHaveUnwantedText(Album album)
     {
         var result = !StringHasFeaturingFragments(album.Artist.Name);
         if (!result)
@@ -340,11 +342,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.ArtistNameHasUnwantedText;
         }
-
-        return result;
     }
 
-    private bool AlbumTitleDoesNotHaveUnwantedText(Album album)
+    private void AlbumTitleDoesNotHaveUnwantedText(Album album)
     {
         var result = !StringHasFeaturingFragments(album.AlbumTitle());
         if (!result)
@@ -356,11 +356,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.TitleHasUnwantedText;
         }
-
-        return result;
     }
 
-    private bool AreMediaNumbersValid(Album album)
+    private void AreMediaNumbersValid(Album album)
     {
         var result = true;
         var songs = album.Songs?.ToArray() ?? [];
@@ -395,11 +393,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaNumbersAreInvalid;
         }
-
-        return result;
     }
 
-    private bool AllSongTitlesDoNotHaveUnwantedText(Album album)
+    private void AllSongTitlesDoNotHaveUnwantedText(Album album)
     {
         var result = true;
         var songs = album.Songs?.ToArray() ?? [];
@@ -431,12 +427,10 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithUnwantedText;
         }
-
-        return result;
     }
 
 
-    private bool AreAllSongNumbersValid(Album album)
+    private void AreAllSongNumbersValid(Album album)
     {
         var result = true;
         var songs = album.Songs?.ToArray() ?? [];
@@ -458,7 +452,14 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithInvalidNumber;
             result = false;
         }
-
+        
+        var firstSongNumber = songNumbers.Length > 0 ? songNumbers.First() : 0;
+        if (firstSongNumber != 1)
+        {
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidFirstSongNumber;
+            result = false;
+        }
+        
         var maximumSongNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumSongNumber]);
         if (songNumbers.Any(x => x > maximumSongNumber))
         {
@@ -476,8 +477,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongsAreNotSequentiallyNumbered;
         }
-
-        return result;
     }
 
     public static bool StringHasFeaturingFragments(string? input)

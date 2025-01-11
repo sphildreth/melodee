@@ -491,7 +491,12 @@ public sealed class DirectoryProcessorService(
                         // Look in the album directory and see if there are any artist images. 
                         // Most of the time an artist image is one up from an album directory in the 'artist' directory.
                         var artistImages = new List<ImageInfo>();
-                        var foundArtistImages = (await FindImagesForArtist(album, _imageConvertor, _imageValidator, _maxImageCount, cancellationToken)).ToArray();
+                        var foundArtistImages = (await FindImagesForArtist(album,
+                            _imageConvertor,
+                            _imageValidator,
+                            _maxImageCount,
+                            _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
+                            cancellationToken)).ToArray();
                         if (foundArtistImages.Length != 0)
                         {
                             foreach (var foundArtistImage in foundArtistImages)
@@ -559,6 +564,13 @@ public sealed class DirectoryProcessorService(
                         if (!File.Exists(oldImageFileName))
                         {
                             Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);
+                            continue;
+                        }
+                        
+                        var imageFileInfo = new FileInfo(oldImageFileName);
+                        if (albumDirInfo.FileIsLikelyDuplicateByCrcAndExtension(imageFileInfo))
+                        {
+                            Logger.Debug("Skipping duplicate image [{ImageName}]", image.FileInfo!.Name);
                             continue;
                         }
 
@@ -963,22 +975,35 @@ public sealed class DirectoryProcessorService(
     }
 
     //TODO make this use the Artist method to get images for an artist
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxImageCount, CancellationToken cancellationToken = default)
+    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album,
+        ImageConvertor imageConvertor,
+        IImageValidator imageValidator,
+        short maxImageCount,
+        bool doDeleteOriginal,
+        CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
-        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image directories.
+        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as
+        // there might be nested albums each with their own artist image directories.
         foreach (var dir in album.ImageDirectories())
         {
             imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
         }
 
         // Sometimes the album is in a directory like "Albums" or "Studio Albums" part of a Discography.  
-        var parents = album.OriginalDirectory.GetParents();
-        var discographyDirectory = parents.FirstOrDefault(x => x.IsDiscographyDirectory());
-        if (discographyDirectory != null)
+        var parents = album.OriginalDirectory.GetParents().ToArray();
+        // var discographyDirectory = parents.FirstOrDefault(x => x.IsDiscographyDirectory());
+        // if (discographyDirectory != null)
+        // {
+        //     imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(discographyDirectory.FullName(), SearchOption.TopDirectoryOnly));
+        // }
+        
+        // Sometimes the album is in a directory with the parent holding an image artist that is not a discography folder
+        var lookAtParentDirectoriesCount = parents.Length < 2 ? parents.Length : 2;
+        for (var i = 0; i < lookAtParentDirectoriesCount; i++)
         {
-            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(discographyDirectory.FullName(), SearchOption.TopDirectoryOnly));
+            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(parents[i].FullName(), SearchOption.TopDirectoryOnly));
         }
 
         var index = 1;
@@ -996,7 +1021,11 @@ public sealed class DirectoryProcessorService(
                 if (fileInfo.DirectoryName != album.Directory.FullName())
                 {
                     var imageFileName = album.Directory.GetNextFileNameForType(maxImageCount, Data.Models.Artist.ImageType).Item1;
-                    File.Move(fileInfo.FullName, imageFileName);
+                    File.Copy(fileInfo.FullName, imageFileName, true);
+                    if (doDeleteOriginal)
+                    {
+                        File.Delete(fileInfo.FullName);
+                    }                    
                     fileInfo = new FileInfo(imageFileName);
                 }
 
