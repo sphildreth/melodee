@@ -1,7 +1,6 @@
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
-using Melodee.Common.Enums;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
@@ -53,7 +52,7 @@ public class LibraryAlbumStatusReportCommand : AsyncCommand<LibraryAlbumStatusRe
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var configFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
-            
+
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
@@ -91,7 +90,7 @@ public class LibraryAlbumStatusReportCommand : AsyncCommand<LibraryAlbumStatusRe
             {
                 foreach (var stat in result.Data ?? [])
                 {
-                        Console.WriteLine($"{stat.Title}\t{stat.Data}\t{stat.Message}");
+                    Console.WriteLine($"{stat.Title}\t{stat.Data}\t{stat.Message}");
                 }
             }
 

@@ -26,29 +26,29 @@ public sealed class StatisticsService(
                 "Albums",
                 await scopedContext.Albums.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 1,
-                "album"));            
+                "album"));
 
             results.Add(new Statistic(StatisticType.Count,
                 "Artists",
                 await scopedContext.Artists.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 2,
-                "artist"));             
-            
+                "artist"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Contributors",
                 await scopedContext.Contributors.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 3,
-                "contacts_product"));   
-            
+                "contacts_product"));
+
             var allGenres = await dbConn.QueryAsync<string>("""
                                                             select distinct "Genres" 
                                                             from 
@@ -65,91 +65,91 @@ public sealed class StatisticsService(
             results.Add(new Statistic(StatisticType.Count,
                 "Genres",
                 allGenres.Count(),
-                null, 
-                null, 
+                null,
+                null,
                 4,
-                "genres"));         
-            
+                "genres"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Libraries",
                 await scopedContext.Libraries.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 5,
-                "library_music"));        
-            
+                "library_music"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Playlists",
                 await scopedContext.Playlists.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 6,
-                "playlist_play"));       
-            
+                "playlist_play"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Shares",
                 await scopedContext.Shares.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 7,
-                "share"));              
-            
+                "share"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Songs",
                 await scopedContext.Songs.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 8,
-                "music_note"));     
-            
+                "music_note"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Songs: Played count",
                 await scopedContext.Songs.SumAsync(x => x.PlayedCount, cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 9,
-                "analytics"));            
-           
+                "analytics"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Users",
                 await scopedContext.Users.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 10,
                 "group"));
-            
+
             results.Add(new Statistic(StatisticType.Count,
                 "Users: Starred artists",
                 await scopedContext.UserArtists.CountAsync(x => x.StarredAt != null, cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 11,
                 "analytics"));
-            
+
             results.Add(new Statistic(StatisticType.Count,
                 "Users: Starred albums",
                 await scopedContext.UserAlbums.CountAsync(x => x.StarredAt != null, cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 12,
-                "analytics"));            
-            
+                "analytics"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Users: Starred songs",
                 await scopedContext.UserSongs.CountAsync(x => x.StarredAt != null, cancellationToken)
                     .ConfigureAwait(false),
-                null, 
-                null, 
+                null,
+                null,
                 12,
-                "analytics"));            
+                "analytics"));
         }
 
         return new OperationResult<Statistic[]>

@@ -10,7 +10,7 @@ public class ETagFilter : IResourceFilter
     private const int OkStatusCode = 200;
     private const int NotModifiedStatusCode = 304;
     private const string IdKey = "id";
-    
+
     public void OnResourceExecuting(ResourceExecutingContext context)
     {
         if (context.HttpContext.Request.Method == "GET")
@@ -37,6 +37,7 @@ public class ETagFilter : IResourceFilter
                                      .Value?.ToString() ??
                                  string.Empty;
                     }
+
                     var etagRepository = context.HttpContext.RequestServices.GetRequiredService<EtagRepository>();
                     if (etagRepository.EtagMatch(apiKey, incomingEtag))
                     {

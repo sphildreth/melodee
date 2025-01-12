@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>mcli</AssemblyName>
+    <Deterministic>false</Deterministic>
+    <AssemblyVersion>1.0.0.*</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

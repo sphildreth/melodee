@@ -8,7 +8,7 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class ArtistExtensions
 {
-    public static Melodee.Common.Models.Artist ToMelodeeArtistModel(this Artist artist)
+    public static Common.Models.Artist ToMelodeeArtistModel(this Artist artist)
     {
         return new Common.Models.Artist(artist.Name,
             artist.NameNormalized,
@@ -17,7 +17,7 @@ public static class ArtistExtensions
             artist.Id,
             artist.MusicBrainzId?.ToString());
     }
-    
+
     public static string ToCoverArtId(this Artist artist)
     {
         return artist.ToApiKey();

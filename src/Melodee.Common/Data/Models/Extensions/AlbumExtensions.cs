@@ -43,7 +43,7 @@ public static class AlbumExtensions
             album.Tags,
             album.ReleaseDate,
             album.AlbumStatus
-            );
+        );
     }
 
     public static RecordLabel[]? RecordLabels(this Album album)

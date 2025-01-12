@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Models.Extensions;
@@ -17,8 +16,8 @@ public record UserInfo(int Id, Guid ApiKey, string UserName, string Email, strin
     {
         var userSalt = UserService.GenerateSalt();
         var usersPassword = this.Decrypt(PasswordEncrypted, configuration);
-        var userToken = $"{usersPassword}{userSalt}".ToMd5Hash();       
-        
+        var userToken = $"{usersPassword}{userSalt}".ToMd5Hash();
+
         return new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
             {
                 new(ClaimTypes.PrimarySid, Id.ToString()),

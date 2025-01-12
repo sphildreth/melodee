@@ -3,7 +3,6 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.Models;
-using Melodee.Common.Services;
 using Melodee.Common.Utility;
 using NodaTime;
 
@@ -49,7 +48,7 @@ public sealed class UserServiceTests : ServiceTestBase
         {
             var usersPublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64();
             var usersPublicKey2 = EncryptionHelper.GenerateRandomPublicKeyBase64();
-            
+
             context.Users.AddRange(new User
                 {
                     ApiKey = shouldContainApiKey,
@@ -106,7 +105,7 @@ public sealed class UserServiceTests : ServiceTestBase
                     UserNameNormalized = "Test User".ToUpperInvariant(),
                     Email = "testemail@local.lan",
                     EmailNormalized = "testemail@local.lan".ToNormalizedString()!,
-                    PasswordEncrypted = EncryptionHelper.Encrypt(TestsBase.NewPluginsConfiguration().GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, ("testemail@local.lan".ToNormalizedString() + "hopefully_a_good_password"), usersPublicKey),
+                    PasswordEncrypted = EncryptionHelper.Encrypt(TestsBase.NewPluginsConfiguration().GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, "testemail@local.lan".ToNormalizedString() + "hopefully_a_good_password", usersPublicKey),
                     PublicKey = usersPublicKey,
                     CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
                 },

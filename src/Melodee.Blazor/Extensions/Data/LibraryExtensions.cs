@@ -11,9 +11,7 @@ public static class LibraryExtensions
         {
             LibraryType.Inbound or LibraryType.Staging => ("stock_media", "Media queue type library"),
             LibraryType.UserImages => ("photo_library", "Images type library"),
-            _ => ("inventory_2","Storage type library")
+            _ => ("inventory_2", "Storage type library")
         };
     }
-    
-    
 }

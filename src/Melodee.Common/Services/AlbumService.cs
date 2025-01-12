@@ -69,7 +69,6 @@ public class AlbumService(
             TotalPages = pagedRequest.TotalPages(albumCount),
             Data = albums
         };
-
     }
 
     public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
@@ -93,7 +92,7 @@ public class AlbumService(
                                               a."AlbumStatus"
                                        FROM "Albums" a
                                        JOIN "Artists" ar ON (a."ArtistId" = ar."Id")
-                                       """;                
+                                       """;
                 var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment, "a");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 if (dbConn is SqliteConnection)
@@ -160,7 +159,8 @@ public class AlbumService(
             foreach (var artistId in artistIds.Distinct())
             {
                 await UpdateArtistAggregateValuesByIdAsync(artistId, cancellationToken).ConfigureAwait(false);
-            }            
+            }
+
             foreach (var libraryId in libraryIds.Distinct())
             {
                 await UpdateLibraryAggregateStatsByIdAsync(libraryId, cancellationToken).ConfigureAwait(false);
@@ -173,8 +173,8 @@ public class AlbumService(
         {
             Data = result
         };
-    }    
-    
+    }
+
     public async Task<MelodeeModels.OperationResult<Album?>> GetByArtistIdAndNameNormalized(int artistId, string nameNormalized, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(nameNormalized, nameof(nameNormalized));

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class BrowsingController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
+public class BrowsingController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     //TODO
     //getSimilarSongs
@@ -18,13 +18,13 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     [Route("/rest/getVideoInfo.view")]
     [Route("/rest/getVideos.view")]
     [Route("/rest/getVideoInfo")]
-    [Route("/rest/getVideos")]    
+    [Route("/rest/getVideos")]
     public IActionResult DeprecatedWontImplement()
     {
         HttpContext.Response.Headers.Append("Cache-Control", "no-cache");
         return StatusCode((int)HttpStatusCode.Gone);
-    }    
-    
+    }
+
     /// <summary>
     ///     Returns album info.
     /// </summary>

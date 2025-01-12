@@ -288,13 +288,13 @@ public sealed class AlbumDiscoveryService(
             null,
             SafeParser.ToLocalDate(x.AlbumYear() ?? 0),
             SafeParser.ToNumber<short>(_albumValidator.ValidateAlbum(x).Data.AlbumStatus)
-            )
+        )
         {
             ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
             MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName)
         });
-        
-        var d = await Task.WhenAll(data);        
+
+        var d = await Task.WhenAll(data);
 
         return new PagedResult<AlbumDataInfo>
         {

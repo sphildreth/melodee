@@ -14,7 +14,7 @@ public class NfoTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(Serializer,GetAlbumValidator(), TestsBase.NewPluginsConfiguration());
+            var nfo = new Nfo(Serializer, GetAlbumValidator(), NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.True(nfoParserResult.Status == AlbumStatus.Ok);
@@ -36,7 +36,7 @@ public class NfoTests : TestsBase
     {
         Assert.Equal(shouldBe, Nfo.IsLineForSong(input ?? string.Empty));
     }
-    
+
     [Fact]
     public async Task ParseJellyfinNfoFile()
     {
@@ -44,24 +44,24 @@ public class NfoTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(Serializer,GetAlbumValidator(), TestsBase.NewPluginsConfiguration());
+            var nfo = new Nfo(Serializer, GetAlbumValidator(), NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.Equal("Chris Young", nfoParserResult.Artist.Name);
             Assert.True(nfoParserResult.Status == AlbumStatus.Invalid);
         }
-    }  
-    
+    }
+
     [Fact]
     public async Task ParseNfoFile01()
     {
         Trace.Listeners.Add(new ConsoleTraceListener());
-        
+
         var testFile = @"/melodee_test/tests/test_nfo01.nfo";
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var nfo = new Nfo(Serializer, GetAlbumValidator(), TestsBase.NewPluginsConfiguration());
+            var nfo = new Nfo(Serializer, GetAlbumValidator(), NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.NotNull(nfoParserResult.Songs);

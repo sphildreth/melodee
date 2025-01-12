@@ -8,7 +8,7 @@ public class TimeFormattingTests
     public void ValidateShortTimeFormat()
     {
         var startTicks = Stopwatch.GetTimestamp();
-        System.Threading.Thread.Sleep(250);
+        Thread.Sleep(250);
         var now = DateTimeOffset.UtcNow;
         Assert.NotNull(now.ToString(@"hh\:mm\:ss\.ffff"));
         var formattedTime = Stopwatch.GetElapsedTime(startTicks).ToString(@"hh\:mm\:ss\.ffff");

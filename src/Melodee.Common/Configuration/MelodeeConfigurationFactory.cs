@@ -6,9 +6,11 @@ namespace Melodee.Common.Configuration;
 public sealed class MelodeeConfigurationFactory(IDbContextFactory<MelodeeDbContext> contextFactory) : IMelodeeConfigurationFactory
 {
     private IMelodeeConfiguration? _configuration;
-    
+
     public void Reset()
-        => _configuration = null;
+    {
+        _configuration = null;
+    }
 
     public async Task<IMelodeeConfiguration> GetConfigurationAsync(CancellationToken cancellationToken = default)
     {
@@ -23,6 +25,7 @@ public sealed class MelodeeConfigurationFactory(IDbContextFactory<MelodeeDbConte
                 _configuration = new MelodeeConfiguration(settings);
             }
         }
+
         return _configuration!;
     }
 }

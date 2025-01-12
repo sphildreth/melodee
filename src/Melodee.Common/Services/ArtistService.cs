@@ -9,9 +9,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Plugins.Conversion.Image;
-using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Extensions;
 using Melodee.Common.Services.Interfaces;
@@ -20,7 +18,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
-using ServiceStack;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -361,7 +358,7 @@ public class ArtistService(
     {
         Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
         Guard.Against.NullOrEmpty(imageBytes, nameof(imageBytes));
-        
+
         var artist = await GetAsync(artistId, cancellationToken);
         if (!artist.IsSuccess || artist.Data == null)
         {
@@ -369,7 +366,7 @@ public class ArtistService(
             {
                 Data = false
             };
-        }    
+        }
 
         return new MelodeeModels.OperationResult<bool>
         {
@@ -393,8 +390,10 @@ public class ArtistService(
                     fileInAlbumDirectory.Delete();
                 }
             }
+
             artistImages = artistDirectory.FileInfosForExtension("jpg").ToArray();
         }
+
         var artistImageFileName = Path.Combine(artistDirectory.FullName(), deleteAllImages ? "01-Band.image" : $"{artistImages.Length + 1}-Band.image");
         var artistImageFileInfo = new FileInfo(artistImageFileName).ToFileSystemInfo();
         await File.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken);
@@ -412,11 +411,12 @@ public class ArtistService(
                     .SetProperty(x => x.ImageCount, artistImages.Length + 1), cancellationToken)
                 .ConfigureAwait(false);
         }
+
         ClearCache(artist);
         OpenSubsonicApiService.ClearImageCacheForApiId(artist.ToApiKey(), CacheManager);
-        return true;        
+        return true;
     }
-    
+
     public async Task<MelodeeModels.OperationResult<bool>> SaveImageUrlAsArtistImageAsync(int artistId, string imageUrl, bool deleteAllImages, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
@@ -431,13 +431,13 @@ public class ArtistService(
             };
         }
 
-        bool result = false;
+        var result = false;
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
         try
         {
             var imageBytes = await httpClientFactory.BytesForImageUrlAsync(configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, imageUrl, cancellationToken);
             if (imageBytes != null)
-            { 
+            {
                 result = await SaveImageBytesAsArtistImageAsync(artist.Data, deleteAllImages, imageBytes, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -454,7 +454,7 @@ public class ArtistService(
 
 
     /// <summary>
-    /// Merge all artists to merge into the merge into artist
+    ///     Merge all artists to merge into the merge into artist
     /// </summary>
     /// <param name="artistIdToMergeInfo">The artist to merge the other artists into.</param>
     /// <param name="artistIdsToMerge">Artists to merge.</param>
@@ -463,29 +463,31 @@ public class ArtistService(
     {
         Guard.Against.Expression(x => x < 1, artistIdToMergeInfo, nameof(artistIdToMergeInfo));
         Guard.Against.NullOrEmpty(artistIdsToMerge, nameof(artistIdsToMerge));
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
-            
+
             var dbArtistToMergeInto = await scopedContext
                 .Artists
                 .Include(x => x.Library)
                 .FirstOrDefaultAsync(x => x.Id == artistIdToMergeInfo, cancellationToken)
                 .ConfigureAwait(false);
-            
+
             if (dbArtistToMergeInto == null)
             {
                 return new MelodeeModels.OperationResult<bool>($"Unknown artist to merge into [{artistIdToMergeInfo}].")
                 {
                     Data = false
                 };
-            }            
+            }
+
             var dbArtistToMergeIntoDirectory = dbArtistToMergeInto.ToFileSystemDirectoryInfo();
             if (!Directory.Exists(dbArtistToMergeIntoDirectory.FullName()))
             {
                 Directory.CreateDirectory(dbArtistToMergeIntoDirectory.FullName());
             }
+
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
             var libraryIdsToUpdate = new List<int>();
             foreach (var artistApiKeyToMerge in artistIdsToMerge)
@@ -504,14 +506,16 @@ public class ArtistService(
                         Data = false
                     };
                 }
+
                 foreach (var albumToMerge in dbArtist.Albums)
                 {
                     var albumToMergeDirectory = Path.Combine(dbArtist.Library.Path, dbArtist.Directory, albumToMerge.Directory);
-                    var albumToMergeNewDirectory = Path.Combine(dbArtistToMergeInto.Library.Path, dbArtistToMergeInto.Directory, albumToMerge.Directory);                    
+                    var albumToMergeNewDirectory = Path.Combine(dbArtistToMergeInto.Library.Path, dbArtistToMergeInto.Directory, albumToMerge.Directory);
                     if (Directory.Exists(albumToMergeDirectory) && !Directory.Exists(albumToMergeNewDirectory))
                     {
                         MediaEditService.MoveDirectory(albumToMergeDirectory, albumToMergeNewDirectory);
-                    } else if (Directory.Exists(albumToMergeNewDirectory))
+                    }
+                    else if (Directory.Exists(albumToMergeNewDirectory))
                     {
                         var albumJsonFiles = Directory.GetFiles(albumToMergeNewDirectory, MelodeeModels.Album.JsonFileName, SearchOption.TopDirectoryOnly);
                         if (albumJsonFiles.Length > 0)
@@ -523,21 +527,24 @@ public class ArtistService(
                             }
                         }
                     }
+
                     albumToMerge.Directory = albumToMergeNewDirectory;
                     albumToMerge.ArtistId = dbArtistToMergeInto.Id;
                     albumToMerge.LastUpdatedAt = now;
                 }
+
                 foreach (var userArtistToMerge in dbArtist.UserArtists)
                 {
                     userArtistToMerge.ArtistId = dbArtistToMergeInto.Id;
-                    userArtistToMerge.LastUpdatedAt = now; 
+                    userArtistToMerge.LastUpdatedAt = now;
                 }
+
                 await scopedContext.Contributors
                     .Where(x => x.ArtistId == dbArtist.Id)
                     .ExecuteUpdateAsync(setters => setters
                         .SetProperty(x => x.ArtistId, dbArtistToMergeInto.Id), cancellationToken)
                     .ConfigureAwait(false);
-                
+
                 scopedContext.Artists.Remove(dbArtist);
                 var saveResult = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 if (saveResult > 0)
@@ -546,25 +553,30 @@ public class ArtistService(
                     if ((dbArtistToMergeInto.ImageCount ?? 0) == 0 && Directory.Exists(dbArtistDirectory.FullName()))
                     {
                         dbArtistToMergeInto.ImageCount = dbArtistToMergeInto.ImageCount ?? 0;
-                        foreach(var dbArtistImage in dbArtistDirectory.FileInfosForExtension("jpg"))
+                        foreach (var dbArtistImage in dbArtistDirectory.FileInfosForExtension("jpg"))
                         {
                             dbArtistImage.MoveTo(Path.Combine(dbArtistToMergeIntoDirectory.FullName(), dbArtistImage.Name));
                             dbArtistToMergeInto.ImageCount++;
                         }
+
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
+
                     Directory.Delete(dbArtist.ToFileSystemDirectoryInfo().FullName(), true);
                 }
+
                 libraryIdsToUpdate.Add(dbArtist.Library.Id);
             }
+
             await UpdateArtistAggregateValuesByIdAsync(dbArtistToMergeInto.Id, cancellationToken).ConfigureAwait(false);
             foreach (var libraryId in libraryIdsToUpdate.Distinct())
             {
                 await UpdateLibraryAggregateStatsByIdAsync(libraryId, cancellationToken).ConfigureAwait(false);
             }
+
             // To clear the entire cache is unusual, but here we have deleted (likely) many artists, safer to clear all cache and let repopulate as needed.
             CacheManager.Clear();
-            return new MelodeeModels.OperationResult<bool>()
+            return new MelodeeModels.OperationResult<bool>
             {
                 Data = true
             };

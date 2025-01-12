@@ -29,8 +29,6 @@ using ServiceStack.Data;
 
 namespace Melodee.Tests.Services;
 
-
-
 public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 {
     private readonly DbConnection _dbConnection;
@@ -117,7 +115,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected IMusicBrainzRepository GetMusicBrainzRepository()
     {
-        return new SQLiteMusicBrainzRepository(Log.Logger, 
+        return new SQLiteMusicBrainzRepository(Log.Logger,
             MockConfigurationFactory(),
             MockDbContextFactory());
     }
@@ -127,13 +125,13 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         var mockEventPublisher = new Mock<IEventPublisher<UserLoginEvent>>();
         return mockEventPublisher.Object;
     }
-    
+
     protected IEventPublisher<AlbumUpdatedEvent> MockAlbumUpdatedEventPublisher()
     {
         var mockEventPublisher = new Mock<IEventPublisher<AlbumUpdatedEvent>>();
         return mockEventPublisher.Object;
     }
-    
+
     protected ArtistSearchEngineService GetArtistSearchEngineService()
     {
         return new ArtistSearchEngineService(Logger,
@@ -149,17 +147,17 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         return new ImageConvertor(TestsBase.NewPluginsConfiguration());
     }
-    
+
     protected IImageValidator GetImageValidator()
     {
         return new ImageValidator(TestsBase.NewPluginsConfiguration());
     }
-    
+
     protected IAlbumValidator GetAlbumValidator()
     {
         return new AlbumValidator(TestsBase.NewPluginsConfiguration());
     }
-    
+
     protected AlbumImageSearchEngineService GetAlbumImageSearchEngineService()
     {
         return new AlbumImageSearchEngineService(Logger,
@@ -169,7 +167,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockFactory(),
             GetMusicBrainzRepository(),
             MockHttpClientFactory());
-    }    
+    }
 
     protected OpenSubsonicApiService GetOpenSubsonicApiService()
     {
@@ -189,10 +187,10 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetAlbumService(),
             GetSongService(),
             new AlbumDiscoveryService(
-                Logger, 
-                CacheManager, 
-                MockFactory(), 
-                MockConfigurationFactory(), 
+                Logger,
+                CacheManager,
+                MockFactory(),
+                MockConfigurationFactory(),
                 Serializer),
             new Mock<IScheduler>().Object,
             GetScrobbleService(),
@@ -206,7 +204,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         var mockFactory = new Mock<InMemoryEventBusPublisher<UserLoginEvent>>();
         return mockFactory.Object;
     }
-    
+
     protected ArtistService GetArtistService()
     {
         return new ArtistService(Logger, CacheManager, MockConfigurationFactory(), MockFactory(), Serializer, MockHttpClientFactory());
@@ -216,7 +214,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         return new AlbumService(Logger, CacheManager, MockFactory());
     }
-    
+
     protected SongService GetSongService()
     {
         return new SongService(Logger, CacheManager, MockFactory());
@@ -239,7 +237,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockAlbumUpdatedEventPublisher()
         );
     }
-    
+
     protected ScrobbleService GetScrobbleService()
     {
         return new ScrobbleService(
@@ -270,14 +268,15 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         // clientFactoryMock.Verify(cf => cf.CreateClient());
         // clientHandlerMock.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         // return clientFactoryMock.Object;
-        
-        var clientHandlerStub = new HttpHandlerStubDelegate((request, cancellationToken) => {
-            var response = new HttpResponseMessage() { StatusCode = HttpStatusCode.OK };
+
+        var clientHandlerStub = new HttpHandlerStubDelegate((request, cancellationToken) =>
+        {
+            var response = new HttpResponseMessage { StatusCode = HttpStatusCode.OK };
             return Task.FromResult(response);
         });
         var factoryMock = new Mock<IHttpClientFactory>();
         factoryMock.Setup(m => m.CreateClient(It.IsAny<string>()))
-            .Returns(() => new HttpClient(clientHandlerStub));      
+            .Returns(() => new HttpClient(clientHandlerStub));
         return factoryMock.Object;
     }
 
@@ -289,15 +288,15 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         mock.Setup(f => f.ListAsync(
                 It.Is<PagedRequest>(_ => true),
                 It.Is<CancellationToken>(_ => true)))
-            .ReturnsAsync(TestsBase.TestLibraries()); 
+            .ReturnsAsync(TestsBase.TestLibraries());
         mock.Setup(f
             => f.GetStorageLibrariesAsync(It.Is<CancellationToken>(_ => true))).ReturnsAsync(new OperationResult<Library[]>
         {
             Data = TestsBase.TestLibraries().Data.Where(x => x.TypeValue == LibraryType.Storage).ToArray()
         });
         mock.Setup(f
-            => f.GetStagingLibraryAsync(It.Is<CancellationToken>(_ => true))).ReturnsAsync(TestsBase.TestStagingLibrary());         
-        return mock.Object;        
+            => f.GetStagingLibraryAsync(It.Is<CancellationToken>(_ => true))).ReturnsAsync(TestsBase.TestStagingLibrary());
+        return mock.Object;
     }
 
     protected UserService GetUserService()
@@ -314,11 +313,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected SettingService MockSettingService()
     {
-       var mock = new Mock<SettingService>();
-       mock.Setup(f => f.GetMelodeeConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
-       mock.Setup(f => f.GetAllSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewConfiguration());
+        var mock = new Mock<SettingService>();
+        mock.Setup(f => f.GetMelodeeConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
+        mock.Setup(f => f.GetAllSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewConfiguration());
 
-       return mock.Object;
+        return mock.Object;
     }
 
     protected static void AssertResultIsSuccessful<T>(PagedResult<T> result) where T : notnull

@@ -15,7 +15,7 @@ using SerilogTimings;
 namespace Melodee.Common.Plugins.MetaData.Directory;
 
 /// <summary>
-/// Creates an album in a directory for MP3 files grouped by Album Title
+///     Creates an album in a directory for MP3 files grouped by Album Title
 /// </summary>
 public class Mp3Files(
     IEnumerable<ISongPlugin> songPlugins,
@@ -33,16 +33,11 @@ public class Mp3Files(
     public override bool IsEnabled { get; set; } = true;
 
     public override int SortOrder { get; } = 0;
-    
-    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
-    {
-        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
-    }
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         var processedFileCount = 0;
-        
+
         var albums = new List<Album>();
         var messages = new List<string>();
         var viaPlugins = new List<string>
@@ -173,7 +168,7 @@ public class Mp3Files(
                 }
             }
         }
-        
+
         // Save all album files to given directory
         var serialized = string.Empty;
         foreach (var album in albums)
@@ -182,6 +177,7 @@ public class Mp3Files(
             {
                 break;
             }
+
             try
             {
                 serialized = serializer.Serialize(album);
@@ -190,7 +186,7 @@ public class Mp3Files(
             {
                 logger.Error(e, "Error serializing album [{Album}]", album.ToString());
             }
-            
+
             await File.WriteAllTextAsync(Path.Combine(fileSystemDirectoryInfo.FullName(), album.ToMelodeeJsonName(MelodeeConfiguration, true)), serialized, cancellationToken);
         }
 
@@ -199,5 +195,9 @@ public class Mp3Files(
             Data = processedFileCount
         };
     }
-}
 
+    public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
+    }
+}

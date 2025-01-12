@@ -13,9 +13,6 @@ using Melodee.Common.MessageBus;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Plugins.Conversion.Image;
-using Melodee.Common.Plugins.MetaData.Song;
-using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
@@ -26,7 +23,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
-using SixLabors.ImageSharp;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -34,13 +30,20 @@ namespace Melodee.Common.Services;
 
 public class LibraryService : ServiceBase
 {
+    private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
+    private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
+    private const string CacheKeyDetailTemplate = "urn:library:{0}";
+    private const string CacheKeyMediaLibraries = "urn:libraries:media-libraries";
+
+    private const int DisplayNumberPadLength = 8;
+    private readonly IEventPublisher<AlbumUpdatedEvent>? _albumUpdatedEvent;
     private readonly IMelodeeConfigurationFactory _configurationFactory;
     private readonly ISerializer _serializer;
-    private readonly IEventPublisher<AlbumUpdatedEvent>? _albumUpdatedEvent;
 
     public LibraryService()
-    {}
-    
+    {
+    }
+
     public LibraryService(ILogger logger,
         ICacheManager cacheManager,
         IDbContextFactory<MelodeeDbContext> contextFactory,
@@ -52,13 +55,6 @@ public class LibraryService : ServiceBase
         _serializer = serializer;
         _albumUpdatedEvent = albumUpdatedEvent;
     }
-
-    private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
-    private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
-    private const string CacheKeyDetailTemplate = "urn:library:{0}";
-    private const string CacheKeyMediaLibraries = "urn:libraries:media-libraries";
-
-    private const int DisplayNumberPadLength = 8;
 
     public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
     {
@@ -78,7 +74,7 @@ public class LibraryService : ServiceBase
             Data = result
         };
     }
-    
+
     public async Task<MelodeeModels.OperationResult<Library[]>> GetStorageLibrariesAsync(CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Storage;
@@ -96,6 +92,7 @@ public class LibraryService : ServiceBase
                 {
                     throw new Exception("No storage library found. At least one Library record must be setup with a type of '3' (Storage).");
                 }
+
                 return library;
             }
         }, cancellationToken).ConfigureAwait(false);
@@ -103,7 +100,7 @@ public class LibraryService : ServiceBase
         {
             Data = result
         };
-    }    
+    }
 
     public async Task<MelodeeModels.OperationResult<Library>> GetUserImagesLibraryAsync(CancellationToken cancellationToken = default)
     {
@@ -209,13 +206,13 @@ public class LibraryService : ServiceBase
             }
 
             dbLibrary.PurgePath();
-            
+
             await scopedContext
                 .Artists
                 .Where(x => x.LibraryId == libraryId)
                 .ExecuteDeleteAsync(cancellationToken)
                 .ConfigureAwait(false);
-            
+
             await scopedContext
                 .LibraryScanHistories
                 .Where(x => x.LibraryId == libraryId)
@@ -227,12 +224,12 @@ public class LibraryService : ServiceBase
             dbLibrary.SongCount = 0;
             dbLibrary.LastScanAt = null;
             dbLibrary.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
-            
+
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             ClearCache(dbLibrary);
         }
-        return await GetAsync(libraryId, cancellationToken);
 
+        return await GetAsync(libraryId, cancellationToken);
     }
 
     public virtual async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(CancellationToken cancellationToken = default)
@@ -277,7 +274,7 @@ public class LibraryService : ServiceBase
                                            left join "Artists" ar on (l."ForArtistId" = ar."Id")
                                            left join "Albums" a on (L."ForAlbumId" = a."Id")
                                            where l."LibraryId" = {0} 
-                                           """;                    
+                                           """;
                     var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment.FormatSmart(libraryId));
                     var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                     if (dbConn is SqliteConnection)
@@ -301,7 +298,7 @@ public class LibraryService : ServiceBase
             TotalCount = librariesCount,
             TotalPages = pagedRequest.TotalPages(librariesCount),
             Data = histories
-        }; 
+        };
     }
 
     public virtual async Task<MelodeeModels.PagedResult<Library>> ListMediaLibrariesAsync(CancellationToken cancellationToken = default)
@@ -319,7 +316,7 @@ public class LibraryService : ServiceBase
             };
         }, cancellationToken).ConfigureAwait(false);
     }
-    
+
 
     public virtual async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
@@ -391,7 +388,8 @@ public class LibraryService : ServiceBase
                 if (processExistingDirectoryResult != null && _albumUpdatedEvent != null)
                 {
                     await _albumUpdatedEvent.Publish(new Event<AlbumUpdatedEvent>(processExistingDirectoryResult), cancellationToken).ConfigureAwait(false);
-                }                
+                }
+
                 continue;
             }
 
@@ -1171,6 +1169,6 @@ public class LibraryService : ServiceBase
         return new MelodeeModels.OperationResult<bool>
         {
             Data = result
-        };        
+        };
     }
 }

@@ -4,9 +4,11 @@ namespace Melodee.Common.Extensions;
 
 public static class DoubleExtensions
 {
-    public static string? ToStringPadLeft(this double? input, short padLeft, char padWith = '0') 
-        => input == null ? null : input!.ToString()!.PadLeft(padLeft, padWith);    
-    
+    public static string? ToStringPadLeft(this double? input, short padLeft, char padWith = '0')
+    {
+        return input == null ? null : input!.ToString()!.PadLeft(padLeft, padWith);
+    }
+
     public static int ToSeconds(this double seconds)
     {
         return Convert.ToInt32(seconds / 1000);

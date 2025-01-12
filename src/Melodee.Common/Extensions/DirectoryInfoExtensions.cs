@@ -30,7 +30,8 @@ public static class DirectoryInfoExtensions
         {
             return false;
         }
-        return directory.EnumerateFiles($"*{ file.Extension}", SearchOption.AllDirectories).Any(file => Crc32.Calculate(file) == crc);
+
+        return directory.EnumerateFiles($"*{file.Extension}", SearchOption.AllDirectories).Any(file => Crc32.Calculate(file) == crc);
     }
 
     public static bool DoesDirectoryHaveImageFiles(this DirectoryInfo directory)

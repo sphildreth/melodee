@@ -44,7 +44,7 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -52,7 +52,7 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
             var settingService = new SettingService(
                 Log.Logger,
                 cacheManager,
-                scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),                
+                scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),
                 scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 

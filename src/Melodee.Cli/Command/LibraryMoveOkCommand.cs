@@ -36,7 +36,7 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())

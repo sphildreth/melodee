@@ -1,5 +1,4 @@
-﻿using Humanizer;
-using Melodee.Common.Extensions;
+﻿using Melodee.Common.Extensions;
 
 namespace Melodee.Tests.Extensions;
 
@@ -82,7 +81,7 @@ public class StringExtensionsTests
     {
         Assert.Equal(shouldBe, input?.TryToGetSongNumberFromString());
     }
-    
+
     [Theory]
     [InlineData(null, null)]
     [InlineData("", null)]
@@ -107,7 +106,7 @@ public class StringExtensionsTests
     public void TryToGetMediaNumberFromString(string? input, int? shouldBe)
     {
         Assert.Equal(shouldBe, input?.TryToGetMediaNumberFromString());
-    }    
+    }
 
     [Theory]
     [InlineData(null, null)]
@@ -126,7 +125,6 @@ public class StringExtensionsTests
         Assert.Equal(shouldBe, input?.RemoveSongNumberFromString());
     }
 
- 
 
     [Theory]
     [InlineData(null, false)]
@@ -210,14 +208,14 @@ public class StringExtensionsTests
         Assert.NotEqual(test, testNormalized);
         var testNormalized2 = test.ToNormalizedString();
         Assert.Equal(testNormalized, testNormalized2);
-        
+
         test = "            انا خايف اكرهك";
         Assert.NotEqual(test, test.ToNormalizedString());
         testNormalized = test.ToNormalizedString();
         Assert.NotNull(testNormalized);
         Assert.NotEqual(test, testNormalized);
         Assert.NotEqual(test, testNormalized2);
-        
+
         test = "        بسحرولك";
         Assert.NotEqual(test, test.ToNormalizedString());
         testNormalized = test.ToNormalizedString();
@@ -259,13 +257,11 @@ public class StringExtensionsTests
         testNormalized = test.ToNormalizedString();
         Assert.NotNull(testNormalized);
         Assert.NotEqual(test, testNormalized);
-
-
     }
-    
-    
+
+
     [Theory]
-    [InlineData(null, null)]    
+    [InlineData(null, null)]
     [InlineData("", null)]
     [InlineData("enc:", null)]
     [InlineData("enc:null", null)]
@@ -275,10 +271,10 @@ public class StringExtensionsTests
     public void ValidateHexDecoding(string? input, string? shouldBe)
     {
         Assert.Equal(shouldBe, input?.FromHexString());
-    }    
-    
+    }
+
     [Theory]
-    [InlineData(null, null)]    
+    [InlineData(null, null)]
     [InlineData("", null)]
     [InlineData("sesame", "736573616D65")]
     [InlineData("something_long_#_+!_with_.x-d*_weird_characters", "736F6D657468696E675F6C6F6E675F235F2B215F776974685F2E782D642A5F77656972645F63686172616374657273")]
@@ -290,7 +286,7 @@ public class StringExtensionsTests
     [Fact]
     public void ValidateTags()
     {
-        var tags = new string[] { "tag1", "TAG2", "tag3", "tag4", "tag5", "Tag6" };
+        var tags = new[] { "tag1", "TAG2", "tag3", "tag4", "tag5", "Tag6" };
         var tag = "".AddTag(tags);
         Assert.NotNull(tag);
         Assert.Contains("tag2", tag.ToTags() ?? throw new InvalidOperationException());
@@ -298,13 +294,12 @@ public class StringExtensionsTests
         var tagNoLower = "".AddTag(tags, dontLowerCase: true);
         Assert.NotNull(tagNoLower);
         Assert.Contains("TAG2", tagNoLower.ToTags() ?? throw new InvalidOperationException());
-
     }
-    
+
     [Theory]
-    [InlineData(null, 0, null)]    
+    [InlineData(null, 0, null)]
     [InlineData(null, 6, null)]
-    [InlineData("", 0,null)]
+    [InlineData("", 0, null)]
     [InlineData("1234", 4, "1234")]
     [InlineData("12345", 4, "1234")]
     [InlineData("12345", 2, "12")]
@@ -312,6 +307,5 @@ public class StringExtensionsTests
     public void ValidateTruncateLength(string? input, int length, string? shouldBe)
     {
         Assert.Equal(shouldBe, input?.TruncateLongString(length));
-    }     
-
+    }
 }

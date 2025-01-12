@@ -106,11 +106,13 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return [];
         }
+
         var searchPattern = extension;
         if (!extension.Contains('.'))
         {
             searchPattern = $"*.{extension}";
         }
+
         return dirInfo.GetFiles(searchPattern, new EnumerationOptions
         {
             RecurseSubdirectories = true,

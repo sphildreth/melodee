@@ -1,6 +1,6 @@
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Moq;
+using Artist = Melodee.Common.Data.Models.Artist;
 
 namespace Melodee.Tests.Extensions;
 
@@ -35,8 +35,8 @@ public class FileSystemDirectoryInfoExtensionTests
             Path = string.Empty,
             Name = input
         }.IsDiscographyDirectory());
-    }    
-    
+    }
+
     [Theory]
     [InlineData("Bobs Discography", false)]
     [InlineData("Media Madness", false)]
@@ -59,8 +59,8 @@ public class FileSystemDirectoryInfoExtensionTests
             Path = string.Empty,
             Name = input
         }.IsAlbumMediaDirectory());
-    }     
-    
+    }
+
     [Theory]
     [InlineData("Albums", true)]
     [InlineData("EP", true)]
@@ -105,11 +105,10 @@ public class FileSystemDirectoryInfoExtensionTests
 
     [Fact]
     public void GetParents()
-    { 
+    {
         var testPath = @"/melodee_test/tests/image_number_tests/";
         if (Directory.Exists(testPath))
         {
-
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = testPath,
@@ -117,11 +116,11 @@ public class FileSystemDirectoryInfoExtensionTests
             };
             var parents = dirInfo.GetParents();
             Assert.NotNull(parents);
-            Assert.NotEmpty(parents);   
+            Assert.NotEmpty(parents);
             Assert.Equal(3, parents.Count());
         }
     }
-    
+
     [Fact]
     public void RenameWithPrefix()
     {
@@ -130,6 +129,7 @@ public class FileSystemDirectoryInfoExtensionTests
         {
             Directory.CreateDirectory(testPath);
         }
+
         var dirInfo = new FileSystemDirectoryInfo
         {
             Path = testPath,
@@ -141,8 +141,8 @@ public class FileSystemDirectoryInfoExtensionTests
         Assert.True(nd.Exists());
         nd.Delete();
         Assert.False(Directory.Exists(nd.FullName()));
-    }    
-    
+    }
+
     [Fact]
     public void RenameWithSuffix()
     {
@@ -151,6 +151,7 @@ public class FileSystemDirectoryInfoExtensionTests
         {
             Directory.CreateDirectory(testPath);
         }
+
         var dirInfo = new FileSystemDirectoryInfo
         {
             Path = testPath,
@@ -162,7 +163,7 @@ public class FileSystemDirectoryInfoExtensionTests
         Assert.True(nd.Exists());
         nd.Delete();
         Assert.False(Directory.Exists(nd.FullName()));
-    }        
+    }
 
     [Fact]
     public void NextImageNumberInFolder()
@@ -176,20 +177,20 @@ public class FileSystemDirectoryInfoExtensionTests
                 Name = testPath
             };
             short maxAllowed = 2;
-            var nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, Melodee.Common.Data.Models.Artist.ImageType);
+            var nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, Artist.ImageType);
             Assert.NotNull(nextImage.Item1);
             Assert.True(nextImage.Item2 > 0);
             var artistTypeCount = nextImage.Item2;
-            
+
             nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, "Front");
             Assert.NotNull(nextImage.Item1);
-            Assert.True(nextImage.Item2 > 0);    
+            Assert.True(nextImage.Item2 > 0);
             Assert.NotEqual(artistTypeCount, nextImage.Item2);
-            
+
             nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, Guid.NewGuid().ToString());
             Assert.NotNull(nextImage.Item1);
-            Assert.True(nextImage.Item2 > 0);    
-            Assert.NotEqual(artistTypeCount, nextImage.Item2);            
+            Assert.True(nextImage.Item2 > 0);
+            Assert.NotEqual(artistTypeCount, nextImage.Item2);
         }
     }
 }

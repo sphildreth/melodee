@@ -1,6 +1,5 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
-using Melodee.Common.Plugins.Processor.MetaTagProcessors;
 using Album = Melodee.Common.Plugins.Processor.MetaTagProcessors.Album;
 
 namespace Melodee.Tests.Plugins.Processors.MetaTagProcessors;
@@ -29,7 +28,7 @@ public class AlbumTitleMetaTagProcessorTests : TestsBase
         Assert.True(result.IsSuccess);
         Assert.Equal("Standing Hampton", result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value);
     }
-    
+
     [Fact]
     public void ValidateAlbumTitleWithRemastered()
     {
@@ -51,8 +50,8 @@ public class AlbumTitleMetaTagProcessorTests : TestsBase
         Assert.NotNull(result);
         Assert.True(result.IsSuccess);
         Assert.Equal("Standing Hampton", result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album)?.Value);
-    }    
-    
+    }
+
     [Fact]
     public void ValidateAlbumTitleWithRemasteredWithDate()
     {

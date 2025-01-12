@@ -15,9 +15,9 @@ public class M3UTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var m3U = new M3UPlaylist(Serializer,new[]
+            var m3U = new M3UPlaylist(Serializer, new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration())
+                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration())
                 },
                 GetAlbumValidator(),
                 NewPluginsConfiguration());

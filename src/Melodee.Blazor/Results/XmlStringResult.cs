@@ -1,4 +1,3 @@
-using Melodee.Common.Models.OpenSubsonic.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Results;

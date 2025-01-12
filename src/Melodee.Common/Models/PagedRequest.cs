@@ -142,6 +142,7 @@ public sealed record PagedRequest
             {
                 return ($"{sqlStartFragment} WHERE 1 = 1", null);
             }
+
             return (sqlStartFragment, null);
         }
 
@@ -159,12 +160,14 @@ public sealed record PagedRequest
         {
             columnNamePrefix = "\"";
         }
-        foreach (var fb in FilterBy.Select((x,i) => (x,i)))
+
+        foreach (var fb in FilterBy.Select((x, i) => (x, i)))
         {
             if (fb.i > 0)
             {
                 sqlResult.Append($" {fb.x.JoinOperator} ");
             }
+
             sqlResult.Append($"{columnNamePrefix}{fb.x.PropertyName}\" {fb.x.OperatorValue} @p_{fb.x.PropertyName}");
         }
 

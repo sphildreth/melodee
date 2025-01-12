@@ -13,12 +13,12 @@ public static class UserExtensions
     {
         return $"user{OpenSubsonicServer.ApiIdSeparator}{album.ApiKey}";
     }
-    
+
     public static string ToAvatarFileName(this User user, string libraryPath)
     {
         return Path.Combine(libraryPath, $"{user.Id.ToStringPadLeft(8)}.gif");
     }
-    
+
     public static Common.Models.OpenSubsonic.User ToApiUser(this User user)
     {
         return new Common.Models.OpenSubsonic.User(user.UserName, user.IsAdmin, user.Email, user.HasStreamRole, user.IsScrobblingEnabled, user.HasDownloadRole, user.HasShareRole, user.HasJukeboxRole, user.LastUpdatedAt?.ToString() ?? user.CreatedAt.ToString());

@@ -12,9 +12,9 @@ namespace Melodee.Common.Filtering;
 public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, object Value, string? JoinOperator = "AND")
 {
     public const string AndJoinOperator = "AND";
-    
+
     public const string OrJoinOperator = "OR";
-    
+
     private const string SqlWildCard = "%";
 
     public string OperatorValue => FilterOperatorToConditionString(Operator);

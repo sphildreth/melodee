@@ -1,15 +1,12 @@
 @page "/media/library/{ApiKey:guid}"
 @inherits MelodeeComponentBase
-
-
-@using Ardalis.GuardClauses
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
 @using Melodee.Common.Services.Scanning
-@using FileInfo = System.IO.FileInfo
+@using FileInfo = FileInfo
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 
 @inject MainLayoutProxyService MainLayoutProxyService

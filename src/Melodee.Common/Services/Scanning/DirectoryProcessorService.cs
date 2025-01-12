@@ -52,19 +52,14 @@ public sealed class DirectoryProcessorService(
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
 
     /// <summary>
-    /// These plugins convert media from various formats into configured formats.
+    ///     These plugins convert media from various formats into configured formats.
     /// </summary>
     private IEnumerable<IConversionPlugin> _conversionPlugins = [];
 
     /// <summary>
-    /// These plugins translate various files into albums.
+    ///     These plugins translate various files into albums.
     /// </summary>
     private IEnumerable<IDirectoryPlugin> _directoryPlugins = [];
-
-    /// <summary>
-    /// These plugins create albums from media files.
-    /// </summary>
-    private IEnumerable<IDirectoryPlugin> _mediaAlbumCreatorPlugins = [];
 
     private string _directoryStaging = null!;
     private ImageConvertor _imageConvertor = new(new MelodeeConfiguration([]));
@@ -72,6 +67,12 @@ public sealed class DirectoryProcessorService(
     private bool _initialized;
     private int _maxAlbumProcessingCount;
     private short _maxImageCount;
+
+    /// <summary>
+    ///     These plugins create albums from media files.
+    /// </summary>
+    private IEnumerable<IDirectoryPlugin> _mediaAlbumCreatorPlugins = [];
+
     private IScriptPlugin _postDiscoveryScript = new NullScript();
 
     private IScriptPlugin _preDiscoveryScript = new NullScript();
@@ -906,7 +907,7 @@ public sealed class DirectoryProcessorService(
         {
             imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
         }
-        
+
         // Sometimes the album is in a directory with the parent holding an image artist that is not a discography folder 
         var parents = album.OriginalDirectory.GetParents().ToArray();
         var lookAtParentDirectoriesCount = parents.Length < 2 ? parents.Length : 2;

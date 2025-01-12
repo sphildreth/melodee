@@ -24,7 +24,7 @@
     <PackageReference Include="Blazored.SessionStorage"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json"/>
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" />    
+    <PackageReference Include="Microsoft.IdentityModel.Tokens"/>
     <PackageReference Include="Quartz.AspNetCore"/>
     <PackageReference Include="Quartz.Jobs"/>
     <PackageReference Include="Quartz.Plugins.TimeZoneConverter"/>
@@ -35,28 +35,28 @@
     <PackageReference Include="Serilog.Sinks.Console"/>
     <PackageReference Include="Serilog.Sinks.File"/>
     <PackageReference Include="Serilog.Sinks.SQLite"/>
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />    
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt"/>
     <PackageReference Include="System.Reactive"/>
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Logs\**" />
+    <Compile Remove="Logs\**"/>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Remove="Logs\**" />
+    <EmbeddedResource Remove="Logs\**"/>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="Logs\**" />
+    <Content Remove="Logs\**"/>
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Logs\**" />
+    <None Remove="Logs\**"/>
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="Components\Components\DictionaryModal.razor" />
+    <AdditionalFiles Include="Components\Components\DictionaryModal.razor"/>
   </ItemGroup>
-  
+
 </Project>

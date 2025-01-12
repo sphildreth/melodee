@@ -150,7 +150,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
 
             if (isForUserAvatar)
             {
-                image.SaveAsGif(outStream);   
+                image.SaveAsGif(outStream);
             }
             else
             {

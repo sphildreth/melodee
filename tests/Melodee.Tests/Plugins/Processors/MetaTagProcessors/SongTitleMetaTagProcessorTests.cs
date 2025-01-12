@@ -74,7 +74,7 @@ public class SongTitleMetaTagProcessorTests : TestsBase
         Assert.True(result.IsSuccess);
         Assert.Equal("Fly Way", result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value);
     }
-    
+
     [Fact]
     public void ValidateSongTitleWithWithShouldRemove3()
     {
@@ -96,7 +96,7 @@ public class SongTitleMetaTagProcessorTests : TestsBase
         Assert.NotNull(result);
         Assert.True(result.IsSuccess);
         Assert.Equal("The Bitch Is Back", result.Data.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value);
-    }    
+    }
 
     [Fact]
     public void ValidateSongTitleWithWithShouldStay()

@@ -15,7 +15,6 @@ using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
-using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Models;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Utility;

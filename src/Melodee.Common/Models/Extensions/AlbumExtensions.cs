@@ -266,6 +266,7 @@ public static class AlbumExtensions
         {
             return songTotalFromSongs.SongTotalNumber();
         }
+
         return SafeParser.ToNumber<short>(album.Songs?.Count() ?? 0);
     }
 

@@ -1,8 +1,7 @@
-﻿@using System.Web
+﻿@inherits LayoutComponentBase
+
 @using Melodee.Common.Enums
 @using Microsoft.AspNetCore.Components.Authorization
-@inherits LayoutComponentBase
-
 @implements IDisposable
 @inject LibraryService LibraryService
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -10,12 +9,12 @@
 @inject NavigationManager NavigationManager
 @inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
 
-<RadzenComponents @rendermode="InteractiveServer" />
+<RadzenComponents @rendermode="InteractiveServer"/>
 
-<RadzenDialog />
-<RadzenNotification />
-<RadzenTooltip />
-<RadzenContextMenu />
+<RadzenDialog/>
+<RadzenNotification/>
+<RadzenTooltip/>
+<RadzenContextMenu/>
 
 <AuthorizeView>
     <NotAuthorized>
@@ -32,8 +31,11 @@
                         </RadzenStack>
                     </RadzenColumn>
                     <RadzenColumn Size="7">
-                        <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-                            <RadzenProgressBar Visible="@MainLayoutProxyService.ShowSpinner" Style="width:100px;" ProgressBarStyle="ProgressBarStyle.Info" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                        <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal"
+                                     JustifyContent="JustifyContent.End">
+                            <RadzenProgressBar Visible="@MainLayoutProxyService.ShowSpinner" Style="width:100px;"
+                                               ProgressBarStyle="ProgressBarStyle.Info" Value="100" ShowValue="false"
+                                               Mode="ProgressBarMode.Indeterminate"/>
                             <DebounceInput class="rz-textbox"
                                            style="width:200px;"
                                            autocomplete="off"
@@ -44,14 +46,16 @@
                                            OnValueChanged="@DoSearchAsync"
                                            ForceNotifyByEnter="true"
                                            ForceNotifyOnBlur="true"/>
-                            <RadzenAppearanceToggle />
+                            <RadzenAppearanceToggle/>
                             <RadzenProfileMenu>
                                 <ChildContent>
                                     <RadzenProfileMenuItem Path="/account/profile" Icon="settings" Text="Profile"/>
-                                    <RadzenProfileMenuItem Path="/account/logout" Text="Logout" Value="Logout" Icon="power_settings_new"/>
+                                    <RadzenProfileMenuItem Path="/account/logout" Text="Logout" Value="Logout"
+                                                           Icon="power_settings_new"/>
                                 </ChildContent>
                                 <Template>
-                                    <RadzenImage Path="@($"/images/{context.User.ToApiKey()}/32")" style="border-radius:16px;"/>
+                                    <RadzenImage Path="@($"/images/{context.User.ToApiKey()}/32")"
+                                                 style="border-radius:16px;"/>
                                 </Template>
                             </RadzenProfileMenu>
                         </RadzenStack>
@@ -68,11 +72,13 @@
                     <RadzenPanelMenuItem Text="Songs" Path="/data/songs" Icon="music_note"/>
                     <RadzenPanelMenuItem Text="Shares" Path="/data/shares" Icon="share"/>
                     <RadzenPanelMenuItem Text="Users" Path="/data/users" Icon="group"/>
-                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings"  Expanded="true" Visible="@AuthService.IsAdmin">
+                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" Expanded="true"
+                                         Visible="@AuthService.IsAdmin">
                         <RadzenPanelMenuItem Text="Media" Icon="perm_media">
                             @foreach (var mediaLibraryInfo in _mediaLibraryInfos)
                             {
-                                <RadzenPanelMenuItem Text="@mediaLibraryInfo.Text" Path="@mediaLibraryInfo.Path" Icon="folder"/>
+                                <RadzenPanelMenuItem Text="@mediaLibraryInfo.Text" Path="@mediaLibraryInfo.Path"
+                                                     Icon="folder"/>
                             }
                         </RadzenPanelMenuItem>
                         <RadzenPanelMenuItem Text="Jobs" Path="/admin/jobs" Icon="checklist"/>
@@ -84,7 +90,7 @@
             <RadzenBody Style="margin: 10px; padding:3px;">
                 @if (_showSearchResults)
                 {
-                    <Search SearchTerm="@_debounceInputValue" />
+                    <Search SearchTerm="@_debounceInputValue"/>
                 }
                 else
                 {
@@ -100,7 +106,7 @@
     string _siteTitle = string.Empty;
 
     string _debounceInputValue = "";
-    bool _showSearchResults = false;
+    bool _showSearchResults;
 
     MediaLibraryInfo[] _mediaLibraryInfos = [];
 
@@ -113,10 +119,14 @@
     }
 
     private void OnHeaderChange(object? sender, EventArgs e)
-        => this.InvokeAsync(StateHasChanged);
+    {
+        InvokeAsync(StateHasChanged);
+    }
 
     private void OnSpinnerChange(object? sender, EventArgs e)
-        => this.InvokeAsync(StateHasChanged);
+    {
+        InvokeAsync(StateHasChanged);
+    }
 
     public void Dispose()
     {
@@ -133,11 +143,13 @@
             {
                 return;
             }
+
             var restoredFromState = await AuthService.GetStateFromTokenAsync();
             if (restoredFromState)
             {
                 NavigationManager.Refresh();
             }
+
             _siteTitle = (await MelodeeConfigurationFactory.GetConfigurationAsync()).GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? string.Empty;
 
             _mediaLibraryInfos = (await LibraryService.ListMediaLibrariesAsync())

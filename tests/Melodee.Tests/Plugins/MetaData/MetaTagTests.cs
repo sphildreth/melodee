@@ -17,7 +17,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -52,7 +52,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -100,7 +100,7 @@ public class MetaTagTests : TestsBase
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -141,7 +141,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(tagResult.Data.File);
             Assert.Equal(fileInfo.FullName, tagResult.Data.File.FullName(dirInfo));
             Assert.NotNull(tagResult.Data.AlbumTitle()?.Nullify());
-            Assert.Equal(newAlbumValue, tagResult.Data.AlbumTitle(), ignoreCase: true);
+            Assert.Equal(newAlbumValue, tagResult.Data.AlbumTitle(), true);
         }
     }
 
@@ -157,7 +157,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -186,7 +186,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -214,7 +214,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -230,7 +230,7 @@ public class MetaTagTests : TestsBase
             Assert.NotNull(songArtists?.Value);
         }
     }
-    
+
     [Fact]
     public async Task ValidateSongWithSelfTitledArtristAsync()
     {
@@ -243,7 +243,7 @@ public class MetaTagTests : TestsBase
                 Path = @"/melodee_test/tests/",
                 Name = "tests"
             };
-            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(),GetImageValidator(), NewPluginsConfiguration());
+            var metaTag = new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration());
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);
             Assert.True(tagResult.IsSuccess);
@@ -256,5 +256,5 @@ public class MetaTagTests : TestsBase
             var albumArtist = song.Tags!.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
             Assert.NotNull(albumArtist?.Value);
         }
-    }    
+    }
 }

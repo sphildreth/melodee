@@ -2,10 +2,16 @@
 @using Melodee.Common.Models.Collection.Extensions
 <RadzenCard Variant="Variant.Filled" class="rz-mx-auto rz-my-2 rz-p-2" Style="max-width: 300px">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Gap="5px" class="rz-p-1">
-        <RadzenImage Path="@Album.ImageUrl()" Style="width: 50px; height: 50px; border-radius: 50%;" />
+        <RadzenImage Path="@Album.ImageUrl()" Style="width: 50px; height: 50px; border-radius: 50%;"/>
         <RadzenStack Gap="0">
-            <RadzenText TextStyle="TextStyle.Body1">@(Album.Name)</RadzenText>
-            <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-mt-4 rz-mb-0">@AlbumDataInfo.InfoLineTitle</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1">
+                <RadzenLink text="@Album.Name"  class="rz-text-wrap" href="@Album.DetailUrl()" />
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle2">
+                <RadzenLink text="@Album.ArtistName"  class="rz-text-wrap" href="@Album.ArtistDetailUrl()" />
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Overline"
+                        class="rz-display-flex rz-mt-4 rz-mb-0">@AlbumDataInfo.InfoLineTitle</RadzenText>
             <RadzenText TextStyle="TextStyle.Body1">@Album.InfoLineData</RadzenText>
         </RadzenStack>
     </RadzenStack>

@@ -1,4 +1,3 @@
-using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -19,11 +18,11 @@ public class AlbumServiceTests : ServiceTestBase
         var shouldContainApiKey = Guid.NewGuid();
 
         var artistName = "Bob Jones";
-        var melodeeArtist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, artistName.CleanString(doPutTheAtEnd: true), null, 1);
+        var melodeeArtist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, artistName.CleanString(true), null, 1);
         var melodeeAlbum = AlbumValidatorTests.TestAlbum;
-        
+
         var configuration = TestsBase.NewPluginsConfiguration();
-        
+
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
             var artist = new Artist
@@ -55,7 +54,7 @@ public class AlbumServiceTests : ServiceTestBase
                 OriginalReleaseDate = melodeeAlbum.OriginalAlbumYear() == null ? null : SafeParser.ToLocalDate(melodeeAlbum.OriginalAlbumYear()!.Value),
                 ReleaseDate = SafeParser.ToLocalDate(melodeeAlbum.AlbumYear() ?? throw new Exception("Album year is required.")),
                 SongCount = SafeParser.ToNumber<short>(melodeeAlbum.Songs?.Count() ?? 0),
-                SortName = configuration.RemoveUnwantedArticles(melodeeAlbum.AlbumTitle().CleanString(true))                
+                SortName = configuration.RemoveUnwantedArticles(melodeeAlbum.AlbumTitle().CleanString(true))
             });
 
             try
@@ -75,14 +74,14 @@ public class AlbumServiceTests : ServiceTestBase
         Assert.Equal(1, listResult.TotalPages);
         Assert.Equal(1, listResult.TotalCount);
     }
- 
+
 
     [Fact]
     public async Task GetByNameNormalizedAsync()
     {
         var artistName = "Bob Jones";
-        var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, artistName.CleanString(doPutTheAtEnd: true), null, 1);
-        
+        var artist = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, artistName.CleanString(true), null, 1);
+
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
             context.Artists.Add(new Artist

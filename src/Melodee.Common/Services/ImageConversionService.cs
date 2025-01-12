@@ -14,7 +14,7 @@ public class ImageConversionService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory
-    )
+)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     public async Task<MelodeeModels.OperationResult<bool>> ConvertImageAsync(FileInfo imageFileInfo, CancellationToken cancellationToken = default)

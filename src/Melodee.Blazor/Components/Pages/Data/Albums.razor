@@ -120,7 +120,7 @@
                                       Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
                         <RadzenImage Path=@($"/images/{data.ToApiKey()}/35") Style="margin-right: 5px;"
                                      AlternateText="@data.Name"/>
-                        <RadzenLink text="@data.Name" class="rz-text-wrap" Path="@($"/data/album/{data.ApiKey}")"/>
+                        <RadzenLink text="@data.Name" class="rz-text-wrap" Path="@data.DetailUrl()"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.AlternateNames)" Title="Alt Names" Width="100px">

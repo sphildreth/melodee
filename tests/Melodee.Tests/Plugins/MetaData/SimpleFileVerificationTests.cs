@@ -42,7 +42,7 @@ public class SimpleFileVerificationTests : TestsBase
             var sfv = new SimpleFileVerification(Serializer,
                 new[]
                 {
-                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer),GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration())
+                    new AtlMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), GetImageConvertor(), GetImageValidator(), NewPluginsConfiguration())
                 }, new AlbumValidator(NewPluginsConfiguration()), NewPluginsConfiguration());
             var sfvResult = await sfv.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {

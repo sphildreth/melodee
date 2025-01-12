@@ -1,5 +1,4 @@
 @using Melodee.Common.Models.Search
-
 @inject SearchService SearchService
 @inject MainLayoutProxyService MainLayoutProxyService
 
@@ -73,6 +72,7 @@
         </ChildContent>
     </RadzenPanel>
 </RadzenStack>
+
 @code {
 
     [Parameter] public required string SearchTerm { get; set; }
@@ -94,7 +94,6 @@
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
-
     }
 
 }

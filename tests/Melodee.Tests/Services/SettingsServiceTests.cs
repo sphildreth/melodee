@@ -80,7 +80,8 @@ public sealed class SettingsServiceTests : ServiceTestBase
         AssertResultIsSuccessful(listResult);
         Assert.Contains(listResult.Data, x => x.Key == SettingRegistry.ConversionBitrate);
         Assert.Equal(1, listResult.TotalCount);
-        Assert.Equal(1, listResult.TotalPages); }
+        Assert.Equal(1, listResult.TotalPages);
+    }
 
     [Fact]
     public async Task ListWithSortAsync()
@@ -146,13 +147,12 @@ public sealed class SettingsServiceTests : ServiceTestBase
         MelodeeConfiguration.SetSetting(settings, SettingRegistry.ValidationMaximumSongNumber, shouldBeValueBool);
         Assert.Equal(shouldBeValueBool, settings[SettingRegistry.ValidationMaximumSongNumber]);
         Assert.True(MelodeeConfiguration.IsTrue(settings, SettingRegistry.ValidationMaximumSongNumber));
-
     }
 
     [Fact]
     public async Task GetAllSettingsAsync()
     {
-        var service = new SettingService(Logger, CacheManager,MockConfigurationFactory(), MockFactory());
+        var service = new SettingService(Logger, CacheManager, MockConfigurationFactory(), MockFactory());
         var listResult = await service.GetAllSettingsAsync();
         Assert.NotEmpty(listResult);
         Assert.Contains(listResult, x => x.Key == SettingRegistry.ValidationMaximumSongNumber);
@@ -163,10 +163,10 @@ public sealed class SettingsServiceTests : ServiceTestBase
     public async Task GetSettingWithFunc()
     {
         var shouldBeValueInt = 99;
-        var service = new SettingService(Logger, CacheManager,MockConfigurationFactory(), MockFactory());
+        var service = new SettingService(Logger, CacheManager, MockConfigurationFactory(), MockFactory());
         var configuration = await service.GetMelodeeConfigurationAsync();
         Assert.NotEmpty(configuration.Configuration);
-        
+
         var maxSongsToProcess = configuration.GetValue<int?>(SettingRegistry.ProcessingMaximumProcessingCount) ?? 0;
         Assert.Equal(0, maxSongsToProcess);
 

@@ -104,7 +104,8 @@
                 <RadzenDataGridColumn Property="@nameof(Library.TypeValue)" Title="Type" Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
-                            <RadzenIcon Icon="@data.LibraryTypeIconAndTitle().Item1" title="@data.LibraryTypeIconAndTitle().Item2"/>
+                            <RadzenIcon Icon="@data.LibraryTypeIconAndTitle().Item1"
+                                        title="@data.LibraryTypeIconAndTitle().Item2"/>
                             <RadzenText Text="@(data.TypeValue.ToString())"/>
                         </RadzenStack>
                     </Template>

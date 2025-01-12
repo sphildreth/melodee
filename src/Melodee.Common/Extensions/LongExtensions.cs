@@ -2,9 +2,11 @@
 
 public static class LongExtensions
 {
-    public static string? ToStringPadLeft(this long? input, short padLeft, char padWith = '0') 
-        => input == null ? null : input!.ToString()!.PadLeft(padLeft, padWith);    
-    
+    public static string? ToStringPadLeft(this long? input, short padLeft, char padWith = '0')
+    {
+        return input == null ? null : input!.ToString()!.PadLeft(padLeft, padWith);
+    }
+
     public static string FormatFileSize(this long size)
     {
         if (size < 900)

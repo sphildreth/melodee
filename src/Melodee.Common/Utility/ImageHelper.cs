@@ -56,13 +56,13 @@ public static partial class ImageHelper
     {
         return ["*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp"];
     }
-    
+
     public static string[]? NormalizedImageTypesFromFilename(string fileName)
     {
         string[] filePartsToMatch;
 
-        var fn = Path.GetFileNameWithoutExtension(fileName);        
-        if (ImageFileNameSeperatorsRegex().IsMatch(fileName)) 
+        var fn = Path.GetFileNameWithoutExtension(fileName);
+        if (ImageFileNameSeperatorsRegex().IsMatch(fileName))
         {
             filePartsToMatch = fn.Replace('-', ' ').Replace('_', ' ').Split(' ');
         }
@@ -81,16 +81,18 @@ public static partial class ImageHelper
                 {
                     result.Add(n.ToNormalizedString() ?? n);
                 }
+
                 if (AlbumImageFileNames.Any(x => x == (n.ToNormalizedString() ?? n)))
                 {
                     result.Add(n.ToNormalizedString() ?? n);
-                }                
+                }
             }
 
             return result.Count > 0 ? result.ToArray() : null;
         }
+
         return null;
-    }    
+    }
 
     private static string[] GetFiles(string? path,
         string[]? patterns = null,
@@ -180,7 +182,7 @@ public static partial class ImageHelper
             }
 
             var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit)).Nullify();
-            var numberInName = SafeParser.ToNumber<int>(nameDigits);            
+            var numberInName = SafeParser.ToNumber<int>(nameDigits);
             var nt = NormalizedImageTypesFromFilename(fileInfo.Name);
             var ntMatches = AlbumImageFileNames.Count(x => nt?.Contains(x) ?? false);
 

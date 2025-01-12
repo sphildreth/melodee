@@ -24,41 +24,41 @@ public abstract class TestsBase
     protected ILogger Logger { get; }
 
     protected ISerializer Serializer { get; }
-    
+
     protected ImageConvertor GetImageConvertor()
     {
-        return new ImageConvertor(TestsBase.NewPluginsConfiguration());
-    }     
-    
+        return new ImageConvertor(NewPluginsConfiguration());
+    }
+
     protected IImageValidator GetImageValidator()
     {
-        return new ImageValidator(TestsBase.NewPluginsConfiguration());
-    }    
-    
+        return new ImageValidator(NewPluginsConfiguration());
+    }
+
     protected IAlbumValidator GetAlbumValidator()
     {
-        return new AlbumValidator(TestsBase.NewPluginsConfiguration());
-    } 
+        return new AlbumValidator(NewPluginsConfiguration());
+    }
 
     public static IMelodeeConfiguration NewPluginsConfiguration()
     {
         return new MelodeeConfiguration(NewConfiguration());
     }
-    
+
     protected IMelodeeConfigurationFactory MockConfigurationFactory()
     {
         var mock = new Mock<IMelodeeConfigurationFactory>();
-        mock.Setup(f => f.GetConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
+        mock.Setup(f => f.GetConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(NewPluginsConfiguration);
         return mock.Object;
-    }    
-    
+    }
+
     public static OperationResult<Library> TestStagingLibrary()
     {
         return new OperationResult<Library>
         {
             Data = TestLibraries().Data.First(x => x.TypeValue == LibraryType.Staging)
         };
-    }    
+    }
 
     public static OperationResult<Library> TestStorageLibrary()
     {
@@ -67,13 +67,13 @@ public abstract class TestsBase
             Data = TestLibraries().Data.First(x => x.TypeValue == LibraryType.Storage)
         };
     }
-    
+
     public static PagedResult<Library> TestLibraries()
     {
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
         return new PagedResult<Library>
         {
-            CurrentPage = 1,            
+            CurrentPage = 1,
             TotalCount = 3,
             TotalPages = 1,
             Data =
@@ -110,19 +110,19 @@ public abstract class TestsBase
     {
         return MelodeeConfiguration.AllSettings(new Dictionary<string, object?>
         {
-            { SettingRegistry.ImagingSmallSize, "300"},
-            { SettingRegistry.ImagingMinimumImageSize, "600"},
-            { SettingRegistry.ImagingLargeSize, "1600"},
+            { SettingRegistry.ImagingSmallSize, "300" },
+            { SettingRegistry.ImagingMinimumImageSize, "600" },
+            { SettingRegistry.ImagingLargeSize, "1600" },
             { SettingRegistry.ProcessingAlbumTitleRemovals, "['^', '~', '#']" },
             { SettingRegistry.ProcessingArtistNameReplacements, "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }" },
-            { SettingRegistry.EncryptionPrivateKey, "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y"},
-            { SettingRegistry.OpenSubsonicServerSupportedVersion, "1.16.1"},
-            { SettingRegistry.OpenSubsonicServerType, "Melodee"},
-            { SettingRegistry.OpenSubsonicServerVersion, "0.1.1"},
-            { SettingRegistry.PluginEnabledCueSheet, "true"},
-            { SettingRegistry.PluginEnabledSimpleFileVerification, "true"},
-            { SettingRegistry.PluginEnabledM3u, "true"},
-            { SettingRegistry.PluginEnabledNfo, "true"},
+            { SettingRegistry.EncryptionPrivateKey, "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y" },
+            { SettingRegistry.OpenSubsonicServerSupportedVersion, "1.16.1" },
+            { SettingRegistry.OpenSubsonicServerType, "Melodee" },
+            { SettingRegistry.OpenSubsonicServerVersion, "0.1.1" },
+            { SettingRegistry.PluginEnabledCueSheet, "true" },
+            { SettingRegistry.PluginEnabledSimpleFileVerification, "true" },
+            { SettingRegistry.PluginEnabledM3u, "true" },
+            { SettingRegistry.PluginEnabledNfo, "true" },
             { SettingRegistry.ProcessingDoDeleteOriginal, "false" },
             { SettingRegistry.ProcessingMaximumAlbumDirectoryNameLength, 255 },
             { SettingRegistry.ProcessingMaximumArtistDirectoryNameLength, 255 },
@@ -132,7 +132,7 @@ public abstract class TestsBase
             { SettingRegistry.ValidationMaximumMediaNumber, 99 },
             { SettingRegistry.ValidationMaximumSongNumber, 999 },
             { SettingRegistry.ValidationMinimumAlbumYear, 1860 },
-            { SettingRegistry.ValidationMaximumAlbumYear, 2035 }            
+            { SettingRegistry.ValidationMaximumAlbumYear, 2035 }
         });
     }
 }

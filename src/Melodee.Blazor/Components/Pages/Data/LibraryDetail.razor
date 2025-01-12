@@ -32,7 +32,8 @@
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
             <RadzenText TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0">
-                <RadzenIcon Icon="@_library.LibraryTypeIconAndTitle().Item1" title="@_library.LibraryTypeIconAndTitle().Item2"/>
+                <RadzenIcon Icon="@_library.LibraryTypeIconAndTitle().Item1"
+                            title="@_library.LibraryTypeIconAndTitle().Item2"/>
                 @(_library.Name)
             </RadzenText>
         </RadzenColumn>
@@ -60,7 +61,8 @@
                               Text="Purge" title="Delete everything in the library. BEWARE!" Click="@PurgeButtonClick"/>
                 @if (_library.TypeValue != LibraryType.Storage)
                 {
-                    <RadzenSplitButton Icon="memory" title="Process media files into Melodee media json file."  Click="@ProcessButtonClick" Text="Process" ButtonStyle="ButtonStyle.Secondary">
+                    <RadzenSplitButton Icon="memory" title="Process media files into Melodee media json file."
+                                       Click="@ProcessButtonClick" Text="Process" ButtonStyle="ButtonStyle.Secondary">
                         <ChildContent>
                             <RadzenSplitButtonItem Text="Force" Value="2"/>
                         </ChildContent>
@@ -69,7 +71,8 @@
                 else
                 {
                     <RadzenButton Icon="database" Text="Scan" ButtonStyle="ButtonStyle.Warning"
-                                  title="Scan Melodee media json files and update database data." Click="@ScanButtonClick"/>
+                                  title="Scan Melodee media json files and update database data."
+                                  Click="@ScanButtonClick"/>
                 }
             </RadzenStack>
         </RadzenColumn>
@@ -87,7 +90,8 @@
                             @context.Text
                         </Template>
                     </RadzenTreeItem>
-                    <RadzenTreeItem Text="@($"{ (_library.TypeValue == LibraryType.Storage ? "Scan" : "Process") } History")">
+                    <RadzenTreeItem
+                        Text="@($"{(_library.TypeValue == LibraryType.Storage ? "Scan" : "Process")} History")">
                         <Template>
                             <RadzenIcon Icon="history"/>
                             @context.Text
@@ -400,7 +404,7 @@
             try
             {
                 await Scheduler.TriggerJob(JobKeyRegistry.LibraryProcessJobJobKey);
-                NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = true}, "started library scan job", ToastTime));
+                NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = true }, "started library scan job", ToastTime));
             }
             finally
             {

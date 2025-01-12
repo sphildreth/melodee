@@ -1,18 +1,7 @@
-using System.Diagnostics;
-using System.Reflection;
-using System.Xml.Linq;
-using System.Xml.Schema;
-using Melodee.Common.Configuration;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Serialization;
 using Melodee.Tests.Services;
 using Melodee.Tests.Validation;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Moq;
-using Serilog;
-using Serilog.Core;
-using Xunit.Abstractions;
 
 namespace Melodee.Tests.Common;
 
@@ -32,6 +21,4 @@ public class SerializerTests : ServiceTestBase
 
         Assert.Equal(AlbumValidatorTests.ShouldBeBitRate, deserialized.Songs?.FirstOrDefault()?.BitRate());
     }
-
-  
 }

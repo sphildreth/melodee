@@ -11,13 +11,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class MediaRetrievalController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
+public class MediaRetrievalController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     //TODO
     //getLyrics
     //getLyricsBySongId //https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
 
-    
+
     [HttpGet]
     [HttpPost]
     [Route("/rest/hls.view")]
@@ -28,7 +28,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
     {
         HttpContext.Response.Headers.Append("Cache-Control", "no-cache");
         return StatusCode((int)HttpStatusCode.Gone);
-    }     
+    }
 
     /// <summary>
     ///     Returns the avatar (personal image) for a user.
@@ -59,7 +59,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
     [Route("/rest/getCoverArt")]
     public Task<IActionResult> GetCoverArtAsync(string id, string? size, CancellationToken cancellationToken = default)
     {
-        return ImageResult(id ,openSubsonicApiService.GetImageForApiKeyId(id,
+        return ImageResult(id, openSubsonicApiService.GetImageForApiKeyId(id,
             size,
             ApiRequest,
             cancellationToken));

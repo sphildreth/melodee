@@ -102,16 +102,16 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
 
         try
         {
-            AreAllSongNumbersValid(album); 
-            AreSongsUniquelyNumbered(album); 
-            AreMediaNumbersValid(album); 
-            DoAllSongsHaveSameAlbumArtist(album); 
+            AreAllSongNumbersValid(album);
+            AreSongsUniquelyNumbered(album);
+            AreMediaNumbersValid(album);
+            DoAllSongsHaveSameAlbumArtist(album);
             AllSongTitlesDoNotHaveUnwantedText(album);
             AlbumArtistDoesNotHaveUnwantedText(album);
-            AlbumTitleDoesNotHaveUnwantedText(album); 
-            DoMediaTotalMatchMediaNumbers(album); 
-            DoAllSongsHaveMediaNumberSet(album); 
-            DoesSongTotalMatchSongCount(album); 
+            AlbumTitleDoesNotHaveUnwantedText(album);
+            DoMediaTotalMatchMediaNumbers(album);
+            DoAllSongsHaveMediaNumberSet(album);
+            DoesSongTotalMatchSongCount(album);
             DoesAlbumHaveCoverImage(album);
             ArtistHasSearchEngineResult(album.Artist);
             AlbumIsStudioTypeAlbum(album);
@@ -160,7 +160,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithoutArtists;
         }
-        
     }
 
     private void ArtistHasSearchEngineResult(Artist albumArtist)
@@ -452,14 +451,14 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithInvalidNumber;
             result = false;
         }
-        
+
         var firstSongNumber = songNumbers.Length > 0 ? songNumbers.First() : 0;
         if (firstSongNumber != 1)
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidFirstSongNumber;
             result = false;
         }
-        
+
         var maximumSongNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumSongNumber]);
         if (songNumbers.Any(x => x > maximumSongNumber))
         {

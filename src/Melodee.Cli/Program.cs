@@ -17,7 +17,7 @@ public static class Program
             {
                 add.AddCommand<ConfigurationSetCommand>("set")
                     .WithDescription("Modify Melodee configuration.");
-            });            
+            });
             config.AddBranch<JobSettings>("job", add =>
             {
                 add.AddCommand<JobRunMusicBrainzUpdateDatabaseJobCommand>("musicbrainz-update")
@@ -61,12 +61,11 @@ public static class Program
             });
         });
 
-        // sph; this seems like a terrible way to do this
-        var version = $"1.0.0-rc21";
-        
+
+        var version = typeof(Program).Assembly.GetName().Version;
         AnsiConsole.MarkupLine($":musical_note: Melodee Command Line Interface v{version}");
         AnsiConsole.MarkupLine("");
-        
+
         return app.Run(args);
     }
 }

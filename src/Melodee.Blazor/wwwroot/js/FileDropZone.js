@@ -17,14 +17,14 @@ export function initializeFileDropZone(dropZoneElement, inputFile) {
 
         // Set the files property of the input element and raise the change event
         inputFile.files = e.dataTransfer.files;
-        const event = new Event('change', { bubbles: true });
+        const event = new Event('change', {bubbles: true});
         inputFile.dispatchEvent(event);
     }
 
     function onPaste(e) {
         // Set the files property of the input element and raise the change event
         inputFile.files = e.clipboardData.files;
-        const event = new Event('change', { bubbles: true });
+        const event = new Event('change', {bubbles: true});
         inputFile.dispatchEvent(event);
     }
 

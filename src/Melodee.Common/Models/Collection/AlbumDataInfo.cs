@@ -23,27 +23,26 @@ public sealed record AlbumDataInfo(
     short AlbumStatus)
 {
     /// <summary>
-    /// This is populated when the record is created from a Media Album File.
+    ///     This is populated when the record is created from a Media Album File.
     /// </summary>
     public string? MelodeeDataFileName { get; set; }
-    
+
     /// <summary>
-    /// This is populated when the record is created from a Media Album file.
+    ///     This is populated when the record is created from a Media Album file.
     /// </summary>
     public byte[]? ImageBytes { get; set; }
-    
+
     public int? NeedsAttentionReasons { get; set; }
-    
+
     public object? State { get; set; }
-    
+
     public AlbumStatus AlbumStatusValue => SafeParser.ToEnum<AlbumStatus>(AlbumStatus);
-    
+
     public AlbumNeedsAttentionReasons NeedsAttentionReasonsValue => SafeParser.ToEnum<AlbumNeedsAttentionReasons>(NeedsAttentionReasons);
-    
+
     public bool IsValid => NeedsAttentionReasonsValue == AlbumNeedsAttentionReasons.NotSet && AlbumStatusValue != Enums.AlbumStatus.Ok;
 
-    public static string InfoLineTitle => $"Year | Song Count | Duration";
+    public static string InfoLineTitle => "Year | Song Count | Duration";
 
     public string InfoLineData => $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()}";
-    
 }

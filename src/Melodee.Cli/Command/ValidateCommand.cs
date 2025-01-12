@@ -81,6 +81,7 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
                     Log.Logger.Error("Could not find library named {LibraryName}", settings.LibraryName);
                     return 0;
                 }
+
                 var albumDiscoveryService = new AlbumDiscoveryService(
                     Log.Logger,
                     cacheManager,

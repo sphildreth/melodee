@@ -137,7 +137,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
 
 internal class JobExecutionContext(CancellationToken cancellation) : IJobExecutionContext
 {
-    private readonly Dictionary<object, object> _dataMap = new Dictionary<object, object>();
+    private readonly Dictionary<object, object> _dataMap = new();
 
     public void Put(object key, object objectValue)
     {
@@ -155,7 +155,7 @@ internal class JobExecutionContext(CancellationToken cancellation) : IJobExecuti
 
     public IScheduler Scheduler { get; } = null!;
     public ITrigger Trigger { get; } = null!;
-    public ICalendar? Calendar { get; }= null!;
+    public ICalendar? Calendar { get; } = null!;
     public bool Recovering { get; } = false;
     public TriggerKey RecoveringTriggerKey { get; } = null!;
     public int RefireCount { get; } = 0;
@@ -163,9 +163,9 @@ internal class JobExecutionContext(CancellationToken cancellation) : IJobExecuti
     public IJobDetail JobDetail { get; } = new JobDetailImpl();
     public IJob JobInstance { get; } = null!;
     public DateTimeOffset FireTimeUtc { get; } = DateTimeOffset.MinValue;
-    public DateTimeOffset? ScheduledFireTimeUtc { get; }= DateTimeOffset.MinValue;
-    public DateTimeOffset? PreviousFireTimeUtc { get; }= DateTimeOffset.MinValue;
-    public DateTimeOffset? NextFireTimeUtc { get; }= DateTimeOffset.MinValue;
+    public DateTimeOffset? ScheduledFireTimeUtc { get; } = DateTimeOffset.MinValue;
+    public DateTimeOffset? PreviousFireTimeUtc { get; } = DateTimeOffset.MinValue;
+    public DateTimeOffset? NextFireTimeUtc { get; } = DateTimeOffset.MinValue;
     public string FireInstanceId { get; } = null!;
     public object? Result { get; set; }
     public TimeSpan JobRunTime { get; } = TimeSpan.Zero;

@@ -9,7 +9,7 @@ namespace Melodee.Tests.Validation;
 public class AlbumValidatorTests
 {
     public const int ShouldBeBitRate = 320;
-    
+
     public static Album TestAlbum
         => new()
         {
@@ -35,7 +35,7 @@ public class AlbumValidatorTests
                 Name = string.Empty
             },
             Status = AlbumStatus.Ok,
-            Images = new []
+            Images = new[]
             {
                 new ImageInfo
                 {
@@ -43,7 +43,7 @@ public class AlbumValidatorTests
                     FileInfo = new FileSystemFileInfo
                     {
                         Name = "2020591499-01-Front.jpg",
-                        Size = 12345,
+                        Size = 12345
                     },
                     PictureIdentifier = PictureIdentifier.Front
                 }
@@ -77,13 +77,13 @@ public class AlbumValidatorTests
                         Name = string.Empty,
                         Size = 12345
                     },
-                    MediaAudios = new [] 
+                    MediaAudios = new[]
                     {
-                          new MediaAudio<object?>
-                          {
-                              Identifier = MediaAudioIdentifier.BitRate,
-                              Value = ShouldBeBitRate
-                          }  
+                        new MediaAudio<object?>
+                        {
+                            Identifier = MediaAudioIdentifier.BitRate,
+                            Value = ShouldBeBitRate
+                        }
                     },
                     Tags = new[]
                     {
@@ -122,13 +122,13 @@ public class AlbumValidatorTests
                         Name = string.Empty,
                         Size = 123456
                     },
-                    MediaAudios = new [] 
+                    MediaAudios = new[]
                     {
                         new MediaAudio<object?>
                         {
                             Identifier = MediaAudioIdentifier.BitRate,
                             Value = ShouldBeBitRate
-                        }  
+                        }
                     },
                     Tags = new[]
                     {
@@ -158,7 +158,7 @@ public class AlbumValidatorTests
                             Value = "You Can Make Me Free"
                         }
                     }
-                }                
+                }
             }
         };
 
@@ -317,7 +317,7 @@ public class AlbumValidatorTests
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
         Assert.Equal(AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
     }
-    
+
     [Fact]
     public void ValidateAlbumWithMissingArtist()
     {
@@ -330,7 +330,7 @@ public class AlbumValidatorTests
         });
         var album = TestAlbum with
         {
-            Artist = new Artist(string.Empty, string.Empty, null, null, null, null),
+            Artist = new Artist(string.Empty, string.Empty, null),
             Tags = albumTags
         };
 
@@ -363,9 +363,9 @@ public class AlbumValidatorTests
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
-        Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidYear, validationResult.Data.AlbumStatusReasons);        
+        Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidYear, validationResult.Data.AlbumStatusReasons);
     }
-    
+
     [Fact]
     public void ValidateAlbumWithDifferentArtistsNotVariousArtists()
     {
@@ -375,8 +375,8 @@ public class AlbumValidatorTests
         var validationResult = validator.ValidateAlbum(testAlbum);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
-    }    
-    
+    }
+
 
     [Fact]
     public void ValidateAlbumWithMissingTitle()

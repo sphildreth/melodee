@@ -29,6 +29,7 @@ using Radzen;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
+using ILogger = Serilog.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,7 +83,7 @@ builder.Services
     .AddScoped<MainLayoutProxyService>()
     .AddSingleton<ISerializer, Serializer>()
     .AddSingleton<ICacheManager>(opt
-        => new MemoryCacheManager(opt.GetRequiredService<Serilog.ILogger>(),
+        => new MemoryCacheManager(opt.GetRequiredService<ILogger>(),
             new TimeSpan(1,
                 0,
                 0,
@@ -115,6 +116,7 @@ builder.Services
     .AddScoped<ArtistSearchEngineService>()
     .AddScoped<StatisticsService>()
     .AddScoped<SearchService>();
+
 #endregion
 
 #region Quartz Related
@@ -169,7 +171,7 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/Error", true);
     app.UseHsts();
 }
 

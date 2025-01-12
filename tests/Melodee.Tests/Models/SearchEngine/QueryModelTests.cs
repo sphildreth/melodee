@@ -11,21 +11,21 @@ public class QueryModelTests
         var name = "John Waite";
         var query = new Query
         {
-            Name = name,
+            Name = name
         };
         Assert.Equal(name.ToNormalizedString(), query.NameNormalized);
         Assert.Equal("WAITEJOHN", query.NameNormalizedReversed);
     }
-    
+
     [Fact]
     public void ValidateQueryModelReversesProperlyWithComma()
     {
         var name = "Waite, John";
         var query = new Query
         {
-            Name = name,
+            Name = name
         };
         Assert.Equal(name.ToNormalizedString(), query.NameNormalized);
         Assert.Equal("JOHNWAITE", query.NameNormalizedReversed);
-    }    
+    }
 }

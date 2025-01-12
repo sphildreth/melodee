@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
-using Melodee.Common.Enums;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.MetaData.Directory;
@@ -44,7 +43,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -52,7 +51,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             var settingService = new SettingService(
                 Log.Logger,
                 cacheManager,
-                scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),                
+                scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),
                 scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>());
             var config = new MelodeeConfiguration(await settingService.GetAllSettingsAsync().ConfigureAwait(false));
 
@@ -155,9 +154,9 @@ public class ParseCommand : AsyncCommand<ParseSettings>
             }
 
             var m3u = new M3UPlaylist(serializer,
-                [
-                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
-                ], albumValidator,  config);
+            [
+                new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
+            ], albumValidator, config);
             if (m3u.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {
                 try

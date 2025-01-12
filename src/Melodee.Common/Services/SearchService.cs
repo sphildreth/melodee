@@ -1,15 +1,15 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
+using Melodee.Common.Extensions;
+using Melodee.Common.Filtering;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Search;
+using Melodee.Common.Models.SearchEngines;
+using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Melodee.Common.Extensions;
-using Melodee.Common.Filtering;
-using Melodee.Common.Models.Collection;
-using Melodee.Common.Models.SearchEngines;
-using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 
 namespace Melodee.Common.Services;
 
@@ -24,7 +24,6 @@ public sealed class SearchService(
     IMusicBrainzRepository musicBrainzRepository)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-
     public async Task<OperationResult<SearchResult>> DoSearchAsync(string searchTerm, short maxResults, SearchInclude include, CancellationToken cancellationToken = default)
     {
         List<ArtistDataInfo> artists = new();
@@ -39,9 +38,9 @@ public sealed class SearchService(
                 Data = new SearchResult([], [], [], [])
             };
         }
-        
+
         var searchTermNormalized = searchTerm.ToNormalizedString() ?? searchTerm;
-        
+
         if (include.HasFlag(SearchInclude.Artists))
         {
             var artistResult = await artistService.ListAsync(new PagedRequest
@@ -56,6 +55,7 @@ public sealed class SearchService(
             }, cancellationToken);
             artists = artistResult.Data.ToList() ?? [];
         }
+
         if (include.HasFlag(SearchInclude.Albums))
         {
             var albumResult = await albumService.ListAsync(new PagedRequest
@@ -69,7 +69,8 @@ public sealed class SearchService(
                 ]
             }, cancellationToken);
             albums = albumResult.Data.ToList() ?? [];
-        }      
+        }
+
         if (include.HasFlag(SearchInclude.Songs))
         {
             var songResult = await songService.ListAsync(new PagedRequest
@@ -78,7 +79,8 @@ public sealed class SearchService(
                 PageSize = maxResults,
                 FilterBy =
                 [
-                    new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains, searchTermNormalized)                ]
+                    new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains, searchTermNormalized)
+                ]
             }, cancellationToken);
             songs = songResult.Data.ToList() ?? [];
         }
@@ -87,18 +89,19 @@ public sealed class SearchService(
         {
             var searchResult = await musicBrainzRepository.SearchArtist(new ArtistQuery
             {
-                Name = searchTerm,
+                Name = searchTerm
             }, maxResults, cancellationToken);
             musicBrainzArtists = searchResult.Data
                 .Where(x => x.MusicBrainzId != null)
                 .Select(x => ArtistDataInfo.BlankArtistDataInfo with
                 {
-                    ApiKey = x.MusicBrainzId!.Value, 
-                    Name = x.Name, 
+                    ApiKey = x.MusicBrainzId!.Value,
+                    Name = x.Name,
                     NameNormalized = x.Name.ToNormalizedString() ?? x.Name
                 })
                 .ToList();
         }
+
         return new OperationResult<SearchResult>
         {
             Data = new SearchResult(artists.ToArray(), albums.ToArray(), songs.ToArray(), musicBrainzArtists.ToArray())

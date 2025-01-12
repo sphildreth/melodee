@@ -5,7 +5,7 @@ namespace Melodee.Tests;
 public class HttpHandlerStubDelegate : DelegatingHandler
 {
     private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handlerFunc;
-    
+
     public HttpHandlerStubDelegate()
     {
         _handlerFunc = (request, cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));

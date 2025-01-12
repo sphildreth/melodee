@@ -24,7 +24,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
 {
     public const string HandlesExtension = "NFO";
 
-    private INfoHandler[] _nfoHandlers =
+    private readonly INfoHandler[] _nfoHandlers =
     [
         new PMediaHandler(),
         new JellyfinHandler()
@@ -97,6 +97,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                         nfoFile.Delete();
                         Log.Information("[{Plugin}] Deleted NFO File [{FileName}]", DisplayName, nfoFile.Name);
                     }
+
                     Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Album [{Album}]", DisplayName, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration), nfoAlbum.ToString());
                     processedFiles++;
                 }
@@ -202,10 +203,10 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
             {
                 if (await nfoHandler.IsHandlerForNfoAsync(fileInfo, cancellationToken))
                 {
-                    return await nfoHandler.HandleNfoAsync(fileInfo, MelodeeConfiguration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),  cancellationToken);
+                    return await nfoHandler.HandleNfoAsync(fileInfo, MelodeeConfiguration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal), cancellationToken);
                 }
             }
-            
+
             var splitChar = ':';
             var albumTags = new List<MetaTag<object?>>();
             var songs = new List<Common.Models.Song>();

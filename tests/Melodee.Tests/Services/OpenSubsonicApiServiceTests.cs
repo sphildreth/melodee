@@ -1,16 +1,9 @@
 using System.Globalization;
-using System.Net.Mail;
 using Melodee.Common.Constants;
-using Melodee.Common.Data.Models;
-using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic;
-using Melodee.Common.Models.OpenSubsonic.Enums;
-using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Utility;
 using NodaTime;
-using Album = Melodee.Common.Data.Models.Album;
 using User = Melodee.Common.Data.Models.User;
 
 namespace Melodee.Tests.Services;
@@ -38,6 +31,7 @@ public class OpenSubsonicApiServiceTests : ServiceTestBase
             });
             await context.SaveChangesAsync();
         }
+
         var licenseResult = await GetOpenSubsonicApiService().GetLicenseAsync(GetApiRequest(username, "123456", password));
         Assert.NotNull(licenseResult);
         Assert.True(licenseResult.IsSuccess);
@@ -46,7 +40,7 @@ public class OpenSubsonicApiServiceTests : ServiceTestBase
         Assert.NotNull(license);
         Assert.True(DateTime.Parse(license.LicenseExpires, CultureInfo.InvariantCulture) > DateTime.Now);
     }
-    
+
     [Fact]
     public async Task AuthenticateUserUsingSaltAndPassword()
     {
@@ -69,10 +63,10 @@ public class OpenSubsonicApiServiceTests : ServiceTestBase
             });
             await context.SaveChangesAsync();
         }
+
         var authResult = await GetOpenSubsonicApiService().AuthenticateSubsonicApiAsync(GetApiRequest(username, salt, HashHelper.CreateMd5($"{password}{salt}") ?? string.Empty));
         Assert.NotNull(authResult);
         Assert.True(authResult.IsSuccess);
         Assert.NotNull(authResult.ResponseData);
-    }    
-    
+    }
 }

@@ -28,7 +28,7 @@ public sealed class MediaEditService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMelodeeConfigurationFactory configurationFactory,    
+    IMelodeeConfigurationFactory configurationFactory,
     LibraryService libraryService,
     AlbumDiscoveryService albumDiscoveryService,
     ISerializer serializer,

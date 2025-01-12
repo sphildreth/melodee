@@ -52,7 +52,7 @@ public class OpenSubsonicApiService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     DefaultImages defaultImages,
-    IMelodeeConfigurationFactory configurationFactory,    
+    IMelodeeConfigurationFactory configurationFactory,
     UserService userService,
     ArtistService artistService,
     AlbumService albumService,
@@ -67,7 +67,7 @@ public class OpenSubsonicApiService(
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string ImageCacheRegion = "urn:openSubsonic:artist-and-album-images";
-    
+
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => configurationFactory.GetConfigurationAsync());
 
     public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
@@ -81,11 +81,11 @@ public class OpenSubsonicApiService(
     {
         return id.Nullify() != null && (id?.StartsWith($"album{OpenSubsonicServer.ApiIdSeparator}") ?? false);
     }
-    
+
     private static bool IsApiIdForUser(string? id)
     {
         return id.Nullify() != null && (id?.StartsWith($"user{OpenSubsonicServer.ApiIdSeparator}") ?? false);
-    }    
+    }
 
     private static bool IsApiIdForSong(string? id)
     {
@@ -880,11 +880,11 @@ public class OpenSubsonicApiService(
             }
         };
     }
-    
-    private record ImageBytesAndEtag(byte[]? Bytes, string? Etag);
 
     public static string GenerateImageCacheKeyForApiId(string apiId, string size)
-        => $"urn:openSubsonic:imageForApikey:{apiId}:{size}";
+    {
+        return $"urn:openSubsonic:imageForApikey:{apiId}:{size}";
+    }
 
     public static void ClearImageCacheForApiId(string apiId, ICacheManager cacheManager)
     {
@@ -912,7 +912,7 @@ public class OpenSubsonicApiService(
             using (Operation.At(LogEventLevel.Debug).Time("GetImageForApiKeyId: [{Username}] Size [{Size}]", apiId, sizeValue))
             {
                 byte[]? result = null;
-                string? eTag = string.Empty;
+                var eTag = string.Empty;
                 try
                 {
                     var apiKey = ApiKeyFromId(apiId);
@@ -1215,6 +1215,7 @@ public class OpenSubsonicApiService(
                 ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
             };
         }
+
         if (apiRequest.Username?.Nullify() == null ||
             (apiRequest.Password?.Nullify() == null &&
              apiRequest.Token?.Nullify() == null))
@@ -2844,4 +2845,6 @@ public class OpenSubsonicApiService(
             }
         };
     }
+
+    private record ImageBytesAndEtag(byte[]? Bytes, string? Etag);
 }

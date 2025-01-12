@@ -56,9 +56,9 @@
         </xs:choice>
         <xs:attribute name="status" type="sub:ResponseStatus" use="required"/>
         <xs:attribute name="version" type="sub:Version" use="required"/>
-        <xs:attribute name="openSubsonic" type="xs:string" use="optional" />
-        <xs:attribute name="serverVersion" type="xs:string" use="optional" />
-        <xs:attribute name="type" type="xs:string" use="optional" />
+        <xs:attribute name="openSubsonic" type="xs:string" use="optional"/>
+        <xs:attribute name="serverVersion" type="xs:string" use="optional"/>
+        <xs:attribute name="type" type="xs:string" use="optional"/>
     </xs:complexType>
 
     <xs:simpleType name="ResponseStatus">
@@ -442,7 +442,8 @@
     <xs:complexType name="PodcastEpisode">
         <xs:complexContent>
             <xs:extension base="sub:Child">
-                <xs:attribute name="streamId" type="xs:string" use="optional"/> <!-- Use this ID for streaming the podcast. -->
+                <xs:attribute name="streamId" type="xs:string"
+                              use="optional"/> <!-- Use this ID for streaming the podcast. -->
                 <xs:attribute name="channelId" type="xs:string" use="required"/> <!-- Added in 1.13.0 -->
                 <xs:attribute name="description" type="xs:string" use="optional"/>
                 <xs:attribute name="status" type="sub:PodcastStatus" use="required"/>
@@ -464,7 +465,8 @@
 
     <xs:complexType name="InternetRadioStations">
         <xs:sequence>
-            <xs:element name="internetRadioStation" type="sub:InternetRadioStation" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="internetRadioStation" type="sub:InternetRadioStation" minOccurs="0"
+                        maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -497,7 +499,8 @@
             <xs:element name="entry" type="sub:Child" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="current" type="xs:int" use="optional"/>   <!-- ID of currently playing track -->
-        <xs:attribute name="position" type="xs:long" use="optional"/> <!-- Position in milliseconds of currently playing track -->
+        <xs:attribute name="position" type="xs:long"
+                      use="optional"/> <!-- Position in milliseconds of currently playing track -->
         <xs:attribute name="username" type="xs:string" use="required"/>
         <xs:attribute name="changed" type="xs:dateTime" use="required"/>
         <xs:attribute name="changedBy" type="xs:string" use="required"/> <!-- Name of client app -->

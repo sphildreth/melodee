@@ -8,31 +8,32 @@ public class MelodeeBlazorCookieMiddleware(RequestDelegate next, IMelodeeConfigu
 {
     public const string DateFormat = "yyyyMMdd";
     public const string CookieName = "melodee_blazor_token";
-    
+
     public async Task InvokeAsync(HttpContext context)
     {
         var configuration = await configurationFactory.GetConfigurationAsync();
-        context.Response.Cookies.Append(CookieName, 
-            HashHelper.CreateMd5(DateTime.UtcNow.ToString(DateFormat) + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) ?? string.Empty, 
+        context.Response.Cookies.Append(CookieName,
+            HashHelper.CreateMd5(DateTime.UtcNow.ToString(DateFormat) + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) ?? string.Empty,
             new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddDays(1)
-        });
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(1)
+            });
         await next(context);
     }
-    
-    
+
+
     public static async Task<bool> ValidateCookie(string? cookie, IMelodeeConfigurationFactory configurationFactory)
     {
-        if(cookie is null)
+        if (cookie is null)
         {
             return false;
         }
+
         var configuration = await configurationFactory.GetConfigurationAsync();
-        return HashHelper.CreateMd5(DateTime.UtcNow.ToString("yyyyMMdd") + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) == cookie;    
+        return HashHelper.CreateMd5(DateTime.UtcNow.ToString("yyyyMMdd") + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) == cookie;
     }
 }
 

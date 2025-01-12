@@ -9,7 +9,6 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
-using Melodee.Common.Models.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Utility;
 using Microsoft.Data.Sqlite;
@@ -80,7 +79,7 @@ public sealed class UserService(
         Guard.Against.NullOrEmpty(userIds, nameof(userIds));
 
         bool result;
-        
+
         foreach (var userId in userIds)
         {
             var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
@@ -95,7 +94,7 @@ public sealed class UserService(
         }
 
         var userImageLibrary = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             foreach (var userId in userIds)
@@ -106,16 +105,18 @@ public sealed class UserService(
                 {
                     File.Delete(userAvatarFullname);
                 }
+
                 scopedContext.Users.Remove(user);
             }
+
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             result = true;
         }
-        
+
         return new MelodeeModels.OperationResult<bool>
         {
             Data = result
-        };        
+        };
     }
 
     public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(string emailAddress, CancellationToken cancellationToken = default)
@@ -357,7 +358,7 @@ public sealed class UserService(
             ClearCache(newUser.EmailNormalized, newUser.ApiKey, newUser.Id, newUser.UserNameNormalized);
 
             await LoginUserAsync(emailAddress, plainTextPassword, cancellationToken).ConfigureAwait(false);
-            
+
             return GetByEmailAddressAsync(emailAddress, cancellationToken).Result;
         }
     }
@@ -377,60 +378,60 @@ public sealed class UserService(
             };
         }
 
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            // Load the detail by DetailToUpdate.Id
+            var dbDetail = await scopedContext
+                .Users
+                .FirstOrDefaultAsync(x => x.Id == detailToUpdate.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (dbDetail == null)
             {
-                // Load the detail by DetailToUpdate.Id
-                var dbDetail = await scopedContext
-                    .Users
-                    .FirstOrDefaultAsync(x => x.Id == detailToUpdate.Id, cancellationToken)
-                    .ConfigureAwait(false);
-
-                if (dbDetail == null)
+                return new MelodeeModels.OperationResult<bool>
                 {
-                    return new MelodeeModels.OperationResult<bool>
-                    {
-                        Data = false,
-                        Type = MelodeeModels.OperationResponseType.NotFound
-                    };
-                }
-
-                // Update values and save to db
-                dbDetail.Description = detailToUpdate.Description;
-                dbDetail.Email = detailToUpdate.Email;
-                dbDetail.EmailNormalized = detailToUpdate.Email.ToNormalizedString() ?? detailToUpdate.Email.ToUpperInvariant();
-                dbDetail.HasCommentRole = detailToUpdate.HasCommentRole;
-                dbDetail.HasCoverArtRole = detailToUpdate.HasCoverArtRole;
-                dbDetail.HasDownloadRole = detailToUpdate.HasDownloadRole;
-                dbDetail.HasJukeboxRole = detailToUpdate.HasJukeboxRole;
-                dbDetail.HasPlaylistRole = detailToUpdate.HasPlaylistRole;
-                dbDetail.HasPodcastRole = detailToUpdate.HasPodcastRole;
-                dbDetail.HasSettingsRole = detailToUpdate.HasSettingsRole;
-                dbDetail.HasShareRole = detailToUpdate.HasShareRole;
-                dbDetail.HasStreamRole = detailToUpdate.HasStreamRole;
-                dbDetail.HasUploadRole = detailToUpdate.HasUploadRole;
-                dbDetail.IsAdmin = detailToUpdate.IsAdmin;
-                dbDetail.IsLocked = detailToUpdate.IsLocked;
-                dbDetail.IsScrobblingEnabled = detailToUpdate.IsScrobblingEnabled;
-                // Take whatever is newer
-                dbDetail.LastActivityAt = dbDetail.LastActivityAt > detailToUpdate.LastActivityAt ? dbDetail.LastActivityAt : detailToUpdate.LastActivityAt;
-                // Take whatever is newer
-                dbDetail.LastLoginAt = dbDetail.LastLoginAt > detailToUpdate.LastLoginAt ? dbDetail.LastLoginAt : detailToUpdate.LastLoginAt;
-                dbDetail.Notes = detailToUpdate.Notes;
-                dbDetail.SortOrder = detailToUpdate.SortOrder;
-                dbDetail.Tags = detailToUpdate.Tags;
-                dbDetail.UserName = detailToUpdate.UserName;
-                dbDetail.UserNameNormalized = detailToUpdate.UserName.ToUpperInvariant();
-
-                dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
-
-                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
-
-                if (result)
-                {
-                    ClearCache(dbDetail.EmailNormalized, dbDetail.ApiKey, dbDetail.Id, dbDetail.UserNameNormalized);
-                }
+                    Data = false,
+                    Type = MelodeeModels.OperationResponseType.NotFound
+                };
             }
-        
+
+            // Update values and save to db
+            dbDetail.Description = detailToUpdate.Description;
+            dbDetail.Email = detailToUpdate.Email;
+            dbDetail.EmailNormalized = detailToUpdate.Email.ToNormalizedString() ?? detailToUpdate.Email.ToUpperInvariant();
+            dbDetail.HasCommentRole = detailToUpdate.HasCommentRole;
+            dbDetail.HasCoverArtRole = detailToUpdate.HasCoverArtRole;
+            dbDetail.HasDownloadRole = detailToUpdate.HasDownloadRole;
+            dbDetail.HasJukeboxRole = detailToUpdate.HasJukeboxRole;
+            dbDetail.HasPlaylistRole = detailToUpdate.HasPlaylistRole;
+            dbDetail.HasPodcastRole = detailToUpdate.HasPodcastRole;
+            dbDetail.HasSettingsRole = detailToUpdate.HasSettingsRole;
+            dbDetail.HasShareRole = detailToUpdate.HasShareRole;
+            dbDetail.HasStreamRole = detailToUpdate.HasStreamRole;
+            dbDetail.HasUploadRole = detailToUpdate.HasUploadRole;
+            dbDetail.IsAdmin = detailToUpdate.IsAdmin;
+            dbDetail.IsLocked = detailToUpdate.IsLocked;
+            dbDetail.IsScrobblingEnabled = detailToUpdate.IsScrobblingEnabled;
+            // Take whatever is newer
+            dbDetail.LastActivityAt = dbDetail.LastActivityAt > detailToUpdate.LastActivityAt ? dbDetail.LastActivityAt : detailToUpdate.LastActivityAt;
+            // Take whatever is newer
+            dbDetail.LastLoginAt = dbDetail.LastLoginAt > detailToUpdate.LastLoginAt ? dbDetail.LastLoginAt : detailToUpdate.LastLoginAt;
+            dbDetail.Notes = detailToUpdate.Notes;
+            dbDetail.SortOrder = detailToUpdate.SortOrder;
+            dbDetail.Tags = detailToUpdate.Tags;
+            dbDetail.UserName = detailToUpdate.UserName;
+            dbDetail.UserNameNormalized = detailToUpdate.UserName.ToUpperInvariant();
+
+            dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+
+            if (result)
+            {
+                ClearCache(dbDetail.EmailNormalized, dbDetail.ApiKey, dbDetail.Id, dbDetail.UserNameNormalized);
+            }
+        }
+
 
         return new MelodeeModels.OperationResult<bool>
         {
@@ -545,24 +546,31 @@ public sealed class UserService(
                 .ToArray();
         }
     }
-    
+
     /// <summary>Generate a salt.</summary>
     /// <param name="saltLength">Length of the salt to generate</param>
-    /// <param name="logRounds">The log2 of the number of rounds of hashing to apply. The work factor therefore increases as (2 ** logRounds).</param>
+    /// <param name="logRounds">
+    ///     The log2 of the number of rounds of hashing to apply. The work factor therefore increases as (2
+    ///     ** logRounds).
+    /// </param>
     /// <returns>An encoded salt value.</returns>
     public static string GenerateSalt(int saltLength = 16, int logRounds = 10)
     {
         var randomBytes = new byte[saltLength];
         RandomNumberGenerator.Create().GetBytes(randomBytes);
-    
-        var rs = new StringBuilder((randomBytes.Length * 2) + 8);
-    
+
+        var rs = new StringBuilder(randomBytes.Length * 2 + 8);
+
         rs.Append("$2a$");
-        if (logRounds < 10) rs.Append('0');
+        if (logRounds < 10)
+        {
+            rs.Append('0');
+        }
+
         rs.Append(logRounds);
         rs.Append('$');
         rs.Append(Encoding.UTF8.GetString(randomBytes).ToBase64());
-    
+
         return rs.ToString();
-    }    
+    }
 }

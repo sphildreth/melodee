@@ -1,12 +1,12 @@
 namespace Melodee.Blazor.Services;
 
 /// <summary>
-/// This is used by child pages to notify the MainLayout that it should show text or the activity spinner.
+///     This is used by child pages to notify the MainLayout that it should show text or the activity spinner.
 /// </summary>
 public sealed class MainLayoutProxyService
 {
     public bool ShowSpinner { get; set; }
-   
+
     public string Header { get; set; } = "Loading...";
 
     public event EventHandler? HeaderChanged;
@@ -25,8 +25,12 @@ public sealed class MainLayoutProxyService
     }
 
     public void NotifyHeaderChanged()
-        => HeaderChanged?.Invoke(this, EventArgs.Empty);
-    
+    {
+        HeaderChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void NotifySpinnerVisibleChangedChanged()
-        => SpinnerVisibleChanged?.Invoke(this, EventArgs.Empty);    
+    {
+        SpinnerVisibleChanged?.Invoke(this, EventArgs.Empty);
+    }
 }

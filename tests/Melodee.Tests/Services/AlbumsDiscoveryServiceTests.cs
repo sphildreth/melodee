@@ -1,4 +1,3 @@
-using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Services.Scanning;
 

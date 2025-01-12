@@ -57,7 +57,7 @@ public class JellyfinXmlDeserializer<T> where T : class, new()
                         Name = e.Element("name").Value,
                         Type = e.Element("type").Value
                     }).ToList();
-            
+
             case "ARTIST":
                 return element.Elements("artist").Select(x => x.Value).ToList();
 

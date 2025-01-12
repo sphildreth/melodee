@@ -11,10 +11,8 @@ using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Melodee.Results;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.WebUtilities;
 using Serilog;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
@@ -75,6 +73,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
                 Log.Warning("ResponseData is invalid for ApiKey [{ApiKey}]", apiKey);
                 return new EmptyResult();
             }
+
             HttpContext.Response.Headers.Append("ETag", model.ResponseData.Etag);
             etagRepository.AddEtag(model.ApiKeyId, model.ResponseData.Etag);
             return new FileContentResult((byte[])model.ResponseData.Data!, model.ResponseData.ContentType ?? "image/jpeg");
@@ -87,6 +86,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
         {
             Log.Warning(ex, "Error in image result for ApiKey [{ApiKey}]", apiKey);
         }
+
         return new EmptyResult();
     }
 
@@ -156,7 +156,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             var cookieHash = HashHelper.CreateMd5(DateTime.UtcNow.ToString(MelodeeBlazorCookieMiddleware.DateFormat) + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) ?? string.Empty;
             requiresAuth = melodeeBlazorTokenCookie != cookieHash;
         }
-        
+
         values.Add(new KeyValue("QueryString", context.HttpContext.Request.QueryString.ToString()));
         ApiRequest = new ApiRequest
         (
@@ -179,7 +179,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
                 GetRequestIp(context.HttpContext)
             )
         );
-        Console.WriteLine($"-*-> User [{ApiRequest.Username}] : { Serializer.Serialize(ApiRequest)}");
+        Console.WriteLine($"-*-> User [{ApiRequest.Username}] : {Serializer.Serialize(ApiRequest)}");
         //return base.OnActionExecutionAsync(context, next);
         await next().ConfigureAwait(false);
     }

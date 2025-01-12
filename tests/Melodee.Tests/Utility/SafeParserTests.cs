@@ -12,8 +12,11 @@ public sealed class SafeParserTests : TestsBase
     [Theory]
     [InlineData(1990, "1990-01-01")]
     [InlineData(2021, "2021-01-01")]
-    public void ValidateToLocalDate(int input, string shouldBe) => Assert.Equal(shouldBe, SafeParser.ToLocalDate(input).ToString("yyyy-MM-dd", null));
-    
+    public void ValidateToLocalDate(int input, string shouldBe)
+    {
+        Assert.Equal(shouldBe, SafeParser.ToLocalDate(input).ToString("yyyy-MM-dd", null));
+    }
+
     [Theory]
     [InlineData("02/22/1988")]
     [InlineData("02/22/88")]

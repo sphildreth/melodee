@@ -3,11 +3,10 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Microsoft.AspNetCore.Mvc;
-using ILogger = Serilog.ILogger;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class ImageController(OpenSubsonicApiService openSubsonicApiService, EtagRepository etagRepository, ISerializer serializer,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
+public class ImageController(OpenSubsonicApiService openSubsonicApiService, EtagRepository etagRepository, ISerializer serializer, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     /// <summary>
     ///     Returns an image based on id and size.
@@ -19,7 +18,7 @@ public class ImageController(OpenSubsonicApiService openSubsonicApiService, Etag
     [Route("/images/{id}/{size}")]
     public Task<IActionResult> GetImageAsync(string id, string size, CancellationToken cancellationToken = default)
     {
-        return ImageResult(id,openSubsonicApiService.GetImageForApiKeyId(id,
+        return ImageResult(id, openSubsonicApiService.GetImageForApiKeyId(id,
             size,
             ApiRequest,
             cancellationToken));

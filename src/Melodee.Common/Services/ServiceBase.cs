@@ -6,7 +6,6 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Enums;
-using Melodee.Common.MessageBus;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
@@ -32,11 +31,13 @@ namespace Melodee.Common.Services;
 public abstract class ServiceBase
 {
     public const string CacheName = "melodee";
-    
+
+    protected static TimeSpan DefaultCacheDuration = TimeSpan.FromDays(1);
+
     protected ServiceBase()
     {
     }
-    
+
     protected ServiceBase(
         ILogger logger,
         ICacheManager cacheManager,
@@ -46,13 +47,11 @@ public abstract class ServiceBase
         CacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
         ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
     }
-    
-    protected static TimeSpan DefaultCacheDuration = TimeSpan.FromDays(1);
 
     protected ILogger Logger { get; }
     protected ICacheManager CacheManager { get; }
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; }
-    
+
     protected async Task<AlbumUpdatedEvent?> ProcessExistingDirectoryMoveMergeAsync(IMelodeeConfiguration configuration, ISerializer serializer, Album albumToMove, string existingAlbumPath, CancellationToken cancellationToken = default)
     {
         var modifiedExistingDirectory = false;
@@ -193,10 +192,11 @@ public abstract class ServiceBase
         {
             return new AlbumUpdatedEvent(null, existingAlbumPath);
         }
+
         return null;
     }
-    
-    
+
+
     protected async Task<OperationResult<bool>> UpdateArtistAggregateValuesByIdAsync(int artistId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -228,16 +228,15 @@ public abstract class ServiceBase
             var result = await dbConn
                 .ExecuteAsync(sql, new { artistId })
                 .ConfigureAwait(false);
-            
-            return new OperationResult<bool>()
+
+            return new OperationResult<bool>
             {
                 Data = result > 0
-            };              
+            };
         }
-        
     }
-    
-    
+
+
     protected async Task<OperationResult<bool>> UpdateLibraryAggregateStatsByIdAsync(int libraryId, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -263,15 +262,14 @@ public abstract class ServiceBase
             var result = await dbConn
                 .ExecuteAsync(sql, new { libraryId })
                 .ConfigureAwait(false);
-            
-            return new OperationResult<bool>()
+
+            return new OperationResult<bool>
             {
                 Data = result > 0
-            };            
+            };
         }
-
     }
-    
+
 
     protected async Task<AlbumList2[]> AlbumListForArtistApiKey(Guid artistApiKey, int userId, CancellationToken cancellationToken)
     {
@@ -398,7 +396,7 @@ public abstract class ServiceBase
     }
 
     /// <summary>
-    /// Returns all albums created by reading songs and the total number of songs
+    ///     Returns all albums created by reading songs and the total number of songs
     /// </summary>
     public async Task<OperationResult<(IEnumerable<Album>, int)>> AllAlbumsForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,

@@ -1,5 +1,4 @@
-﻿@using Melodee.Blazor.Services
-<h1>@_message</h1>
+﻿<h1>@_message</h1>
 
 @code {
     [Inject] private IAuthService AuthService { get; set; } = null!;
@@ -19,4 +18,5 @@
             NavigationManager.NavigateTo($"/account/login?returnUrl={_returnUrl}", true);
         }
     }
+
 }

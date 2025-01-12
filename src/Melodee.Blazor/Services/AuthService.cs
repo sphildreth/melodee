@@ -14,7 +14,6 @@ public class AuthService(
     IConfiguration configuration)
     : IAuthService
 {
-
     private const string AuthTokenName = "melodee_auth_token";
     private ClaimsPrincipal? _currentUser;
 
@@ -35,13 +34,13 @@ public class AuthService(
     }
 
     public bool IsAdmin => CurrentUser.IsInRole(RoleNameRegistry.Administrator);
-    
+
     public bool IsLoggedIn => CurrentUser.Identity?.IsAuthenticated ?? false;
 
     public async Task LogoutAsync()
     {
         CurrentUser = new ClaimsPrincipal();
-        await localStorageService.RemoveItemAsync(AuthTokenName);     
+        await localStorageService.RemoveItemAsync(AuthTokenName);
     }
 
 
@@ -82,6 +81,7 @@ public class AuthService(
                 identity = new ClaimsIdentity();
             }
         }
+
         var user = new ClaimsPrincipal(identity);
         CurrentUser = user;
         return result;

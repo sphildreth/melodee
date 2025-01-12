@@ -12,6 +12,5 @@ public class IdGeneratorTests
         var id2 = IdGenerator.CreateId;
         Assert.True(id2 > 0);
         Assert.NotEqual(id, id2);
-        
     }
 }

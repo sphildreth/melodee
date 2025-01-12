@@ -29,7 +29,7 @@ public class ImageConversionTests
             Assert.True(convertedFileInfo.Exists);
         }
     }
-    
+
     [Fact]
     public async Task ValidateConvertingPngToJpgAsync()
     {

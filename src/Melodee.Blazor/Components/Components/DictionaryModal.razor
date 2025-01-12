@@ -9,10 +9,10 @@
         <tbody>
         @foreach (var kp in ModelDictionary)
         {
-        <tr>
-            <th scope="row">@kp.Key</th>
-            <td>@kp.Value?.ToString()</td>
-        </tr>
+            <tr>
+                <th scope="row">@kp.Key</th>
+                <td>@kp.Value?.ToString()</td>
+            </tr>
         }
         </tbody>
     </table>

@@ -1,7 +1,5 @@
-@using Ardalis.GuardClauses
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Services.SearchEngines
-
 @inject SettingService SettingService
 @inject AlbumImageSearchEngineService AlbumImageSearchEngineService
 @inject ArtistSearchEngineService ArtistImageSearchEngineService
@@ -14,7 +12,8 @@
         <RadzenColumn Size="12">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center"
                          JustifyContent="JustifyContent.End" Gap="0.5rem">
-                <RadzenSwitch @bind-Value="@_doDeleteExistingImages" Name="@($"Delete other { SearchType.ToString()} images")"/>
+                <RadzenSwitch @bind-Value="@_doDeleteExistingImages"
+                              Name="@($"Delete other {SearchType.ToString()} images")"/>
                 <RadzenButton Icon="cancel" Text="Cancel" Click="@CancelClicked"/>
                 <RadzenButton Icon="save" Text="Select" Click="@SelectClicked"/>
             </RadzenStack>
@@ -48,7 +47,8 @@
                 @foreach (var result in _results)
                 {
                     <div class="@(_selectedResult == result ? "selected" : string.Empty) cover-search-image-container">
-                        <img @onclick="() => _selectedResult = result" class="rounded cover-search-image" src="@result.Url" alt="@result.Title"/>
+                        <img @onclick="() => _selectedResult = result" class="rounded cover-search-image"
+                             src="@result.Url" alt="@result.Title"/>
                     </div>
                 }
             </div>
@@ -66,10 +66,11 @@
                 @*     Error=@(args => OnError(args, "FileInput")) *@
                 @*     InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "select file" } })"/> *@
 
-                <InputFile OnChange="@SingleUpload" />
+                <InputFile OnChange="@SingleUpload"/>
                 @if (_imageBytes?.Length > 0)
                 {
-                    <img style="width:100px;height: auto;" alt="Selected image" src="data:image;base64, @Convert.ToBase64String(_imageBytes)"/>
+                    <img style="width:100px;height: auto;" alt="Selected image"
+                         src="data:image;base64, @Convert.ToBase64String(_imageBytes)"/>
                 }
 
                 @* <RadzenFileInput *@
@@ -107,7 +108,7 @@
 
     private async Task SingleUpload(InputFileChangeEventArgs e)
     {
-        await using (MemoryStream ms = new MemoryStream())
+        await using (var ms = new MemoryStream())
         {
             await e.File.OpenReadStream().CopyToAsync(ms);
             _imageBytes = ms.ToArray();
@@ -122,6 +123,7 @@
         {
             await OnUpdateCallback.InvokeAsync(null);
         }
+
         if (OnUpdateCallback.HasDelegate && _selectedResult != null)
         {
             await OnUpdateCallback.InvokeAsync(_selectedResult);
@@ -140,26 +142,26 @@
         {
             if (SearchType == ImageSearchType.Artist)
             {
-                _results = (await ArtistImageSearchEngineService.DoSearchAsync(new ArtistQuery()
-                {
-                    Name = SearchValues.First().Value ?? string.Empty
-                }, _maxResults))
-                .Data
-                .Where(x => x.ImageUrl != null)
-                .Select(x => new ImageSearchResult(x.ImageUrl!, x.Name, _doDeleteExistingImages))
-                .ToArray();
+                _results = (await ArtistImageSearchEngineService.DoSearchAsync(new ArtistQuery
+                    {
+                        Name = SearchValues.First().Value ?? string.Empty
+                    }, _maxResults))
+                    .Data
+                    .Where(x => x.ImageUrl != null)
+                    .Select(x => new ImageSearchResult(x.ImageUrl!, x.Name, _doDeleteExistingImages))
+                    .ToArray();
             }
             else
             {
                 _results = (await AlbumImageSearchEngineService.DoSearchAsync(new AlbumQuery
-                {
-                    Artist = SearchValues.OrderBy(x => x.SortOrder).First().Value,
-                    Year = SafeParser.ToNumber<int>(SearchValues.OrderBy(x => x.SortOrder).Skip(1).First().Value),
-                    Name = SearchValues.OrderBy(x => x.SortOrder).Skip(2).First().Value,
-                }, _maxResults))
-                .Data
-                .Select(x => new ImageSearchResult(x.UrlValue, x.Title ?? string.Empty, _doDeleteExistingImages))
-                .ToArray();
+                    {
+                        Artist = SearchValues.OrderBy(x => x.SortOrder).First().Value,
+                        Year = SafeParser.ToNumber<int>(SearchValues.OrderBy(x => x.SortOrder).Skip(1).First().Value),
+                        Name = SearchValues.OrderBy(x => x.SortOrder).Skip(2).First().Value
+                    }, _maxResults))
+                    .Data
+                    .Select(x => new ImageSearchResult(x.UrlValue, x.Title ?? string.Empty, _doDeleteExistingImages))
+                    .ToArray();
             }
 
 

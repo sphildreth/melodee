@@ -19,13 +19,13 @@ public sealed record ArtistDataInfo(
     string Tags)
 {
     public object? State { get; set; }
-    
-    public static string InfoLineTitle => $"Album Count | Song Count";
 
-    public string InfoLineData => $"{AlbumCount.ToStringPadLeft(4)} | {SongCount.ToStringPadLeft(5)}";       
-    
+    public static string InfoLineTitle => "Album Count | Song Count";
+
+    public string InfoLineData => $"{AlbumCount.ToStringPadLeft(4)} | {SongCount.ToStringPadLeft(5)}";
+
     public static ArtistDataInfo BlankArtistDataInfo =>
-        new ArtistDataInfo(0,
+        new(0,
             Guid.Empty,
             false,
             0,

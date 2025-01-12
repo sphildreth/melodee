@@ -12,10 +12,17 @@ public static class ArtistDataInfoExtensions
             Name = artist.Directory
         };
     }
+    
+    public static string DetailUrl(this ArtistDataInfo artistDataInfo)
+        => $"/data/artist/{artistDataInfo.ApiKey}";    
 
     public static string ImageUrl(this ArtistDataInfo artistDataInfo, int? size = null)
-        => $"/images/{artistDataInfo.ToApiKey()}/{ size ?? 80}";
-    
+    {
+        return $"/images/{artistDataInfo.ToApiKey()}/{size ?? 80}";
+    }
+
     public static string ToApiKey(this ArtistDataInfo artist)
-        => $"artist{OpenSubsonicServer.ApiIdSeparator}{artist.ApiKey}";
+    {
+        return $"artist{OpenSubsonicServer.ApiIdSeparator}{artist.ApiKey}";
+    }
 }

@@ -66,7 +66,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var melodeeConfigurationFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
-            
+
             var melodeeConfiguration = await melodeeConfigurationFactory.GetConfigurationAsync().ConfigureAwait(false);
             var imageValidator = new ImageValidator(melodeeConfiguration);
 

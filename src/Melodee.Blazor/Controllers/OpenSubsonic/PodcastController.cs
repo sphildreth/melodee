@@ -9,7 +9,7 @@ namespace Melodee.Blazor.Controllers.OpenSubsonic;
 /// <summary>
 ///     No plans on implementing Podcasts in Melodee.
 /// </summary>
-public class PodcastController(ISerializer serializer, EtagRepository etagRepository,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
+public class PodcastController(ISerializer serializer, EtagRepository etagRepository, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     [HttpGet]
     [HttpPost]

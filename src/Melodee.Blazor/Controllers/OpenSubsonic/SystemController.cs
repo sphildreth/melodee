@@ -3,11 +3,10 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Microsoft.AspNetCore.Mvc;
-using ILogger = Serilog.ILogger;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class SystemController(EtagRepository etagRepository, ISerializer serializer, OpenSubsonicApiService openSubsonicApiService,IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
+public class SystemController(EtagRepository etagRepository, ISerializer serializer, OpenSubsonicApiService openSubsonicApiService, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     /// <summary>
     ///     List the OpenSubsonic extensions supported by this server.

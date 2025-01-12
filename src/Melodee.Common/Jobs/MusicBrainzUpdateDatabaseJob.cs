@@ -7,7 +7,6 @@ using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Services;
-using Melodee.Common.Services.Interfaces;
 using Quartz;
 using Serilog;
 using Serilog.Events;

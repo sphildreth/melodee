@@ -1,7 +1,4 @@
 using Melodee.Common.Models;
-using Melodee.Common.Models.Extensions;
-using Melodee.Common.Plugins.MetaData.Song;
-using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Services.Scanning;
 using Serilog;
 

@@ -58,7 +58,7 @@ public class ConfigurationSetCommand : AsyncCommand<ConfigurationSetSetting>
             var config = await settingService.GetAsync(settings.Key).ConfigureAwait(false);
             if (!config.IsSuccess || config.Data == null)
             {
-                AnsiConsole.MarkupLine($":warning: Unknown configuration key [{ settings.Key}]");
+                AnsiConsole.MarkupLine($":warning: Unknown configuration key [{settings.Key}]");
                 return 1;
             }
 
@@ -77,6 +77,7 @@ public class ConfigurationSetCommand : AsyncCommand<ConfigurationSetSetting>
                 AnsiConsole.MarkupLine(":party_popper: Configuration updated.");
                 return 0;
             }
+
             return 1;
         }
     }

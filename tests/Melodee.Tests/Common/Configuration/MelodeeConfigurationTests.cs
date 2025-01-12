@@ -20,7 +20,7 @@ public class MelodeeConfigurationTests
         var configuration = TestsBase.NewPluginsConfiguration();
         configuration.SetSetting(SettingRegistry.ProcessingIgnoredArticles, "THE|EL|LA|LOS|LAS|LE|LES|OS|AS|O|A");
         Assert.Equal(shouldBe, configuration.RemoveUnwantedArticles(input));
-        
+
         configuration.SetSetting(SettingRegistry.ProcessingIgnoredArticles, string.Empty);
         Assert.Equal(input.Nullify(), configuration.RemoveUnwantedArticles(input));
     }

@@ -20,7 +20,7 @@ public sealed record SongDataInfo(
     Instant CreatedAt,
     string Tags)
 {
-    public static string InfoLineTitle => $"Song Number | Duration";
+    public static string InfoLineTitle => "Song Number | Duration";
 
-    public string InfoLineData => $"{ SongNumber.ToStringPadLeft(3)} | {Duration.ToFormattedDateTimeOffset()}";    
+    public string InfoLineData => $"{SongNumber.ToStringPadLeft(3)} | {Duration.ToFormattedDateTimeOffset()}";
 }

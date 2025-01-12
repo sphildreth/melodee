@@ -30,7 +30,7 @@ public class CookieStorageAccessor(IJSRuntime jsRuntime)
     {
         if (_accessorJsRef.IsValueCreated is false)
         {
-            _accessorJsRef = new(await jsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/CookieStorageAccessor.js"));
+            _accessorJsRef = new Lazy<IJSObjectReference>(await jsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/CookieStorageAccessor.js"));
         }
     }
 
@@ -42,4 +42,3 @@ public class CookieStorageAccessor(IJSRuntime jsRuntime)
         }
     }
 }
-

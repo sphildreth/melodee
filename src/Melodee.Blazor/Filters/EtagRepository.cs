@@ -12,6 +12,7 @@ public class EtagRepository
         {
             return _eTags.TryAdd(apiKeyId!, etag!);
         }
+
         return false;
     }
 
@@ -21,6 +22,7 @@ public class EtagRepository
         {
             return _eTags.ContainsKey(apiKeyId!) && _eTags[apiKeyId!] == etag;
         }
+
         return false;
     }
 }

@@ -8,7 +8,7 @@ public sealed class Register
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required(ErrorMessage = "Username is required")]
     public string? Username { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required(ErrorMessage = "Email is required")]
     [DataType(DataType.EmailAddress)]
