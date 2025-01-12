@@ -51,7 +51,8 @@ public sealed class MediaEditService(
         _imageConvertor = new ImageConvertor(_configuration);
         _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
 
-        _directoryLibrary = (await libraryService.GetLibraryAsync(token)).Data.Path;
+        // TODO this needs to support multiple storage libraries
+        _directoryLibrary = (await libraryService.GetStorageLibrariesAsync(token)).Data.OrderBy(x => x.SortOrder).First().Path;
 
         await albumDiscoveryService.InitializeAsync(configuration, token).ConfigureAwait(false);
 

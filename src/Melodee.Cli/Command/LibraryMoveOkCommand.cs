@@ -17,7 +17,7 @@ namespace Melodee.Cli.Command;
 
 public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, LibraryMoveOkSettings settingses)
+    public override async Task<int> ExecuteAsync(CommandContext context, LibraryMoveOkSettings settings)
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -85,10 +85,16 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
                 }
             };
 
-            var result = await libraryService.MoveAlbumsFromLibraryToLibrary(settingses.LibraryName,
-                    settingses.ToLibraryName,
+            if (settings.LibraryName == settings.ToLibraryName)
+            {
+                AnsiConsole.MarkupLine("[red]Source and destination library are the same.[/]");
+                return 1;
+            }
+
+            var result = await libraryService.MoveAlbumsFromLibraryToLibrary(settings.LibraryName,
+                    settings.ToLibraryName,
                     b => b.Status == AlbumStatus.Ok,
-                    settingses.Verbose)
+                    settings.Verbose)
                 .ConfigureAwait(false);
 
             if (!result.IsSuccess)

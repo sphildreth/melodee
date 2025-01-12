@@ -60,7 +60,7 @@ public abstract class TestsBase
         };
     }    
 
-    public static OperationResult<Library> TestLibrary()
+    public static OperationResult<Library> TestStorageLibrary()
     {
         return new OperationResult<Library>
         {

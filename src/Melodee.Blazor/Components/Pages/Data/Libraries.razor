@@ -1,5 +1,6 @@
 @page "/data/libraries"
 @inherits MelodeeComponentBase
+@using Melodee.Blazor.Extensions.Data
 @using Melodee.Common.Filtering
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using Library = Melodee.Common.Data.Models.Library
@@ -100,7 +101,14 @@
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Library.Path)" Title="Path"/>
-                <RadzenDataGridColumn Property="@nameof(Library.TypeValue)" Title="Type" Width="80px"/>
+                <RadzenDataGridColumn Property="@nameof(Library.TypeValue)" Title="Type" Width="100px">
+                    <Template Context="data">
+                        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
+                            <RadzenIcon Icon="@data.LibraryTypeIconAndTitle().Item1" title="@data.LibraryTypeIconAndTitle().Item2"/>
+                            <RadzenText Text="@(data.TypeValue.ToString())"/>
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Library.ArtistCount)" Title="Artists" Width="80px"/>
                 <RadzenDataGridColumn Property="@nameof(Library.AlbumCount)" Title="Albums" Width="80px"/>
                 <RadzenDataGridColumn Property="@nameof(Library.SongCount)" Title="Songs" Width="80px"/>

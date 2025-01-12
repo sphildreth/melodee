@@ -1,9 +1,10 @@
-﻿using Melodee.Common.Enums;
+﻿using System.Text.RegularExpressions;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Utility;
 
-public static class ImageHelper
+public static partial class ImageHelper
 {
     private static string[] ArtistImageFileNames =>
     [
@@ -25,10 +26,12 @@ public static class ImageHelper
         "ART",
         "BIG",
         "COVER",
+        "COVERS",
         "CVR",
         "FOLDER",
         "FRONT",
-        "SCAN"
+        "SCAN",
+        "SCANS"
     ];
 
     private static string[] AlbumSecondaryImageFileNames =>
@@ -53,6 +56,41 @@ public static class ImageHelper
     {
         return ["*.bmp", "*.jpeg", "*.jpe", "*.jpg", "*.png", "*.gif", "*.webp"];
     }
+    
+    public static string[]? NormalizedImageTypesFromFilename(string fileName)
+    {
+        string[] filePartsToMatch;
+
+        var fn = Path.GetFileNameWithoutExtension(fileName);        
+        if (ImageFileNameSeperatorsRegex().IsMatch(fileName)) 
+        {
+            filePartsToMatch = fn.Replace('-', ' ').Replace('_', ' ').Split(' ');
+        }
+        else
+        {
+            filePartsToMatch = [fn];
+        }
+
+        if (filePartsToMatch.Length > 0)
+        {
+            var result = new List<string>();
+            foreach (var filePartToMatch in filePartsToMatch)
+            {
+                var n = filePartToMatch.ToNormalizedString() ?? filePartToMatch;
+                if (ArtistImageFileNames.Any(x => x == (n.ToNormalizedString() ?? n)))
+                {
+                    result.Add(n.ToNormalizedString() ?? n);
+                }
+                if (AlbumImageFileNames.Any(x => x == (n.ToNormalizedString() ?? n)))
+                {
+                    result.Add(n.ToNormalizedString() ?? n);
+                }                
+            }
+
+            return result.Count > 0 ? result.ToArray() : null;
+        }
+        return null;
+    }    
 
     private static string[] GetFiles(string? path,
         string[]? patterns = null,
@@ -135,17 +173,20 @@ public static class ImageHelper
 
         if (FileHelper.IsFileImageType(fileInfo.Extension))
         {
-            var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
+            var normalizedName = Path.GetFileNameWithoutExtension(fileInfo.Name).ToNormalizedString() ?? fileInfo.Name;
             if (AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 return false;
             }
 
-            if (AlbumImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit)).Nullify();
+            var numberInName = SafeParser.ToNumber<int>(nameDigits);            
+            var nt = NormalizedImageTypesFromFilename(fileInfo.Name);
+            var ntMatches = AlbumImageFileNames.Count(x => nt?.Contains(x) ?? false);
+
+            if (ntMatches > 0)
             {
-                var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
-                var numberInName = SafeParser.ToNumber<int>(nameDigits);
-                // Primary image is 00 and 01, sometimes images have year in them, so if 00 or 01 or greater then minimum year
+                // Primary image is 00 and 01, sometimes images have year in them, so if 00 or 01 or greater than minimum year
                 return numberInName is > 1860 or < 2;
             }
         }
@@ -239,4 +280,7 @@ public static class ImageHelper
 
         return result.OrderBy(x => x.Name);
     }
+
+    [GeneratedRegex(@".*(-| |_)+.*", RegexOptions.IgnoreCase, "en-US")]
+    private static partial Regex ImageFileNameSeperatorsRegex();
 }

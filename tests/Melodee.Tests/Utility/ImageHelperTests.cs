@@ -1,5 +1,6 @@
 ﻿using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Utility;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 
 namespace Melodee.Tests.Utility;
 
@@ -58,7 +59,14 @@ public sealed class ImageHelperTests
     [InlineData("Booklet2-Scans.jpg",  false)]
     [InlineData("Scan_06-Covers.jpg",  false)]
     [InlineData("Back-Scans.jpg",  false)]
+    [InlineData("Back Cover.jpg",  false)]
+    [InlineData("Inner Cover.jpg",  false)]
+    [InlineData("Proof.jpg",  false)]  
+    [InlineData("mY nAME is BOB & here iS my proof image.jpg",  false)]
     [InlineData("02-cover.jpg",  false)]
+    [InlineData("artist.jpg",  false)]
+    [InlineData("artist 000.jpg",  false)]
+    [InlineData("artist 1.jpg",  false)]
     [InlineData("Mazzy Star-ghost highway-remastered-CD.jpg",  false)]
     [InlineData("Mazzy Star-ghost highway-remastered-booklet-front.jpg",  false)]
     [InlineData("Front-Scans.jpg",  true)]
@@ -80,6 +88,9 @@ public sealed class ImageHelperTests
     [InlineData("Front-Scans.jpg",  false)]
     [InlineData("img001-Scans.jpg",  false)]
     [InlineData("Kim Wilde - You Came (2006) (Cover).jpg", false)]
+    [InlineData("artist.jpg",  false)]
+    [InlineData("artist 000.jpg",  false)]
+    [InlineData("artist 1.jpg",  false)]    
     [InlineData("CD-Scans.jpg",  true)]    
     [InlineData("02-cover.jpg",  true)]    
     [InlineData("Back-Scans.jpg",  true)]
@@ -91,7 +102,34 @@ public sealed class ImageHelperTests
     [InlineData("Covers-002.jpg", true)]
     [InlineData("Mazzy Star-ghost highway-remastered-CD.jpg",  true)]
     [InlineData("Mazzy Star-ghost highway-remastered-booklet-front.jpg",  true)]
-    public void FileIsAlbumSecondaryImage(string fileName, bool expected) => Assert.Equal(expected, ImageHelper.IsAlbumSecondaryImage(new FileInfo(fileName)));    
+    public void FileIsAlbumSecondaryImage(string fileName, bool expected) => Assert.Equal(expected, ImageHelper.IsAlbumSecondaryImage(new FileInfo(fileName)));
+
+    [Fact]
+    public void ValidateImageFileNameParts()
+    {
+        var parts = "Back Cover.jpg";
+        var pp = ImageHelper.NormalizedImageTypesFromFilename(parts);
+        Assert.NotNull(pp);
+        Assert.Contains(pp, x => x == "COVER");
+        Assert.True(pp.Length == 1);
+        
+        parts = "Proof.jpg";
+        pp = ImageHelper.NormalizedImageTypesFromFilename(parts);
+        Assert.Null(pp);
+
+        parts = "Cover.jpg";
+        pp = ImageHelper.NormalizedImageTypesFromFilename(parts);
+        Assert.NotNull(pp);
+        Assert.Contains(pp, x => x == "COVER");
+        Assert.True(pp.Length == 1);        
+        
+        parts = "Artist 01.jpg";
+        pp = ImageHelper.NormalizedImageTypesFromFilename(parts);
+        Assert.NotNull(pp);
+        Assert.Contains(pp, x => x == "ARTIST");
+        Assert.True(pp.Length == 1);
+
+    }
     
     [Theory]
     [InlineData("logo.jpg",  false)]

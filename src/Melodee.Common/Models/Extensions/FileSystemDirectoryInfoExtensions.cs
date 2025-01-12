@@ -228,7 +228,9 @@ public static class FileSystemDirectoryInfoExtensions
         }
 
         highestNumberFound++;
-        return (Path.Combine(fileSystemDirectoryInfo.FullName(), $"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maxNumberLength)}-{imageType}.jpg"), highestNumberFound);
+        return (Path.Combine(fileSystemDirectoryInfo.FullName(),
+                $"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maxNumberLength)}-{imageType}.jpg"),
+            highestNumberFound);
     }
 
     public static IEnumerable<FileInfo> AllFileImageTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)

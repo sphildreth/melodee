@@ -353,12 +353,11 @@
         var configuration = await ConfigurationFactory.GetConfigurationAsync();
         ToastTime = configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
 
-        var library = await LibraryService.GetLibraryAsync();
-        _libraries =
-        [
-            library.Data
-        ];
-        _libaryName = library.Data.Name;
+        var storageLibrariesResult = await LibraryService.GetStorageLibrariesAsync();
+        _libraries = storageLibrariesResult.Data.ToList();
+
+        // TODO when more than one storage library a
+        _libaryName = _libraries.First().Name;
 
         if (ApiKey != Guid.Empty)
         {

@@ -3,6 +3,8 @@ using System.Net;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
+using Melodee.Common.Enums;
 using Melodee.Common.MessageBus;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
@@ -289,7 +291,10 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
                 It.Is<CancellationToken>(_ => true)))
             .ReturnsAsync(TestsBase.TestLibraries()); 
         mock.Setup(f
-            => f.GetLibraryAsync(It.Is<CancellationToken>(_ => true))).ReturnsAsync(TestsBase.TestLibrary());
+            => f.GetStorageLibrariesAsync(It.Is<CancellationToken>(_ => true))).ReturnsAsync(new OperationResult<Library[]>
+        {
+            Data = TestsBase.TestLibraries().Data.Where(x => x.TypeValue == LibraryType.Storage).ToArray()
+        });
         mock.Setup(f
             => f.GetStagingLibraryAsync(It.Is<CancellationToken>(_ => true))).ReturnsAsync(TestsBase.TestStagingLibrary());         
         return mock.Object;        

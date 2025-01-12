@@ -1,5 +1,6 @@
 @page "/data/library/{ApiKey:guid}"
 @inherits MelodeeComponentBase
+@using Melodee.Blazor.Extensions.Data
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
 @using Melodee.Common.Filtering
@@ -7,7 +8,9 @@
 @using Melodee.Common.Services.Scanning
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using Library = Melodee.Common.Data.Models.Library
+@using IScheduler = Quartz.IScheduler
 
+@inject IScheduler Scheduler
 @inject ILogger Logger
 @inject DialogService DialogService
 @inject IMelodeeConfigurationFactory ConfigurationFactory
@@ -22,13 +25,16 @@
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
     <RadzenBreadCrumbItem Path="/data/libraries" Text="Libraries"/>
-    <RadzenBreadCrumbItem Icon="library_music" Text="@_library.Name"/>
+    <RadzenBreadCrumbItem Icon="@_library.LibraryTypeIconAndTitle().Item1" Text="@_library.Name"/>
 </RadzenBreadCrumb>
 
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="@_library.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+            <RadzenText TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0">
+                <RadzenIcon Icon="@_library.LibraryTypeIconAndTitle().Item1" title="@_library.LibraryTypeIconAndTitle().Item2"/>
+                @(_library.Name)
+            </RadzenText>
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
             <RadzenStack
@@ -52,13 +58,19 @@
                 }
                 <RadzenButton Icon="delete_sweep" Visible="!_library.IsLocked" ButtonStyle="ButtonStyle.Danger"
                               Text="Purge" title="Delete everything in the library. BEWARE!" Click="@PurgeButtonClick"/>
-                @* <RadzenButton Icon="update" Visible="!_library.IsLocked" Text="Scan" *@
-                @*               title="Run scan job on this library." Click="@ScanButtonClick"/> *@
-                <RadzenSplitButton Click="@ScanSplitButtonClick" Text="Scan" ButtonStyle="ButtonStyle.Secondary">
-                    <ChildContent>
-                        <RadzenSplitButtonItem Text="Force" Value="2" />
-                    </ChildContent>
-                </RadzenSplitButton>
+                @if (_library.TypeValue != LibraryType.Storage)
+                {
+                    <RadzenSplitButton Icon="memory" title="Process media files into Melodee media json file."  Click="@ProcessButtonClick" Text="Process" ButtonStyle="ButtonStyle.Secondary">
+                        <ChildContent>
+                            <RadzenSplitButtonItem Text="Force" Value="2"/>
+                        </ChildContent>
+                    </RadzenSplitButton>
+                }
+                else
+                {
+                    <RadzenButton Icon="database" Text="Scan" ButtonStyle="ButtonStyle.Warning"
+                                  title="Scan Melodee media json files and update database data." Click="@ScanButtonClick"/>
+                }
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -75,7 +87,7 @@
                             @context.Text
                         </Template>
                     </RadzenTreeItem>
-                    <RadzenTreeItem Text="Scan History">
+                    <RadzenTreeItem Text="@($"{ (_library.TypeValue == LibraryType.Storage ? "Scan" : "Process") } History")">
                         <Template>
                             <RadzenIcon Icon="history"/>
                             @context.Text
@@ -379,15 +391,33 @@
         _showItem = arg.Text == null || arg.Text == "Overview" ? ShowItem.Overview : ShowItem.ScanHistory;
     }
 
-    private async Task ScanSplitButtonClick(RadzenSplitButtonItem? arg)
+    private async Task ScanButtonClick()
     {
-        var confirm = await DialogService.Confirm("<p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
+        var confirm = await DialogService.Confirm("<p>Scanning a library updates database information from Melodee data files.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
         if (confirm ?? false)
         {
-            var force = arg?.Text == "Force";
             MainLayoutProxyService.ToggleSpinnerVisible();
             try
             {
+                await Scheduler.TriggerJob(JobKeyRegistry.LibraryProcessJobJobKey);
+                NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = true}, "started library scan job", ToastTime));
+            }
+            finally
+            {
+                MainLayoutProxyService.ToggleSpinnerVisible();
+            }
+        }
+    }
+
+    private async Task ProcessButtonClick(RadzenSplitButtonItem? arg)
+    {
+        var confirm = await DialogService.Confirm("<p>Processing a library creates Melodee data files with media found. This could overwrite Melodee data files, images and songs.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
+        if (confirm ?? false)
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+            try
+            {
+                var force = arg?.Text == "Force";
                 await DirectoryProcessorService.InitializeAsync();
                 var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), force ? null : _library.LastScanAt);
                 NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", ToastTime));
