@@ -1,0 +1,41 @@
+@page "/about"
+
+@inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
+
+<PageTitle>About</PageTitle>
+
+<RadzenStack Orientation="Orientation.Vertical">
+    <RadzenText TextStyle="TextStyle.H4">
+        @_siteTitle
+    </RadzenText>
+    <RadzenCard>
+        <RadzenStack>
+            <dl>
+                @foreach (var serverStat in _serverStats.OrderBy(x => x.Key))
+                {
+                    <dt>@serverStat.Key</dt>
+                    <dd>@((MarkupString)(serverStat.Value ?? string.Empty))</dd>
+                }
+            </dl>
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+
+    string _siteTitle = string.Empty;
+    readonly List<KeyValue> _serverStats = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        var configuration = await MelodeeConfigurationFactory.GetConfigurationAsync();
+        _siteTitle = configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? string.Empty;
+
+        _serverStats.Add(new KeyValue("API Version", configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? string.Empty));
+        _serverStats.Add(new KeyValue("Melodee", "Melodee music system <a href=\"https://github.com/sphildreth/melodee\">GitHub</a>"));
+        _serverStats.Add(new KeyValue("UI Version", typeof(Program).Assembly.GetName().Version?.ToString() ?? string.Empty));
+    }
+
+}

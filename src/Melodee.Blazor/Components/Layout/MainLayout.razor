@@ -84,7 +84,14 @@
                         <RadzenPanelMenuItem Text="Jobs" Path="/admin/jobs" Icon="checklist"/>
                         <RadzenPanelMenuItem Text="Settings" Path="/admin/settings" Icon="settings"/>
                     </RadzenPanelMenuItem>
-
+                    <RadzenPanelMenuItem Text="About" Path="/about">
+                        <Template>
+                            <RadzenLink Path="/about">
+                                <RadzenIcon Icon="info" IconStyle="IconStyle.Dark"/>
+                                About
+                            </RadzenLink>
+                        </Template>
+                    </RadzenPanelMenuItem>
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody Style="margin: 10px; padding:3px;">
@@ -150,13 +157,15 @@
                 NavigationManager.Refresh();
             }
 
-            _siteTitle = (await MelodeeConfigurationFactory.GetConfigurationAsync()).GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? string.Empty;
-
+            var configuration = await MelodeeConfigurationFactory.GetConfigurationAsync();
+            _siteTitle = configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? string.Empty;
             _mediaLibraryInfos = (await LibraryService.ListMediaLibrariesAsync())
                 .Data
                 .Where(x => x.TypeValue is LibraryType.Inbound or LibraryType.Staging)
                 .Select(x => new MediaLibraryInfo(x.Name, $"/media/library/{x.ApiKey}"))
                 .ToArray();
+
+
         }
     }
 
