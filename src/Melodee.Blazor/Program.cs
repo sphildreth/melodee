@@ -60,6 +60,7 @@ builder.Services.AddAntiforgery(opt =>
 
 builder.Services.AddInMemoryEvent<UserLoginEvent, UserLoginEventHandler>();
 builder.Services.AddInMemoryEvent<AlbumUpdatedEvent, AlbumUpdatedEventHandler>();
+builder.Services.AddInMemoryEvent<SearchHistoryEvent, SearchHistoryEventHandler>();
 
 builder.Services.AddRadzenComponents();
 

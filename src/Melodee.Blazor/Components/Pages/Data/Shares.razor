@@ -1,0 +1,219 @@
+@page "/data/shares"
+
+@inherits MelodeeComponentBase
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Filtering
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
+@using Share = Melodee.Common.Data.Models.Share
+
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject ILogger Logger
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject ShareService ShareService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject TooltipService TooltipService
+@inject NavigationManager NavigationManager
+@inject DefaultImages DefaultImages
+
+<PageTitle>Shares</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Icon="share" Text="Shares"/>
+</RadzenBreadCrumb>
+
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="Shares" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenButton Icon="delete" Disabled="!_selectedShares.Any()" Text="Delete"
+                              Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <DebounceInput class="rz-textbox rz-w-100"
+                   autocomplete="off"
+                   @bind-Value="@_debounceInputValue"
+                   @bind-Value:event="OnInput"
+                   DebounceTime="800"
+                   MinLength="3"
+                   OnValueChanged="@DoSearchAsync"
+                   ForceNotifyByEnter="true"
+                   ForceNotifyOnBlur="true"/>
+    <RadzenRow>
+        <RadzenDataGrid
+            @ref="_grid"
+            style="height: 500px;"
+            IsLoading="@_isLoading"
+            Count="@_count"
+            Data="@_shares"
+            LoadData="@LoadData"
+            AllowSorting="true"
+            AllowFiltering="true"
+            AllowRowSelectOnRowClick="false"
+            AllowPaging="true"
+            Page="OnPage"
+            PageSize="DefaultPageSize"
+            PagerHorizontalAlign="HorizontalAlign.Center"
+            ShowPagingSummary="true"
+            PageSizeOptions="@PageSizeOptions"
+            PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
+            ColumnWidth="200px"
+            SelectionMode="DataGridSelectionMode.Multiple"
+            @bind-Value="@_selectedShares">
+            <Columns>
+                <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox
+                            TabIndex="-1"
+                            TriState="false"
+                            TValue="bool?"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select all items" } })"
+                            Value="@(_selectedShares.Any() != true ? false : !_shares.All(i => _selectedShares.Contains(i)) ? null : _shares.Any(i => _selectedShares.Contains(i)))"
+                            Change="@(args => _selectedShares = args == true ? _selectedShares.ToList() : [])"/>
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)"
+                                    MouseEnter="@(args => ShowTooltip(args, "Share is locked. Locked shares cannot be deleted."))"/>
+                        <RadzenCheckBox
+                            TabIndex="-1"
+                            TriState="false"
+                            Value="@(_selectedShares.Contains(data))"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select item" } })"
+                            Change="@(_ => { _grid.SelectRow(data); })"
+                            Visible="@(!data.IsLocked)"
+                            TValue="bool"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Share.CreatedAt)" Title="Created" Filterable="false"
+                                      Width="120px">
+                    <Template Context="data">
+                        <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Share.Tags)" Title="Tags" Width="100px">
+                    <Template Context="data">
+                        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
+                            @foreach (var name in data.Tags?.ToTags() ?? [])
+                            {
+                                <RadzenBadge IsPill="true" BadgeStyle="BadgeStyle.Primary" Text="@name"/>
+                            }
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+
+    RadzenDataGrid<Share> _grid = null!;
+    int _count;
+    IEnumerable<Share> _shares = null!;
+    bool _isLoading;
+    int _currentPage = 1;
+    IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
+    IList<Share> _selectedShares = [];
+
+    string _debounceInputValue = "";
+
+    void OnPage(PagerEventArgs args)
+    {
+        _currentPage = args.PageIndex + 1;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        _isLoading = true;
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            Dictionary<string, string>? sorting = null;
+            if (args.Sorts.Any())
+            {
+                sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
+            }
+
+            FilterOperatorInfo[]? filters = null;
+            if (_debounceInputValue.Nullify() != null)
+            {
+                filters =
+                [
+                    new FilterOperatorInfo(nameof(Share.Description), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
+                ];
+            }
+            else if (args.Filters.Any())
+            {
+                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
+                        x.FilterValue))
+                    .ToArray();
+            }
+
+            var result = await ShareService.ListAsync(new PagedRequest
+            {
+                FilterBy = filters,
+                Page = _currentPage,
+                PageSize = SafeParser.ToNumber<short>(args.Top),
+                OrderBy = sorting
+            });
+            _shares = result.Data;
+            _count = SafeParser.ToNumber<int>(result.TotalCount);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Loading Shares");
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+
+        _isLoading = false;
+    }
+
+    private void AddButtonClick()
+    {
+        NavigationManager.NavigateTo($"/data/useredit/{Guid.Empty}");
+    }
+
+
+    private async Task DeleteSelectedButtonClick()
+    {
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            var deleteResult = await ShareService.DeleteAsync(_selectedShares.Select(x => x.Id).ToArray());
+            if (deleteResult.IsSuccess)
+            {
+                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Shares", ToastTime));
+                await _grid.RefreshDataAsync();
+                return;
+            }
+
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Shares", ToastTime));
+        }
+    }
+
+    private void ShowTooltip(ElementReference elementReference, string message)
+    {
+        TooltipService.Open(elementReference, message);
+    }
+
+    private async Task DoSearchAsync(string s)
+    {
+        await LoadData(new LoadDataArgs { Sorts = [], Filters = [] });
+    }
+
+}
+
+

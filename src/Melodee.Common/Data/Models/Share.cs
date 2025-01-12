@@ -13,11 +13,11 @@ public class Share : DataModelBase
     public User User { get; set; } = null!;
 
     /// <summary>
-    ///     Pipe seperated list.
+    ///     Pipe seperated list. These can be either Album and/or SongIds.
     /// </summary>
     [Required]
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
-    public required string SongIds { get; set; }
+    public required string ShareIds { get; set; }
 
     [Required] public required Instant ExpiresAt { get; set; }
 

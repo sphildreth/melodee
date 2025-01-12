@@ -45,6 +45,11 @@ public static class ClaimsPrincipalExtensions
         return principal.IsInRole(RoleNameRegistry.Administrator);
     }
 
+    public static Guid ToApiGuid(this ClaimsPrincipal principal)
+    {
+        return Guid.Parse(principal.FindFirstValue(ClaimTypes.Sid) ?? string.Empty);
+    }
+
     public static string ToApiKey(this ClaimsPrincipal principal)
     {
         return $"user{OpenSubsonicServer.ApiIdSeparator}{principal.FindFirstValue(ClaimTypes.Sid)}";

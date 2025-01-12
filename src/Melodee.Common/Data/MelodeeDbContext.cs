@@ -38,6 +38,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<RadioStation> RadioStations { get; set; }
 
     public DbSet<Setting> Settings { get; set; }
+    
+    public DbSet<SearchHistory> SearchHistories { get; set; }
 
     public DbSet<Share> Shares { get; set; }
 
@@ -78,7 +80,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 new Library
                 {
                     Id = 3,
-                    Name = "Library",
+                    Name = "Storage",
                     Description = "The library directory to place processed, reviewed and ready to use music files into.",
                     Path = "/storage/library/",
                     Type = (int)LibraryType.Storage,

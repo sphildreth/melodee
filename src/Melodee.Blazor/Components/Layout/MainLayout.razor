@@ -8,6 +8,7 @@
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
 @inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
+@inject IJSRuntime JSRuntime
 
 <RadzenComponents @rendermode="InteractiveServer"/>
 
@@ -84,20 +85,13 @@
                         <RadzenPanelMenuItem Text="Jobs" Path="/admin/jobs" Icon="checklist"/>
                         <RadzenPanelMenuItem Text="Settings" Path="/admin/settings" Icon="settings"/>
                     </RadzenPanelMenuItem>
-                    <RadzenPanelMenuItem Text="About" Path="/about">
-                        <Template>
-                            <RadzenLink Path="/about">
-                                <RadzenIcon Icon="info" IconStyle="IconStyle.Dark"/>
-                                About
-                            </RadzenLink>
-                        </Template>
-                    </RadzenPanelMenuItem>
+                    <RadzenPanelMenuItem Text="About" Path="/about" Icon="info" IconColor="@Colors.Secondary" />
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody Style="margin: 10px; padding:3px;">
                 @if (_showSearchResults)
                 {
-                    <Search SearchTerm="@_debounceInputValue"/>
+                    <Search UserApiKey="@context.User.ToApiGuid()" UserAgent="@_userAgent"  SearchTerm="@_debounceInputValue"/>
                 }
                 else
                 {
@@ -111,6 +105,7 @@
 @code {
     bool _sidebarExpanded = true;
     string _siteTitle = string.Empty;
+    string _userAgent = string.Empty;
 
     string _debounceInputValue = "";
     bool _showSearchResults;
@@ -165,7 +160,7 @@
                 .Select(x => new MediaLibraryInfo(x.Name, $"/media/library/{x.ApiKey}"))
                 .ToArray();
 
-
+            _userAgent = await JSRuntime.InvokeAsync<string>("getUserAgent", []);
         }
     }
 

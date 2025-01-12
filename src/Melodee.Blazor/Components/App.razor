@@ -16,6 +16,11 @@
 <body>
 <Routes @rendermode="InteractiveServer"/>
 <script src="_framework/blazor.web.js"></script>
+<script>
+    window.getUserAgent = () => {
+        return navigator.userAgent;
+    };
+</script>
 <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Colors).Assembly.GetName().Version)"></script>
 </body>
 
