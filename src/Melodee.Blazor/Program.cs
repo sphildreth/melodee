@@ -9,14 +9,12 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Jobs;
-using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
-using Melodee.Common.Services.EventHandlers;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
@@ -58,9 +56,10 @@ builder.Services.AddAntiforgery(opt =>
     opt.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
-builder.Services.AddInMemoryEvent<UserLoginEvent, UserLoginEventHandler>();
-builder.Services.AddInMemoryEvent<AlbumUpdatedEvent, AlbumUpdatedEventHandler>();
-builder.Services.AddInMemoryEvent<SearchHistoryEvent, SearchHistoryEventHandler>();
+// builder.Services.AddInMemoryEvent<SearchHistoryEvent, SearchHistoryEventHandler>();
+// builder.Services.AddInMemoryEvent<UserLoginEvent, UserLoginEventHandler>();
+// builder.Services.AddInMemoryEvent<AlbumUpdatedEvent, AlbumUpdatedEventHandler>();
+
 
 builder.Services.AddRadzenComponents();
 
@@ -179,8 +178,6 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithRedirects("/Error");
 
 //app.UseHttpsRedirection();
-
-app.Services.StartConsumersAsync();
 
 app.UseCookiePolicy(new CookiePolicyOptions
 {

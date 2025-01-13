@@ -48,8 +48,7 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
                 cacheManager,
                 dbFactory,
                 configFactory,
-                serializer,
-                null);
+                serializer);
 
             libraryService.OnProcessingProgressEvent += (sender, e) =>
             {

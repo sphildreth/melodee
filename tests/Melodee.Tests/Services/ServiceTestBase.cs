@@ -120,17 +120,17 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockDbContextFactory());
     }
 
-    protected IEventPublisher<UserLoginEvent> MockUserEventPublisher()
-    {
-        var mockEventPublisher = new Mock<IEventPublisher<UserLoginEvent>>();
-        return mockEventPublisher.Object;
-    }
+    // protected IEventPublisher<UserLoginEvent> MockUserEventPublisher()
+    // {
+    //     var mockEventPublisher = new Mock<IEventPublisher<UserLoginEvent>>();
+    //     return mockEventPublisher.Object;
+    // }
 
-    protected IEventPublisher<AlbumUpdatedEvent> MockAlbumUpdatedEventPublisher()
-    {
-        var mockEventPublisher = new Mock<IEventPublisher<AlbumUpdatedEvent>>();
-        return mockEventPublisher.Object;
-    }
+    // protected IEventPublisher<AlbumUpdatedEvent> MockAlbumUpdatedEventPublisher()
+    // {
+    //     var mockEventPublisher = new Mock<IEventPublisher<AlbumUpdatedEvent>>();
+    //     return mockEventPublisher.Object;
+    // }
 
     protected ArtistSearchEngineService GetArtistSearchEngineService()
     {
@@ -195,15 +195,14 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             new Mock<IScheduler>().Object,
             GetScrobbleService(),
             GetLibraryService(),
-            GetArtistSearchEngineService(),
-            MockUserEventPublisher());
+            GetArtistSearchEngineService());
     }
 
-    protected InMemoryEventBusPublisher<UserLoginEvent> MockUserLoginEventBusPublisher()
-    {
-        var mockFactory = new Mock<InMemoryEventBusPublisher<UserLoginEvent>>();
-        return mockFactory.Object;
-    }
+    // protected InMemoryEventBusPublisher<UserLoginEvent> MockUserLoginEventBusPublisher()
+    // {
+    //     var mockFactory = new Mock<InMemoryEventBusPublisher<UserLoginEvent>>();
+    //     return mockFactory.Object;
+    // }
 
     protected ArtistService GetArtistService()
     {
@@ -233,8 +232,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             CacheManager,
             MockFactory(),
             MockConfigurationFactory(),
-            Serializer,
-            MockAlbumUpdatedEventPublisher()
+            Serializer
         );
     }
 

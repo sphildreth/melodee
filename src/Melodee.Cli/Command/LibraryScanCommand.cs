@@ -61,8 +61,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                 cacheManager,
                 dbFactory,
                 configFactory,
-                serializer,
-                null);
+                serializer);
 
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 

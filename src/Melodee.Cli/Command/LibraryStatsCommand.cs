@@ -58,8 +58,7 @@ public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
                 cacheManager,
                 dbFactory,
                 configFactory,
-                serializer,
-                null);
+                serializer);
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 
             var result = await libraryService.Statistics(settings.LibraryName);

@@ -57,8 +57,7 @@ public class LibraryAlbumStatusReportCommand : AsyncCommand<LibraryAlbumStatusRe
                 cacheManager,
                 dbFactory,
                 configFactory,
-                serializer,
-                null);
+                serializer);
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 
             var result = await libraryService.AlbumStatusReport(settings.LibraryName);

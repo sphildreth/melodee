@@ -9,8 +9,6 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.MessageBus;
-using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Validation;
@@ -36,7 +34,6 @@ public class LibraryService : ServiceBase
     private const string CacheKeyMediaLibraries = "urn:libraries:media-libraries";
 
     private const int DisplayNumberPadLength = 8;
-    private readonly IEventPublisher<AlbumUpdatedEvent>? _albumUpdatedEvent;
     private readonly IMelodeeConfigurationFactory _configurationFactory;
     private readonly ISerializer _serializer;
 
@@ -48,12 +45,11 @@ public class LibraryService : ServiceBase
         ICacheManager cacheManager,
         IDbContextFactory<MelodeeDbContext> contextFactory,
         IMelodeeConfigurationFactory configurationFactory,
-        ISerializer serializer,
-        IEventPublisher<AlbumUpdatedEvent>? albumUpdatedEvent) : base(logger, cacheManager, contextFactory)
+        ISerializer serializer) : base(logger, cacheManager, contextFactory)
     {
         _configurationFactory = configurationFactory;
         _serializer = serializer;
-        _albumUpdatedEvent = albumUpdatedEvent;
+
     }
 
     public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
@@ -384,11 +380,12 @@ public class LibraryService : ServiceBase
             }
             else
             {
-                var processExistingDirectoryResult = await ProcessExistingDirectoryMoveMergeAsync(configuration, _serializer, album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
-                if (processExistingDirectoryResult != null && _albumUpdatedEvent != null)
-                {
-                    await _albumUpdatedEvent.Publish(new Event<AlbumUpdatedEvent>(processExistingDirectoryResult), cancellationToken).ConfigureAwait(false);
-                }
+                // TODO EventBus
+                // var processExistingDirectoryResult = await ProcessExistingDirectoryMoveMergeAsync(configuration, _serializer, album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
+                // if (processExistingDirectoryResult != null && _albumUpdatedEvent != null)
+                // {
+                //     await _albumUpdatedEvent.Publish(new Event<AlbumUpdatedEvent>(processExistingDirectoryResult), cancellationToken).ConfigureAwait(false);
+                // }
 
                 continue;
             }

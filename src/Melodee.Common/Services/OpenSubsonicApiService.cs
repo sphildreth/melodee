@@ -8,8 +8,6 @@ using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.MessageBus;
-using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
@@ -61,8 +59,7 @@ public class OpenSubsonicApiService(
     IScheduler schedule,
     ScrobbleService scrobbleService,
     LibraryService libraryService,
-    ArtistSearchEngineService artistSearchEngineService,
-    IEventPublisher<UserLoginEvent> userEventPublisher
+    ArtistSearchEngineService artistSearchEngineService
 )
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -1283,7 +1280,8 @@ public class OpenSubsonicApiService(
 
                     if (isAuthenticated)
                     {
-                        await userEventPublisher.Publish(new Event<UserLoginEvent>(new UserLoginEvent(user.Data!.Id, user.Data.UserName)), cancellationToken).ConfigureAwait(false);
+                        // TODO EventBus
+                        //await userEventPublisher.Publish(new Event<UserLoginEvent>(new UserLoginEvent(user.Data!.Id, user.Data.UserName)), cancellationToken).ConfigureAwait(false);
                         result = true;
                     }
                 }

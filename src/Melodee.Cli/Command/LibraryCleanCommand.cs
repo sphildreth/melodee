@@ -58,8 +58,7 @@ public class LibraryCleanCommand : AsyncCommand<LibraryCleanSettings>
                 cacheManager,
                 dbFactory,
                 configFactory,
-                serializer,
-                null);
+                serializer);
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 
             var result = await libraryService.CleanLibraryAsync(settings.LibraryName);
