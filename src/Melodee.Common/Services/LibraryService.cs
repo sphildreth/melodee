@@ -9,6 +9,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Validation;
@@ -20,6 +21,7 @@ using Melodee.Common.Utility;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using Rebus.Bus;
 using Serilog;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
@@ -36,6 +38,7 @@ public class LibraryService : ServiceBase
     private const int DisplayNumberPadLength = 8;
     private readonly IMelodeeConfigurationFactory _configurationFactory;
     private readonly ISerializer _serializer;
+    private readonly IBus _bus;
 
     public LibraryService()
     {
@@ -45,11 +48,12 @@ public class LibraryService : ServiceBase
         ICacheManager cacheManager,
         IDbContextFactory<MelodeeDbContext> contextFactory,
         IMelodeeConfigurationFactory configurationFactory,
-        ISerializer serializer) : base(logger, cacheManager, contextFactory)
+        ISerializer serializer,
+        IBus bus) : base(logger, cacheManager, contextFactory)
     {
         _configurationFactory = configurationFactory;
         _serializer = serializer;
-
+        _bus = bus;
     }
 
     public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
@@ -380,13 +384,11 @@ public class LibraryService : ServiceBase
             }
             else
             {
-                // TODO EventBus
-                // var processExistingDirectoryResult = await ProcessExistingDirectoryMoveMergeAsync(configuration, _serializer, album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
-                // if (processExistingDirectoryResult != null && _albumUpdatedEvent != null)
-                // {
-                //     await _albumUpdatedEvent.Publish(new Event<AlbumUpdatedEvent>(processExistingDirectoryResult), cancellationToken).ConfigureAwait(false);
-                // }
-
+                var processExistingDirectoryResult = await ProcessExistingDirectoryMoveMergeAsync(configuration, _serializer, album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
+                if (processExistingDirectoryResult != null)
+                {
+                    await _bus.Publish(new AlbumUpdatedEvent(processExistingDirectoryResult.AlbumId, processExistingDirectoryResult.AlbumPath)).ConfigureAwait(false);
+                }
                 continue;
             }
 

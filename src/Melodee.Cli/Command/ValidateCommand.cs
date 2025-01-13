@@ -13,6 +13,9 @@ using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Rebus.Bus;
+using Rebus.Config;
+using Rebus.Transport.InMem;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
@@ -53,6 +56,13 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
         services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
+        services.AddRebus(configure =>
+        {
+            return configure
+                .Logging(l => l.ColoredConsole())
+                .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
+        }); 
+        
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -67,11 +77,14 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
             Album? album = null;
             if (settings is { LibraryName: not null, Id: not null })
             {
+                var bus = scope.ServiceProvider.GetRequiredService<IBus>();
+
                 var libraryService = new LibraryService(Log.Logger,
                     cacheManager,
                     dbFactory,
                     configFactory,
-                    serializer);
+                    serializer,
+                    bus);
 
                 var libraryListResult = await libraryService.ListAsync(new PagedRequest()).ConfigureAwait(false);
                 var library = libraryListResult.Data.FirstOrDefault(x => x.Name == settings.LibraryName);

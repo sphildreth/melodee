@@ -24,6 +24,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Quartz;
+using Rebus.Bus;
 using Serilog;
 using ServiceStack.Data;
 
@@ -195,7 +196,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             new Mock<IScheduler>().Object,
             GetScrobbleService(),
             GetLibraryService(),
-            GetArtistSearchEngineService());
+            GetArtistSearchEngineService(),
+            new Mock<IBus>().Object);
     }
 
     // protected InMemoryEventBusPublisher<UserLoginEvent> MockUserLoginEventBusPublisher()
@@ -232,7 +234,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             CacheManager,
             MockFactory(),
             MockConfigurationFactory(),
-            Serializer
+            Serializer,
+            new Mock<IBus>().Object
         );
     }
 

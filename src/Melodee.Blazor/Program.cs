@@ -9,6 +9,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Jobs;
+using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Models;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
@@ -24,6 +25,9 @@ using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Quartz.AspNetCore;
 using Radzen;
+using Rebus.Activation;
+using Rebus.Config;
+using Rebus.Transport.InMem;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
@@ -55,11 +59,6 @@ builder.Services.AddAntiforgery(opt =>
     opt.Cookie.Name = "melodee_csrf";
     opt.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
-
-// builder.Services.AddInMemoryEvent<SearchHistoryEvent, SearchHistoryEventHandler>();
-// builder.Services.AddInMemoryEvent<UserLoginEvent, UserLoginEventHandler>();
-// builder.Services.AddInMemoryEvent<AlbumUpdatedEvent, AlbumUpdatedEventHandler>();
-
 
 builder.Services.AddRadzenComponents();
 
@@ -167,6 +166,16 @@ builder.Services.AddQuartzServer(opts => { opts.WaitForJobsToComplete = true; })
 
 #endregion
 
+builder.Services.AddRebus(configure =>
+{
+    return configure
+        .Logging(l => l.ColoredConsole())
+        .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
+});
+builder.Services.AddRebusHandler<AlbumUpdatedEventHandler>();
+builder.Services.AddRebusHandler<SearchHistoryEventHandler>();
+builder.Services.AddRebusHandler<UserLoginEventHandler>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -178,6 +187,8 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithRedirects("/Error");
 
 //app.UseHttpsRedirection();
+
+
 
 app.UseCookiePolicy(new CookiePolicyOptions
 {

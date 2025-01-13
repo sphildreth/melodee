@@ -4,6 +4,7 @@ using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Search;
@@ -12,6 +13,7 @@ using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using Rebus.Bus;
 using Serilog;
 
 namespace Melodee.Common.Services;
@@ -24,7 +26,8 @@ public sealed class SearchService(
     ArtistService artistService,
     AlbumService albumService,
     SongService songService,
-    IMusicBrainzRepository musicBrainzRepository)
+    IMusicBrainzRepository musicBrainzRepository,
+    IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     public async Task<OperationResult<SearchResult>> DoSearchAsync(Guid userApiKey, string? userAgent, string? searchTerm, short maxResults, SearchInclude include, CancellationToken cancellationToken = default)
@@ -109,19 +112,18 @@ public sealed class SearchService(
 
         var elapsedTime = Stopwatch.GetElapsedTime(startTicks);
         
-        // TODO EventBus
-        // await searchEventPublisher.Publish(new Event<SearchHistoryEvent>(new SearchHistoryEvent
-        // {
-        //     CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
-        //     ByUserApiKey = userApiKey,
-        //     ByUserAgent = userAgent,
-        //     SearchQuery = searchTerm?.ToBase64(),
-        //     FoundArtistsCount = artists.Count,
-        //     FoundAlbumsCount = albums.Count,
-        //     FoundSongsCount = songs.Count,
-        //     FoundOtherItems = musicBrainzArtists.Count,
-        //     SearchDurationInMs = elapsedTime.TotalMilliseconds
-        // }), cancellationToken).ConfigureAwait(false);
+        await bus.Publish(new SearchHistoryEvent
+        {
+            CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+            ByUserApiKey = userApiKey,
+            ByUserAgent = userAgent,
+            SearchQuery = searchTerm?.ToBase64(),
+            FoundArtistsCount = artists.Count,
+            FoundAlbumsCount = albums.Count,
+            FoundSongsCount = songs.Count,
+            FoundOtherItems = musicBrainzArtists.Count,
+            SearchDurationInMs = elapsedTime.TotalMilliseconds
+        }).ConfigureAwait(false);
         return new OperationResult<SearchResult>
         {
             Data = new SearchResult(artists.ToArray(), albums.ToArray(), songs.ToArray(), musicBrainzArtists.ToArray())

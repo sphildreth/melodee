@@ -8,6 +8,9 @@ using Melodee.Common.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Rebus.Bus;
+using Rebus.Config;
+using Rebus.Transport.InMem;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
@@ -46,6 +49,12 @@ public class LibraryCleanCommand : AsyncCommand<LibraryCleanSettings>
         services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
+        services.AddRebus(configure =>
+        {
+            return configure
+                .Logging(l => l.ColoredConsole())
+                .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
+        });        
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -53,12 +62,14 @@ public class LibraryCleanCommand : AsyncCommand<LibraryCleanSettings>
         {
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var configFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
+            var bus = scope.ServiceProvider.GetRequiredService<IBus>();
 
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
                 configFactory,
-                serializer);
+                serializer,
+                bus);
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 
             var result = await libraryService.CleanLibraryAsync(settings.LibraryName);
