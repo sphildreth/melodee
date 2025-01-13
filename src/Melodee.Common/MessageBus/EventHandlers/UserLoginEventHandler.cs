@@ -1,5 +1,6 @@
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Services;
+using Melodee.Common.Services.Caching;
 using Rebus.Handlers;
 
 namespace Melodee.Common.MessageBus.EventHandlers;
@@ -8,7 +9,6 @@ public sealed class UserLoginEventHandler(UserService userService) : IHandleMess
 {
     public Task Handle(UserLoginEvent eventData)
     {
-        Console.WriteLine($"[{nameof(UserLoginEventHandler)}]: {eventData}");            
         return userService.UpdateLastLogin(eventData);
     }
 }

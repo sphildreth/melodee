@@ -197,7 +197,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetScrobbleService(),
             GetLibraryService(),
             GetArtistSearchEngineService(),
-            new Mock<IBus>().Object);
+            MockBus());
     }
 
     // protected InMemoryEventBusPublisher<UserLoginEvent> MockUserLoginEventBusPublisher()
@@ -235,7 +235,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockFactory(),
             MockConfigurationFactory(),
             Serializer,
-            new Mock<IBus>().Object
+            MockBus()
         );
     }
 
@@ -302,9 +302,16 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected UserService GetUserService()
     {
-        return new UserService(Logger, CacheManager, MockFactory(), MockConfigurationFactory(), GetLibraryService());
+        return new UserService(Logger, CacheManager, MockFactory(), MockConfigurationFactory(), GetLibraryService(), MockBus());
     }
 
+    protected IBus MockBus()
+    {
+        var busMock = new Mock<IBus>();
+        busMock.Setup(b => b.SendLocal(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>())).Returns(Task.CompletedTask);
+        return busMock.Object;
+    }
+    
     protected IMelodeeConfigurationFactory MockConfigurationFactory()
     {
         var mock = new Mock<IMelodeeConfigurationFactory>();

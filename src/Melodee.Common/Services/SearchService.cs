@@ -112,7 +112,7 @@ public sealed class SearchService(
 
         var elapsedTime = Stopwatch.GetElapsedTime(startTicks);
         
-        await bus.Publish(new SearchHistoryEvent
+        await bus.SendLocal(new SearchHistoryEvent
         {
             CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
             ByUserApiKey = userApiKey,

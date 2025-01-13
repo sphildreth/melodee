@@ -14,6 +14,7 @@ using Melodee.Common.Utility;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using Rebus.Bus;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -30,7 +31,8 @@ public sealed class UserService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
-    LibraryService libraryService)
+    LibraryService libraryService,
+    IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:user:apikey:{0}";
@@ -281,17 +283,9 @@ public sealed class UserService(
         }
 
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            await scopedContext.Users
-                .Where(x => x.Id == user.Data.Id)
-                .ExecuteUpdateAsync(setters =>
-                    setters.SetProperty(x => x.LastActivityAt, now)
-                        .SetProperty(x => x.LastLoginAt, now), cancellationToken)
-                .ConfigureAwait(false);
-            ClearCache(user.Data.EmailNormalized, user.Data.ApiKey, user.Data.Id, user.Data.UserNameNormalized);
-        }
-
+       
+        await bus.SendLocal(new UserLoginEvent(user.Data!.Id, user.Data.UserName)).ConfigureAwait(false);
+        
         // Sets return object so consumer sees new value, actual update to DB happens in another non-blocking thread.
         user.Data.LastActivityAt = now;
         user.Data.LastLoginAt = now;
@@ -449,6 +443,7 @@ public sealed class UserService(
                 var user = await GetAsync(eventData.UserId, cancellationToken).ConfigureAwait(false);
                 if (user.Data != null)
                 {
+                    Console.WriteLine($"[{nameof(UpdateLastLogin)}]: {eventData}");
                     await scopedContext.Users
                         .Where(x => x.Id == eventData.UserId)
                         .ExecuteUpdateAsync(setters =>

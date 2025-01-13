@@ -26,7 +26,9 @@ using Quartz;
 using Quartz.AspNetCore;
 using Radzen;
 using Rebus.Activation;
+using Rebus.Compression;
 using Rebus.Config;
+using Rebus.Persistence.InMem;
 using Rebus.Transport.InMem;
 using Serilog;
 using ServiceStack.Data;
@@ -170,7 +172,15 @@ builder.Services.AddRebus(configure =>
 {
     return configure
         .Logging(l => l.ColoredConsole())
-        .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
+        .Options(o =>
+        {
+            o.EnableCompression(bodySizeThresholdBytes: 32768);
+            o.SetNumberOfWorkers(numberOfWorkers: 4);
+            o.SetMaxParallelism(maxParallelism: 25);
+        })
+        .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"))
+        .Sagas(s => s.StoreInMemory())
+        .Timeouts(t => t.StoreInMemory());
 });
 builder.Services.AddRebusHandler<AlbumUpdatedEventHandler>();
 builder.Services.AddRebusHandler<SearchHistoryEventHandler>();

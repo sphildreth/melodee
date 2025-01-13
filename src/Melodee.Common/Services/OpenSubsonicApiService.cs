@@ -1283,7 +1283,7 @@ public class OpenSubsonicApiService(
 
                     if (isAuthenticated)
                     {
-                        await bus.Publish(new UserLoginEvent(user.Data!.Id, user.Data.UserName)).ConfigureAwait(false);
+                        await bus.SendLocal(new UserLoginEvent(user.Data!.Id, user.Data.UserName)).ConfigureAwait(false);
                         result = true;
                     }
                 }
