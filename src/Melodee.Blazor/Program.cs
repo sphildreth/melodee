@@ -168,10 +168,10 @@ builder.Services.AddQuartzServer(opts => { opts.WaitForJobsToComplete = true; })
 
 #endregion
 
-builder.Services.AddRebus(configure =>
+builder.Services.AddRebus((configurer, provider) =>
 {
-    return configure
-        .Logging(l => l.ColoredConsole())
+    return configurer
+        .Logging(l => l.Serilog(provider.GetRequiredService<ILogger>()))
         .Options(o =>
         {
             o.EnableCompression(bodySizeThresholdBytes: 32768);

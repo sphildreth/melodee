@@ -32,6 +32,7 @@
     <PackageReference Include="Quartz.Plugins.TimeZoneConverter"/>
     <PackageReference Include="Quartz.Serialization.SystemTextJson"/>
     <PackageReference Include="Rebus" />
+    <PackageReference Include="Rebus.Serilog" />
     <PackageReference Include="Rebus.ServiceProvider" />
     <PackageReference Include="Serilog"/>
     <PackageReference Include="Serilog.AspNetCore"/>

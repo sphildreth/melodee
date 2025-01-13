@@ -63,6 +63,7 @@
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.13.1" />
     <PackageVersion Include="Radzen.Blazor" Version="5.7.4" />
     <PackageVersion Include="Rebus" Version="8.7.1" />
+    <PackageVersion Include="Rebus.Serilog" Version="8.0.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />
     <PackageVersion Include="Serilog" Version="4.2.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
