@@ -175,8 +175,8 @@ builder.Services.AddRebus((configurer, provider) =>
         .Options(o =>
         {
             o.EnableCompression(bodySizeThresholdBytes: 32768);
-            o.SetNumberOfWorkers(numberOfWorkers: 4);
-            o.SetMaxParallelism(maxParallelism: 25);
+            o.SetNumberOfWorkers(numberOfWorkers: 2);
+            o.SetMaxParallelism(maxParallelism: 20);
         })
         .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"))
         .Sagas(s => s.StoreInMemory())
