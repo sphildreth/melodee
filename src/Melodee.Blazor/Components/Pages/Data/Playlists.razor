@@ -1,32 +1,32 @@
-@page "/data/shares"
+@page "/data/playlists"
 
 @inherits MelodeeComponentBase
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Filtering
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
-@using Share = Melodee.Common.Data.Models.Share
+@using Playlist = Melodee.Common.Data.Models.Playlist
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
-@inject ShareService ShareService
+@inject PlaylistService PlaylistService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject TooltipService TooltipService
 @inject NavigationManager NavigationManager
 @inject DefaultImages DefaultImages
 
-<PageTitle>Shares</PageTitle>
+<PageTitle>Playlists</PageTitle>
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Icon="share" Text="Shares"/>
+    <RadzenBreadCrumbItem Icon="playlist_play" Text="Playlists"/>
 </RadzenBreadCrumb>
 
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="Shares" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+            <RadzenText Text="Playlists" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
             <RadzenStack
@@ -34,7 +34,7 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
-                <RadzenButton Icon="delete" Disabled="!_selectedShares.Any()" Text="Delete"
+                <RadzenButton Icon="delete" Disabled="!_selectedPlaylists.Any()" Text="Delete"
                               Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
@@ -54,7 +54,7 @@
             style="height: 500px;"
             IsLoading="@_isLoading"
             Count="@_count"
-            Data="@_shares"
+            Data="@_playlists"
             LoadData="@LoadData"
             AllowSorting="true"
             AllowFiltering="true"
@@ -68,7 +68,7 @@
             PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
             ColumnWidth="200px"
             SelectionMode="DataGridSelectionMode.Multiple"
-            @bind-Value="@_selectedShares">
+            @bind-Value="@_selectedPlaylists">
             <Columns>
                 <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
                     <HeaderTemplate>
@@ -77,29 +77,29 @@
                             TriState="false"
                             TValue="bool?"
                             InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select all items" } })"
-                            Value="@(_selectedShares.Any() != true ? false : !_shares.All(i => _selectedShares.Contains(i)) ? null : _shares.Any(i => _selectedShares.Contains(i)))"
-                            Change="@(args => _selectedShares = args == true ? _selectedShares.ToList() : [])"/>
+                            Value="@(_selectedPlaylists.Any() != true ? false : !_playlists.All(i => _selectedPlaylists.Contains(i)) ? null : _playlists.Any(i => _selectedPlaylists.Contains(i)))"
+                            Change="@(args => _selectedPlaylists = args == true ? _selectedPlaylists.ToList() : [])"/>
                     </HeaderTemplate>
                     <Template Context="data">
                         <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)"
-                                    MouseEnter="@(args => ShowTooltip(args, "Share is locked. Locked shares cannot be deleted."))"/>
+                                    MouseEnter="@(args => ShowTooltip(args, "Playlist is locked. Locked playlists cannot be deleted."))"/>
                         <RadzenCheckBox
                             TabIndex="-1"
                             TriState="false"
-                            Value="@(_selectedShares.Contains(data))"
+                            Value="@(_selectedPlaylists.Contains(data))"
                             InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select item" } })"
                             Change="@(_ => { _grid.SelectRow(data); })"
                             Visible="@(!data.IsLocked)"
                             TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Share.CreatedAt)" Title="Created" Filterable="false"
+                <RadzenDataGridColumn Property="@nameof(Playlist.CreatedAt)" Title="Created" Filterable="false"
                                       Width="120px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Share.Tags)" Title="Tags" Width="100px">
+                <RadzenDataGridColumn Property="@nameof(Playlist.Tags)" Title="Tags" Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.Tags?.ToTags() ?? [])
@@ -116,13 +116,13 @@
 
 @code {
 
-    RadzenDataGrid<Share> _grid = null!;
+    RadzenDataGrid<Playlist> _grid = null!;
     int _count;
-    IEnumerable<Share> _shares = null!;
+    IEnumerable<Playlist> _playlists = null!;
     bool _isLoading;
     int _currentPage = 1;
     IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
-    IList<Share> _selectedShares = [];
+    IList<Playlist> _selectedPlaylists = [];
 
     string _debounceInputValue = "";
 
@@ -148,7 +148,7 @@
             {
                 filters =
                 [
-                    new FilterOperatorInfo(nameof(Share.Description), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
+                    new FilterOperatorInfo(nameof(Playlist.Name), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
                 ];
             }
             else if (args.Filters.Any())
@@ -159,14 +159,14 @@
                     .ToArray();
             }
 
-            var result = await ShareService.ListAsync(new PagedRequest
+            var result = await PlaylistService.ListAsync(new PagedRequest
             {
                 FilterBy = filters,
                 Page = _currentPage,
                 PageSize = SafeParser.ToNumber<short>(args.Top),
                 OrderBy = sorting
             });
-            _shares = result.Data;
+            _playlists = result.Data;
             _count = SafeParser.ToNumber<int>(result.TotalCount);
         }
         catch (Exception e)
@@ -183,7 +183,7 @@
 
     private void AddButtonClick()
     {
-        NavigationManager.NavigateTo($"/data/sharededit/{Guid.Empty}");
+        NavigationManager.NavigateTo($"/data/playlistedit/{Guid.Empty}");
     }
 
 
@@ -192,7 +192,7 @@
         var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
-            var deleteResult = await ShareService.DeleteAsync(_selectedShares.Select(x => x.Id).ToArray());
+            var deleteResult = await PlaylistService.DeleteAsync(_selectedPlaylists.Select(x => x.Id).ToArray());
             if (deleteResult.IsSuccess)
             {
                 NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Shares", ToastTime));

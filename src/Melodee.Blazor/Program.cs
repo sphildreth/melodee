@@ -7,6 +7,7 @@ using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
 using Melodee.Common.Jobs;
 using Melodee.Common.MessageBus.EventHandlers;
@@ -116,7 +117,9 @@ builder.Services
     .AddScoped<ArtistImageSearchEngineService>()
     .AddScoped<ArtistSearchEngineService>()
     .AddScoped<StatisticsService>()
-    .AddScoped<SearchService>();
+    .AddScoped<SearchService>()
+    .AddScoped<ShareService>()
+    .AddScoped<PlaylistService>();
 
 #endregion
 

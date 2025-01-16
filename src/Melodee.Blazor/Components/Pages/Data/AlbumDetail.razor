@@ -3,6 +3,7 @@
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
+@using _Imports = Melodee.Blazor.Components._Imports
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
 @inject AlbumService AlbumService
@@ -10,13 +11,28 @@
 
 <PageTitle>@_album.Name</PageTitle>
 
-<RadzenBreadCrumb Class="rz-pb-5">
-    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
-    <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")" Text="Albums"/>
-    <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
-</RadzenBreadCrumb>
-
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center" Class="rz-pb-5">
+        <RadzenColumn Size="7" SizeMD="9">
+            <RadzenBreadCrumb>
+                <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+                <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
+                <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")" Text="Albums"/>
+                <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
+            </RadzenBreadCrumb>
+        </RadzenColumn>
+        <RadzenColumn Size="5" SizeMD="3">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenRating Value="@_userAlbum.Rating" Change="@UserRatingChange"/>
+                <RadzenIcon Icon="favorite" IconColor="@(_userAlbum.IsStarred ? "red" : "black")" @onclick="@IsStarredClicked" Style="cursor:pointer;"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
@@ -215,6 +231,13 @@
         Songs
     }
 
+    UserAlbum _userAlbum = new UserAlbum
+    {
+        UserId = 0,
+        AlbumId = 0,
+        CreatedAt = default
+    };
+
     Album _album = new()
     {
         Artist = new Artist
@@ -291,6 +314,16 @@
     }
 
     private Task DeleteButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task UserRatingChange(int arg)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task IsStarredClicked()
     {
         throw new NotImplementedException();
     }
