@@ -32,6 +32,9 @@ public sealed class UserService(
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
     LibraryService libraryService,
+    ArtistService artistService,
+    AlbumService albumService,
+    SongService songService,
     IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -102,13 +105,16 @@ public sealed class UserService(
             foreach (var userId in userIds)
             {
                 var user = scopedContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken).Result;
-                var userAvatarFullname = user.ToAvatarFileName(userImageLibrary.Data.Path);
-                if (File.Exists(userAvatarFullname))
+                if (user != null)
                 {
-                    File.Delete(userAvatarFullname);
-                }
+                    var userAvatarFullname = user.ToAvatarFileName(userImageLibrary.Data.Path);
+                    if (File.Exists(userAvatarFullname))
+                    {
+                        File.Delete(userAvatarFullname);
+                    }
 
-                scopedContext.Users.Remove(user);
+                    scopedContext.Users.Remove(user);
+                }
             }
 
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -175,12 +181,12 @@ public sealed class UserService(
     public async Task<bool> IsUserAdminAsync(string username, CancellationToken cancellationToken = default)
     {
         var user = await GetByUsernameAsync(username, cancellationToken).ConfigureAwait(false);
-        return user?.Data?.IsAdmin ?? false;
+        return user.Data?.IsAdmin ?? false;
     }
 
     public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+        Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
@@ -262,7 +268,7 @@ public sealed class UserService(
             };
         }
 
-        var authenticated = false;
+        bool authenticated;
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
         if (password?.StartsWith("enc:") ?? false)
         {
@@ -361,7 +367,7 @@ public sealed class UserService(
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
-        var result = false;
+        bool result;
         var validationResult = ValidateModel(detailToUpdate);
         if (!validationResult.IsSuccess)
         {
@@ -461,6 +467,9 @@ public sealed class UserService(
             Data = true
         };
     }
+    
+    private void ClearCache(User user)
+        => ClearCache(user.Email, user.ApiKey, user.Id, user.UserName);
 
     private void ClearCache(string? emailAddress, Guid? apiKey, int? id, string? username)
     {
@@ -485,38 +494,142 @@ public sealed class UserService(
         }
     }
 
-    public async Task<UserAlbum?> UserAlbumAsync(string? userName, Guid albumApiKey, CancellationToken cancellationToken)
+    public async Task< MelodeeModels.OperationResult<bool>> ToggleAristStarAsync(int userId, Guid artistApiKey, bool isStarred, CancellationToken cancellationToken = default)
+    {
+        bool result = false;
+        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var artist = await artistService.GetByApiKeyAsync(artistApiKey, cancellationToken).ConfigureAwait(false);
+            if (artist.Data != null)
+            {
+                var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                if (userArtist == null)
+                {
+                    userArtist = new UserArtist
+                    {
+                        UserId = userId,
+                        ArtistId = artist.Data.Id,
+                        CreatedAt = now
+                    };
+                    scopedContext.UserArtists.Add(userArtist);
+                }
+                userArtist.StarredAt = isStarred ? now : null;
+                userArtist.IsStarred = isStarred;
+                userArtist.LastUpdatedAt = now;
+                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+                ClearCache(user.Data!);
+            }
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+    
+    public async Task< MelodeeModels.OperationResult<bool>> ToggleAlbumStarAsync(int userId, Guid albumApiKey, bool isStarred, CancellationToken cancellationToken = default)
+    {
+        bool result = false;
+        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var album = await albumService.GetByApiKeyAsync(albumApiKey, cancellationToken).ConfigureAwait(false);
+            if (album.Data != null)
+            {
+                var userAlbum = await scopedContext.UserAlbums.FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == album.Data.Id, cancellationToken).ConfigureAwait(false);
+                if (userAlbum == null)
+                {
+                    userAlbum = new UserAlbum
+                    {
+                        UserId = userId,
+                        AlbumId = album.Data.Id,
+                        CreatedAt = now,
+                        LastPlayedAt = null
+                    };
+                    scopedContext.UserAlbums.Add(userAlbum);
+                }
+
+                userAlbum.StarredAt = isStarred ? now : null;
+                userAlbum.IsStarred = isStarred;
+                userAlbum.LastUpdatedAt = now;
+                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+                ClearCache(user.Data!);                
+            }
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }    
+    
+    public async Task< MelodeeModels.OperationResult<bool>> ToggleSongStarAsync(int userId, Guid songApiKey, bool isStarred, CancellationToken cancellationToken = default)
+    {
+        bool result = false;
+        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var song = await songService.GetByApiKeyAsync(songApiKey, cancellationToken).ConfigureAwait(false);
+            if (song.Data != null)
+            {
+                var userSong = await scopedContext.UserSongs.FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == song.Data.Id, cancellationToken).ConfigureAwait(false);
+                if (userSong == null)
+                {
+                    userSong = new UserSong
+                    {
+                        UserId = userId,
+                        SongId = song.Data.Id,
+                        CreatedAt = now,
+                        LastPlayedAt = null
+                    };
+                    scopedContext.UserSongs.Add(userSong);
+                }
+
+                userSong.StarredAt = isStarred ? now : null;
+                userSong.IsStarred = isStarred;
+                userSong.LastUpdatedAt = now;
+                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+                ClearCache(user.Data!);                 
+            }
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }     
+
+    public async Task<UserAlbum?> UserAlbumAsync(int userId, Guid albumApiKey, CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select ua.*
                       from "UserAlbums" ua 
-                      left join "Users" u on (ua."UserId" = u."Id")
                       left join "Albums" a on (ua."AlbumId" = a."Id")
-                      where u."UserNameNormalized" = @userName
+                      where ua."UserId" = @userId
                       and a."ApiKey" = @albumApiKey;
                       """;
             var dbConn = scopedContext.Database.GetDbConnection();
-            return await dbConn.QuerySingleOrDefaultAsync<UserAlbum?>(sql, new { userName = userName.ToNormalizedString(), albumApiKey })
+            return await dbConn.QuerySingleOrDefaultAsync<UserAlbum?>(sql, new { userId, albumApiKey })
                 .ConfigureAwait(false);
         }
     }
 
-    public async Task<UserSong?> UserSongAsync(string? userName, Guid songApiKey, CancellationToken cancellationToken)
+    public async Task<UserSong?> UserSongAsync(int userId, Guid songApiKey, CancellationToken cancellationToken)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select us.*
                       from "UserSongs" us 
-                      left join "Users" u on (us."UserId" = u."Id")
                       left join "Songs" s on (us."SongId" = s."Id")
-                      where u."UserNameNormalized" = @userName
+                      where us."UserId" = @userId
                       and s."ApiKey" = @songApiKey;
                       """;
             var dbConn = scopedContext.Database.GetDbConnection();
-            return await dbConn.QuerySingleOrDefaultAsync<UserSong?>(sql, new { userName = userName.ToNormalizedString(), songApiKey })
+            return await dbConn.QuerySingleOrDefaultAsync<UserSong?>(sql, new { userId, songApiKey })
                 .ConfigureAwait(false);
         }
     }

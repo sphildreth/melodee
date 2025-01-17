@@ -4,6 +4,8 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
+using Microsoft.Win32.SafeHandles;
 using NodaTime;
 
 namespace Melodee.Blazor.Security.Extensions;
@@ -45,6 +47,9 @@ public static class ClaimsPrincipalExtensions
         return principal.IsInRole(RoleNameRegistry.Administrator);
     }
 
+    public static int UserId(this ClaimsPrincipal principal)
+        => SafeParser.ToNumber<int?>(principal.FindFirstValue(ClaimTypes.PrimarySid) ?? string.Empty) ?? 0;
+    
     public static Guid ToApiGuid(this ClaimsPrincipal principal)
     {
         return Guid.Parse(principal.FindFirstValue(ClaimTypes.Sid) ?? string.Empty);

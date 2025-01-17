@@ -52,7 +52,7 @@
     <PackageVersion Include="MimeTypes" Version="2.5.2" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageVersion Include="NodaTime" Version="3.2.0" />
+    <PackageVersion Include="NodaTime" Version="3.2.1" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" Version="9.0.2" />
     <PackageVersion Include="Polly.Core" Version="8.5.1" />
@@ -61,7 +61,7 @@
     <PackageVersion Include="Quartz.Jobs" Version="3.13.1" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.1" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.13.1" />
-    <PackageVersion Include="Radzen.Blazor" Version="5.7.6" />
+    <PackageVersion Include="Radzen.Blazor" Version="5.7.8" />
     <PackageVersion Include="Rebus" Version="8.7.1" />
     <PackageVersion Include="Rebus.Serilog" Version="8.0.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />

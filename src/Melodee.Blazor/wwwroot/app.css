@@ -27,3 +27,7 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
   border-color: #929292;
 }
+
+i.filled-icon {
+  font-variation-settings: 'FILL' 1;
+}

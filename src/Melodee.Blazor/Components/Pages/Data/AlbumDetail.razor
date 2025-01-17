@@ -3,11 +3,12 @@
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
-@using _Imports = Melodee.Blazor.Components._Imports
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
-@inject AlbumService AlbumService
 
+@inject AlbumService AlbumService
+@inject UserService UserService
+@inject NotificationService NotificationService
 
 <PageTitle>@_album.Name</PageTitle>
 
@@ -28,7 +29,7 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenRating Value="@_userAlbum.Rating" Change="@UserRatingChange"/>
-                <RadzenIcon Icon="favorite" IconColor="@(_userAlbum.IsStarred ? "red" : "black")" @onclick="@IsStarredClicked" Style="cursor:pointer;"/>
+                <RadzenIcon Icon="favorite" class="filled-icon" IconColor="@(_userAlbum.IsStarred ? "red" : "black")" @onclick="@IsStarredClicked" Style="cursor:pointer;"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -261,10 +262,8 @@
         CreatedAt = default
     };
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        await base.OnInitializedAsync();
-
         if (ApiKey != Guid.Empty)
         {
             var albumResult = await AlbumService.GetByApiKeyAsync(ApiKey);
@@ -284,6 +283,12 @@
                         AlbumStatusBadgeStyle = BadgeStyle.Primary;
                         break;
                 }
+                _userAlbum = await UserService.UserAlbumAsync(CurrentUsersId, _album.ApiKey) ?? new UserAlbum
+                {
+                    UserId = 0,
+                    AlbumId = 0,
+                    CreatedAt = default
+                };
             }
         }
     }
@@ -323,9 +328,11 @@
         throw new NotImplementedException();
     }
 
-    private Task IsStarredClicked()
+    private async Task IsStarredClicked()
     {
-        throw new NotImplementedException();
+        _userAlbum.IsStarred = !_userAlbum.IsStarred;
+        var result = await UserService.ToggleAlbumStarAsync(CurrentUsersId, _album.ApiKey, _userAlbum.IsStarred);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Album Favorite", ToastTime));
     }
 
 }
