@@ -13,6 +13,8 @@ public static class ArtistExtensions
     public static readonly Regex VariousArtistParseRegex = new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex CastRecordingSongArtistParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
+    public static readonly Regex SoundtrackRecordingArtistParseRegex = new(@"(soundtrack|(\(*\s*ost\))*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static KeyValue ToKeyValue(this Artist artist)
     {

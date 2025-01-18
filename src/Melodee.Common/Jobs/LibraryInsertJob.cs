@@ -455,7 +455,7 @@ public class LibraryInsertJob(
                         {
                             ApiKey = melodeeAlbum.Id,
                             AlbumStatus = (short)melodeeAlbum.Status,
-                            AlbumType = (int)AlbumType.Album,
+                            AlbumType = SafeParser.ToNumber<short>(melodeeAlbum.AlbumType),
                             Artist = dbArtist,
                             CreatedAt = _now,
                             Directory = albumDirectory,

@@ -65,7 +65,6 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
         services.AddRebus(configure =>
         {
             return configure
-                .Logging(l => l.ColoredConsole())
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         }); 
         

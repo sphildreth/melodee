@@ -73,8 +73,7 @@
                     <RadzenPanelMenuItem Text="Songs" Path="/data/songs" Icon="music_note"/>
                     <RadzenPanelMenuItem Text="Shares" Path="/data/shares" Icon="share"/>
                     <RadzenPanelMenuItem Text="Users" Path="/data/users" Icon="group"/>
-                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" Expanded="true"
-                                         Visible="@AuthService.IsAdmin">
+                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" Visible="@AuthService.IsAdmin">
                         <RadzenPanelMenuItem Text="Media" Icon="perm_media">
                             @foreach (var mediaLibraryInfo in _mediaLibraryInfos)
                             {

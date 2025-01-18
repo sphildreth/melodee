@@ -277,11 +277,6 @@ public class LibraryService : ServiceBase
                                            """;
                     var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment.FormatSmart(libraryId));
                     var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                    if (dbConn is SqliteConnection)
-                    {
-                        listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                    }
-
                     histories = (await dbConn
                         .QueryAsync<LibraryScanHistoryDataInfo>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();
@@ -336,11 +331,6 @@ public class LibraryService : ServiceBase
                 {
                     var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Libraries\"");
                     var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                    if (dbConn is SqliteConnection)
-                    {
-                        listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                    }
-
                     libraries = (await dbConn
                         .QueryAsync<Library>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();

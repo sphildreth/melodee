@@ -8,6 +8,9 @@ public record Query
 {
     public Guid? ApiKey { get; init; }
 
+    /// <summary>
+    /// Name of Artist, Album or Song depending on search type.
+    /// </summary>
     [Required] public required string Name { get; init; }
 
     private string NameInTagFormat
@@ -37,4 +40,6 @@ public record Query
     public Guid? MusicBrainzIdValue => SafeParser.ToGuid(MusicBrainzId);
 
     public string? MusicBrainzId { get; init; }
+    
+    public string Country { get; init; } = "US";
 }

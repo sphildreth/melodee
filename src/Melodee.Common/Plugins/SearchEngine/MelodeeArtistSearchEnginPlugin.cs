@@ -13,6 +13,9 @@ using ServiceStack;
 
 namespace Melodee.Common.Plugins.SearchEngine;
 
+/// <summary>
+/// Searches for Artist using the Melodee database
+/// </summary>
 public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> contextFactory)
     : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin
 {

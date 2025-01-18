@@ -12,7 +12,7 @@ public class LastFm(IMelodeeConfiguration configuration, ISerializer serializer,
 
     public string Id => "3E43D998-2E9C-45B0-8128-EE6F0A41419E";
 
-    public string DisplayName => "Last FM Service";
+    public string DisplayName => "Last FM Search Engine";
 
     public bool IsEnabled { get; set; } = false;
 

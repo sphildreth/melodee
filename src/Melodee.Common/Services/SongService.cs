@@ -47,11 +47,6 @@ public class SongService(
                                        """;
                 var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment);
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                if (dbConn is SqliteConnection)
-                {
-                    listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                }
-
                 songs = (await dbConn
                     .QueryAsync<SongDataInfo>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();

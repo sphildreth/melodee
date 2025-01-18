@@ -145,6 +145,7 @@ public class Mp3Files(
                             var newAlbum = new Album
                             {
                                 Artist = Artist.NewArtistFromName(artistName ?? throw new Exception("Invalid artist name")),
+                                AlbumType  = song.AlbumTitle().TryToDetectAlbumType(), 
                                 Images = songsGroupedByAlbum.Where(x => x.Images != null)
                                     .SelectMany(x => x.Images!)
                                     .DistinctBy(x => x.CrcHash).ToArray(),
@@ -195,7 +196,7 @@ public class Mp3Files(
             Data = processedFileCount
         };
     }
-
+    
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
         return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);

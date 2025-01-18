@@ -48,7 +48,7 @@ public class NfoTests : TestsBase
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.Equal("Chris Young", nfoParserResult.Artist.Name);
-            Assert.True(nfoParserResult.Status == AlbumStatus.Invalid);
+            Assert.True(nfoParserResult.Status == AlbumStatus.New);
         }
     }
 

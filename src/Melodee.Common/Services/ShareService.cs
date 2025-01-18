@@ -45,11 +45,6 @@ public class ShareService(
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Shares\"");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                if (dbConn is SqliteConnection)
-                {
-                    listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                }
-
                 shares = (await dbConn
                     .QueryAsync<Share>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();

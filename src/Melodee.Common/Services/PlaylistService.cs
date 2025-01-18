@@ -45,11 +45,6 @@ public class PlaylistService(
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Playlists\"");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                if (dbConn is SqliteConnection)
-                {
-                    listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                }
-
                 playlists = (await dbConn
                     .QueryAsync<Playlist>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();

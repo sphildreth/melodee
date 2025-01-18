@@ -42,7 +42,6 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
         services.AddRebus(configure =>
         {
             return configure
-                .Logging(l => l.ColoredConsole())
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         }); 
         var serviceProvider = services.BuildServiceProvider();

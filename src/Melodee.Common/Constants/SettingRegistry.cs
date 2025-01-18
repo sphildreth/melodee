@@ -66,6 +66,7 @@ public static class SettingRegistry
     public const string ScrobblingLastFmSharedSecret = "scrobbling.lastFm.sharedSecret";
     public const string ScrobblingLastFmEnabled = "scrobbling.lastFm.Enabled";
     public const string SearchEngineDefaultPageSize = "searchEngine.defaultPageSize";
+    public const string SearchEngineITunesEnabled = "searchEngine.itunes.enabled";    
     public const string SearchEngineMusicBrainzEnabled = "searchEngine.musicbrainz.enabled";
     public const string SearchEngineMusicBrainzImportMaximumToProcess = "searchEngine.musicbrainz.importMaximumToProcess";
     public const string SearchEngineMusicBrainzImportBatchSize = "searchEngine.musicbrainz.importBatchSize";

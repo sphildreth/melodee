@@ -59,7 +59,6 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
         services.AddRebus(configure =>
         {
             return configure
-                .Logging(l => l.ColoredConsole())
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         }); 
         

@@ -14,6 +14,7 @@ public sealed class ImageHelperTests
     [InlineData("00-elton_john-never_too_late_soundtrack_to_the_disney_documentary-ost-web-2024.jpg", false)]
     [InlineData("Band_2.jpg", false)]
     [InlineData("Band 14.jpg", false)]
+    [InlineData("artist 07.jpg", false)]
     [InlineData("001.jpg", false)]
     [InlineData("Band.jpg", true)]
     [InlineData("Artist.jpg", true)]
@@ -47,6 +48,7 @@ public sealed class ImageHelperTests
     [InlineData("Band 02.jpg", true)]
     [InlineData("Band 14.jpg", true)]
     [InlineData("logo.jpg", true)]
+    [InlineData("artist 07.jpg", true)]
     public void FileIsArtistSecondaryImage(string fileName, bool shouldBe)
     {
         Assert.Equal(ImageHelper.IsArtistSecondaryImage(new FileInfo(fileName)), shouldBe);
@@ -66,6 +68,7 @@ public sealed class ImageHelperTests
     [InlineData("artist.jpg", false)]
     [InlineData("artist 000.jpg", false)]
     [InlineData("artist 1.jpg", false)]
+    [InlineData("artist 07.jpg", false)]
     [InlineData("Mazzy Star-ghost highway-remastered-CD.jpg", false)]
     [InlineData("Mazzy Star-ghost highway-remastered-booklet-front.jpg", false)]
     [InlineData("Front-Scans.jpg", true)]
@@ -93,6 +96,7 @@ public sealed class ImageHelperTests
     [InlineData("artist.jpg", false)]
     [InlineData("artist 000.jpg", false)]
     [InlineData("artist 1.jpg", false)]
+    [InlineData("artist 07.jpg", false)]
     [InlineData("CD-Scans.jpg", true)]
     [InlineData("02-cover.jpg", true)]
     [InlineData("Back-Scans.jpg", true)]

@@ -3,6 +3,7 @@ using System.Net;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
+using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
@@ -16,6 +17,10 @@ public static partial class StringExtensions
     private static readonly string YearParseRegex = "(19|20)\\d{2}";
 
     private static readonly string SongNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
+    
+    public static readonly Regex HasEPFragmentsRegex = new(@"(((\(|\[)|(\s-\s))+ep+(\)|\])?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
+    public static readonly Regex HasSingleFragmentsRegex = new(@"(((\(|\[)|(\s-\s))+single+(\)|\])?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex HasWithFragmentsRegex = new(@"(\s*[\(\[]*with\s+)+", RegexOptions.Compiled);
 
@@ -647,6 +652,23 @@ public static partial class StringExtensions
         }
 
         return HasWithFragmentsRegex.Matches(input!).Count + HasFeatureFragmentsRegex.Matches(input!).Count;
+    }
+
+    public static AlbumType TryToDetectAlbumType(this string? input)
+    {
+        if (input.Nullify() == null)
+        {
+            return AlbumType.NotSet;
+        }
+        if (HasEPFragmentsRegex.Matches(input!).Count > 0)
+        {
+            return AlbumType.EP;
+        }
+        if (HasSingleFragmentsRegex.Matches(input!).Count > 0)
+        {
+            return AlbumType.Single;
+        }        
+        return AlbumType.Album;
     }
 
     public static string? RemoveFileExtension(this string? input)

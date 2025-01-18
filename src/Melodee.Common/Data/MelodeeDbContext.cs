@@ -685,6 +685,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
+                    Id = 914,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineITunesEnabled,
+                    Comment = "Is ITunes search engine enabled.",
+                    Value = "true",
+                    CreatedAt = now
+                },                
+                new Setting
+                {
                     Id = 400,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingDoLoadEmbeddedImages,

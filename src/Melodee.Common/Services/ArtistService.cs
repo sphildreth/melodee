@@ -59,11 +59,6 @@ public class ArtistService(
                                        """;
                 var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment, "a");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                if (dbConn is SqliteConnection)
-                {
-                    listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                }
-
                 artists = (await dbConn
                     .QueryAsync<ArtistDataInfo>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
