@@ -572,25 +572,33 @@ public sealed class DirectoryProcessorService(
                             .ConfigureAwait(false);
                         if (artistSearchResult.IsSuccess)
                         {
-                            var artistFromSearch = artistSearchResult.Data.FirstOrDefault();
+                            var artistFromSearch = artistSearchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
                             if (artistFromSearch != null)
                             {
                                 album.Artist = album.Artist with
                                 {
+                                    AmgId = artistFromSearch.AmgId,
                                     ArtistDbId = artistFromSearch.Id,
+                                    DiscogsId = artistFromSearch.DiscogsId,
+                                    ItunesId = artistFromSearch.MusicBrainzId?.ToString(),
+                                    LastFmId = artistFromSearch.LastFmId,
+                                    MusicBrainzId = artistFromSearch.MusicBrainzId,
                                     Name = artistFromSearch.Name,
                                     NameNormalized = artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
-                                    MusicBrainzId = artistFromSearch.MusicBrainzId?.ToString(),
-                                    SortName = artistFromSearch.SortName,
+                                    OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
                                     SearchEngineResultUniqueId = artistFromSearch.UniqueId,
-                                    OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null
+                                    SortName = artistFromSearch.SortName,
+                                    SpotifyId = artistFromSearch.SpotifyId,                                    
+                                    WikiDataId = artistFromSearch.WikiDataId,
                                 };
 
                                 if (artistFromSearch.Releases?.Length != 0)
                                 {
                                     album.AlbumDbId = artistFromSearch.Releases!.First().Id;
                                     album.AlbumType = artistFromSearch.Releases!.First().AlbumType;
-                                    album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId?.ToString();
+                                    
+                                    // Artist result should override any in place for Album as its more specific and likely more accurate
+                                    album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId;
                                 }
 
                                 album.Status = AlbumStatus.Ok;
@@ -614,9 +622,23 @@ public sealed class DirectoryProcessorService(
                                 .ConfigureAwait(false);
                             if (albumImageSearchResult.IsSuccess)
                             {
-                                var imageSearchResult = albumImageSearchResult.Data.FirstOrDefault();
+                                var imageSearchResult = albumImageSearchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
                                 if (imageSearchResult != null)
                                 {
+                                    album.ItunesId ??= imageSearchResult.ItunesId;
+                                    album.AmgId ??= imageSearchResult.AmgId;
+                                    album.DiscogsId ??= imageSearchResult.DiscogsId;
+                                    album.WikiDataId ??= imageSearchResult.WikiDataId;
+                                    album.LastFmId ??= imageSearchResult.LastFmId;
+                                    album.SpotifyId ??= imageSearchResult.SpotifyId;
+                                    
+                                    album.Artist.ItunesId ??= imageSearchResult.ArtistItunesId;
+                                    album.Artist.AmgId ??= imageSearchResult.ArtistAmgId;
+                                    album.Artist.DiscogsId ??= imageSearchResult.ArtistDiscogsId;
+                                    album.Artist.WikiDataId ??= imageSearchResult.ArtistWikiDataId;
+                                    album.Artist.LastFmId ??= imageSearchResult.ArtistLastFmId;
+                                    album.Artist.SpotifyId ??= imageSearchResult.ArtistSpotifyId;
+                                    
                                     var albumImageFromSearchFileName = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Data.Models.Album.FrontImageType).Item1);
                                     if (await httpClient.DownloadFileAsync(
                                             imageSearchResult.MediaUrl,

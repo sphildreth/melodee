@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Text;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 
@@ -27,12 +28,16 @@ public class StringExtensionsTests
     [InlineData("   Bob   ", "Bob")]
     [InlineData("Bob And Nancy", "Bob And Nancy")]
     [InlineData("Bob And Nancy!", "Bob And Nancy!")]
+    [InlineData("Bob\t And\t Nancy!", "Bob And Nancy!")]
+    [InlineData("Bob\r\n And Nancy!", "Bob And Nancy!")]
     [InlineData("Bob And Nancy, wITH sTEVE", "Bob And Nancy, With Steve")]
     [InlineData(" Bob    And    Nancy", "Bob And Nancy")]
     [InlineData(" Bob    And    Nancy   ", "Bob And Nancy")]
-    [InlineData("\\0 Goofy (C)\\x00 Doofies\u2400\\u0000", "Goofy (C) Doofies")]
+    [InlineData("\\0 Goofy   (C)\\x00 Doofies\u2400\\u0000", "Goofy (C) Doofies")]
     [InlineData("With", "With")]
-    [InlineData("Show Me \u0026 Wrong", "Show Me & Wrong")]
+    [InlineData("Show Me \t \u0026 Wrong", "Show Me & Wrong")]
+    [InlineData("Penguin Café", "Penguin Café")]
+    [InlineData("Abcdefghijklmnopqrstuvwxyz0123456789-.!?", "Abcdefghijklmnopqrstuvwxyz0123456789-.!?")]
     public void CleanString(string input, string shouldBe)
     {
         Assert.Equal(shouldBe, input.CleanString());
@@ -205,6 +210,7 @@ public class StringExtensionsTests
         //d835dd1fd835dd29d835dd2cd835dd2cd835dd212665fe0fd835dd30d835dd31d835dd1ed835dd26d835dd2bd835dd22d835dd21306f3055307f
         //8J2Un/CdlKnwnZSs8J2UrPCdlKHimaXvuI/wnZSw8J2UsfCdlJ7wnZSm8J2Uq/CdlKLwnZSh44Gv44GV44G/
         var test = "𝔟𝔩𝔬𝔬𝔡♥️𝔰𝔱𝔞𝔦𝔫𝔢𝔡はさみ";
+       
         var testNormalized = test.ToNormalizedString();
         Assert.NotNull(testNormalized);
         Assert.NotEqual(test, testNormalized);

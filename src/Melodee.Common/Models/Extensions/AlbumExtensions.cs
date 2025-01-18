@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
@@ -12,15 +13,20 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class AlbumExtensions
 {
+    public static readonly Regex SoundtrackRecordingArtistParseRegex = new(@"(soundtrack|(\(*\s*ost\))*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
     public static KeyValue ToKeyValue(this Album album)
     {
-        return new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
+        return new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId?.ToString() ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
     }
 
     public static bool IsStudioTypeAlbum(this Album album)
     {
         return album.Directory.IsDirectoryStudioAlbums() && album.AlbumType is AlbumType.Album or AlbumType.EP;
     }
+
+    public static bool IsSoundTrackTypeAlbum(this Album album)
+        => SoundtrackRecordingArtistParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);   
 
     public static bool IsVariousArtistTypeAlbum(this Album album)
     {
@@ -30,10 +36,15 @@ public static class AlbumExtensions
             return false;
         }
 
+        if (IsSoundTrackTypeAlbum(album))
+        {
+            return true;
+        }
+        
         var genre = songs.Select(x => x.Genre().Nullify()).Distinct().ToArray();
         if (genre.Length > 0)
         {
-            if (genre.Any(x => album.Artist.IsSoundSongArist() || album.Artist.IsVariousArtist() || album.Artist.IsCastRecording()))
+            if (genre.Any(x => album.Artist.IsVariousArtist() || album.Artist.IsCastRecording()))
             {
                 return true;
             }
@@ -48,7 +59,7 @@ public static class AlbumExtensions
             return true;
         }
 
-        return album.Artist.IsVariousArtist() || album.Artist.IsSoundSongArist() || album.Artist.IsCastRecording();
+        return album.Artist.IsVariousArtist() || album.Artist.IsCastRecording();
     }
 
     public static bool HasSongArtists(this Album album)
@@ -514,7 +525,7 @@ public static class AlbumExtensions
         {
             Artist = album.Artist.Name,
             Name = album.AlbumTitle() ?? string.Empty,
-            MusicBrainzId = album.MusicBrainzId,
+            MusicBrainzId = album.MusicBrainzId.ToString(),
             Year = album.AlbumYear() ?? 0
         };
     }

@@ -8,17 +8,13 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class ArtistExtensions
 {
-    public static readonly Regex SoundSongArtistParseRegex = new(@"(sound\s*Song[s]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
     public static readonly Regex VariousArtistParseRegex = new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex CastRecordingSongArtistParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    
-    public static readonly Regex SoundtrackRecordingArtistParseRegex = new(@"(soundtrack|(\(*\s*ost\))*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static KeyValue ToKeyValue(this Artist artist)
     {
-        return new KeyValue(artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId ?? artist.Name.ToNormalizedString() ?? artist.Name, artist.Name.ToNormalizedString() ?? artist.Name);
+        return new KeyValue(artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId?.ToString() ?? artist.Name.ToNormalizedString() ?? artist.Name, artist.Name.ToNormalizedString() ?? artist.Name);
     }
 
     public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
@@ -27,7 +23,7 @@ public static class ArtistExtensions
         {
             Name = artist.Name,
             AlbumKeyValues = albumKeyValues,
-            MusicBrainzId = artist.MusicBrainzId
+            MusicBrainzId = artist.MusicBrainzId.ToString()
         };
     }
 
@@ -38,20 +34,12 @@ public static class ArtistExtensions
         {
             return AlbumArtistType.NotSet;
         }
-
         if (artist.IsVariousArtist())
         {
             return AlbumArtistType.VariousArtists;
         }
-
-        if (artist.IsSoundSongArist())
-        {
-            return AlbumArtistType.SoundSong;
-        }
-
         return AlbumArtistType.ArtistOrBand;
     }
-
 
     public static bool IsValid(this Artist artist)
     {
@@ -69,11 +57,11 @@ public static class ArtistExtensions
         return artistName.Nullify() != null && CastRecordingSongArtistParseRegex.IsMatch(artistName);
     }
 
-    public static bool IsSoundSongArist(this Artist artist)
-    {
-        var artistName = artist.Name;
-        return artistName.Nullify() != null && SoundSongArtistParseRegex.IsMatch(artistName);
-    }
+    // public static bool IsSoundSongArist(this Artist artist)
+    // {
+    //     var artistName = artist.Name;
+    //     return artistName.Nullify() != null && SoundSongArtistParseRegex.IsMatch(artistName);
+    // }
 
     public static bool IsVariousArtist(this Artist artist)
     {
@@ -99,7 +87,7 @@ public static class ArtistExtensions
             throw new Exception("Neither Artist or ArtistSort tag is set.");
         }
 
-        if (artist.ArtistDbId == null && artist.MusicBrainzId.Nullify() == null)
+        if (artist.ArtistDbId == null && artist.MusicBrainzId == null)
         {
             throw new Exception("Neither ArtistDbId or MusicBrainzId is set.");
         }
@@ -133,7 +121,7 @@ public static class ArtistExtensions
         }
 
         var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
-        var fnIdPart = $" [{SafeParser.Hash(artist.ArtistDbId.ToString(), artist.MusicBrainzId)}]";
+        var fnIdPart = $" [{SafeParser.Hash(artist.ArtistDbId.ToString(), artist.MusicBrainzId.ToString())}]";
         var maxFnLength = processingMaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length) - 2;
         if (artistDirectory.Length > maxFnLength)
         {

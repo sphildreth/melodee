@@ -6,7 +6,5 @@ public enum AlbumArtistType
 
     ArtistOrBand,
 
-    SoundSong,
-
     VariousArtists
 }

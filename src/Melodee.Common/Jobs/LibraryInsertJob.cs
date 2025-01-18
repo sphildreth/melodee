@@ -47,7 +47,7 @@ public class LibraryInsertJob(
     private int _batchSize;
     private IMelodeeConfiguration _configuration = null!;
     private JobDataMap _dataMap = null!;
-    private string _duplicateAlbumPrefix;
+    private string _duplicateAlbumPrefix = string.Empty;
     private string[] _ignorePerformers = [];
     private string[] _ignoreProduction = [];
     private string[] _ignorePublishers = [];
@@ -92,7 +92,6 @@ public class LibraryInsertJob(
                 return;
             }
 
-            var verboseMode = SafeParser.ToBoolean(context.Get("Verbose"));
             var forceMode = SafeParser.ToBoolean(context.Get("ForceMode"));
 
             var imageConvertor = new ImageConvertor(_configuration);
@@ -390,13 +389,6 @@ public class LibraryInsertJob(
         {
             await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                // var artists = melodeeAlbumsForDirectory
-                //     .Select(x => x.Artist)
-                //     .Where(x => x.IsValid())
-                //     .DistinctBy(x => x.NameNormalized)
-                //     .OrderBy(x => x.Name)
-                //     .ToArray();
-
                 var dbAlbumsToAdd = new List<dbModels.Album>();
                 var stopProcessingAlbum = false;
                 foreach (var melodeeAlbum in melodeeAlbumsForDirectory)
@@ -453,24 +445,30 @@ public class LibraryInsertJob(
                     {
                         var newAlbum = new dbModels.Album
                         {
-                            ApiKey = melodeeAlbum.Id,
                             AlbumStatus = (short)melodeeAlbum.Status,
                             AlbumType = SafeParser.ToNumber<short>(melodeeAlbum.AlbumType),
+                            AmgId = melodeeAlbum.AmgId,
+                            ApiKey = melodeeAlbum.Id,
                             Artist = dbArtist,
                             CreatedAt = _now,
                             Directory = albumDirectory,
                             DiscCount = melodeeAlbum.MediaCountValue(),
+                            DiscogsId = melodeeAlbum.DiscogsId,
                             Duration = melodeeAlbum.TotalDuration(),
                             Genres = melodeeAlbum.Genre() == null ? null : melodeeAlbum.Genre()!.Split('/'),
                             IsCompilation = melodeeAlbum.IsVariousArtistTypeAlbum(),
-                            MusicBrainzId = SafeParser.ToGuid(melodeeAlbum.MusicBrainzId),
+                            ItunesId = melodeeAlbum.ItunesId,
+                            LastFmId = melodeeAlbum.LastFmId,
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
+                            MusicBrainzId = SafeParser.ToGuid(melodeeAlbum.MusicBrainzId),
                             Name = albumTitle,
                             NameNormalized = nameNormalized,
                             OriginalReleaseDate = melodeeAlbum.OriginalAlbumYear() == null ? null : SafeParser.ToLocalDate(melodeeAlbum.OriginalAlbumYear()!.Value),
                             ReleaseDate = SafeParser.ToLocalDate(melodeeAlbum.AlbumYear() ?? throw new Exception("Album year is required.")),
                             SongCount = SafeParser.ToNumber<short>(melodeeAlbum.Songs?.Count() ?? 0),
-                            SortName = _configuration.RemoveUnwantedArticles(albumTitle.CleanString(true))
+                            SortName = _configuration.RemoveUnwantedArticles(albumTitle.CleanString(true)),
+                            SpotifyId = melodeeAlbum.SpotifyId,
+                            WikiDataId = melodeeAlbum.WikiDataId
                         };
                         if (dbAlbumsToAdd.Any(x => x.Artist.Id == dbArtist.Id && x.NameNormalized == nameNormalized))
                         {
@@ -672,15 +670,21 @@ public class LibraryInsertJob(
                         var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
                         dbArtistsToAdd.Add(new dbModels.Artist
                         {
+                            AmgId = artist.AmgId,
                             ApiKey = artist.Id,
-                            Directory = newArtistDirectory,
                             CreatedAt = _now,
+                            Directory = newArtistDirectory,
+                            DiscogsId = artist.DiscogsId,
+                            ItunesId = artist.ItunesId,
+                            LastFmId = artist.LastFmId,
                             LibraryId = library.Id,
-                            MusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId),
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
+                            MusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId),
                             Name = artist.Name,
                             NameNormalized = artist.NameNormalized,
-                            SortName = artist.SortName
+                            SortName = artist.SortName,
+                            SpotifyId = artist.SpotifyId,
+                            WikiDataId = artist.WikiDataId
                         });
                     }
                 }

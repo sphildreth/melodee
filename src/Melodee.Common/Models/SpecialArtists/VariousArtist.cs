@@ -11,10 +11,11 @@ namespace Melodee.Common.Models.SpecialArtists;
 ///         This artist shouldn't generally be used for album or songs.
 ///     </remarks>
 /// </summary>
-public sealed record VariousArtist() : Artist(
-    "Various Artist",
-    "Various Artist".ToNormalizedString()!,
-    "Various Artist",
-    null,
-    null,
-    "89ad4ac3-39f7-470e-963a-56509c546377");
+public sealed record VariousArtist : Artist
+{
+    public VariousArtist() 
+        : base("Various Artist", "Various Artist".ToNormalizedString()!, "Various Artist")
+    {
+        MusicBrainzId = Guid.Parse("89ad4ac3-39f7-470e-963a-56509c546377");
+    }
+}

@@ -24,7 +24,19 @@ public sealed record Album
 
     public int? AlbumDbId { get; set; }
 
-    public string? MusicBrainzId { get; set; }
+    public Guid? MusicBrainzId { get; set; }
+   
+    public string? ItunesId { get; set; }
+
+    public string? AmgId { get; set; }
+
+    public string? DiscogsId { get; set; }
+
+    public string? WikiDataId { get; set; }
+
+    public string? LastFmId { get; set; }
+
+    public string? SpotifyId { get; set; }
 
     public DateTimeOffset? Modified { get; set; }
 

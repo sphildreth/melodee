@@ -22,19 +22,6 @@ public class ArtistExtensionTests
 
     [Theory]
     [InlineData("Bob Jones", false)]
-    [InlineData("Bob Song", false)]
-    [InlineData("Song Bob", false)]
-    [InlineData("Sound Bob", false)]
-    [InlineData("SoundSongs", true)]
-    [InlineData("Sound Song", true)]
-    [InlineData("Sound Songs", true)]
-    public void ValidateIsSoundSongArtists(string input, bool shouldBe)
-    {
-        Assert.Equal(shouldBe, Artist.NewArtistFromName(input).IsSoundSongArist());
-    }
-
-    [Theory]
-    [InlineData("Bob Jones", false)]
     [InlineData("Bob Cast", false)]
     [InlineData("Song Bob", false)]
     [InlineData("Sound Bob", false)]

@@ -145,8 +145,10 @@ public sealed class JellyfinHandler : INfoHandler
             {
                 Artist = new Artist(artistName,
                     artistName.ToNormalizedString() ?? artistName,
-                    artistName.ToTitleCase() ?? artistName,
-                    MusicBrainzId: jfAlbum.MusicBrainzAlbumArtistId),
+                    artistName.ToTitleCase() ?? artistName)
+                {
+                    MusicBrainzId = jfAlbum.MusicBrainzAlbumArtistId == null ? null : Guid.Parse(jfAlbum.MusicBrainzAlbumArtistId)
+                },
                 Files =
                 [
                     new AlbumFile

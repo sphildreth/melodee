@@ -74,14 +74,17 @@ public class ITunesSearchEngine(
                         var mediaUrl = sr.ArtworkUrl100!.Replace("100x100bb", "600x600bb");
                         results.Add(new ImageSearchResult
                         {
+                            ArtistAmgId = sr.AmgArtistId?.ToString(),
+                            ArtistItunesId = sr.ArtistId?.ToString(),
                             FromPlugin = DisplayName,
                             Height = 600,
+                            ItunesId = sr.CollectionId?.ToString(),
                             MediaUrl = mediaUrl,
                             Rank = rank,
-                            Title = sr.CollectionName,
                             ThumbnailUrl = sr.ArtworkUrl100!,
+                            Title = sr.CollectionName,
                             UniqueId = sr.CollectionId ?? 0 + sr.ArtistId ?? 0,
-                            Width = 600,
+                            Width = 600
                         });
                     }
                 }

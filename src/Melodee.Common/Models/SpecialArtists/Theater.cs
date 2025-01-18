@@ -14,10 +14,10 @@ namespace Melodee.Common.Models.SpecialArtists;
 ///         artist credit.
 ///     </remarks>
 /// </summary>
-public sealed record Theater() : Artist(
-    "Theater",
-    "Theater".ToNormalizedString()!,
-    "Theater",
-    null,
-    null,
-    "a0ef7e1d-44ff-4039-9435-7d5fefdeecc9");
+public sealed record Theater : Artist
+{
+    public Theater() : base("Theater", "Theater".ToNormalizedString()!, "Theater")
+    {
+        MusicBrainzId = Guid.Parse("a0ef7e1d-44ff-4039-9435-7d5fefdeecc9");
+    }
+}

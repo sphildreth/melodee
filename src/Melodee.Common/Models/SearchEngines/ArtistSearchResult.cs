@@ -41,6 +41,19 @@ public sealed record ArtistSearchResult
 
     /// <summary>Any found MusicBrainzId</summary>
     public Guid? MusicBrainzId { get; init; }
+    
+    /// <summary>
+    /// All Music Guide Artist Id
+    /// </summary>
+    public string? AmgId { get; init; }
+
+    public string? DiscogsId { get; init; }
+
+    public string? WikiDataId { get; init; }
+
+    public string? LastFmId { get; init; }
+
+    public string? SpotifyId { get; init; }      
 
     /// <summary>Any alternate names for Artist</summary>
     public string[]? AlternateNames { get; init; }

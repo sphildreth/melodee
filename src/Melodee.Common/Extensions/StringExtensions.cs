@@ -312,9 +312,7 @@ public static partial class StringExtensions
         {
             return input;
         }
-
-        result = NullAndUnicodeRegex().Replace(result.Replace("\u0026", "&").Replace("\0", string.Empty), string.Empty);
-        return WeirdTickAndMoreThanSingleSpacesRegex().Replace(result.Replace("’", "'"), " ").Trim();
+        return ReplaceMultipleSpacesRegex().Replace(CleanStringReplacementRegex().Replace(result, string.Empty), " ").Trim();
     }
 
     public static bool ContainsUnicodeCharacter(this string input)
@@ -424,7 +422,6 @@ public static partial class StringExtensions
             // Cheap way to handle non english, RTL, etc.
             return input.ToBase64();
         }
-
         v = ReplaceWithCharacter().Replace(v, string.Empty);
         return ReplaceDuplicatePipeCharacters()
             .Replace(RemoveNonAlphanumericCharacters()
@@ -433,7 +430,7 @@ public static partial class StringExtensions
                              string.Empty,
                         string.Empty),
                 "|")
-            .Nullify();
+            .Nullify() ?? input.ToBase64();
     }
 
     public static string ToAlphanumericName(this string input, bool stripSpaces = true, bool stripCommas = true)
@@ -780,12 +777,9 @@ public static partial class StringExtensions
     [GeneratedRegex("(\\|{2,})")]
     public static partial Regex ReplaceDuplicatePipeCharacters();
 
-    [GeneratedRegex("\t+|\r+|\\s+|\r+|@+")]
+    [GeneratedRegex("␀+|\t+|\r+|\\s+|\r+|@+")]
     public static partial Regex ReplaceWithCharacter();
-
-    [GeneratedRegex(@"([\\]+.?[0-9]+)|([^\u0000-\u007F]+)")]
-    private static partial Regex NullAndUnicodeRegex();
-
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex WeirdTickAndMoreThanSingleSpacesRegex();
+    
+    [GeneratedRegex(@"(\\0|\\u0+|\\x0+|\t|\r|\n|␀)", RegexOptions.IgnoreCase)]
+    private static partial Regex CleanStringReplacementRegex();
 }

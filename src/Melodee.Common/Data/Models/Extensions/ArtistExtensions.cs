@@ -14,8 +14,11 @@ public static class ArtistExtensions
             artist.NameNormalized,
             artist.SortName,
             null,
-            artist.Id,
-            artist.MusicBrainzId?.ToString());
+            artist.Id
+        )
+        {
+            MusicBrainzId = artist.MusicBrainzId
+        };
     }
 
     public static string ToCoverArtId(this Artist artist)
