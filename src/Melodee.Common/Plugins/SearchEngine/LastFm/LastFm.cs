@@ -50,7 +50,7 @@ public class LastFm(
         }
 
         var httpClient = httpClientFactory.CreateClient();
-        var requestUri =$"//ws.audioscrobbler.com/2.0/?method=album.Search&api_key={apiKey}&format=json&album={Uri.EscapeDataString(query.Name.Trim())}";
+        var requestUri =$"https://ws.audioscrobbler.com/2.0/?method=album.Search&api_key={apiKey}&format=json&album={Uri.EscapeDataString(query.Name.Trim())}";
 
         try
         {
@@ -92,11 +92,14 @@ public class LastFm(
                         }
                     }
                 }
-                logger.Debug("[{DisplayName}] found [{ImageCount}] for Album [{Query}]",
-                    DisplayName,
-                    results.Count,
-                    query.ToString());        
-                
+
+                if (results.Count > 0)
+                {
+                    logger.Debug("[{DisplayName}] found [{ImageCount}] for Album [{Query}]",
+                        DisplayName,
+                        results.Count,
+                        query.ToString());
+                }
             }
         }
         catch (Exception ex)

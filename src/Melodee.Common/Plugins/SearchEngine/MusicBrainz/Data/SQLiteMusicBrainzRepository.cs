@@ -141,14 +141,19 @@ public class SQLiteMusicBrainzRepository(
                         else
                         {
                             sql = """
-                                  SELECT ReleaseType, ReleaseDate, MusicBrainzIdRaw, Name, NameNormalized, SortName, ReleaseGroupMusicBrainzIdRaw 
-                                  FROM "Album"
-                                  WHERE MusicBrainzArtistId = {0}
-                                  and ('{1}' = '' OR NameNormalized in ('{1}'))
-                                  group by ReleaseGroupMusicBrainzIdRaw
-                                  order by ReleaseDate
+                                  SELECT a.ReleaseType, a.ReleaseDate, a.MusicBrainzIdRaw, a.Name, a.NameNormalized, a.SortName, a.ReleaseGroupMusicBrainzIdRaw, ar.MusicBrainzIdRaw as ArtistMusicBrainzRaw
+                                  FROM "Album" a
+                                  JOIN "Artist" ar ON (a.MusicBrainzArtistId = ar.MusicBrainzArtistId)
+                                  WHERE ar.NameNormalized = '{0}'
+                                  AND ('{1}' = '' OR a.NameNormalized in ('{1}'))
+                                  AND SUBSTR(a.ReleaseDate, 1, 4) in ('{2}')
+                                  group by a.ReleaseGroupMusicBrainzIdRaw 
                                   """;
-                            ssql = sql.FormatSmart(artist.MusicBrainzArtistId, string.Join(@"','", query.AlbumKeyValues?.Select(x => x.Value.ToNormalizedString()) ?? []), string.Join(@"','", query.AlbumKeyValues?.Select(x => x.Key) ?? []));
+                            ssql = sql.FormatSmart(query.NameNormalized,
+                                string.Join(@"','",
+                                    query.AlbumKeyValues?.Select(x => x.Value.ToNormalizedString()) ?? []),
+                                string.Join(@"','",
+                                    query.AlbumKeyValues?.Select(x => x.Key) ?? []));
                         }
 
                         var artistAlbums = db.Query<Album>(ssql).ToArray();

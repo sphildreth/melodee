@@ -82,6 +82,8 @@ public class Mp3Files(
                     }
                 }
 
+                var songMediaNumbers = songs.Select(x => x.MediaNumber()).Distinct();
+                var songMaxMediaNumber = songMediaNumbers.Max();
                 foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.AlbumId))
                 {
                     foreach (var song in songsGroupedByAlbum)
@@ -117,7 +119,7 @@ public class Mp3Files(
                                 },
                                 new()
                                 {
-                                    Identifier = MetaTagIdentifier.DiscTotal, Value = song.MediaTotalNumber(), SortOrder = 4
+                                    Identifier = MetaTagIdentifier.DiscTotal, Value = songMaxMediaNumber, SortOrder = 4
                                 },
                                 new()
                                 {

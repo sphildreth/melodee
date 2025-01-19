@@ -46,7 +46,7 @@ public class AlbumImageSearchEngineService(
             },
             new LastFm(logger, configuration, serializer, httpClientFactory)
             {
-                IsEnabled = configuration.GetValue<bool>(SettingRegistry.ScrobblingLastFmEnabled)
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineLastFmEnabled)
             }             
         };
         var result = new List<ImageSearchResult>();
