@@ -1,4 +1,5 @@
 using System.Globalization;
+using NodaTime;
 
 namespace Melodee.Common.Extensions;
 
@@ -13,6 +14,9 @@ public static class DoubleExtensions
     {
         return Convert.ToInt32(seconds / 1000);
     }
+    
+    public static Duration ToDuration(this double seconds)
+        => Duration.FromMilliseconds(seconds);
 
     public static string ToFormattedDateTimeOffset(this double seconds, string? format = null)
     {

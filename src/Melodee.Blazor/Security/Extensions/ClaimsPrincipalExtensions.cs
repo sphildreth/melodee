@@ -39,7 +39,7 @@ public static class ClaimsPrincipalExtensions
 
     public static string? FormatDuration(this ClaimsPrincipal principal, Duration? duration)
     {
-        return duration?.ToString() ?? MelodeeConfiguration.DefaultNoValuePlaceHolder;
+        return duration?.ToString("-H:mm:ss", principal.GetCulture()) ?? MelodeeConfiguration.DefaultNoValuePlaceHolder;
     }
 
     public static bool IsAdmin(this ClaimsPrincipal principal)

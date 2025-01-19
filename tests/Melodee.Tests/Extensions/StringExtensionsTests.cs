@@ -295,11 +295,11 @@ public class StringExtensionsTests
     public void ValidateTags()
     {
         var tags = new[] { "tag1", "TAG2", "tag3", "tag4", "tag5", "Tag6" };
-        var tag = "".AddTag(tags);
+        var tag = "".AddTags(tags);
         Assert.NotNull(tag);
         Assert.Contains("tag2", tag.ToTags() ?? throw new InvalidOperationException());
 
-        var tagNoLower = "".AddTag(tags, dontLowerCase: true);
+        var tagNoLower = "".AddTags(tags, dontLowerCase: true);
         Assert.NotNull(tagNoLower);
         Assert.Contains("TAG2", tagNoLower.ToTags() ?? throw new InvalidOperationException());
     }

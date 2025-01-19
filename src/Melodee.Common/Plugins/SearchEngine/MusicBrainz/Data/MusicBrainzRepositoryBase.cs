@@ -259,7 +259,7 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                     SortName = artist.SortName,
                     NameNormalized = artist.NameNormalized,
                     MusicBrainzIdRaw = artist.MusicBrainzId.ToString(),
-                    AlternateNames = "".AddTag(aArtistAlias?.Select(x => x.Name.ToNormalizedString() ?? x.Name), dontLowerCase: true)
+                    AlternateNames = "".AddTags(aArtistAlias?.Select(x => x.Name.ToNormalizedString() ?? x.Name), dontLowerCase: true)
                 });
             });
         }
@@ -355,7 +355,7 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                     var artistCreditNameArtistId = artistCreditName?.ArtistId ?? 0;
                     contributorIds = releaseArtistCreditNames == null
                         ? null
-                        : "".AddTag(releaseArtistCreditNames
+                        : "".AddTags(releaseArtistCreditNames
                             .Where(x => x.ArtistId != artistCreditNameArtistId)
                             .Select(x => x.ArtistId.ToString()));
                 }

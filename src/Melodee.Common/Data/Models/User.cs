@@ -16,7 +16,6 @@ public class User : DataModelBase
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
-
     public required string UserNameNormalized { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
@@ -74,6 +73,12 @@ public class User : DataModelBase
 
     [MaxLength(MaxLengthDefinitions.HashOrGuidLength)]
     public string? LastFmSessionKey { get; set; }
+    
+    /// <summary>
+    ///     Pipe seperated list. Don't randomize songs in these genres. e.g. 'HOLIDAY|CHRISTMAS'
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
+    public string? HatedGenres { get; set; }    
 
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 

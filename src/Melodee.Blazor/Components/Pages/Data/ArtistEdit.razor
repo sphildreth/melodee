@@ -392,9 +392,9 @@
             }
 
             _artist.LibraryId = _libraries.First(x => x.Name == _libaryName).Id;
-            _artist.AlternateNames = "".AddTag(_alternateNames, doNormalize: true);
-            _artist.Roles = "".AddTag(_roles);
-            _artist.Tags = "".AddTag(_tags);
+            _artist.AlternateNames = "".AddTags(_alternateNames, doNormalize: true);
+            _artist.Roles = "".AddTags(_roles);
+            _artist.Tags = "".AddTags(_tags);
 
             if (ApiKey == Guid.Empty)
             {

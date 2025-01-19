@@ -3,8 +3,10 @@
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
+@using NodaTime
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
+@using Song = Melodee.Common.Data.Models.Song
 
 @inject AlbumService AlbumService
 @inject UserService UserService
@@ -18,7 +20,8 @@
             <RadzenBreadCrumb>
                 <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
                 <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
-                <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")" Text="Albums"/>
+                <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")"
+                                      Text="Albums"/>
                 <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
             </RadzenBreadCrumb>
         </RadzenColumn>
@@ -29,7 +32,10 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenRating Value="@_userAlbum.Rating" Change="@UserRatingChange"/>
-                <RadzenIcon Icon="favorite" class="filled-icon" IconColor="@(_userAlbum.IsStarred ? "red" : "black")" @onclick="@IsStarredClicked" Style="cursor:pointer;"/>
+                <RadzenIcon Icon="thumb_down" class="filled-icon" IconColor="@(_userAlbum.IsHated ? "#A2A415" : "#C9C9C7")"
+                            @onclick="@IsHatedClicked" Style="cursor:pointer;"/>
+                <RadzenIcon Icon="favorite" class="filled-icon" IconColor="@(_userAlbum.IsStarred ? "#FA0202" : "#C9C9C7")"
+                            @onclick="@IsStarredClicked" Style="cursor:pointer;"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -68,46 +74,59 @@
 <RadzenStack class="rz-mt-3">
     <RadzenRow>
         <RadzenColumn Size="4" SizeMD="2">
-            <RadzenCard>
-                <RadzenTree Change="@OnShowItemChange">
-                    <RadzenTreeItem Text="Overview" Selected="true">
-                        <Template>
-                            <RadzenIcon Icon="overview"/>
-                            @context.Text
-                        </Template>
-                    </RadzenTreeItem>
-                    <RadzenTreeItem Text="Contributors">
-                        <Template>
-                            <RadzenIcon Icon="groups"/>
-                            @context.Text
-                        </Template>
-                    </RadzenTreeItem>
-                    <RadzenTreeItem Text="Discs">
-                        <Template>
-                            <RadzenIcon Icon="album"/>
-                            @context.Text
-                        </Template>
-                    </RadzenTreeItem>
-                    <RadzenTreeItem Text="Files">
-                        <Template>
-                            <RadzenIcon Icon="folder_data"/>
-                            @context.Text
-                        </Template>
-                    </RadzenTreeItem>
-                    <RadzenTreeItem Text="Images">
-                        <Template>
-                            <RadzenIcon Icon="image"/>
-                            @context.Text
-                        </Template>
-                    </RadzenTreeItem>
-                    <RadzenTreeItem Text="Songs">
-                        <Template>
-                            <RadzenIcon Icon="music_note"/>
-                            @context.Text
-                        </Template>
-                    </RadzenTreeItem>
-                </RadzenTree>
-            </RadzenCard>
+            <RadzenStack>
+                <RadzenCard>
+                    <RadzenTree Change="@OnShowItemChange">
+                        <RadzenTreeItem Text="Overview" Selected="true">
+                            <Template>
+                                <RadzenIcon Icon="overview"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem Text="Contributors">
+                            <Template>
+                                <RadzenIcon Icon="groups"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem Text="Files">
+                            <Template>
+                                <RadzenIcon Icon="folder_data"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem Text="Images">
+                            <Template>
+                                <RadzenIcon Icon="image"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                    </RadzenTree>
+                </RadzenCard>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                            Statistics
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Disc Count" Statistic="@(_album.DiscCount.ToStringPadLeft(3))"/>
+                            <CondensedStatistic Label="Song Count" Statistic="@(_album.SongCount.ToStringPadLeft(4))"/>
+                            <CondensedStatistic Label="Played Total" Statistic="@(_album.PlayedCount.ToStringPadLeft(6))"/>
+                            <CondensedStatistic Label="Last Played" Statistic="@(CurrentUser?.FormatInstant(_album.LastPlayedAt))"/>
+                            <CondensedStatistic Label="Created" Statistic="@(CurrentUser?.FormatInstant(_album.CreatedAt))"/>
+                            <CondensedStatistic Label="Last Updated" Statistic="@(CurrentUser?.FormatInstant(_album.LastUpdatedAt))"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+            </RadzenStack>
         </RadzenColumn>
         <RadzenColumn Size="8" SizeMD="9">
             @if (_showItem == ShowItem.Overview)
@@ -118,84 +137,45 @@
                             <HeaderTemplate>
                                 <RadzenText TextStyle="TextStyle.H6"
                                             class="rz-display-flex rz-align-items-center rz-m-0">
-                                    <RadzenIcon Icon="monitoring" class="rz-me-1"/>
-                                    Statistics
+                                    <RadzenIcon Icon="music_note" class="rz-me-1"/>
+                                    Songs
                                 </RadzenText>
                             </HeaderTemplate>
                             <ChildContent>
-                                <RadzenStack
-                                    Orientation="Orientation.Horizontal"
-                                    Wrap="FlexWrap.Wrap"
-                                    JustifyContent="JustifyContent.Left"
-                                    class="rz-p-6"
-                                    Gap="2rem">
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
-                                                 Style="min-width: 200px;">
-                                        <RadzenIcon Icon="artist"/>
-                                        <div
-                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
-                                            Disc Count
-                                        </div>
-                                        <div style="width:110px;display:inline-block;text-align:right;">
-                                            @(_album.DiscCount.ToStringPadLeft(3))
-                                        </div>
-                                    </RadzenBadge>
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
-                                                 Style="min-width: 200px;">
-                                        <RadzenIcon Icon="artist"/>
-                                        <div
-                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
-                                            Played Total
-                                        </div>
-                                        <div style="width:110px;display:inline-block;text-align:right;">
-                                            @(_album.PlayedCount.ToStringPadLeft(6))
-                                        </div>
-                                    </RadzenBadge>
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
-                                                 Style="min-width: 200px;">
-                                        <RadzenIcon Icon="album"/>
-                                        <div
-                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
-                                            Song Count
-                                        </div>
-                                        <div style="width:110px;display:inline-block;text-align:right;">
-                                            @(_album.SongCount.ToStringPadLeft(4))
-                                        </div>
-                                    </RadzenBadge>
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
-                                                 Style="min-width: 200px;">
-                                        <RadzenIcon Icon="history"/>
-                                        <div
-                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
-                                            Created
-                                        </div>
-                                        <div style="width:110px;display:inline-block;text-align:right;">
-                                            @(CurrentUser?.FormatInstant(_album.CreatedAt))
-                                        </div>
-                                    </RadzenBadge>
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
-                                                 Style="min-width: 200px;">
-                                        <RadzenIcon Icon="history"/>
-                                        <div
-                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
-                                            Last Played
-                                        </div>
-                                        <div style="width:110px;display:inline-block;text-align:right;">
-                                            @(CurrentUser?.FormatInstant(_album.LastPlayedAt))
-                                        </div>
-                                    </RadzenBadge>
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark"
-                                                 Style="min-width: 200px;">
-                                        <RadzenIcon Icon="history"/>
-                                        <div
-                                            style="width:120px;display:inline-block;text-transform:none;text-align:left;">
-                                            Last Updated
-                                        </div>
-                                        <div style="width:110px;display:inline-block;text-align:right;">
-                                            @(CurrentUser?.FormatInstant(_album.LastUpdatedAt))
-                                        </div>
-                                    </RadzenBadge>
-                                </RadzenStack>
+                                <table class="rz-mt-1">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col" style="min-width:50px;"></th>
+                                        <th scope="col">#</th>
+                                        <th scope="col" style="width:90%;">Title</th>
+                                        <th scope="col">Duration</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var song in _album.Discs.OrderBy(x => x.DiscNumber).SelectMany(x => x.Songs).OrderBy(x => x.SongNumber))
+                                    {
+                                        <tr>
+                                            <th scope="row">
+                                                <RadzenIcon
+                                                    Icon="thumb_down"
+                                                    class="filled-icon"
+                                                    IconColor="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.IsHated ?? false ? "#A2A415" : "#C9C9C7")"
+                                                    @onclick="@(() => IsSongHatedClicked(song))"
+                                                    Style="cursor:pointer;" />
+                                                <RadzenIcon
+                                                    Icon="favorite"
+                                                    class="filled-icon"
+                                                    IconColor="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.IsStarred ?? false ? "#FA0202" : "#C9C9C7")"
+                                                    @onclick="@(() => IsSongStarredClicked(song))"
+                                                    Style="cursor:pointer;"/>
+                                            </th>
+                                            <td>@($"{song.AlbumDisc.DiscNumber.ToStringPadLeft(2)}.{song.SongNumber.ToStringPadLeft(3)}")</td>
+                                            <td>@song.Title</td>
+                                            <td>@CurrentUser.FormatDuration(song.Duration.ToDuration())</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
                             </ChildContent>
                         </RadzenPanel>
                     </RadzenColumn>
@@ -226,10 +206,8 @@
     {
         Overview = 1,
         Contributors,
-        Discs,
         Files,
-        Images,
-        Songs
+        Images
     }
 
     UserAlbum _userAlbum = new UserAlbum
@@ -238,6 +216,8 @@
         AlbumId = 0,
         CreatedAt = default
     };
+
+    UserSong[] _userSongs = [];
 
     Album _album = new()
     {
@@ -256,6 +236,7 @@
             LibraryId = 0,
             CreatedAt = default
         },
+        Discs = new List<AlbumDisc>(),
         Name = string.Empty,
         NameNormalized = string.Empty,
         Directory = string.Empty,
@@ -283,12 +264,16 @@
                         AlbumStatusBadgeStyle = BadgeStyle.Primary;
                         break;
                 }
+
                 _userAlbum = await UserService.UserAlbumAsync(CurrentUsersId, _album.ApiKey) ?? new UserAlbum
                 {
                     UserId = 0,
                     AlbumId = 0,
                     CreatedAt = default
                 };
+
+                _userSongs = await UserService.UserSongsForAlbumAsync(CurrentUsersId, _album.ApiKey) ?? [];
+
             }
         }
     }
@@ -328,11 +313,76 @@
         throw new NotImplementedException();
     }
 
+    private async Task IsHatedClicked()
+    {
+        _userAlbum.IsHated = !_userAlbum.IsHated;
+        var result = await UserService.ToggleAlbumHatedAsync(CurrentUsersId, _album.ApiKey, _userAlbum.IsHated);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Album Hatred", ToastTime));
+    }
+
     private async Task IsStarredClicked()
     {
         _userAlbum.IsStarred = !_userAlbum.IsStarred;
         var result = await UserService.ToggleAlbumStarAsync(CurrentUsersId, _album.ApiKey, _userAlbum.IsStarred);
         NotificationService.Notify(NotificationMessageForResult(result, "Toggling Album Favorite", ToastTime));
+    }
+
+
+    private async Task IsSongStarredClicked(Song song)
+    {
+        var userSong = _userSongs.FirstOrDefault(x => x.SongId == song.Id);
+        if (userSong == null)
+        {
+            userSong = new UserSong
+            {
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                UserId = CurrentUsersId,
+                SongId = song.Id,
+                IsStarred = true,
+            };
+            var allUserSongs = _userSongs.ToList();
+            allUserSongs.Add(userSong);
+            _userSongs = allUserSongs.ToArray();
+        }
+        else
+        {
+            userSong.IsStarred = !userSong.IsStarred;
+        }
+        if (userSong.IsStarred)
+        {
+            userSong.IsHated = false;
+        }
+        var result = await UserService.ToggleSongStarAsync(CurrentUsersId, song.ApiKey, userSong.IsStarred);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Song Favorite", ToastTime));
+
+    }
+
+    private async Task IsSongHatedClicked(Song song)
+    {
+        var userSong = _userSongs.FirstOrDefault(x => x.SongId == song.Id);
+        if (userSong == null)
+        {
+            userSong = new UserSong
+            {
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                UserId = CurrentUsersId,
+                SongId = song.Id,
+                IsHated = true,
+            };
+            var allUserSongs = _userSongs.ToList();
+            allUserSongs.Add(userSong);
+            _userSongs = allUserSongs.ToArray();
+        }
+        else
+        {
+            userSong.IsHated = !userSong.IsHated;
+        }
+        if (userSong.IsHated)
+        {
+            userSong.IsStarred = false;
+        }
+        var result = await UserService.ToggleSongHatedAsync(CurrentUsersId, song.ApiKey, userSong.IsStarred);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Song Hatred", ToastTime));
     }
 
 }

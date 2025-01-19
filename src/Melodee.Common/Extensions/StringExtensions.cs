@@ -354,9 +354,9 @@ public static partial class StringExtensions
     /// <param name="tagSplit">Tag split value</param>
     /// <param name="dontLowerCase">Don't return lowercase value, leave value case as is</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
-    public static string? AddTag(this string? str, string? value, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
+    public static string? AddTags(this string? str, string? value, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
     {
-        return AddTag(str, value?.Split(tagSplit ?? TagsSeparator), tagSplit, dontLowerCase);
+        return AddTags(str, value?.Split(tagSplit ?? TagsSeparator), tagSplit, dontLowerCase);
     }
 
     /// <summary>
@@ -369,7 +369,7 @@ public static partial class StringExtensions
     /// <param name="doReorder">Reorder values</param>
     /// <param name="doNormalize">Apply normalization to values</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
-    public static string? AddTag(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false, bool? doReorder = true, bool? doNormalize = false)
+    public static string? AddTags(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false, bool? doReorder = true, bool? doNormalize = false)
     {
         var vv = values as string[] ?? values?.ToArray() ?? [];
         if (SafeParser.IsNull(str) && vv.Length == 0)

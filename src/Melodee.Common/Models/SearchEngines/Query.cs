@@ -19,12 +19,12 @@ public record Query
         {
             if (Name.Contains(','))
             {
-                return "".AddTag(Name.Split(','), doReorder: false)?.ToNormalizedString() ?? NameNormalized;
+                return "".AddTags(Name.Split(','), doReorder: false)?.ToNormalizedString() ?? NameNormalized;
             }
 
             if (Name.Contains(' '))
             {
-                return "".AddTag(Name.Split(' '), doReorder: false)?.ToNormalizedString() ?? NameNormalized;
+                return "".AddTags(Name.Split(' '), doReorder: false)?.ToNormalizedString() ?? NameNormalized;
             }
 
             return NameNormalized;

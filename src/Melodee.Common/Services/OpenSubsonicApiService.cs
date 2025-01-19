@@ -722,7 +722,7 @@ public class OpenSubsonicApiService(
 
             var album = albumResponse.Data!;
             var userAlbum = await userService.UserAlbumAsync(authResponse.UserInfo.Id, apiKey.Value, cancellationToken);
-            var userSongsForAlbum = await userService.UserSongsForAlbumAsync(apiRequest.Username, apiKey.Value, cancellationToken) ?? [];
+            var userSongsForAlbum = await userService.UserSongsForAlbumAsync(authResponse.UserInfo.Id, apiKey.Value, cancellationToken) ?? [];
             data = new AlbumId3WithSongs
             {
                 AlbumDate = album.ReleaseDate.ToItemDate(),
