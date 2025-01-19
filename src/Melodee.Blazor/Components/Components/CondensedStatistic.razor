@@ -1,11 +1,14 @@
-<div>
-    <RadzenText TextStyle="TextStyle.Caption">@Label</RadzenText>
+<div class="@Class">
+    <RadzenText Style="@LabelStyle" TextStyle="TextStyle.Caption">@Label</RadzenText>
     <div>
-        <RadzenText TextStyle="TextStyle.Overline">@Statistic</RadzenText>
+        <RadzenText Style="@StatisticStyle" TextStyle="TextStyle.Overline">@Statistic</RadzenText>
     </div>
 </div>
 
 @code {
     [Parameter] public required string Label { get; set; }
     [Parameter] public required string Statistic { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? LabelStyle { get; set; }
+    [Parameter] public string? StatisticStyle { get; set; }
 }

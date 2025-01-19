@@ -51,8 +51,11 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
-                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Text="Edit" title="Edit the album"
-                              Click="@EditButtonClick"/>
+                <RadzenButton
+                    Icon="edit"
+                    ButtonStyle="ButtonStyle.Info"
+                    Text="Edit" title="Edit the album"
+                    Click="@EditButtonClick"/>
                 @if (_album.IsLocked)
                 {
                     <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning"
@@ -103,6 +106,26 @@
                         </RadzenTreeItem>
                     </RadzenTree>
                 </RadzenCard>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="info" class="rz-me-1"/>
+                            Details
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Status" StatisticStyle="@AlbumStatusStyle" Statistic="@_album.AlbumStatusValue.ToString()"/>
+                            <CondensedStatistic Label="Album Type" Statistic="@_album.AlbumTypeValue.ToString()"/>
+                            <CondensedStatistic Label="Genres" Statistic="@_album.Genres?.ToCsv()"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
                 <RadzenPanel>
                     <HeaderTemplate>
                         <RadzenText TextStyle="TextStyle.H6"
@@ -171,7 +194,7 @@
                                             </th>
                                             <td>@($"{song.AlbumDisc.DiscNumber.ToStringPadLeft(2)}.{song.SongNumber.ToStringPadLeft(3)}")</td>
                                             <td>@song.Title</td>
-                                            <td>@CurrentUser.FormatDuration(song.Duration.ToDuration())</td>
+                                            <td>@CurrentUser!.FormatDuration(song.Duration.ToDuration())</td>
                                         </tr>
                                     }
                                     </tbody>
@@ -180,12 +203,10 @@
                         </RadzenPanel>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="3">
-                        <RadzenStack Orientation="Orientation.Vertical">
-                            <RadzenBadge BadgeStyle="@AlbumStatusBadgeStyle" Style="width:305px;"
-                                         Text="@($"Status: {_album.AlbumStatusValue.ToString()}")"/>
-                            <RadzenImage Path=@($"/images/{_album.ToApiKey()}/300") Style="margin:auto;display: block;"
-                                         AlternateText="@_album.Name"/>
-                        </RadzenStack>
+                        <RadzenImage
+                            Path=@($"/images/{_album.ToApiKey()}/300")
+                            Style="margin:auto;display: block;"
+                            AlternateText="@_album.Name"/>
                     </RadzenColumn>
                 </RadzenRow>
             }
@@ -198,7 +219,7 @@
 
     [Parameter] public Guid ApiKey { get; set; }
 
-    BadgeStyle AlbumStatusBadgeStyle { get; set; }
+    string AlbumStatusStyle { get; set; } = string.Empty;
 
     ShowItem _showItem = ShowItem.Overview;
 
@@ -255,13 +276,13 @@
                 switch (_album.AlbumStatusValue)
                 {
                     case AlbumStatus.New:
-                        AlbumStatusBadgeStyle = BadgeStyle.Info;
+                        AlbumStatusStyle = "color: var(--rz-info)";
                         break;
                     case AlbumStatus.Invalid:
-                        AlbumStatusBadgeStyle = BadgeStyle.Warning;
+                        AlbumStatusStyle = "color: var(--rz-warning)";
                         break;
                     default:
-                        AlbumStatusBadgeStyle = BadgeStyle.Primary;
+                        AlbumStatusStyle = "color: var(--rz-success)";
                         break;
                 }
 
@@ -271,7 +292,6 @@
                     AlbumId = 0,
                     CreatedAt = default
                 };
-
                 _userSongs = await UserService.UserSongsForAlbumAsync(CurrentUsersId, _album.ApiKey) ?? [];
 
             }
