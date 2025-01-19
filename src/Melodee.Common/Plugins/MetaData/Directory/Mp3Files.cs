@@ -117,10 +117,6 @@ public class Mp3Files(
                                 },
                                 new()
                                 {
-                                    Identifier = MetaTagIdentifier.DiscNumber, Value = song.MediaNumber(), SortOrder = 4
-                                },
-                                new()
-                                {
                                     Identifier = MetaTagIdentifier.DiscTotal, Value = song.MediaTotalNumber(), SortOrder = 4
                                 },
                                 new()

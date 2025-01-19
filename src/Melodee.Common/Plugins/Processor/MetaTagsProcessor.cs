@@ -13,14 +13,15 @@ namespace Melodee.Common.Plugins.Processor;
 public sealed partial class MetaTagsProcessor(IMelodeeConfiguration configuration, ISerializer serializer)
     : IMetaTagsProcessorPlugin
 {
-    private readonly IEnumerable<IMetaTagProcessor> _metaTagProcessors = new IMetaTagProcessor[]
-    {
+    private readonly IEnumerable<IMetaTagProcessor> _metaTagProcessors =
+    [
         new Album(configuration.Configuration, serializer),
         new AlbumArtist(configuration.Configuration, serializer),
         new Artist(configuration.Configuration, serializer),
         new AlbumDate(configuration.Configuration, serializer),
+        new DiscTotal(configuration.Configuration, serializer),
         new SongTitle(configuration.Configuration, serializer)
-    };
+    ];
 
     public string Id => "EBFFDB54-F24E-42F3-B98F-6C65500249FE";
 

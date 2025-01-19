@@ -723,48 +723,6 @@ public sealed class MediaEditService(
         };
     }
 
-    public async Task<OperationResult<bool>> DeleteAlbumsInStagingAsync(FileSystemDirectoryInfo directoryInfo, Guid[] albumIds, CancellationToken cancellationToken = default)
-    {
-        CheckInitialized();
-
-        if (albumIds.Length == 0)
-        {
-            return new OperationResult<bool>
-            {
-                Data = false
-            };
-        }
-
-        var result = false;
-        try
-        {
-            foreach (var selectedAlbumId in albumIds)
-            {
-                var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, selectedAlbumId, cancellationToken);
-                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(directoryInfo.FullName(), album.ToDirectoryName()));
-                try
-                {
-                    Directory.Delete(albumStagingDirInfo.FullName, true);
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Error deleting [{AlbumId}]", selectedAlbumId);
-                }
-            }
-
-            result = true;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Deleting Albums from staging.");
-        }
-
-        return new OperationResult<bool>
-        {
-            Data = result
-        };
-    }
-
     public async Task<OperationResult<bool>> MoveAlbumsToLibraryAsync(FileSystemDirectoryInfo directoryInfo, Guid[] albumIds, CancellationToken cancellationToken = default)
     {
         CheckInitialized();

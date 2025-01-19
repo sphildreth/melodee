@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Utility;
+using NodaTime;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -12,6 +14,23 @@ public static class ArtistExtensions
 
     public static readonly Regex CastRecordingSongArtistParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    public static ArtistDataInfo ToArtistDataInfo(this Artist artist, DateTimeOffset? createdAt,  int? albumCount = null,  int? songCount = null)
+    {
+        return new(0,
+            artist.Id,
+            false,
+            0,
+            string.Empty,
+            artist.Name,
+            artist.NameNormalized,
+            string.Empty,
+            string.Empty,
+            albumCount ?? 0,
+            songCount ?? 0,
+            createdAt != null ? Instant.FromDateTimeOffset(createdAt.Value) : Instant.MinValue,
+            string.Empty);
+    }
+    
     public static KeyValue ToKeyValue(this Artist artist)
     {
         return new KeyValue(artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId?.ToString() ?? artist.Name.ToNormalizedString() ?? artist.Name, artist.Name.ToNormalizedString() ?? artist.Name);

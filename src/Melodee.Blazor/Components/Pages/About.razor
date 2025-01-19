@@ -1,4 +1,6 @@
 @page "/about"
+@using System.Security.Claims
+@inherits MelodeeComponentBase
 
 @inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
 
@@ -10,11 +12,24 @@
     </RadzenText>
     <RadzenCard>
         <RadzenStack>
+            <RadzenText TextStyle="TextStyle.H6" Text="About Server" />
             <dl>
                 @foreach (var serverStat in _serverStats.OrderBy(x => x.Key))
                 {
                     <dt>@serverStat.Key</dt>
                     <dd>@((MarkupString)(serverStat.Value ?? string.Empty))</dd>
+                }
+            </dl>
+        </RadzenStack>
+    </RadzenCard>
+    <RadzenCard>
+        <RadzenStack>
+            <RadzenText TextStyle="TextStyle.H6" Text="About You" />
+            <dl>
+                @foreach (var claim in _userClaimsToDisplay)
+                {
+                    <dt>@claim.Type</dt>
+                    <dd>@claim.Value</dd>
                 }
             </dl>
         </RadzenStack>
@@ -25,6 +40,15 @@
 
     string _siteTitle = string.Empty;
     readonly List<KeyValue> _serverStats = [];
+    readonly List<Claim> _userClaimsToDisplay = [];
+
+    readonly string[] _showClaimTypes =
+        [
+            "HTTP://SCHEMAS.MICROSOFT.COM/WS/2008/06/IDENTITY/CLAIMS/ROLE",
+            "HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/SID",
+            "HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/NAME",
+            "HTTP://SCHEMAS.XMLSOAP.ORG/WS/2005/05/IDENTITY/CLAIMS/EMAILADDRESS"
+        ];
 
     protected override async Task OnInitializedAsync()
     {
@@ -36,6 +60,9 @@
         _serverStats.Add(new KeyValue("API Version", configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? string.Empty));
         _serverStats.Add(new KeyValue("Melodee", "Melodee music system <a href=\"https://github.com/sphildreth/melodee\">GitHub</a>"));
         _serverStats.Add(new KeyValue("UI Version", typeof(Program).Assembly.GetName().Version?.ToString() ?? string.Empty));
+
+        _userClaimsToDisplay.AddRange(CurrentUser?.Claims.Where(x => _showClaimTypes.Contains(x.Type.ToUpper())) ?? []);
+
     }
 
 }

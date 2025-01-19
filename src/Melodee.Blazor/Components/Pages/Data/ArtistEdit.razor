@@ -356,7 +356,7 @@
         var storageLibrariesResult = await LibraryService.GetStorageLibrariesAsync();
         _libraries = storageLibrariesResult.Data.ToList();
 
-        // TODO when more than one storage library a
+        // TODO handle differently when more than one storage library
         _libaryName = _libraries.First().Name;
 
         if (ApiKey != Guid.Empty)

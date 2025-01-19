@@ -88,12 +88,17 @@ public class ITunesSearchEngine(
                         });
                     }
                 }
+                logger.Debug("[{DisplayName}] found [{ImageCount}] for Album [{Query}]",
+                    DisplayName,
+                    results.Count,
+                    query.ToString());
             }
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Error searching for album image url [{Url}] query [{Query}]", requestUri, query.Name);
         }
+
         return new OperationResult<ImageSearchResult[]?>
         {
             Data = results.OrderBy(x => x.Rank).ToArray()

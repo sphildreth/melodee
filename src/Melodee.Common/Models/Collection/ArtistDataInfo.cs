@@ -19,6 +19,11 @@ public sealed record ArtistDataInfo(
     string Tags)
 {
     public object? State { get; set; }
+    
+    /// <summary>
+    ///     This is populated when the record is created from a Media Album file.
+    /// </summary>
+    public byte[]? ImageBytes { get; set; }    
 
     public static string InfoLineTitle => "Album Count | Song Count";
 

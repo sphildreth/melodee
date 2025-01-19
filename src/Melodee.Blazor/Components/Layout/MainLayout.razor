@@ -74,6 +74,7 @@
                     <RadzenPanelMenuItem Text="Shares" Path="/data/shares" Icon="share"/>
                     <RadzenPanelMenuItem Text="Users" Path="/data/users" Icon="group"/>
                     <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" Visible="@AuthService.IsAdmin">
+                        <RadzenPanelMenuItem Text="Dashboard" Path="/admin/dashboard" Icon="dashboard"/>
                         <RadzenPanelMenuItem Text="Media" Icon="perm_media">
                             @foreach (var mediaLibraryInfo in _mediaLibraryInfos)
                             {

@@ -691,7 +691,16 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Is ITunes search engine enabled.",
                     Value = "true",
                     CreatedAt = now
-                },                
+                },
+                new Setting
+                {
+                    Id = 915,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineLastFmEnabled,
+                    Comment = "Is LastFM search engine enabled.",
+                    Value = "true",
+                    CreatedAt = now
+                },                 
                 new Setting
                 {
                     Id = 400,

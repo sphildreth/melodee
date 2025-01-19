@@ -1,0 +1,36 @@
+@page "/admin/dashboard"
+@inherits MelodeeComponentBase
+
+@inject ICacheManager CacheManager
+@inject NotificationService NotificationService
+
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>Dashboard</PageTitle>
+
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                Gap="0.5rem">
+                <RadzenButton
+                    Icon="sweep"
+                    Text="Clear Cache"
+                    Click="@ClearCacheClicked"
+                    ButtonStyle="ButtonStyle.Warning"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+
+    private void ClearCacheClicked()
+    {
+        CacheManager.Clear();
+        NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = true }, "cleared cache", ToastTime));
+    }
+
+}

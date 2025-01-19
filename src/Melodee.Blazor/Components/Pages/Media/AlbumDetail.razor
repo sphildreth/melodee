@@ -8,10 +8,13 @@
 @inject ILogger Logger
 @inject LibraryService LibraryService
 @inject AlbumDiscoveryService AlbumDiscoveryService
+@inject MediaEditService MediaEditService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject DefaultImages DefaultImages
+
+@attribute [Authorize(Roles = "Administrator,Editor")]
 
 <PageTitle>@_album.AlbumTitle()</PageTitle>
 
@@ -20,12 +23,187 @@
     <RadzenBreadCrumbItem Path="@($"/media/library/{_library.ApiKey}")" Icon="folder" Text="@_library.Name"/>
     <RadzenBreadCrumbItem Icon="album" Text="@_album.AlbumTitle()"/>
 </RadzenBreadCrumb>
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="@_album.AlbumTitle()" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenButton
+                    Icon="edit"
+                    ButtonStyle="ButtonStyle.Info"
+                    Text="Edit" title="Edit the album"
+                    Click="@EditButtonClick"/>
+                <RadzenButton
+                    Icon="move_group"
+                    Text="Move to Library"
+                    title="Move to Library." Click="@MoveButtonClick"/>
+                <RadzenButton
+                    Icon="delete"
+                    ButtonStyle="ButtonStyle.Danger"
+                    Text="Delete" title="Delete the album and all album files. BEWARE!"
+                    Click="@DeleteButtonClick"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+<RadzenStack class="rz-mt-3">
+    <RadzenRow>
+        <RadzenColumn Size="4" SizeMD="2">
+            <RadzenStack>
+                <RadzenCard>
+                    <RadzenTree Change="@OnShowItemChange">
+                        <RadzenTreeItem Text="Overview" Selected="true">
+                            <Template>
+                                <RadzenIcon Icon="overview"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem Text="Contributors">
+                            <Template>
+                                <RadzenIcon Icon="groups"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem Text="Files">
+                            <Template>
+                                <RadzenIcon Icon="folder_data"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem Text="Images">
+                            <Template>
+                                <RadzenIcon Icon="image"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                    </RadzenTree>
+                </RadzenCard>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="info" class="rz-me-1"/>
+                            Details
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            @if (_album.IsValid)
+                            {
+                                <CondensedStatistic Label="Status" StatisticStyle="color: var(--rz-success)" Statistic="Ok"/>
+                            }
+                            else
+                            {
+                                <CondensedStatistic LabelStyle="@(_album.IsValid ? "" : "color: var(--rz-color-danger);")" Label="Issues" Statistic="@_album.StatusReasons.ToString()"/>
+                            }
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                            Statistics
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Disc Count" Statistic="@(_album.MediaCountValue().ToStringPadLeft(3))"/>
+                            <CondensedStatistic Label="Song Count" Statistic="@(_album.SongTotalValue().ToStringPadLeft(4))"/>
+                            <CondensedStatistic Label="Created" Statistic="@(CurrentUser?.FormatDateTimeOffset(_album.Created))"/>
+                            <CondensedStatistic Label="Last Updated" Statistic="@(CurrentUser?.FormatDateTimeOffset(_album.Modified))"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="8" SizeMD="9">
+            @if (_showItem == ShowItem.Overview)
+            {
+                <RadzenRow class="rz-pb-3">
+                    <RadzenColumn Size="12" SizeMD="9">
+                        <RadzenPanel>
+                            <HeaderTemplate>
+                                <RadzenText TextStyle="TextStyle.H6"
+                                            class="rz-display-flex rz-align-items-center rz-m-0">
+                                    <RadzenIcon Icon="music_note" class="rz-me-1"/>
+                                    Songs
+                                </RadzenText>
+                            </HeaderTemplate>
+                            <ChildContent>
+                                <table class="rz-mt-1">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col" style="width:90%;">Title</th>
+                                        <th scope="col">Duration</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var song in (_album.Songs ?? []).OrderBy(x => x.MediaNumber()).ThenBy(x => x.MediaNumber()))
+                                    {
+                                        <tr>
+                                            <td>@($"{song.MediaNumber().ToStringPadLeft(2)}.{song.SongNumber().ToStringPadLeft(3)}")</td>
+                                            <td>@song.Title()</td>
+                                            <td>@CurrentUser!.FormatDuration(song.Duration().ToDuration())</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </ChildContent>
+                        </RadzenPanel>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenStack>
+                            <ArtistDataInfoCardComponent
+                                ShowArtistLink="false"
+                                Style="width: 350px;"
+                                Artist="@_album.Artist.ToArtistDataInfo(_album.Created, 1, _album.SongTotalValue())" />
+                            <RadzenImage
+                                Path="@_coverImage"
+                                Style="width: 350px; height: auto; margin:auto;display: block;"
+                                AlternateText="@_album.AlbumTitle()"/>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
 
 @code {
 
     [Parameter] public Guid LibraryApiKey { get; set; }
 
     [Parameter] public Guid ApiKey { get; set; }
+
+    ShowItem _showItem = ShowItem.Overview;
+
+    string _coverImage = string.Empty;
+
+    private enum ShowItem
+    {
+        Overview = 1,
+        Contributors,
+        Files,
+        Images
+    }
 
     Common.Data.Models.Library _library = new()
     {
@@ -47,8 +225,19 @@
         {
             Path = string.Empty,
             Name = string.Empty
-        }
+        },
+        Songs = []
     };
+
+    private void OnShowItemChange(TreeEventArgs arg)
+    {
+        switch (arg.Text)
+        {
+            default:
+                _showItem = ShowItem.Overview;
+                break;
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -59,6 +248,8 @@
             _library = libraryResult.Data!;
 
             _album = await AlbumDiscoveryService.AlbumByUniqueIdAsync(_library.ToFileSystemDirectoryInfo(), ApiKey);
+
+            _coverImage = await _album.CoverImageBase64Async() ?? DefaultImages.AlbumCoverBase64;
         }
         finally
         {
@@ -70,6 +261,51 @@
     {
         await base.OnInitializedAsync();
         await AlbumDiscoveryService.InitializeAsync();
+        await MediaEditService.InitializeAsync();
+    }
+
+    private Task EditButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private async Task DeleteButtonClick()
+    {
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            if (_album.Delete(_library.Path))
+            {
+                NavigationManager.NavigateTo($"/media/library/{_library.ApiKey}", true);
+            }
+            NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = false }, "deleting album", ToastTime));
+        }
+    }
+
+    private async Task MoveButtonClick()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var librariesResult = await LibraryService.GetStorageLibrariesAsync();
+            if (librariesResult.Data.Length > 1)
+            {
+                // TODO If more than one Library type library then prompt for which library to move into
+                throw new NotImplementedException();
+            }
+
+            var storageLibrary = librariesResult.Data.First();
+            var moveResult = await LibraryService.MoveAlbumsFromLibraryToLibrary(
+                _library.Name,
+                storageLibrary.Name,
+                a => a.Id == _album.Id,
+                true);
+            NavigationManager.NavigateTo($"/media/library/{_library.ApiKey}", true);
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
     }
 
 }

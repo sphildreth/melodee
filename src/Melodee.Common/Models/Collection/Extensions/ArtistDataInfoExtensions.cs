@@ -4,6 +4,15 @@ namespace Melodee.Common.Models.Collection.Extensions;
 
 public static class ArtistDataInfoExtensions
 {
+    public static string? ImageBase64(this ArtistDataInfo artist, byte[]? defaultImages = null)
+    {
+        if (artist.ImageBytes == null && defaultImages == null)
+        {
+            return null;
+        }
+        return $"data:image/jpeg;base64,{Convert.ToBase64String(artist.ImageBytes ?? defaultImages ?? [])}";   
+    }    
+    
     public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this ArtistDataInfo artist, string? libraryPath = null)
     {
         return new FileSystemDirectoryInfo
@@ -18,6 +27,10 @@ public static class ArtistDataInfoExtensions
 
     public static string ImageUrl(this ArtistDataInfo artistDataInfo, int? size = null)
     {
+        if (artistDataInfo.ImageBase64() != null)
+        {
+            return artistDataInfo.ImageBase64()!;
+        }
         return $"/images/{artistDataInfo.ToApiKey()}/{size ?? 80}";
     }
 

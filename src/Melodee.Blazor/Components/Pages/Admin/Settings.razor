@@ -1,13 +1,16 @@
 @page "/admin/settings"
+@inherits MelodeeComponentBase
+
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Filtering
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
-@inherits MelodeeComponentBase
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject ILogger Logger
 @inject SettingService SettingService
 @inject NotificationService NotificationService
+
+@attribute [Authorize(Roles = "Administrator")]
 
 <PageTitle>Settings</PageTitle>
 
