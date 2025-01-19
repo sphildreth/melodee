@@ -76,6 +76,8 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+            
+            var settingService = new SettingService(Log.Logger, cacheManager, configFactory, dbFactory);
 
             var job = new LibraryInsertJob
             (
@@ -114,6 +116,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                         Log.Logger,
                         cacheManager,
                         serializer,
+                        settingService,
                         configFactory,
                         dbFactory,
                         scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
@@ -124,6 +127,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                         Log.Logger,
                         cacheManager,
                         serializer,
+                        settingService,
                         configFactory,
                         dbFactory,
                         scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),

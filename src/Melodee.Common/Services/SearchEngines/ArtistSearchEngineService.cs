@@ -6,6 +6,7 @@ using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Plugins.SearchEngine;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,7 @@ public class ArtistSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     ISerializer serializer,
+    SettingService settingService,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMusicBrainzRepository musicBrainzRepository,
@@ -41,12 +43,20 @@ public class ArtistSearchEngineService(
             new MusicBrainzArtistSearchEnginePlugin(musicBrainzRepository)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
+            },
+            new Spotify(Log.Logger, _configuration, _serializer, settingService, httpClientFactory)
+            {
+                IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             }
         ];
 
         _artistTopSongsSearchEnginePlugins =
         [
-            new MelodeeArtistSearchEnginPlugin(ContextFactory)
+            new MelodeeArtistSearchEnginPlugin(ContextFactory),
+            new Spotify(Log.Logger, _configuration, _serializer, settingService, httpClientFactory)
+            {
+                IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
+            }
         ];
 
         _initialized = true;

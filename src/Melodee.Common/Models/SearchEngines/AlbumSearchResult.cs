@@ -38,4 +38,6 @@ public sealed record AlbumSearchResult
     public Guid? MusicBrainzId { get; set; }
 
     public ArtistSearchResult? Artist { get; init; }
+    
+    public string? SpotifyId { get; set; }
 }

@@ -26,7 +26,7 @@ public class LastFm(
 
     public int SortOrder { get; } = 1;
     
-    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         //http://ws.audioscrobbler.com/2.0/?method=album.Search&api_key=<key>&format=json&album=Rising
 
@@ -54,7 +54,7 @@ public class LastFm(
 
         try
         {
-            var response = await httpClient.GetAsync(requestUri, token);
+            var response = await httpClient.GetAsync(requestUri, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -64,7 +64,7 @@ public class LastFm(
                 };
             }
 
-            var jsonResponse = await response.Content.ReadAsStringAsync(token);
+            var jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
             var searchResult = serializer.Deserialize<LastFmResult>(jsonResponse);
             if (searchResult?.Results?.Albummatches?.album?.Any() ?? false)
             {

@@ -23,7 +23,7 @@ public sealed record MetaTag<T>
 
     public int SortOrder { get; set; }
 
-    [JsonIgnore] public bool WasModified => OriginalValue != null;
+    [JsonIgnore] public bool WasModified => OriginalValue != null && OriginalValue.Equals(Value) == false;
 
     public StyleClass StyleClass { get; set; } = StyleClass.Normal;
 

@@ -28,7 +28,7 @@ public class ITunesSearchEngine(
 
     public int SortOrder { get; } = 2;
     
-    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         //https://itunes.apple.com/search?term=Cargo&entity=album&country=US&media=music
 
@@ -47,7 +47,7 @@ public class ITunesSearchEngine(
 
         try
         {
-            var response = await httpClient.GetAsync(requestUri, token);
+            var response = await httpClient.GetAsync(requestUri, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -57,7 +57,7 @@ public class ITunesSearchEngine(
                 };
             }
 
-            var jsonResponse = await response.Content.ReadAsStringAsync(token);
+            var jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
             var searchResult = serializer.Deserialize<ITunesSearchResult>(jsonResponse);
             if (searchResult?.Results?.Any() ?? false)
             {
@@ -100,7 +100,7 @@ public class ITunesSearchEngine(
         }
         catch (Exception ex)
         {
-            logger.Error(ex, "Error searching for album image url [{Url}] query [{Query}]", requestUri, query.Name);
+            logger.Error(ex, "Error searching for album image url [{Url}] query [{Query}]", requestUri, query.ToString());
         }
 
         return new OperationResult<ImageSearchResult[]?>

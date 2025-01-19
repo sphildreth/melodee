@@ -50,6 +50,7 @@
     <PackageReference Include="SharpZipLib"/>
     <PackageReference Include="SixLabors.ImageSharp"/>
     <PackageReference Include="SmartFormat"/>
+    <PackageReference Include="SpotifyAPI.Web" />
     <PackageReference Include="System.IO.Hashing"/>
     <PackageReference Include="System.Linq.Dynamic.Core"/>
     <PackageReference Include="z440.atl.core"/>

@@ -75,6 +75,7 @@ public sealed class ImageHelperTests
     [InlineData("Front Cover.jpg", true)]
     [InlineData("front.jpg", true)]
     [InlineData("cover.jpg", true)]
+    [InlineData("TG_front.jpg", true)]
     [InlineData("01-cover.jpg", true)]
     [InlineData("Covers-001.jpg", true)]
     [InlineData("Scan_01-Covers.jpg", true)]

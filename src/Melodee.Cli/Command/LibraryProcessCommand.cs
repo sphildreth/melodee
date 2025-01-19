@@ -79,6 +79,8 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
             var melodeeConfiguration = await melodeeConfigurationFactory.GetConfigurationAsync().ConfigureAwait(false);
             var imageValidator = new ImageValidator(melodeeConfiguration);
 
+            var settingService = new SettingService(Log.Logger, cacheManager, melodeeConfigurationFactory, dbFactory);
+            
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,
@@ -95,6 +97,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 Log.Logger,
                 cacheManager,
                 serializer,
+                settingService,
                 melodeeConfigurationFactory,
                 dbFactory,
                 musicBrainzRepository,
@@ -105,6 +108,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 Log.Logger,
                 cacheManager,
                 serializer,
+                settingService,
                 melodeeConfigurationFactory,
                 dbFactory,
                 scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),

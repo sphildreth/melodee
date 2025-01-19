@@ -14,7 +14,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
     IMelodeeConfiguration configuration,
     IMusicBrainzRepository repository) : IAlbumImageSearchEnginePlugin
 {
-    public bool StopProcessing { get; } = false;
+    public bool StopProcessing { get; private set; } = false;
 
     public string Id => "3E6C2DD3-AC1A-452D-B52B-4C292BA1CC49";
 
@@ -24,8 +24,10 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
 
     public int SortOrder { get; } = 0;
 
-    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
+        StopProcessing = false;
+        
         var result = new List<ImageSearchResult>();
 
         if (!configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled))
@@ -47,7 +49,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
                 [
                     new KeyValue(query.Year.ToString(), query.Name)
                 ]
-            }, 1, token).ConfigureAwait(false);
+            }, 1, cancellationToken).ConfigureAwait(false);
             if (artistSearchResult.IsSuccess)
             {
                 var rg = artistSearchResult.Data.FirstOrDefault()?.Releases?.FirstOrDefault()?.MusicBrainzResourceGroupId;
@@ -55,11 +57,12 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
                 {
                     result.Add(new ImageSearchResult
                     {
-                        FromPlugin = nameof(MusicBrainzCoverArtArchiveSearchEngine),
+                        FromPlugin = DisplayName,
                         Rank = 10,
                         ThumbnailUrl = string.Empty,
                         MediaUrl = $"https://coverartarchive.org/release-group/{rg}/front"
                     });
+                    StopProcessing = true;
                 }
             }
         }

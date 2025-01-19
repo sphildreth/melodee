@@ -8,6 +8,7 @@ using Melodee.Common.Plugins.SearchEngine.ITunes;
 using Melodee.Common.Plugins.SearchEngine.LastFm;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ public class AlbumImageSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     ISerializer serializer,
+    SettingService settingService,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMusicBrainzRepository musicBrainzRepository,
@@ -44,10 +46,14 @@ public class AlbumImageSearchEngineService(
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)
             },
+            new Spotify(logger, configuration, serializer, settingService, httpClientFactory)
+            {
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
+            },            
             new LastFm(logger, configuration, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineLastFmEnabled)
-            }             
+            }        
         };
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
@@ -58,6 +64,10 @@ public class AlbumImageSearchEngineService(
                 if (searchResult.IsSuccess)
                 {
                     result.AddRange(searchResult.Data ?? []);
+                }                
+                if (searchEngine.StopProcessing || result.Count >= maxResultsValue)
+                {
+                    break;
                 }
             }
             catch (Exception e)
