@@ -254,9 +254,22 @@ public sealed class DirectoryProcessorService(
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
 
-        Console.WriteLine("Handling multiple media albums...");
-        directoriesToProcess = HandleAnyDirectoriesWithMultipleMediaDirectories(fileSystemDirectoryInfo, directoriesToProcess);
-
+        // TODO Ensure the CD3 directories are not screwed up
+        return new NotImplementedException();
+        
+        var mediaDirectoriesToProcess = directoriesToProcess.Where(x => x.GetParent().UniqueId != fileSystemDirectoryInfo.UniqueId &&  x.AllMediaTypeFileInfos().Any()).ToArray();
+        if (mediaDirectoriesToProcess.Length > 0)
+        {
+            // This means there are subdirectories which have media files in directories which have media files, must be one album per directory.
+            foreach(var mediaDirectoryToProcess in mediaDirectoriesToProcess)
+            {
+                var newDir = new DirectoryInfo(Path.Combine(fileSystemDirectoryInfo.FullName(), Guid.NewGuid().ToString()));
+                Directory.Move(mediaDirectoryToProcess.FullName(), newDir.FullName);
+                directoriesToProcess.Remove(mediaDirectoryToProcess);
+                directoriesToProcess.Add(newDir.ToDirectorySystemInfo());
+            }
+        }
+     
         if (directoriesToProcess.Count > 0)
         {
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
@@ -359,7 +372,7 @@ public sealed class DirectoryProcessorService(
                 }
 
                 // If no albums were created by previous plugins, create from media files
-                if (!directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName).Any())
+                if (!directoryInfoToProcess.MelodeeJsonFiles().Any())
                 {
                     foreach (var plugin in _mediaAlbumCreatorPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
                     {
@@ -376,11 +389,9 @@ public sealed class DirectoryProcessorService(
                         }
                     }
                 }
-
-                Console.WriteLine("Loading Album for directory...");
-
+                
                 var albumsForDirectory = new List<Album>();
-                foreach (var melodeeJsonFile in directoryInfoToProcess.FileInfosForExtension(Album.JsonFileName).ToArray())
+                foreach (var melodeeJsonFile in directoryInfoToProcess.MelodeeJsonFiles())
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                     {
@@ -803,64 +814,71 @@ public sealed class DirectoryProcessorService(
     private List<FileSystemDirectoryInfo> HandleAnyDirectoriesWithMultipleMediaDirectories(FileSystemDirectoryInfo topDirectory, List<FileSystemDirectoryInfo> directoriesToProcess)
     {
         var result = new List<FileSystemDirectoryInfo>();
-        var handledParents = new List<FileSystemDirectoryInfo>();
 
         try
         {
             foreach (var directory in directoriesToProcess)
             {
                 var directoryParent = directory.GetParent();
-                if (directory.IsAlbumMediaDirectory() && !handledParents.Contains(directoryParent))
+                if (directory.AllMediaTypeFileInfos().Any() && $"{directoryParent.FullName()}{Path.DirectorySeparatorChar}" != topDirectory.FullName())
                 {
-                    if ($"{directoryParent.FullName()}{Path.DirectorySeparatorChar}" == topDirectory.FullName())
-                    {
-                        continue;
-                    }
+                    var newDirName = Path.Combine(topDirectory.FullName(), Guid.NewGuid().ToString());
+             //       Directory.Move(directory.FullName(), newDirName);
+                    result.Add(new DirectoryInfo(newDirName).ToDirectorySystemInfo());
+                    
+                    // if (handledParents.Count > 0 )
+                    // {
+                    //     continue;
+                    // }
 
-                    var allMediaDirectoriesInParentDirectory = directoryParent.AllAlbumMediaDirectories().ToArray();
-                    var totalMediaNumber = allMediaDirectoriesInParentDirectory.Count();
-                    foreach (var mediaDirectory in allMediaDirectoriesInParentDirectory)
-                    {
-                        var mediaNumber = mediaDirectory.Name.TryToGetMediaNumberFromString() ?? 1;
-                        foreach (var mediaFile in mediaDirectory.AllMediaTypeFileInfos().ToArray())
-                        {
-                            var fileAtl = new Track(mediaFile.FullName)
-                            {
-                                DiscNumber = mediaNumber,
-                                DiscTotal = totalMediaNumber
-                            };
-                            fileAtl.Save();
-                            var songFileName = SongExtensions.SongFileName(
-                                mediaFile,
-                                _configuration.GetValue<int>(SettingRegistry.ValidationMaximumSongNumber),
-                                fileAtl.TrackNumber ?? throw new Exception($"Cannot read track number for [{mediaFile}]"),
-                                fileAtl.Title ?? throw new Exception($"Cannot read song title for [{mediaFile}]"),
-                                _configuration.GetValue<int>(SettingRegistry.ValidationMaximumMediaNumber),
-                                mediaNumber,
-                                totalMediaNumber,
-                                ".mp3");
-                            mediaFile.MoveTo(Path.Combine(directoryParent.FullName(), songFileName));
-                        }
+                 //   var allMediaDirectoriesInParentDirectory = directoryParent.AllAlbumMediaDirectories().ToArray();
+                    // var totalMediaNumber = allMediaDirectoriesInParentDirectory.Count();
+                    // foreach (var mediaDirectory in allMediaDirectoriesInParentDirectory)
+                    // {
+                    //     var mediaNumber = mediaDirectory.Name.TryToGetMediaNumberFromString() ?? 1;
+                    //     foreach (var mediaFile in mediaDirectory.AllMediaTypeFileInfos().ToArray())
+                    //     {
+                    //         var fileAtl = new Track(mediaFile.FullName)
+                    //         {
+                    //             DiscNumber = mediaNumber,
+                    //             DiscTotal = totalMediaNumber
+                    //         };
+                    //         fileAtl.Save();
+                    //         var songFileName = SongExtensions.SongFileName(
+                    //             mediaFile,
+                    //             _configuration.GetValue<int>(SettingRegistry.ValidationMaximumSongNumber),
+                    //             fileAtl.TrackNumber ?? throw new Exception($"Cannot read track number for [{mediaFile}]"),
+                    //             fileAtl.Title ?? throw new Exception($"Cannot read song title for [{mediaFile}]"),
+                    //             _configuration.GetValue<int>(SettingRegistry.ValidationMaximumMediaNumber),
+                    //             mediaNumber,
+                    //             totalMediaNumber,
+                    //             ".mp3");
+                    //         mediaFile.MoveTo(Path.Combine(directoryParent.FullName(), songFileName));
+                    //     }
+                    //
+                    //     foreach (var imageFile in mediaDirectory.AllFileImageTypeFileInfos())
+                    //     {
+                    //         var newImageFilename = Path.Combine(directoryParent.FullName(), imageFile.Name);
+                    //         if (!File.Exists(newImageFilename))
+                    //         {
+                    //             imageFile.MoveTo(newImageFilename);
+                    //         }
+                    //     }
+                    //
+                    //     Directory.Delete(mediaDirectory.FullName(), true);
+                    // }
 
-                        foreach (var imageFile in mediaDirectory.AllFileImageTypeFileInfos())
-                        {
-                            var newImageFilename = Path.Combine(directoryParent.FullName(), imageFile.Name);
-                            if (!File.Exists(newImageFilename))
-                            {
-                                imageFile.MoveTo(newImageFilename);
-                            }
-                        }
-
-                        Directory.Delete(mediaDirectory.FullName(), true);
-                    }
-
-                    handledParents.Add(directoryParent);
-                    result.Add(directoryParent);
+               //     handledParents.Add(directoryParent);
+                  //  result.Add(directoryParent);
                 }
-                else if (!directory.IsAlbumMediaDirectory())
-                {
-                    result.Add(directory);
-                }
+                 else if (directory.AllMediaTypeFileInfos().Any())
+                 {
+                     result.Add(directory);
+                 }
+                // else
+                // {
+                //     var t = 1;
+                // }
             }
         }
         catch (Exception e)

@@ -82,8 +82,12 @@ public class Mp3Files(
                     }
                 }
 
-                var songMediaNumbers = songs.Select(x => x.MediaNumber()).Distinct();
-                var songMaxMediaNumber = songMediaNumbers.Max();
+                var songMaxMediaNumber = 1;
+                if (songs.Count > 0)
+                {
+                    var songMediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
+                    songMaxMediaNumber = songMediaNumbers.Length != 0 ? songMediaNumbers.Max() : 1;
+                }
                 foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.AlbumId))
                 {
                     foreach (var song in songsGroupedByAlbum)

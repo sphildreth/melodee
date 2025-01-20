@@ -34,6 +34,8 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
 
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
+        StopProcessing = false;
+        
         var resultType = OperationResponseType.Error;
         var processedFiles = 0;
 

@@ -8,7 +8,7 @@ namespace Melodee.Common.Models;
 /// </summary>
 public sealed record FileSystemDirectoryInfo
 {
-    public long UniqueId => SafeParser.Hash(Path);
+    public long UniqueId => SafeParser.Hash(Path.TrimEnd(System.IO.Path.DirectorySeparatorChar));
 
     [JsonIgnore] public bool ShowInTree => MusicFilesFound > 0;
 

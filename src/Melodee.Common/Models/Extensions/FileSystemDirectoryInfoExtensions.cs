@@ -99,6 +99,21 @@ public static class FileSystemDirectoryInfoExtensions
         Directory.Delete(fileSystemDirectoryInfo.FullName());
     }
 
+    public static IEnumerable<FileInfo> MelodeeJsonFiles(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
+        if (!dirInfo.Exists)
+        {
+            return [];
+        }
+
+        return dirInfo.GetFiles($"*{Album.JsonFileName}", new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            MatchCasing = MatchCasing.CaseInsensitive
+        }).OrderBy(x => x.Name).ToArray();  
+    }
+    
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
