@@ -1,8 +1,6 @@
 ![Melodee](graphics/melodee_gh_card.png)
 
-# NOTE
-
-Melodee is under development, very much a work in progress.
+## 🚧 *Melodee is under development, currently in alpha mode.* 🚧
 
 # Melodee
 
@@ -12,7 +10,7 @@ Melodee is a music system designed to handle libraries with tens of millions of 
 
 * Melodee.Blazor - Blazor and OpenSubsonic API server
     * Both OpenSubsonic and Subsonic 1.16.1.
-    * Blazor adminisrative front end.
+    * Blazor administrative front end.
 * Melodee.Cli - Command line interface
     * Library management.
     * Manage configuration values.
