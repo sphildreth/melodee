@@ -41,6 +41,8 @@ public class FileSystemDirectoryInfoExtensionTests
     [InlineData("Bobs Discography", false)]
     [InlineData("Media Madness", false)]
     [InlineData("Media 2013 Madness", false)]
+    [InlineData("97b244a3-7a49-4dec-921b-2257fc597f39", false)]
+    [InlineData("00-k 2024", false)]
     [InlineData("Artist - [2000] Album", false)]
     [InlineData("CD", false)]
     [InlineData("A0", true)] // sph; I dont know why, but these are common
@@ -49,6 +51,7 @@ public class FileSystemDirectoryInfoExtensionTests
     [InlineData("AAA1", true)]
     [InlineData("B2", true)]
     [InlineData("CD01", true)]
+    [InlineData("CD14", true)]
     [InlineData("CD1", true)]
     [InlineData("DISC1", true)]
     [InlineData("media001", true)]

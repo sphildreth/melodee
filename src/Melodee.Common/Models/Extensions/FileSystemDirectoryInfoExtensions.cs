@@ -16,7 +16,7 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static readonly Regex IsDirectoryDiscographyRegex = new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new("(cd|disc|disk|side|media|a|b|c|d|e|f)([0-9]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new("^(cd|disc|disk|side|media|a|b|c|d|e|f){1,}([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     /// <summary>
     ///     Rename the Directory and prepend the given prefix.
@@ -154,6 +154,9 @@ public static class FileSystemDirectoryInfoExtensions
         return !string.IsNullOrWhiteSpace(dir) && IsDirectoryDiscographyRegex.IsMatch(dir);
     }
 
+    /// <summary>
+    /// Is the directory a directory that holds a media (e.g. 'CD01' or 'DISCA')
+    /// </summary>
     public static bool IsAlbumMediaDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var dir = fileSystemDirectoryInfo.Name;

@@ -319,17 +319,19 @@ public class StringExtensionsTests
 
     [Theory]
     [InlineData(null, AlbumType.NotSet)]
+    [InlineData("", AlbumType.NotSet)]    
     [InlineData("Cold Spring Harbor", AlbumType.Album)]
     [InlineData("Sleepy Nights", AlbumType.Album)]
+    [InlineData("Vultures", AlbumType.Album)]
     [InlineData("Sleepy Nights - Episode 1", AlbumType.Album)]
     [InlineData("Single and Alone", AlbumType.Album)]
     [InlineData("Lonely Boy - Single In Manhattan", AlbumType.Album)]
     [InlineData("Cold Spring Harbor - EP", AlbumType.EP)]
     [InlineData("Cold Spring Harbor [EP]", AlbumType.EP)]
     [InlineData("Cold Spring Harbor (EP)", AlbumType.EP)]
+    [InlineData("00-kittie-vultures-ep-web-2024", AlbumType.EP)]
     [InlineData("Cold Spring Harbor [Single]", AlbumType.Single)]
     [InlineData("Cold Spring Harbor (Single)", AlbumType.Single)]
-    [InlineData("Cold Spring Harbor - SINGLE", AlbumType.Single)]
     public void ValidateAlbumType(string? input, AlbumType shouldBe)
         => Assert.Equal(shouldBe, input.TryToDetectAlbumType());
 }

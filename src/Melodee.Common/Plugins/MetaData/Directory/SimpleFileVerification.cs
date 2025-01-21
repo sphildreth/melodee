@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -72,7 +73,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
 
                     Log.Debug("\u2502 Found [{Songs}] valid Songs for Sfv file", models.Count(x => x.IsValid));
 
-                    var songs = new List<Common.Models.Song>();
+                    var songs = new ConcurrentBag<Common.Models.Song>();
                     await Parallel.ForEachAsync(models.Where(x => x.IsValid), cancellationToken, async (model, tt) =>
                     {
                         var songResult = await songPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
@@ -131,8 +132,10 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     }
 
                     var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
+                    var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
                     var sfvAlbum = new Album
                     {
+                        AlbumType = albumName.TryToDetectAlbumType(),
                         Artist = new Artist(
                             artistName ?? throw new Exception($"Invalid artist on {nameof(SimpleFileVerification)}"),
                             artistName.ToNormalizedString() ?? artistName,

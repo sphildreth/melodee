@@ -17,6 +17,7 @@ public class SerializerTests : ServiceTestBase
         Assert.NotNull(deserialized);
         Assert.Equal(album.Id, deserialized.Id);
         Assert.Equal(album.Status, deserialized.Status);
+        Assert.Equal(album.AlbumType, deserialized.AlbumType);
         Assert.NotNull(deserialized.Songs);
 
         Assert.Equal(AlbumValidatorTests.ShouldBeBitRate, deserialized.Songs?.FirstOrDefault()?.BitRate());

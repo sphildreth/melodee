@@ -62,7 +62,9 @@ public static class ArtistExtensions
 
     public static bool IsValid(this Artist artist)
     {
-        return (artist.ArtistDbId != null || artist.MusicBrainzId != null) && artist.Name.Nullify() != null;
+        // If the artist is known already to Melodee (via Dbid) or is a known MusicBrainz or Spotify artist then is ok.
+        // Musicbrainz and Spotify reliably return images for artists, other providers (looking at you LastFm) are spoty.
+        return (artist.ArtistDbId != null || artist.MusicBrainzId != null || artist.SpotifyId != null) && artist.Name.Nullify() != null;
     }
 
     public static string ToAlphanumericName(this Artist artist, bool stripSpaces = true, bool stripCommas = true)

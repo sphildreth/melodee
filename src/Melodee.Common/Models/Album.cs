@@ -205,9 +205,13 @@ public sealed record Album
         var isAlbumOk = Status == AlbumStatus.Ok && otherAlbum.Status == AlbumStatus.Ok;
         var isAlbumInvalid = Status == AlbumStatus.Invalid || otherAlbum.Status == AlbumStatus.Invalid;
 
+        var isAlbumTypeAlbum = AlbumType == AlbumType.Album || otherAlbum.AlbumType == AlbumType.Album;
+        var isAlbumTypeEP = !isAlbumTypeAlbum && AlbumType == AlbumType.EP || otherAlbum.AlbumType == AlbumType.EP;
+        
         return new Album
         {
-            Artist = Artist,
+            AlbumType = isAlbumTypeAlbum && !isAlbumTypeEP ? AlbumType.Album : isAlbumTypeEP ? AlbumType.EP : AlbumType.NotSet,
+            Artist = Artist.Merge(otherAlbum.Artist),
             Directory = Directory,
             Files = files.ToArray(),
             Images = images.ToArray(),

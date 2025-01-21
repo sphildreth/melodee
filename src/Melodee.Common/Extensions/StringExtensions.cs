@@ -18,9 +18,9 @@ public static partial class StringExtensions
 
     private static readonly string SongNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
     
-    public static readonly Regex HasEPFragmentsRegex = new(@"(((\(|\[)|(\s-\s))+ep+(\)|\])?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasEPFragmentsRegex = new(@"((\(|\[|-|\s)+(ep)+(\)|\]|-|\s)?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     
-    public static readonly Regex HasSingleFragmentsRegex = new(@"(((\(|\[)|(\s-\s))+single+(\)|\])?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasSingleFragmentsRegex = new(@"(((\(|\[)|(\s-\s))+(single)+(\)|\])?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex HasWithFragmentsRegex = new(@"(\s*[\(\[]*with\s+)+", RegexOptions.Compiled);
 
