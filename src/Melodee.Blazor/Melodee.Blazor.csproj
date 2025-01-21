@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Radzen.Blazor"/>
+    <PackageReference Include="Radzen.Blazor" Version="5.7.10" />
     <PackageReference Include="Asp.Versioning.Http"/>
     <PackageReference Include="Blazored.SessionStorage"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions"/>
