@@ -13,6 +13,7 @@ using Melodee.Common.Utility;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using ServiceStack;
 
 namespace Melodee.Common.Plugins.MetaData.Directory.Nfo;
 
@@ -69,7 +70,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
             {
                 using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
                 {
-                    var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, parentDirectory, cancellationToken);
+                    var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, fileSystemDirectoryInfo, cancellationToken);
                     if (nfoAlbum == null)
                     {
                         continue;
@@ -189,10 +190,20 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
 
     // ReSharper enable StringLiteralTypo
 
+    private static readonly string[] _lineIgnores =
+    [
+        "length",
+        "runtime"
+    ];
+    
     public static bool IsLineForSong(string line)
     {
-        var l = line.ToAlphanumericName().Nullify();
-        return !string.IsNullOrWhiteSpace(l) && IsLineForSongRegex().IsMatch(l);
+        var l = line.Nullify();
+        if (!string.IsNullOrWhiteSpace(l))
+        {
+            return IsLineForSongRegex().IsMatch(l) && _lineIgnores.All(x => !l.Contains(x, StringComparison.OrdinalIgnoreCase));
+        }
+        return false;
     }
 
     public async Task<Album?> AlbumForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo, CancellationToken cancellationToken = default)
@@ -218,45 +229,10 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                 MetaTagIdentifier.Genre
             };
 
+            var mediaFilesForFolder = fileInfo.Directory.ToDirectorySystemInfo().AllMediaTypeFileInfos().ToArray();
+            
             foreach (var line in await File.ReadAllLinesAsync(fileInfo.FullName, cancellationToken))
             {
-                if (IsLineForSong(line))
-                {
-                    var l = line.OnlyAlphaNumeric();
-                    var songNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
-                    var songDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
-                    var songTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
-                    songs.Add(new Common.Models.Song
-                    {
-                        CrcHash = Crc32.Calculate(fileInfo),
-                        Tags =
-                        [
-                            new MetaTag<object?>
-                            {
-                                Identifier = MetaTagIdentifier.TrackNumber,
-                                Value = songNumber
-                            },
-                            new MetaTag<object?>
-                            {
-                                Identifier = MetaTagIdentifier.Title,
-                                Value = songTitle
-                            },
-                            new MetaTag<object?>
-                            {
-                                Identifier = MetaTagIdentifier.Length,
-                                Value = songDuration
-                            }
-                        ],
-                        File = new FileSystemFileInfo
-                        {
-                            Name = string.Empty,
-                            Size = 0
-                        },
-                        SortOrder = songNumber
-                    });
-                    continue;
-                }
-
                 if (!string.IsNullOrEmpty(line.ToAlphanumericName().Nullify()))
                 {
                     var plr = ParseLine(line, splitChar);
@@ -338,6 +314,44 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                         }
                     }
                 }
+                if (IsLineForSong(line))
+                {
+                    var l = line.OnlyAlphaNumeric();
+                    var songNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
+                    var songDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
+                    var songTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
+                    
+                    var fileForSong = mediaFilesForFolder.FirstOrDefault(x => x.Name.ToNormalizedString()!.Contains(songTitle.ToNormalizedString()!, StringComparison.OrdinalIgnoreCase));
+                    if (fileForSong == null)
+                    {
+                        Log.Warning("[{Plugin}] Could not find file for song [{SongTitle}] in [{DirName}]", DisplayName, songTitle, fileInfo.Directory?.FullName);
+                        continue;
+                    }
+                    songs.Add(new Common.Models.Song
+                    {
+                        CrcHash = Crc32.Calculate(fileForSong),
+                        Tags =
+                        [
+                            new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.TrackNumber,
+                                Value = songNumber
+                            },
+                            new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Title,
+                                Value = songTitle
+                            },
+                            new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Length,
+                                Value = songDuration
+                            }
+                        ],
+                        File = fileForSong.ToFileSystemInfo(),
+                        SortOrder = songNumber
+                    });
+                }                
             }
 
             if (songs.Any() && albumTags.All(x => x.Identifier != MetaTagIdentifier.DiscTotal))
@@ -355,13 +369,35 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                 });
             }
 
+            if (songs.Any())
+            {
+                var s = new List<Common.Models.Song>();
+                foreach (var song in songs)
+                {
+                    if (song.AlbumArtist().Nullify() == null)
+                    {
+                        s.Add(song with
+                        {
+                            Tags = song.Tags?.Append(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.AlbumArtist,
+                                Value = albumTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value
+                            }).ToArray()
+                        });
+                    }
+                }
+                songs = s;
+            }
+            
             var artistName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
+            var albumName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
             var result = new Album
             {
+                AlbumType = albumName.TryToDetectAlbumType(),
                 Artist = new Artist(
                     artistName ?? throw new Exception($"Invalid artist on {nameof(Nfo)}"),
-                    artistName.ToNormalizedString() ?? artistName!,
-                    null),
+                    artistName.ToNormalizedString() ?? artistName,
+                    null),    
                 Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ?? new FileSystemDirectoryInfo
                 {
                     Path = fileInfo.Directory?.FullName ?? string.Empty,
@@ -402,7 +438,8 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
         return null;
     }
 
-    [GeneratedRegex(@"[0-9]+[a-z]+[0-9]{3,4}")]
+    //[GeneratedRegex(@"[0-9]+[a-z]+[0-9]{3,4}")]
+    [GeneratedRegex(@".*([0-9]+:[0-9]+).*")]
     private static partial Regex IsLineForSongRegex();
 
     [GeneratedRegex(@"\.{2,}")]

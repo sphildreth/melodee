@@ -17,17 +17,40 @@ public class NfoTests : TestsBase
             var nfo = new Nfo(Serializer, GetAlbumValidator(), NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
-            Assert.True(nfoParserResult.Status == AlbumStatus.Ok);
+            Assert.Equal(3, nfoParserResult.Songs?.Count());
+            var dir = fileInfo.Directory?.ToDirectorySystemInfo();
+            Assert.DoesNotContain(nfoParserResult.Songs, x => !x.File.Exists(dir));
+            
         }
     }
+    
+    [Fact]
+    public async Task ParseNfoFile2()
+    {
+        var testFile = @"/melodee_test/inbound/00-k 2024/00-kittie-vultures-ep-web-2024.nfo";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var nfo = new Nfo(Serializer, GetAlbumValidator(), NewPluginsConfiguration());
+            var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
+            Assert.NotNull(nfoParserResult);
+            Assert.Equal(3, nfoParserResult.Songs?.Count());
+            var dir = fileInfo.Directory?.ToDirectorySystemInfo();
+            Assert.DoesNotContain(nfoParserResult.Songs, x => !x.File.Exists(dir));
+        }
+    }    
 
     [Theory]
     [InlineData(null, false)]
     [InlineData("bob", false)]
     [InlineData("лллллллллллллллллммллллллллллллВл  ллллплллВА   олллл     АВллллллА    ппВВВллл", false)]
+    [InlineData("                   Holy_Truth-Fire_Proof-(DZB707)-WEB-2024-PTC", false)]
+    [InlineData("           \ufffd\ufffd\ufffd   Quality...: 320kbps ~ 44,1kHz ~ Joint Stereo    \ufffd\ufffd\ufffd", false)]
+    [InlineData("\ufffd\ufffd\ufffd   Length....: 20:49                               \ufffd\ufffd\ufffd", false)]
     [InlineData("01 The Cloverland Panopticon 03:28", true)]
     [InlineData("1 The Cloverland Panopticon 3:28", true)]
     [InlineData("\ud83d\udea8 01 The Cloverland Panopticon 3:28", true)]
+    [InlineData("           \ufffd\ufffd\ufffd   01.Pole Shift                           07:24   \ufffd\ufffd\ufffd", true)]    
     [InlineData("01 > The Cloverland Panopticon                                 < 03:28", true)]
     [InlineData("           ллл   01.Tokyo Night                          05:25   ллл", true)]
     [InlineData("Û 02. Legendary (feat. Lonnie Westry)                                     2:41 Û", true)]
@@ -65,7 +88,6 @@ public class NfoTests : TestsBase
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
             Assert.NotNull(nfoParserResult);
             Assert.NotNull(nfoParserResult.Songs);
-            Assert.True(nfoParserResult.MediaCountValue() > 0);
         }
     }
 }

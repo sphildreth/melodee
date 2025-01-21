@@ -37,7 +37,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
     {
         StopProcessing = false;
         
-        var resultType = OperationResponseType.Error;
+        var resultType = OperationResponseType.Ok;
         var processedFiles = 0;
 
         try

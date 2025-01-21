@@ -36,7 +36,7 @@ public sealed class M3UPlaylist(
     {
         StopProcessing = false;
         
-        var resultType = OperationResponseType.Error;
+        var resultType = OperationResponseType.Ok;
         var processedFiles = 0;
         try
         {
@@ -112,12 +112,16 @@ public sealed class M3UPlaylist(
                                     SortOrder = 5 + i
                                 }));
                         }
+                        
+                        var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
+                        var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();                        
 
                         var m3UAlbum = new Album
                         {
+                            AlbumType = albumName.TryToDetectAlbumType(),
                             Artist = new Artist(
-                                firstSong.AlbumArtist() ?? throw new Exception($"Invalid artist on {nameof(CueSheet)}"),
-                                firstSong.AlbumArtist().ToNormalizedString() ?? firstSong.AlbumArtist()!,
+                                artistName ?? throw new Exception($"Invalid artist on {nameof(Models.CueSheet)}"),
+                                artistName.ToNormalizedString() ?? artistName,
                                 null),
                             Directory = fileSystemDirectoryInfo,
                             Files = new[]

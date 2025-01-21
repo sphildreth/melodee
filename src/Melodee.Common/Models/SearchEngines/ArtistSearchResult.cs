@@ -48,6 +48,8 @@ public sealed record ArtistSearchResult
     public string? AmgId { get; init; }
 
     public string? DiscogsId { get; init; }
+    
+    public string? ItunesId { get; init; }
 
     public string? WikiDataId { get; init; }
 

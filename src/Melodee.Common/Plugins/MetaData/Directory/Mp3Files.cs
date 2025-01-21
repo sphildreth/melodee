@@ -74,7 +74,7 @@ public class Mp3Files(
                             if (pluginResult.IsSuccess)
                             {
                                 songs.Add(pluginResult.Data);
-                                viaPlugins.Add(plugin.DisplayName);
+                                viaPlugins.Add($"{nameof(Mp3Files)}:{plugin.DisplayName}");
                             }
 
                             messages.AddRange(pluginResult.Messages ?? []);
