@@ -261,7 +261,7 @@ public class LibraryService : ServiceBase
             {
                 var orderBy = pagedRequest.OrderByValue();
                 var dbConn = scopedContext.Database.GetDbConnection();
-                var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Libraries\"");
+                var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"LibraryScanHistories\" where \"LibraryId\" = {0} ".FormatSmart(libraryId));
                 librariesCount = await dbConn
                     .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
                     .ConfigureAwait(false);
