@@ -1,4 +1,7 @@
 <Project ToolsVersion="15.0">
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Ardalis.GuardClauses" Version="5.0.0" />
     <PackageVersion Include="Asp.Versioning.Http" Version="8.1.0" />
