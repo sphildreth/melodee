@@ -120,6 +120,6 @@ public class LastFm(
 
     public Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(int forArtist, int maxResults, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(new PagedResult<SongSearchResult>(["LastFm Not implemented"]) { Data = [] });
     }
 }

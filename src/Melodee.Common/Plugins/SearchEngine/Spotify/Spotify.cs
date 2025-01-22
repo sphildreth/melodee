@@ -243,7 +243,7 @@ public class Spotify(
 
     public Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(int forArtist, int maxResults, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(new PagedResult<SongSearchResult>(["Spotify Not implemented"]) { Data = [] });
     }
 }
 

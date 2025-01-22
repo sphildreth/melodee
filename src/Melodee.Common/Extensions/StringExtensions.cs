@@ -79,7 +79,7 @@ public static partial class StringExtensions
 
     public static string? Nullify(this string? input)
     {
-        if (string.IsNullOrWhiteSpace(input))
+        if (string.IsNullOrWhiteSpace(input) || input.Equals("\"\"") || input.Equals("''"))
         {
             return null;
         }

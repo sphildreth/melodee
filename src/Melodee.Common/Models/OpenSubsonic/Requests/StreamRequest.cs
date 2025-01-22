@@ -16,7 +16,7 @@ namespace Melodee.Common.Models.OpenSubsonic.Requests;
 /// </param>
 /// <param name="TimeOffset">
 ///     By default only applicable to video streaming. If specified, start streaming at the given
-///     offset (in seconds) into the media. The Transcode Offet extension enables the parameter to music too.
+///     offset (in seconds) into the media. The Transcode Offset extension enables the parameter to music too.
 /// </param>
 public record StreamRequest(string Id, int? MaxBitRate, string? Format, int? TimeOffset)
 {

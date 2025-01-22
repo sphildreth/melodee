@@ -769,7 +769,7 @@ public class LibraryInsertJob(
         var contributorNameValue = contributorName.Nullify()?.CleanStringAsIs() ?? song.MetaTagValue<string?>(tag)?.CleanStringAsIs();
         if (contributorNameValue.Nullify() != null)
         {
-            var artist = contributorNameValue == null ? null : await artistService.GetByNameNormalized(contributorNameValue, cancellationToken).ConfigureAwait(false);
+            var artist = contributorNameValue == null ? null : await artistService.GetByNameNormalized(contributorNameValue.ToNormalizedString() ?? contributorName!, cancellationToken).ConfigureAwait(false);
             var contributorType = DetermineContributorType(tag);
             if (DoMakeContributorForTageTypeAndValue(contributorType, contributorNameValue))
             {

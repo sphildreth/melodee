@@ -23,7 +23,7 @@ public record Artist(
     string CoverArt,
     string? ArtistImageUrl = null,
     string? UserStarred = null,
-    AlbumList2[]? Albums = null
+    AlbumList2[]? Album = null
 ) : IOpenSubsonicToXml
 {
     /// <summary>
@@ -40,9 +40,9 @@ public record Artist(
         }
 
         var result = new StringBuilder($"<artist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" {starredAttribute} artistImageUrl=\"{ArtistImageUrl}\" averageRating=\"{AverageRating}\" userRating=\"{UserRating}\" coverArt=\"{CoverArt}\" albumCount=\"{AlbumCount}\">");
-        if (Albums != null)
+        if (Album != null)
         {
-            foreach (var album in Albums)
+            foreach (var album in Album)
             {
                 // result.Append($"<album id=\"{ album.Id }\" name=\"{ album.Name.ToSafeXmlString() }\" coverArt=\"{ album.CoverArt }\" songCount=\"{ album.SongCount }\" created=\"{ album.Created }\" duration=\"{ album.Duration }\" artist=\"{ album.Artist.ToSafeXmlString() }\" artistId=\"{ album.ArtistId }\"/>");
                 result.Append(album.ToXml());

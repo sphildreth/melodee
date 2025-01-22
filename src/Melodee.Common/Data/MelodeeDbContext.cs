@@ -700,6 +700,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Is LastFM search engine enabled.",
                     Value = "true",
                     CreatedAt = now
+                },              
+                new Setting
+                {
+                    Id = 916,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineMaximumAllowedPageSize,
+                    Comment = "When performing a search engine search, the maximum allowed page size.",
+                    Value = "1000",
+                    CreatedAt = now
                 },                 
                 new Setting
                 {

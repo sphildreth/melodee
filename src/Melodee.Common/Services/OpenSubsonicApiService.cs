@@ -25,6 +25,7 @@ using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Primitives;
 using NodaTime;
 using Quartz;
@@ -1645,10 +1646,7 @@ public class OpenSubsonicApiService(
                 }
             }
 
-            if (request.IsDownloadingRequest)
-            {
-                Logger.Information("[{ServiceName}] User downloaded song [{SongId}]", nameof(OpenSubsonicApiService), request.Id);
-            }
+            await bus.SendLocal(new UserStreamEvent(apiRequest, request)).ConfigureAwait(false);
 
             return new StreamResponse
             (
@@ -1736,79 +1734,136 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
+        long totalCount = 0;
         ArtistSearchResult[] artists = [];
         AlbumSearchResult[] albums = [];
         SongSearchResult[] songs = [];
 
-        if (request.QueryValue.Nullify() != null)
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var defaultPageSize = (await Configuration.Value).GetValue<short>(SettingRegistry.SearchEngineDefaultPageSize);
+            var maxAllowedPageSize = (await Configuration.Value).GetValue<short>(SettingRegistry.SearchEngineMaximumAllowedPageSize);
+            var artistOffset = request.ArtistOffset ?? 0;
+            if (artistOffset < 0)
             {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                var defaultPageSize = (await Configuration.Value).GetValue<short>(SettingRegistry.DefaultsPageSize);
-                var sqlParameters = new Dictionary<string, object>
+                artistOffset = defaultPageSize;
+            }
+
+            var artistCount = request.ArtistCount ?? defaultPageSize;
+            if (artistCount > maxAllowedPageSize)
+            {
+                artistCount = maxAllowedPageSize;
+            }
+
+            var albumOffset = request.AlbumOffset ?? 0;
+            if (albumOffset < 0)
+            {
+                albumOffset = defaultPageSize;
+            }
+
+            var albumCount = request.AlbumCount ?? defaultPageSize;
+            if (albumCount > maxAllowedPageSize)
+            {
+                albumCount = maxAllowedPageSize;
+            }
+
+            var songOffset = request.SongOffset ?? 0;
+            if (songOffset < 0)
+            {
+                songOffset = defaultPageSize;
+            }
+
+            var songCount = request.SongCount ?? defaultPageSize;
+            if (songCount > maxAllowedPageSize)
+            {
+                songCount = maxAllowedPageSize;
+            }
+
+            if (request.Query.Nullify() == null)
+            {
+                // is a request to get the total number of whatever type is greater than 0
+                if (request.AlbumCount == 1)
                 {
-                    { "userId", authResponse.UserInfo.Id },
-                    { "normalizedQuery", request.QueryNormalizedValue },
-                    { "artistOffset", request.ArtistOffset ?? 0 },
-                    { "artistCount", request.ArtistCount ?? defaultPageSize },
-                    { "albumOffset", request.AlbumOffset ?? 0 },
-                    { "albumCount", request.AlbumCount ?? defaultPageSize },
-                    { "songOffset", request.SongOffset ?? 0 },
-                    { "songCount", request.SongCount ?? defaultPageSize }
-                };
-                var sql = """
-                          select 'artist_' || "ApiKey"::varchar as "Id", "Name", 'artist_' || "ApiKey" as "CoverArt", "AlbumCount"
-                          from "Artists" a
-                          where a."NameNormalized" like @normalizedQuery
-                          or a."AlternateNames" like @normalizedQuery
-                          ORDER BY a."SortName" OFFSET @artistOffset ROWS FETCH NEXT @artistCount ROWS ONLY;
-                          """;
-                artists = (await dbConn
-                    .QueryAsync<ArtistSearchResult>(sql, sqlParameters)
-                    .ConfigureAwait(false)).ToArray();
-
-                sql = """
-                      select 'album_' || a."ApiKey"::varchar as "Id", a."Name", 'album_' || a."ApiKey"::varchar as "CoverArt", a."SongCount", a."CreatedAt", 
-                             a."Duration" as "DurationMs", 'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist",a."Genres"  
-                      from "Albums" a
-                      left join "Artists" aa on (a."ArtistId" = aa."Id")
-                      where a."NameNormalized"  like @normalizedQuery
-                      or a."AlternateNames" like @normalizedQuery
-                      ORDER BY a."SortName" OFFSET @albumOffset ROWS FETCH NEXT @albumCount ROWS ONLY;
-                      """;
-                albums = (await dbConn
-                    .QueryAsync<AlbumSearchResult>(sql, sqlParameters)
-                    .ConfigureAwait(false)).ToArray();
-
-                sql = """
-                      select 'song_' || s."ApiKey"::varchar as "Id", a."ApiKey"::varchar as Parent, s."Title", a."Name" as Album, aa."Name" as "Artist", 'song_' || s."ApiKey"::varchar as "CoverArt", 
-                             a."SongCount", s."CreatedAt", s."Duration" as "DurationMs", s."BitRate", s."SongNumber" as "Track", 
-                             DATE_PART('year', a."ReleaseDate"::date) as "Year", a."Genres", s."FileSize" as "Size", 
-                             s."ContentType", l."Path" || aa."Directory" || a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", 'album_' ||a."ApiKey"::varchar as "AlbumId", 
-                             'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
-                      from "Songs" s
-                      join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                      join "Albums" a on (ad."AlbumId" = a."Id")
-                      join "Artists" aa on (a."ArtistId" = aa."Id")
-                      join "Libraries" l on (aa."LibraryId" = l."Id")
-                      where s."TitleNormalized"  like @normalizedQuery
-                      or s."AlternateNames" like @normalizedQuery
-                      ORDER BY a."SortName" OFFSET @songOffset ROWS FETCH NEXT @songCount ROWS ONLY;
-                      """;
-                songs = (await dbConn
-                    .QueryAsync<SongSearchResult>(sql, sqlParameters)
-                    .ConfigureAwait(false)).ToArray();
-
-                if (albums.Length == 0 && songs.Length == 0 && artists.Length == 0)
-                {
-                    Logger.Information("! No result for query [{Query}] Normalized [{QueryNormalized}]", request.QueryValue, request.QueryNormalizedValue);
+                    totalCount = await scopedContext.Albums.LongCountAsync(cancellationToken: cancellationToken);   
                 }
+                else if (request.ArtistCount == 1)
+                {
+                    totalCount = await scopedContext.Artists.LongCountAsync(cancellationToken: cancellationToken);
+                }
+                else if (request.SongCount == 1)
+                {
+                    totalCount = await scopedContext.Songs.LongCountAsync(cancellationToken: cancellationToken);
+                }
+            }
+            
+            var sqlParameters = new Dictionary<string, object>
+            {
+                { "userId", authResponse.UserInfo.Id },
+                { "normalizedQuery", request.QueryNormalizedValue },
+                { "artistOffset", artistOffset },
+                { "artistCount", artistCount },
+                { "albumOffset", albumOffset },
+                { "albumCount", albumCount },
+                { "songOffset", songOffset },
+                { "songCount", songCount }
+            };
+            var sql = """
+                      select 'artist_' || "ApiKey"::varchar as "Id", "Name", 'artist_' || "ApiKey" as "CoverArt", "AlbumCount"
+                      from "Artists" a
+                      where a."NameNormalized" like @normalizedQuery
+                      or a."AlternateNames" like @normalizedQuery
+                      or @normalizedQuery = ''
+                      ORDER BY a."SortName" OFFSET @artistOffset ROWS FETCH NEXT @artistCount ROWS ONLY;
+                      """;
+            artists = (await dbConn
+                .QueryAsync<ArtistSearchResult>(sql, sqlParameters)
+                .ConfigureAwait(false)).ToArray();
+
+            sql = """
+                  select 'album_' || a."ApiKey"::varchar as "Id", a."Name", 'album_' || a."ApiKey"::varchar as "CoverArt", a."SongCount", a."CreatedAt", 
+                         a."Duration" as "DurationMs", 'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist",a."Genres"  
+                  from "Albums" a
+                  left join "Artists" aa on (a."ArtistId" = aa."Id")
+                  where a."NameNormalized"  like @normalizedQuery
+                  or a."AlternateNames" like @normalizedQuery
+                  or @normalizedQuery = ''
+                  ORDER BY a."SortName" OFFSET @albumOffset ROWS FETCH NEXT @albumCount ROWS ONLY;
+                  """;
+            albums = (await dbConn
+                .QueryAsync<AlbumSearchResult>(sql, sqlParameters)
+                .ConfigureAwait(false)).ToArray();
+
+            sql = """
+                  select 'song_' || s."ApiKey"::varchar as "Id", a."ApiKey"::varchar as Parent, s."Title", a."Name" as Album, aa."Name" as "Artist", 'song_' || s."ApiKey"::varchar as "CoverArt", 
+                         a."SongCount", s."CreatedAt", s."Duration" as "DurationMs", s."BitRate", s."SongNumber" as "Track", 
+                         DATE_PART('year', a."ReleaseDate"::date) as "Year", a."Genres", s."FileSize" as "Size", 
+                         s."ContentType", l."Path" || aa."Directory" || a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", 'album_' ||a."ApiKey"::varchar as "AlbumId", 
+                         'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
+                  from "Songs" s
+                  join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
+                  join "Albums" a on (ad."AlbumId" = a."Id")
+                  join "Artists" aa on (a."ArtistId" = aa."Id")
+                  join "Libraries" l on (aa."LibraryId" = l."Id")
+                  where s."TitleNormalized"  like @normalizedQuery
+                  or s."AlternateNames" like @normalizedQuery
+                  or @normalizedQuery = ''
+                  ORDER BY a."SortName" OFFSET @songOffset ROWS FETCH NEXT @songCount ROWS ONLY;
+                  """;
+            songs = (await dbConn
+                .QueryAsync<SongSearchResult>(sql, sqlParameters)
+                .ConfigureAwait(false)).ToArray();
+
+            if (albums.Length == 0 && songs.Length == 0 && artists.Length == 0)
+            {
+                Logger.Information("! No result for query [{Query}] Normalized [{QueryNormalized}]", request.QueryValue, request.QueryNormalizedValue);
             }
         }
 
+
         return new ResponseModel
         {
+            TotalCount = totalCount,
             UserInfo = authResponse.UserInfo,
             ResponseData = await DefaultApiResponse() with
             {
@@ -2090,16 +2145,19 @@ public class OpenSubsonicApiService(
                 {
                     result = (await userService.ToggleAristStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
                 }
+
                 if (IsApiIdForAlbum(idValue))
                 {
                     result = (await userService.ToggleAlbumStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
                 }
+
                 if (IsApiIdForSong(idValue))
                 {
                     result = (await userService.ToggleSongStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
                 }
             }
-        }      
+        }
+
         return new ResponseModel
         {
             UserInfo = BlankUserInfo,
