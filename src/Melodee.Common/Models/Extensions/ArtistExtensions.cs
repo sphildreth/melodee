@@ -63,7 +63,7 @@ public static class ArtistExtensions
     public static bool IsValid(this Artist artist)
     {
         // If the artist is known already to Melodee (via Dbid) or is a known MusicBrainz or Spotify artist then is ok.
-        // Musicbrainz and Spotify reliably return images for artists, other providers (looking at you LastFm) are spoty.
+        // Musicbrainz and Spotify reliably return images for artists, other providers (looking at you LastFm) are spotty.
         return (artist.ArtistDbId != null || artist.MusicBrainzId != null || artist.SpotifyId != null) && artist.Name.Nullify() != null;
     }
 
@@ -108,10 +108,7 @@ public static class ArtistExtensions
             throw new Exception("Neither Artist or ArtistSort tag is set.");
         }
 
-        if (artist.ArtistDbId == null && artist.MusicBrainzId == null)
-        {
-            throw new Exception("Neither ArtistDbId or MusicBrainzId is set.");
-        }
+        var artistFolderId = artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId?.ToString() ?? artist.SpotifyId ?? throw new Exception("Neither ArtistDbId, MusicBrainzId or SpotifyId is set.");
 
         var artistDirectory = artistNameToUse.ToAlphanumericName(false, false).ToDirectoryNameFriendly()?.ToTitleCase(false);
         if (string.IsNullOrEmpty(artistDirectory))
@@ -142,7 +139,7 @@ public static class ArtistExtensions
         }
 
         var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
-        var fnIdPart = $" [{SafeParser.Hash(artist.ArtistDbId.ToString(), artist.MusicBrainzId.ToString())}]";
+        var fnIdPart = $" [{SafeParser.Hash(artistFolderId)}]";
         var maxFnLength = processingMaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length) - 2;
         if (artistDirectory.Length > maxFnLength)
         {

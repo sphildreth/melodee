@@ -1016,7 +1016,7 @@ public class LibraryService : ServiceBase
                     if (d.Parent?.DoesDirectoryHaveMediaFiles() ?? false)
                     {
                         var parentDir = d.Parent.ToDirectorySystemInfo();
-                        if (parentDir.FullName() == libDir.FullName())
+                        if (parentDir.FullName().ToNormalizedString() == libDir.FullName().ToNormalizedString())
                         {
                             continue;
                         }
