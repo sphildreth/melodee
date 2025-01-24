@@ -20,6 +20,10 @@ public static class SettingRegistry
     public const string ImagingSmallSize = "imaging.smallSize";
     public const string ImagingMediumSize = "imaging.mediumSize";
     public const string ImagingLargeSize = "imaging.largeSize";
+    public const string JobsArtistHousekeepingCronExpression = "jobs.artistHousekeeping.cronExpression";
+    public const string JobsLibraryProcessCronExpression = "jobs.libraryProcess.cronExpression";
+    public const string JobsLibraryInsertCronExpression = "jobs.libraryInsert.cronExpression";    
+    public const string JobsMusicBrainzUpdateDatabaseCronExpression = "jobs.musicbrainzUpdateDatabase.cronExpression";
     public const string MagicDoRemoveFeaturingArtistFromSongArtist = "magic.doRemoveFeaturingArtistFromSongArtist";
     public const string MagicDoRemoveFeaturingArtistFromSongTitle = "magic.doRemoveFeaturingArtistFromSongTitle";
     public const string MagicDoRemoveUnwantedTextFromAlbumTitle = "magic.doRemoveUnwantedTextFromAlbumTitle";

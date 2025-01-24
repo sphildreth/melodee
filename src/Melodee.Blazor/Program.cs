@@ -1,14 +1,13 @@
 using Blazored.SessionStorage;
 using Melodee.Blazor.Components;
-using Melodee.Blazor.Extensions;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Middleware;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Jobs;
 using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Models;
@@ -26,7 +25,6 @@ using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Quartz.AspNetCore;
 using Radzen;
-using Rebus.Activation;
 using Rebus.Compression;
 using Rebus.Config;
 using Rebus.Persistence.InMem;
@@ -134,38 +132,6 @@ builder.Services
 builder.Services.AddQuartz(q =>
 {
     q.UseTimeZoneConverter();
-
-    q.AddJob<LibraryInboundProcessJob>(opts => opts.WithIdentity(JobKeyRegistry.LibraryInboundProcessJobKey));
-    q.AddTrigger(opts => opts
-            .ForJob(JobKeyRegistry.LibraryInboundProcessJobKey)
-            .WithIdentity("LibraryInboundProcessJob-trigger")
-            .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
-            .UsingJobData(JobMapNameRegistry.Count, 0)
-            .WithCronSchedule("0 0/10 * * * ?") // Every 10 minutes
-    );
-
-    q.AddJob<LibraryInsertJob>(opts => opts.WithIdentity(JobKeyRegistry.LibraryProcessJobJobKey));
-    q.AddTrigger(opts => opts
-            .ForJob(JobKeyRegistry.LibraryProcessJobJobKey)
-            .WithIdentity("LibraryProcessJob-trigger")
-            .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
-            .UsingJobData(JobMapNameRegistry.Count, 0)
-            .WithCronSchedule("0 0 * * * ?") // Once a day, at 00:00
-    );
-
-    q.AddJob<MusicBrainzUpdateDatabaseJob>(opts => opts.WithIdentity(JobKeyRegistry.MusicBrainzUpdateDatabaseJobKey));
-    q.AddTrigger(opts => opts
-            .ForJob(JobKeyRegistry.MusicBrainzUpdateDatabaseJobKey)
-            .WithIdentity("MusicBrainzUpdateDatabaseJob-trigger")
-            .WithCronSchedule("0 0 1 * * ?") // Once a month, at 00:00
-    );
-
-    q.AddJob<ArtistHousekeepingJob>(opts => opts.WithIdentity(JobKeyRegistry.ArtistHousekeepingJobJobKey));
-    q.AddTrigger(opts => opts
-            .ForJob(JobKeyRegistry.ArtistHousekeepingJobJobKey)
-            .WithIdentity("ArtistHousekeepingJobJobKey-trigger")
-            .WithCronSchedule("0 * * * * ?") // Every hour
-    );
 });
 builder.Services.AddSingleton<IScheduler>(provider =>
 {
@@ -173,6 +139,7 @@ builder.Services.AddSingleton<IScheduler>(provider =>
     var scheduler = factory.GetScheduler().Result;
     return scheduler;
 });
+
 builder.Services.AddQuartzServer(opts => { opts.WaitForJobsToComplete = true; });
 
 #endregion
@@ -207,7 +174,73 @@ app.UseStatusCodePagesWithRedirects("/Error");
 
 //app.UseHttpsRedirection();
 
+#region Scheduling Quartz Jobs with Configuration
 
+var quartzScheduler = app.Services.GetRequiredService<IScheduler>();
+var melodeeConfigurationFactory = app.Services.GetRequiredService<IMelodeeConfigurationFactory>();
+var melodeeConfiguration = await melodeeConfigurationFactory.GetConfigurationAsync();
+
+var artistHousekeepingCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsArtistHousekeepingCronExpression);
+if (artistHousekeepingCronExpression.Nullify() != null)
+{
+    await quartzScheduler.ScheduleJob(
+        JobBuilder.Create<ArtistHousekeepingJob>()
+            .WithIdentity(JobKeyRegistry.ArtistHousekeepingJobJobKey)
+            .Build(), 
+        TriggerBuilder.Create()
+            .WithIdentity("ArtistHousekeepingJobJobKey-trigger")
+            .WithCronSchedule(artistHousekeepingCronExpression!)
+            .StartNow()
+            .Build());
+}
+
+var libraryInboundProcessJobKeyCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsLibraryProcessCronExpression);
+if (libraryInboundProcessJobKeyCronExpression.Nullify() != null)
+{
+    await quartzScheduler.ScheduleJob(
+        JobBuilder.Create<LibraryInboundProcessJob>()
+            .WithIdentity(JobKeyRegistry.LibraryInboundProcessJobKey)
+            .Build(), 
+        TriggerBuilder.Create()
+            .WithIdentity("LibraryInboundProcessJob-trigger")
+            .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
+            .UsingJobData(JobMapNameRegistry.Count, 0)        
+            .WithCronSchedule(libraryInboundProcessJobKeyCronExpression!)
+            .StartNow()
+            .Build());
+}
+
+var libraryInsertCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsLibraryInsertCronExpression);
+if (libraryInsertCronExpression.Nullify() != null)
+{
+    await quartzScheduler.ScheduleJob(
+        JobBuilder.Create<LibraryInsertJob>()
+            .WithIdentity(JobKeyRegistry.LibraryProcessJobJobKey)
+            .Build(), 
+        TriggerBuilder.Create()
+            .WithIdentity("LibraryProcessJob-trigger")
+            .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
+            .UsingJobData(JobMapNameRegistry.Count, 0)  
+            .WithCronSchedule(libraryInsertCronExpression!)
+            .StartNow()
+            .Build());
+}
+
+var musicBrainzUpdateDatabaseCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsMusicBrainzUpdateDatabaseCronExpression);
+if (musicBrainzUpdateDatabaseCronExpression.Nullify() != null)
+{
+    await quartzScheduler.ScheduleJob(
+        JobBuilder.Create<MusicBrainzUpdateDatabaseJob>()
+            .WithIdentity(JobKeyRegistry.MusicBrainzUpdateDatabaseJobKey)
+            .Build(), 
+        TriggerBuilder.Create()
+            .WithIdentity("MusicBrainzUpdateDatabaseJob-trigger")
+            .WithCronSchedule(musicBrainzUpdateDatabaseCronExpression!)
+            .StartNow()
+            .Build());
+}
+
+#endregion
 
 app.UseCookiePolicy(new CookiePolicyOptions
 {

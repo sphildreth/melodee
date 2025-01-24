@@ -11,6 +11,12 @@
 
 @attribute [Authorize(Roles = "Administrator")]
 
+@if (_jobs.Count == 0)
+{
+    <p>No jobs found</p>
+    <p>Check your configuration and enable the Cron Expressions for Jobs.</p>
+}
+
 <RadzenDataList
     AllowVirtualization="false"
     WrapItems="true"

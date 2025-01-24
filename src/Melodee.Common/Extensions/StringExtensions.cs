@@ -14,11 +14,13 @@ public static partial class StringExtensions
 {
     public const char TagsSeparator = '|';
 
-    private static readonly string YearParseRegex = "(19|20)\\d{2}";
+    private const string YearParseRegex = "(19|20)\\d{2}";
 
     private static readonly string SongNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
     
-    public static readonly Regex HasEPFragmentsRegex = new(@"((\(|\[|-|\s)+(ep)+(\)|\]|-|\s)?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasEpFragmentsRegex = new(@"(?<![a-zA-Z])(ep)(?![a-zA-Z])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
+    public static readonly Regex HasOtherTypeFragmentsRegex = new(@"(?<![a-zA-Z])(live|tribute)(?![a-zA-Z])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     
     public static readonly Regex HasSingleFragmentsRegex = new(@"(((\(|\[)|(\s-\s))+(single)+(\)|\])?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -571,6 +573,21 @@ public static partial class StringExtensions
 
         return string.Equals(a1?.ToAlphanumericName(), a2?.ToAlphanumericName());
     }
+    
+    public static string? TryToGetAlbumTitle(this string? input)
+    {
+        if (input.Nullify() == null)
+        {
+            return null;
+        }
+        var result = Regex.Replace(input!, @"[-_]", TagsSeparator.ToString());
+        result = Regex.Replace(result, @"(\(|\[)?\b(19|20)\d{2}\b(\)|\])?", string.Empty);
+        if (result.Contains(TagsSeparator))
+        {
+            result  = result.Split(TagsSeparator).Last();
+        }
+        return result.CleanString();
+    }
 
     public static int? TryToGetYearFromString(this string input)
     {
@@ -650,21 +667,25 @@ public static partial class StringExtensions
 
         return HasWithFragmentsRegex.Matches(input!).Count + HasFeatureFragmentsRegex.Matches(input!).Count;
     }
-
+    
     public static AlbumType TryToDetectAlbumType(this string? input)
     {
         if (input.Nullify() == null)
         {
             return AlbumType.NotSet;
         }
-        if (HasEPFragmentsRegex.Matches(input!).Count > 0)
+        if (HasEpFragmentsRegex.Matches(input!).Count > 0)
         {
             return AlbumType.EP;
         }
         if (HasSingleFragmentsRegex.Matches(input!).Count > 0)
         {
             return AlbumType.Single;
-        }        
+        }
+        if (HasOtherTypeFragmentsRegex.Matches(input!).Count > 0)
+        {
+            return AlbumType.Other;
+        }           
         return AlbumType.Album;
     }
 

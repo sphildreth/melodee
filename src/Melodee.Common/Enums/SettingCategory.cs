@@ -28,5 +28,7 @@ public enum SettingCategory
 
     Transcoding,
 
-    Validation
+    Validation,
+    
+    Jobs
 }

@@ -171,7 +171,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album Artist is unknown, will need manual validation.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
-            if (albumArtist.Name.Nullify() == null)
+            if (albumArtist.Name.Nullify() == null && _albumNeedsAttentionReasons.HasFlag(AlbumNeedsAttentionReasons.ArtistIsNotSet) == false)
             {
                 _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasUnknownArtist;
             }

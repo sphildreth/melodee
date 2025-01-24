@@ -283,9 +283,19 @@ public sealed class AtlMetaTag(
         var tagCount = tags.Count;
         tags.ForEach(x => x.SortOrder = tagCount);
 
+        // If the album title isn't set try to parse it from the directory name
+        if (tags.All(x => x.Identifier != MetaTagIdentifier.Album))
+        {
+            tags.Add(new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.Album,
+                Value = directoryInfo.Name.TryToGetAlbumTitle()
+            });
+        }           
+        
         var albumTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
         var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
-        if (albumTag == null || artistTag == null)
+        if (albumTag?.Value?.ToString().Nullify() == null || artistTag?.Value?.ToString().Nullify() == null)
         {
             return new OperationResult<Models.Song>($"Song [{fileSystemFileInfo.Name}] is invalid, missing Album and/or Artist tags.")
             {
@@ -296,11 +306,11 @@ public sealed class AtlMetaTag(
                 },
                 Type = OperationResponseType.ValidationFailure
             };
-        }
-
+        }         
+        
         tags.First(x => x.Identifier == MetaTagIdentifier.Album).SortOrder = 1;
         tags.First(x => x.Identifier == MetaTagIdentifier.Artist).SortOrder = 2;
-
+        
         // Ensure that AlbumArtist is set, if has fragments will get cleaned up by MetaTag Processor
         if (tags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
         {
@@ -311,7 +321,7 @@ public sealed class AtlMetaTag(
                 SortOrder = 3
             });
         }
-
+        
         var metaTagsProcessorResult = await metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
         if (!metaTagsProcessorResult.IsSuccess)
         {

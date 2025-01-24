@@ -862,6 +862,42 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Is downloading enabled.",
                     Value = "true",
                     CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 1400,
+                    Category = (int)SettingCategory.Jobs,
+                    Key = SettingRegistry.JobsArtistHousekeepingCronExpression,
+                    Comment = "Cron expression to run the artist housekeeping job, set empty to disable. Default of '0 0 0/1 1/1 * ? *' will run every hour. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Value = "0 0 0/1 1/1 * ? *",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 1401,
+                    Category = (int)SettingCategory.Jobs,
+                    Key = SettingRegistry.JobsLibraryProcessCronExpression,
+                    Comment = "Cron expression to run the library process job, set empty to disable. Default of '0 */10 * ? * *' Every 10 minutes. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Value = "0 */10 * ? * *",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 1402,
+                    Category = (int)SettingCategory.Jobs,
+                    Key = SettingRegistry.JobsLibraryInsertCronExpression,
+                    Comment = "Cron expression to run the library scan job, set empty to disable. Default of '0 0 0 * * ?' will run every day at 00:00. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Value = "0 0 0 * * ?",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 1403,
+                    Category = (int)SettingCategory.Jobs,
+                    Key = SettingRegistry.JobsMusicBrainzUpdateDatabaseCronExpression,
+                    Comment = "Cron expression to run the musicbrainz database update job, set empty to disable. Default of '0 0 12 1 * ?' will run first day of the month. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Value = "0 0 12 1 * ?",
+                    CreatedAt = now
                 }
             );
         });

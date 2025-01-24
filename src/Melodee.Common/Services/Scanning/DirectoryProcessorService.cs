@@ -252,10 +252,6 @@ public sealed class DirectoryProcessorService(
         }
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
-
-        // TODO Ensure the CD3 directories are not screwed up
-
-        
         var mediaDirectoriesToProcess = directoriesToProcess.Where(x => x.GetParent().UniqueId != fileSystemDirectoryInfo.UniqueId &&  x.AllMediaTypeFileInfos().Any()).ToArray();
         if (mediaDirectoriesToProcess.Length > 0)
         {
@@ -699,11 +695,10 @@ public sealed class DirectoryProcessorService(
                         var jsonName = album.ToMelodeeJsonName(_configuration, true);
                         if (jsonName.Nullify() != null)
                         {
-                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal) && album.MelodeeDataFileName != null)
+                            if (album.MelodeeDataFileName != null)
                             {
                                 File.Delete(album.MelodeeDataFileName);
                             }
-
                             await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken).ConfigureAwait(false);
                             if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                             {
@@ -794,7 +789,6 @@ public sealed class DirectoryProcessorService(
             }
         }
 
-        fileSystemDirectoryInfo.DeleteAllEmptyDirectories();
         LogAndRaiseEvent(LogEventLevel.Information, "Processing Complete!");
 
         return new OperationResult<DirectoryProcessorResult>(processingMessages)

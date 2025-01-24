@@ -978,7 +978,7 @@ public class LibraryService : ServiceBase
         var library = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == settingsLibraryName.ToNormalizedString());
         if (library == null)
         {
-            return new MelodeeModels.OperationResult<string[]>("Invalid From library Name")
+            return new MelodeeModels.OperationResult<string[]>("Invalid from library Name")
             {
                 Data = []
             };
@@ -1016,27 +1016,25 @@ public class LibraryService : ServiceBase
                     if (d.Parent?.DoesDirectoryHaveMediaFiles() ?? false)
                     {
                         var parentDir = d.Parent.ToDirectorySystemInfo();
-                        if (parentDir.FullName().ToNormalizedString() == libDir.FullName().ToNormalizedString())
+                        if (parentDir.FullName().ToNormalizedString() != libDir.FullName().ToNormalizedString())
                         {
-                            continue;
-                        }
+                            foreach (var imageFile in d.ToDirectorySystemInfo().AllFileImageTypeFileInfos())
+                            {
+                                string? newImageFileName = null;
+                                if (ImageHelper.IsAlbumImage(imageFile) || ImageHelper.IsAlbumSecondaryImage(imageFile))
+                                {
+                                    newImageFileName = parentDir.GetNextFileNameForType(maxNumberOfAlbumImagesAllowed, ImageHelper.IsAlbumImage(imageFile) ? PictureIdentifier.Front.ToString() : PictureIdentifier.SecondaryFront.ToString()).Item1;
+                                }
+                                else if (ImageHelper.IsArtistImage(imageFile) || ImageHelper.IsArtistSecondaryImage(imageFile))
+                                {
+                                    newImageFileName = parentDir.GetNextFileNameForType(maxNumberOfArtistImagesAllowed, ImageHelper.IsArtistImage(imageFile) ? PictureIdentifier.Artist.ToString() : PictureIdentifier.ArtistSecondary.ToString()).Item1;
+                                }
 
-                        foreach (var imageFile in d.ToDirectorySystemInfo().AllFileImageTypeFileInfos())
-                        {
-                            string? newImageFileName = null;
-                            if (ImageHelper.IsAlbumImage(imageFile) || ImageHelper.IsAlbumSecondaryImage(imageFile))
-                            {
-                                newImageFileName = parentDir.GetNextFileNameForType(maxNumberOfAlbumImagesAllowed, ImageHelper.IsAlbumImage(imageFile) ? PictureIdentifier.Front.ToString() : PictureIdentifier.SecondaryFront.ToString()).Item1;
-                            }
-                            else if (ImageHelper.IsArtistImage(imageFile) || ImageHelper.IsArtistSecondaryImage(imageFile))
-                            {
-                                newImageFileName = parentDir.GetNextFileNameForType(maxNumberOfArtistImagesAllowed, ImageHelper.IsArtistImage(imageFile) ? PictureIdentifier.Artist.ToString() : PictureIdentifier.ArtistSecondary.ToString()).Item1;
-                            }
-
-                            if (newImageFileName != null)
-                            {
-                                File.Move(imageFile.FullName, newImageFileName);
-                                messages.Add($"Moved image file from [{imageFile.FullName}] to [{newImageFileName}]");
+                                if (newImageFileName != null)
+                                {
+                                    File.Move(imageFile.FullName, newImageFileName);
+                                    messages.Add($"Moved image file from [{imageFile.FullName}] to [{newImageFileName}]");
+                                }
                             }
                         }
                     }
