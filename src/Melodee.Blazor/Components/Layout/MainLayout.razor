@@ -9,6 +9,7 @@
 @inject NavigationManager NavigationManager
 @inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
 @inject IJSRuntime JSRuntime
+@inject CookieThemeService CookieThemeService
 
 <RadzenComponents @rendermode="InteractiveServer"/>
 
@@ -114,8 +115,24 @@
 
     private sealed record MediaLibraryInfo(string Text, string Path);
 
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    [Inject] private ThemeService ThemeService { get; set; } = null!;
+
     protected override void OnInitialized()
     {
+        base.OnInitialized();
+
+        if (HttpContext != null)
+        {
+            var theme = HttpContext.Request.Cookies["melodee_ui_theme"];
+
+            if (!string.IsNullOrEmpty(theme))
+            {
+                ThemeService.SetTheme(theme, false);
+            }
+        }
+
         MainLayoutProxyService.HeaderChanged += OnHeaderChange;
         MainLayoutProxyService.SpinnerVisibleChanged += OnSpinnerChange;
     }

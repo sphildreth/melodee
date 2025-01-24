@@ -65,6 +65,12 @@ builder.Services.AddAntiforgery(opt =>
 
 builder.Services.AddRadzenComponents();
 
+builder.Services.AddRadzenCookieThemeService(options =>
+{
+    options.Name = "melodee_ui_theme"; 
+    options.Duration = TimeSpan.FromDays(9999); 
+});
+
 builder.Services.AddBlazoredSessionStorage();
 
 builder.Services.AddAuthorization();
