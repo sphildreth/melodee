@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
+/// <summary>
+/// This is a Melodee extension to the OpenSubsonic API and is not standard OpenSubsonic search, for that <see cref="SearchingController"/>
+/// </summary>
 public class SearchEngineController(
     ISerializer serializer,
     EtagRepository etagRepository,

@@ -24,9 +24,43 @@ public static class AlbumExtensions
     {
         return album.Directory.IsDirectoryStudioAlbums() && album.AlbumType is AlbumType.Album or AlbumType.EP;
     }
+    
+    private static string[] SoundtrackTypeAlbumGenres
+        =>
+        [
+            "SOUNDTRACK",
+            "ORIGINALSOUNDTRACK",
+            "ORIGINALSOUNDTRACKRECORDING",
+            "OST"
+        ];    
 
     public static bool IsSoundTrackTypeAlbum(this Album album)
-        => SoundtrackRecordingArtistParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);   
+        => SoundtrackTypeAlbumGenres.Contains(album.Genre()?.ToNormalizedString() ?? string.Empty) || 
+           SoundtrackRecordingArtistParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
+
+    private static string[] OriginalCastTypeAlbumGenres
+        =>
+        [
+            "THEATRE",
+            "THEATER",
+            "AUDIODRAMA",
+            "AUDIOPLAY",
+            "AUDIOTHEATRE",
+            "AUDIOTHEATER",
+            "BROADWAY",
+            "CASTRECORDING",
+            "RADIOTHEATRE",
+            "OCT",
+            "ORIGINALRECORDING",
+            "ORIGINALCAST",
+            "ORIGINALCASTRECORDING"
+        ];
+    
+    public static bool IsOriginalCastTypeAlbum(this Album album) 
+        =>
+            OriginalCastTypeAlbumGenres.Contains(album.Genre()?.ToNormalizedString() ?? string.Empty) ||
+            album.Artist.IsCastRecording() ||
+            ArtistExtensions.CastRecordingArtistOrAlbumTitleParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
 
     public static bool IsVariousArtistTypeAlbum(this Album album)
     {

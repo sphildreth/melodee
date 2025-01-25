@@ -42,15 +42,15 @@ public class AlbumImageSearchEngineService(
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
             },
-            new ITunesSearchEngine(logger, serializer, httpClientFactory)
+            new ITunesSearchEngine(Logger, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)
             },
-            new Spotify(logger, configuration, serializer, settingService, httpClientFactory)
+            new Spotify(Logger, configuration, serializer, settingService, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             },            
-            new LastFm(logger, configuration, serializer, httpClientFactory)
+            new LastFm(Logger, configuration, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineLastFmEnabled)
             }        

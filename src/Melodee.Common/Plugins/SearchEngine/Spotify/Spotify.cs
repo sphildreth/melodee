@@ -1,6 +1,5 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
-using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -8,9 +7,6 @@ using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Utility;
-using Microsoft.EntityFrameworkCore;
-using Polly;
-using Polly.Retry;
 using Serilog;
 using SpotifyAPI.Web;
 using SpotifyAPI.Web.Http;
@@ -23,7 +19,7 @@ public class Spotify(
     ISerializer serializer,
     SettingService settingService,
     IHttpClientFactory httpClientFactory)
-    : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin, IAlbumImageSearchEnginePlugin
+    : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin, IAlbumImageSearchEnginePlugin, IArtistImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
 
@@ -34,7 +30,97 @@ public class Spotify(
     public bool IsEnabled { get; set; } = false;
 
     public int SortOrder { get; } = 1;
-    
+
+    public async Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+    {
+        var results = new List<ImageSearchResult>();
+
+        try
+        {
+            var apiClientId = configuration.GetValue<string>(SettingRegistry.SearchEngineSpotifyApiKey);
+            var apiClientSecret = configuration.GetValue<string>(SettingRegistry.SearchEngineSpotifyClientSecret);
+
+            if (string.IsNullOrWhiteSpace(apiClientId) || string.IsNullOrWhiteSpace(apiClientSecret))
+            {
+                return new OperationResult<ImageSearchResult[]?>("Spotify API key not configured.")
+                {
+                    Data = []
+                };
+            }
+
+            var apiAccessToken = configuration.GetValue<string>(SettingRegistry.SearchEngineSpotifyAccessToken);
+
+            var config = SpotifyClientConfig.CreateDefault();
+
+            if (string.IsNullOrWhiteSpace(apiAccessToken))
+            {
+                var request = new ClientCredentialsRequest(apiClientId, apiClientSecret);
+                var response = await new OAuthClient(config).RequestToken(request, cancellationToken);
+                apiAccessToken = response.AccessToken;
+                await settingService.SetAsync(SettingRegistry.SearchEngineSpotifyAccessToken, apiAccessToken, cancellationToken);
+            }
+
+            var spotify = new SpotifyClient(config.WithToken(apiAccessToken));
+            SearchResponse? searchResult = null;
+            try
+            {
+                searchResult = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Artist, query.Name), cancellationToken);
+            }
+            catch (APIUnauthorizedException e)
+            {
+                var request = new ClientCredentialsRequest(apiClientId, apiClientSecret);
+                var response = await new OAuthClient(config).RequestToken(request, cancellationToken);
+                apiAccessToken = response.AccessToken;
+                await settingService.SetAsync(SettingRegistry.SearchEngineSpotifyAccessToken, apiAccessToken, cancellationToken);
+            }
+
+            if (searchResult?.Artists?.Items?.Count > 0)
+            {
+                foreach (var sr in searchResult.Artists.Items)
+                {
+                    var biggestImageHeight = sr.Images.Max(x => x.Height);
+
+                    short rank = 10;
+
+                    var image = sr.Images.FirstOrDefault(x => x.Height == biggestImageHeight);
+                    if (image != null)
+                    {
+                        results.Add(new ImageSearchResult
+                        {
+                            SpotifyId = sr.Id,
+                            ArtistSpotifyId = sr.Id,
+                            FromPlugin = DisplayName,
+                            Height = image.Height,
+                            MediaUrl = image.Url,
+                            Rank = rank,
+                            ThumbnailUrl = image.Url,
+                            Title = sr.Name,
+                            UniqueId = SafeParser.Hash(sr.Id),
+                            Width = image.Width
+                        });
+                    }
+                }
+            }
+
+            if (results.Count > 0)
+            {
+                logger.Debug("[{DisplayName}] found [{ImageCount}] for Artist [{Query}]",
+                    DisplayName,
+                    results.Count,
+                    query.ToString());
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "Error searching for artist query [{Query}]", query.ToString());
+        }
+
+        return new OperationResult<ImageSearchResult[]?>
+        {
+            Data = results.OrderBy(x => x.Rank).ToArray()
+        };
+    }
+
     public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         var results = new List<ImageSearchResult>();
@@ -131,7 +217,7 @@ public class Spotify(
         {
             Data = results.OrderBy(x => x.Rank).ToArray()
         };
-    }    
+    }
 
     public async Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
@@ -152,7 +238,7 @@ public class Spotify(
 
             var apiAccessToken = configuration.GetValue<string>(SettingRegistry.SearchEngineSpotifyAccessToken);
 
-            var config = SpotifyClientConfig.CreateDefault();//.WithRetryHandler(new MelodeeRetryHandler());
+            var config = SpotifyClientConfig.CreateDefault(); //.WithRetryHandler(new MelodeeRetryHandler());
 
             if (string.IsNullOrWhiteSpace(apiAccessToken))
             {
@@ -175,6 +261,7 @@ public class Spotify(
                 apiAccessToken = response.AccessToken;
                 await settingService.SetAsync(SettingRegistry.SearchEngineSpotifyAccessToken, apiAccessToken, cancellationToken);
             }
+
             if (searchResult?.Artists?.Items?.Count > 0)
             {
                 foreach (var sr in searchResult.Artists.Items)
@@ -207,8 +294,9 @@ public class Spotify(
                             var albums = artistAlbumsResult.Items.Where(x => query.AlbumKeyValues.Any(y => y.Key == x.ReleaseDate[..4] && y.Value == x.Name.ToNormalizedString())).ToArray();
                             if (albums.Length != 0)
                             {
-                                newResults.Add(artist with { 
-                                    Rank = 10 + albums.Length, 
+                                newResults.Add(artist with
+                                {
+                                    Rank = 10 + albums.Length,
                                     Releases = albums.Select(x => new AlbumSearchResult
                                     {
                                         AlbumType = x.AlbumType.ToNormalizedString() == "ALBUM" ? AlbumType.Album : AlbumType.NotSet,
@@ -227,7 +315,6 @@ public class Spotify(
                         results = newResults;
                     }
                 }
-
             }
         }
         catch (Exception ex)
@@ -248,7 +335,7 @@ public class Spotify(
 }
 
 public class MelodeeRetryHandler : IRetryHandler
-{ 
+{
     public Task<IResponse> HandleRetry(IRequest request, IResponse response, IRetryHandler.RetryFunc retry, CancellationToken cancel = default)
     {
         Thread.Sleep(1000);

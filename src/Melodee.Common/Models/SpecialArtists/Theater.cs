@@ -19,5 +19,6 @@ public sealed record Theater : Artist
     public Theater() : base("Theater", "Theater".ToNormalizedString()!, "Theater")
     {
         MusicBrainzId = Guid.Parse("a0ef7e1d-44ff-4039-9435-7d5fefdeecc9");
+        WikiDataId = "Q11635";        
     }
 }

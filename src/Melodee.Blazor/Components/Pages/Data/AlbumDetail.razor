@@ -3,6 +3,7 @@
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
+@using Melodee.Common.Models.Extensions
 @using NodaTime
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
@@ -154,7 +155,7 @@
             @if (_showItem == ShowItem.Overview)
             {
                 <RadzenRow class="rz-pb-3">
-                    <RadzenColumn Size="12" SizeMD="9">
+                    <RadzenColumn Size="12" SizeMD="8">
                         <RadzenPanel>
                             <HeaderTemplate>
                                 <RadzenText TextStyle="TextStyle.H6"
@@ -201,9 +202,12 @@
                             </ChildContent>
                         </RadzenPanel>
                     </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <ArtistDataInfoCardComponent
+                            Style="width: 350px;"
+                            Artist="@_album.Artist.ToArtistDataInfo()" />
                         <RadzenImage
-                            Path=@($"/images/{_album.ToApiKey()}/300")
+                            Path=@($"/images/{_album.ToApiKey()}/350")
                             Style="margin:auto;display: block;"
                             AlternateText="@_album.Name"/>
                     </RadzenColumn>

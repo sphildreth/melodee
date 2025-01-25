@@ -12,8 +12,8 @@ public static class ArtistExtensions
 {
     public static readonly Regex VariousArtistParseRegex = new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex CastRecordingSongArtistParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
+    public static readonly Regex CastRecordingArtistOrAlbumTitleParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+   
     public static ArtistDataInfo ToArtistDataInfo(this Artist artist, DateTimeOffset? createdAt,  int? albumCount = null,  int? songCount = null)
     {
         return new(0,
@@ -75,14 +75,8 @@ public static class ArtistExtensions
     public static bool IsCastRecording(this Artist artist)
     {
         var artistName = artist.Name;
-        return artistName.Nullify() != null && CastRecordingSongArtistParseRegex.IsMatch(artistName);
+        return artistName.Nullify() != null && CastRecordingArtistOrAlbumTitleParseRegex.IsMatch(artistName);
     }
-
-    // public static bool IsSoundSongArist(this Artist artist)
-    // {
-    //     var artistName = artist.Name;
-    //     return artistName.Nullify() != null && SoundSongArtistParseRegex.IsMatch(artistName);
-    // }
 
     public static bool IsVariousArtist(this Artist artist)
     {

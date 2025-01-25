@@ -16,6 +16,11 @@ public sealed record VariousArtist : Artist
     public VariousArtist() 
         : base("Various Artist", "Various Artist".ToNormalizedString()!, "Various Artist")
     {
+        AmgId = "various-artists-mn0000258947";
+        DiscogsId = "194-Various";
+        LastFmId = "Various+Artists";
         MusicBrainzId = Guid.Parse("89ad4ac3-39f7-470e-963a-56509c546377");
+        SpotifyId = "0LyfQWJT6nXafLPZqxe9Of";
+        WikiDataId = "Q3108914";
     }
 }

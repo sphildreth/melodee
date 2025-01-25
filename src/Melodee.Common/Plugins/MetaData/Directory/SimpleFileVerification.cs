@@ -173,10 +173,17 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                     if (File.Exists(stagingAlbumDataName))
                     {
-                        var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
-                        if (existingAlbum != null)
+                        try
                         {
-                            sfvAlbum = sfvAlbum.Merge(existingAlbum);
+                            var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                            if (existingAlbum != null)
+                            {
+                                sfvAlbum = sfvAlbum.Merge(existingAlbum);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error(e, "Unable to merge existing album [{StagingAlbumDataName}]", stagingAlbumDataName);
                         }
                     }
 

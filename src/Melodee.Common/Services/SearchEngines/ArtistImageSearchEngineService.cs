@@ -4,8 +4,11 @@ using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Plugins.SearchEngine;
+using Melodee.Common.Plugins.SearchEngine.ITunes;
+using Melodee.Common.Plugins.SearchEngine.LastFm;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +23,7 @@ public class ArtistImageSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     ISerializer serializer,
+    SettingService settingService,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMusicBrainzRepository musicBrainzRepository,
@@ -34,10 +38,14 @@ public class ArtistImageSearchEngineService(
 
         var searchEngines = new List<IArtistImageSearchEnginePlugin>
         {
-            new MusicBrainzArtistSearchEnginePlugin(musicBrainzRepository)
+            new Spotify(Logger, configuration, serializer, settingService, httpClientFactory)
             {
-                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
-            }
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
+            },
+            new ITunesSearchEngine(Logger, serializer, httpClientFactory)
+            {
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)
+            },            
         };
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))

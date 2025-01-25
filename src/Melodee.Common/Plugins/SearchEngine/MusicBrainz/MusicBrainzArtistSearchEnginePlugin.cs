@@ -4,13 +4,8 @@ using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 
 namespace Melodee.Common.Plugins.SearchEngine.MusicBrainz;
 
-public class MusicBrainzArtistSearchEnginePlugin(IMusicBrainzRepository repository) : IArtistSearchEnginePlugin, IArtistImageSearchEnginePlugin
+public class MusicBrainzArtistSearchEnginePlugin(IMusicBrainzRepository repository) : IArtistSearchEnginePlugin
 {
-    public Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken token = default)
-    {
-        throw new NotImplementedException();
-    }
-
     public bool StopProcessing { get; } = false;
 
     public string Id => "018A798D-7B68-4F3E-80CD-1BAF03998C0B";

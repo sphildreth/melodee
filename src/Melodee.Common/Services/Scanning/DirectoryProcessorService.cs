@@ -6,6 +6,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.SpecialArtists;
 using Melodee.Common.Plugins.Conversion;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.Conversion.Media;
@@ -404,6 +405,7 @@ public sealed class DirectoryProcessorService(
                         var album = serializer.Deserialize<Album>(await File.ReadAllTextAsync(melodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false));
                         if (album != null)
                         {
+                            album.MelodeeDataFileName = melodeeJsonFile.FullName;
                             albumsForDirectory.Add(album);
                         }
                     }
@@ -473,6 +475,33 @@ public sealed class DirectoryProcessorService(
                         }
 
                         album.Artist = new Artist(album.Artist.Name, album.Artist.NameNormalized, album.Artist.SortName, artistImages);
+                        if (album.IsSoundTrackTypeAlbum() && album.Songs != null)
+                        {
+                            // If the album has different artists and is soundtrack then ensure artist is set to special VariousArtists
+                            var songsGroupedByArtist = album.Songs.GroupBy(x => x.AlbumArtist()).ToArray();
+                            if (songsGroupedByArtist.Length > 1)
+                            {
+                                album.Artist = new VariousArtist();
+                                foreach (var song in album.Songs)
+                                {
+                                    album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, album.Artist.Name);
+                                }
+                            }
+                        }          
+                        else if (album.IsOriginalCastTypeAlbum() && album.Songs != null)
+                        {
+                            // If the album has different artists and is Original Cast type then ensure artist is set to special Theater
+                            // NOTE: Remember Original Cast Type albums with a single composer/artist is attributed to that composer/artist (e.g. Stephen Schwartz - Wicked)
+                            var songsGroupedByArtist = album.Songs.GroupBy(x => x.AlbumArtist()).ToArray();
+                            if (songsGroupedByArtist.Length > 1)
+                            {
+                                album.Artist = new Theater();
+                                foreach (var song in album.Songs)
+                                {
+                                    album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, album.Artist.Name);
+                                }
+                            }
+                        }
 
                         var albumDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, album.ToDirectoryName()));
                         if (!albumDirInfo.Exists)
@@ -482,7 +511,7 @@ public sealed class DirectoryProcessorService(
 
                         var albumImagesToMove = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
                         var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
-                        foreach (var (image, _) in albumImagesToMove.Concat(artistImageToMove).Select((image, index) => (image, index)))
+                        foreach (var image in albumImagesToMove.Concat(artistImageToMove))
                         {
                             var oldImageFileName = Path.Combine(album.Directory.FullName(), image.FileInfo!.OriginalName!);
                             if (!File.Exists(oldImageFileName))
@@ -571,9 +600,9 @@ public sealed class DirectoryProcessorService(
                         }
 
                         album.Directory = albumDirInfo.ToDirectorySystemInfo();
-
-                        Console.WriteLine("Querying for artist...");
+                        
                         // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
+                        Console.WriteLine("Querying for artist...");                        
                         var searchRequest = album.Artist.ToArtistQuery([
                             new KeyValue((album.AlbumYear() ?? 0).ToString(),
                                 album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle())

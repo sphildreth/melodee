@@ -5,5 +5,5 @@ namespace Melodee.Common.Plugins.SearchEngine;
 
 public interface IArtistImageSearchEnginePlugin : IPlugin
 {
-    Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken token = default);
+    Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default);
 }
