@@ -18,6 +18,35 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new("^(cd|disc|disk|side|media|a|b|c|d|e|f){1,}([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    public static void Empty(this FileSystemDirectoryInfo directory)
+    {
+        foreach (var file in directory.AllFileInfos(searchOption: SearchOption.AllDirectories))
+        {
+            file.Delete();
+        }
+
+        foreach (var subDirectory in directory.AllDirectoryInfos(searchOption: SearchOption.AllDirectories))
+        {
+            subDirectory.Delete(true);
+        }
+    }    
+    
+    public static bool FileIsLikelyDuplicateByCrcAndExtension(this FileSystemDirectoryInfo directory, FileInfo file)
+    {
+        if (!directory.Exists() || !file.Exists)
+        {
+            return false;
+        }
+        var crc = Crc32.Calculate(file);
+        return crc.Nullify() != null && directory.AllFileInfos($"*{file.Extension}", SearchOption.AllDirectories).Any(ff => Crc32.Calculate(ff) == crc);
+    }
+
+    public static bool DoesDirectoryHaveImageFiles(this FileSystemDirectoryInfo directory) 
+        => directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileImageType(x.Extension));
+
+    public static bool DoesDirectoryHaveMediaFiles(this FileSystemDirectoryInfo directory) 
+        => directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileMediaType(x.Extension));
+
     /// <summary>
     ///     Rename the Directory and prepend the given prefix.
     /// </summary>
@@ -25,34 +54,12 @@ public static class FileSystemDirectoryInfoExtensions
     {
         var d = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         var newName = $"{prefix}{d.Name}";
-        var moveTo = Path.Combine(d.Parent.FullName, newName);
+        var moveTo = Path.Combine(d.Parent!.FullName, newName);
         if (Directory.Exists(moveTo))
         {
-            Directory.Move(moveTo, Path.Combine(d.FullName, $"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}"));
+           moveTo.ToDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
         }
-
-        Directory.Move(d.FullName, moveTo);
-        return new FileSystemDirectoryInfo
-        {
-            Path = moveTo,
-            Name = newName
-        };
-    }
-
-    /// <summary>
-    ///     Rename the Directory and append the given suffix.
-    /// </summary>
-    public static FileSystemDirectoryInfo AppendSuffix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string suffix)
-    {
-        var dirName = Path.GetDirectoryName(fileSystemDirectoryInfo.Path) ?? string.Empty;
-        var newName = $"{fileSystemDirectoryInfo.Name}{suffix}";
-        var moveTo = Path.Combine(dirName, newName);
-        if (Directory.Exists(moveTo))
-        {
-            Directory.Move(moveTo, Path.Combine(dirName, $"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}"));
-        }
-
-        Directory.Move(fileSystemDirectoryInfo.FullName(), moveTo);
+        d.ToDirectorySystemInfo().MoveToDirectory(moveTo);
         return new FileSystemDirectoryInfo
         {
             Path = moveTo,
@@ -94,9 +101,9 @@ public static class FileSystemDirectoryInfoExtensions
         return Directory.Exists(fileSystemDirectoryInfo.FullName());
     }
 
-    public static void Delete(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    public static void Delete(this FileSystemDirectoryInfo fileSystemDirectoryInfo, bool? recursive = null)
     {
-        Directory.Delete(fileSystemDirectoryInfo.FullName());
+        Directory.Delete(fileSystemDirectoryInfo.FullName(), recursive ?? true);
     }
 
     public static IEnumerable<FileInfo> MelodeeJsonFiles(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
@@ -263,7 +270,7 @@ public static class FileSystemDirectoryInfoExtensions
         return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
     }
 
-    public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null)
+    public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null, SearchOption? searchOption = null)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
@@ -271,10 +278,16 @@ public static class FileSystemDirectoryInfoExtensions
             return [];
         }
 
-        return dirInfo.EnumerateFiles(searchPattern ?? "*.*", SearchOption.TopDirectoryOnly);
+        return dirInfo.EnumerateFiles(searchPattern ?? "*.*", searchOption ?? SearchOption.TopDirectoryOnly);
     }
 
-    public static IEnumerable<DirectoryInfo> AllDirectoryInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null)
+    public static FileSystemDirectoryInfo? Parent(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
+        return dirInfo.Parent?.ToDirectorySystemInfo();
+    }
+
+    public static IEnumerable<DirectoryInfo> AllDirectoryInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null, SearchOption? searchOption = null)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
@@ -282,7 +295,7 @@ public static class FileSystemDirectoryInfoExtensions
             return [];
         }
 
-        return dirInfo.EnumerateDirectories(searchPattern ?? "*.*", SearchOption.TopDirectoryOnly);
+        return dirInfo.EnumerateDirectories(searchPattern ?? "*.*", searchOption ?? SearchOption.TopDirectoryOnly);
     }
 
     public static void DeleteAllEmptyDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
@@ -380,4 +393,34 @@ public static class FileSystemDirectoryInfoExtensions
         var dir = fileSystemDirectoryInfo.FullName();
         return !string.IsNullOrWhiteSpace(dir) && !IsDirectoryNotStudioAlbumsRegex.IsMatch(dir);
     }
+    
+    /// <summary>
+    ///     This exists because in some systems where data is on one mapped drive it cannot be "Moved" to another mapped drive ("Cross link" error), it must be copied and then deleted.
+    /// </summary>
+    public static void MoveToDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string destination, string? dontMoveFileName = null)
+    {
+        if (!Directory.Exists(destination))
+        {
+            Directory.CreateDirectory(destination);
+        }
+        var toMove = fileSystemDirectoryInfo.FullName();
+        var files = Directory.GetFiles(toMove);
+        var directories = Directory.GetDirectories(toMove);
+        foreach (var file in files)
+        {
+            if (!string.Equals(Path.GetFileName(file), dontMoveFileName, StringComparison.OrdinalIgnoreCase))
+            {
+                File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
+            }
+        }
+        foreach (var d in directories)
+        {
+            var dd = Path.Combine(toMove, Path.GetFileName(d)).ToDirectoryInfo();
+            dd.MoveToDirectory(Path.Combine(destination, Path.GetFileName(d)), dontMoveFileName);
+        }
+        Directory.Delete(toMove, true);
+        var dirInfo = new DirectoryInfo(destination);
+        fileSystemDirectoryInfo.Path = destination;
+        fileSystemDirectoryInfo.Name = dirInfo.Name;
+    }    
 }

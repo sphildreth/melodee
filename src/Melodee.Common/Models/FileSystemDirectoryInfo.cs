@@ -19,7 +19,7 @@ public sealed record FileSystemDirectoryInfo
     /// </summary>
     public required string Path { get; set; }
 
-    public required string Name { get; init; }
+    public required string Name { get; set; }
 
     /// <summary>
     ///     This is the total number of items found when the Album was initially processed, does not necessarily include any

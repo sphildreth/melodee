@@ -508,7 +508,7 @@ public class ArtistService(
                     var albumToMergeNewDirectory = Path.Combine(dbArtistToMergeInto.Library.Path, dbArtistToMergeInto.Directory, albumToMerge.Directory);
                     if (Directory.Exists(albumToMergeDirectory) && !Directory.Exists(albumToMergeNewDirectory))
                     {
-                        MediaEditService.MoveDirectory(albumToMergeDirectory, albumToMergeNewDirectory);
+                        albumToMergeDirectory.ToDirectoryInfo().MoveToDirectory(albumToMergeNewDirectory);
                     }
                     else if (Directory.Exists(albumToMergeNewDirectory))
                     {

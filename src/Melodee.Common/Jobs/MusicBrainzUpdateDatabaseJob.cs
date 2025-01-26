@@ -5,6 +5,8 @@ using ICSharpCode.SharpZipLib.Tar;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Services;
 using Quartz;
@@ -69,8 +71,12 @@ public class MusicBrainzUpdateDatabaseJob(
 
             using (var client = httpClientFactory.CreateClient())
             {
-                var storageStagingDirectory = new DirectoryInfo(Path.Combine(storagePath, "staging"));
-                Directory.CreateDirectory(storageStagingDirectory.FullName);
+                var storageStagingDirectory = new FileSystemDirectoryInfo
+                {
+                    Path = Path.Combine(storagePath, "staging"),
+                    Name = "staging"
+                };
+                storageStagingDirectory.EnsureExists();
                 storageStagingDirectory.Empty();
 
                 var latest = await client.GetStringAsync("https://data.metabrainz.org/pub/musicbrainz/data/fullexport/LATEST", context.CancellationToken).ConfigureAwait(false);
@@ -95,14 +101,14 @@ public class MusicBrainzUpdateDatabaseJob(
                     }
                 }
 
-                var mbDumpFileName = Path.Combine(storageStagingDirectory.FullName, "mbdump.tar.bz2");
+                var mbDumpFileName = Path.Combine(storageStagingDirectory.FullName(), "mbdump.tar.bz2");
                 var downloadedMbDumpFile = await client.DownloadFileAsync(
                     $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump.tar.bz2",
                     mbDumpFileName,
                     null,
                     context.CancellationToken);
 
-                var mbDumpDerivedFileName = Path.Combine(storageStagingDirectory.FullName, "mbdump-derived.tar.bz2");
+                var mbDumpDerivedFileName = Path.Combine(storageStagingDirectory.FullName(), "mbdump-derived.tar.bz2");
                 var downloadedMbDerivedFile = await client.DownloadFileAsync(
                     $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump-derived.tar.bz2",
                     mbDumpDerivedFileName,
@@ -127,7 +133,7 @@ public class MusicBrainzUpdateDatabaseJob(
                         await using (Stream bzipStream = new BZip2InputStream(mbDumpStream))
                         {
                             var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
-                            tarArchive.ExtractContents(storageStagingDirectory.FullName);
+                            tarArchive.ExtractContents(storageStagingDirectory.FullName());
                             tarArchive.Close();
                             bzipStream.Close();
                         }
@@ -145,7 +151,7 @@ public class MusicBrainzUpdateDatabaseJob(
                         await using (Stream bzipStream = new BZip2InputStream(mbDumpDerivedStream))
                         {
                             var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
-                            tarArchive.ExtractContents(storageStagingDirectory.FullName);
+                            tarArchive.ExtractContents(storageStagingDirectory.FullName());
                             tarArchive.Close();
                             bzipStream.Close();
                         }

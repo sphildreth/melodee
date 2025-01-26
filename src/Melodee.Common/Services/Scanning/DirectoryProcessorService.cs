@@ -269,7 +269,7 @@ public sealed class DirectoryProcessorService(
                     continue;
                 }
                 var newDir = new DirectoryInfo(Path.Combine(fileSystemDirectoryInfo.FullName(), Guid.NewGuid().ToString()));
-                Directory.Move(mediaDirectoryToProcess.FullName(), newDir.FullName);
+                mediaDirectoryToProcess.MoveToDirectory(newDir.FullName);
                 Logger.Debug(":: [{ServiceName}] :: Moved nested album [{Moved}] to [{NewName}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName(), newDir.FullName);
                 directoriesToProcess.Remove(mediaDirectoryToProcess);
                 directoriesToProcess.Add(newDir.ToDirectorySystemInfo());
@@ -317,7 +317,7 @@ public sealed class DirectoryProcessorService(
                             if (pluginResult.Type == OperationResponseType.Error && skipPrefix.Nullify() != null)
                             {
                                 var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
-                                Directory.Move(directoryInfoToProcess.FullName(), Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
+                                directoryInfoToProcess.MoveToDirectory(Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
                                 LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);
                             }
 
@@ -513,11 +513,11 @@ public sealed class DirectoryProcessorService(
                             }
                         }
 
-                        var albumDirInfo = new DirectoryInfo(Path.Combine(_directoryStaging, album.ToDirectoryName()));
-                        if (!albumDirInfo.Exists)
+                        var albumDirectorySystemInfo = new FileSystemDirectoryInfo
                         {
-                            albumDirInfo.Create();
-                        }
+                            Path = Path.Combine(_directoryStaging, album.ToDirectoryName()),
+                            Name = album.ToDirectoryName()
+                        };
 
                         var albumImagesToMove = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
                         var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
@@ -531,13 +531,13 @@ public sealed class DirectoryProcessorService(
                             }
 
                             var imageFileInfo = new FileInfo(oldImageFileName);
-                            if (albumDirInfo.FileIsLikelyDuplicateByCrcAndExtension(imageFileInfo))
+                            if (albumDirectorySystemInfo.FileIsLikelyDuplicateByCrcAndExtension(imageFileInfo))
                             {
                                 Logger.Debug("Skipping duplicate image [{ImageName}]", image.FileInfo!.Name);
                                 continue;
                             }
 
-                            var newImageFileName = Path.Combine(albumDirInfo.FullName, image.FileInfo.Name);
+                            var newImageFileName = Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
                             if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                             {
                                 File.Copy(oldImageFileName, newImageFileName, true);
@@ -566,7 +566,7 @@ public sealed class DirectoryProcessorService(
                                     continue;
                                 }
 
-                                var newSongFileName = Path.Combine(albumDirInfo.FullName, song.File.Name);
+                                var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(), song.File.Name);
                                 if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                                 {
                                     File.Copy(oldSongFilename, newSongFileName, true);
@@ -591,7 +591,6 @@ public sealed class DirectoryProcessorService(
                             {
                                 Console.WriteLine("Running plugins on songs with modified tags...");                               
 
-                                var albumDirectorySystemInfo = albumDirInfo.ToDirectorySystemInfo();
                                 foreach (var songPlugin in _songPlugins)
                                 {
                                     foreach (var song in album.Songs.Where(x => x.Tags?.Any(t => t.WasModified) ?? false))
@@ -610,7 +609,7 @@ public sealed class DirectoryProcessorService(
                             }
                         }
 
-                        album.Directory = albumDirInfo.ToDirectorySystemInfo();
+                        album.Directory = albumDirectorySystemInfo;
                         
                         // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
                         Console.WriteLine("Querying for artist...");                        
@@ -691,7 +690,7 @@ public sealed class DirectoryProcessorService(
                                     album.Artist.SpotifyId ??= imageSearchResult.ArtistSpotifyId;
                                     album.Artist.WikiDataId ??= imageSearchResult.ArtistWikiDataId;
                                     
-                                    var albumImageFromSearchFileName = Path.Combine(albumDirInfo.FullName, albumDirInfo.ToDirectorySystemInfo().GetNextFileNameForType(_maxImageCount, Data.Models.Album.FrontImageType).Item1);
+                                    var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(), albumDirectorySystemInfo.GetNextFileNameForType(_maxImageCount, Data.Models.Album.FrontImageType).Item1);
                                     if (await httpClient.DownloadFileAsync(
                                             imageSearchResult.MediaUrl,
                                             albumImageFromSearchFileName,
@@ -739,10 +738,10 @@ public sealed class DirectoryProcessorService(
                             {
                                 File.Delete(album.MelodeeDataFileName);
                             }
-                            await File.WriteAllTextAsync(Path.Combine(albumDirInfo.FullName, jsonName), serialized, cancellationToken).ConfigureAwait(false);
+                            await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), serialized, cancellationToken).ConfigureAwait(false);
                             if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                             {
-                                using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirInfo.Name))
+                                using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirectorySystemInfo.Name))
                                 {
                                     await mediaEditService.DoMagic(album.Directory, album.Id, cancellationToken).ConfigureAwait(false);
                                 }
@@ -794,7 +793,7 @@ public sealed class DirectoryProcessorService(
                 if (skipPrefix.Nullify() != null)
                 {
                     var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
-                    Directory.Move(directoryInfoToProcess.FullName(), Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
+                    directoryInfoToProcess.MoveToDirectory(Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
                     LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);
                 }
             }

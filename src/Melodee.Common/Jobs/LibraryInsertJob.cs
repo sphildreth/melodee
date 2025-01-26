@@ -9,9 +9,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Plugins.Conversion.Image;
-using Melodee.Common.Plugins.MetaData.Song;
-using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
@@ -25,6 +22,7 @@ using Serilog;
 using SmartFormat;
 using SearchOption = System.IO.SearchOption;
 using dbModels = Melodee.Common.Data.Models;
+
 
 namespace Melodee.Common.Jobs;
 
@@ -94,8 +92,6 @@ public class LibraryInsertJob(
 
             var forceMode = SafeParser.ToBoolean(context.Get("ForceMode"));
 
-            var imageConvertor = new ImageConvertor(_configuration);
-
             DirectoryInfo? processingDirectory = null;
 
             _totalAlbumsInserted = 0;
@@ -116,12 +112,6 @@ public class LibraryInsertJob(
             _ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);
             _ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
 
-            var imageValidator = new ImageValidator(_configuration);
-
-            ISongPlugin[] songPlugins =
-            [
-                new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), imageConvertor, imageValidator, _configuration)
-            ];
             _now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
             _duplicateAlbumPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix) ?? "__duplicate_ ";
@@ -163,7 +153,6 @@ public class LibraryInsertJob(
                     }
 
                     var libraryProcessStartTicks = Stopwatch.GetTimestamp();
-                    var dirs = new DirectoryInfo(libraryIndex.library.Path).GetDirectories("*", SearchOption.AllDirectories);
                     var lastScanAt = forceMode ? defaultNeverScannedDate : libraryIndex.library.LastScanAt ?? defaultNeverScannedDate;
                     if (_totalSongsInserted > _maxSongsToProcess && _maxSongsToProcess > 0)
                     {
@@ -222,18 +211,21 @@ public class LibraryInsertJob(
 
                                     melodeeFilesForDirectory.Add(melodeeFile);
                                 }
-                                catch (Exception e)
+                                catch
                                 {
                                     // The melodee data file won't load.
                                     var albumDirectoryToMove = melodeeFileInfo.Directory!.Parent;
-                                    var moveDirectoryTo = Path.Combine(stagingLibrary.Data.Path, albumDirectoryToMove.Name);
-                                    Directory.Move(albumDirectoryToMove.FullName, moveDirectoryTo);
-                                    File.Delete(Path.Combine(moveDirectoryTo, Album.JsonFileName));
-                                    Logger.Warning(
-                                        "[{JobName}] Invalid Melodee File. Deleted and moved directory [{From}] To Staging [{To}]",
-                                        nameof(LibraryInsertJob),
-                                        albumDirectoryToMove,
-                                        moveDirectoryTo);
+                                    if (albumDirectoryToMove != null)
+                                    {
+                                        var moveDirectoryTo = Path.Combine(stagingLibrary.Data.Path, albumDirectoryToMove.Name);
+                                        albumDirectoryToMove.MoveTo(moveDirectoryTo);
+                                        File.Delete(Path.Combine(moveDirectoryTo, Album.JsonFileName));
+                                        Logger.Warning(
+                                            "[{JobName}] Invalid Melodee File. Deleted and moved directory [{From}] to staging [{To}]",
+                                            nameof(LibraryInsertJob),
+                                            albumDirectoryToMove,
+                                            moveDirectoryTo);
+                                    }
                                 }
                             }
                             catch (Exception e)

@@ -333,9 +333,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected SettingService MockSettingService()
     {
         var mock = new Mock<SettingService>();
-        mock.Setup(f => f.GetMelodeeConfigurationAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewPluginsConfiguration);
         mock.Setup(f => f.GetAllSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.NewConfiguration());
-
         return mock.Object;
     }
 

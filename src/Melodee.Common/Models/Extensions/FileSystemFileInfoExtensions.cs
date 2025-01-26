@@ -1,7 +1,7 @@
 namespace Melodee.Common.Models.Extensions;
 
 /// <summary>
-///     These take the DirectoryInfo for the directoy as the FileSystem should be light as possible, an example is there
+///     These take the DirectoryInfo for the directory as the FileSystem should be light as possible, an example is there
 ///     may be 10 images which should only have unique names in the same album directory.
 /// </summary>
 public static class FileSystemFileInfoExtensions

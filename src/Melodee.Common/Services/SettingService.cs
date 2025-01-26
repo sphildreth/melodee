@@ -18,16 +18,32 @@ namespace Melodee.Common.Services;
 ///     Setting data domain service, this is used to manage the settings, for getting settings for services see
 ///     <see cref="IMelodeeConfigurationFactory" />
 /// </summary>
-public class SettingService(
-    ILogger logger,
-    ICacheManager cacheManager,
-    IMelodeeConfigurationFactory melodeeConfigurationFactory,
-    IDbContextFactory<MelodeeDbContext> contextFactory)
-    : ServiceBase(logger, cacheManager, contextFactory)
+public class SettingService : ServiceBase
 {
+    private readonly IMelodeeConfigurationFactory _melodeeConfigurationFactory;
+
+    /// <summary>
+    ///  Parameterless for mocking
+    /// </summary>
+    public SettingService()
+    {
+    }
+    
+    /// <summary>
+    ///     Setting data domain service, this is used to manage the settings, for getting settings for services see
+    ///     <see cref="IMelodeeConfigurationFactory" />
+    /// </summary>
+    public SettingService(ILogger logger,
+        ICacheManager cacheManager,
+        IMelodeeConfigurationFactory melodeeConfigurationFactory,
+        IDbContextFactory<MelodeeDbContext> contextFactory) : base(logger, cacheManager, contextFactory)
+    {
+        _melodeeConfigurationFactory = melodeeConfigurationFactory;
+    }
+
     private const string CacheKeyDetailTemplate = "urn:setting:{0}";
 
-    public async Task<Dictionary<string, object?>> GetAllSettingsAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<Dictionary<string, object?>> GetAllSettingsAsync(CancellationToken cancellationToken = default)
     {
         var listResult = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken);
         if (!listResult.IsSuccess)
@@ -150,11 +166,6 @@ public class SettingService(
         };
     }
 
-    public async Task<IMelodeeConfiguration> GetMelodeeConfigurationAsync(CancellationToken cancellationToken = default)
-    {
-        return new MelodeeConfiguration(await GetAllSettingsAsync(cancellationToken));
-    }
-
     public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Setting detailToUpdate, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
@@ -205,7 +216,7 @@ public class SettingService(
             if (result)
             {
                 CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(dbDetail.Id));
-                melodeeConfigurationFactory.Reset();
+                _melodeeConfigurationFactory.Reset();
             }
         }
 

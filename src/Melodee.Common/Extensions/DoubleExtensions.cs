@@ -16,10 +16,14 @@ public static class DoubleExtensions
     }
 
     public static Duration ToDuration(this double? milliseconds)
-        => milliseconds == null ? Duration.Zero : Duration.FromMilliseconds(milliseconds.Value);
-    
+    {
+        return milliseconds == null ? Duration.Zero : Duration.FromMilliseconds(milliseconds.Value);
+    }
+
     public static Duration ToDuration(this double milliseconds)
-        => Duration.FromMilliseconds(milliseconds);
+    {
+        return Duration.FromMilliseconds(milliseconds);
+    }
 
     public static string ToFormattedDateTimeOffset(this double seconds, string? format = null)
     {

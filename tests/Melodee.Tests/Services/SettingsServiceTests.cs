@@ -163,8 +163,7 @@ public sealed class SettingsServiceTests : ServiceTestBase
     public async Task GetSettingWithFunc()
     {
         var shouldBeValueInt = 99;
-        var service = new SettingService(Logger, CacheManager, MockConfigurationFactory(), MockFactory());
-        var configuration = await service.GetMelodeeConfigurationAsync();
+        var configuration = await MockConfigurationFactory().GetConfigurationAsync();
         Assert.NotEmpty(configuration.Configuration);
 
         var maxSongsToProcess = configuration.GetValue<int?>(SettingRegistry.ProcessingMaximumProcessingCount) ?? 0;

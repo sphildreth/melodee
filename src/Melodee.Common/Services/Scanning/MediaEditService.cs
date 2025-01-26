@@ -743,7 +743,7 @@ public sealed class MediaEditService(
                 var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, selectedAlbumId, cancellationToken);
                 var albumStagingDirInfo = new DirectoryInfo(Path.Combine(directoryInfo.FullName(), album.ToDirectoryName()));
                 var albumLibraryDirInfo = new DirectoryInfo(Path.Combine(_directoryLibrary, album.ToDirectoryName()));
-                MoveDirectory(albumStagingDirInfo.FullName, albumLibraryDirInfo.FullName);
+                albumLibraryDirInfo.ToDirectorySystemInfo().MoveToDirectory(albumLibraryDirInfo.FullName);
             }
 
             directoryInfo.DeleteAllEmptyDirectories();
@@ -760,32 +760,5 @@ public sealed class MediaEditService(
         };
     }
 
-    /// <summary>
-    ///     This exists because in some systems where data is on one mapped drive it cannot be "Moved" to another mapped drive
-    ///     ("Cross link" error), it must be copied and then deleted.
-    /// </summary>
-    public static void MoveDirectory(string toMove, string destination, string? dontMoveFileName = null)
-    {
-        if (!Directory.Exists(destination))
-        {
-            Directory.CreateDirectory(destination);
-        }
 
-        var files = Directory.GetFiles(toMove);
-        var directories = Directory.GetDirectories(toMove);
-        foreach (var file in files)
-        {
-            if (!string.Equals(Path.GetFileName(file), dontMoveFileName, StringComparison.OrdinalIgnoreCase))
-            {
-                File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
-            }
-        }
-
-        foreach (var d in directories)
-        {
-            MoveDirectory(Path.Combine(toMove, Path.GetFileName(d)), Path.Combine(destination, Path.GetFileName(d)), dontMoveFileName);
-        }
-
-        Directory.Delete(toMove, true);
-    }
 }
