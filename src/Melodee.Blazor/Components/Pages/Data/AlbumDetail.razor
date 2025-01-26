@@ -1,4 +1,4 @@
-@page "/data/album/{ApiKey:guid}"
+@page "/data/album/{ApiKey:guid}/{FromUrl}"
 @inherits MelodeeComponentBase
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
@@ -12,6 +12,9 @@
 @inject AlbumService AlbumService
 @inject UserService UserService
 @inject NotificationService NotificationService
+@inject ILogger Logger
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
 
 <PageTitle>@_album.Name</PageTitle>
 
@@ -221,6 +224,11 @@
 
     [Parameter] public Guid ApiKey { get; set; }
 
+    /// <summary>
+    /// When this is set, is it used if the album gets deleted to return the user back (like viewing albums for an artist return to the artist detail)
+    /// </summary>
+    [Parameter] public string? FromUrl { get; set; }
+
     string AlbumStatusStyle { get; set; } = string.Empty;
 
     ShowItem _showItem = ShowItem.Overview;
@@ -325,9 +333,18 @@
         throw new NotImplementedException();
     }
 
-    private Task DeleteButtonClick()
+    private async Task DeleteButtonClick()
     {
-        throw new NotImplementedException();
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            var deleteResult = await AlbumService.DeleteAsync([_album.Id]);
+            if (deleteResult.IsSuccess)
+            {
+                NavigationManager.NavigateTo(FromUrl ?? $"/data/libraries", true);
+            }
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "deleting album", ToastTime));
+        }
     }
 
     private Task UserRatingChange(int arg)

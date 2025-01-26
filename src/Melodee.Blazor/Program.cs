@@ -19,6 +19,7 @@ using Melodee.Common.Services.Caching;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
+using Melodee.Common.Utility;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -176,68 +177,72 @@ app.UseStatusCodePagesWithRedirects("/Error");
 
 #region Scheduling Quartz Jobs with Configuration
 
-var quartzScheduler = app.Services.GetRequiredService<IScheduler>();
-var melodeeConfigurationFactory = app.Services.GetRequiredService<IMelodeeConfigurationFactory>();
-var melodeeConfiguration = await melodeeConfigurationFactory.GetConfigurationAsync();
-
-var artistHousekeepingCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsArtistHousekeepingCronExpression);
-if (artistHousekeepingCronExpression.Nullify() != null)
+var isQuartzDisabled = SafeParser.ToBoolean(builder.Configuration["QuartzDisabled"]);
+if (!isQuartzDisabled)
 {
-    await quartzScheduler.ScheduleJob(
-        JobBuilder.Create<ArtistHousekeepingJob>()
-            .WithIdentity(JobKeyRegistry.ArtistHousekeepingJobJobKey)
-            .Build(), 
-        TriggerBuilder.Create()
-            .WithIdentity("ArtistHousekeepingJobJobKey-trigger")
-            .WithCronSchedule(artistHousekeepingCronExpression!)
-            .StartNow()
-            .Build());
-}
+    var quartzScheduler = app.Services.GetRequiredService<IScheduler>();
+    var melodeeConfigurationFactory = app.Services.GetRequiredService<IMelodeeConfigurationFactory>();
+    var melodeeConfiguration = await melodeeConfigurationFactory.GetConfigurationAsync();
 
-var libraryInboundProcessJobKeyCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsLibraryProcessCronExpression);
-if (libraryInboundProcessJobKeyCronExpression.Nullify() != null)
-{
-    await quartzScheduler.ScheduleJob(
-        JobBuilder.Create<LibraryInboundProcessJob>()
-            .WithIdentity(JobKeyRegistry.LibraryInboundProcessJobKey)
-            .Build(), 
-        TriggerBuilder.Create()
-            .WithIdentity("LibraryInboundProcessJob-trigger")
-            .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
-            .UsingJobData(JobMapNameRegistry.Count, 0)        
-            .WithCronSchedule(libraryInboundProcessJobKeyCronExpression!)
-            .StartNow()
-            .Build());
-}
+    var artistHousekeepingCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsArtistHousekeepingCronExpression);
+    if (artistHousekeepingCronExpression.Nullify() != null)
+    {
+        await quartzScheduler.ScheduleJob(
+            JobBuilder.Create<ArtistHousekeepingJob>()
+                .WithIdentity(JobKeyRegistry.ArtistHousekeepingJobJobKey)
+                .Build(),
+            TriggerBuilder.Create()
+                .WithIdentity("ArtistHousekeepingJobJobKey-trigger")
+                .WithCronSchedule(artistHousekeepingCronExpression!)
+                .StartNow()
+                .Build());
+    }
 
-var libraryInsertCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsLibraryInsertCronExpression);
-if (libraryInsertCronExpression.Nullify() != null)
-{
-    await quartzScheduler.ScheduleJob(
-        JobBuilder.Create<LibraryInsertJob>()
-            .WithIdentity(JobKeyRegistry.LibraryProcessJobJobKey)
-            .Build(), 
-        TriggerBuilder.Create()
-            .WithIdentity("LibraryProcessJob-trigger")
-            .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
-            .UsingJobData(JobMapNameRegistry.Count, 0)  
-            .WithCronSchedule(libraryInsertCronExpression!)
-            .StartNow()
-            .Build());
-}
+    var libraryInboundProcessJobKeyCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsLibraryProcessCronExpression);
+    if (libraryInboundProcessJobKeyCronExpression.Nullify() != null)
+    {
+        await quartzScheduler.ScheduleJob(
+            JobBuilder.Create<LibraryInboundProcessJob>()
+                .WithIdentity(JobKeyRegistry.LibraryInboundProcessJobKey)
+                .Build(),
+            TriggerBuilder.Create()
+                .WithIdentity("LibraryInboundProcessJob-trigger")
+                .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
+                .UsingJobData(JobMapNameRegistry.Count, 0)
+                .WithCronSchedule(libraryInboundProcessJobKeyCronExpression!)
+                .StartNow()
+                .Build());
+    }
 
-var musicBrainzUpdateDatabaseCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsMusicBrainzUpdateDatabaseCronExpression);
-if (musicBrainzUpdateDatabaseCronExpression.Nullify() != null)
-{
-    await quartzScheduler.ScheduleJob(
-        JobBuilder.Create<MusicBrainzUpdateDatabaseJob>()
-            .WithIdentity(JobKeyRegistry.MusicBrainzUpdateDatabaseJobKey)
-            .Build(), 
-        TriggerBuilder.Create()
-            .WithIdentity("MusicBrainzUpdateDatabaseJob-trigger")
-            .WithCronSchedule(musicBrainzUpdateDatabaseCronExpression!)
-            .StartNow()
-            .Build());
+    var libraryInsertCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsLibraryInsertCronExpression);
+    if (libraryInsertCronExpression.Nullify() != null)
+    {
+        await quartzScheduler.ScheduleJob(
+            JobBuilder.Create<LibraryInsertJob>()
+                .WithIdentity(JobKeyRegistry.LibraryProcessJobJobKey)
+                .Build(),
+            TriggerBuilder.Create()
+                .WithIdentity("LibraryProcessJob-trigger")
+                .UsingJobData(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString())
+                .UsingJobData(JobMapNameRegistry.Count, 0)
+                .WithCronSchedule(libraryInsertCronExpression!)
+                .StartNow()
+                .Build());
+    }
+
+    var musicBrainzUpdateDatabaseCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsMusicBrainzUpdateDatabaseCronExpression);
+    if (musicBrainzUpdateDatabaseCronExpression.Nullify() != null)
+    {
+        await quartzScheduler.ScheduleJob(
+            JobBuilder.Create<MusicBrainzUpdateDatabaseJob>()
+                .WithIdentity(JobKeyRegistry.MusicBrainzUpdateDatabaseJobKey)
+                .Build(),
+            TriggerBuilder.Create()
+                .WithIdentity("MusicBrainzUpdateDatabaseJob-trigger")
+                .WithCronSchedule(musicBrainzUpdateDatabaseCronExpression!)
+                .StartNow()
+                .Build());
+    }
 }
 
 #endregion

@@ -123,7 +123,7 @@
                         <RadzenText Text="@data.AlbumStatusValue.ToString()"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Album.Artist.Name)" Title="Artist" Width="150px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.ArtistName)" Title="Artist" Width="150px">
                     <Template Context="data">
                         @if (data.ApiKey != Guid.Empty)
                         {
@@ -135,17 +135,17 @@
                         }
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.DiscCount)" Title="Discs" Width="90px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.DiscCount)" Filterable="false" Title="Discs" Width="90px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatNumber(data.DiscCount)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Title="Songs" Width="90px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Filterable="false" Title="Songs" Width="90px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatNumber(data.SongCount)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Duration)" Title="Duration" Width="120px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Duration)" Filterable="false" Title="Duration" Width="120px">
                     <Template Context="data">
                         <RadzenText Text="@data.Duration.ToFormattedDateTimeOffset()"/>
                     </Template>
@@ -156,7 +156,7 @@
                         <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Tags)" Title="Tags" Width="100px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Tags)" Filterable="false" Title="Tags" Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.Tags?.ToTags() ?? [])
@@ -243,8 +243,7 @@
             {
                 filters =
                 [
-                    new FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
-                    new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, FilterOperatorInfo.OrJoinOperator)
+                    new FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
                 ];
             }
             else if (args.Filters.Any())

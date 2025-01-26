@@ -132,7 +132,7 @@
                 </RadzenPanel>
             </RadzenStack>
         </RadzenColumn>
-        <RadzenColumn Size="8" SizeMD="9">
+        <RadzenColumn Size="8" SizeMD="8">
             @if (_showItem == ShowItem.Overview)
             {
                 <RadzenRow class="rz-pb-3">
@@ -172,11 +172,11 @@
                         <RadzenStack>
                             <ArtistDataInfoCardComponent
                                 ShowArtistLink="false"
-                                Style="width: 350px;"
+                                Style="width: 375px;"
                                 Artist="@_album.Artist.ToArtistDataInfo(_album.Created, 1, _album.SongTotalValue())" />
                             <RadzenImage
                                 Path="@_coverImage"
-                                Style="width: 350px; height: auto; margin:auto;display: block;"
+                                Style="width: 375px; height: auto; margin:auto;display: block;"
                                 AlternateText="@_album.AlbumTitle()"/>
                         </RadzenStack>
                     </RadzenColumn>

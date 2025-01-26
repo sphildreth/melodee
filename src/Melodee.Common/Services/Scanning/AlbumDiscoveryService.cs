@@ -162,14 +162,15 @@ public sealed class AlbumDiscoveryService(
                     break;
             }
         }
-
+   
+        
         if (pagedRequest.FilterBy != null)
         {
             foreach (var filterBy in pagedRequest.FilterBy)
             {
                 switch (filterBy.PropertyName)
                 {
-                    case "Artist":
+                    case "ArtistName":
                         albums = albums.Where(x => x.Artist.NameNormalized.Contains(filterBy.Value.ToString()?.ToNormalizedString() ?? string.Empty)).ToList();
                         break;
 
@@ -177,8 +178,14 @@ public sealed class AlbumDiscoveryService(
                         var filterStatusValue = SafeParser.ToEnum<AlbumStatus>(filterBy.Value);
                         albums = albums.Where(x => x.Status == filterStatusValue).ToList();
                         break;
+                    
+                    case "NameNormalized":
+                        albums = albums.Where(x =>
+                            (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(filterBy.Value.ToString() ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)) ||
+                            x.Artist.Name.Contains(filterBy.Value.ToString() ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)).ToList();
+                        break;                    
 
-                    case "Year":
+                    case "ReleaseDate":
                         var filterYearValue = SafeParser.ToNumber<int>(filterBy.Value);
                         albums = albums.Where(x => x.AlbumYear() == filterYearValue).ToList();
                         break;
@@ -256,22 +263,6 @@ public sealed class AlbumDiscoveryService(
     {
         CheckInitialized();
         var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
-        // var data = albumsForDirectoryInfo.Data.ToArray().Select(async x => new AlbumDataInfo
-        // (
-        //     Artist = x.Artist.Name,
-        //     Created = x.Created,
-        //     Duration = x.Duration(),
-        //     MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName),
-        //     ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
-        //     IsValid = _albumValidator.ValidateAlbum(x).Data.IsValid,
-        //     Title = x.AlbumTitle(),
-        //     Year = x.AlbumYear(),
-        //     SongCount = x.SongTotalValue(),
-        //     AlbumStatus = x.Status,
-        //     ViaPlugins = x.ViaPlugins.ToArray(),
-        //     Id = x.Id
-        // );
-
         var data = albumsForDirectoryInfo.Data.ToArray().Select(async x => new AlbumDataInfo(
             0,
             x.Id,
@@ -295,7 +286,7 @@ public sealed class AlbumDiscoveryService(
         });
 
         var d = await Task.WhenAll(data);
-
+        
         return new PagedResult<AlbumDataInfo>
         {
             TotalCount = albumsForDirectoryInfo.TotalCount,

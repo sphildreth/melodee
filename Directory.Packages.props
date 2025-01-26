@@ -64,7 +64,7 @@
     <PackageVersion Include="Quartz.Jobs" Version="3.13.1" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.1" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.13.1" />
-    <PackageVersion Include="Radzen.Blazor" Version="5.7.10" />
+    <PackageVersion Include="Radzen.Blazor" Version="5.9.0" />
     <PackageVersion Include="Rebus" Version="8.7.1" />
     <PackageVersion Include="Rebus.Serilog" Version="8.0.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />
@@ -97,6 +97,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="z440.atl.core" Version="6.13.0" />
+    <PackageVersion Include="z440.atl.core" Version="6.14.0" />
   </ItemGroup>
 </Project>
