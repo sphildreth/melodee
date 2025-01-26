@@ -57,7 +57,7 @@ public sealed class LibraryInboundProcessJob(
             {
                 Path = directoryInbound,
                 Name = directoryInbound
-            }, inboundLibrary.LastScanAt, context.CancellationToken).ConfigureAwait(false);
+            }, inboundLibrary.LastScanAt, null, context.CancellationToken).ConfigureAwait(false);
 
             if (!result.IsSuccess)
             {

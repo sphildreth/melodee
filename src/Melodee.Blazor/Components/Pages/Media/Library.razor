@@ -320,7 +320,7 @@
             try
             {
                 await DirectoryProcessorService.InitializeAsync();
-                var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), _library.LastScanAt);
+                var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), _library.LastScanAt, null);
                 NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", ToastTime));
             }
             finally

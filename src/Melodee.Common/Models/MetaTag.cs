@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -23,7 +24,7 @@ public sealed record MetaTag<T>
 
     public int SortOrder { get; set; }
 
-    [JsonIgnore] public bool WasModified => OriginalValue != null && OriginalValue.Equals(Value) == false;
+    [JsonIgnore] public bool WasModified => OriginalValue != null && OriginalValue.ToString() != Value?.ToString();
 
     public StyleClass StyleClass { get; set; } = StyleClass.Normal;
 
@@ -33,4 +34,5 @@ public sealed record MetaTag<T>
         newProcessedBy.AddRange(processedBy);
         ProcessedBy = newProcessedBy.ToArray();
     }
+
 }

@@ -15,6 +15,11 @@ public class LibraryProcessSettings : LibrarySettings
     [CommandOption("--force")]
     [DefaultValue(true)]
     public bool ForceMode { get; init; }
+    
+    [Description("Maximum number of albums to process and then quit, null is unlimited.")]
+    [CommandArgument(0, "[LIMIT]")]
+    [DefaultValue(null)]
+    public int? ProcessLimit { get; init; }
 
     [Description("Script to run before Processing.")]
     [CommandArgument(0, "[PRESCRIPT]")]

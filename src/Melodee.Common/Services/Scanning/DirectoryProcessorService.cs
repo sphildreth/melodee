@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
@@ -22,6 +23,7 @@ using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using NodaTime;
 using Serilog;
 using Serilog.Events;
@@ -159,7 +161,7 @@ public sealed class DirectoryProcessorService(
         }
     }
 
-    public async Task<OperationResult<DirectoryProcessorResult>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, Instant? lastProcessDate, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<DirectoryProcessorResult>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, Instant? lastProcessDate, int? maxAlbumsToProcess, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
@@ -192,6 +194,8 @@ public sealed class DirectoryProcessorService(
             NumberOfValidAlbumsProcessed = 0,
             NumberOfAlbumsProcessed = 0
         };
+        
+        _maxAlbumProcessingCount = maxAlbumsToProcess ?? _maxAlbumProcessingCount; 
 
         var startTicks = Stopwatch.GetTimestamp();
 
@@ -415,6 +419,7 @@ public sealed class DirectoryProcessorService(
                     }
                 }
 
+                
                 Console.WriteLine($"Loading [{albumsForDirectory.Count}] directory");
 
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
@@ -427,6 +432,11 @@ public sealed class DirectoryProcessorService(
                         break;
                     }
 
+                    if (album.ModifiedTags().Any())
+                    {
+                        var t = 1;
+                    }
+                    
                     try
                     {
                         var albumImages = new List<ImageInfo>();
@@ -576,10 +586,11 @@ public sealed class DirectoryProcessorService(
                                 }
                             }
 
-                            Console.WriteLine("Running plugins on songs...");
                             if ((album.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
                                 album.Songs!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
                             {
+                                Console.WriteLine("Running plugins on songs with modified tags...");                               
+
                                 var albumDirectorySystemInfo = albumDirInfo.ToDirectorySystemInfo();
                                 foreach (var songPlugin in _songPlugins)
                                 {
@@ -633,7 +644,7 @@ public sealed class DirectoryProcessorService(
                                     WikiDataId = album.Artist.WikiDataId ??artistFromSearch.WikiDataId
                                 };
 
-                                if (artistFromSearch.Releases?.Length != 0)
+                                if (artistFromSearch.Releases?.FirstOrDefault() != null)
                                 {
                                     album.AlbumDbId = album.AlbumDbId ?? artistFromSearch.Releases!.First().Id;
                                     album.AlbumType = album.AlbumType == AlbumType.NotSet ? artistFromSearch.Releases!.First().AlbumType : album.AlbumType;

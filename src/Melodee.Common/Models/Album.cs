@@ -67,7 +67,7 @@ public sealed record Album
     public IEnumerable<MetaTag<object?>>? Tags { get; set; }
 
     public KeyValue? SearchEngineResultKeyValue { get; init; }
-
+    
     public IEnumerable<Song>? Songs { get; set; }
 
     public IEnumerable<ValidationResultMessage> ValidationMessages { get; set; } = [];
@@ -134,6 +134,13 @@ public sealed record Album
     public override string ToString()
     {
         return $"AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+    }
+
+    public IEnumerable<MetaTag<object?>> ModifiedTags()
+    {
+        var modifiedAlbumTags = Tags?.Where(x => x.WasModified) ?? [];
+        var modifiedSongTags = Songs?.SelectMany(x => x.Tags?.Where(y => y.WasModified) ?? []).ToArray() ?? [];
+        return modifiedAlbumTags.Concat(modifiedSongTags);
     }
 
     public Album Merge(Album otherAlbum)
@@ -237,10 +244,11 @@ public sealed record Album
 
         if (value != null)
         {
+            var ov = existingTag?.OriginalValue ?? existingTag?.Value;
             tags.Add(new MetaTag<object?>
             {
                 Identifier = identifier,
-                OriginalValue = existingTag?.OriginalValue,
+                OriginalValue = ov == value ? null : ov,
                 SortOrder = existingTag?.SortOrder ?? 0,
                 StyleClass = existingTag?.StyleClass ?? StyleClass.Normal,
                 Value = value
@@ -280,7 +288,7 @@ public sealed record Album
                 tags.Add(new MetaTag<object?>
                 {
                     Identifier = identifier,
-                    OriginalValue = existingTag?.OriginalValue,
+                    OriginalValue = existingTag?.OriginalValue != value ? existingTag?.OriginalValue : null,
                     SortOrder = existingTag?.SortOrder ?? 0,
                     StyleClass = existingTag?.StyleClass ?? StyleClass.Normal,
                     Value = value

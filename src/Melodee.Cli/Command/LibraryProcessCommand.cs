@@ -174,7 +174,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
 
             await processor.InitializeAsync();
 
-            var result = await processor.ProcessDirectoryAsync(libraryToProcess.ToFileSystemDirectoryInfo(), settings.ForceMode ? null : libraryToProcess.LastScanAt);
+            var result = await processor.ProcessDirectoryAsync(libraryToProcess.ToFileSystemDirectoryInfo(), settings.ForceMode ? null : libraryToProcess.LastScanAt, settings.ProcessLimit);
 
             Log.Debug("ℹ️ Processed library [{Inbound}] in [{ElapsedTime}]", libraryToProcess.ToString(), Stopwatch.GetElapsedTime(startTicks));
 

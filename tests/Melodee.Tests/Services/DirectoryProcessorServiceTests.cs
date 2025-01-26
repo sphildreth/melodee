@@ -54,7 +54,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             {
                 Path = dirInfo.FullName,
                 Name = dirInfo.Name
-            }, null);
+            }, null, null);
             Assert.NotNull(result);
             Assert.True(result.IsSuccess);
         }
@@ -79,7 +79,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             {
                 Path = dirInfo.FullName,
                 Name = dirInfo.Name
-            }, null);
+            }, null, null);
             Assert.NotNull(result);
             Assert.True(result.IsSuccess);
         }
@@ -148,7 +148,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             {
                 Path = dirInfo.FullName,
                 Name = dirInfo.Name
-            }, null);
+            }, null, null);
             Assert.NotNull(result);
             Assert.True(result.IsSuccess);
             Assert.Equal(1, result.Data.NumberOfAlbumFilesProcessed);

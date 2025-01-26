@@ -423,7 +423,7 @@
             {
                 var force = arg?.Text == "Force";
                 await DirectoryProcessorService.InitializeAsync();
-                var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), force ? null : _library.LastScanAt);
+                var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), force ? null : _library.LastScanAt, null);
                 NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", ToastTime));
             }
             finally
