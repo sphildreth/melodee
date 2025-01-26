@@ -84,7 +84,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                     if (File.Exists(stagingAlbumDataName))
                     {
-                        var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                        var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);
                         if (existingAlbum != null)
                         {
                             nfoAlbum = nfoAlbum.Merge(existingAlbum);

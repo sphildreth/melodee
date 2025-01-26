@@ -156,7 +156,7 @@ public sealed class M3UPlaylist(
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);                            
                             if (existingAlbum != null)
                             {
                                 m3UAlbum = m3UAlbum.Merge(existingAlbum);

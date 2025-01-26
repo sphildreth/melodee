@@ -387,7 +387,7 @@ public class LibraryService : ServiceBase
             var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
             album.Directory.MoveToDirectory(libraryAlbumPath);
             var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
-            var melodeeFile = _serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFileName, cancellationToken));
+            var melodeeFile = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(_serializer, melodeeFileName, cancellationToken).ConfigureAwait(false); 
             melodeeFile!.Directory.Path = libraryAlbumPath;
             if (album.Artist.Images?.Any() ?? false)
             {
@@ -598,7 +598,6 @@ public class LibraryService : ServiceBase
         }
 
         var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
-
         var albumValidator = new AlbumValidator(configuration);
 
         var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
@@ -629,8 +628,7 @@ public class LibraryService : ServiceBase
                     continue;
                 }
             }
-
-            var album = _serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(albumFile, cancellationToken));
+            var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(_serializer, albumFile, cancellationToken).ConfigureAwait(false);
             if (album != null)
             {
                 if (!albumValidator.ValidateAlbum(album).Data.IsValid)
@@ -702,7 +700,7 @@ public class LibraryService : ServiceBase
         var library = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == libraryName.ToNormalizedString());
         if (library == null)
         {
-            return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>("Invalid From library Name")
+            return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>("Invalid library Name")
             {
                 Data = []
             };
@@ -724,18 +722,30 @@ public class LibraryService : ServiceBase
         var melodeeFilesForLibrary = new List<MelodeeModels.Album>();
         foreach (var melodeeFileSystemInfo in melodeeFileSystemInfosForLibrary)
         {
-            var melodeeFile = _serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllBytesAsync(melodeeFileSystemInfo.FullName, cancellationToken));
+            var melodeeFile = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(_serializer, melodeeFileSystemInfo.FullName, cancellationToken).ConfigureAwait(false);            
             if (melodeeFile != null)
             {
                 melodeeFilesForLibrary.Add(melodeeFile);
             }
         }
 
+        Console.WriteLine($"Found [{melodeeFilesForLibrary.Count}] albums in library [{library}]...");
+        
         var melodeeFilesGrouped = melodeeFilesForLibrary.GroupBy(x => x.Status);
         var melodeeFilesGroupedOk = melodeeFilesGrouped.FirstOrDefault(x => x.Key == AlbumStatus.Ok);
         if (melodeeFilesGroupedOk != null)
         {
-            result.Add(new MelodeeModels.Statistic(StatisticType.Information, melodeeFilesGroupedOk.Key.ToString(), melodeeFilesGroupedOk.Count(), StatisticColorRegistry.Ok, "These albums are ok!"));
+            result.Add(new MelodeeModels.Statistic(StatisticType.Information, melodeeFilesGroupedOk.Key.ToString(), melodeeFilesGroupedOk.Count(), StatisticColorRegistry.Ok, "Album with `Ok` status."));
+            var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
+            var albumValidator = new AlbumValidator(configuration);
+            foreach (var album in melodeeFilesGroupedOk)
+            {
+                var validateResults = albumValidator.ValidateAlbum(album);
+                if(!validateResults.Data.IsValid)
+                {
+                    result.Add(new MelodeeModels.Statistic(StatisticType.Warning, $"Album with `Ok` status [{album}], is invalid", _serializer.Serialize(validateResults.Data) ?? string.Empty, StatisticColorRegistry.Warning));
+                }
+            }
         }
 
         foreach (var album in melodeeFilesForLibrary.Where(x => x.Status != AlbumStatus.Ok))
@@ -851,7 +861,7 @@ public class LibraryService : ServiceBase
 
                                         try
                                         {
-                                            _serializer.Deserialize<MelodeeModels.Album>(await File.ReadAllTextAsync(melodeeFile.FullName, cancellationToken));
+                                            await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(_serializer, melodeeFile.FullName, cancellationToken).ConfigureAwait(false); 
                                         }
                                         catch (Exception ex)
                                         {

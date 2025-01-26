@@ -515,7 +515,7 @@ public class ArtistService(
                         var albumJsonFiles = Directory.GetFiles(albumToMergeNewDirectory, MelodeeModels.Album.JsonFileName, SearchOption.TopDirectoryOnly);
                         if (albumJsonFiles.Length > 0)
                         {
-                            var album = serializer.Deserialize<MelodeeModels.Album>(albumJsonFiles[0]);
+                            var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumJsonFiles[0], cancellationToken).ConfigureAwait(false);                            
                             if (album != null)
                             {
                                 await ProcessExistingDirectoryMoveMergeAsync(configuration, serializer, album, albumToMergeDirectory, cancellationToken).ConfigureAwait(false);

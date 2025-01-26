@@ -122,7 +122,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             Console.WriteLine(e);
         }
 
-        var albumStatus = _validationMessages.Count(x => x.Severity == ValidationResultMessageSeverity.Critical) == 0
+        var albumStatus = _validationMessages.All(x => x.Severity != ValidationResultMessageSeverity.Critical)
             ? AlbumStatus.Ok
             : AlbumStatus.Invalid;
         return new OperationResult<AlbumValidationResult>

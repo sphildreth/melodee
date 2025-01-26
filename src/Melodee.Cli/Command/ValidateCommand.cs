@@ -108,9 +108,12 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
                 var albumResult = await albumService.GetByApiKeyAsync(SafeParser.ToGuid(settings.ApiKey)!.Value).ConfigureAwait(false);
                 if (albumResult.IsSuccess)
                 {
-                    var pathToAlbum = Path.Combine(albumResult.Data!.Directory, "melodee.json");
-                    album = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(pathToAlbum).ConfigureAwait(false));
+                    album = await Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(albumResult.Data!.Directory, "melodee.json")).ConfigureAwait(false);                    
                 }
+            }
+            else if (settings.PathToMelodeeDataFile != null)
+            {
+                album = await Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(settings.PathToMelodeeDataFile)).ConfigureAwait(false);
             }
 
             if (album != null)

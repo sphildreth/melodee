@@ -406,7 +406,7 @@ public sealed class DirectoryProcessorService(
 
                     try
                     {
-                        var album = serializer.Deserialize<Album>(await File.ReadAllTextAsync(melodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false));
+                        var album = await Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false);                        
                         if (album != null)
                         {
                             album.MelodeeDataFileName = melodeeJsonFile.FullName;

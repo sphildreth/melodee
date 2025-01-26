@@ -3,6 +3,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
+using Melodee.Common.Serialization;
 
 namespace Melodee.Common.Models;
 
@@ -299,5 +300,16 @@ public sealed record Album
             songs.Add(song with { Tags = tags.ToArray() });
             Songs = songs.ToArray();
         }
+    }
+
+    public static async Task<Album?> DeserializeAndInitializeAlbumAsync(ISerializer serializer, string fullPathToMelodeeDataFile, CancellationToken cancellationToken = default)
+    {
+        var result = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(fullPathToMelodeeDataFile, cancellationToken).ConfigureAwait(false));
+        var d = fullPathToMelodeeDataFile.ToDirectoryInfo();
+        if (result != null && result.Directory != d)
+        {
+            result.Directory = d;
+        }
+        return result;
     }
 }

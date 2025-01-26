@@ -175,7 +175,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     {
                         try
                         {
-                            var existingAlbum = serializer.Deserialize<Album?>(await File.ReadAllTextAsync(stagingAlbumDataName, cancellationToken));
+                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);;
                             if (existingAlbum != null)
                             {
                                 sfvAlbum = sfvAlbum.Merge(existingAlbum);

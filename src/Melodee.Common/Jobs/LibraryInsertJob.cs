@@ -202,7 +202,7 @@ public class LibraryInsertJob(
 
                                 try
                                 {
-                                    var melodeeFile = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(melodeeFileInfo.FullName).ConfigureAwait(false));
+                                    var melodeeFile = await Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileInfo.FullName, context.CancellationToken).ConfigureAwait(false);                                    
                                     if (melodeeFile == null || !_albumValidator.ValidateAlbum(melodeeFile).Data.IsValid)
                                     {
                                         Logger.Warning("[{JobName}] Invalid Melodee file [{MelodeeFile}]", nameof(LibraryInsertJob), melodeeFile?.ToString() ?? melodeeFileInfo.FullName);

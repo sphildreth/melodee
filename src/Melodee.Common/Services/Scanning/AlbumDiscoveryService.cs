@@ -317,7 +317,7 @@ public sealed class AlbumDiscoveryService(
 
                     try
                     {
-                        var r = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(jsonFile.FullName, cancellationToken));
+                        var r = await Album.DeserializeAndInitializeAlbumAsync(serializer, jsonFile.FullName, cancellationToken).ConfigureAwait(false);
                         if (r != null)
                         {
                             r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
