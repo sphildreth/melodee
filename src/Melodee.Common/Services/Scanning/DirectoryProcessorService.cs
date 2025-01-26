@@ -431,11 +431,6 @@ public sealed class DirectoryProcessorService(
                     {
                         break;
                     }
-
-                    if (album.ModifiedTags().Any())
-                    {
-                        var t = 1;
-                    }
                     
                     try
                     {
@@ -518,6 +513,7 @@ public sealed class DirectoryProcessorService(
                             Path = Path.Combine(_directoryStaging, album.ToDirectoryName()),
                             Name = album.ToDirectoryName()
                         };
+                        albumDirectorySystemInfo.EnsureExists();
 
                         var albumImagesToMove = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
                         var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
@@ -654,7 +650,7 @@ public sealed class DirectoryProcessorService(
 
                                 album.Status = AlbumStatus.Ok;
 
-                                LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
+                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                             }
                             else
                             {
@@ -712,7 +708,7 @@ public sealed class DirectoryProcessorService(
                                                 WasEmbeddedInSong = false
                                             }
                                         };
-                                        LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
+                                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
                                     }
                                 }
                                 else
@@ -765,7 +761,7 @@ public sealed class DirectoryProcessorService(
                             LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\udc4d Found valid album [{album}]");
                             if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
                             {
-                                LogAndRaiseEvent(LogEventLevel.Information, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
+                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
                                 _stopProcessingTriggered = true;
                                 break;
                             }
@@ -828,7 +824,7 @@ public sealed class DirectoryProcessorService(
             }
         }
 
-        LogAndRaiseEvent(LogEventLevel.Information, "Processing Complete!");
+        LogAndRaiseEvent(LogEventLevel.Debug, "Processing Complete!");
 
         return new OperationResult<DirectoryProcessorResult>(processingMessages)
         {
