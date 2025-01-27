@@ -1008,14 +1008,14 @@ public class OpenSubsonicApiService(
                                 }
                                 else
                                 {
-                                    Logger.Warning("[{ServiceName}] Album directory is missing Melodee data file [{AlbumPath}]", nameof(OpenSubsonicApiService), pathToAlbum);
-                                    var albumDirInfo = new FileSystemDirectoryInfo
-                                    {
-                                        Name = pathToAlbum,
-                                        Path = pathToAlbum
-                                    };
-                                    var imagesForFolder = albumDirInfo.AllFileImageTypeFileInfos();
-                                    var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, $" {ImageInfo.ImageFilePrefix}01-front.jpg", StringComparison.OrdinalIgnoreCase));
+                                    var albumDirInfo = pathToAlbum.ToDirectoryInfo();
+                                    var imagesForFolder = albumDirInfo.AllFileImageTypeFileInfos().ToArray();
+                                    Logger.Warning(
+                                        "[{ServiceName}] Album directory is missing Melodee data file [{AlbumPath}] found [{ImageCount}] images in album path.",
+                                        nameof(OpenSubsonicApiService),
+                                        pathToAlbum,
+                                        imagesForFolder.Length);                                    
+                                    var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, $"{ImageInfo.ImageFilePrefix}01-front.jpg", StringComparison.OrdinalIgnoreCase));
                                     if (firstFrontImage != null)
                                     {
                                         result = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
