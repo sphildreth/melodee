@@ -153,6 +153,39 @@ public class ArtistService(
             CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
         }
     }
+    
+    /// <summary>
+    /// Find the Artist using various given Ids.
+    /// </summary>
+    public async Task<MelodeeModels.OperationResult<Artist?>> FindArtistAsync(int? byId, Guid byApiKey, string? byName, Guid? byMusicBrainzId, CancellationToken cancellationToken = default)
+    {
+        int? id = null;
+        
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();
+                id =await dbConn
+                    .QuerySingleOrDefaultAsync<int?>("""
+                                                     select a."Id"
+                                                     from "Artists" a 
+                                                     where a."Id" = @id
+                                                     or a."ApiKey" = @apiKey
+                                                     or a."MusicBrainzId" = @musicBrainzId   
+                                                     or a."NameNormalized" = @name
+                                                     """, new { @id = byId, @apiKey = byApiKey, @name = byName, @musicBrainzId = byMusicBrainzId })
+                    .ConfigureAwait(false);
+            }
+
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
+            {
+                Data = null
+            };
+        }
+
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
+    }
 
     public async Task<MelodeeModels.OperationResult<Artist?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {

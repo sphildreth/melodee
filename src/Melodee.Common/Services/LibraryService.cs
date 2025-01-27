@@ -773,8 +773,6 @@ public class LibraryService : ServiceBase
             };
         }
 
-        var shouldResetLastScan = false;
-
         var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
         var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
@@ -829,7 +827,6 @@ public class LibraryService : ServiceBase
                                     if (dbArtist == null)
                                     {
                                         result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Unknown artist directory", artistDirectory, StatisticColorRegistry.Error, $"Unable to find artist for directory [{d.Name}]"));
-                                        shouldResetLastScan = true;
                                     }
 
                                     artistDirectoriesFound++;
@@ -855,7 +852,7 @@ public class LibraryService : ServiceBase
                                         var melodeeFile = d.GetFileSystemInfos(MelodeeModels.Album.JsonFileName, SearchOption.TopDirectoryOnly).FirstOrDefault();
                                         if (melodeeFile == null)
                                         {
-                                            Logger.Warning("Invalid album directory [{DirName}] has no melodee data file.", d.FullName);
+                                            Logger.Warning("Album directory [{DirName}] has no melodee data file.", d.FullName);
                                             continue;
                                         }
 
@@ -882,7 +879,6 @@ public class LibraryService : ServiceBase
                                         if (dbAlbum == null)
                                         {
                                             result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Unknown album directory", albumDirectory, StatisticColorRegistry.Error, $"Unable to find album for directory [{d.Name}]"));
-                                            shouldResetLastScan = true;
                                             continue;
                                         }
 
@@ -893,7 +889,6 @@ public class LibraryService : ServiceBase
                                             if (dbSong == null)
                                             {
                                                 result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Unknown song", songFound.Name, StatisticColorRegistry.Error, $"Album Id [{dbAlbum?.Id}]: Unable to find song for album"));
-                                                shouldResetLastScan = true;
                                             }
                                             albumSongsFound++;
                                         }
@@ -921,21 +916,19 @@ public class LibraryService : ServiceBase
                 {
                     result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Album directory missing Melodee data file", albumDirectoriesWithoutMelodeeDataFile, StatisticColorRegistry.Error, "When scanning media without a Melodee data file, media files will not get processed."));
                 }
-
-                shouldResetLastScan = shouldResetLastScan && library.TypeValue == LibraryType.Storage;
-
-                var message = artistDirectoriesFound == library.ArtistCount ? null : "Artist directory count does not match Library artist count.";
+                
+                var message = artistDirectoriesFound == library.ArtistCount ? null : $"Artist directory count [{artistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library artist count [{library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength)}].";
                 result.Add(new MelodeeModels.Statistic(artistDirectoriesFound == library.ArtistCount ? StatisticType.Information : StatisticType.Warning, "Artist Directories Found", artistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), artistDirectoriesFound == library.ArtistCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
 
                 message = albumDirectoriesFound == library.AlbumCount ? null : $"Album directory count [{albumDirectoriesFound}] does not match Library album count [{library.AlbumCount}].";
                 result.Add(new MelodeeModels.Statistic(albumDirectoriesFound == library.AlbumCount ? StatisticType.Information : StatisticType.Warning, "Album Directories Found", albumDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), albumDirectoriesFound == library.AlbumCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
 
-                message = songsFound == library.SongCount ? null : $"Song count [{songsFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(DisplayNumberPadLength)}].";
+                message = songsFound == library.SongCount ? null : $"Song directory count [{songsFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(DisplayNumberPadLength)}].";
                 result.Add(new MelodeeModels.Statistic(songsFound == library.SongCount ? StatisticType.Information : StatisticType.Error, "Songs Found", songsFound.ToStringPadLeft(DisplayNumberPadLength), songsFound == library.SongCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
             }
         }
 
-        return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>(shouldResetLastScan ? "You should run `library scan`" : string.Empty)
+        return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>
         {
             Data = result.ToArray()
         };

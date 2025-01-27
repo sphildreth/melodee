@@ -394,16 +394,17 @@ public class LibraryInsertJob(
                     currentAlbum = melodeeAlbum;
                     var artistName = melodeeAlbum.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                     var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
-                    var dbArtistResult = await artistService.GetByApiKeyAsync(melodeeAlbum.Artist.Id, cancellationToken).ConfigureAwait(false);
-                    if (!dbArtistResult.IsSuccess)
-                    {
-                        dbArtistResult = await artistService.GetByNameNormalized(artistNormalizedName, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    var dbArtist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistResult.Data!.Id, cancellationToken).ConfigureAwait(false);
+                    var dbArtistResult = await artistService.FindArtistAsync(melodeeAlbum.Artist.ArtistDbId, melodeeAlbum.Artist.Id, artistNormalizedName, melodeeAlbum.Artist.MusicBrainzId, cancellationToken).ConfigureAwait(false);
+                    var dbArtistId = dbArtistResult.Data?.Id;
+                    var dbArtist = dbArtistId == null ? null : await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistId, cancellationToken).ConfigureAwait(false);
                     if (dbArtist == null)
                     {
-                        Logger.Warning("Unable to find artist [{ArtistUniqueId}] Artist for album [{AlbumUniqueId}].", melodeeAlbum.Artist.Id, melodeeAlbum.Id);
+                        Logger.Warning(
+                            "Unable to find artist [{ArtistUniqueId}] nameNormalized [{NameNormalized}] musicBrainzId [{MbId}] artist for album [{AlbumUniqueId}].",
+                            melodeeAlbum.Artist.Id,
+                            artistNormalizedName,
+                            melodeeAlbum.Artist.MusicBrainzId,
+                            melodeeAlbum.Id);
                         continue;
                     }
 

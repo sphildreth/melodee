@@ -37,7 +37,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     [Route("/rest/getAlbumInfo2.view")]
     [Route("/rest/getAlbumInfo")]
     [Route("/rest/getAlbumInfo2")]
-    public Task<IActionResult> GetAlbumInfo(string id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> GetAlbumInfo(string id, int? count, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetAlbumInfoAsync(id, ApiRequest, cancellationToken));
     }
@@ -58,7 +58,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     {
         return MakeResult(openSubsonicApiService.GetArtistInfoAsync(id, count, ApiRequest, cancellationToken));
     }
-
+    
     /// <summary>
     ///     Returns top songs for the given artist.
     /// </summary>
