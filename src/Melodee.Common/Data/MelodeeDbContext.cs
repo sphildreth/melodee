@@ -501,7 +501,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 50,
                     Key = SettingRegistry.ProcessingDuplicateAlbumPrefix,
                     Comment = "Prefix to apply to indicate an album directory is a duplicate album for an artist. If left blank the default of '__duplicate_' will be used.",
-                    Value = "__duplicate_ ",
+                    Value = "_duplicate_ ",
                     CreatedAt = now
                 },
                 new Setting
