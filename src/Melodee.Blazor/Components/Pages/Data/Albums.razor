@@ -133,7 +133,7 @@
                         </RadzenStack>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Album.Artist.Name)" Title="Artist" Width="150px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.ArtistName)" Title="Artist" Width="150px">
                     <Template Context="data">
                         <RadzenLink Text="@data.ArtistName" Path="@($"/data/artist/{data.ArtistApiKey}")"/>
                     </Template>
@@ -222,7 +222,7 @@
                     new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, FilterOperatorInfo.OrJoinOperator)
                 ];
             }
-            else if (args.Filters.Any())
+            else if (args.Filters.Any(x => x.Property != nameof(AlbumDataInfo.ArtistName)))
             {
                 filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
                         SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
@@ -231,15 +231,16 @@
             }
 
             PagedResult<AlbumDataInfo> result;
-            if (FilterToArtistApiKey != null)
+            if (FilterToArtistApiKey != null || args.Filters.Any(x => x.Property == nameof(AlbumDataInfo.ArtistName)))
             {
+                var v = FilterToArtistApiKey ?? (await ArtistService.GetByNameNormalized(args.Filters.FirstOrDefault(x => x.Property == nameof(AlbumDataInfo.ArtistName))?.FilterValue?.ToString()?.ToNormalizedString() ?? string.Empty))?.Data?.ApiKey;
                 result = await AlbumService.ListForArtistApiKeyAsync(new PagedRequest
                 {
                     FilterBy = filters,
                     Page = _currentPage,
                     PageSize = SafeParser.ToNumber<short>(args.Top),
                     OrderBy = sorting
-                }, FilterToArtistApiKey.Value);
+                }, v ?? Guid.Empty);
             }
             else
             {

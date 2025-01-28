@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
@@ -13,6 +14,8 @@ public sealed record Song
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public required string CrcHash { get; init; }
+
+    public long DuplicateHashCheck => SafeParser.Hash(this.AlbumTitle(), this.MediaNumber().ToString(), this.SongNumber().ToString(), this.Title().ToNormalizedString());
 
     public required FileSystemFileInfo File { get; init; }
 
@@ -30,4 +33,33 @@ public sealed record Song
     {
         return $"ArtistId [{ArtistId}] AlbumId [{AlbumId}] SongId [{Id}] File [{File}]";
     }
+
+    public static Song IdentityBestAndMergeOthers(Song[] songs)
+    {
+        if (songs.Length == 1)
+        {
+            return songs[0];
+        }
+        var best = songs[0];
+        foreach (var song in songs.Skip(1))
+        {
+            if (song.Duration() >= best.Duration() || song.BitRate() > best.BitRate() || song.BitDepth() > best.BitDepth())
+            {
+                var tags = (best.Tags ?? []).ToList();
+                foreach (var tagItem in (song.Tags ?? []))
+                {
+                    if (tags.FirstOrDefault(x => x.Identifier == tagItem.Identifier) == null)
+                    {
+                        tags.Add(tagItem);
+                    }
+                }
+                best = song with
+                {
+                    Tags = tags
+                };
+            }
+        }
+        return best;
+    }
+    
 }

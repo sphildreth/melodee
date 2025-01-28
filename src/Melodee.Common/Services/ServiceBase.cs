@@ -169,6 +169,7 @@ public abstract class ServiceBase
                         // existing song is better don't do anything
                         songsToMove.Remove(songToMove);
                     }
+                    
                 }
             }
 

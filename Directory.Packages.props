@@ -64,7 +64,7 @@
     <PackageVersion Include="Quartz.Jobs" Version="3.13.1" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.1" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.13.1" />
-    <PackageVersion Include="Radzen.Blazor" Version="5.9.1" />
+    <PackageVersion Include="Radzen.Blazor" Version="5.9.4" />
     <PackageVersion Include="Rebus" Version="8.7.1" />
     <PackageVersion Include="Rebus.Serilog" Version="8.0.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />
@@ -87,7 +87,7 @@
     <PackageVersion Include="SpotifyAPI.Web" Version="7.2.1" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.3.1" />
     <PackageVersion Include="System.IO.Hashing" Version="9.0.1" />
-    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.5.1" />
+    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.0" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
     <PackageVersion Include="Toolbelt.Blazor.HotKeys2" Version="5.1.0" />

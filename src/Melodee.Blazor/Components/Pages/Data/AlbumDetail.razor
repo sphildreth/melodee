@@ -1,9 +1,8 @@
-@page "/data/album/{ApiKey:guid}/{FromUrl}"
+@page "/data/album/{ApiKey:guid}/{FromUrl?}"
 @inherits MelodeeComponentBase
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
-@using Melodee.Common.Models.Extensions
 @using NodaTime
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
@@ -12,7 +11,6 @@
 @inject AlbumService AlbumService
 @inject UserService UserService
 @inject NotificationService NotificationService
-@inject ILogger Logger
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 
@@ -341,7 +339,7 @@
             var deleteResult = await AlbumService.DeleteAsync([_album.Id]);
             if (deleteResult.IsSuccess)
             {
-                NavigationManager.NavigateTo(FromUrl ?? $"/data/libraries", true);
+                NavigationManager.NavigateTo(FromUrl ?? $"/data/albums", true);
             }
             NotificationService.Notify(NotificationMessageForResult(deleteResult, "deleting album", ToastTime));
         }

@@ -114,7 +114,7 @@ public sealed class CueSheet(
 
                     if (theReader != null)
                     {
-                        var cueModel = await ParseFileAsync(cueFile.FullName, Configuration);
+                        var cueModel = await ParseFileAsync(cueFile?.FullName, Configuration);
                         if (cueModel is { IsValid: true })
                         {
                             var withAudioBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionBitrate]);
@@ -217,7 +217,7 @@ public sealed class CueSheet(
         return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
     }
 
-    public static async Task<Models.CueSheet?> ParseFileAsync(string filePath, Dictionary<string, object?> configuration)
+    public static async Task<Models.CueSheet?> ParseFileAsync(string? filePath, Dictionary<string, object?> configuration)
     {
         if (string.IsNullOrWhiteSpace(filePath))
         {

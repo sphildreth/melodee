@@ -349,14 +349,14 @@ public static class SongExtensions
         return $"{disc}{songNumberValue} {fileNameFromTitle}{extension ?? fileInfo.Extension}";
     }
 
-    public static string ToSongFileName(this Song song, FileSystemDirectoryInfo directoryInfo, Dictionary<string, object?> configuration)
+    public static string ToSongFileName(this Song song, FileSystemDirectoryInfo directoryInfo)
     {
         return SongFileName(
             song.File.ToFileInfo(directoryInfo),
-            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
+            9999,
             song.SongNumber(),
             song.Title(),
-            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
+            999,
             song.MediaNumber(),
             song.MediaTotalNumber());
     }

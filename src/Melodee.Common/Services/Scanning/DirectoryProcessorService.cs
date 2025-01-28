@@ -562,7 +562,7 @@ public sealed class DirectoryProcessorService(
                                     continue;
                                 }
 
-                                var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(), song.File.Name);
+                                var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(), song.ToSongFileName(albumDirectorySystemInfo));
                                 if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                                 {
                                     File.Copy(oldSongFilename, newSongFileName, true);

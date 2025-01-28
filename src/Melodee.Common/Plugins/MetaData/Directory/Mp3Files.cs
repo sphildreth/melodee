@@ -1,5 +1,7 @@
+using Lucene.Net.Analysis.Miscellaneous;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -8,6 +10,7 @@ using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using Microsoft.VisualBasic;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -53,6 +56,8 @@ public class Mp3Files(
         {
             using (Operation.At(LogEventLevel.Debug).Time("AllAlbumsForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
             {
+                await HandleDuplicatesAsync(fileSystemDirectoryInfo, cancellationToken);
+                
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
                 {
                     if (cancellationToken.IsCancellationRequested)
@@ -198,7 +203,83 @@ public class Mp3Files(
             Data = processedFileCount
         };
     }
-    
+
+    private async Task HandleDuplicatesAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    {
+        Console.WriteLine($"Checking for duplicate files in [{fileSystemDirectoryInfo.FullName()}]...");
+        
+        // Delete any files that are duplicate by length and CRC value
+        var files = fileSystemDirectoryInfo.AllFileInfos(searchOption: SearchOption.AllDirectories)
+            .GroupBy(f => new { f.Length, Hash = Crc32.Calculate(f) })
+            .Where(g => g.Count() > 1)
+            .ToArray();
+        
+        foreach (var group in files)
+        {
+            var filesToDelete = group.Skip(1).ToList();
+            foreach (var file in filesToDelete)
+            {
+                File.Delete(file.FullName);
+                Console.WriteLine($"Deleted duplicate: {file.FullName}");
+            }
+        }
+
+        if (files.Length == 0)
+        {
+            Console.WriteLine($"No duplicate non-media files found...");
+        }
+
+        var mediaFiles = fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.AllDirectories).ToArray();
+        var seenSongs = new List<Common.Models.Song>();
+        foreach (var mediaFile in mediaFiles)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+
+            var fsi = mediaFile.ToFileSystemInfo();
+            foreach (var plugin in songPlugins.OrderBy(x => x.SortOrder))
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
+                {
+                    var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
+                    if (pluginResult.IsSuccess)
+                    {
+                        seenSongs.Add(pluginResult.Data);
+                        break;
+                    }
+                }
+            }
+        }
+
+        var duplicateSongs = seenSongs.GroupBy(x => x.DuplicateHashCheck).Where(x => x.Count() > 1).ToArray();
+        if (duplicateSongs.Any())
+        {
+            foreach(var duplicateGroup in duplicateSongs)
+            {
+                var bestSong = Common.Models.Song.IdentityBestAndMergeOthers(duplicateGroup.ToArray());
+                var duplicateSong = duplicateGroup.Where(x => x.Id != bestSong.Id).ToArray();
+                foreach (var ds in duplicateSong)
+                {
+                    var duplicateSongFile = ds.File.FullName(fileSystemDirectoryInfo);
+                    File.Delete(duplicateSongFile);
+                    Console.WriteLine($"Deleted duplicate song: {duplicateSongFile}");
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine($"No duplicate songs found...");
+        }
+        Console.WriteLine($"Duplicate checking complete.");
+    }
+
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
         return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);

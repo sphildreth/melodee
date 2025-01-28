@@ -265,9 +265,9 @@ public static class FileSystemDirectoryInfoExtensions
         return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension));
     }
 
-    public static IEnumerable<FileInfo> AllMediaTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    public static IEnumerable<FileInfo> AllMediaTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, SearchOption? searchOption = null)
     {
-        return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
+        return fileSystemDirectoryInfo.AllFileInfos(searchOption:searchOption).Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
     }
 
     public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null, SearchOption? searchOption = null)
