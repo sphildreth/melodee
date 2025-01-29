@@ -1,31 +1,261 @@
-@page "/data/artist/{ApiKey:guid}"
+@page "/data/artist/{ApiKey:guid}/{FromUrl?}"
 @inherits MelodeeComponentBase
 
+@using Melodee.Common.Data.Models
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
+@using Melodee.Common.Models.Collection
 @using Artist = Melodee.Common.Data.Models.Artist
-@inject ArtistService ArtistService
 
+@inject ArtistService ArtistService
+@inject AlbumService AlbumService
+@inject UserService UserService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
 
 <PageTitle>@_artist.Name</PageTitle>
 
-<RadzenBreadCrumb Class="rz-pb-5">
-    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Path="/data/artists" Text="Artists"/>
-    <RadzenBreadCrumbItem Icon="artist" Text="@_artist.Name"/>
-</RadzenBreadCrumb>
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center" Class="rz-pb-5">
+        <RadzenColumn Size="7" SizeMD="9">
+            <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+            <RadzenBreadCrumbItem Path="/data/artists" Text="Artists"/>
+            <RadzenBreadCrumbItem Icon="artist" Text="@_artist.Name"/>
+        </RadzenColumn>
+        <RadzenColumn Size="5" SizeMD="3">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenRating Value="@_userArtist.Rating" Change="@UserRatingChange"/>
+                <RadzenIcon Icon="thumb_down" class="filled-icon" IconColor="@(_userArtist.IsHated ? "#A2A415" : "#C9C9C7")"
+                            @onclick="@IsHatedClicked" Style="cursor:pointer;"/>
+                <RadzenIcon Icon="favorite" class="filled-icon" IconColor="@(_userArtist.IsStarred ? "#FA0202" : "#C9C9C7")"
+                            @onclick="@IsStarredClicked" Style="cursor:pointer;"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="@_artist.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenButton
+                    Icon="edit"
+                    ButtonStyle="ButtonStyle.Info"
+                    Text="Edit" title="Edit the artist"
+                    Click="@EditButtonClick"/>
+                @if (_artist.IsLocked)
+                {
+                    <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning"
+                                  title="Unlock library, will allow modifications." Click="@UnlockButtonClick"/>
+                }
+                else
+                {
+                    <RadzenButton Icon="lock" Text="Lock" ButtonStyle="ButtonStyle.Warning"
+                                  title="Lock library, will prevent modifications." Click="@LockButtonClick"/>
+                }
+                <RadzenButton Icon="delete" Visible="!_artist.IsLocked" ButtonStyle="ButtonStyle.Danger"
+                              Text="Delete" title="Delete the artist and all album files. BEWARE!"
+                              Click="@DeleteButtonClick"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+<RadzenStack class="rz-mt-3">
+    <RadzenRow>
+        <RadzenColumn Size="4" SizeMD="2">
+            <RadzenStack>
+                <RadzenCard>
+                    <RadzenTree Change="@OnShowItemChange">
+                        <RadzenTreeItem Text="Overview" Selected="true">
+                            <Template>
+                                <RadzenIcon Icon="overview"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem Text="Images">
+                            <Template>
+                                <RadzenIcon Icon="image"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem Text="Relationships">
+                            <Template>
+                                <RadzenIcon Icon="partner_exchange"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                    </RadzenTree>
+                </RadzenCard>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="info" class="rz-me-1"/>
+                            Details
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Library" Statistic="@_artist.Library.Name"/>
+                            @if (_artist.RealName.Nullify() != null)
+                            {
+                                <CondensedStatistic Label="Real Name" Statistic="@_artist.RealName"/>
+                            }
+                            @if (_artist.SortName.Nullify() != null)
+                            {
+                                <CondensedStatistic Label="Sort Name" Statistic="@_artist.SortName"/>
+                            }
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="info" class="rz-me-1"/>
+                            External Links
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.Amg" Id="@_artist.AmgId" />
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.Discogs" Id="@_artist.DiscogsId" />
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.ITunes" Id="@_artist.ItunesId" />
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.LastFm" Id="@_artist.LastFmId" />
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.Spotify" Id="@_artist.SpotifyId" />
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.MusicBrainz" Id="@_artist.MusicBrainzId" />
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                            Statistics
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Album Count" Statistic="@(_artist.AlbumCount.ToStringPadLeft(3))"/>
+                            <CondensedStatistic Label="Song Count" Statistic="@(_artist.SongCount.ToStringPadLeft(4))"/>
+                            <CondensedStatistic Label="Played Total" Statistic="@(_artist.PlayedCount.ToStringPadLeft(6))"/>
+                            <CondensedStatistic Label="Last Played" Statistic="@(CurrentUser?.FormatInstant(_artist.LastPlayedAt))"/>
+                            <CondensedStatistic Label="Created" Statistic="@(CurrentUser?.FormatInstant(_artist.CreatedAt))"/>
+                            <CondensedStatistic Label="Last Updated" Statistic="@(CurrentUser?.FormatInstant(_artist.LastUpdatedAt))"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="8" SizeMD="9">
+            @if (_showItem == ShowItem.Overview)
+            {
+                <RadzenRow class="rz-pb-3">
+                    <RadzenColumn Size="12" SizeMD="8">
+                        <RadzenPanel>
+                            <HeaderTemplate>
+                                <RadzenText TextStyle="TextStyle.H6"
+                                            class="rz-display-flex rz-align-items-center rz-m-0">
+                                    <RadzenIcon Icon="album" class="rz-me-1"/>
+                                    Albums
+                                </RadzenText>
+                            </HeaderTemplate>
+                            <ChildContent>
+                                    @foreach (var album in _albums)
+                                    {
+                                        <AlbumDataInfoCardComponent Album="@album"/>
+                                    }
+                            </ChildContent>
+                        </RadzenPanel>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenImage
+                            Path=@($"/images/{_artist.ToApiKey()}/350")
+                            Style="margin:auto;display: block;"
+                            AlternateText="@_artist.Name"/>
+                    </RadzenColumn>
+                </RadzenRow>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
 
-Details go here for @_artist.Name
 
 @code {
 
     [Parameter] public Guid ApiKey { get; set; }
 
+    /// <summary>
+    /// When this is set, is it used if the artist gets deleted to return the user back (like viewing artist for a library return to the library detail)
+    /// </summary>
+    [Parameter] public string? FromUrl { get; set; }
+
     Artist _artist = new()
     {
+        Library = new Library
+        {
+            Name = string.Empty,
+            Path = string.Empty,
+            Type = 0,
+            CreatedAt = default
+        },
         Name = string.Empty,
         NameNormalized = string.Empty,
         Directory = string.Empty,
         LibraryId = 0,
         CreatedAt = default
+    };
+
+    string MetaDataModelStyle { get; set; } = string.Empty;
+
+    ShowItem _showItem = ShowItem.Overview;
+
+    IEnumerable<AlbumDataInfo> _albums = [];
+
+    private enum ShowItem
+    {
+        Overview = 1,
+        Images,
+        Relationships
+    }
+
+    UserArtist _userArtist = new UserArtist
+    {
+        UserId = 0,
+        ArtistId = 0,
+        CreatedAt = default
+    };
+
+    int? _currentPage = 1;
+    short? _pageSize = 50;
+
+    Dictionary<string, string> _orderBy = new Dictionary<string, string>
+    {
+        { nameof(AlbumDataInfo.ReleaseDate), PagedRequest.OrderAscDirection.ToString() }
     };
 
     protected override async Task OnInitializedAsync()
@@ -38,8 +268,85 @@ Details go here for @_artist.Name
             if (artistResult is { IsSuccess: true, Data: not null })
             {
                 _artist = artistResult.Data;
+
+                _userArtist = await UserService.UserArtistAsync(CurrentUsersId, _artist.ApiKey) ?? new UserArtist
+                {
+                    UserId = 0,
+                    ArtistId = 0,
+                    CreatedAt = default
+                };
+
+                _albums = (await AlbumService.ListForArtistApiKeyAsync(new PagedRequest
+                {
+                    Page = _currentPage,
+                    PageSize = _pageSize,
+                    OrderBy = _orderBy
+                }, _artist.ApiKey)).Data ?? [];
             }
         }
     }
+
+    private void OnShowItemChange(TreeEventArgs arg)
+    {
+        switch (arg.Text)
+        {
+            default:
+                _showItem = ShowItem.Overview;
+                break;
+        }
+    }
+
+ private Task EditButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task UnlockButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task LockButtonClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private async Task DeleteButtonClick()
+    {
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            var deleteResult = await ArtistService.DeleteAsync([_artist.Id]);
+            if (deleteResult.IsSuccess)
+            {
+                NavigationManager.NavigateTo(FromUrl ?? $"/data/artists", true);
+            }
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "deleting artist", ToastTime));
+        }
+    }
+
+    private Task UserRatingChange(int arg)
+    {
+        throw new NotImplementedException();
+    }
+
+    private async Task IsHatedClicked()
+    {
+        _userArtist.IsHated = !_userArtist.IsHated;
+        var result = await UserService.ToggleArtistHatedAsync(CurrentUsersId, _artist.ApiKey, _userArtist.IsHated);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Artist Hatred", ToastTime));
+    }
+
+    private async Task IsStarredClicked()
+    {
+        _userArtist.IsStarred = !_userArtist.IsStarred;
+        var result = await UserService.ToggleArtistStarAsync(CurrentUsersId, _artist.ApiKey, _userArtist.IsStarred);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Artist Favorite", ToastTime));
+    }
+
+
+
+
+
 
 }

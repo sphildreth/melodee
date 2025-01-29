@@ -64,4 +64,8 @@
     <AdditionalFiles Include="Components\Components\DictionaryModal.razor"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\images\icons\" />
+  </ItemGroup>
+
 </Project>

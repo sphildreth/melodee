@@ -1,0 +1,96 @@
+@using Melodee.Common.Enums
+
+@if (Id != null)
+{
+    <div class="@Class">
+        <RadzenStack>
+            <RadzenLink Target="_blank" Path="@_url">
+                <img
+                    class="icon"
+                    asp-append-version="true"
+                    style="height:20px; width: auto;"
+                    src="@($"/icons/{_icon}")"
+                    alt="@_icon" />
+                <RadzenText TextStyle="TextStyle.Caption">@ThirdPartyIdType.ToString()</RadzenText>
+            </RadzenLink>
+        </RadzenStack>
+    </div>
+}
+
+@code {
+    [Parameter] public required ThirdPartyIdType ThirdPartyIdType { get; set; }
+    [Parameter] public required MelodeeDataType MelodeeDataType { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public object? Id { get; set; }
+
+    string? _url;
+    string? _icon;
+
+    private string? ThirdPartyUrlForId(ThirdPartyIdType idType, MelodeeDataType dataType, string? id)
+    {
+        if (id?.Nullify() == null)
+        {
+            return null;
+        }
+        switch (idType)
+        {
+            case ThirdPartyIdType.Amg:
+                return $"https://www.allmusic.com/{dataType.ToString().ToLower()}/{id}";
+
+            case ThirdPartyIdType.Discogs:
+                return $"https://www.discogs.com/{dataType.ToString().ToLower()}/{id}";
+
+            case ThirdPartyIdType.ITunes:
+                return $"https://itunes.apple.com/us/{dataType.ToString().ToLower()}/{id}";
+
+            case ThirdPartyIdType.LastFm:
+                return $"https://www.last.fm/music/{id}";
+
+            case ThirdPartyIdType.MusicBrainz:
+                return $"https://musicbrainz.org/{dataType.ToString().ToLower()}/{id}";
+
+            case ThirdPartyIdType.Spotify:
+                return $"https://open.spotify.com/{dataType.ToString().ToLower()}/{id}";
+
+            case ThirdPartyIdType.WikiData:
+                return $"https://www.wikidata.org/wiki/{id}";
+        }
+        return null;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _url = ThirdPartyUrlForId(ThirdPartyIdType, MelodeeDataType, Id?.ToString());
+        switch (ThirdPartyIdType)
+        {
+            case ThirdPartyIdType.Amg:
+                _icon = "amg-80x80.png";
+                break;
+
+            case ThirdPartyIdType.Discogs:
+                _icon = "discogs-80x80.png";
+                break;
+
+            case ThirdPartyIdType.ITunes:
+                _icon = "itunes-80x80.png";
+                break;
+
+            case ThirdPartyIdType.LastFm:
+                _icon = "lastfm-80x80.png";
+                break;
+
+            case ThirdPartyIdType.MusicBrainz:
+                _icon = "musicbrainz-80x80.png";
+                break;
+
+            case ThirdPartyIdType.Spotify:
+                _icon = "spotify-80x80.png";
+                break;
+
+            case ThirdPartyIdType.WikiData:
+                _icon = "wikidata-80x80.png";
+                break;
+        }
+    }
+
+}

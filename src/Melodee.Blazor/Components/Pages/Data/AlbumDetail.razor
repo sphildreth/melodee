@@ -123,7 +123,14 @@
                             Gap="5px">
                             <CondensedStatistic Label="Status" StatisticStyle="@AlbumStatusStyle" Statistic="@_album.AlbumStatusValue.ToString()"/>
                             <CondensedStatistic Label="Album Type" Statistic="@_album.AlbumTypeValue.ToString()"/>
+                            <CondensedStatistic Label="Amg Id" Statistic="@_album.AmgId"/>
+                            <CondensedStatistic Label="Discogs Id" Statistic="@_album.DiscogsId"/>
                             <CondensedStatistic Label="Genres" Statistic="@_album.Genres?.ToCsv()"/>
+                            <CondensedStatistic Label="ITunes Id" Statistic="@_album.ItunesId"/>
+                            <CondensedStatistic Label="LastFm Id" Statistic="@_album.LastFmId"/>
+                            <CondensedStatistic Label="MusicBrainz Id" Statistic="@_album.MusicBrainzId?.ToString()"/>
+                            <CondensedStatistic Label="Spotify Id" Statistic="@_album.SpotifyId"/>
+                            <CondensedStatistic Label="WikiData Id" Statistic="@_album.WikiDataId"/>
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>

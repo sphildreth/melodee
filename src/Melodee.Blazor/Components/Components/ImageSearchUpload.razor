@@ -4,6 +4,7 @@
 @inject AlbumImageSearchEngineService AlbumImageSearchEngineService
 @inject ArtistSearchEngineService ArtistImageSearchEngineService
 @inject MainLayoutProxyService MainLayoutProxyService
+@inject ILogger Logger
 
 <PageTitle>Image Search</PageTitle>
 
@@ -12,8 +13,11 @@
         <RadzenColumn Size="12">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center"
                          JustifyContent="JustifyContent.End" Gap="0.5rem">
-                <RadzenSwitch @bind-Value="@_doDeleteExistingImages"
-                              Name="@($"Delete other {SearchType.ToString()} images")"/>
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenLabel Text="@($"Delete other {SearchType.ToString()} images")" Component="False"/>
+                    <RadzenSwitch @bind-Value="@_doDeleteExistingImages"
+                                  Name="DeleteExistingImages"/>
+                </RadzenStack>
                 <RadzenButton Icon="cancel" Text="Cancel" Click="@CancelClicked"/>
                 <RadzenButton Icon="save" Text="Select" Click="@SelectClicked"/>
             </RadzenStack>
@@ -47,8 +51,11 @@
                 @foreach (var result in _results)
                 {
                     <div class="@(_selectedResult == result ? "selected" : string.Empty) cover-search-image-container">
-                        <img @onclick="() => _selectedResult = result" class="rounded cover-search-image"
-                             src="@result.Url" alt="@result.Title"/>
+                        <img
+                            @onclick="() => _selectedResult = result"
+                            class="rounded cover-search-image"
+                            src="@result.Url"
+                            alt="@result.Title"/>
                     </div>
                 }
             </div>
@@ -57,32 +64,12 @@
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12">
             <RadzenCard Variant="Variant.Outlined">
-                @* <RadzenFileInput *@
-                @*     @bind-Value="@_imageBytes" *@
-                @*     @bind-FileName="@_fileName" *@
-                @*     @bind-FileSize="@_fileSize" *@
-                @*     TValue="byte[]" *@
-                @*     Change=@(args => OnChange(args, "FileInput")) *@
-                @*     Error=@(args => OnError(args, "FileInput")) *@
-                @*     InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "select file" } })"/> *@
-
                 <InputFile OnChange="@SingleUpload"/>
                 @if (_imageBytes?.Length > 0)
                 {
                     <img style="width:100px;height: auto;" alt="Selected image"
                          src="data:image;base64, @Convert.ToBase64String(_imageBytes)"/>
                 }
-
-                @* <RadzenFileInput *@
-                @*     @bind-Value="@_imageBytes" *@
-                @*     @bind-FileName="@_fileName" *@
-                @*     @bind-FileSize="@_fileSize" *@
-                @*     TValue="byte[]" *@
-                @*     Style="width: 100%" *@
-                @*     Change=@(args => OnChange(args, "FileInput")) *@
-                @*     Error=@(args => OnError(args, "FileInput")) *@
-                @*     InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})"/> *@
-
             </RadzenCard>
         </RadzenColumn>
     </RadzenRow>
@@ -90,7 +77,7 @@
 
 @code {
 
-    bool _loading;
+    bool _loading = true;
     int _maxResults = 10;
     bool _doDeleteExistingImages = true;
 
@@ -133,18 +120,20 @@
     protected override async Task OnInitializedAsync()
     {
         _maxResults = (await SettingService.GetValueAsync<int?>(SettingRegistry.SearchEngineDefaultPageSize)).Data ?? (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
+        await ArtistImageSearchEngineService.InitializeAsync();
         await DoSearchAsync();
     }
 
-    public async Task DoSearchAsync()
+    private async Task DoSearchAsync()
     {
+        _loading = true;
         try
         {
             if (SearchType == ImageSearchType.Artist)
             {
                 _results = (await ArtistImageSearchEngineService.DoSearchAsync(new ArtistQuery
                     {
-                        Name = SearchValues.First().Value ?? string.Empty
+                        Name = SearchValues.First().Value
                     }, _maxResults))
                     .Data
                     .Where(x => x.ImageUrl != null)
@@ -163,14 +152,15 @@
                     .Select(x => new ImageSearchResult(x.UrlValue, x.Title ?? string.Empty, _doDeleteExistingImages))
                     .ToArray();
             }
-
-
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
         }
         catch (Exception e)
         {
-            //Logger.Error(e, "Artist [{Artist}] Album [{Album}] Year [{Year}]", _artistName, _albumName, _albumYear);
+            Logger.Error(e, "For search [{Value}]",  SearchValues.FirstOrDefault()?.Value);
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

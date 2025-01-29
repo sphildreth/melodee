@@ -494,7 +494,15 @@
         {
             if (selectedImageSearchResult != null)
             {
-                var saveResult = await ArtistService.SaveImageAsArtistImageAsync(_artist.Id, selectedImageSearchResult.DoDeleteAllOtherArtistImages, selectedImageSearchResult.ImageBytes);
+                OperationResult<bool>? saveResult = null;
+                if (selectedImageSearchResult.ImageBytes != null)
+                {
+                   saveResult = await ArtistService.SaveImageAsArtistImageAsync(_artist.Id, selectedImageSearchResult.DoDeleteAllOtherArtistImages, selectedImageSearchResult.ImageBytes);
+                }
+                else
+                {
+                    saveResult = await ArtistService.SaveImageUrlAsArtistImageAsync(_artist.Id, selectedImageSearchResult.Url, selectedImageSearchResult.DoDeleteAllOtherArtistImages);
+                }
                 if (saveResult.IsSuccess)
                 {
                     NavigationManager.Refresh(true);

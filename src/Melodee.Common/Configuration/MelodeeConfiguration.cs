@@ -47,6 +47,8 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         return input.Nullify();
     }
 
+    
+    
     public string GetBuildImageUrl(string apiKey, ImageSize imageSize)
     {
         var baseUrl = GetValue<string>(SettingRegistry.SystemBaseUrl);

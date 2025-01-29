@@ -78,7 +78,7 @@
                             TValue="bool?"
                             InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select all items" } })"
                             Value="@(_selectedPlaylists.Any() != true ? false : !_playlists.All(i => _selectedPlaylists.Contains(i)) ? null : _playlists.Any(i => _selectedPlaylists.Contains(i)))"
-                            Change="@(args => _selectedPlaylists = args == true ? _selectedPlaylists.ToList() : [])"/>
+                            Change="@(args => _selectedPlaylists = args == true ? _playlists.ToList() : [])"/>
                     </HeaderTemplate>
                     <Template Context="data">
                         <RadzenIcon Icon="lock" IconColor="@Colors.Warning" Visible="@(data.IsLocked)"

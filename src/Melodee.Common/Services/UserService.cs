@@ -600,6 +600,44 @@ public sealed class UserService(
             Data = result
         };
     }
+    
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleArtistHatedAsync(int userId, Guid artistApiKey, bool isHated, CancellationToken cancellationToken = default)
+    {
+        bool result = false;
+        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var artist = await artistService.GetByApiKeyAsync(artistApiKey, cancellationToken).ConfigureAwait(false);
+            if (artist.Data != null)
+            {
+                var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                if (userArtist == null)
+                {
+                    userArtist = new UserArtist
+                    {
+                        UserId = userId,
+                        ArtistId = artist.Data.Id,
+                        CreatedAt = now
+                    };
+                    scopedContext.UserArtists.Add(userArtist);
+                }
+                userArtist.IsHated = isHated;
+                if (isHated)
+                {
+                    userArtist.IsStarred = false;
+                    userArtist.StarredAt = null;
+                }
+                userArtist.LastUpdatedAt = now;
+                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+                ClearCache(user.Data!);                
+            }
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }    
 
     public async Task<MelodeeModels.OperationResult<bool>> ToggleAlbumHatedAsync(int userId, Guid albumApiKey, bool isHated, CancellationToken cancellationToken = default)
     {
@@ -639,6 +677,46 @@ public sealed class UserService(
             Data = result
         };
     }
+
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleArtistStarAsync(int userId, Guid albumApiKey, bool isStarred, CancellationToken cancellationToken = default)
+    {
+        bool result = false;
+        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var artist = await artistService.GetByApiKeyAsync(albumApiKey, cancellationToken).ConfigureAwait(false);
+            if (artist.Data != null)
+            {
+                var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                if (userArtist == null)
+                {
+                    userArtist = new UserArtist
+                    {
+                        UserId = userId,
+                        ArtistId = artist.Data.Id,
+                        CreatedAt = now
+                    };
+                    scopedContext.UserArtists.Add(userArtist);
+                }
+
+                userArtist.StarredAt = isStarred ? now : null;
+                userArtist.IsStarred = isStarred;
+                if (isStarred)
+                {
+                    userArtist.IsHated = false;
+                }
+                userArtist.LastUpdatedAt = now;
+                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+                ClearCache(user.Data!);                
+            }
+        }
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+    
     
     public async Task< MelodeeModels.OperationResult<bool>> ToggleAlbumStarAsync(int userId, Guid albumApiKey, bool isStarred, CancellationToken cancellationToken = default)
     {
@@ -758,6 +836,23 @@ public sealed class UserService(
             Data = result
         };
     }     
+    
+    public async Task<UserArtist?> UserArtistAsync(int userId, Guid artistApiKey, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var sql = """
+                      select ua.*
+                      from "UserArtists" ua 
+                      left join "Artists" a on (ua."ArtistId" = a."Id")
+                      where ua."UserId" = @userId
+                      and a."ApiKey" = @artistApiKey;
+                      """;
+            var dbConn = scopedContext.Database.GetDbConnection();
+            return await dbConn.QuerySingleOrDefaultAsync<UserArtist?>(sql, new { userId, artistApiKey })
+                .ConfigureAwait(false);
+        }
+    }    
 
     public async Task<UserAlbum?> UserAlbumAsync(int userId, Guid albumApiKey, CancellationToken cancellationToken = default)
     {
