@@ -13,10 +13,10 @@ public static class ArtistExtensions
     public static readonly Regex VariousArtistParseRegex = new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex CastRecordingArtistOrAlbumTitleParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-   
-    public static ArtistDataInfo ToArtistDataInfo(this Artist artist, DateTimeOffset? createdAt,  int? albumCount = null,  int? songCount = null)
+
+    public static ArtistDataInfo ToArtistDataInfo(this Artist artist, DateTimeOffset? createdAt, int? albumCount = null, int? songCount = null)
     {
-        return new(0,
+        return new ArtistDataInfo(0,
             artist.Id,
             false,
             0,
@@ -30,7 +30,7 @@ public static class ArtistExtensions
             createdAt != null ? Instant.FromDateTimeOffset(createdAt.Value) : Instant.MinValue,
             string.Empty);
     }
-    
+
     public static KeyValue ToKeyValue(this Artist artist)
     {
         return new KeyValue(artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId?.ToString() ?? artist.Name.ToNormalizedString() ?? artist.Name, artist.Name.ToNormalizedString() ?? artist.Name);
@@ -53,10 +53,12 @@ public static class ArtistExtensions
         {
             return AlbumArtistType.NotSet;
         }
+
         if (artist.IsVariousArtist())
         {
             return AlbumArtistType.VariousArtists;
         }
+
         return AlbumArtistType.ArtistOrBand;
     }
 

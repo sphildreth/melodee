@@ -53,7 +53,7 @@ public class LibraryCleanCommand : AsyncCommand<LibraryCleanSettings>
         {
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
-        });        
+        });
 
         var serviceProvider = services.BuildServiceProvider();
 

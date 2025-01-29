@@ -26,14 +26,14 @@ Melodee is a music system designed to handle libraries with tens of millions of 
         * Removes featuring/with artist from song titles'
         * Removes unwanted text from song and album titles.
 * Plugin based architecture.
-  * Plugins to parse NFO, M3U, SFV metadata files.
-  * Plugins to read and edit tags for Flac, Ogg, Ape, MP3 files.
-  * Search engines to find album and artist metadata and images and scrobble.
-    * iTunes
-    * LastFM
-    * MusicBrainz
-      * Downloads and creates local MusicBrainz SQLite database for faster metadata lookup.
-    * Spotify
+    * Plugins to parse NFO, M3U, SFV metadata files.
+    * Plugins to read and edit tags for Flac, Ogg, Ape, MP3 files.
+    * Search engines to find album and artist metadata and images and scrobble.
+        * iTunes
+        * LastFM
+        * MusicBrainz
+            * Downloads and creates local MusicBrainz SQLite database for faster metadata lookup.
+        * Spotify
 * Job engine
     * Uses cron like scheduling.
     * Scans inbound, staging and storage libraries for new media and updates.

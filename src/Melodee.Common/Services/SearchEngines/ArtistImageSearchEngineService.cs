@@ -5,8 +5,6 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Plugins.SearchEngine;
 using Melodee.Common.Plugins.SearchEngine.ITunes;
-using Melodee.Common.Plugins.SearchEngine.LastFm;
-using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Serialization;
@@ -45,7 +43,7 @@ public class ArtistImageSearchEngineService(
             new ITunesSearchEngine(Logger, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)
-            },            
+            }
         };
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))

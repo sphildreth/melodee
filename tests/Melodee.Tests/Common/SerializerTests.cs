@@ -26,10 +26,10 @@ public class SerializerTests : ServiceTestBase
         var deserializedAlbumTag = deserialized.Tags.First(x => x.Identifier == MetaTagIdentifier.Album);
         Assert.Equal(albumAlbumTag.ToString(), deserializedAlbumTag.ToString());
         Assert.Equal(AlbumValidatorTests.ShouldBeBitRate, deserialized.Songs?.FirstOrDefault()?.BitRate());
-        
+
         album.SetTagValue(MetaTagIdentifier.Album, deserializedAlbumTag.Value?.ToString());
         Assert.Empty(album.ModifiedTags());
-        
+
         album.SetTagValue(MetaTagIdentifier.Album, Guid.NewGuid().ToString());
         Assert.NotEmpty(album.ModifiedTags());
     }

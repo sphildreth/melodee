@@ -1,7 +1,5 @@
-using Hqub.Lastfm;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Plugins.MetaData.Directory.Nfo.Handlers.Jellyfin.Models.Jellyfin;
 
 namespace Melodee.Common.Models;
 
@@ -13,22 +11,22 @@ public record Artist(
     int? ArtistDbId = null)
 {
     /// <summary>
-    /// All Music Guide Artist Id
+    ///     All Music Guide Artist Id
     /// </summary>
     public string? AmgId { get; set; }
 
     public string? ItunesId { get; set; }
-    
+
     public string? DiscogsId { get; set; }
 
     public string? WikiDataId { get; set; }
-    
+
     public Guid? MusicBrainzId { get; set; }
-    
+
     public string? LastFmId { get; set; }
 
-    public string? SpotifyId { get; set; }  
-    
+    public string? SpotifyId { get; set; }
+
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public long? SearchEngineResultUniqueId { get; set; }
@@ -53,6 +51,7 @@ public record Artist(
                 }
             }
         }
+
         return new Artist(Name ?? other.Name, NameNormalized ?? other.NameNormalized, SortName ?? other.SortName, images, ArtistDbId ?? other.ArtistDbId)
         {
             AmgId = AmgId ?? other.AmgId,

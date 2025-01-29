@@ -162,8 +162,8 @@ public sealed class AlbumDiscoveryService(
                     break;
             }
         }
-   
-        
+
+
         if (pagedRequest.FilterBy != null)
         {
             foreach (var filterBy in pagedRequest.FilterBy)
@@ -178,12 +178,12 @@ public sealed class AlbumDiscoveryService(
                         var filterStatusValue = SafeParser.ToEnum<AlbumStatus>(filterBy.Value);
                         albums = albums.Where(x => x.Status == filterStatusValue).ToList();
                         break;
-                    
+
                     case "NameNormalized":
                         albums = albums.Where(x =>
                             (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(filterBy.Value.ToString() ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)) ||
                             x.Artist.Name.Contains(filterBy.Value.ToString() ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)).ToList();
-                        break;                    
+                        break;
 
                     case "ReleaseDate":
                         var filterYearValue = SafeParser.ToNumber<int>(filterBy.Value);
@@ -286,7 +286,7 @@ public sealed class AlbumDiscoveryService(
         });
 
         var d = await Task.WhenAll(data);
-        
+
         return new PagedResult<AlbumDataInfo>
         {
             TotalCount = albumsForDirectoryInfo.TotalCount,

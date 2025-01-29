@@ -135,17 +135,20 @@
                         }
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.DiscCount)" Filterable="false" Title="Discs" Width="90px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.DiscCount)" Filterable="false" Title="Discs"
+                                      Width="90px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatNumber(data.DiscCount)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Filterable="false" Title="Songs" Width="90px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Filterable="false" Title="Songs"
+                                      Width="90px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatNumber(data.SongCount)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Duration)" Filterable="false" Title="Duration" Width="120px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Duration)" Filterable="false" Title="Duration"
+                                      Width="120px">
                     <Template Context="data">
                         <RadzenText Text="@data.Duration.ToFormattedDateTimeOffset()"/>
                     </Template>
@@ -156,7 +159,8 @@
                         <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Tags)" Filterable="false" Title="Tags" Width="100px">
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.Tags)" Filterable="false" Title="Tags"
+                                      Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.Tags?.ToTags() ?? [])

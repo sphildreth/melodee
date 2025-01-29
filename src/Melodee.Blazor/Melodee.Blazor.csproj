@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Radzen.Blazor" />
+    <PackageReference Include="Radzen.Blazor"/>
     <PackageReference Include="Asp.Versioning.Http"/>
     <PackageReference Include="Blazored.SessionStorage"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions"/>
@@ -31,9 +31,9 @@
     <PackageReference Include="Quartz.Jobs"/>
     <PackageReference Include="Quartz.Plugins.TimeZoneConverter"/>
     <PackageReference Include="Quartz.Serialization.SystemTextJson"/>
-    <PackageReference Include="Rebus" />
-    <PackageReference Include="Rebus.Serilog" />
-    <PackageReference Include="Rebus.ServiceProvider" />
+    <PackageReference Include="Rebus"/>
+    <PackageReference Include="Rebus.Serilog"/>
+    <PackageReference Include="Rebus.ServiceProvider"/>
     <PackageReference Include="Serilog"/>
     <PackageReference Include="Serilog.AspNetCore"/>
     <PackageReference Include="Serilog.Settings.AppSettings"/>
@@ -65,7 +65,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\images\icons\" />
+    <Folder Include="wwwroot\images\icons\"/>
   </ItemGroup>
 
 </Project>

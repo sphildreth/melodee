@@ -36,7 +36,3 @@ public record Image(
     string? _text,
     string? size
 );
-
-
-
-

@@ -13,27 +13,26 @@ public class SearchHistory
     [Required] public required Instant CreatedAt { get; set; } = SystemClock.Instance.GetCurrentInstant();
 
     [RequiredGreaterThanZero] public int ByUserId { get; set; }
-    
+
     [NotMapped] public Guid ByUserApiKey { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
     public string? ByUserAgent { get; set; }
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? SearchQuery { get; set; }
-    
+
     public int FoundArtistsCount { get; set; }
 
     public int FoundAlbumsCount { get; set; }
 
     public int FoundSongsCount { get; set; }
-    
+
     public int FoundOtherItems { get; set; }
 
     [RequiredGreaterThanZero] public double SearchDurationInMs { get; set; }
 
     [NotMapped] public Duration SearchDurationInMillisecondsValue => Duration.FromMilliseconds(SearchDurationInMs);
 
-    [NotMapped]
-    public int Count => FoundArtistsCount + FoundAlbumsCount + FoundSongsCount + FoundOtherItems;
+    [NotMapped] public int Count => FoundArtistsCount + FoundAlbumsCount + FoundSongsCount + FoundOtherItems;
 }

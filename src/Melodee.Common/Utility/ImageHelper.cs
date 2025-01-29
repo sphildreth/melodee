@@ -172,7 +172,7 @@ public static partial class ImageHelper
         {
             return false;
         }
-        
+
         if (IsArtistImage(fileInfo) || IsArtistSecondaryImage(fileInfo))
         {
             return false;
@@ -212,12 +212,12 @@ public static partial class ImageHelper
         {
             return false;
         }
-        
+
         if (IsAlbumImage(fileInfo))
         {
             return false;
         }
-        
+
         if (FileHelper.IsFileImageType(fileInfo.Extension))
         {
             var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;

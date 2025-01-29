@@ -23,7 +23,7 @@ public sealed record ImageSearchResult
     public string UrlValue => ThumbnailUrl.Nullify() ?? MediaUrl;
 
     public string? Title { get; init; }
-    
+
     public string? ItunesId { get; init; }
 
     public string? AmgId { get; init; }
@@ -37,11 +37,11 @@ public sealed record ImageSearchResult
     public string? LastFmId { get; init; }
 
     public string? SpotifyId { get; init; }
-    
+
     public string? ArtistItunesId { get; init; }
 
     /// <summary>
-    /// All Music Guide Artist Id
+    ///     All Music Guide Artist Id
     /// </summary>
     public string? ArtistAmgId { get; init; }
 
@@ -53,5 +53,5 @@ public sealed record ImageSearchResult
 
     public string? ArtistLastFmId { get; init; }
 
-    public string? ArtistSpotifyId { get; init; }    
+    public string? ArtistSpotifyId { get; init; }
 }

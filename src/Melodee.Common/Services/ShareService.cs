@@ -1,23 +1,10 @@
-using System.Security.Cryptography;
-using System.Text;
-using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Configuration;
-using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
-using Melodee.Common.Data.Models.Extensions;
-using Melodee.Common.Extensions;
-using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Services.Interfaces;
-using Melodee.Common.Utility;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using NodaTime;
 using Serilog;
-using Serilog.Events;
-using SerilogTimings;
-using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Common.Services;

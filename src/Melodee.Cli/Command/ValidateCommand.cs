@@ -60,8 +60,8 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
         {
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
-        }); 
-        
+        });
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -108,7 +108,7 @@ public class ValidateCommand : AsyncCommand<ValidateSettings>
                 var albumResult = await albumService.GetByApiKeyAsync(SafeParser.ToGuid(settings.ApiKey)!.Value).ConfigureAwait(false);
                 if (albumResult.IsSuccess)
                 {
-                    album = await Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(albumResult.Data!.Directory, "melodee.json")).ConfigureAwait(false);                    
+                    album = await Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(albumResult.Data!.Directory, "melodee.json")).ConfigureAwait(false);
                 }
             }
             else if (settings.PathToMelodeeDataFile != null)

@@ -36,7 +36,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         StopProcessing = false;
-        
+
         var resultType = OperationResponseType.Ok;
         var processedFiles = 0;
 
@@ -175,7 +175,8 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     {
                         try
                         {
-                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);;
+                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);
+                            ;
                             if (existingAlbum != null)
                             {
                                 sfvAlbum = sfvAlbum.Merge(existingAlbum);

@@ -16,16 +16,6 @@ public class LastFm(
     IHttpClientFactory httpClientFactory)
     : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin, IAlbumImageSearchEnginePlugin
 {
-    public bool StopProcessing { get; } = false;
-
-    public string Id => "3E43D998-2E9C-45B0-8128-EE6F0A41419E";
-
-    public string DisplayName => "Last FM Search Engine";
-
-    public bool IsEnabled { get; set; } = false;
-
-    public int SortOrder { get; } = 1;
-    
     public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         //http://ws.audioscrobbler.com/2.0/?method=album.Search&api_key=<key>&format=json&album=Rising
@@ -38,9 +28,9 @@ public class LastFm(
                 Data = []
             };
         }
-        
+
         var results = new List<ImageSearchResult>();
-        
+
         if (string.IsNullOrWhiteSpace(query.Name))
         {
             return new OperationResult<ImageSearchResult[]?>
@@ -50,7 +40,7 @@ public class LastFm(
         }
 
         var httpClient = httpClientFactory.CreateClient();
-        var requestUri =$"https://ws.audioscrobbler.com/2.0/?method=album.Search&api_key={apiKey}&format=json&album={Uri.EscapeDataString(query.Name.Trim())}";
+        var requestUri = $"https://ws.audioscrobbler.com/2.0/?method=album.Search&api_key={apiKey}&format=json&album={Uri.EscapeDataString(query.Name.Trim())}";
 
         try
         {
@@ -73,7 +63,7 @@ public class LastFm(
                 {
                     if (sr.artist.ToNormalizedString() == na)
                     {
-                        var tnUrl  = sr.image?.FirstOrDefault(x => x.size == "large")?._text;
+                        var tnUrl = sr.image?.FirstOrDefault(x => x.size == "large")?._text;
                         var mediaUrl = sr.image?.FirstOrDefault(x => x.size == "extralarge")?._text?.Replace("300x300", "600x600");
                         if (tnUrl != null && mediaUrl != null)
                         {
@@ -106,11 +96,22 @@ public class LastFm(
         {
             logger.Error(ex, "Error searching for album image url [{Url}] query [{Query}]", requestUri, query.Name);
         }
+
         return new OperationResult<ImageSearchResult[]?>
         {
             Data = results.OrderBy(x => x.Rank).ToArray()
         };
     }
+
+    public bool StopProcessing { get; } = false;
+
+    public string Id => "3E43D998-2E9C-45B0-8128-EE6F0A41419E";
+
+    public string DisplayName => "Last FM Search Engine";
+
+    public bool IsEnabled { get; set; } = false;
+
+    public int SortOrder { get; } = 1;
 
     public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {

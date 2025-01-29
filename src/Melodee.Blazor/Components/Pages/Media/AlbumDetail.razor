@@ -26,7 +26,8 @@
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="@_album.AlbumTitle()" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+            <RadzenText Text="@_album.AlbumTitle()" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1"
+                        style="margin: 0"/>
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
             <RadzenStack
@@ -100,11 +101,14 @@
                             Gap="5px">
                             @if (_album.IsValid)
                             {
-                                <CondensedStatistic Label="Status" StatisticStyle="color: var(--rz-success)" Statistic="Ok"/>
+                                <CondensedStatistic Label="Status" StatisticStyle="color: var(--rz-success)"
+                                                    Statistic="Ok"/>
                             }
                             else
                             {
-                                <CondensedStatistic LabelStyle="@(_album.IsValid ? "" : "color: var(--rz-color-danger);")" Label="Issues" Statistic="@_album.StatusReasons.ToString()"/>
+                                <CondensedStatistic
+                                    LabelStyle="@(_album.IsValid ? "" : "color: var(--rz-color-danger);")"
+                                    Label="Issues" Statistic="@_album.StatusReasons.ToString()"/>
                             }
                         </RadzenStack>
                     </ChildContent>
@@ -123,10 +127,14 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <CondensedStatistic Label="Disc Count" Statistic="@(_album.MediaCountValue().ToStringPadLeft(3))"/>
-                            <CondensedStatistic Label="Song Count" Statistic="@(_album.SongTotalValue().ToStringPadLeft(4))"/>
-                            <CondensedStatistic Label="Created" Statistic="@(CurrentUser?.FormatDateTimeOffset(_album.Created))"/>
-                            <CondensedStatistic Label="Last Updated" Statistic="@(CurrentUser?.FormatDateTimeOffset(_album.Modified))"/>
+                            <CondensedStatistic Label="Disc Count"
+                                                Statistic="@(_album.MediaCountValue().ToStringPadLeft(3))"/>
+                            <CondensedStatistic Label="Song Count"
+                                                Statistic="@(_album.SongTotalValue().ToStringPadLeft(4))"/>
+                            <CondensedStatistic Label="Created"
+                                                Statistic="@(CurrentUser?.FormatDateTimeOffset(_album.Created))"/>
+                            <CondensedStatistic Label="Last Updated"
+                                                Statistic="@(CurrentUser?.FormatDateTimeOffset(_album.Modified))"/>
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>
@@ -173,7 +181,7 @@
                             <ArtistDataInfoCardComponent
                                 ShowArtistLink="false"
                                 Style="width: 375px;"
-                                Artist="@_album.Artist.ToArtistDataInfo(_album.Created, 1, _album.SongTotalValue())" />
+                                Artist="@_album.Artist.ToArtistDataInfo(_album.Created, 1, _album.SongTotalValue())"/>
                             <RadzenImage
                                 Path="@_coverImage"
                                 Style="width: 375px; height: auto; margin:auto;display: block;"
@@ -278,6 +286,7 @@
             {
                 NavigationManager.NavigateTo($"/media/library/{_library.ApiKey}", true);
             }
+
             NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = false }, "deleting album", ToastTime));
         }
     }

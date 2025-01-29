@@ -154,37 +154,37 @@ public class FileSystemDirectoryInfoExtensionTests
         {
             var createdDirName = Path.Combine(testDirectory, Guid.NewGuid().ToString());
             var createdDir = Directory.CreateDirectory(createdDirName);
-            
+
             // Create a new file in dir to move
             var createdFileName = Path.Combine(createdDirName, Guid.NewGuid().ToString());
             var createdFileInfo = new FileInfo(createdFileName);
             File.Create(createdFileName).Dispose();
             Assert.True(File.Exists(createdFileName));
             Assert.True(createdFileInfo.Exists);
-            
+
             // Move directory which should move file in directory as well 
             var directorySystemInfo = createdDir.ToDirectorySystemInfo();
             var movedToDirName = Path.Combine(testDirectory, Guid.NewGuid().ToString());
             directorySystemInfo.MoveToDirectory(movedToDirName);
             Assert.False(Directory.Exists(createdDirName));
             Assert.True(Directory.Exists(movedToDirName));
-            
+
             // Ensure file got moved with directory
             var movedCreatedFileName = Path.Combine(movedToDirName, createdFileInfo.Name);
             Assert.True(File.Exists(movedCreatedFileName));
-            
+
             var directoryInfo = new DirectoryInfo(movedToDirName);
             Assert.Equal(directoryInfo.Name, directorySystemInfo.Name);
             Assert.Equal(directoryInfo.FullName, directorySystemInfo.Path);
             Assert.Equal(directoryInfo.FullName, directorySystemInfo.FullName());
-            Assert.True(directorySystemInfo.Exists());            
-            
+            Assert.True(directorySystemInfo.Exists());
+
             directorySystemInfo.Delete();
             Assert.False(Directory.Exists(movedToDirName));
             Assert.False(directorySystemInfo.Exists());
         }
-    }    
-    
+    }
+
     [Fact]
     public void NextImageNumberInFolder()
     {

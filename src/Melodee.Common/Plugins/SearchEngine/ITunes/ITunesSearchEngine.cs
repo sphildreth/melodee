@@ -116,7 +116,7 @@ public class ITunesSearchEngine(
     public async Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         //https://itunes.apple.com/search?term=Colin%2BHay&entity=allArtist&country=US&media=all
-        
+
         var results = new List<ImageSearchResult>();
 
         if (string.IsNullOrWhiteSpace(query.Name))
@@ -165,6 +165,7 @@ public class ITunesSearchEngine(
                         Width = 600
                     });
                 }
+
                 if (results.Count > 0)
                 {
                     logger.Debug("[{DisplayName}] found [{ImageCount}] for Artist [{Query}]",
@@ -248,6 +249,7 @@ public class ITunesSearchEngine(
             );
             return imageUrl;
         }
+
         return null;
     }
 }

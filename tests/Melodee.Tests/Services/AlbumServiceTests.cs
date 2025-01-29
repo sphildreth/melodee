@@ -1,18 +1,12 @@
-using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Utility;
-using Melodee.Tests.Validation;
 using NodaTime;
-using Album = Melodee.Common.Data.Models.Album;
 using Artist = Melodee.Common.Data.Models.Artist;
 
 namespace Melodee.Tests.Services;
 
 public class AlbumServiceTests : ServiceTestBase
 {
-
     [Fact]
     public async Task GetByNameNormalizedAsync()
     {

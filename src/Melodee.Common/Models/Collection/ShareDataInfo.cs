@@ -2,8 +2,7 @@ using NodaTime;
 
 namespace Melodee.Common.Models.Collection;
 
-public sealed record ShareDataInfo
-(
+public sealed record ShareDataInfo(
     int Id,
     Guid ApiKey,
     bool IsLocked,

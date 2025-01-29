@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
@@ -23,7 +22,6 @@ using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
 using NodaTime;
 using Serilog;
 using Serilog.Events;
@@ -194,8 +192,8 @@ public sealed class DirectoryProcessorService(
             NumberOfValidAlbumsProcessed = 0,
             NumberOfAlbumsProcessed = 0
         };
-        
-        _maxAlbumProcessingCount = maxAlbumsToProcess ?? _maxAlbumProcessingCount; 
+
+        _maxAlbumProcessingCount = maxAlbumsToProcess ?? _maxAlbumProcessingCount;
 
         var startTicks = Stopwatch.GetTimestamp();
 
@@ -257,17 +255,18 @@ public sealed class DirectoryProcessorService(
         }
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
-        var mediaDirectoriesToProcess = directoriesToProcess.Where(x => x.GetParent().UniqueId != fileSystemDirectoryInfo.UniqueId &&  x.AllMediaTypeFileInfos().Any()).ToArray();
+        var mediaDirectoriesToProcess = directoriesToProcess.Where(x => x.GetParent().UniqueId != fileSystemDirectoryInfo.UniqueId && x.AllMediaTypeFileInfos().Any()).ToArray();
         if (mediaDirectoriesToProcess.Length > 0)
         {
             // This means there are subdirectories which have media files in directories which have media files, must be one album per directory.
-            foreach(var mediaDirectoryToProcess in mediaDirectoriesToProcess)
+            foreach (var mediaDirectoryToProcess in mediaDirectoriesToProcess)
             {
                 if (mediaDirectoryToProcess.IsAlbumMediaDirectory())
                 {
                     Logger.Debug(":: [{ServiceName}] Skipping nested album media directory [{Dir}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName());
                     continue;
                 }
+
                 var newDir = new DirectoryInfo(Path.Combine(fileSystemDirectoryInfo.FullName(), Guid.NewGuid().ToString()));
                 mediaDirectoryToProcess.MoveToDirectory(newDir.FullName);
                 Logger.Debug(":: [{ServiceName}] :: Moved nested album [{Moved}] to [{NewName}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName(), newDir.FullName);
@@ -275,7 +274,7 @@ public sealed class DirectoryProcessorService(
                 directoriesToProcess.Add(newDir.ToDirectorySystemInfo());
             }
         }
-     
+
         if (directoriesToProcess.Count > 0)
         {
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
@@ -395,7 +394,7 @@ public sealed class DirectoryProcessorService(
                         }
                     }
                 }
-                
+
                 var albumsForDirectory = new List<Album>();
                 foreach (var melodeeJsonFile in directoryInfoToProcess.MelodeeJsonFiles())
                 {
@@ -406,7 +405,7 @@ public sealed class DirectoryProcessorService(
 
                     try
                     {
-                        var album = await Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false);                        
+                        var album = await Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false);
                         if (album != null)
                         {
                             album.MelodeeDataFileName = melodeeJsonFile.FullName;
@@ -419,7 +418,7 @@ public sealed class DirectoryProcessorService(
                     }
                 }
 
-                
+
                 Console.WriteLine($"Loading [{albumsForDirectory.Count}] directory");
 
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
@@ -431,7 +430,7 @@ public sealed class DirectoryProcessorService(
                     {
                         break;
                     }
-                    
+
                     try
                     {
                         var albumImages = new List<ImageInfo>();
@@ -492,7 +491,7 @@ public sealed class DirectoryProcessorService(
                                     album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, album.Artist.Name);
                                 }
                             }
-                        }          
+                        }
                         else if (album.IsOriginalCastTypeAlbum() && album.Songs != null)
                         {
                             // If the album has different artists and is Original Cast type then ensure artist is set to special Theater
@@ -585,7 +584,7 @@ public sealed class DirectoryProcessorService(
                             if ((album.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
                                 album.Songs!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
                             {
-                                Console.WriteLine("Running plugins on songs with modified tags...");                               
+                                Console.WriteLine("Running plugins on songs with modified tags...");
 
                                 foreach (var songPlugin in _songPlugins)
                                 {
@@ -606,9 +605,9 @@ public sealed class DirectoryProcessorService(
                         }
 
                         album.Directory = albumDirectorySystemInfo;
-                        
+
                         // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
-                        Console.WriteLine("Querying for artist...");                        
+                        Console.WriteLine("Querying for artist...");
                         var searchRequest = album.Artist.ToArtistQuery([
                             new KeyValue((album.AlbumYear() ?? 0).ToString(),
                                 album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle())
@@ -626,24 +625,24 @@ public sealed class DirectoryProcessorService(
                                 {
                                     AmgId = album.Artist.AmgId ?? artistFromSearch.AmgId,
                                     ArtistDbId = album.Artist.ArtistDbId ?? artistFromSearch.Id,
-                                    DiscogsId = album.Artist.DiscogsId ??artistFromSearch.DiscogsId,
+                                    DiscogsId = album.Artist.DiscogsId ?? artistFromSearch.DiscogsId,
                                     ItunesId = album.Artist.ItunesId ?? artistFromSearch.ItunesId,
-                                    LastFmId = album.Artist.LastFmId ??artistFromSearch.LastFmId,
-                                    MusicBrainzId = album.Artist.MusicBrainzId ??artistFromSearch.MusicBrainzId,
+                                    LastFmId = album.Artist.LastFmId ?? artistFromSearch.LastFmId,
+                                    MusicBrainzId = album.Artist.MusicBrainzId ?? artistFromSearch.MusicBrainzId,
                                     Name = album.Artist.Name.Nullify() ?? artistFromSearch.Name,
                                     NameNormalized = album.Artist.NameNormalized.Nullify() ?? artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
                                     OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
                                     SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId ?? artistFromSearch.UniqueId,
-                                    SortName = album.Artist.SortName ??artistFromSearch.SortName,
-                                    SpotifyId = album.Artist.SpotifyId ??artistFromSearch.SpotifyId,                                    
-                                    WikiDataId = album.Artist.WikiDataId ??artistFromSearch.WikiDataId
+                                    SortName = album.Artist.SortName ?? artistFromSearch.SortName,
+                                    SpotifyId = album.Artist.SpotifyId ?? artistFromSearch.SpotifyId,
+                                    WikiDataId = album.Artist.WikiDataId ?? artistFromSearch.WikiDataId
                                 };
 
                                 if (artistFromSearch.Releases?.FirstOrDefault() != null)
                                 {
                                     album.AlbumDbId = album.AlbumDbId ?? artistFromSearch.Releases!.First().Id;
                                     album.AlbumType = album.AlbumType == AlbumType.NotSet ? artistFromSearch.Releases!.First().AlbumType : album.AlbumType;
-                                    
+
                                     // Artist result should override any in place for Album as its more specific and likely more accurate
                                     album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId;
                                 }
@@ -678,14 +677,14 @@ public sealed class DirectoryProcessorService(
                                     album.LastFmId ??= imageSearchResult.LastFmId;
                                     album.SpotifyId ??= imageSearchResult.SpotifyId;
                                     album.WikiDataId ??= imageSearchResult.WikiDataId;
-                                    
+
                                     album.Artist.AmgId ??= imageSearchResult.ArtistAmgId;
                                     album.Artist.DiscogsId ??= imageSearchResult.ArtistDiscogsId;
                                     album.Artist.ItunesId ??= imageSearchResult.ArtistItunesId;
                                     album.Artist.LastFmId ??= imageSearchResult.ArtistLastFmId;
                                     album.Artist.SpotifyId ??= imageSearchResult.ArtistSpotifyId;
                                     album.Artist.WikiDataId ??= imageSearchResult.ArtistWikiDataId;
-                                    
+
                                     var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(), albumDirectorySystemInfo.GetNextFileNameForType(_maxImageCount, Data.Models.Album.FrontImageType).Item1);
                                     if (await httpClient.DownloadFileAsync(
                                             imageSearchResult.MediaUrl,
@@ -734,6 +733,7 @@ public sealed class DirectoryProcessorService(
                             {
                                 File.Delete(album.MelodeeDataFileName);
                             }
+
                             await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), serialized, cancellationToken).ConfigureAwait(false);
                             if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                             {

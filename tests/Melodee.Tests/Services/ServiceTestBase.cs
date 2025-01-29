@@ -5,8 +5,6 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
-using Melodee.Common.MessageBus;
-using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.Scrobbling;
@@ -320,7 +318,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         busMock.Setup(b => b.SendLocal(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>())).Returns(Task.CompletedTask);
         return busMock.Object;
     }
-    
+
     protected IMelodeeConfigurationFactory MockConfigurationFactory()
     {
         var mock = new Mock<IMelodeeConfigurationFactory>();

@@ -14,17 +14,7 @@ namespace Melodee.Common.Models.Extensions;
 public static class AlbumExtensions
 {
     public static readonly Regex SoundtrackRecordingArtistParseRegex = new(@"(soundtrack|(\(*\s*ost\))*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    
-    public static KeyValue ToKeyValue(this Album album)
-    {
-        return new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId?.ToString() ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
-    }
 
-    public static bool IsStudioTypeAlbum(this Album album)
-    {
-        return album.Directory.IsDirectoryStudioAlbums() && album.AlbumType is AlbumType.Album or AlbumType.EP;
-    }
-    
     private static string[] SoundtrackTypeAlbumGenres
         =>
         [
@@ -32,11 +22,7 @@ public static class AlbumExtensions
             "ORIGINALSOUNDTRACK",
             "ORIGINALSOUNDTRACKRECORDING",
             "OST"
-        ];    
-
-    public static bool IsSoundTrackTypeAlbum(this Album album)
-        => SoundtrackTypeAlbumGenres.Contains(album.Genre()?.ToNormalizedString() ?? string.Empty) || 
-           SoundtrackRecordingArtistParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
+        ];
 
     private static string[] OriginalCastTypeAlbumGenres
         =>
@@ -55,12 +41,29 @@ public static class AlbumExtensions
             "ORIGINALCAST",
             "ORIGINALCASTRECORDING"
         ];
-    
-    public static bool IsOriginalCastTypeAlbum(this Album album) 
-        =>
-            OriginalCastTypeAlbumGenres.Contains(album.Genre()?.ToNormalizedString() ?? string.Empty) ||
-            album.Artist.IsCastRecording() ||
-            ArtistExtensions.CastRecordingArtistOrAlbumTitleParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
+
+    public static KeyValue ToKeyValue(this Album album)
+    {
+        return new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId?.ToString() ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
+    }
+
+    public static bool IsStudioTypeAlbum(this Album album)
+    {
+        return album.Directory.IsDirectoryStudioAlbums() && album.AlbumType is AlbumType.Album or AlbumType.EP;
+    }
+
+    public static bool IsSoundTrackTypeAlbum(this Album album)
+    {
+        return SoundtrackTypeAlbumGenres.Contains(album.Genre()?.ToNormalizedString() ?? string.Empty) ||
+               SoundtrackRecordingArtistParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
+    }
+
+    public static bool IsOriginalCastTypeAlbum(this Album album)
+    {
+        return OriginalCastTypeAlbumGenres.Contains(album.Genre()?.ToNormalizedString() ?? string.Empty) ||
+               album.Artist.IsCastRecording() ||
+               ArtistExtensions.CastRecordingArtistOrAlbumTitleParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
+    }
 
     public static bool IsVariousArtistTypeAlbum(this Album album)
     {
@@ -74,7 +77,7 @@ public static class AlbumExtensions
         {
             return true;
         }
-        
+
         var genre = songs.Select(x => x.Genre().Nullify()).Distinct().ToArray();
         if (genre.Length > 0)
         {

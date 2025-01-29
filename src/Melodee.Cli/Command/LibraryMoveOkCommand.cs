@@ -43,7 +43,7 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
         {
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
-        }); 
+        });
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())

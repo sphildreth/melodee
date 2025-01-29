@@ -26,7 +26,7 @@ public sealed record Album
     public int? AlbumDbId { get; set; }
 
     public Guid? MusicBrainzId { get; set; }
-   
+
     public string? ItunesId { get; set; }
 
     public string? AmgId { get; set; }
@@ -68,7 +68,7 @@ public sealed record Album
     public IEnumerable<MetaTag<object?>>? Tags { get; set; }
 
     public KeyValue? SearchEngineResultKeyValue { get; init; }
-    
+
     public IEnumerable<Song>? Songs { get; set; }
 
     public IEnumerable<ValidationResultMessage> ValidationMessages { get; set; } = [];
@@ -214,8 +214,8 @@ public sealed record Album
         var isAlbumInvalid = Status == AlbumStatus.Invalid || otherAlbum.Status == AlbumStatus.Invalid;
 
         var isAlbumTypeAlbum = AlbumType == AlbumType.Album || otherAlbum.AlbumType == AlbumType.Album;
-        var isAlbumTypeEP = !isAlbumTypeAlbum && AlbumType == AlbumType.EP || otherAlbum.AlbumType == AlbumType.EP;
-        
+        var isAlbumTypeEP = (!isAlbumTypeAlbum && AlbumType == AlbumType.EP) || otherAlbum.AlbumType == AlbumType.EP;
+
         return new Album
         {
             AlbumType = isAlbumTypeAlbum && !isAlbumTypeEP ? AlbumType.Album : isAlbumTypeEP ? AlbumType.EP : AlbumType.NotSet,
@@ -310,6 +310,7 @@ public sealed record Album
         {
             result.Directory = d;
         }
+
         return result;
     }
 }

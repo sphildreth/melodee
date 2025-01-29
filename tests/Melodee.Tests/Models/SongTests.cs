@@ -32,14 +32,14 @@ public class SongTests
     public void ValidateMergeBest()
     {
         var song = AlbumValidatorTests.TestAlbum.Songs!.First();
-        
+
         var betterMediaAudios = song.MediaAudios?.ToList() ?? [];
         betterMediaAudios.Remove(betterMediaAudios.First(x => x.Identifier == MediaAudioIdentifier.BitRate));
         betterMediaAudios.Add(new MediaAudio<object?> { Identifier = MediaAudioIdentifier.BitRate, Value = 999 });
-        
+
         var betterTags = song.Tags?.ToList() ?? [];
-        betterTags.Add(new MetaTag<object?> { Identifier = MetaTagIdentifier.Publisher, Value ="Bobs Publishing" });
-        
+        betterTags.Add(new MetaTag<object?> { Identifier = MetaTagIdentifier.Publisher, Value = "Bobs Publishing" });
+
         var betterSong = song with
         {
             MediaAudios = betterMediaAudios,

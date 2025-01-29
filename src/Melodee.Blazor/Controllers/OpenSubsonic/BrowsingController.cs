@@ -58,7 +58,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     {
         return MakeResult(openSubsonicApiService.GetArtistInfoAsync(id, count, ApiRequest, cancellationToken));
     }
-    
+
     /// <summary>
     ///     Returns top songs for the given artist.
     /// </summary>

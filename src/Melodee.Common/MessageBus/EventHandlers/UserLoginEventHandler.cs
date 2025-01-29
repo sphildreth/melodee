@@ -1,6 +1,5 @@
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Services;
-using Melodee.Common.Services.Caching;
 using Rebus.Handlers;
 
 namespace Melodee.Common.MessageBus.EventHandlers;

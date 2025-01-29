@@ -45,8 +45,7 @@ public sealed class DiscTotal(Dictionary<string, object?> configuration, ISerial
                 discTotalValue = metaTags
                     .Where(x => x.Identifier == MetaTagIdentifier.DiscNumber)
                     .Select(x => x.Value)
-                    .Where(x => x != null).
-                    Select(SafeParser.ToNumber<short?>)
+                    .Where(x => x != null).Select(SafeParser.ToNumber<short?>)
                     .Max();
             }
         }
@@ -55,6 +54,7 @@ public sealed class DiscTotal(Dictionary<string, object?> configuration, ISerial
         {
             discTotalValue = 1;
         }
+
         var result = new List<MetaTag<object?>>
         {
             new()

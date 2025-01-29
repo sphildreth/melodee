@@ -38,7 +38,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<RadioStation> RadioStations { get; set; }
 
     public DbSet<Setting> Settings { get; set; }
-    
+
     public DbSet<SearchHistory> SearchHistories { get; set; }
 
     public DbSet<Share> Shares { get; set; }
@@ -700,7 +700,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Is LastFM search engine enabled.",
                     Value = "true",
                     CreatedAt = now
-                },              
+                },
                 new Setting
                 {
                     Id = 916,
@@ -709,7 +709,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "When performing a search engine search, the maximum allowed page size.",
                     Value = "1000",
                     CreatedAt = now
-                },                 
+                },
                 new Setting
                 {
                     Id = 400,

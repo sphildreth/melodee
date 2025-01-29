@@ -22,10 +22,9 @@ public class NfoTests : TestsBase
             Assert.NotNull(dir);
             Assert.NotNull(nfoParserResult.Songs);
             Assert.DoesNotContain(nfoParserResult.Songs, x => !x.File.Exists(dir));
-            
         }
     }
-    
+
     [Fact]
     public async Task ParseNfoFile2()
     {
@@ -42,7 +41,7 @@ public class NfoTests : TestsBase
             Assert.NotNull(nfoParserResult.Songs);
             Assert.DoesNotContain(nfoParserResult.Songs, x => !x.File.Exists(dir));
         }
-    }    
+    }
 
     [Theory]
     [InlineData(null, false)]
@@ -54,7 +53,7 @@ public class NfoTests : TestsBase
     [InlineData("01 The Cloverland Panopticon 03:28", true)]
     [InlineData("1 The Cloverland Panopticon 3:28", true)]
     [InlineData("\ud83d\udea8 01 The Cloverland Panopticon 3:28", true)]
-    [InlineData("           \ufffd\ufffd\ufffd   01.Pole Shift                           07:24   \ufffd\ufffd\ufffd", true)]    
+    [InlineData("           \ufffd\ufffd\ufffd   01.Pole Shift                           07:24   \ufffd\ufffd\ufffd", true)]
     [InlineData("01 > The Cloverland Panopticon                                 < 03:28", true)]
     [InlineData("           ллл   01.Tokyo Night                          05:25   ллл", true)]
     [InlineData("Û 02. Legendary (feat. Lonnie Westry)                                     2:41 Û", true)]

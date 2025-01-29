@@ -1,6 +1,5 @@
 @page "/data/artist/{ApiKey:guid}/{FromUrl?}"
 @inherits MelodeeComponentBase
-
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
@@ -30,9 +29,11 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenRating Value="@_userArtist.Rating" Change="@UserRatingChange"/>
-                <RadzenIcon Icon="thumb_down" class="filled-icon" IconColor="@(_userArtist.IsHated ? "#A2A415" : "#C9C9C7")"
+                <RadzenIcon Icon="thumb_down" class="filled-icon"
+                            IconColor="@(_userArtist.IsHated ? "#A2A415" : "#C9C9C7")"
                             @onclick="@IsHatedClicked" Style="cursor:pointer;"/>
-                <RadzenIcon Icon="favorite" class="filled-icon" IconColor="@(_userArtist.IsStarred ? "#FA0202" : "#C9C9C7")"
+                <RadzenIcon Icon="favorite" class="filled-icon"
+                            IconColor="@(_userArtist.IsStarred ? "#FA0202" : "#C9C9C7")"
                             @onclick="@IsStarredClicked" Style="cursor:pointer;"/>
             </RadzenStack>
         </RadzenColumn>
@@ -137,12 +138,19 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.Amg" Id="@_artist.AmgId" />
-                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.Discogs" Id="@_artist.DiscogsId" />
-                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.ITunes" Id="@_artist.ItunesId" />
-                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.LastFm" Id="@_artist.LastFmId" />
-                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.Spotify" Id="@_artist.SpotifyId" />
-                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist" ThirdPartyIdType="ThirdPartyIdType.MusicBrainz" Id="@_artist.MusicBrainzId" />
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist"
+                                            ThirdPartyIdType="ThirdPartyIdType.Amg" Id="@_artist.AmgId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist"
+                                            ThirdPartyIdType="ThirdPartyIdType.Discogs" Id="@_artist.DiscogsId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist"
+                                            ThirdPartyIdType="ThirdPartyIdType.ITunes" Id="@_artist.ItunesId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist"
+                                            ThirdPartyIdType="ThirdPartyIdType.LastFm" Id="@_artist.LastFmId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist"
+                                            ThirdPartyIdType="ThirdPartyIdType.Spotify" Id="@_artist.SpotifyId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist"
+                                            ThirdPartyIdType="ThirdPartyIdType.MusicBrainz"
+                                            Id="@_artist.MusicBrainzId"/>
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>
@@ -160,12 +168,17 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <CondensedStatistic Label="Album Count" Statistic="@(_artist.AlbumCount.ToStringPadLeft(3))"/>
+                            <CondensedStatistic Label="Album Count"
+                                                Statistic="@(_artist.AlbumCount.ToStringPadLeft(3))"/>
                             <CondensedStatistic Label="Song Count" Statistic="@(_artist.SongCount.ToStringPadLeft(4))"/>
-                            <CondensedStatistic Label="Played Total" Statistic="@(_artist.PlayedCount.ToStringPadLeft(6))"/>
-                            <CondensedStatistic Label="Last Played" Statistic="@(CurrentUser?.FormatInstant(_artist.LastPlayedAt))"/>
-                            <CondensedStatistic Label="Created" Statistic="@(CurrentUser?.FormatInstant(_artist.CreatedAt))"/>
-                            <CondensedStatistic Label="Last Updated" Statistic="@(CurrentUser?.FormatInstant(_artist.LastUpdatedAt))"/>
+                            <CondensedStatistic Label="Played Total"
+                                                Statistic="@(_artist.PlayedCount.ToStringPadLeft(6))"/>
+                            <CondensedStatistic Label="Last Played"
+                                                Statistic="@(CurrentUser?.FormatInstant(_artist.LastPlayedAt))"/>
+                            <CondensedStatistic Label="Created"
+                                                Statistic="@(CurrentUser?.FormatInstant(_artist.CreatedAt))"/>
+                            <CondensedStatistic Label="Last Updated"
+                                                Statistic="@(CurrentUser?.FormatInstant(_artist.LastUpdatedAt))"/>
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>
@@ -185,10 +198,10 @@
                                 </RadzenText>
                             </HeaderTemplate>
                             <ChildContent>
-                                    @foreach (var album in _albums)
-                                    {
-                                        <AlbumDataInfoCardComponent Album="@album"/>
-                                    }
+                                @foreach (var album in _albums)
+                                {
+                                    <AlbumDataInfoCardComponent Album="@album"/>
+                                }
                             </ChildContent>
                         </RadzenPanel>
                     </RadzenColumn>
@@ -210,9 +223,11 @@
     [Parameter] public Guid ApiKey { get; set; }
 
     /// <summary>
-    /// When this is set, is it used if the artist gets deleted to return the user back (like viewing artist for a library return to the library detail)
+    ///     When this is set, is it used if the artist gets deleted to return the user back (like viewing artist for a library
+    ///     return to the library detail)
     /// </summary>
-    [Parameter] public string? FromUrl { get; set; }
+    [Parameter]
+    public string? FromUrl { get; set; }
 
     Artist _artist = new()
     {
@@ -243,19 +258,19 @@
         Relationships
     }
 
-    UserArtist _userArtist = new UserArtist
+    UserArtist _userArtist = new()
     {
         UserId = 0,
         ArtistId = 0,
         CreatedAt = default
     };
 
-    int? _currentPage = 1;
-    short? _pageSize = 50;
+    readonly int? _currentPage = 1;
+    readonly short? _pageSize = 50;
 
-    Dictionary<string, string> _orderBy = new Dictionary<string, string>
+    readonly Dictionary<string, string> _orderBy = new()
     {
-        { nameof(AlbumDataInfo.ReleaseDate), PagedRequest.OrderAscDirection.ToString() }
+        { nameof(AlbumDataInfo.ReleaseDate), PagedRequest.OrderAscDirection }
     };
 
     protected override async Task OnInitializedAsync()
@@ -296,7 +311,7 @@
         }
     }
 
- private Task EditButtonClick()
+    private Task EditButtonClick()
     {
         throw new NotImplementedException();
     }
@@ -319,8 +334,9 @@
             var deleteResult = await ArtistService.DeleteAsync([_artist.Id]);
             if (deleteResult.IsSuccess)
             {
-                NavigationManager.NavigateTo(FromUrl ?? $"/data/artists", true);
+                NavigationManager.NavigateTo(FromUrl ?? "/data/artists", true);
             }
+
             NotificationService.Notify(NotificationMessageForResult(deleteResult, "deleting artist", ToastTime));
         }
     }
@@ -343,10 +359,6 @@
         var result = await UserService.ToggleArtistStarAsync(CurrentUsersId, _artist.ApiKey, _userArtist.IsStarred);
         NotificationService.Notify(NotificationMessageForResult(result, "Toggling Artist Favorite", ToastTime));
     }
-
-
-
-
 
 
 }

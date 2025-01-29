@@ -35,7 +35,7 @@ public sealed class M3UPlaylist(
     public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         StopProcessing = false;
-        
+
         var resultType = OperationResponseType.Ok;
         var processedFiles = 0;
         try
@@ -112,9 +112,9 @@ public sealed class M3UPlaylist(
                                     SortOrder = 5 + i
                                 }));
                         }
-                        
+
                         var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
-                        var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();                        
+                        var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
 
                         var m3UAlbum = new Album
                         {
@@ -156,7 +156,7 @@ public sealed class M3UPlaylist(
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);                            
+                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);
                             if (existingAlbum != null)
                             {
                                 m3UAlbum = m3UAlbum.Merge(existingAlbum);

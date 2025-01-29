@@ -9,5 +9,5 @@ public enum ThirdPartyIdType
     LastFm,
     MusicBrainz,
     Spotify,
-    WikiData    
+    WikiData
 }

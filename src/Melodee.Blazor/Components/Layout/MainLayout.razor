@@ -1,5 +1,4 @@
 ﻿@inherits LayoutComponentBase
-
 @using Melodee.Common.Enums
 @using Microsoft.AspNetCore.Components.Authorization
 @implements IDisposable
@@ -86,13 +85,14 @@
                         <RadzenPanelMenuItem Text="Jobs" Path="/admin/jobs" Icon="checklist"/>
                         <RadzenPanelMenuItem Text="Settings" Path="/admin/settings" Icon="settings"/>
                     </RadzenPanelMenuItem>
-                    <RadzenPanelMenuItem Text="About" Path="/about" Icon="info" IconColor="@Colors.Secondary" />
+                    <RadzenPanelMenuItem Text="About" Path="/about" Icon="info" IconColor="@Colors.Secondary"/>
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody Style="margin: 10px; padding:3px;">
                 @if (_showSearchResults)
                 {
-                    <Search UserApiKey="@context.User.ToApiGuid()" UserAgent="@_userAgent"  SearchTerm="@_debounceInputValue"/>
+                    <Search UserApiKey="@context.User.ToApiGuid()" UserAgent="@_userAgent"
+                            SearchTerm="@_debounceInputValue"/>
                 }
                 else
                 {

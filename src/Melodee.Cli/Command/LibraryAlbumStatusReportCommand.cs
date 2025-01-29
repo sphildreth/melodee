@@ -52,8 +52,8 @@ public class LibraryAlbumStatusReportCommand : AsyncCommand<LibraryAlbumStatusRe
         {
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
-        }); 
-        
+        });
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -68,7 +68,7 @@ public class LibraryAlbumStatusReportCommand : AsyncCommand<LibraryAlbumStatusRe
                 configFactory,
                 serializer,
                 bus);
-            
+
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 
             var result = await libraryService.AlbumStatusReport(settings.LibraryName);

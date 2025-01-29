@@ -13,7 +13,6 @@ using Melodee.Common.Utility;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
-using ServiceStack;
 
 namespace Melodee.Common.Plugins.MetaData.Directory.Nfo;
 
@@ -195,7 +194,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
         "length",
         "runtime"
     ];
-    
+
     public static bool IsLineForSong(string line)
     {
         var l = line.Nullify();
@@ -203,6 +202,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
         {
             return IsLineForSongRegex().IsMatch(l) && _lineIgnores.All(x => !l.Contains(x, StringComparison.OrdinalIgnoreCase));
         }
+
         return false;
     }
 
@@ -230,7 +230,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
             };
 
             var mediaFilesForFolder = fileInfo.Directory?.ToDirectorySystemInfo().AllMediaTypeFileInfos().ToArray();
-            
+
             foreach (var line in await File.ReadAllLinesAsync(fileInfo.FullName, cancellationToken))
             {
                 if (!string.IsNullOrEmpty(line.ToAlphanumericName().Nullify()))
@@ -314,19 +314,21 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                         }
                     }
                 }
+
                 if (IsLineForSong(line))
                 {
                     var l = line.OnlyAlphaNumeric();
                     var songNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
                     var songDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
                     var songTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
-                    
+
                     var fileForSong = mediaFilesForFolder.FirstOrDefault(x => x.Name.ToNormalizedString()!.Contains(songTitle.ToNormalizedString()!, StringComparison.OrdinalIgnoreCase));
                     if (fileForSong == null)
                     {
                         Log.Warning("[{Plugin}] Could not find file for song [{SongTitle}] in [{DirName}]", DisplayName, songTitle, fileInfo.Directory?.FullName);
                         continue;
                     }
+
                     songs.Add(new Common.Models.Song
                     {
                         CrcHash = Crc32.Calculate(fileForSong),
@@ -351,7 +353,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                         File = fileForSong.ToFileSystemInfo(),
                         SortOrder = songNumber
                     });
-                }                
+                }
             }
 
             if (songs.Any() && albumTags.All(x => x.Identifier != MetaTagIdentifier.DiscTotal))
@@ -386,9 +388,10 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                         });
                     }
                 }
+
                 songs = s;
             }
-            
+
             var artistName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
             var albumName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
             var result = new Album
@@ -397,7 +400,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                 Artist = new Artist(
                     artistName ?? throw new Exception($"Invalid artist on {nameof(Nfo)}"),
                     artistName.ToNormalizedString() ?? artistName,
-                    null),    
+                    null),
                 Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ?? new FileSystemDirectoryInfo
                 {
                     Path = fileInfo.Directory?.FullName ?? string.Empty,

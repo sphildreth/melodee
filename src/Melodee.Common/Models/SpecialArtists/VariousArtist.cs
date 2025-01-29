@@ -13,7 +13,7 @@ namespace Melodee.Common.Models.SpecialArtists;
 /// </summary>
 public sealed record VariousArtist : Artist
 {
-    public VariousArtist() 
+    public VariousArtist()
         : base("Various Artist", "Various Artist".ToNormalizedString()!, "Various Artist")
     {
         AmgId = "various-artists-mn0000258947";

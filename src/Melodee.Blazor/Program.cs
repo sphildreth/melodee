@@ -66,8 +66,8 @@ builder.Services.AddRadzenComponents();
 
 builder.Services.AddRadzenCookieThemeService(options =>
 {
-    options.Name = "melodee_ui_theme"; 
-    options.Duration = TimeSpan.FromDays(9999); 
+    options.Name = "melodee_ui_theme";
+    options.Duration = TimeSpan.FromDays(9999);
 });
 
 builder.Services.AddBlazoredSessionStorage();
@@ -130,10 +130,7 @@ builder.Services
 
 #region Quartz Related
 
-builder.Services.AddQuartz(q =>
-{
-    q.UseTimeZoneConverter();
-});
+builder.Services.AddQuartz(q => { q.UseTimeZoneConverter(); });
 builder.Services.AddSingleton<IScheduler>(provider =>
 {
     var factory = provider.GetRequiredService<ISchedulerFactory>();
@@ -151,9 +148,9 @@ builder.Services.AddRebus((configurer, provider) =>
         .Logging(l => l.Serilog(provider.GetRequiredService<ILogger>()))
         .Options(o =>
         {
-            o.EnableCompression(bodySizeThresholdBytes: 32768);
-            o.SetNumberOfWorkers(numberOfWorkers: 2);
-            o.SetMaxParallelism(maxParallelism: 20);
+            o.EnableCompression(32768);
+            o.SetNumberOfWorkers(2);
+            o.SetMaxParallelism(20);
         })
         .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"))
         .Sagas(s => s.StoreInMemory())

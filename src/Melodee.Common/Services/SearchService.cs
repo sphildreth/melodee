@@ -1,7 +1,5 @@
 using System.Diagnostics;
-using Melodee.Common.Configuration;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.MessageBus.Events;
@@ -22,7 +20,6 @@ public sealed class SearchService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMelodeeConfigurationFactory configurationFactory,
     ArtistService artistService,
     AlbumService albumService,
     SongService songService,
@@ -46,8 +43,8 @@ public sealed class SearchService(
         }
 
         var startTicks = Stopwatch.GetTimestamp();
-        
-        var searchTermNormalized = searchTerm.ToNormalizedString() ?? searchTerm;
+
+        var searchTermNormalized = searchTerm.ToNormalizedString() ?? searchTerm ?? string.Empty;
 
         if (include.HasFlag(SearchInclude.Artists))
         {
@@ -61,7 +58,7 @@ public sealed class SearchService(
                     new FilterOperatorInfo(nameof(ArtistDataInfo.AlternateNames), FilterOperator.Contains, searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
             }, cancellationToken);
-            artists = artistResult.Data.ToList() ?? [];
+            artists = artistResult.Data.ToList();
         }
 
         if (include.HasFlag(SearchInclude.Albums))
@@ -76,7 +73,7 @@ public sealed class SearchService(
                     new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains, searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
             }, cancellationToken);
-            albums = albumResult.Data.ToList() ?? [];
+            albums = albumResult.Data.ToList();
         }
 
         if (include.HasFlag(SearchInclude.Songs))
@@ -90,14 +87,14 @@ public sealed class SearchService(
                     new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains, searchTermNormalized)
                 ]
             }, cancellationToken);
-            songs = songResult.Data.ToList() ?? [];
+            songs = songResult.Data.ToList();
         }
 
         if (include.HasFlag(SearchInclude.MusicBrainz))
         {
             var searchResult = await musicBrainzRepository.SearchArtist(new ArtistQuery
             {
-                Name = searchTerm
+                Name = searchTerm ?? string.Empty
             }, maxResults, cancellationToken);
             musicBrainzArtists = searchResult.Data
                 .Where(x => x.MusicBrainzId != null)
@@ -111,7 +108,7 @@ public sealed class SearchService(
         }
 
         var elapsedTime = Stopwatch.GetElapsedTime(startTicks);
-        
+
         await bus.SendLocal(new SearchHistoryEvent
         {
             CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),

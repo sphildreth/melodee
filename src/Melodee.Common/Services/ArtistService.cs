@@ -13,8 +13,6 @@ using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Extensions;
 using Melodee.Common.Services.Interfaces;
-using Melodee.Common.Services.Scanning;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
@@ -153,28 +151,28 @@ public class ArtistService(
             CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
         }
     }
-    
+
     /// <summary>
-    /// Find the Artist using various given Ids.
+    ///     Find the Artist using various given Ids.
     /// </summary>
     public async Task<MelodeeModels.OperationResult<Artist?>> FindArtistAsync(int? byId, Guid byApiKey, string? byName, Guid? byMusicBrainzId, CancellationToken cancellationToken = default)
     {
         int? id = null;
-        
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                id =await dbConn
-                    .QuerySingleOrDefaultAsync<int?>("""
-                                                     select a."Id"
-                                                     from "Artists" a 
-                                                     where a."Id" = @id
-                                                     or a."ApiKey" = @apiKey
-                                                     or a."MusicBrainzId" = @musicBrainzId   
-                                                     or a."NameNormalized" = @name
-                                                     """, new { @id = byId, @apiKey = byApiKey, @name = byName, @musicBrainzId = byMusicBrainzId })
-                    .ConfigureAwait(false);
-            }
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            id = await dbConn
+                .QuerySingleOrDefaultAsync<int?>("""
+                                                 select a."Id"
+                                                 from "Artists" a 
+                                                 where a."Id" = @id
+                                                 or a."ApiKey" = @apiKey
+                                                 or a."MusicBrainzId" = @musicBrainzId   
+                                                 or a."NameNormalized" = @name
+                                                 """, new { id = byId, apiKey = byApiKey, name = byName, musicBrainzId = byMusicBrainzId })
+                .ConfigureAwait(false);
+        }
 
         if (id == null)
         {
@@ -548,7 +546,7 @@ public class ArtistService(
                         var albumJsonFiles = Directory.GetFiles(albumToMergeNewDirectory, MelodeeModels.Album.JsonFileName, SearchOption.TopDirectoryOnly);
                         if (albumJsonFiles.Length > 0)
                         {
-                            var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumJsonFiles[0], cancellationToken).ConfigureAwait(false);                            
+                            var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumJsonFiles[0], cancellationToken).ConfigureAwait(false);
                             if (album != null)
                             {
                                 await ProcessExistingDirectoryMoveMergeAsync(configuration, serializer, album, albumToMergeDirectory, cancellationToken).ConfigureAwait(false);

@@ -20,15 +20,16 @@ namespace Melodee.Common.Services;
 /// </summary>
 public class SettingService : ServiceBase
 {
-    private readonly IMelodeeConfigurationFactory _melodeeConfigurationFactory;
+    private const string CacheKeyDetailTemplate = "urn:setting:{0}";
+    private readonly IMelodeeConfigurationFactory _melodeeConfigurationFactory = null!;
 
     /// <summary>
-    ///  Parameterless for mocking
+    /// This is required for Mocking in unit tests.
     /// </summary>
-    public SettingService()
+    public SettingService() 
     {
     }
-    
+
     /// <summary>
     ///     Setting data domain service, this is used to manage the settings, for getting settings for services see
     ///     <see cref="IMelodeeConfigurationFactory" />
@@ -40,8 +41,6 @@ public class SettingService : ServiceBase
     {
         _melodeeConfigurationFactory = melodeeConfigurationFactory;
     }
-
-    private const string CacheKeyDetailTemplate = "urn:setting:{0}";
 
     public virtual async Task<Dictionary<string, object?>> GetAllSettingsAsync(CancellationToken cancellationToken = default)
     {

@@ -39,8 +39,8 @@
     <PackageReference Include="Polly.Core"/>
     <PackageReference Include="Quartz.Jobs"/>
     <PackageReference Include="Quartz.Serialization.SystemTextJson"/>
-    <PackageReference Include="Rebus" />
-    <PackageReference Include="Rebus.ServiceProvider" />
+    <PackageReference Include="Rebus"/>
+    <PackageReference Include="Rebus.ServiceProvider"/>
     <PackageReference Include="Serilog"/>
     <PackageReference Include="Serilog.Sinks.Console"/>
     <PackageReference Include="Serilog.Sinks.File"/>
@@ -50,7 +50,7 @@
     <PackageReference Include="SharpZipLib"/>
     <PackageReference Include="SixLabors.ImageSharp"/>
     <PackageReference Include="SmartFormat"/>
-    <PackageReference Include="SpotifyAPI.Web" />
+    <PackageReference Include="SpotifyAPI.Web"/>
     <PackageReference Include="System.IO.Hashing"/>
     <PackageReference Include="System.Linq.Dynamic.Core"/>
     <PackageReference Include="z440.atl.core"/>
@@ -61,7 +61,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="MessageBus\" />
+    <Folder Include="MessageBus\"/>
     <Folder Include="Migrations\"/>
   </ItemGroup>
 

@@ -14,7 +14,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
     IMelodeeConfiguration configuration,
     IMusicBrainzRepository repository) : IAlbumImageSearchEnginePlugin
 {
-    public bool StopProcessing { get; private set; } = false;
+    public bool StopProcessing { get; private set; }
 
     public string Id => "3E6C2DD3-AC1A-452D-B52B-4C292BA1CC49";
 
@@ -27,7 +27,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
     public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
     {
         StopProcessing = false;
-        
+
         var result = new List<ImageSearchResult>();
 
         if (!configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled))

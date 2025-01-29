@@ -366,6 +366,7 @@ public class LibraryService(
                 {
                     await bus.SendLocal(new AlbumUpdatedEvent(processExistingDirectoryResult.AlbumId, processExistingDirectoryResult.AlbumPath)).ConfigureAwait(false);
                 }
+
                 continue;
             }
 
@@ -373,7 +374,7 @@ public class LibraryService(
             var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
             album.Directory.MoveToDirectory(libraryAlbumPath);
             var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
-            var melodeeFile = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileName, cancellationToken).ConfigureAwait(false); 
+            var melodeeFile = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileName, cancellationToken).ConfigureAwait(false);
             melodeeFile!.Directory.Path = libraryAlbumPath;
             if (album.Artist.Images?.Any() ?? false)
             {
@@ -614,6 +615,7 @@ public class LibraryService(
                     continue;
                 }
             }
+
             var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumFile, cancellationToken).ConfigureAwait(false);
             if (album != null)
             {
@@ -708,7 +710,7 @@ public class LibraryService(
         var melodeeFilesForLibrary = new List<MelodeeModels.Album>();
         foreach (var melodeeFileSystemInfo in melodeeFileSystemInfosForLibrary)
         {
-            var melodeeFile = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileSystemInfo.FullName, cancellationToken).ConfigureAwait(false);            
+            var melodeeFile = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileSystemInfo.FullName, cancellationToken).ConfigureAwait(false);
             if (melodeeFile != null)
             {
                 melodeeFilesForLibrary.Add(melodeeFile);
@@ -716,7 +718,7 @@ public class LibraryService(
         }
 
         Console.WriteLine($"Found [{melodeeFilesForLibrary.Count}] albums in library [{library}]...");
-        
+
         var melodeeFilesGrouped = melodeeFilesForLibrary.GroupBy(x => x.Status);
         var melodeeFilesGroupedOk = melodeeFilesGrouped.FirstOrDefault(x => x.Key == AlbumStatus.Ok);
         if (melodeeFilesGroupedOk != null)
@@ -727,7 +729,7 @@ public class LibraryService(
             foreach (var album in melodeeFilesGroupedOk)
             {
                 var validateResults = albumValidator.ValidateAlbum(album);
-                if(!validateResults.Data.IsValid)
+                if (!validateResults.Data.IsValid)
                 {
                     result.Add(new MelodeeModels.Statistic(StatisticType.Warning, $"Album with `Ok` status [{album}], is invalid", serializer.Serialize(validateResults.Data) ?? string.Empty, StatisticColorRegistry.Warning));
                 }
@@ -844,7 +846,7 @@ public class LibraryService(
 
                                         try
                                         {
-                                            await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFile.FullName, cancellationToken).ConfigureAwait(false); 
+                                            await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFile.FullName, cancellationToken).ConfigureAwait(false);
                                         }
                                         catch (Exception ex)
                                         {
@@ -854,6 +856,7 @@ public class LibraryService(
                                                     "! Unable to load melodee album [{FileName}]",
                                                     melodeeFile.FullName);
                                             }
+
                                             continue;
                                         }
 
@@ -876,6 +879,7 @@ public class LibraryService(
                                             {
                                                 result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Unknown song", songFound.Name, StatisticColorRegistry.Error, $"Album Id [{dbAlbum?.Id}]: Unable to find song for album"));
                                             }
+
                                             albumSongsFound++;
                                         }
 
@@ -883,6 +887,7 @@ public class LibraryService(
                                         {
                                             result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Album song count mismatch ", $"{dbArtist?.Directory}{d.Name}", StatisticColorRegistry.Error, $"Album Id [{dbAlbum?.Id}]: Found [{albumSongsFound.ToStringPadLeft(4)}] album has [{dbAlbum?.SongCount.ToStringPadLeft(4)}]"));
                                         }
+
                                         songsFound += albumSongsFound;
 
                                         if (!d.EnumerateFiles(MelodeeModels.Album.JsonFileName).Any())
@@ -902,7 +907,7 @@ public class LibraryService(
                 {
                     result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Album directory missing Melodee data file", albumDirectoriesWithoutMelodeeDataFile, StatisticColorRegistry.Error, "When scanning media without a Melodee data file, media files will not get processed."));
                 }
-                
+
                 var message = artistDirectoriesFound == library.ArtistCount ? null : $"Artist directory count [{artistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library artist count [{library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength)}].";
                 result.Add(new MelodeeModels.Statistic(artistDirectoriesFound == library.ArtistCount ? StatisticType.Information : StatisticType.Warning, "Artist Directories Found", artistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), artistDirectoriesFound == library.ArtistCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
 
@@ -971,7 +976,9 @@ public class LibraryService(
             if (!dd.DoesDirectoryHaveMediaFiles())
             {
                 directoriesWithoutMediaFiles.Add(dd);
-            };
+            }
+
+            ;
         });
         if (directoriesWithoutMediaFiles.Distinct().Any())
         {
@@ -1014,7 +1021,7 @@ public class LibraryService(
                 }
             }
         }
-        
+
         allDirectoriesInLibrary = libDir.AllDirectoryInfos(searchOption: SearchOption.AllDirectories).ToArray();
         var libraryDirectoryCountAfterCleaning = allDirectoriesInLibrary.Length;
         var numberDeleted = libraryDirectoryCountBeforeCleaning - libraryDirectoryCountAfterCleaning;
@@ -1022,9 +1029,10 @@ public class LibraryService(
         {
             messages.Add($"Deleted [{numberDeleted.ToStringPadLeft(DisplayNumberPadLength)}] directories from library. Library now has [{libraryDirectoryCountAfterCleaning.ToStringPadLeft(DisplayNumberPadLength)}] directories.");
         }
+
         var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
-        
+
         var melodeeFilesDeleted = 0;
         if (library.TypeValue != LibraryType.Inbound)
         {
@@ -1047,6 +1055,7 @@ public class LibraryService(
                             continue;
                         }
                     }
+
                     var directoryInfo = directory.ToFileSystemDirectoryInfo();
                     if (directoryInfo != null && directoryInfo.AllMediaTypeFileInfos().Any())
                     {
@@ -1058,7 +1067,6 @@ public class LibraryService(
                         if (dbAlbum == null)
                         {
                             messages.Add($"Unable to find album for directory [{directory}]");
-                            
                         }
                     }
                 }
@@ -1098,52 +1106,52 @@ public class LibraryService(
         //     }        
 
 
-            // if (library.TypeValue == LibraryType.Storage)
-            // {
-            //     // If album directory has media files, but does not have a melodee data file, and is not found in the db, then move back to inbound
-            //     var inboundLibrary = await GetInboundLibraryAsync(cancellationToken).ConfigureAwait(false);
-            //     d.MoveTo(Path.Combine(inboundLibrary.Data.Path, Guid.NewGuid().ToString()));
-            //     result.Add(new MelodeeModels.Statistic(StatisticType.Warning, "~ Moved album directory", albumDirectory, StatisticColorRegistry.Warning, "Moved album folder to incoming"));
-            //     continue;
-            // }        
+        // if (library.TypeValue == LibraryType.Storage)
+        // {
+        //     // If album directory has media files, but does not have a melodee data file, and is not found in the db, then move back to inbound
+        //     var inboundLibrary = await GetInboundLibraryAsync(cancellationToken).ConfigureAwait(false);
+        //     d.MoveTo(Path.Combine(inboundLibrary.Data.Path, Guid.NewGuid().ToString()));
+        //     result.Add(new MelodeeModels.Statistic(StatisticType.Warning, "~ Moved album directory", albumDirectory, StatisticColorRegistry.Warning, "Moved album folder to incoming"));
+        //     continue;
+        // }        
 
-            // // If unable to load melodee data file then move back to Inbound
-            // var inboundLibrary = await GetInboundLibraryAsync(cancellationToken).ConfigureAwait(false);
-            // d.MoveTo(Path.Combine(inboundLibrary.Data.Path, Guid.NewGuid().ToString()));
-            // result.Add(new MelodeeModels.Statistic(StatisticType.Warning,
-            //     "~ Invalid Melodee file",
-            //     albumDirectory,
-            //     StatisticColorRegistry.Warning,
-            //     "Invalid Melodee File. Deleted and moved directory to inbound library."));        
+        // // If unable to load melodee data file then move back to Inbound
+        // var inboundLibrary = await GetInboundLibraryAsync(cancellationToken).ConfigureAwait(false);
+        // d.MoveTo(Path.Combine(inboundLibrary.Data.Path, Guid.NewGuid().ToString()));
+        // result.Add(new MelodeeModels.Statistic(StatisticType.Warning,
+        //     "~ Invalid Melodee file",
+        //     albumDirectory,
+        //     StatisticColorRegistry.Warning,
+        //     "Invalid Melodee File. Deleted and moved directory to inbound library."));        
 
-            // if (shouldResetLastScan)
-            // {
-            //     var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken).ConfigureAwait(false);
-            //     dbLibrary.LastScanAt = null;
-            //     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            // }
-            
-      //  }
+        // if (shouldResetLastScan)
+        // {
+        //     var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken).ConfigureAwait(false);
+        //     dbLibrary.LastScanAt = null;
+        //     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        // }
+
+        //  }
 
 
-      if (library.TypeValue != LibraryType.Storage)
-      {
-          foreach (var melodeeJsonFile in Directory.GetFiles(library.Path, $"*{MelodeeModels.Album.JsonFileName}", SearchOption.AllDirectories))
-          {
-              File.Delete(melodeeJsonFile);
-              melodeeFilesDeleted++;
-          }
-          if (melodeeFilesDeleted > 0)
-          {
-              messages.Add($"Deleted [{melodeeFilesDeleted}] melodee files from library.");
-          }
-      }
+        if (library.TypeValue != LibraryType.Storage)
+        {
+            foreach (var melodeeJsonFile in Directory.GetFiles(library.Path, $"*{MelodeeModels.Album.JsonFileName}", SearchOption.AllDirectories))
+            {
+                File.Delete(melodeeJsonFile);
+                melodeeFilesDeleted++;
+            }
 
-      return new MelodeeModels.OperationResult<string[]>
-          {
-              Data = messages.ToArray()
-          };
-      
+            if (melodeeFilesDeleted > 0)
+            {
+                messages.Add($"Deleted [{melodeeFilesDeleted}] melodee files from library.");
+            }
+        }
+
+        return new MelodeeModels.OperationResult<string[]>
+        {
+            Data = messages.ToArray()
+        };
     }
 
 

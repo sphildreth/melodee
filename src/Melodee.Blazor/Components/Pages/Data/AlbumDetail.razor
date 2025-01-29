@@ -34,9 +34,11 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenRating Value="@_userAlbum.Rating" Change="@UserRatingChange"/>
-                <RadzenIcon Icon="thumb_down" class="filled-icon" IconColor="@(_userAlbum.IsHated ? "#A2A415" : "#C9C9C7")"
+                <RadzenIcon Icon="thumb_down" class="filled-icon"
+                            IconColor="@(_userAlbum.IsHated ? "#A2A415" : "#C9C9C7")"
                             @onclick="@IsHatedClicked" Style="cursor:pointer;"/>
-                <RadzenIcon Icon="favorite" class="filled-icon" IconColor="@(_userAlbum.IsStarred ? "#FA0202" : "#C9C9C7")"
+                <RadzenIcon Icon="favorite" class="filled-icon"
+                            IconColor="@(_userAlbum.IsStarred ? "#FA0202" : "#C9C9C7")"
                             @onclick="@IsStarredClicked" Style="cursor:pointer;"/>
             </RadzenStack>
         </RadzenColumn>
@@ -121,7 +123,8 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <CondensedStatistic Label="Status" StatisticStyle="@AlbumStatusStyle" Statistic="@_album.AlbumStatusValue.ToString()"/>
+                            <CondensedStatistic Label="Status" StatisticStyle="@AlbumStatusStyle"
+                                                Statistic="@_album.AlbumStatusValue.ToString()"/>
                             <CondensedStatistic Label="Album Type" Statistic="@_album.AlbumTypeValue.ToString()"/>
                             <CondensedStatistic Label="Amg Id" Statistic="@_album.AmgId"/>
                             <CondensedStatistic Label="Discogs Id" Statistic="@_album.DiscogsId"/>
@@ -150,10 +153,14 @@
                             Gap="5px">
                             <CondensedStatistic Label="Disc Count" Statistic="@(_album.DiscCount.ToStringPadLeft(3))"/>
                             <CondensedStatistic Label="Song Count" Statistic="@(_album.SongCount.ToStringPadLeft(4))"/>
-                            <CondensedStatistic Label="Played Total" Statistic="@(_album.PlayedCount.ToStringPadLeft(6))"/>
-                            <CondensedStatistic Label="Last Played" Statistic="@(CurrentUser?.FormatInstant(_album.LastPlayedAt))"/>
-                            <CondensedStatistic Label="Created" Statistic="@(CurrentUser?.FormatInstant(_album.CreatedAt))"/>
-                            <CondensedStatistic Label="Last Updated" Statistic="@(CurrentUser?.FormatInstant(_album.LastUpdatedAt))"/>
+                            <CondensedStatistic Label="Played Total"
+                                                Statistic="@(_album.PlayedCount.ToStringPadLeft(6))"/>
+                            <CondensedStatistic Label="Last Played"
+                                                Statistic="@(CurrentUser?.FormatInstant(_album.LastPlayedAt))"/>
+                            <CondensedStatistic Label="Created"
+                                                Statistic="@(CurrentUser?.FormatInstant(_album.CreatedAt))"/>
+                            <CondensedStatistic Label="Last Updated"
+                                                Statistic="@(CurrentUser?.FormatInstant(_album.LastUpdatedAt))"/>
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>
@@ -192,7 +199,7 @@
                                                     class="filled-icon"
                                                     IconColor="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.IsHated ?? false ? "#A2A415" : "#C9C9C7")"
                                                     @onclick="@(() => IsSongHatedClicked(song))"
-                                                    Style="cursor:pointer;" />
+                                                    Style="cursor:pointer;"/>
                                                 <RadzenIcon
                                                     Icon="favorite"
                                                     class="filled-icon"
@@ -213,7 +220,7 @@
                     <RadzenColumn Size="12" SizeMD="4">
                         <ArtistDataInfoCardComponent
                             Style="width: 350px;"
-                            Artist="@_album.Artist.ToArtistDataInfo()" />
+                            Artist="@_album.Artist.ToArtistDataInfo()"/>
                         <RadzenImage
                             Path=@($"/images/{_album.ToApiKey()}/350")
                             Style="margin:auto;display: block;"
@@ -230,9 +237,11 @@
     [Parameter] public Guid ApiKey { get; set; }
 
     /// <summary>
-    /// When this is set, is it used if the album gets deleted to return the user back (like viewing albums for an artist return to the artist detail)
+    ///     When this is set, is it used if the album gets deleted to return the user back (like viewing albums for an artist
+    ///     return to the artist detail)
     /// </summary>
-    [Parameter] public string? FromUrl { get; set; }
+    [Parameter]
+    public string? FromUrl { get; set; }
 
     string AlbumStatusStyle { get; set; } = string.Empty;
 
@@ -246,7 +255,7 @@
         Images
     }
 
-    UserAlbum _userAlbum = new UserAlbum
+    UserAlbum _userAlbum = new()
     {
         UserId = 0,
         AlbumId = 0,
@@ -308,7 +317,6 @@
                     CreatedAt = default
                 };
                 _userSongs = await UserService.UserSongsForAlbumAsync(CurrentUsersId, _album.ApiKey) ?? [];
-
             }
         }
     }
@@ -346,8 +354,9 @@
             var deleteResult = await AlbumService.DeleteAsync([_album.Id]);
             if (deleteResult.IsSuccess)
             {
-                NavigationManager.NavigateTo(FromUrl ?? $"/data/albums", true);
+                NavigationManager.NavigateTo(FromUrl ?? "/data/albums", true);
             }
+
             NotificationService.Notify(NotificationMessageForResult(deleteResult, "deleting album", ToastTime));
         }
     }
@@ -382,7 +391,7 @@
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
                 UserId = CurrentUsersId,
                 SongId = song.Id,
-                IsStarred = true,
+                IsStarred = true
             };
             var allUserSongs = _userSongs.ToList();
             allUserSongs.Add(userSong);
@@ -392,13 +401,14 @@
         {
             userSong.IsStarred = !userSong.IsStarred;
         }
+
         if (userSong.IsStarred)
         {
             userSong.IsHated = false;
         }
+
         var result = await UserService.ToggleSongStarAsync(CurrentUsersId, song.ApiKey, userSong.IsStarred);
         NotificationService.Notify(NotificationMessageForResult(result, "Toggling Song Favorite", ToastTime));
-
     }
 
     private async Task IsSongHatedClicked(Song song)
@@ -411,7 +421,7 @@
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
                 UserId = CurrentUsersId,
                 SongId = song.Id,
-                IsHated = true,
+                IsHated = true
             };
             var allUserSongs = _userSongs.ToList();
             allUserSongs.Add(userSong);
@@ -421,10 +431,12 @@
         {
             userSong.IsHated = !userSong.IsHated;
         }
+
         if (userSong.IsHated)
         {
             userSong.IsStarred = false;
         }
+
         var result = await UserService.ToggleSongHatedAsync(CurrentUsersId, song.ApiKey, userSong.IsStarred);
         NotificationService.Notify(NotificationMessageForResult(result, "Toggling Song Hatred", ToastTime));
     }

@@ -49,11 +49,11 @@ public class AlbumImageSearchEngineService(
             new Spotify(Logger, configuration, settingService)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
-            },            
+            },
             new LastFm(Logger, configuration, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineLastFmEnabled)
-            }        
+            }
         };
         var result = new List<ImageSearchResult>();
         foreach (var searchEngine in searchEngines.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
@@ -64,7 +64,8 @@ public class AlbumImageSearchEngineService(
                 if (searchResult.IsSuccess)
                 {
                     result.AddRange(searchResult.Data ?? []);
-                }                
+                }
+
                 if (searchEngine.StopProcessing || result.Count >= maxResultsValue)
                 {
                     break;

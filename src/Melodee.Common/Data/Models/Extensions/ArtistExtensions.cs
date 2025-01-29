@@ -4,16 +4,14 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.SearchEngines;
-using NodaTime;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
 public static class ArtistExtensions
 {
-    
     public static ArtistDataInfo ToArtistDataInfo(this Artist artist)
     {
-        return new (artist.Id,
+        return new ArtistDataInfo(artist.Id,
             artist.ApiKey,
             false,
             0,
@@ -26,8 +24,8 @@ public static class ArtistExtensions
             artist.SongCount,
             artist.CreatedAt,
             string.Empty);
-    }    
-    
+    }
+
     public static Common.Models.Artist ToMelodeeArtistModel(this Artist artist)
     {
         return new Common.Models.Artist(artist.Name,

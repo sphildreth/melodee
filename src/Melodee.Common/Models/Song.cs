@@ -40,26 +40,28 @@ public sealed record Song
         {
             return songs[0];
         }
+
         var best = songs[0];
         foreach (var song in songs.Skip(1))
         {
             if (song.Duration() >= best.Duration() || song.BitRate() > best.BitRate() || song.BitDepth() > best.BitDepth())
             {
                 var tags = (best.Tags ?? []).ToList();
-                foreach (var tagItem in (song.Tags ?? []))
+                foreach (var tagItem in song.Tags ?? [])
                 {
                     if (tags.FirstOrDefault(x => x.Identifier == tagItem.Identifier) == null)
                     {
                         tags.Add(tagItem);
                     }
                 }
+
                 best = song with
                 {
                     Tags = tags
                 };
             }
         }
+
         return best;
     }
-    
 }

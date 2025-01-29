@@ -1,5 +1,4 @@
 @using Melodee.Common.Enums
-
 @if (Id != null)
 {
     <div class="@Class">
@@ -10,7 +9,7 @@
                     asp-append-version="true"
                     style="height:20px; width: auto;"
                     src="@($"/icons/{_icon}")"
-                    alt="@_icon" />
+                    alt="@_icon"/>
                 <RadzenText TextStyle="TextStyle.Caption">@ThirdPartyIdType.ToString()</RadzenText>
             </RadzenLink>
         </RadzenStack>
@@ -32,6 +31,7 @@
         {
             return null;
         }
+
         switch (idType)
         {
             case ThirdPartyIdType.Amg:
@@ -55,6 +55,7 @@
             case ThirdPartyIdType.WikiData:
                 return $"https://www.wikidata.org/wiki/{id}";
         }
+
         return null;
     }
 

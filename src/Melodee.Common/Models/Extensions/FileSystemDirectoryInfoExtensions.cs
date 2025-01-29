@@ -29,23 +29,28 @@ public static class FileSystemDirectoryInfoExtensions
         {
             subDirectory.Delete(true);
         }
-    }    
-    
+    }
+
     public static bool FileIsLikelyDuplicateByCrcAndExtension(this FileSystemDirectoryInfo directory, FileInfo file)
     {
         if (!directory.Exists() || !file.Exists)
         {
             return false;
         }
+
         var crc = Crc32.Calculate(file);
         return crc.Nullify() != null && directory.AllFileInfos($"*{file.Extension}", SearchOption.AllDirectories).Any(ff => Crc32.Calculate(ff) == crc);
     }
 
-    public static bool DoesDirectoryHaveImageFiles(this FileSystemDirectoryInfo directory) 
-        => directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileImageType(x.Extension));
+    public static bool DoesDirectoryHaveImageFiles(this FileSystemDirectoryInfo directory)
+    {
+        return directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileImageType(x.Extension));
+    }
 
-    public static bool DoesDirectoryHaveMediaFiles(this FileSystemDirectoryInfo directory) 
-        => directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileMediaType(x.Extension));
+    public static bool DoesDirectoryHaveMediaFiles(this FileSystemDirectoryInfo directory)
+    {
+        return directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileMediaType(x.Extension));
+    }
 
     /// <summary>
     ///     Rename the Directory and prepend the given prefix.
@@ -57,8 +62,9 @@ public static class FileSystemDirectoryInfoExtensions
         var moveTo = Path.Combine(d.Parent!.FullName, newName);
         if (Directory.Exists(moveTo))
         {
-           moveTo.ToDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
+            moveTo.ToDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
         }
+
         d.ToDirectorySystemInfo().MoveToDirectory(moveTo);
         return new FileSystemDirectoryInfo
         {
@@ -118,9 +124,9 @@ public static class FileSystemDirectoryInfoExtensions
         {
             RecurseSubdirectories = true,
             MatchCasing = MatchCasing.CaseInsensitive
-        }).OrderBy(x => x.Name).ToArray();  
+        }).OrderBy(x => x.Name).ToArray();
     }
-    
+
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
@@ -162,7 +168,7 @@ public static class FileSystemDirectoryInfoExtensions
     }
 
     /// <summary>
-    /// Is the directory a directory that holds a media (e.g. 'CD01' or 'DISCA')
+    ///     Is the directory a directory that holds a media (e.g. 'CD01' or 'DISCA')
     /// </summary>
     public static bool IsAlbumMediaDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
@@ -267,7 +273,7 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static IEnumerable<FileInfo> AllMediaTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, SearchOption? searchOption = null)
     {
-        return fileSystemDirectoryInfo.AllFileInfos(searchOption:searchOption).Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
+        return fileSystemDirectoryInfo.AllFileInfos(searchOption: searchOption).Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
     }
 
     public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null, SearchOption? searchOption = null)
@@ -393,9 +399,10 @@ public static class FileSystemDirectoryInfoExtensions
         var dir = fileSystemDirectoryInfo.FullName();
         return !string.IsNullOrWhiteSpace(dir) && !IsDirectoryNotStudioAlbumsRegex.IsMatch(dir);
     }
-    
+
     /// <summary>
-    ///     This exists because in some systems where data is on one mapped drive it cannot be "Moved" to another mapped drive ("Cross link" error), it must be copied and then deleted.
+    ///     This exists because in some systems where data is on one mapped drive it cannot be "Moved" to another mapped drive
+    ///     ("Cross link" error), it must be copied and then deleted.
     /// </summary>
     public static void MoveToDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string destination, string? dontMoveFileName = null)
     {
@@ -403,6 +410,7 @@ public static class FileSystemDirectoryInfoExtensions
         {
             Directory.CreateDirectory(destination);
         }
+
         var toMove = fileSystemDirectoryInfo.FullName();
         var files = Directory.GetFiles(toMove);
         var directories = Directory.GetDirectories(toMove);
@@ -413,14 +421,16 @@ public static class FileSystemDirectoryInfoExtensions
                 File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
             }
         }
+
         foreach (var d in directories)
         {
             var dd = Path.Combine(toMove, Path.GetFileName(d)).ToDirectoryInfo();
             dd.MoveToDirectory(Path.Combine(destination, Path.GetFileName(d)), dontMoveFileName);
         }
+
         Directory.Delete(toMove, true);
         var dirInfo = new DirectoryInfo(destination);
         fileSystemDirectoryInfo.Path = destination;
         fileSystemDirectoryInfo.Name = dirInfo.Name;
-    }    
+    }
 }

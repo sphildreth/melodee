@@ -25,7 +25,6 @@ using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Primitives;
 using NodaTime;
 using Quartz;
@@ -1014,7 +1013,7 @@ public class OpenSubsonicApiService(
                                         "[{ServiceName}] Album directory is missing Melodee data file [{AlbumPath}] found [{ImageCount}] images in album path.",
                                         nameof(OpenSubsonicApiService),
                                         pathToAlbum,
-                                        imagesForFolder.Length);                                    
+                                        imagesForFolder.Length);
                                     var firstFrontImage = imagesForFolder.FirstOrDefault(x => string.Equals(x.Name, $"{ImageInfo.ImageFilePrefix}01-front.jpg", StringComparison.OrdinalIgnoreCase));
                                     if (firstFrontImage != null)
                                     {
@@ -1785,18 +1784,18 @@ public class OpenSubsonicApiService(
                 // is a request to get the total number of whatever type is greater than 0
                 if (request.AlbumCount == 1)
                 {
-                    totalCount = await scopedContext.Albums.LongCountAsync(cancellationToken: cancellationToken);   
+                    totalCount = await scopedContext.Albums.LongCountAsync(cancellationToken);
                 }
                 else if (request.ArtistCount == 1)
                 {
-                    totalCount = await scopedContext.Artists.LongCountAsync(cancellationToken: cancellationToken);
+                    totalCount = await scopedContext.Artists.LongCountAsync(cancellationToken);
                 }
                 else if (request.SongCount == 1)
                 {
-                    totalCount = await scopedContext.Songs.LongCountAsync(cancellationToken: cancellationToken);
+                    totalCount = await scopedContext.Songs.LongCountAsync(cancellationToken);
                 }
             }
-            
+
             var sqlParameters = new Dictionary<string, object>
             {
                 { "userId", authResponse.UserInfo.Id },

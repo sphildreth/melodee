@@ -1,5 +1,4 @@
 using Melodee.Common.Extensions;
-using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using NodaTime;
 using Artist = Melodee.Common.Data.Models.Artist;

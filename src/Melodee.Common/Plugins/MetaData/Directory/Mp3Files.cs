@@ -1,7 +1,5 @@
-using Lucene.Net.Analysis.Miscellaneous;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
-using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -10,7 +8,6 @@ using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
-using Microsoft.VisualBasic;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -57,7 +54,7 @@ public class Mp3Files(
             using (Operation.At(LogEventLevel.Debug).Time("AllAlbumsForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
             {
                 await HandleDuplicatesAsync(fileSystemDirectoryInfo, cancellationToken);
-                
+
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
                 {
                     if (cancellationToken.IsCancellationRequested)
@@ -93,6 +90,7 @@ public class Mp3Files(
                     var songMediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
                     songMaxMediaNumber = songMediaNumbers.Length != 0 ? songMediaNumbers.Max() : 1;
                 }
+
                 foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.AlbumId))
                 {
                     foreach (var song in songsGroupedByAlbum)
@@ -152,7 +150,7 @@ public class Mp3Files(
                             var newAlbum = new Album
                             {
                                 Artist = Artist.NewArtistFromName(artistName ?? throw new Exception("Invalid artist name")),
-                                AlbumType  = song.AlbumTitle().TryToDetectAlbumType(), 
+                                AlbumType = song.AlbumTitle().TryToDetectAlbumType(),
                                 Images = songsGroupedByAlbum.Where(x => x.Images != null)
                                     .SelectMany(x => x.Images!)
                                     .DistinctBy(x => x.CrcHash).ToArray(),
@@ -207,13 +205,13 @@ public class Mp3Files(
     private async Task HandleDuplicatesAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         Console.WriteLine($"Checking for duplicate files in [{fileSystemDirectoryInfo.FullName()}]...");
-        
+
         // Delete any files that are duplicate by length and CRC value
         var files = fileSystemDirectoryInfo.AllFileInfos(searchOption: SearchOption.AllDirectories)
             .GroupBy(f => new { f.Length, Hash = Crc32.Calculate(f) })
             .Where(g => g.Count() > 1)
             .ToArray();
-        
+
         foreach (var group in files)
         {
             var filesToDelete = group.Skip(1).ToList();
@@ -226,7 +224,7 @@ public class Mp3Files(
 
         if (files.Length == 0)
         {
-            Console.WriteLine($"No duplicate non-media files found...");
+            Console.WriteLine("No duplicate non-media files found...");
         }
 
         var mediaFiles = fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.AllDirectories).ToArray();
@@ -261,7 +259,7 @@ public class Mp3Files(
         var duplicateSongs = seenSongs.GroupBy(x => x.DuplicateHashCheck).Where(x => x.Count() > 1).ToArray();
         if (duplicateSongs.Any())
         {
-            foreach(var duplicateGroup in duplicateSongs)
+            foreach (var duplicateGroup in duplicateSongs)
             {
                 var bestSong = Common.Models.Song.IdentityBestAndMergeOthers(duplicateGroup.ToArray());
                 var duplicateSong = duplicateGroup.Where(x => x.Id != bestSong.Id).ToArray();
@@ -275,9 +273,10 @@ public class Mp3Files(
         }
         else
         {
-            Console.WriteLine($"No duplicate songs found...");
+            Console.WriteLine("No duplicate songs found...");
         }
-        Console.WriteLine($"Duplicate checking complete.");
+
+        Console.WriteLine("Duplicate checking complete.");
     }
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)

@@ -10,9 +10,10 @@ public static class ArtistDataInfoExtensions
         {
             return null;
         }
-        return $"data:image/jpeg;base64,{Convert.ToBase64String(artist.ImageBytes ?? defaultImages ?? [])}";   
-    }    
-    
+
+        return $"data:image/jpeg;base64,{Convert.ToBase64String(artist.ImageBytes ?? defaultImages ?? [])}";
+    }
+
     public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this ArtistDataInfo artist, string? libraryPath = null)
     {
         return new FileSystemDirectoryInfo
@@ -21,9 +22,11 @@ public static class ArtistDataInfoExtensions
             Name = artist.Directory
         };
     }
-    
+
     public static string DetailUrl(this ArtistDataInfo artistDataInfo)
-        => $"/data/artist/{artistDataInfo.ApiKey}";    
+    {
+        return $"/data/artist/{artistDataInfo.ApiKey}";
+    }
 
     public static string ImageUrl(this ArtistDataInfo artistDataInfo, int? size = null)
     {
@@ -31,6 +34,7 @@ public static class ArtistDataInfoExtensions
         {
             return artistDataInfo.ImageBase64()!;
         }
+
         return $"/images/{artistDataInfo.ToApiKey()}/{size ?? 80}";
     }
 

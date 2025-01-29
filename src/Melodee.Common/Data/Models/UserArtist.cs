@@ -17,9 +17,9 @@ public class UserArtist : DataModelBase
     public Artist Artist { get; set; } = null!;
 
     public bool IsStarred { get; set; }
-    
+
     /// <summary>
-    /// When true don't include in randomization's, the user hates it. 
+    ///     When true don't include in randomization's, the user hates it.
     /// </summary>
     public bool IsHated { get; set; }
 

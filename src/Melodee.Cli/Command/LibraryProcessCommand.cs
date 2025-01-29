@@ -66,8 +66,8 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
         {
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
-        }); 
-        
+        });
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -75,12 +75,12 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
             var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
             var melodeeConfigurationFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
             var bus = scope.ServiceProvider.GetRequiredService<IBus>();
-            
+
             var melodeeConfiguration = await melodeeConfigurationFactory.GetConfigurationAsync().ConfigureAwait(false);
             var imageValidator = new ImageValidator(melodeeConfiguration);
 
             var settingService = new SettingService(Log.Logger, cacheManager, melodeeConfigurationFactory, dbFactory);
-            
+
             var libraryService = new LibraryService(Log.Logger,
                 cacheManager,
                 dbFactory,

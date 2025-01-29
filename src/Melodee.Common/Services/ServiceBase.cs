@@ -25,7 +25,6 @@ using SixLabors.ImageSharp;
 using Artist = Melodee.Common.Models.Artist;
 using Directory = System.IO.Directory;
 
-
 namespace Melodee.Common.Services;
 
 public abstract class ServiceBase
@@ -34,6 +33,9 @@ public abstract class ServiceBase
 
     protected static TimeSpan DefaultCacheDuration = TimeSpan.FromDays(1);
 
+    /// <summary>
+    /// This is required for Mocking in unit tests.
+    /// </summary>
     protected ServiceBase()
     {
     }
@@ -48,9 +50,9 @@ public abstract class ServiceBase
         ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
     }
 
-    protected ILogger Logger { get; }
-    protected ICacheManager CacheManager { get; }
-    protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; }
+    protected ILogger Logger { get; } = null!;
+    protected ICacheManager CacheManager { get; } = null!;
+    protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = null!;
 
     protected async Task<AlbumUpdatedEvent?> ProcessExistingDirectoryMoveMergeAsync(IMelodeeConfiguration configuration, ISerializer serializer, Album albumToMove, string existingAlbumPath, CancellationToken cancellationToken = default)
     {
@@ -169,7 +171,6 @@ public abstract class ServiceBase
                         // existing song is better don't do anything
                         songsToMove.Remove(songToMove);
                     }
-                    
                 }
             }
 

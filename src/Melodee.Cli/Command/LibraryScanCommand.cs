@@ -56,8 +56,8 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
         {
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
-        }); 
-        
+        });
+
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -76,7 +76,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
             var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
 
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-            
+
             var settingService = new SettingService(Log.Logger, cacheManager, configFactory, dbFactory);
 
             var job = new LibraryInsertJob
