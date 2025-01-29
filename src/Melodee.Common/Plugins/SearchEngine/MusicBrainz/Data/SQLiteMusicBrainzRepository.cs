@@ -57,7 +57,7 @@ public class SQLiteMusicBrainzRepository(
         var data = new List<ArtistSearchResult>();
 
         var maxLuceneResults = 10;
-        long totalCount = 0;
+        int totalCount = 0;
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
         var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath) ?? throw new InvalidOperationException($"Invalid setting for [{SettingRegistry.SearchEngineMusicBrainzStoragePath}]");

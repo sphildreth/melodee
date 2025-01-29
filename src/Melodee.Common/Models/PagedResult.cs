@@ -9,7 +9,7 @@ public sealed record PagedResult<T> : OperationResult<IEnumerable<T>> where T : 
 
     public int CurrentPage { get; init; }
 
-    public long TotalCount { get; init; }
+    public int TotalCount { get; init; }
 
     public int TotalPages { get; init; }
 }

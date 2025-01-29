@@ -40,7 +40,7 @@
     <RadzenRow>
         <RadzenColumn Size="12">
             <div class="cover-search-images-container">
-                @if (_loading)
+                @if (_isLoading)
                 {
                     <RadzenProgressBarCircular
                         ProgressBarStyle="ProgressBarStyle.Primary"
@@ -77,7 +77,7 @@
 
 @code {
 
-    bool _loading = true;
+    bool _isLoading = true;
     int _maxResults = 10;
     bool _doDeleteExistingImages = true;
 
@@ -126,7 +126,7 @@
 
     private async Task DoSearchAsync()
     {
-        _loading = true;
+        _isLoading = true;
         try
         {
             if (SearchType == ImageSearchType.Artist)
@@ -159,7 +159,7 @@
         }
         finally
         {
-            _loading = false;
+            _isLoading = false;
             await InvokeAsync(StateHasChanged);
         }
     }

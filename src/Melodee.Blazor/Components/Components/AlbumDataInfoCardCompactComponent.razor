@@ -1,16 +1,13 @@
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
-<RadzenCard Variant="Variant.Filled"
-            class="rz-mx-auto rz-my-1 rz-p-1"
-            Style="max-width: 300px">
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Gap="5px" class="rz-p-1">
-        <RadzenImage Path="@Album.ImageUrl()" Style="width: 60px; height: 60px;margin-right: 5px;"/>
-        <RadzenStack Gap="0">
+<RadzenCard
+    Variant="Variant.Filled"
+    class="rz-mx-auto rz-my-1 rz-p-1">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Gap="2px" class="rz-p-1">
+        <RadzenImage Path="@Album.ImageUrl()" Style="width: 60px; height: 60px; margin-right: 5px;"/>
+        <RadzenStack>
             <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin:0;padding:0;">
                 <RadzenLink text="@Album.Name" class="rz-text-wrap" href="@Album.DetailUrl()"/>
-            </RadzenText>
-            <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin:0;padding:0;">
-                <RadzenLink text="@Album.ArtistName"  class="rz-text-wrap" href="@Album.ArtistDetailUrl()"/>
             </RadzenText>
             <RadzenText TextStyle="TextStyle.Overline" Style="margin:0;padding:0;">@AlbumDataInfo.InfoLineTitle</RadzenText>
             <RadzenText TextStyle="TextStyle.Body1" Style="margin:0;padding:0;">@Album.InfoLineData</RadzenText>

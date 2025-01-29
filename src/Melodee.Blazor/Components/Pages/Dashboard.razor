@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Melodee.Common.Enums
 @using Melodee.Common.Models.Collection
 @inherits MelodeeComponentBase
 
@@ -23,7 +24,7 @@
                     Wrap="FlexWrap.Wrap"
                     JustifyContent="JustifyContent.Left"
                     class="rz-p-2"
-                    Gap="2rem">
+                    Gap="8px">
                     @foreach (var statistic in _statistics)
                     {
                         <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
@@ -32,7 +33,14 @@
                                 @($"{statistic.Title}")
                             </div>
                             <div style="width:65px;display:inline-block;text-align:right;">
-                                @($"{((int)statistic.Data).ToStringPadLeft(PadLeftValue)}")
+                                @if (statistic.Type == StatisticType.Count)
+                                {
+                                    @($"{((int)statistic.Data).ToStringPadLeft(PadLeftValue)}")
+                                }
+                                else
+                                {
+                                    @statistic.Data
+                                }
                             </div>
                         </RadzenBadge>
                     }
@@ -52,8 +60,8 @@
                 Orientation="Orientation.Horizontal"
                 Wrap="FlexWrap.Wrap"
                 JustifyContent="JustifyContent.Left"
-                class="rz-p-2"
-                Gap="10px">
+                class="rz-p-1"
+                Gap="5px">
                 @foreach (var artist in _latestArtists)
                 {
                     <ArtistDataInfoCardComponent Artist="@artist"/>
@@ -73,8 +81,8 @@
                 Orientation="Orientation.Horizontal"
                 Wrap="FlexWrap.Wrap"
                 JustifyContent="JustifyContent.Left"
-                class="rz-p-2"
-                Gap="10px">
+                class="rz-p-1"
+                Gap="5px">
                 @foreach (var album in _latestAlbums)
                 {
                     <AlbumDataInfoCardComponent Album="@album"/>

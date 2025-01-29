@@ -11,7 +11,7 @@
 
 @attribute [AllowAnonymous]
 
-@if (_loading)
+@if (_isLoading)
 {
     <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false"
                                Mode="ProgressBarMode.Indeterminate"/>
@@ -49,7 +49,7 @@ else
 @code {
     private readonly string _userName = string.Empty;
     private readonly string _password = string.Empty;
-    private bool _loading = true;
+    private bool _isLoading = true;
 
     [SupplyParameterFromQuery] [Parameter] public string? ReturnUrl { get; set; }
 
@@ -91,13 +91,13 @@ else
             }
         }
 
-        _loading = false;
+        _isLoading = false;
         StateHasChanged();
     }
 
     private async Task OnLogin(LoginArgs args, string name)
     {
-        _loading = true;
+        _isLoading = true;
 
         try
         {
@@ -118,7 +118,7 @@ else
         }
         finally
         {
-            _loading = false;
+            _isLoading = false;
         }
     }
 

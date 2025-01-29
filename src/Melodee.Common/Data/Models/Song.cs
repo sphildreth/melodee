@@ -84,6 +84,9 @@ public class Song : MetaDataModelBase
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
     public string? PartTitles { get; set; }
 
+    /// <summary>
+    /// The length of the song in milliseconds
+    /// </summary>
     [RequiredGreaterThanZero] public required double Duration { get; set; }
 
     [RequiredGreaterThanZero] public required int SamplingRate { get; set; }

@@ -71,7 +71,7 @@ public class ArtistSearchEngineService(
         CheckInitialized();
 
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
-        long totalCount = 0;
+        int totalCount = 0;
         long operationTime = 0;
 
         var artistIdValue = artistId;
@@ -131,7 +131,7 @@ public class ArtistSearchEngineService(
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
 
         long operationTime = 0;
-        long totalCount = 0;
+        int totalCount = 0;
 
         using (Operation.At(LogEventLevel.Debug).Time("[{Name}] DoSearchAsync [{DirectoryInfo}]",
                    nameof(ArtistSearchEngineService), query))

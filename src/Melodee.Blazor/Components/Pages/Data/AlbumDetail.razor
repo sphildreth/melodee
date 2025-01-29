@@ -126,14 +126,40 @@
                             <CondensedStatistic Label="Status" StatisticStyle="@AlbumStatusStyle"
                                                 Statistic="@_album.AlbumStatusValue.ToString()"/>
                             <CondensedStatistic Label="Album Type" Statistic="@_album.AlbumTypeValue.ToString()"/>
-                            <CondensedStatistic Label="Amg Id" Statistic="@_album.AmgId"/>
-                            <CondensedStatistic Label="Discogs Id" Statistic="@_album.DiscogsId"/>
                             <CondensedStatistic Label="Genres" Statistic="@_album.Genres?.ToCsv()"/>
-                            <CondensedStatistic Label="ITunes Id" Statistic="@_album.ItunesId"/>
-                            <CondensedStatistic Label="LastFm Id" Statistic="@_album.LastFmId"/>
-                            <CondensedStatistic Label="MusicBrainz Id" Statistic="@_album.MusicBrainzId?.ToString()"/>
-                            <CondensedStatistic Label="Spotify Id" Statistic="@_album.SpotifyId"/>
-                            <CondensedStatistic Label="WikiData Id" Statistic="@_album.WikiDataId"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="link" class="rz-me-1"/>
+                            External Links
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
+                                            ThirdPartyIdType="ThirdPartyIdType.Amg" Id="@_album.AmgId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
+                                            ThirdPartyIdType="ThirdPartyIdType.Discogs" Id="@_album.DiscogsId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
+                                            ThirdPartyIdType="ThirdPartyIdType.ITunes" Id="@_album.ItunesId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
+                                            ThirdPartyIdType="ThirdPartyIdType.LastFm" Id="@_album.LastFmId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
+                                            ThirdPartyIdType="ThirdPartyIdType.Spotify" Id="@_album.SpotifyId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
+                                            ThirdPartyIdType="ThirdPartyIdType.MusicBrainz"
+                                            Id="@_album.MusicBrainzId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
+                                            ThirdPartyIdType="ThirdPartyIdType.WikiData"
+                                            Id="@_album.WikiDataId"/>
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>

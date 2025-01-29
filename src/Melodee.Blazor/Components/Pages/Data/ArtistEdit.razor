@@ -45,7 +45,7 @@
     </RadzenRow>
     <RadzenRow Gap="10px" RowGap="1rem" class="rz-m-0 rz-m-md-2">
         <RadzenColumn Size="12" SizeMD="4">
-            @if (_loading)
+            @if (_isLoading)
             {
                 <RadzenProgressBarCircular
                     ProgressBarStyle="ProgressBarStyle.Primary"
@@ -320,7 +320,7 @@
 
 @code {
 
-    bool _loading = true;
+    bool _isLoading = true;
 
     List<KeyValue> _musicBrainzArtists = [];
     List<Library> _libraries = [];
@@ -373,7 +373,7 @@
                 }
             }
 
-            _loading = false;
+            _isLoading = false;
         }
     }
 

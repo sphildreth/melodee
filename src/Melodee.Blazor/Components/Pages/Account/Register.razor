@@ -60,10 +60,10 @@
                                 </RadzenColumn>
                             </RadzenRow>
                             <RadzenRow>
-                                <RadzenProgressBar Visible="@_loading" Style="width:100px;"
+                                <RadzenProgressBar Visible="@_isLoading" Style="width:100px;"
                                                    ProgressBarStyle="ProgressBarStyle.Info" Value="100"
                                                    ShowValue="false" Mode="ProgressBarMode.Indeterminate"/>
-                                <RadzenButton Disabled="@(_loading)" ButtonType="ButtonType.Submit" Text="Register"
+                                <RadzenButton Disabled="@(_isLoading)" ButtonType="ButtonType.Submit" Text="Register"
                                               Style="width: 100%"/>
                             </RadzenRow>
                         </RadzenStack>
@@ -76,7 +76,7 @@
 
 @code {
 
-    bool _loading;
+    bool _isLoading;
     readonly ViewModels.Register _model = new();
 
     void ShowErrorMessage()
@@ -98,7 +98,7 @@
 
     async Task OnSubmit(ViewModels.Register model)
     {
-        _loading = true;
+        _isLoading = true;
         try
         {
             var result = await UserService.RegisterAsync(model.Username ?? string.Empty, model.EmailAddress ?? string.Empty, model.Password ?? string.Empty);
@@ -122,7 +122,7 @@
         }
         finally
         {
-            _loading = false;
+            _isLoading = false;
         }
 
         ShowErrorMessage();

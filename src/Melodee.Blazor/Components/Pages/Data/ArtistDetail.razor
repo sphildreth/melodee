@@ -128,7 +128,7 @@
                     <HeaderTemplate>
                         <RadzenText TextStyle="TextStyle.H6"
                                     class="rz-display-flex rz-align-items-center rz-m-0">
-                            <RadzenIcon Icon="info" class="rz-me-1"/>
+                            <RadzenIcon Icon="link" class="rz-me-1"/>
                             External Links
                         </RadzenText>
                     </HeaderTemplate>
@@ -151,6 +151,9 @@
                             <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist"
                                             ThirdPartyIdType="ThirdPartyIdType.MusicBrainz"
                                             Id="@_artist.MusicBrainzId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Artist"
+                                            ThirdPartyIdType="ThirdPartyIdType.WikiData"
+                                            Id="@_artist.WikiDataId"/>
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>
@@ -198,10 +201,27 @@
                                 </RadzenText>
                             </HeaderTemplate>
                             <ChildContent>
-                                @foreach (var album in _albums)
+                                @if (_isLoading)
                                 {
-                                    <AlbumDataInfoCardComponent Album="@album"/>
+                                    <RadzenProgressBarCircular
+                                        ProgressBarStyle="ProgressBarStyle.Primary"
+                                        Value="100"
+                                        ShowValue="false"
+                                        Mode="ProgressBarMode.Indeterminate"/>
                                 }
+                                @foreach (var album in _albums.OrderByDescending(x => x.ReleaseDate))
+                                {
+                                    <AlbumDataInfoCardCompactComponent Album="@album"/>
+                                }
+                                <RadzenPager
+                                    ShowPagingSummary="true"
+                                    PagingSummaryFormat="@PagingSummaryFormat"
+                                    HorizontalAlign="HorizontalAlign.Right"
+                                    Count="_totalAlbumCount"
+                                    PageSize="@((int)_pageSize)"
+                                    PageNumbersCount="5"
+                                    PageChanged="@PageChanged"/>
+
                             </ChildContent>
                         </RadzenPanel>
                     </RadzenColumn>
@@ -219,6 +239,10 @@
 
 
 @code {
+
+    private const string PagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
+
+    int _totalAlbumCount = 0;
 
     [Parameter] public Guid ApiKey { get; set; }
 
@@ -265,18 +289,38 @@
         CreatedAt = default
     };
 
-    readonly int? _currentPage = 1;
-    readonly short? _pageSize = 50;
+    bool _isLoading = true;
+    int? _currentPage = 1;
+    readonly short _pageSize = 50;
 
     readonly Dictionary<string, string> _orderBy = new()
     {
         { nameof(AlbumDataInfo.ReleaseDate), PagedRequest.OrderAscDirection }
     };
 
-    protected override async Task OnInitializedAsync()
+    async Task PageChanged(PagerEventArgs args)
     {
-        await base.OnInitializedAsync();
+        _currentPage = args.PageIndex + 1;
+        await LoadAlbums();
+    }
 
+    private async Task LoadAlbums()
+    {
+        _isLoading = true;
+        var albumListResult = await AlbumService.ListForArtistApiKeyAsync(new PagedRequest
+        {
+            Page = _currentPage,
+            PageSize = _pageSize,
+            OrderBy = _orderBy
+        }, _artist.ApiKey);
+
+        _albums = albumListResult.Data;
+        _totalAlbumCount = albumListResult.TotalCount;
+        _isLoading = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
         if (ApiKey != Guid.Empty)
         {
             var artistResult = await ArtistService.GetByApiKeyAsync(ApiKey);
@@ -290,13 +334,7 @@
                     ArtistId = 0,
                     CreatedAt = default
                 };
-
-                _albums = (await AlbumService.ListForArtistApiKeyAsync(new PagedRequest
-                {
-                    Page = _currentPage,
-                    PageSize = _pageSize,
-                    OrderBy = _orderBy
-                }, _artist.ApiKey)).Data ?? [];
+                await LoadAlbums();
             }
         }
     }
@@ -311,9 +349,9 @@
         }
     }
 
-    private Task EditButtonClick()
+    private void EditButtonClick()
     {
-        throw new NotImplementedException();
+        NavigationManager.NavigateTo($"/data/artistedit/{_artist.ApiKey}", true);
     }
 
     private Task UnlockButtonClick()

@@ -1,6 +1,8 @@
+using System.Globalization;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -148,8 +150,24 @@ public sealed class StatisticsService(
                     .ConfigureAwait(false),
                 null,
                 null,
-                12,
+                13,
                 "analytics"));
+            
+            results.Add(new Statistic(StatisticType.Information,
+                "Total: Song Mb",
+                (await scopedContext.Songs.SumAsync(x => x.FileSize, cancellationToken).ConfigureAwait(false)).FormatFileSize(),
+                null,
+                null,
+                14,
+                "bar_chart"));         
+
+            results.Add(new Statistic(StatisticType.Information,
+                "Total: Song Duration",
+                (await scopedContext.Songs.SumAsync(x => x.Duration, cancellationToken).ConfigureAwait(false)).ToDuration().ToString("D:hh:mm:ss", CultureInfo.InvariantCulture),
+                null,
+                null,
+                15,
+                "bar_chart"));              
         }
 
         return new OperationResult<Statistic[]>

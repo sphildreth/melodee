@@ -7,7 +7,7 @@
                 <img
                     class="icon"
                     asp-append-version="true"
-                    style="height:20px; width: auto;"
+                    style="height:auto; width: 20px; margin-right: 2px;"
                     src="@($"/icons/{_icon}")"
                     alt="@_icon"/>
                 <RadzenText TextStyle="TextStyle.Caption">@ThirdPartyIdType.ToString()</RadzenText>
@@ -61,6 +61,11 @@
 
     protected override void OnParametersSet()
     {
+        if (Id == null)
+        {
+            return;
+        }
+
         _url = ThirdPartyUrlForId(ThirdPartyIdType, MelodeeDataType, Id?.ToString());
         switch (ThirdPartyIdType)
         {
