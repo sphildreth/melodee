@@ -38,7 +38,7 @@ public class ArtistImageSearchEngineService(
 
         var searchEngines = new List<IArtistImageSearchEnginePlugin>
         {
-            new Spotify(Logger, configuration, serializer, settingService, httpClientFactory)
+            new Spotify(Logger, configuration, settingService)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             },

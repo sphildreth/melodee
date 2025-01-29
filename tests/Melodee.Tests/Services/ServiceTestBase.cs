@@ -137,12 +137,10 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         return new ArtistSearchEngineService(Logger,
             CacheManager,
-            Serializer,
             MockSettingService(),
             MockConfigurationFactory(),
             MockFactory(),
-            GetMusicBrainzRepository(),
-            MockHttpClientFactory());
+            GetMusicBrainzRepository());
     }
 
     protected ImageConvertor GetImageConvertor()

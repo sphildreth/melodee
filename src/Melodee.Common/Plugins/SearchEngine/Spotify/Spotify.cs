@@ -16,9 +16,7 @@ namespace Melodee.Common.Plugins.SearchEngine.Spotify;
 public class Spotify(
     ILogger logger,
     IMelodeeConfiguration configuration,
-    ISerializer serializer,
-    SettingService settingService,
-    IHttpClientFactory httpClientFactory)
+    SettingService settingService)
     : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin, IAlbumImageSearchEnginePlugin, IArtistImageSearchEnginePlugin
 {
     public bool StopProcessing { get; } = false;
@@ -66,7 +64,7 @@ public class Spotify(
             {
                 searchResult = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Artist, query.Name), cancellationToken);
             }
-            catch (APIUnauthorizedException e)
+            catch (APIUnauthorizedException)
             {
                 var request = new ClientCredentialsRequest(apiClientId, apiClientSecret);
                 var response = await new OAuthClient(config).RequestToken(request, cancellationToken);
@@ -156,7 +154,7 @@ public class Spotify(
             {
                 searchResult = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Album, query.Name), cancellationToken);
             }
-            catch (APIUnauthorizedException e)
+            catch (APIUnauthorizedException)
             {
                 var request = new ClientCredentialsRequest(apiClientId, apiClientSecret);
                 var response = await new OAuthClient(config).RequestToken(request, cancellationToken);
@@ -254,7 +252,7 @@ public class Spotify(
             {
                 searchResult = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Artist, query.Name), cancellationToken);
             }
-            catch (APIUnauthorizedException e)
+            catch (APIUnauthorizedException)
             {
                 var request = new ClientCredentialsRequest(apiClientId, apiClientSecret);
                 var response = await new OAuthClient(config).RequestToken(request, cancellationToken);

@@ -7,10 +7,7 @@ using Serilog;
 
 namespace Melodee.Common.MessageBus.EventHandlers;
 
-public sealed class AlbumUpdatedEventHandler(
-    ILogger logger,
-    ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory) : IHandleMessages<AlbumUpdatedEvent>
+public sealed class AlbumUpdatedEventHandler() : IHandleMessages<AlbumUpdatedEvent>
 {
 
     public Task Handle(AlbumUpdatedEvent message)

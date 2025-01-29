@@ -43,11 +43,11 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
             var artistSearchResult = await repository.SearchArtist(new ArtistQuery
             {
                 MusicBrainzId = query.ArtistMusicBrainzId,
-                Name = query.Artist,
-                AlbumMusicBrainzIds = query.MusicBrainzIdValue == null ? null : [query.MusicBrainzIdValue.Value],
+                Name = query?.Artist ?? string.Empty,
+                AlbumMusicBrainzIds = query?.MusicBrainzIdValue == null ? null : [query.MusicBrainzIdValue.Value],
                 AlbumKeyValues =
                 [
-                    new KeyValue(query.Year.ToString(), query.Name)
+                    new KeyValue(query?.Year.ToString() ?? string.Empty, query?.Name)
                 ]
             }, 1, cancellationToken).ConfigureAwait(false);
             if (artistSearchResult.IsSuccess)

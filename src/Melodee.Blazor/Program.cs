@@ -162,6 +162,7 @@ builder.Services.AddRebus((configurer, provider) =>
 builder.Services.AddRebusHandler<AlbumUpdatedEventHandler>();
 builder.Services.AddRebusHandler<SearchHistoryEventHandler>();
 builder.Services.AddRebusHandler<UserLoginEventHandler>();
+builder.Services.AddRebusHandler<UserStreamEventHandler>();
 
 var app = builder.Build();
 

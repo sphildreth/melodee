@@ -115,12 +115,10 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                     (
                         Log.Logger,
                         cacheManager,
-                        serializer,
                         settingService,
                         configFactory,
                         dbFactory,
-                        scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
-                        httpClientFactory
+                        scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>()
                     ),
                     new AlbumImageSearchEngineService
                     (

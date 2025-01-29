@@ -46,7 +46,7 @@ public class AlbumImageSearchEngineService(
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)
             },
-            new Spotify(Logger, configuration, serializer, settingService, httpClientFactory)
+            new Spotify(Logger, configuration, settingService)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             },            

@@ -48,6 +48,7 @@ public class SongTests
         var mergedSong = Song.IdentityBestAndMergeOthers([song, betterSong]);
         Assert.Equal(song.AlbumTitle(), mergedSong.AlbumTitle());
         Assert.Equal(999, mergedSong.MediaAudios?.First(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value);
+        Assert.NotNull(mergedSong.Tags);
         Assert.Contains(mergedSong.Tags, x => x.Identifier == MetaTagIdentifier.Publisher && x.Value as string == "Bobs Publishing");
     }
 }

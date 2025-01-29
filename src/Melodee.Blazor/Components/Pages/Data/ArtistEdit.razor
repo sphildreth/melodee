@@ -321,7 +321,7 @@
 @code {
 
     bool _loading = true;
-    int ToastTime;
+
     List<KeyValue> _musicBrainzArtists = [];
     List<Library> _libraries = [];
 
@@ -349,9 +349,6 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-
-        var configuration = await ConfigurationFactory.GetConfigurationAsync();
-        ToastTime = configuration.GetValue<int>(SettingRegistry.UserInterfaceToastAutoCloseTime);
 
         var storageLibrariesResult = await LibraryService.GetStorageLibrariesAsync();
         _libraries = storageLibrariesResult.Data.ToList();

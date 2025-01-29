@@ -229,7 +229,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                 MetaTagIdentifier.Genre
             };
 
-            var mediaFilesForFolder = fileInfo.Directory.ToDirectorySystemInfo().AllMediaTypeFileInfos().ToArray();
+            var mediaFilesForFolder = fileInfo.Directory?.ToDirectorySystemInfo().AllMediaTypeFileInfos().ToArray();
             
             foreach (var line in await File.ReadAllLinesAsync(fileInfo.FullName, cancellationToken))
             {

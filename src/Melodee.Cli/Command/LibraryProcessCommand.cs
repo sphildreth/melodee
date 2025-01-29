@@ -96,12 +96,10 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
             var artistSearchEngineService = new ArtistSearchEngineService(
                 Log.Logger,
                 cacheManager,
-                serializer,
                 settingService,
                 melodeeConfigurationFactory,
                 dbFactory,
-                musicBrainzRepository,
-                scope.ServiceProvider.GetRequiredService<IHttpClientFactory>());
+                musicBrainzRepository);
 
             var albumImageSearchEngineService = new AlbumImageSearchEngineService
             (

@@ -10,12 +10,11 @@ namespace Melodee.Common.MessageBus.EventHandlers;
 public sealed class SearchHistoryEventHandler
 (
     ILogger logger,
-    ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory) : IHandleMessages<SearchHistoryEvent>
 {
     public async Task Handle(SearchHistoryEvent eventData)
     {
-        Console.WriteLine($"[{nameof(SearchHistoryEventHandler)}]: {eventData}");        
+        logger.Debug("[{Name}]: {eventData}", nameof(SearchHistoryEventHandler), eventData);        
         await using (var scopedContext = await contextFactory.CreateDbContextAsync().ConfigureAwait(false))
         {
             var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.ApiKey == eventData.ByUserApiKey);

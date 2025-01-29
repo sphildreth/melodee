@@ -19,6 +19,8 @@ public class NfoTests : TestsBase
             Assert.NotNull(nfoParserResult);
             Assert.Equal(3, nfoParserResult.Songs?.Count());
             var dir = fileInfo.Directory?.ToDirectorySystemInfo();
+            Assert.NotNull(dir);
+            Assert.NotNull(nfoParserResult.Songs);
             Assert.DoesNotContain(nfoParserResult.Songs, x => !x.File.Exists(dir));
             
         }
@@ -36,6 +38,8 @@ public class NfoTests : TestsBase
             Assert.NotNull(nfoParserResult);
             Assert.Equal(3, nfoParserResult.Songs?.Count());
             var dir = fileInfo.Directory?.ToDirectorySystemInfo();
+            Assert.NotNull(dir);
+            Assert.NotNull(nfoParserResult.Songs);
             Assert.DoesNotContain(nfoParserResult.Songs, x => !x.File.Exists(dir));
         }
     }    

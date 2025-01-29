@@ -8,9 +8,7 @@ using Serilog;
 namespace Melodee.Common.MessageBus.EventHandlers;
 
 public sealed class UserStreamEventHandler(
-    ILogger logger,     
-    IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMelodeeConfigurationFactory configurationFactory)  : IHandleMessages<UserStreamEvent>
+    ILogger logger)  : IHandleMessages<UserStreamEvent>
 {
     public Task Handle(UserStreamEvent message)
     {

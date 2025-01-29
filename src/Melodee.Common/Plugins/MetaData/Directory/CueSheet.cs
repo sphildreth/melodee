@@ -153,14 +153,17 @@ public sealed class CueSheet(
                                 fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
                                 fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
                                 fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.Nfo.HandlesExtension);
-                                File.Delete(cueFile.FullName);
-                                var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
-                                if (cueFileMediaFile.Exists)
+                                if (cueFile != null)
                                 {
-                                    cueFileMediaFile.Delete();
+                                    File.Delete(cueFile.FullName);
+                                    var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
+                                    if (cueFileMediaFile.Exists)
+                                    {
+                                        cueFileMediaFile.Delete();
+                                    }
                                 }
                             }
-                            else if (convertedExtension.Nullify() != null)
+                            else if (convertedExtension.Nullify() != null && cueFile != null)
                             {
                                 var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{convertedExtension}");
                                 cueFile.MoveTo(movedFileName);

@@ -7,7 +7,6 @@ using Melodee.Common.Plugins.SearchEngine;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
-using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -19,15 +18,12 @@ namespace Melodee.Common.Services.SearchEngines;
 public class ArtistSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
-    ISerializer serializer,
     SettingService settingService,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMusicBrainzRepository musicBrainzRepository,
-    IHttpClientFactory httpClientFactory)
+    IMusicBrainzRepository musicBrainzRepository)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private readonly ISerializer _serializer = serializer;
     private IArtistSearchEnginePlugin[] _artistSearchEnginePlugins = [];
     private IArtistTopSongsSearchEnginePlugin[] _artistTopSongsSearchEnginePlugins = [];
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
@@ -44,7 +40,7 @@ public class ArtistSearchEngineService(
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
             },
-            new Spotify(Log.Logger, _configuration, _serializer, settingService, httpClientFactory)
+            new Spotify(Log.Logger, _configuration, settingService)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             }
@@ -53,7 +49,7 @@ public class ArtistSearchEngineService(
         _artistTopSongsSearchEnginePlugins =
         [
             new MelodeeArtistSearchEnginPlugin(ContextFactory),
-            new Spotify(Log.Logger, _configuration, _serializer, settingService, httpClientFactory)
+            new Spotify(Log.Logger, _configuration, settingService)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             }
@@ -85,7 +81,7 @@ public class ArtistSearchEngineService(
             artistIdValue = searchResult.Data.FirstOrDefault(x => x.Id != null)?.Id;
         }
 
-        if (artistId == null)
+        if (artistIdValue == null)
         {
             return new PagedResult<SongSearchResult>([$"No artist found for [{artistName}]"])
             {
@@ -102,7 +98,7 @@ public class ArtistSearchEngineService(
                 break;
             }
 
-            var pluginResult = await plugin.DoArtistTopSongsSearchAsync(artistId.Value, maxResultsValue, cancellationToken).ConfigureAwait(false);
+            var pluginResult = await plugin.DoArtistTopSongsSearchAsync(artistIdValue.Value, maxResultsValue, cancellationToken).ConfigureAwait(false);
             if (pluginResult is { IsSuccess: true, Data: not null })
             {
                 result.AddRange(pluginResult.Data);
