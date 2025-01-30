@@ -216,7 +216,7 @@
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    @foreach (var song in _album.Discs.OrderBy(x => x.DiscNumber).SelectMany(x => x.Songs).OrderBy(x => x.SongNumber))
+                                    @foreach (var song in _album.Discs.SelectMany(x => x.Songs).OrderBy(x => x.AlbumDisc.DiscNumber).ThenBy(x => x.SongNumber))
                                     {
                                         <tr>
                                             <th scope="row">

@@ -383,6 +383,13 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             }
         }
 
+        var songMediaTotalNumber = mediaNumbers.Max();
+        if (songMediaTotalNumber > 1)
+        {
+            // If the maximum media number is more than one, then ensure the part (TPA) (e.g. 1/2 or 1/3) is set on all. 
+            result = songs.All(x => x.MediaTotalNumber() == songMediaTotalNumber);
+        }
+
         if (!result)
         {
             _validationMessages.Add(new ValidationResultMessage
