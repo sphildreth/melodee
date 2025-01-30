@@ -35,9 +35,13 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenButton Icon="cell_merge" Disabled="_selectedAlbums.Count < 2" Text="Merge"
-                              Click="@MergeSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
+                              Click="@MergeSelectedButtonClick"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Warning"/>
                 <RadzenButton Icon="delete" Disabled="!_selectedAlbums.Any()" Text="Delete"
-                              Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
+                              Click="@DeleteSelectedButtonClick"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>

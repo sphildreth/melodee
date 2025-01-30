@@ -28,7 +28,8 @@ public static class ArtistExtensions
             albumCount ?? 0,
             songCount ?? 0,
             createdAt != null ? Instant.FromDateTimeOffset(createdAt.Value) : Instant.MinValue,
-            string.Empty);
+            string.Empty,
+            null);
     }
 
     public static KeyValue ToKeyValue(this Artist artist)

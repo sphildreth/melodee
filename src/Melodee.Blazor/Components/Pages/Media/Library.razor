@@ -39,16 +39,26 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenButton Icon="mop" Visible="!_library.IsLocked" Text="Clean"
-                              title="Clean this libraries folder." Click="@CleanButtonClick"/>
+                              title="Clean this libraries folder."
+                              Size="ButtonSize.Small"
+                              Click="@CleanButtonClick"/>
                 <RadzenButton Icon="memory" Visible="!_library.IsLocked" Text="Process"
-                              title="Run process job on this library." Click="@ProcessButtonClick"/>
+                              title="Run process job on this library."
+                              Size="ButtonSize.Small"
+                              Click="@ProcessButtonClick"/>
                 <RadzenButton Icon="move_group" Visible="!_library.IsLocked" Text="Move Ok"
-                              title="Move Ok to Library." Click="@MoveOkButtonClick"/>
+                              title="Move Ok to Library."
+                              Size="ButtonSize.Small"
+                              Click="@MoveOkButtonClick"/>
                 <RadzenButton Icon="delete" Disabled="!_selectedAlbums.Any()" Text="Delete"
-                              Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
+                              Click="@DeleteSelectedButtonClick"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Warning"/>
                 <RadzenButton Icon="delete_sweep" Text="Delete not Ok"
                               title="Delete all not Ok status albums in library."
-                              Click="@DeleteNotOkSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
+                              Click="@DeleteNotOkSelectedButtonClick"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>

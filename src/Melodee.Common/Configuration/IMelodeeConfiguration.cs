@@ -6,7 +6,9 @@ public interface IMelodeeConfiguration
 {
     Dictionary<string, object?> Configuration { get; }
 
-    string GetBuildImageUrl(string apiKey, ImageSize imageSize);
+    string GenerateImageUrl(string apiKey, ImageSize imageSize);
+
+    string GenerateWebSearchUrl(object[] searchTerms);
 
     T? GetValue<T>(string key, Func<T?, T>? returnValue = null);
 

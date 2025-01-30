@@ -13,6 +13,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 
 <PageTitle>@_album.Name</PageTitle>
 
@@ -47,31 +48,58 @@
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="@_album.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+            <RadzenText Text="@($"[{_album.ReleaseDate.Year}] {_album.Name}")" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
         </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+        <RadzenColumn Size="12" SizeMD="6">
             <RadzenStack
                 Orientation="Orientation.Horizontal"
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
+                <RadzenSplitButton Click=@OnInternetSearchClick
+                                   icon="public"
+                                   title="Search the web for album"
+                                   Size="ButtonSize.Small"
+                                   Text="Web Search">
+                    <ChildContent>
+                        <RadzenSplitButtonItem Text="Album" Value="1" />
+                        <RadzenSplitButtonItem Text="Year + Album" Value="2" />
+                        <RadzenSplitButtonItem Text="Album + Artist" Value="3" />
+                    </ChildContent>
+                </RadzenSplitButton>
                 <RadzenButton
                     Icon="edit"
+                    Visible="CurrentUser?.IsEditor() ?? false"
                     ButtonStyle="ButtonStyle.Info"
                     Text="Edit" title="Edit the album"
+                    Size="ButtonSize.Small"
                     Click="@EditButtonClick"/>
                 @if (_album.IsLocked)
                 {
-                    <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning"
-                                  title="Unlock library, will allow modifications." Click="@UnlockButtonClick"/>
+                    <RadzenButton Icon="lock_open"
+                                  Text="Unlock"
+                                  ButtonStyle="ButtonStyle.Warning"
+                                  Visible="CurrentUser?.IsEditor() ?? false"
+                                  title="Unlock library, will allow modifications."
+                                  Size="ButtonSize.Small"
+                                  Click="@UnlockButtonClick"/>
                 }
                 else
                 {
-                    <RadzenButton Icon="lock" Text="Lock" ButtonStyle="ButtonStyle.Warning"
-                                  title="Lock library, will prevent modifications." Click="@LockButtonClick"/>
+                    <RadzenButton Icon="lock"
+                                  Text="Lock"
+                                  ButtonStyle="ButtonStyle.Warning"
+                                  Visible="CurrentUser?.IsEditor() ?? false"
+                                  title="Lock library, will prevent modifications."
+                                  Size="ButtonSize.Small"
+                                  Click="@LockButtonClick"/>
                 }
-                <RadzenButton Icon="delete" Visible="!_album.IsLocked" ButtonStyle="ButtonStyle.Danger"
-                              Text="Delete" title="Delete the album and all album files. BEWARE!"
+                <RadzenButton Icon="delete"
+                              Visible="@((CurrentUser?.IsEditor() ?? false) && !_album.IsLocked)"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Text="Delete"
+                              title="Delete the album and all album files. BEWARE!"
+                              Size="ButtonSize.Small"
                               Click="@DeleteButtonClick"/>
             </RadzenStack>
         </RadzenColumn>
@@ -465,6 +493,40 @@
 
         var result = await UserService.ToggleSongHatedAsync(CurrentUsersId, song.ApiKey, userSong.IsStarred);
         NotificationService.Notify(NotificationMessageForResult(result, "Toggling Song Hatred", ToastTime));
+    }
+
+    private async Task OnInternetSearchClick(RadzenSplitButtonItem? arg)
+    {
+        var searchTerms = new List<object>();
+        if (arg == null)
+        {
+            searchTerms.Add(_album.Artist.Name);
+            searchTerms.Add(_album.ReleaseDate.Year);
+            searchTerms.Add(_album.Name);
+        }
+        else
+        {
+            searchTerms.Clear();
+            switch (arg.Value)
+            {
+                case "3":
+                    searchTerms.Add(_album.Name);
+                    searchTerms.Add(_album.Artist.Name);
+                    break;
+
+                case "2":
+                    searchTerms.Clear();
+                    searchTerms.Add(_album.ReleaseDate.Year);
+                    searchTerms.Add(_album.Name);
+                    break;
+
+                default:
+                    searchTerms.Clear();
+                    searchTerms.Add(_album.Name);
+                    break;
+            }
+        }
+        await JsRuntime.InvokeVoidAsync("openInNewTab", Configuration.GenerateWebSearchUrl(searchTerms.ToArray()));
     }
 
 }

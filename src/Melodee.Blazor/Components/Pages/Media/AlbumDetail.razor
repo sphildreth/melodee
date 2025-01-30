@@ -39,15 +39,20 @@
                     Icon="edit"
                     ButtonStyle="ButtonStyle.Info"
                     Text="Edit" title="Edit the album"
+                    Size="ButtonSize.Small"
                     Click="@EditButtonClick"/>
                 <RadzenButton
                     Icon="move_group"
                     Text="Move to Library"
-                    title="Move to Library." Click="@MoveButtonClick"/>
+                    title="Move to Library."
+                    Size="ButtonSize.Small"
+                    Click="@MoveButtonClick"/>
                 <RadzenButton
                     Icon="delete"
                     ButtonStyle="ButtonStyle.Danger"
-                    Text="Delete" title="Delete the album and all album files. BEWARE!"
+                    Text="Delete"
+                    title="Delete the album and all album files. BEWARE!"
+                    Size="ButtonSize.Small"
                     Click="@DeleteButtonClick"/>
             </RadzenStack>
         </RadzenColumn>

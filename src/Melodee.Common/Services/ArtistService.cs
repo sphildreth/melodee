@@ -51,7 +51,7 @@ public class ArtistService(
             {
                 var sqlStartFragment = """
                                        SELECT a."Id", a."ApiKey", a."IsLocked", a."LibraryId", l."Path" as "LibraryPath", a."Name", a."NameNormalized", a."AlternateNames",
-                                              a."Directory", a."AlbumCount", a."SongCount", a."CreatedAt", a."Tags"
+                                              a."Directory", a."AlbumCount", a."SongCount", a."CreatedAt", a."Tags", a."LastUpdatedAt"
                                        FROM "Artists" a
                                        JOIN "Libraries" l ON (a."LibraryId" = l."Id") 
                                        """;

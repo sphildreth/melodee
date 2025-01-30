@@ -31,7 +31,9 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenButton Icon="delete" Disabled="!_selectedSongs.Any()" Text="Delete"
-                              Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
+                              Click="@DeleteSelectedButtonClick"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>

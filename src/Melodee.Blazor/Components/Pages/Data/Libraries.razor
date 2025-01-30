@@ -31,9 +31,13 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
-                <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick"/>
+                <RadzenButton Icon="add_circle_outline" Text="Add"
+                              Size="ButtonSize.Small"
+                              Click="@AddButtonClick"/>
                 <RadzenButton Icon="delete" Disabled="!_selectedLibraries.Any()" Text="Delete"
-                              Click="@DeleteSelectedButtonClick" ButtonStyle="ButtonStyle.Warning"/>
+                              Click="@DeleteSelectedButtonClick"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>

@@ -16,7 +16,8 @@ public sealed record ArtistDataInfo(
     int AlbumCount,
     int SongCount,
     Instant CreatedAt,
-    string Tags)
+    string Tags,
+    Instant? LastUpdatedAt)
 {
     public object? State { get; set; }
 
@@ -42,5 +43,6 @@ public sealed record ArtistDataInfo(
             0,
             0,
             Instant.MinValue,
-            string.Empty);
+            string.Empty,
+            null);
 }

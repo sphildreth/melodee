@@ -2009,7 +2009,7 @@ public class OpenSubsonicApiService(
                         info.UserRatingValue,
                         info.CalculatedRating,
                         info.CoverArt,
-                        configuration.GetBuildImageUrl(info.CoverArt, ImageSize.Large),
+                        configuration.GenerateImageUrl(info.CoverArt, ImageSize.Large),
                         info.UserStarred?.ToString()));
                 }
 
@@ -2099,7 +2099,7 @@ public class OpenSubsonicApiService(
                     artistInfo.UserRating,
                     artistInfo.CalculatedRating,
                     artistInfo.CoverArt,
-                    configuration.GetBuildImageUrl(id, ImageSize.Large),
+                    configuration.GenerateImageUrl(id, ImageSize.Large),
                     artistInfo.UserStarred?.ToString(),
                     await AlbumListForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false));
             }
@@ -2668,9 +2668,9 @@ public class OpenSubsonicApiService(
 
                 data = new ArtistInfo(artist.ToApiKey(),
                     artist.Name,
-                    configuration.GetBuildImageUrl(id, ImageSize.Thumbnail),
-                    configuration.GetBuildImageUrl(id, ImageSize.Medium),
-                    configuration.GetBuildImageUrl(id, ImageSize.Large),
+                    configuration.GenerateImageUrl(id, ImageSize.Thumbnail),
+                    configuration.GenerateImageUrl(id, ImageSize.Medium),
+                    configuration.GenerateImageUrl(id, ImageSize.Large),
                     artist.SongCount,
                     artist.AlbumCount,
                     artist.Biography,
@@ -2712,9 +2712,9 @@ public class OpenSubsonicApiService(
 
                 data = new AlbumInfo(album.ToApiKey(),
                     album.Name,
-                    configuration.GetBuildImageUrl(id, ImageSize.Thumbnail),
-                    configuration.GetBuildImageUrl(id, ImageSize.Medium),
-                    configuration.GetBuildImageUrl(id, ImageSize.Large),
+                    configuration.GenerateImageUrl(id, ImageSize.Thumbnail),
+                    configuration.GenerateImageUrl(id, ImageSize.Medium),
+                    configuration.GenerateImageUrl(id, ImageSize.Large),
                     album.SongCount,
                     1,
                     album.Notes,

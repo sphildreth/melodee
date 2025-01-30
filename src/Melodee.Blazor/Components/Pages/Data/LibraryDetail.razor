@@ -44,25 +44,36 @@
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
                 <RadzenButton Icon="mop" Text="Clean" Visible="!_library.IsLocked"
-                              title="Clean library, removing any empty folders." Click="@CleanButtonClick"/>
+                              title="Clean library, removing any empty folders."
+                              Size="ButtonSize.Small"
+                              Click="@CleanButtonClick"/>
                 <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Text="Edit" title="Edit the library"
+                              Size="ButtonSize.Small"
                               Click="@EditButtonClick"/>
                 @if (_library.IsLocked)
                 {
                     <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning"
-                                  title="Unlock library, will allow modifications." Click="@UnlockButtonClick"/>
+                                  title="Unlock library, will allow modifications."
+                                  Size="ButtonSize.Small"
+                                  Click="@UnlockButtonClick"/>
                 }
                 else
                 {
                     <RadzenButton Icon="lock" Text="Lock" ButtonStyle="ButtonStyle.Warning"
-                                  title="Lock library, will prevent modifications." Click="@LockButtonClick"/>
+                                  title="Lock library, will prevent modifications."
+                                  Size="ButtonSize.Small"
+                                  Click="@LockButtonClick"/>
                 }
                 <RadzenButton Icon="delete_sweep" Visible="!_library.IsLocked" ButtonStyle="ButtonStyle.Danger"
-                              Text="Purge" title="Delete everything in the library. BEWARE!" Click="@PurgeButtonClick"/>
+                              Text="Purge" title="Delete everything in the library. BEWARE!"
+                              Size="ButtonSize.Small"
+                              Click="@PurgeButtonClick"/>
                 @if (_library.TypeValue != LibraryType.Storage)
                 {
                     <RadzenSplitButton Icon="memory" title="Process media files into Melodee media json file."
-                                       Click="@ProcessButtonClick" Text="Process" ButtonStyle="ButtonStyle.Secondary">
+                                       Click="@ProcessButtonClick" Text="Process"
+                                       Size="ButtonSize.Small"
+                                       ButtonStyle="ButtonStyle.Secondary">
                         <ChildContent>
                             <RadzenSplitButtonItem Text="Force" Value="2"/>
                         </ChildContent>
@@ -72,6 +83,7 @@
                 {
                     <RadzenButton Icon="database" Text="Scan" ButtonStyle="ButtonStyle.Warning"
                                   title="Scan Melodee media json files and update database data."
+                                  Size="ButtonSize.Small"
                                   Click="@ScanButtonClick"/>
                 }
             </RadzenStack>

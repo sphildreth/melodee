@@ -44,7 +44,9 @@
                     </RadzenRow>
                 </RadzenColumn>
                 <RadzenColumn Size="12" SizeLG="2" class="rz-p-4">
-                    <RadzenButton Text="Run now" Style="width: 100%" Click="@(_ => RunJob(jobStatus))"/>
+                    <RadzenButton Text="Run now" Style="width: 100%"
+                                  Size="ButtonSize.Small"
+                                  Click="@(_ => RunJob(jobStatus))"/>
                 </RadzenColumn>
             </RadzenRow>
         </RadzenCard>

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Web;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -47,8 +48,13 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         return input.Nullify();
     }
 
+    public string GenerateWebSearchUrl(object[] searchTerms)
+    {
+        var term = HttpUtility.UrlEncode(string.Join(" ", searchTerms));
+        return $"https://www.google.com/search?q={term}";
+    }
 
-    public string GetBuildImageUrl(string apiKey, ImageSize imageSize)
+    public string GenerateImageUrl(string apiKey, ImageSize imageSize)
     {
         var baseUrl = GetValue<string>(SettingRegistry.SystemBaseUrl);
         if (baseUrl.Nullify() == null || baseUrl == RequiredNotSetValue)

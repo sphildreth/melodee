@@ -23,7 +23,8 @@ public static class ArtistExtensions
             artist.AlbumCount,
             artist.SongCount,
             artist.CreatedAt,
-            string.Empty);
+            string.Empty,
+            null);
     }
 
     public static Common.Models.Artist ToMelodeeArtistModel(this Artist artist)

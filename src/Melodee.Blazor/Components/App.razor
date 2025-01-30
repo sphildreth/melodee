@@ -20,6 +20,9 @@
     window.getUserAgent = () => {
         return navigator.userAgent;
     };
+    function openInNewTab(url) {
+        window.open(url, '_blank');
+    }
 </script>
 <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Colors).Assembly.GetName().Version)"></script>
 </body>
