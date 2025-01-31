@@ -162,16 +162,58 @@ public class ArtistService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
-            id = await dbConn
-                .QuerySingleOrDefaultAsync<int?>("""
-                                                 select a."Id"
-                                                 from "Artists" a 
-                                                 where a."Id" = @id
-                                                 or a."ApiKey" = @apiKey
-                                                 or a."MusicBrainzId" = @musicBrainzId   
-                                                 or a."NameNormalized" = @name
-                                                 """, new { id = byId, apiKey = byApiKey, name = byName, musicBrainzId = byMusicBrainzId })
-                .ConfigureAwait(false);
+            try
+            {
+                string sql = string.Empty;
+
+                if (byId.HasValue)
+                {
+                    sql = """
+                          select a."Id"
+                          from "Artists" a 
+                          where a."Id" = @id
+                         """;
+                    id = await dbConn
+                        .QuerySingleOrDefaultAsync<int?>(sql, new { id = byId })
+                        .ConfigureAwait(false);                    
+                }
+                
+                if (id == null && byApiKey != Guid.Empty)
+                {
+                    sql = """
+                           select a."Id"
+                           from "Artists" a 
+                           where a."ApiKey" = @apiKey
+                          """;
+                    id = await dbConn
+                        .QuerySingleOrDefaultAsync<int?>(sql, new { apiKey = byApiKey })
+                        .ConfigureAwait(false);                    
+                }
+
+                if (id == null)
+                {
+                    sql = """
+                              select a."Id"
+                              from "Artists" a 
+                              where a."MusicBrainzId" = @musicBrainzId   
+                              or a."NameNormalized" = @name
+                              """;
+                    id = await dbConn
+                        .QuerySingleOrDefaultAsync<int?>(sql, new { name = byName, musicBrainzId = byMusicBrainzId })
+                        .ConfigureAwait(false);                     
+                }
+
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "[{ServiceName}] attempting to Find Artist id [{Id}], apiKey [{ApiKey}], name [{Name}] musicbrainzId [{MbId}]",
+                    nameof(ArtistService),
+                    byId,
+                    byApiKey,
+                    byName,
+                    byMusicBrainzId);
+                throw;
+            }            
         }
 
         if (id == null)

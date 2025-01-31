@@ -400,7 +400,8 @@ public class LibraryInsertJob(
                     if (dbArtist == null)
                     {
                         Logger.Warning(
-                            "Unable to find artist [{ArtistUniqueId}] nameNormalized [{NameNormalized}] musicBrainzId [{MbId}] artist for album [{AlbumUniqueId}].",
+                            "Unable to find artist by id [{ArtistDbId}] apikey [{ApiKey}] nameNormalized [{NameNormalized}] musicBrainzId [{MbId}] artist for album [{AlbumUniqueId}].",
+                            melodeeAlbum.Artist.ArtistDbId,
                             melodeeAlbum.Artist.Id,
                             artistNormalizedName,
                             melodeeAlbum.Artist.MusicBrainzId,
@@ -637,28 +638,13 @@ public class LibraryInsertJob(
                 foreach (var artist in artists)
                 {
                     currentArtist = artist;
-                    var dbArtistResult = await artistService.GetByApiKeyAsync(artist.Id, cancellationToken).ConfigureAwait(false);
-                    if (!dbArtistResult.IsSuccess)
-                    {
-                        var artistMusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId);
-                        if (artistMusicBrainzId != null)
-                        {
-                            dbArtistResult = await artistService.GetByMusicBrainzIdAsync(artistMusicBrainzId.Value, cancellationToken).ConfigureAwait(false);
-                        }
-
-                        if (!dbArtistResult.IsSuccess)
-                        {
-                            dbArtistResult = await artistService.GetByNameNormalized(artist.NameNormalized, cancellationToken).ConfigureAwait(false);
-                        }
-                    }
-
-                    var dbArtist = dbArtistResult.Data;
+                    var dbArtistResult = await artistService.FindArtistAsync(artist.ArtistDbId, artist.Id, artist.NameNormalized, artist.MusicBrainzId, cancellationToken).ConfigureAwait(false);
+                    var dbArtistId = dbArtistResult.Data?.Id;
+                    var dbArtist = dbArtistId == null ? null : await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistId, cancellationToken).ConfigureAwait(false);
                     if (!dbArtistResult.IsSuccess || dbArtist == null)
                     {
-                        Logger.Debug("[{JobName}] Creating new artist for Id [{Id}] MusicbrainzId [{MusicBrainzId}] NormalizedName [{Name}]",
+                        Logger.Debug("[{JobName}] Creating new artist for NormalizedName [{Name}]",
                             nameof(LibraryInsertJob),
-                            artist.Id,
-                            artist.MusicBrainzId,
                             artist.NameNormalized);
                         var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
                         dbArtistsToAdd.Add(new dbModels.Artist
