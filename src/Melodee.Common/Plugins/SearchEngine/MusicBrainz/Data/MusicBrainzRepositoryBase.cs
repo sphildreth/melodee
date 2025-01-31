@@ -47,20 +47,18 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
     public abstract Task<PagedResult<ArtistSearchResult>> SearchArtist(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default);
     public abstract Task<OperationResult<bool>> ImportData(CancellationToken cancellationToken = default);
 
-    protected static async Task<T[]> LoadDataFromFileAsync<T>(string file, Func<string[], T> constructor, CancellationToken cancellationToken = default) where T : notnull
+    protected static T[] LoadDataFromFileAsync<T>(string file, Func<string[], T> constructor, CancellationToken cancellationToken = default) where T : notnull
     {
         if (!File.Exists(file))
         {
             return [];
         }
-
-        var result = new List<T>();
-        await foreach (var lineFromFile in File.ReadLinesAsync(file, cancellationToken))
+        var result = new ConcurrentBag<T>();
+        Parallel.ForEach(File.ReadLines(file), lineFromFile =>
         {
             var parts = lineFromFile.Split('\t');
             result.Add(constructor(parts));
-        }
-
+        });
         return result.ToArray();
     }
 
@@ -82,55 +80,55 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artists"))
         {
-            LoadedArtists = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist"), parts => new Models.Artist
+            LoadedArtists = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist"), parts => new Models.Artist
             {
                 Id = SafeParser.ToNumber<long>(parts[0]),
                 MusicBrainzId = SafeParser.ToGuid(parts[1]) ?? Guid.Empty,
                 Name = parts[2].CleanString().TruncateLongString(MaxIndexSize)!,
                 NameNormalized = parts[2].CleanString().TruncateLongString(MaxIndexSize)!.ToNormalizedString() ?? parts[2],
                 SortName = parts[3].CleanString(true).TruncateLongString(MaxIndexSize) ?? parts[2]
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist_credit"))
         {
-            LoadedArtistCredits = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist_credit"), parts => new ArtistCredit
+            LoadedArtistCredits = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist_credit"), parts => new ArtistCredit
             {
                 Id = SafeParser.ToNumber<long>(parts[0]),
                 ArtistCount = SafeParser.ToNumber<int>(parts[2]),
                 Name = parts[1],
                 RefCount = SafeParser.ToNumber<int>(parts[3]),
                 Gid = SafeParser.ToGuid(parts[6]) ?? Guid.Empty
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist_credit_name"))
         {
-            LoadedArtistCreditNames = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist_credit_name"), parts => new ArtistCreditName
+            LoadedArtistCreditNames = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist_credit_name"), parts => new ArtistCreditName
             {
                 ArtistCreditId = SafeParser.ToNumber<long>(parts[0]),
                 Position = SafeParser.ToNumber<int>(parts[1]),
                 ArtistId = SafeParser.ToNumber<long>(parts[2]),
                 Name = parts[3]
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist_alias"))
         {
-            LoadedArtistAliases = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist_alias"), parts => new ArtistAlias
+            LoadedArtistAliases = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/artist_alias"), parts => new ArtistAlias
             {
                 Id = SafeParser.ToNumber<long>(parts[0]),
                 ArtistId = SafeParser.ToNumber<long>(parts[1]),
                 Name = parts[2],
                 Type = SafeParser.ToNumber<int>(parts[6]),
                 SortName = parts[7]
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded link_type"))
         {
-            LoadedLinkTypes = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link_type"), parts => new LinkType
+            LoadedLinkTypes = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link_type"), parts => new LinkType
             {
                 Id = SafeParser.ToNumber<long>(parts[0]),
                 ParentId = SafeParser.ToNumber<long>(parts[1]),
@@ -145,12 +143,12 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                 HasDates = SafeParser.ToBoolean(parts[13]),
                 Entity0Cardinality = SafeParser.ToNumber<int>(parts[14]),
                 Entity1Cardinality = SafeParser.ToNumber<int>(parts[15])
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded link"))
         {
-            LoadedLinks = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link"), parts => new Link
+            LoadedLinks = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/link"), parts => new Link
             {
                 Id = SafeParser.ToNumber<long>(parts[0]),
                 LinkTypeId = SafeParser.ToNumber<long>(parts[1]),
@@ -161,12 +159,12 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                 EndDateMonth = SafeParser.ToNumber<int?>(parts[6]),
                 EndDateDay = SafeParser.ToNumber<int?>(parts[7]),
                 IsEnded = SafeParser.ToBoolean(parts[10])
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded artist link"))
         {
-            LoadedLinkArtistToArtists = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/l_artist_artist"), parts => new LinkArtistToArtist
+            LoadedLinkArtistToArtists = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/l_artist_artist"), parts => new LinkArtistToArtist
             {
                 Id = SafeParser.ToNumber<long>(parts[0]),
                 LinkId = SafeParser.ToNumber<long>(parts[1]),
@@ -175,13 +173,13 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                 LinkOrder = SafeParser.ToNumber<int>(parts[6]),
                 Artist0Credit = parts[7],
                 Artist1Credit = parts[8]
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release"))
         {
-            LoadedReleases = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release"), parts => new Release
+            LoadedReleases = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release"), parts => new Release
             {
                 ArtistCreditId = SafeParser.ToNumber<long>(parts[3]),
                 Id = SafeParser.ToNumber<long>(parts[0]),
@@ -190,60 +188,60 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
                 NameNormalized = parts[2].CleanString().TruncateLongString(MaxIndexSize).ToNormalizedString() ?? parts[2],
                 SortName = parts[2].CleanString(true).TruncateLongString(MaxIndexSize) ?? parts[2],
                 ReleaseGroupId = SafeParser.ToNumber<long>(parts[4])
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release_country"))
         {
-            LoadedReleasesCountries = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_country"), parts => new ReleaseCountry
+            LoadedReleasesCountries = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_country"), parts => new ReleaseCountry
             {
                 ReleaseId = SafeParser.ToNumber<long>(parts[0]),
                 CountryId = SafeParser.ToNumber<long>(parts[1]),
                 DateYear = SafeParser.ToNumber<int>(parts[2]),
                 DateMonth = SafeParser.ToNumber<int>(parts[3]),
                 DateDay = SafeParser.ToNumber<int>(parts[4])
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded tag"))
         {
-            LoadedTags = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/tag"), parts => new Tag
+            LoadedTags = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/tag"), parts => new Tag
             {
                 Id = SafeParser.ToNumber<long>(parts[0]),
                 Name = parts[1]
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release_tag"))
         {
-            LoadedReleaseTags = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_tag"), parts => new ReleaseTag
+            LoadedReleaseTags = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_tag"), parts => new ReleaseTag
             {
                 ReleaseId = SafeParser.ToNumber<long>(parts[0]),
                 TagId = SafeParser.ToNumber<long>(parts[1])
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release_group"))
         {
-            LoadedReleaseGroups = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_group"), parts => new ReleaseGroup
+            LoadedReleaseGroups = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_group"), parts => new ReleaseGroup
             {
                 Id = SafeParser.ToNumber<long>(parts[0]),
                 MusicBrainzIdRaw = parts[1],
                 Name = parts[2],
                 ArtistCreditId = SafeParser.ToNumber<long>(parts[3]),
                 ReleaseType = SafeParser.ToNumber<int>(parts[4])
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Loaded release_group_meta"))
         {
-            LoadedReleaseGroupMetas = await LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_group_meta"), parts => new ReleaseGroupMeta
+            LoadedReleaseGroupMetas = LoadDataFromFileAsync(Path.Combine(storagePath, "staging/mbdump/release_group_meta"), parts => new ReleaseGroupMeta
             {
                 ReleaseGroupId = SafeParser.ToNumber<long>(parts[0]),
                 DateYear = SafeParser.ToNumber<int>(parts[2]),
                 DateMonth = SafeParser.ToNumber<int>(parts[3]),
                 DateDay = SafeParser.ToNumber<int>(parts[4])
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
         }
 
         var artistAliasDictionary = LoadedArtistAliases.GroupBy(x => x.ArtistId).ToDictionary(x => x.Key, x => x.ToArray());

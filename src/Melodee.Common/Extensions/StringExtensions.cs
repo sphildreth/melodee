@@ -776,18 +776,101 @@ public static partial class StringExtensions
 
         return Encoding.UTF8.GetString(bytes);
     }
-
-    private static string? RemoveAccents(this string? value)
+    
+    public static string ReplaceNonCharacters(this string aString, char replacement)
     {
-        if (SafeParser.IsNull(value))
+        var sb = new StringBuilder(aString.Length);
+        for (var i = 0; i < aString.Length; i++)
+        {
+            if (char.IsSurrogatePair(aString, i))
+            {
+                var c = char.ConvertToUtf32(aString, i);
+                i++;
+                if (IsCharacter(c))
+                {
+                    sb.Append(char.ConvertFromUtf32(c));
+                }
+                else
+                {
+                    sb.Append(replacement);
+                }
+            }
+            else
+            {
+                char c = aString[i];
+                if (IsCharacter(c))
+                {
+                    sb.Append(c);
+                }
+                else
+                {
+                    sb.Append(replacement);
+                }
+            }
+        }
+        return sb.ToString();
+    }
+
+    public static bool IsCharacter(int point)
+    {
+        return point < 0xFDD0 || // everything below here is fine
+               point > 0xFDEF &&    // exclude the 0xFFD0...0xFDEF non-characters
+               (point & 0xfffE) != 0xFFFE; // exclude all other non-characters
+    }  
+    
+    
+    /// <summary>
+    /// Removes diacritics (accents) from a string.
+    /// </summary>
+    /// <param name="text">The string to remove diacritics from.</param>
+    /// <returns>The string without diacritics.</returns>
+    public static string? RemoveAccents(this string text)
+    {
+        if (text.Nullify() == null)
         {
             return null;
         }
 
-        return new string(value!.Normalize(NormalizationForm.FormD)
-            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-            .ToArray());
-    }
+        var originalText = text;
+
+        text = text.ReplaceNonCharacters(' ');
+        
+        // Normalize the string to decompose characters into their base form and combining characters
+        try
+        {
+            text = text.Normalize(NormalizationForm.FormD);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
+        }
+
+        
+        // Create a StringBuilder to store the result
+        var result = new StringBuilder();
+
+        foreach (char c in text)
+        {
+            // Check if the character is a non-spacing mark (accent)
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            {
+                result.Append(c);
+            }
+        }
+
+        // Return the normalized string
+        try
+        {
+            return result.ToString().Normalize(NormalizationForm.FormC);
+        }
+        catch (Exception e)
+        {
+            var invalidCharactersRegex = new Regex("([\ud800-\udbff](?![\udc00-\udfff]))|((?<![\ud800-\udbff])[\udc00-\udfff])");
+            text = invalidCharactersRegex.Replace(text, "");
+            Console.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
+        }
+        return text;
+    }    
 
     public static string? ToSafeXmlString(this string? input)
     {

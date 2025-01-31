@@ -23,7 +23,7 @@ public static class HttpClientExtensions
                 Delay = TimeSpan.FromMinutes(3)
             })
             .Build();
-        return await pipeline.ExecuteAsync(async result => await DownloadFileActionAsync(httpClient, url, filePath, overrideCondition, cancellationToken), cancellationToken);
+        return await pipeline.ExecuteAsync(async result => await DownloadFileActionAsync(httpClient, url, filePath, overrideCondition, cancellationToken), cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task<bool> DownloadFileActionAsync(this HttpClient httpClient, string url, string filePath, Func<FileInfo, FileInfo, CancellationToken, Task<bool>>? overrideCondition = null, CancellationToken cancellationToken = default)

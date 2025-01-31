@@ -43,11 +43,13 @@ public class MusicBrainzUpdateDatabaseJob(
         try
         {
             storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath);
-            if (storagePath == null || !Directory.Exists(storagePath))
+            if (storagePath == null)
             {
                 Logger.Error("[{JobName}] MusicBrainz storage path is invalid [{SettingName}]", nameof(MusicBrainzUpdateDatabaseJob), SettingRegistry.SearchEngineMusicBrainzStoragePath);
                 return;
             }
+
+            storagePath.ToDirectoryInfo().EnsureExists();
 
             lockfile = Path.Combine(storagePath, $"{nameof(MusicBrainzUpdateDatabaseJob)}.lock");
             if (File.Exists(lockfile))
@@ -69,6 +71,9 @@ public class MusicBrainzUpdateDatabaseJob(
                 File.Move(dbName, tempDbName);
             }
 
+            // Simple way to skip downloading for debugging
+            var doDownload = true;
+            
             using (var client = httpClientFactory.CreateClient())
             {
                 var storageStagingDirectory = new FileSystemDirectoryInfo
@@ -76,87 +81,90 @@ public class MusicBrainzUpdateDatabaseJob(
                     Path = Path.Combine(storagePath, "staging"),
                     Name = "staging"
                 };
-                storageStagingDirectory.EnsureExists();
-                storageStagingDirectory.Empty();
-
-                var latest = await client.GetStringAsync("https://data.metabrainz.org/pub/musicbrainz/data/fullexport/LATEST", context.CancellationToken).ConfigureAwait(false);
-                if (latest.Nullify() == null)
+                if (doDownload)
                 {
-                    Logger.Error("[{JobName}] Unable to download LATEST information from MusicBrainz", nameof(MusicBrainzUpdateDatabaseJob));
-                    return;
-                }
+                    storageStagingDirectory.EnsureExists();
+                    storageStagingDirectory.Empty();
 
-                latest = latest.CleanString();
-
-                if (doesDbExist && latest != null)
-                {
-                    var latestTimeStamp = DateTimeOffset.ParseExact(latest, "yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-                    var lastJobRunTimestamp = configuration.GetValue<DateTimeOffset?>(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
-                    if (latestTimeStamp < lastJobRunTimestamp)
+                    var latest = await client.GetStringAsync("https://data.metabrainz.org/pub/musicbrainz/data/fullexport/LATEST", context.CancellationToken).ConfigureAwait(false);
+                    if (latest.Nullify() == null)
                     {
-                        Logger.Warning("[{JobName}] MusicBrainz LATEST is older than Last Job Run timestamp [{SettingName}], meaning latest MusicBrainz export has already been processed.",
-                            nameof(MusicBrainzUpdateDatabaseJob),
-                            SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
+                        Logger.Error("[{JobName}] Unable to download LATEST information from MusicBrainz", nameof(MusicBrainzUpdateDatabaseJob));
                         return;
                     }
-                }
 
-                var mbDumpFileName = Path.Combine(storageStagingDirectory.FullName(), "mbdump.tar.bz2");
-                var downloadedMbDumpFile = await client.DownloadFileAsync(
-                    $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump.tar.bz2",
-                    mbDumpFileName,
-                    null,
-                    context.CancellationToken);
+                    latest = latest.CleanString();
 
-                var mbDumpDerivedFileName = Path.Combine(storageStagingDirectory.FullName(), "mbdump-derived.tar.bz2");
-                var downloadedMbDerivedFile = await client.DownloadFileAsync(
-                    $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump-derived.tar.bz2",
-                    mbDumpDerivedFileName,
-                    null,
-                    context.CancellationToken);
-
-                if (!downloadedMbDumpFile || !downloadedMbDerivedFile)
-                {
-                    Logger.Warning("[{JobName}] Unable to download files: mbdump.tar.bz2 [{MbDumpFileName}], mbdump-derived.tar.bz2 [{MbDumpDerivedFileName}]",
-                        nameof(MusicBrainzUpdateDatabaseJob),
-                        mbDumpFileName,
-                        mbDumpDerivedFileName);
-                    return;
-                }
-
-
-                Logger.Information("[{JobName}] Starting extracted file [{FileName}].", nameof(MusicBrainzUpdateDatabaseJob), mbDumpFileName);
-                using (Operation.At(LogEventLevel.Debug).Time("Extracted downloaded file [{File}]", mbDumpFileName))
-                {
-                    await using (Stream mbDumpStream = File.OpenRead(mbDumpFileName))
+                    if (doesDbExist && latest != null)
                     {
-                        await using (Stream bzipStream = new BZip2InputStream(mbDumpStream))
+                        var latestTimeStamp = DateTimeOffset.ParseExact(latest, "yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+                        var lastJobRunTimestamp = configuration.GetValue<DateTimeOffset?>(SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
+                        if (latestTimeStamp < lastJobRunTimestamp)
                         {
-                            var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
-                            tarArchive.ExtractContents(storageStagingDirectory.FullName());
-                            tarArchive.Close();
-                            bzipStream.Close();
+                            Logger.Warning("[{JobName}] MusicBrainz LATEST is older than Last Job Run timestamp [{SettingName}], meaning latest MusicBrainz export has already been processed.",
+                                nameof(MusicBrainzUpdateDatabaseJob),
+                                SettingRegistry.SearchEngineMusicBrainzImportLastImportTimestamp);
+                            return;
                         }
-
-                        mbDumpStream.Close();
                     }
-                }
 
+                    var mbDumpFileName = Path.Combine(storageStagingDirectory.FullName(), "mbdump.tar.bz2");
+                    var downloadedMbDumpFile = await client.DownloadFileAsync(
+                        $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump.tar.bz2",
+                        mbDumpFileName,
+                        null,
+                        context.CancellationToken);
 
-                Logger.Information("[{JobName}] Starting extracted file [{FileName}].", nameof(MusicBrainzUpdateDatabaseJob), mbDumpDerivedFileName);
-                using (Operation.At(LogEventLevel.Debug).Time("Extracted downloaded file [{File}]", mbDumpDerivedFileName))
-                {
-                    await using (Stream mbDumpDerivedStream = File.OpenRead(mbDumpDerivedFileName))
+                    var mbDumpDerivedFileName = Path.Combine(storageStagingDirectory.FullName(), "mbdump-derived.tar.bz2");
+                    var downloadedMbDerivedFile = await client.DownloadFileAsync(
+                        $"https://data.metabrainz.org/pub/musicbrainz/data/fullexport/{latest}/mbdump-derived.tar.bz2",
+                        mbDumpDerivedFileName,
+                        null,
+                        context.CancellationToken);
+
+                    if (!downloadedMbDumpFile || !downloadedMbDerivedFile)
                     {
-                        await using (Stream bzipStream = new BZip2InputStream(mbDumpDerivedStream))
-                        {
-                            var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
-                            tarArchive.ExtractContents(storageStagingDirectory.FullName());
-                            tarArchive.Close();
-                            bzipStream.Close();
-                        }
+                        Logger.Warning("[{JobName}] Unable to download files: mbdump.tar.bz2 [{MbDumpFileName}], mbdump-derived.tar.bz2 [{MbDumpDerivedFileName}]",
+                            nameof(MusicBrainzUpdateDatabaseJob),
+                            mbDumpFileName,
+                            mbDumpDerivedFileName);
+                        return;
+                    }
 
-                        mbDumpDerivedStream.Close();
+
+                    Logger.Information("[{JobName}] Starting extracted file [{FileName}].", nameof(MusicBrainzUpdateDatabaseJob), mbDumpFileName);
+                    using (Operation.At(LogEventLevel.Debug).Time("Extracted downloaded file [{File}]", mbDumpFileName))
+                    {
+                        await using (Stream mbDumpStream = File.OpenRead(mbDumpFileName))
+                        {
+                            await using (Stream bzipStream = new BZip2InputStream(mbDumpStream))
+                            {
+                                var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
+                                tarArchive.ExtractContents(storageStagingDirectory.FullName());
+                                tarArchive.Close();
+                                bzipStream.Close();
+                            }
+
+                            mbDumpStream.Close();
+                        }
+                    }
+
+
+                    Logger.Information("[{JobName}] Starting extracted file [{FileName}].", nameof(MusicBrainzUpdateDatabaseJob), mbDumpDerivedFileName);
+                    using (Operation.At(LogEventLevel.Debug).Time("Extracted downloaded file [{File}]", mbDumpDerivedFileName))
+                    {
+                        await using (Stream mbDumpDerivedStream = File.OpenRead(mbDumpDerivedFileName))
+                        {
+                            await using (Stream bzipStream = new BZip2InputStream(mbDumpDerivedStream))
+                            {
+                                var tarArchive = TarArchive.CreateInputTarArchive(bzipStream, Encoding.UTF8);
+                                tarArchive.ExtractContents(storageStagingDirectory.FullName());
+                                tarArchive.Close();
+                                bzipStream.Close();
+                            }
+
+                            mbDumpDerivedStream.Close();
+                        }
                     }
                 }
             }
