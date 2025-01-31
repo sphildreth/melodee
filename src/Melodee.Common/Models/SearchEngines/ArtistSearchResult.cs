@@ -7,6 +7,9 @@ namespace Melodee.Common.Models.SearchEngines;
 /// </summary>
 public sealed record ArtistSearchResult
 {
+    /// <summary>
+    /// If this is populated it is the PkId of the Artist record from the Melodee database.
+    /// </summary>
     public int? Id { get; init; }
 
     public KeyValue KeyValue => new(UniqueId.ToString(), Name.ToNormalizedString() ?? Name);
@@ -30,9 +33,6 @@ public sealed record ArtistSearchResult
 
     /// <summary>Ranked, higher number the better quality of the result to the query.</summary>
     public int Rank { get; init; }
-
-    /// <summary>Artist ApiKey (if found in database)</summary>
-    public Guid? ApiKey { get; init; }
 
     /// <summary>Public URL to an image.</summary>
     public string? ImageUrl { get; init; }

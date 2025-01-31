@@ -52,7 +52,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                         .ConfigureAwait(false);
                     data.Add(new ArtistSearchResult
                     {
-                        ApiKey = artistByMusicBrainz.ApiKey,
+                        Id = artistByMusicBrainz.Id,
                         AlternateNames = artistByMusicBrainz.AlternateNames?.ToTags()?.ToArray() ?? [],
                         FromPlugin = DisplayName,
                         UniqueId = SafeParser.Hash(artistByMusicBrainz.MusicBrainzId.ToString()),
@@ -103,7 +103,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                     {
                         data.AddRange(matchingWithAlbums.Select(x => new ArtistSearchResult
                         {
-                            ApiKey = x.ApiKey,
+                            Id = x.Id,
                             AlternateNames = x.AlternateNames?.ToTags()?.ToArray() ?? [],
                             FromPlugin = DisplayName,
                             UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),
@@ -146,7 +146,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                 {
                     data.AddRange(artistsByNamedNormalized.Select(x => new ArtistSearchResult
                     {
-                        ApiKey = x.ApiKey,
+                        Id = x.Id,
                         AlternateNames = x.AlternateNames?.ToTags()?.ToArray() ?? [],
                         FromPlugin = DisplayName,
                         UniqueId = SafeParser.Hash(x.MusicBrainzId.ToString()),

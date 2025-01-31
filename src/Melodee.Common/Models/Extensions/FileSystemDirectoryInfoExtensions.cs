@@ -418,7 +418,15 @@ public static class FileSystemDirectoryInfoExtensions
         {
             if (!string.Equals(Path.GetFileName(file), dontMoveFileName, StringComparison.OrdinalIgnoreCase))
             {
-                File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
+                try
+                {
+                    File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
+                }
+                catch (PathTooLongException e)
+                {
+                    Trace.WriteLine($"Aborting move. Unable to move file, path is too long. [{file}]");
+                    return;
+                }
             }
         }
 
