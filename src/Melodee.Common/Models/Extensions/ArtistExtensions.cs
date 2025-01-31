@@ -81,6 +81,9 @@ public static class ArtistExtensions
         return artistName.Nullify() != null && CastRecordingArtistOrAlbumTitleParseRegex.IsMatch(artistName);
     }
 
+    public static long? ArtistUniqueId(this Artist artist) 
+        => SafeParser.Hash(artist.Name?.ToString());
+
     public static bool IsVariousArtist(this Artist artist)
     {
         var artistName = artist.Name;

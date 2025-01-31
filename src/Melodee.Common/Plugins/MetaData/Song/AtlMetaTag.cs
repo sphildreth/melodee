@@ -11,6 +11,7 @@ using Melodee.Common.Plugins.MetaData.Song.Extensions;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Utility;
+using Quartz.Logging;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -268,6 +269,7 @@ public sealed class AtlMetaTag(
         {
             Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
         }
+        
 
         // Ensure that OrigAlbumYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
         if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigAlbumYear))
@@ -295,6 +297,22 @@ public sealed class AtlMetaTag(
 
         var albumTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album);
         var artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+        if (artistTag?.Value?.ToString().Nullify() == null)
+        {
+            // If [TP1,TPE1] is not set and [TP2,TPE2] is set, and only one, then use [TP2,TPE2] for [TP1,TPE1]
+            var isSingleArtist = tags.Count(x => x.Identifier == MetaTagIdentifier.AlbumArtist) == 1;
+            var albumArtistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
+            if (isSingleArtist && albumArtistTag?.Value?.ToString().Nullify() != null)
+            {
+                tags.Add(new MetaTag<object?>
+                {
+                    Identifier = MetaTagIdentifier.Artist,
+                    Value = albumArtistTag.Value
+                });
+                artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
+                Log.Information("[{PluginName}] [TP1, TPE1] is not set, using value for [TP2,TPE2].", nameof(AtlMetaTag));
+            }
+        }
         if (albumTag?.Value?.ToString().Nullify() == null || artistTag?.Value?.ToString().Nullify() == null)
         {
             return new OperationResult<Models.Song>($"Song [{fileSystemFileInfo.Name}] is invalid, missing Album and/or Artist tags.")

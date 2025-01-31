@@ -1,3 +1,4 @@
+using System.Web;
 using Melodee.Common.Data.Constants;
 
 namespace Melodee.Common.Models.Collection.Extensions;
@@ -14,9 +15,10 @@ public static class AlbumDataInfoExtensions
         return $"/images/{artistDataInfo.ToApiKey()}/{size ?? 80}";
     }
 
-    public static string DetailUrl(this AlbumDataInfo albumDataInfo)
+    public static string DetailUrl(this AlbumDataInfo albumDataInfo, string? fromUrl = null)
     {
-        return $"/data/album/{albumDataInfo.ApiKey}";
+        var result = $"/data/album/{albumDataInfo.ApiKey}";
+        return fromUrl != null ? $"{result}/{HttpUtility.UrlEncode(fromUrl)}" : result;
     }
 
     public static string ArtistDetailUrl(this AlbumDataInfo albumDataInfo)

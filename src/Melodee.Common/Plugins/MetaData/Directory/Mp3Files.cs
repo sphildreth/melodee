@@ -51,25 +51,13 @@ public class Mp3Files(
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
-            using (Operation.At(LogEventLevel.Debug).Time("AllAlbumsForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] ProcessDirectoryAsync [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.Name))
             {
-                await HandleDuplicatesAsync(fileSystemDirectoryInfo, cancellationToken);
-
-                foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
+                await Parallel.ForEachAsync(dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly), cancellationToken, async (fileSystemInfo, tt) =>
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        break;
-                    }
-
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in songPlugins.OrderBy(x => x.SortOrder))
                     {
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
                             var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
@@ -82,7 +70,9 @@ public class Mp3Files(
                             messages.AddRange(pluginResult.Messages ?? []);
                         }
                     }
-                }
+                });
+                
+                await HandleDuplicates(fileSystemDirectoryInfo,songs.ToArray(), cancellationToken);                
 
                 var songMaxMediaNumber = 1;
                 if (songs.Count > 0)
@@ -91,7 +81,7 @@ public class Mp3Files(
                     songMaxMediaNumber = songMediaNumbers.Length != 0 ? songMediaNumbers.Max() : 1;
                 }
 
-                foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.AlbumId))
+                foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.SongArtistAlbumUniqueId()))
                 {
                     foreach (var song in songsGroupedByAlbum)
                     {
@@ -100,7 +90,7 @@ public class Mp3Files(
                             break;
                         }
 
-                        var foundAlbum = albums.FirstOrDefault(x => x.Id == songsGroupedByAlbum.Key);
+                        var foundAlbum = albums.FirstOrDefault(x => x.ArtistAlbumUniqueId() == songsGroupedByAlbum.Key);
                         if (foundAlbum != null)
                         {
                             albums.Remove(foundAlbum);
@@ -160,10 +150,6 @@ public class Mp3Files(
                                 Songs = songsGroupedByAlbum.OrderBy(x => x.SortOrder).ToArray(),
                                 ViaPlugins = viaPlugins.Distinct().ToArray()
                             };
-                            var validationResult = albumValidator.ValidateAlbum(newAlbum);
-                            newAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
-                            newAlbum.Status = validationResult.Data.AlbumStatus;
-                            newAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
                             albums.Add(newAlbum);
                             if (albums.Count(x => x.IsValid) > maxAlbumProcessingCount)
                             {
@@ -183,7 +169,10 @@ public class Mp3Files(
             {
                 break;
             }
-
+            var validationResult = albumValidator.ValidateAlbum(album);
+            album.ValidationMessages = validationResult.Data.Messages ?? [];
+            album.Status = validationResult.Data.AlbumStatus;
+            album.StatusReasons = validationResult.Data.AlbumStatusReasons;
             try
             {
                 serialized = serializer.Serialize(album);
@@ -202,7 +191,7 @@ public class Mp3Files(
         };
     }
 
-    private async Task HandleDuplicatesAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    private Task HandleDuplicates(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] seenSongs, CancellationToken cancellationToken = default)
     {
         Console.WriteLine($"Checking for duplicate files in [{fileSystemDirectoryInfo.FullName()}]...");
 
@@ -221,41 +210,6 @@ public class Mp3Files(
                 Console.WriteLine($"Deleted duplicate: {file.FullName}");
             }
         }
-
-        if (files.Length == 0)
-        {
-            Console.WriteLine("No duplicate non-media files found...");
-        }
-
-        var mediaFiles = fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.AllDirectories).ToArray();
-        var seenSongs = new List<Common.Models.Song>();
-        foreach (var mediaFile in mediaFiles)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-
-            var fsi = mediaFile.ToFileSystemInfo();
-            foreach (var plugin in songPlugins.OrderBy(x => x.SortOrder))
-            {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
-                {
-                    var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
-                    if (pluginResult.IsSuccess)
-                    {
-                        seenSongs.Add(pluginResult.Data);
-                        break;
-                    }
-                }
-            }
-        }
-
         var duplicateSongs = seenSongs.GroupBy(x => x.DuplicateHashCheck).Where(x => x.Count() > 1).ToArray();
         if (duplicateSongs.Any())
         {
@@ -271,12 +225,7 @@ public class Mp3Files(
                 }
             }
         }
-        else
-        {
-            Console.WriteLine("No duplicate songs found...");
-        }
-
-        Console.WriteLine("Duplicate checking complete.");
+        return Task.CompletedTask;
     }
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)

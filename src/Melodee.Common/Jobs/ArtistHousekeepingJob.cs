@@ -49,6 +49,7 @@ public class ArtistHousekeepingJob(
             {
                 maxNumberOfImagesAllowed = short.MaxValue;
             }
+            Logger.Debug("[{JobName}] found [{Count}] artists without images.", nameof(ArtistHousekeepingJob), artists.Length);
 
             foreach (var artist in artists)
             {
@@ -79,6 +80,7 @@ public class ArtistHousekeepingJob(
                             artist.ImageCount = 1;
                             artist.MetaDataStatus = SafeParser.ToNumber<int>(MetaDataModelStatus.UpdatedImages);
                             artistService.ClearCache(artist);
+                            Logger.Information("[{JobName}] Updated artist image for artist [{ArtistName}]", nameof(ArtistHousekeepingJob), artist.Name);
                         }
                     }
                 }

@@ -20,13 +20,25 @@
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center" Class="rz-pb-5">
         <RadzenColumn Size="7" SizeMD="9">
-            <RadzenBreadCrumb>
-                <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-                <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
-                <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")"
-                                      Text="Albums"/>
-                <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
-            </RadzenBreadCrumb>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                @if (FromUrl != null)
+                {
+                    <RadzenButton
+                        Icon="arrow_back"
+                        ButtonStyle="ButtonStyle.Info"
+                        Text="Back"
+                        title="Go back"
+                        Size="ButtonSize.Small"
+                        Click="@(() => NavigationManager.NavigateTo(FromUrl, true))"/>
+                }
+                <RadzenBreadCrumb>
+                    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+                    <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
+                    <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")"
+                                          Text="Albums"/>
+                    <RadzenBreadCrumbItem Icon="album" Text="@_album.Name"/>
+                </RadzenBreadCrumb>
+            </RadzenStack>
         </RadzenColumn>
         <RadzenColumn Size="5" SizeMD="3">
             <RadzenStack
@@ -294,8 +306,7 @@
     ///     When this is set, is it used if the album gets deleted to return the user back (like viewing albums for an artist
     ///     return to the artist detail)
     /// </summary>
-    [Parameter]
-    public string? FromUrl { get; set; }
+    [Parameter] public string? FromUrl { get; set; }
 
     string AlbumStatusStyle { get; set; } = string.Empty;
 

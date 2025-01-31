@@ -112,6 +112,11 @@ public static class SongExtensions
         return SafeParser.Hash(songArtist);
     }
 
+    public static long? SongArtistAlbumUniqueId(this Song song)
+    {
+        return SafeParser.Hash(song.AlbumArtist() ?? string.Empty, song.AlbumTitle() ?? string.Empty);
+    }
+
     public static string? AlbumArtist(this Song song)
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.AlbumArtist);

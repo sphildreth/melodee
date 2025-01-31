@@ -173,8 +173,8 @@ public sealed class DirectoryProcessorService(
         var directoryPluginProcessedFileCount = 0;
         var numberOfAlbumFilesProcessed = 0;
 
-        var artistsIdsSeen = new List<Guid>();
-        var albumsIdsSeen = new List<Guid>();
+        var artistsIdsSeen = new List<long?>();
+        var albumsIdsSeen = new List<long?>();
         var songsIdsSeen = new List<Guid>();
 
         var skipPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
@@ -261,17 +261,24 @@ public sealed class DirectoryProcessorService(
             // This means there are subdirectories which have media files in directories which have media files, must be one album per directory.
             foreach (var mediaDirectoryToProcess in mediaDirectoriesToProcess)
             {
-                if (mediaDirectoryToProcess.IsAlbumMediaDirectory())
-                {
-                    Logger.Debug(":: [{ServiceName}] Skipping nested album media directory [{Dir}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName());
-                    continue;
-                }
 
-                var newDir = new DirectoryInfo(Path.Combine(fileSystemDirectoryInfo.FullName(), Guid.NewGuid().ToString()));
-                mediaDirectoryToProcess.MoveToDirectory(newDir.FullName);
-                Logger.Debug(":: [{ServiceName}] :: Moved nested album [{Moved}] to [{NewName}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName(), newDir.FullName);
-                directoriesToProcess.Remove(mediaDirectoryToProcess);
-                directoriesToProcess.Add(newDir.ToDirectorySystemInfo());
+                try
+                {
+                    if (mediaDirectoryToProcess.IsAlbumMediaDirectory())
+                    {
+                        Logger.Debug(":: [{ServiceName}] Skipping nested album media directory [{Dir}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName());
+                        continue;
+                    }
+                    var newDir = new DirectoryInfo(Path.Combine(fileSystemDirectoryInfo.FullName(), Guid.NewGuid().ToString()));
+                    mediaDirectoryToProcess.MoveToDirectory(newDir.FullName);
+                    Logger.Debug(":: [{ServiceName}] :: Moved nested album [{Moved}] to [{NewName}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName(), newDir.FullName);
+                    directoriesToProcess.Remove(mediaDirectoryToProcess);
+                    directoriesToProcess.Add(newDir.ToDirectorySystemInfo());
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "Error processing album media directory [{Dir}]", mediaDirectoryToProcess.FullName());
+                }
             }
         }
 
@@ -419,7 +426,7 @@ public sealed class DirectoryProcessorService(
                 }
 
 
-                Console.WriteLine($"Loading [{albumsForDirectory.Count}] directory");
+                Console.WriteLine($"Loading [{albumsForDirectory.Count}] album directories");
 
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
                 //var albumAndJsonFile = new Dictionary<Album, string>();
@@ -743,9 +750,9 @@ public sealed class DirectoryProcessorService(
                                 }
                             }
 
-                            artistsIdsSeen.Add(album.Artist.Id);
-                            artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.Id) ?? []);
-                            albumsIdsSeen.Add(album.Id);
+                            artistsIdsSeen.Add(album.Artist.ArtistUniqueId());
+                            artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId()) ?? []);
+                            albumsIdsSeen.Add(album.ArtistAlbumUniqueId());
                             songsIdsSeen.AddRange(album.Songs?.Select(x => x.Id) ?? []);
                         }
                         else

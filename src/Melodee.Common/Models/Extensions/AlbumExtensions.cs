@@ -46,7 +46,12 @@ public static class AlbumExtensions
     {
         return new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId?.ToString() ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
     }
-
+    
+    public static long? ArtistAlbumUniqueId(this Album album)
+    {
+        return SafeParser.Hash(album.Artist.Name?.ToString() ?? string.Empty, album.AlbumTitle() ?? string.Empty);
+    }
+    
     public static bool IsStudioTypeAlbum(this Album album)
     {
         return album.Directory.IsDirectoryStudioAlbums() && album.AlbumType is AlbumType.Album or AlbumType.EP;

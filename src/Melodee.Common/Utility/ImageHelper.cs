@@ -30,6 +30,7 @@ public static partial class ImageHelper
         "CVR",
         "FOLDER",
         "FRONT",
+        "RELEASE",
         "SCAN",
         "SCANS"
     ];

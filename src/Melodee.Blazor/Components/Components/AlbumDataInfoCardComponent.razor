@@ -4,10 +4,10 @@
             class="rz-mx-auto rz-my-1 rz-p-1"
             Style="max-width: 300px">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Gap="5px" class="rz-p-1">
-        <RadzenImage Path="@Album.ImageUrl()" Style="width: 60px; height: 60px;margin-right: 5px;"/>
+        <RadzenImage Path="@Album.ImageUrl()" Style="width: 60px; height: 60px; margin-right: 5px;"/>
         <RadzenStack Gap="0">
             <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin:0;padding:0;">
-                <RadzenLink text="@Album.Name" class="rz-text-wrap" href="@Album.DetailUrl()"/>
+                <RadzenLink text="@Album.Name" class="rz-text-wrap" href="@Album.DetailUrl(FromUrl)"/>
             </RadzenText>
             <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin:0;padding:0;">
                 <RadzenLink text="@Album.ArtistName"  class="rz-text-wrap" href="@Album.ArtistDetailUrl()"/>
@@ -20,4 +20,5 @@
 
 @code {
     [Parameter] public AlbumDataInfo Album { get; set; } = null!;
+    [Parameter] public string? FromUrl { get; set; }
 }
