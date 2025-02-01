@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Ardalis.GuardClauses;
 using Dapper;
 using IdSharp.Common.Utils;
@@ -717,7 +718,7 @@ public class LibraryService(
             }
         }
 
-        Console.WriteLine($"Found [{melodeeFilesForLibrary.Count}] albums in library [{library}]...");
+        Trace.WriteLine($"Found [{melodeeFilesForLibrary.Count}] albums in library [{library}]...");
 
         var melodeeFilesGrouped = melodeeFilesForLibrary.GroupBy(x => x.Status);
         var melodeeFilesGroupedOk = melodeeFilesGrouped.FirstOrDefault(x => x.Key == AlbumStatus.Ok);
@@ -965,7 +966,7 @@ public class LibraryService(
 
         var messages = new List<string>();
         var allDirectoriesInLibrary = libDir.AllDirectoryInfos(searchOption: SearchOption.TopDirectoryOnly).ToArray();
-        Console.WriteLine($"Found [{allDirectoriesInLibrary.Length}] top level directories...");
+        Trace.WriteLine($"Found [{allDirectoriesInLibrary.Length}] top level directories...");
         var libraryDirectoryCountBeforeCleaning = allDirectoriesInLibrary.Length;
 
         // Look for images and delete directories that don't have any media files
@@ -982,7 +983,7 @@ public class LibraryService(
         });
         if (directoriesWithoutMediaFiles.Distinct().Any())
         {
-            Console.WriteLine($"Found [{directoriesWithoutMediaFiles.Count}] directories with no media files...");
+            Trace.WriteLine($"Found [{directoriesWithoutMediaFiles.Count}] directories with no media files...");
             foreach (var directory in directoriesWithoutMediaFiles.Distinct())
             {
                 if (directory.DoesDirectoryHaveImageFiles())

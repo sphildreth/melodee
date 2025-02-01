@@ -1,8 +1,11 @@
+using System.Diagnostics;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
+using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.SearchEngine;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
@@ -12,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using ServiceStack;
+using Artist = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Artist;
 
 namespace Melodee.Common.Services.SearchEngines;
 
@@ -20,9 +25,10 @@ public class ArtistSearchEngineService(
     ICacheManager cacheManager,
     SettingService settingService,
     IMelodeeConfigurationFactory configurationFactory,
-    IDbContextFactory<MelodeeDbContext> contextFactory,
+    IDbContextFactory<MelodeeDbContext> melodeeDbContextFactory,
+    IDbContextFactory<ArtistSearchEngineServiceDbContext> artistSearchEngineServiceDbContextFactory,
     IMusicBrainzRepository musicBrainzRepository)
-    : ServiceBase(logger, cacheManager, contextFactory)
+    : ServiceBase(logger, cacheManager, melodeeDbContextFactory)
 {
     private IArtistSearchEnginePlugin[] _artistSearchEnginePlugins = [];
     private IArtistTopSongsSearchEnginePlugin[] _artistTopSongsSearchEnginePlugins = [];
@@ -54,6 +60,11 @@ public class ArtistSearchEngineService(
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             }
         ];
+
+        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            await scopedContext.Database.EnsureCreatedAsync(cancellationToken);
+        }
 
         _initialized = true;
     }
@@ -136,24 +147,146 @@ public class ArtistSearchEngineService(
         using (Operation.At(LogEventLevel.Debug).Time("[{Name}] DoSearchAsync [{DirectoryInfo}]",
                    nameof(ArtistSearchEngineService), query))
         {
-            foreach (var plugin in _artistSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
+            
+            // See if found in DbContext if not then query plugins, add to context and return results
+            await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    break;
-                }
+                var artist = await scopedContext
+                    .Artists
+                    .Where(x => x.NameNormalized == query.NameNormalized || (x.MusicBrainzId != null && x.MusicBrainzId == query.MusicBrainzIdValue))
+                    .FirstOrDefaultAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
 
-                var pluginResult = await plugin.DoArtistSearchAsync(query, maxResultsValue, cancellationToken).ConfigureAwait(false);
-                if (pluginResult is { IsSuccess: true, Data: not null })
+                if (artist != null)
                 {
-                    result.AddRange(pluginResult.Data);
-                    totalCount += pluginResult.TotalCount;
-                    operationTime += pluginResult.OperationTime ?? 0;
+                    result.Add(new ArtistSearchResult
+                    {
+                        AmgId = artist.AmgId,
+                        DiscogsId = artist.DiscogsId,
+                        FromPlugin = nameof(ArtistSearchEngineService),
+                        ItunesId = artist.ItunesId,
+                        LastFmId = artist.LastFmId,
+                        MusicBrainzId = artist.MusicBrainzId,
+                        Name = artist.Name,
+                        Rank = 1,
+                        SortName = artist.SortName,
+                        SpotifyId = artist.SpotifyId,
+                        UniqueId = artist.Id,
+                        WikiDataId = artist.WikiDataId,
+                    });
+                    Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Found artist [{artist}] in database for query [{query}].");
                 }
-
-                if (plugin.StopProcessing || result.Count >= maxResultsValue)
+                else
                 {
-                    break;
+                    foreach (var plugin in _artistSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        var pluginResult = await plugin.DoArtistSearchAsync(query, maxResultsValue, cancellationToken).ConfigureAwait(false);
+                        if (pluginResult is { IsSuccess: true, Data: not null })
+                        {
+                            result.AddRange(pluginResult.Data);
+                            totalCount += pluginResult.TotalCount;
+                            operationTime += pluginResult.OperationTime ?? 0;
+                        }
+
+                        if (plugin.StopProcessing || result.Count >= maxResultsValue)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (result.Count > 0)
+                    {
+                        var rr = result.First();
+                        var newArtist = new ArtistSearchResult
+                        {
+                            AmgId = rr.AmgId,
+                            DiscogsId = rr.DiscogsId,
+                            FromPlugin = nameof(ArtistSearchEngineService),
+                            ItunesId = rr.ItunesId,
+                            LastFmId = rr.LastFmId,
+                            MusicBrainzId = rr.MusicBrainzId,
+                            Name = rr.Name,
+                            Rank = 1,
+                            SortName = rr.SortName,
+                            SpotifyId = rr.SpotifyId,
+                            WikiDataId = rr.WikiDataId,
+                        };
+                        newArtist = result.Aggregate(newArtist, (current, r) => current with
+                        {
+                            AmgId = current.AmgId ?? r.AmgId,
+                            DiscogsId = current.DiscogsId ?? r.DiscogsId,
+                            ItunesId = current.ItunesId ?? r.ItunesId,
+                            LastFmId = current.LastFmId ?? r.LastFmId,
+                            Name = current.Name ?? r.Name,
+                            MusicBrainzId = current.MusicBrainzId ?? r.MusicBrainzId,
+                            Rank = current.Rank + 1,
+                            SpotifyId = current.SpotifyId ?? r.SpotifyId,
+                            WikiDataId = current.WikiDataId ?? r.WikiDataId
+                        });
+                        result.Clear();
+                        
+                        var nameNormalized = newArtist.Name.ToNormalizedString() ?? newArtist.Name;
+                        
+                        artist = await scopedContext
+                            .Artists
+                            .Where(x => x.NameNormalized == nameNormalized || 
+                                             (x.AmgId != null && x.AmgId == newArtist.AmgId) ||
+                                             (x.DiscogsId != null && x.DiscogsId == newArtist.DiscogsId) ||
+                                             (x.ItunesId != null && x.ItunesId == newArtist.ItunesId) ||
+                                             (x.LastFmId != null && x.LastFmId == newArtist.LastFmId) ||
+                                             (x.MusicBrainzId != null && x.MusicBrainzId == newArtist.MusicBrainzId) ||
+                                             (x.SpotifyId != null && x.SpotifyId == newArtist.SpotifyId) ||
+                                             (x.WikiDataId != null && x.WikiDataId == newArtist.WikiDataId))
+                            .FirstOrDefaultAsync(cancellationToken: cancellationToken)
+                            .ConfigureAwait(false);
+
+                        
+                        if (artist != null)
+                        {
+                            result.Add(new ArtistSearchResult
+                            {
+                                AmgId = artist.AmgId,
+                                DiscogsId = artist.DiscogsId,
+                                FromPlugin = nameof(ArtistSearchEngineService),
+                                ItunesId = artist.ItunesId,
+                                LastFmId = artist.LastFmId,
+                                MusicBrainzId = artist.MusicBrainzId,
+                                Name = artist.Name,
+                                Rank = 1,
+                                SortName = artist.SortName,
+                                SpotifyId = artist.SpotifyId,
+                                UniqueId = artist.Id,
+                                WikiDataId = artist.WikiDataId,
+                            });
+                            Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Found artist [{artist}] in database for query [{query}].");
+                        }
+                        else if (artist == null)
+                        {
+                            var newDbArtist = new Artist
+                            {
+                                AmgId = newArtist.AmgId,
+                                DiscogsId = newArtist.DiscogsId,
+                                ItunesId = newArtist.ItunesId,
+                                LastFmId = newArtist.LastFmId,
+                                MusicBrainzId = newArtist.MusicBrainzId,
+                                Name = newArtist.Name,
+                                NameNormalized = newArtist.Name.ToNormalizedString() ?? newArtist.Name,
+                                SortName = newArtist.SortName ?? newArtist.Name,
+                                SpotifyId = newArtist.SpotifyId,
+                                WikiDataId = newArtist.WikiDataId,
+                            };
+                            scopedContext.Artists.Add(newDbArtist);
+                            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                            newArtist = newArtist with { UniqueId = newDbArtist.Id };
+                            result.Add(newArtist);
+                            Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Added artist [{newArtist}] to database.");
+                        }
+                    }
                 }
             }
         }

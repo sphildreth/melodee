@@ -198,7 +198,7 @@ public sealed class DirectoryProcessorService(
         var startTicks = Stopwatch.GetTimestamp();
 
         // Ensure directory to process exists
-        Console.WriteLine($"Ensuring processing path [{fileSystemDirectoryInfo.Path}] exists...");
+        Trace.WriteLine($"Ensuring processing path [{fileSystemDirectoryInfo.Path}] exists...");
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
         {
@@ -213,7 +213,7 @@ public sealed class DirectoryProcessorService(
         }
 
         // Ensure that staging directory exists
-        Console.WriteLine($"Ensuring staging path [{_directoryStaging}] exists...");
+        Trace.WriteLine($"Ensuring staging path [{_directoryStaging}] exists...");
         if (!Directory.Exists(_directoryStaging))
         {
             return new OperationResult<DirectoryProcessorResult>
@@ -292,7 +292,7 @@ public sealed class DirectoryProcessorService(
 
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
-            Console.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
+            Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
             try
             {
                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -426,11 +426,11 @@ public sealed class DirectoryProcessorService(
                 }
 
 
-                Console.WriteLine($"Loading [{albumsForDirectory.Count}] album directories");
+                Trace.WriteLine($"Loading [{albumsForDirectory.Count}] album directories");
 
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
                 //var albumAndJsonFile = new Dictionary<Album, string>();
-                Console.WriteLine("Loading images for album...");
+                Trace.WriteLine("Loading images for album...");
                 foreach (var album in albumsForDirectory.Take(_maxAlbumProcessingCount))
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -591,7 +591,7 @@ public sealed class DirectoryProcessorService(
                             if ((album.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
                                 album.Songs!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
                             {
-                                Console.WriteLine("Running plugins on songs with modified tags...");
+                                Trace.WriteLine("Running plugins on songs with modified tags...");
 
                                 foreach (var songPlugin in _songPlugins)
                                 {
@@ -614,7 +614,7 @@ public sealed class DirectoryProcessorService(
                         album.Directory = albumDirectorySystemInfo;
 
                         // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
-                        Console.WriteLine("Querying for artist...");
+                        Trace.WriteLine("Querying for artist...");
                         var searchRequest = album.Artist.ToArtistQuery([
                             new KeyValue((album.AlbumYear() ?? 0).ToString(),
                                 album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle())
@@ -667,7 +667,7 @@ public sealed class DirectoryProcessorService(
                         // If album has no images then see if ImageSearchEngine can find any
                         if (album.Images?.Count() == 0)
                         {
-                            Console.WriteLine("Querying for album image...");
+                            Trace.WriteLine("Querying for album image...");
                             var albumImageSearchRequest = album.ToAlbumQuery();
                             var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(albumImageSearchRequest,
                                     1,
@@ -724,14 +724,14 @@ public sealed class DirectoryProcessorService(
                             }
                         }
 
-                        Console.WriteLine("Validating album...");
+                        Trace.WriteLine("Validating album...");
                         var validationResult = _albumValidator.ValidateAlbum(album);
                         album.ValidationMessages = validationResult.Data.Messages ?? [];
                         album.Status = validationResult.Data.AlbumStatus;
                         album.StatusReasons = validationResult.Data.AlbumStatusReasons;
-                        Console.WriteLine($"Validating album: status [{album.Status.ToString()}] reasons [{(album.StatusReasons == AlbumNeedsAttentionReasons.NotSet ? "None" : album.StatusReasons.ToString())}]");
+                        Trace.WriteLine($"Validating album: status [{album.Status.ToString()}] reasons [{(album.StatusReasons == AlbumNeedsAttentionReasons.NotSet ? "None" : album.StatusReasons.ToString())}]");
 
-                        Console.WriteLine("Serializing album...");
+                        Trace.WriteLine("Serializing album...");
                         var serialized = serializer.Serialize(album);
                         var jsonName = album.ToMelodeeJsonName(_configuration, true);
                         if (jsonName.Nullify() != null)
@@ -887,7 +887,7 @@ public sealed class DirectoryProcessorService(
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Trace.WriteLine(e);
             }
         }
 

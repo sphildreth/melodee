@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Security;
 using System.Text;
@@ -842,7 +843,7 @@ public static partial class StringExtensions
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
+            Trace.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
         }
 
         
@@ -867,7 +868,7 @@ public static partial class StringExtensions
         {
             var invalidCharactersRegex = new Regex("([\ud800-\udbff](?![\udc00-\udfff]))|((?<![\ud800-\udbff])[\udc00-\udfff])");
             text = invalidCharactersRegex.Replace(text, "");
-            Console.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
+            Trace.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
         }
         return text;
     }    

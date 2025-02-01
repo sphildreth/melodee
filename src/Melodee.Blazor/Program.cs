@@ -11,6 +11,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Jobs;
 using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Models;
+using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
@@ -49,6 +50,9 @@ builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o
         => o.UseNodaTime()
             .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+
+builder.Services.AddDbContextFactory<ArtistSearchEngineServiceDbContext>(opt 
+    => opt.UseSqlite(builder.Configuration.GetConnectionString("ArtistSearchEngineConnection")));
 
 builder.Services.AddSingleton<IDbConnectionFactory>(_ =>
     new OrmLiteConnectionFactory(builder.Configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));

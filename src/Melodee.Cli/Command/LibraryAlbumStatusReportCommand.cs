@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
@@ -100,7 +101,7 @@ public class LibraryAlbumStatusReportCommand : AsyncCommand<LibraryAlbumStatusRe
             {
                 foreach (var stat in result.Data ?? [])
                 {
-                    Console.WriteLine($"{stat.Title}\t{stat.Data}\t{stat.Message}");
+                    Trace.WriteLine($"{stat.Title}\t{stat.Data}\t{stat.Message}");
                 }
             }
 

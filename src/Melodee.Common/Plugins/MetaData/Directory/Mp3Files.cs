@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
@@ -193,8 +194,13 @@ public class Mp3Files(
 
     private Task HandleDuplicates(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] seenSongs, CancellationToken cancellationToken = default)
     {
-        Console.WriteLine($"Checking for duplicate files in [{fileSystemDirectoryInfo.FullName()}]...");
+        Trace.WriteLine($"Checking for duplicate files in [{fileSystemDirectoryInfo.FullName()}]...");
 
+        if (seenSongs.Length == 0)
+        {
+            return Task.CompletedTask;
+        }
+        
         // Delete any files that are duplicate by length and CRC value
         var files = fileSystemDirectoryInfo.AllFileInfos(searchOption: SearchOption.AllDirectories)
             .GroupBy(f => new { f.Length, Hash = Crc32.Calculate(f) })
@@ -207,7 +213,7 @@ public class Mp3Files(
             foreach (var file in filesToDelete)
             {
                 File.Delete(file.FullName);
-                Console.WriteLine($"Deleted duplicate: {file.FullName}");
+                Trace.WriteLine($"Deleted duplicate: {file.FullName}");
             }
         }
         var duplicateSongs = seenSongs.GroupBy(x => x.DuplicateHashCheck).Where(x => x.Count() > 1).ToArray();
@@ -221,7 +227,7 @@ public class Mp3Files(
                 {
                     var duplicateSongFile = ds.File.FullName(fileSystemDirectoryInfo);
                     File.Delete(duplicateSongFile);
-                    Console.WriteLine($"Deleted duplicate song: {duplicateSongFile}");
+                    Trace.WriteLine($"Deleted duplicate song: {duplicateSongFile}");
                 }
             }
         }

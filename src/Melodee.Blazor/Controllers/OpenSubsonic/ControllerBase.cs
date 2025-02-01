@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Middleware;
 using Melodee.Blazor.Results;
@@ -179,7 +180,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
                 GetRequestIp(context.HttpContext)
             )
         );
-        Console.WriteLine($"-*-> User [{ApiRequest.Username}] : {Serializer.Serialize(ApiRequest)}");
+        Trace.WriteLine($"-*-> User [{ApiRequest.Username}] : {Serializer.Serialize(ApiRequest)}");
         //return base.OnActionExecutionAsync(context, next);
         await next().ConfigureAwait(false);
     }

@@ -118,7 +118,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    Trace.WriteLine(e);
                 }
             }
 
@@ -149,7 +149,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    Trace.WriteLine(e);
                 }
             }
 
@@ -179,7 +179,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    Trace.WriteLine(e);
                 }
             }
 
@@ -206,7 +206,7 @@ public class ParseCommand : AsyncCommand<ParseSettings>
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    Trace.WriteLine(e);
                 }
             }
 

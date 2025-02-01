@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using Dapper;
 using IdSharp.Common.Utils;
 using Melodee.Common.Configuration;
@@ -73,7 +74,7 @@ public abstract class ServiceBase
             // if none exist take all images from albumToMove
             if (existingImages.Count == 0)
             {
-                Console.WriteLine("No image found in existing directory. Copying all images from Album...");
+                Trace.WriteLine("No image found in existing directory. Copying all images from Album...");
                 foreach (var image in albumToMove.Images)
                 {
                     if (image.FileInfo != null)
@@ -111,7 +112,7 @@ public abstract class ServiceBase
                         }
 
                         var toFile = Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName));
-                        Console.WriteLine($"Existing image [{existingWithSameFileName.ImageFileName}] to be overwritten by image [{toFile}]...");
+                        Trace.WriteLine($"Existing image [{existingWithSameFileName.ImageFileName}] to be overwritten by image [{toFile}]...");
                         File.Delete(existingWithSameFileName.ImageFileName);
                         File.Move(imageToMove.ImageFileName, toFile);
                         Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
@@ -124,7 +125,7 @@ public abstract class ServiceBase
                     var toFile = Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName));
                     if (!File.Exists(toFile))
                     {
-                        Console.WriteLine($"Moving image [{imageToMove.ImageFileName}] to [{toFile}]...");
+                        Trace.WriteLine($"Moving image [{imageToMove.ImageFileName}] to [{toFile}]...");
                         File.Move(imageToMove.ImageFileName, toFile);
                         Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
                         modifiedExistingDirectory = true;

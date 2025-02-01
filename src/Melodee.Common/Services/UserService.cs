@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Ardalis.GuardClauses;
@@ -449,7 +450,7 @@ public sealed class UserService(
                 var user = await GetAsync(eventData.UserId, cancellationToken).ConfigureAwait(false);
                 if (user.Data != null)
                 {
-                    Console.WriteLine($"[{nameof(UpdateLastLogin)}]: {eventData}");
+                    Trace.WriteLine($"[{nameof(UpdateLastLogin)}]: {eventData}");
                     await scopedContext.Users
                         .Where(x => x.Id == eventData.UserId)
                         .ExecuteUpdateAsync(setters =>

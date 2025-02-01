@@ -2,6 +2,7 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Jobs;
+using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
@@ -46,6 +47,8 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
+        services.AddDbContextFactory<ArtistSearchEngineServiceDbContext>(opt 
+            => opt.UseSqlite(configuration.GetConnectionString("ArtistSearchEngineConnection")));        
         services.AddHttpClient();
         services.AddSingleton<IDbConnectionFactory>(_ =>
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
@@ -118,6 +121,7 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
                         settingService,
                         configFactory,
                         dbFactory,
+                        scope.ServiceProvider.GetRequiredService<IDbContextFactory<ArtistSearchEngineServiceDbContext>>(),
                         scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>()
                     ),
                     new AlbumImageSearchEngineService

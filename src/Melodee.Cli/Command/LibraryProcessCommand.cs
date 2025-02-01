@@ -5,6 +5,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
@@ -55,6 +56,9 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
             opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
+        services.AddDbContextFactory<ArtistSearchEngineServiceDbContext>(opt 
+            => opt.UseSqlite(configuration.GetConnectionString("ArtistSearchEngineConnection")));   
+        
         services.AddHttpClient();
 
         services.AddSingleton<IDbConnectionFactory>(opt =>
@@ -68,6 +72,11 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         });
 
+        if (settings.Verbose)
+        {
+            Trace.Listeners.Add(new ConsoleTraceListener());
+        }
+        
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -99,6 +108,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
                 settingService,
                 melodeeConfigurationFactory,
                 dbFactory,
+                scope.ServiceProvider.GetRequiredService<IDbContextFactory<ArtistSearchEngineServiceDbContext>>(),
                 musicBrainzRepository);
 
             var albumImageSearchEngineService = new AlbumImageSearchEngineService

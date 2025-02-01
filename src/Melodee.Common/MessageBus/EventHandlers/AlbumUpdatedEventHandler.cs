@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Melodee.Common.MessageBus.Events;
 using Rebus.Handlers;
 
@@ -8,7 +9,7 @@ public sealed class AlbumUpdatedEventHandler : IHandleMessages<AlbumUpdatedEvent
     public Task Handle(AlbumUpdatedEvent message)
     {
         // TODO update db or something        
-        Console.WriteLine($"[{nameof(AlbumUpdatedEventHandler)}]: {message}");
+        Trace.WriteLine($"[{nameof(AlbumUpdatedEventHandler)}]: {message}");
 
         return Task.CompletedTask;
     }

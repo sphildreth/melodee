@@ -8,6 +8,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.Scrobbling;
+using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
@@ -33,6 +34,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     private readonly DbConnection _dbConnection;
 
     private readonly DbContextOptions<MelodeeDbContext> _dbContextOptions;
+    
+    private readonly DbContextOptions<ArtistSearchEngineServiceDbContext> _dbArtistSearchEngineContextOptions;
 
     protected ServiceTestBase()
     {
@@ -54,12 +57,22 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         _dbContextOptions = new DbContextOptionsBuilder<MelodeeDbContext>()
             .UseSqlite(_dbConnection, x => x.UseNodaTime())
             .Options;
+        
+        _dbArtistSearchEngineContextOptions = new DbContextOptionsBuilder<ArtistSearchEngineServiceDbContext>()
+            .UseSqlite(_dbConnection)
+            .Options;
 
         using (var context = new MelodeeDbContext(_dbContextOptions))
         {
             context.Database.EnsureCreated();
             context.SaveChanges();
         }
+        
+        using (var context = new ArtistSearchEngineServiceDbContext(_dbArtistSearchEngineContextOptions))
+        {
+            context.Database.EnsureCreated();
+            context.SaveChanges();
+        }        
     }
 
     protected ILogger Logger { get; }
@@ -85,6 +98,14 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             => f.CreateDbContextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => new MelodeeDbContext(_dbContextOptions));
         return mockFactory.Object;
     }
+    
+    protected IDbContextFactory<ArtistSearchEngineServiceDbContext> MockArtistSearchEngineFactory()
+    {
+        var mockFactory = new Mock<IDbContextFactory<ArtistSearchEngineServiceDbContext>>();
+        mockFactory.Setup(f
+            => f.CreateDbContextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => new ArtistSearchEngineServiceDbContext(_dbArtistSearchEngineContextOptions));
+        return mockFactory.Object;
+    }    
 
     protected ApiRequest GetApiRequest(string username, string salt, string password)
     {
@@ -119,25 +140,16 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockDbContextFactory());
     }
 
-    // protected IEventPublisher<UserLoginEvent> MockUserEventPublisher()
-    // {
-    //     var mockEventPublisher = new Mock<IEventPublisher<UserLoginEvent>>();
-    //     return mockEventPublisher.Object;
-    // }
-
-    // protected IEventPublisher<AlbumUpdatedEvent> MockAlbumUpdatedEventPublisher()
-    // {
-    //     var mockEventPublisher = new Mock<IEventPublisher<AlbumUpdatedEvent>>();
-    //     return mockEventPublisher.Object;
-    // }
 
     protected ArtistSearchEngineService GetArtistSearchEngineService()
     {
-        return new ArtistSearchEngineService(Logger,
+        return new ArtistSearchEngineService(
+            Logger,
             CacheManager,
             MockSettingService(),
             MockConfigurationFactory(),
             MockFactory(),
+            MockArtistSearchEngineFactory(),
             GetMusicBrainzRepository());
     }
 

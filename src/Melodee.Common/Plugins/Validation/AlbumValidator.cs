@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
@@ -119,7 +120,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Trace.WriteLine(e);
         }
 
         var albumStatus = _validationMessages.All(x => x.Severity != ValidationResultMessageSeverity.Critical)

@@ -108,7 +108,7 @@ public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
                 {
                     if (!settings.ShowOnlyIssues || (settings.ShowOnlyIssues && stat.Type != StatisticType.Information))
                     {
-                        Console.WriteLine($"{stat.Title}\t{stat.Data}\t{stat.Message}");
+                        AnsiConsole.WriteLine($"{stat.Title}\t{stat.Data}\t{stat.Message}");
                     }
                 }
             }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ATL;
 using FFMpegCore;
 using Melodee.Common.Configuration;
@@ -558,7 +559,7 @@ public sealed class AtlMetaTag(
             var ext = track.FileInfo().Extension;
             if (!ext.ToLower().EndsWith("m4a")) // M4A is an audio file using the MP4 encoding
             {
-                Console.WriteLine($"Video file found in Scanning. File [{track.FileInfo().FullName}]");
+                Trace.WriteLine($"Video file found in Scanning. File [{track.FileInfo().FullName}]");
                 return false;
             }
         }

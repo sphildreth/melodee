@@ -1,4 +1,5 @@
 @page "/account/login"
+@using System.Diagnostics
 @using Melodee.Common.Data.Models.Extensions
 @using Microsoft.AspNetCore.WebUtilities
 
@@ -114,7 +115,7 @@ else
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Trace.WriteLine(e);
         }
         finally
         {
