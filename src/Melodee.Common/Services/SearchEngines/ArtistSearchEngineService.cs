@@ -199,7 +199,7 @@ public class ArtistSearchEngineService(
                         SpotifyId = artist.SpotifyId,
                         UniqueId = artist.Id,
                         WikiDataId = artist.WikiDataId,
-                        Releases = artist.Albums?.Select(x => x.ToAlbumSearchResult()).ToArray()
+                        Releases = artist.Albums?.Select(x => x.ToAlbumSearchResult(artist, nameof(ArtistSearchEngineService))).ToArray()
                     });
                     Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Found artist [{artist}] in database for query [{query}].");
                 }
@@ -269,6 +269,7 @@ public class ArtistSearchEngineService(
                                 {
                                     seenAlbumRelease.MusicBrainzId ??= arRelease.MusicBrainzId;
                                     seenAlbumRelease.SpotifyId ??= arRelease.SpotifyId;
+                                    seenAlbumRelease.CoverUrl ??= arRelease.CoverUrl;
                                 }
                             }
                         }
@@ -338,14 +339,15 @@ public class ArtistSearchEngineService(
                                     NameNormalized = x.NameNormalized,
                                     Year = SafeParser.ToDateTime(x.ReleaseDate)?.Year ?? 0,
                                     MusicBrainzId = x.MusicBrainzId,
-                                    SpotifyId = x.SpotifyId
+                                    SpotifyId = x.SpotifyId,
+                                    CoverUrl = x.CoverUrl
                                 }).ToArray();
                                 
                                 newDbArtist.Albums = albums;                                
                             }                            
                             scopedContext.Artists.Add(newDbArtist);
                             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                            newArtist = newArtist with { UniqueId = newDbArtist.Id, Releases = albums.Select(x => x.ToAlbumSearchResult()).ToArray()};
+                            newArtist = newArtist with { UniqueId = newDbArtist.Id, Releases = albums.Select(x => x.ToAlbumSearchResult(x.Artist, nameof(ArtistSearchEngineService))).ToArray()};
                             result.Add(newArtist);
                             Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Added artist [{newArtist}] with [{albums.Length}] albums to database.");
                         }

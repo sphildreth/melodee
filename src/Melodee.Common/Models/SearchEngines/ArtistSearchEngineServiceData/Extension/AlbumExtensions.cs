@@ -2,10 +2,11 @@ namespace Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Exte
 
 public static class AlbumExtensions
 {
-    public static AlbumSearchResult ToAlbumSearchResult(this Album album)
+    public static AlbumSearchResult ToAlbumSearchResult(this Album album, Artist artist, string fromPlugin)
     {
         return new AlbumSearchResult
         {
+            Artist = artist.ToArtistSearchResult(fromPlugin),
             UniqueId = album.Id,
             AlbumType = album.AlbumTypeValue,
             ReleaseDate = $"01/01/{ album.Year}",

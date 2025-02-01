@@ -20,7 +20,7 @@
         </RadzenColumn>
     </RadzenRow>
     <RadzenRow>
-        @foreach (var kv in SearchValues)
+        @foreach (var kv in SearchValues.Where(x => x.Key != nameof(AlbumQuery.ArtistMusicBrainzId) && x.Key != nameof(AlbumQuery.Year)))
         {
             <DebounceInput class="rz-textbox rz-w-100"
                            autocomplete="off"
@@ -35,7 +35,7 @@
     </RadzenRow>
     <RadzenRow>
         <RadzenColumn Size="12">
-            <div class="cover-search-images-container">
+            <div class="album-searches-container">
                 @if (_isLoading)
                 {
                     <RadzenProgressBarCircular
@@ -46,7 +46,9 @@
                 }
                 @foreach (var result in _results)
                 {
-                    <AlbumDataInfoCardComponent Album="result"/>
+                    <div class="@(_selectedResult == result ? "selected" : string.Empty) album-search-container" @onclick="() => _selectedResult = result">
+                        <AlbumDataInfoCardCompactComponent ShowAlbumLink="false" Album="result"/>
+                    </div>
                 }
             </div>
         </RadzenColumn>
@@ -83,7 +85,7 @@
     {
         _maxResults = (await SettingService.GetValueAsync<int?>(SettingRegistry.SearchEngineDefaultPageSize)).Data ?? (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
         await AlbumSearchEngineService.InitializeAsync();
-        await DoSearchAsync();
+      //  await DoSearchAsync();
     }
 
     private async Task DoSearchAsync()
@@ -95,16 +97,22 @@
         _isLoading = true;
         try
         {
+            var searchName = SearchValues.First(x => x.Key == nameof(AlbumQuery.Name)).Value;
             _results = (await AlbumSearchEngineService.DoSearchAsync(new AlbumQuery
                 {
                     Artist = SearchValues.First(x => x.Key == nameof(AlbumQuery.Artist)).Value,
                     ArtistMusicBrainzId = SearchValues.First(x => x.Key ==  nameof(AlbumQuery.ArtistMusicBrainzId)).Value,
-                    Name = SearchValues.First(x => x.Key == nameof(AlbumQuery.Name)).Value,
+                    Name = searchName,
                     Year = SafeParser.ToNumber<int>(SearchValues.First(x => x.Key == nameof(AlbumQuery.Year)).Value)
                 }, _maxResults))
                 .Data
+                .OrderByDescending(x => x.Year).ThenBy(x => x.Name)
                 .Select(x => x.ToAlbumDataInfo())
                 .ToArray();
+            if (searchName.Nullify() != null)
+            {
+                _results = _results.Where(x => x.NameNormalized.Contains(searchName.ToNormalizedString() ?? searchName)).ToArray();
+            }
         }
         catch (Exception e)
         {

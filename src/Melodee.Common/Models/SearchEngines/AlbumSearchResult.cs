@@ -28,7 +28,7 @@ public sealed record AlbumSearchResult
 
     public string[]? Genres { get; init; }
 
-    public string? CoverUrl { get; init; }
+    public string? CoverUrl { get; set; }
 
     public required string Name { get; init; }
 

@@ -759,4 +759,19 @@ public sealed class MediaEditService(
             Data = result
         };
     }
+
+    public async Task<OperationResult<bool>> SaveMelodeeAlbum(Album album, CancellationToken cancellationToken = default)
+    {
+        album.Modified = DateTimeOffset.UtcNow;
+        var albumValidResult = _albumValidator.ValidateAlbum(album);
+        album.ValidationMessages = albumValidResult.Data.Messages ?? [];
+        album.Status = albumValidResult.Data.AlbumStatus;
+        album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;
+        await SaveAlbum(album.Directory, album, cancellationToken);
+
+        return new OperationResult<bool>
+        {
+            Data = album.Status == AlbumStatus.Ok
+        };
+    }
 }

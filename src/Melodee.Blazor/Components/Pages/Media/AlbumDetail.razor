@@ -1,9 +1,12 @@
 @page "/media/album/{LibraryApiKey:guid}/{ApiKey:guid}"
+@using Melodee.Blazor.Extensions
 @using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Extensions
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Services.Scanning
+@using SQLitePCL
 @inherits MelodeeComponentBase
 
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -363,9 +366,27 @@
                  SearchValues="searchValues"/>);
     }
 
-    private Task IdentifyAlbumCallback(AlbumDataInfo? arg)
+    private async Task IdentifyAlbumCallback(AlbumDataInfo? arg)
     {
-        throw new NotImplementedException();
+        if (arg?.AlbumSearchResult != null)
+        {
+            _album.Artist = _album.Artist with
+            {
+                MusicBrainzId = arg.AlbumSearchResult.Artist?.MusicBrainzId,
+                Name = arg.AlbumSearchResult.Artist?.Name ?? _album.Artist.Name,
+                NameNormalized = arg.AlbumSearchResult.Artist?.Name.ToNormalizedString() ?? _album.Artist.NameNormalized,
+                SortName = arg.AlbumSearchResult.Artist?.SortName ?? _album.Artist.SortName,
+                SpotifyId = arg.AlbumSearchResult.Artist?.SpotifyId
+            };
+            _album.SetTagValue(MetaTagIdentifier.Title, arg.AlbumSearchResult.Name, doSetSongValue: false);
+            _album.SetTagValue(MetaTagIdentifier.AlbumDate, arg.AlbumSearchResult.Year, doSetSongValue: false);
+            var result = await MediaEditService.SaveMelodeeAlbum(_album);
+            if (result.Data)
+            {
+                NotificationService.Notify(NotificationMessageForResult(result, "identifying album", ToastTime));
+                NavigationManager.ReloadPage();
+            }
+        }
     }
 }
 

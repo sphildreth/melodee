@@ -1,0 +1,18 @@
+.album-searches--container {
+  overflow: auto;
+  border: 1px solid lightgray;
+}
+
+img.cover-search-image {
+  max-width: 80px;
+  max-height: 80px;
+  margin: 3px;
+}
+
+.album-search-container {
+  margin: 2px;
+}
+
+.album-search-container.selected {
+  border: 1px solid red;
+}

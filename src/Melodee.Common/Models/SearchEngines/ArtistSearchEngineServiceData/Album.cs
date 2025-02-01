@@ -31,6 +31,9 @@ public record Album
     [MaxLength(255)]
     public string? SpotifyId { get; init; }
     
+    [MaxLength(2000)]
+    public string? CoverUrl { get; init; }
+    
     [Required]
     [MaxLength(2000)]
     public required string Name { get; init; }

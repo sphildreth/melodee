@@ -12,7 +12,7 @@ public static class AlbumDataInfoExtensions
 
     public static string ImageUrl(this AlbumDataInfo artistDataInfo, int? size = null)
     {
-        return $"/images/{artistDataInfo.ToApiKey()}/{size ?? 80}";
+        return artistDataInfo.CoverUrl ?? $"/images/{artistDataInfo.ToApiKey()}/{size ?? 80}";
     }
 
     public static string DetailUrl(this AlbumDataInfo albumDataInfo, string? fromUrl = null)

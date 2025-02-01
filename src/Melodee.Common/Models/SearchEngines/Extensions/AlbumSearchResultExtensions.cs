@@ -26,6 +26,10 @@ public static class AlbumSearchResultExtensions
             null,
             LocalDate.FromDateTime(SafeParser.ToDateTime(searchResult.ReleaseDate) ?? DateTime.MinValue),
             (short)AlbumStatus.Ok
-        );
+        )
+        {
+            CoverUrl = searchResult.CoverUrl,
+            AlbumSearchResult = searchResult
+        };
     }
 }
