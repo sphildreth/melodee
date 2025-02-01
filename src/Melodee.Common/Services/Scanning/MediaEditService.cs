@@ -586,7 +586,7 @@ public sealed class MediaEditService(
 
                 mediaLooper++;
             }
-
+            album.SetTagValue(MetaTagIdentifier.SongTotal, numberOfMedias);
             newAlbumId = await SaveAlbum(directoryInfo, album, cancellationToken);
             result = true;
         }

@@ -5,19 +5,26 @@
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Extensions
 @using Melodee.Common.Models.SearchEngines
+@using Melodee.Common.Plugins.Validation
 @using Melodee.Common.Services.Scanning
+@using Melodee.Common.Services.SearchEngines
+@using SixLabors.ImageSharp
 @using SQLitePCL
+@using ImageInfo = Melodee.Common.Models.ImageInfo
 @inherits MelodeeComponentBase
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject ILogger Logger
 @inject LibraryService LibraryService
 @inject AlbumDiscoveryService AlbumDiscoveryService
+@inject AlbumImageSearchEngineService AlbumImageSearchEngineService
 @inject MediaEditService MediaEditService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject DefaultImages DefaultImages
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject IHttpClientFactory HttpClientFactory
 
 @attribute [Authorize(Roles = "Administrator,Editor")]
 
@@ -31,7 +38,9 @@
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="@_album.AlbumTitle()" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1"
+            <RadzenText Text="@($"[{_album.AlbumYear()}] {_album.AlbumTitle()}")"
+                        TextStyle="TextStyle.DisplayH6"
+                        TagName="TagName.H1"
                         style="margin: 0"/>
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
@@ -175,7 +184,7 @@
                                 <table class="rz-mt-1">
                                     <thead>
                                     <tr>
-                                        <th scope="col">#</th>
+                                        <th scope="col" style="min-width:60px;">#</th>
                                         <th scope="col" style="width:90%;">Title</th>
                                         <th scope="col">Duration</th>
                                     </tr>
@@ -184,7 +193,10 @@
                                     @foreach (var song in (_album.Songs ?? []).OrderBy(x => x.MediaNumber()).ThenBy(x => x.MediaNumber()))
                                     {
                                         <tr>
-                                            <td>@($"{song.MediaNumber().ToStringPadLeft(2)}.{song.SongNumber().ToStringPadLeft(3)}")</td>
+                                            <td>
+                                                <span style="cursor: pointer;color: red;" @onclick="@(() => DeleteSong(song))">🗑</span>
+                                                @($"{song.MediaNumber().ToStringPadLeft(2)}.{song.SongNumber().ToStringPadLeft(3)}")
+                                            </td>
                                             <td>@song.Title()</td>
                                             <td>@CurrentUser!.FormatDuration(song.Duration().ToDuration())</td>
                                         </tr>
@@ -214,6 +226,8 @@
 
 
 @code {
+
+    short _maxResults = 10;
 
     [Parameter] public Guid LibraryApiKey { get; set; }
 
@@ -288,6 +302,9 @@
         await base.OnInitializedAsync();
         await AlbumDiscoveryService.InitializeAsync();
         await MediaEditService.InitializeAsync();
+
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _maxResults = configuration.GetValue<short?>(SettingRegistry.SearchEngineDefaultPageSize) ?? configuration.GetValue<short>(SettingRegistry.DefaultsPageSize);
     }
 
     private Task EditButtonClick()
@@ -380,7 +397,43 @@
             };
             _album.SetTagValue(MetaTagIdentifier.Title, arg.AlbumSearchResult.Name, doSetSongValue: false);
             _album.SetTagValue(MetaTagIdentifier.AlbumDate, arg.AlbumSearchResult.Year, doSetSongValue: false);
-            var result = await MediaEditService.SaveMelodeeAlbum(_album);
+            OperationResult<bool> result;
+            if (_album.Images?.Count() == 0)
+            {
+                var imageSearch = await AlbumImageSearchEngineService.DoSearchAsync(_album.ToAlbumQuery(), _maxResults);
+                if (imageSearch.Data?.Length > 0)
+                {
+                    var imageSearchResult = imageSearch.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
+                    if (imageSearchResult != null)
+                    {
+                        var httpClient = HttpClientFactory.CreateClient();
+                        var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
+                        var albumImageFromSearchFileName = Path.Combine(_album.Directory.FullName(), _album.Directory.GetNextFileNameForType(_maxResults, Common.Data.Models.Album.FrontImageType).Item1);
+                        if (await httpClient.DownloadFileAsync(
+                                imageSearchResult.MediaUrl,
+                                albumImageFromSearchFileName,
+                                async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front)).Data.IsValid).ConfigureAwait(false))
+                        {
+                            var newImageInfo = new System.IO.FileInfo(albumImageFromSearchFileName);
+                            var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName).ConfigureAwait(false);
+                            _album.Images = new List<ImageInfo>
+                            {
+                                new()
+                                {
+                                    FileInfo = newImageInfo.ToFileSystemInfo(),
+                                    PictureIdentifier = PictureIdentifier.Front,
+                                    CrcHash = Crc32.Calculate(newImageInfo),
+                                    Width = imageInfo.Width,
+                                    Height = imageInfo.Height,
+                                    SortOrder = 1,
+                                    WasEmbeddedInSong = false
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+            result = await MediaEditService.SaveMelodeeAlbum(_album);
             if (result.Data)
             {
                 NotificationService.Notify(NotificationMessageForResult(result, "identifying album", ToastTime));
@@ -388,5 +441,21 @@
             }
         }
     }
+
+    private async Task DeleteSong(Song song)
+    {
+        // TODO BLECH
+
+        _album.Songs = _album.Songs!.Except([song]);
+        await MediaEditService.SaveMelodeeAlbum(_album);
+        await MediaEditService.RenumberSongs(_album.Directory, _album.Id);
+        var result = await MediaEditService.SaveMelodeeAlbum(_album);
+        if (result.Data)
+        {
+            NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
+            NavigationManager.ReloadPage();
+        }
+    }
+
 }
 

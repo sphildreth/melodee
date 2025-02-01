@@ -62,7 +62,6 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
                         ThumbnailUrl = string.Empty,
                         MediaUrl = $"https://coverartarchive.org/release-group/{rg}/front"
                     });
-                    StopProcessing = true;
                 }
             }
         }
