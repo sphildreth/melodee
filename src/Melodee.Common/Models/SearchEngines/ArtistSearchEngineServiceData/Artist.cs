@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 
-[Index(nameof(Name), IsUnique = true)]
-[Index(nameof(NameNormalized), IsUnique = true)]
-[Index(nameof(SortName), IsUnique = true)]
+[Index(nameof(Name))]
+[Index(nameof(NameNormalized))]
+[Index(nameof(SortName))]
 [Index(nameof(ItunesId), IsUnique = true)]
 [Index(nameof(AmgId), IsUnique = true)]
 [Index(nameof(DiscogsId), IsUnique = true)]
@@ -49,6 +50,11 @@ public record Artist
 
     [MaxLength(255)]
     public string? SpotifyId { get; init; }
+
+    public ICollection<Album> Albums { get; set; } = [];
+    
+    [NotMapped]
+    public int Rank { get; set; }
 
     public override string ToString() => $"{Name} ({Id}) MusicBrainzId: [{MusicBrainzId}] SpotifyId: [{SpotifyId}]";
 }

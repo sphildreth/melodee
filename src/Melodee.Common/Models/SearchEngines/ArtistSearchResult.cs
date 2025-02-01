@@ -32,7 +32,7 @@ public sealed record ArtistSearchResult
     public long UniqueId { get; init; }
 
     /// <summary>Ranked, higher number the better quality of the result to the query.</summary>
-    public int Rank { get; init; }
+    public int Rank { get; set; }
 
     /// <summary>Public URL to an image.</summary>
     public string? ImageUrl { get; init; }
@@ -61,7 +61,7 @@ public sealed record ArtistSearchResult
     public string[]? AlternateNames { get; init; }
 
     /// <summary>Collection of releases for artist</summary>
-    public AlbumSearchResult[]? Releases { get; init; }
+    public AlbumSearchResult[]? Releases { get; set; }
 
     /// <summary>
     ///     Similar Artists

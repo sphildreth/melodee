@@ -146,7 +146,7 @@ public class SQLiteMusicBrainzRepository(
                                   JOIN "Artist" ar ON (a.MusicBrainzArtistId = ar.MusicBrainzArtistId)
                                   WHERE ar.NameNormalized = '{0}'
                                   AND ('{1}' = '' OR a.NameNormalized in ('{1}'))
-                                  AND SUBSTR(a.ReleaseDate, 1, 4) in ('{2}')
+                                  AND ('{2}' = '' OR '{2}' = '0' OR SUBSTR(a.ReleaseDate, 1, 4) in ('{2}'))
                                   group by a.ReleaseGroupMusicBrainzIdRaw 
                                   """;
                             ssql = sql.FormatSmart(query.NameNormalized,

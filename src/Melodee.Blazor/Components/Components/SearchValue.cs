@@ -1,6 +1,6 @@
 namespace Melodee.Blazor.Components.Components;
 
-public class ImageSearchValue
+public class SearchValue
 {
     public required string Key { get; set; }
 

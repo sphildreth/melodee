@@ -280,7 +280,7 @@ public class Spotify(
                     }
                 }
 
-                if (query.AlbumKeyValues?.Length > 0 && results.Count > 0)
+                if (results.Count > 0)
                 {
                     var newResults = new List<ArtistSearchResult>();
                     foreach (var artist in results.Where(x => x.SpotifyId != null))
@@ -288,25 +288,22 @@ public class Spotify(
                         var artistAlbumsResult = await spotify.Artists.GetAlbums(artist.SpotifyId!, new ArtistsAlbumsRequest(), cancellationToken);
                         if (artistAlbumsResult?.Items?.Count > 0)
                         {
-                            var albums = artistAlbumsResult.Items.Where(x => query.AlbumKeyValues.Any(y => y.Key == x.ReleaseDate[..4] && y.Value == x.Name.ToNormalizedString())).ToArray();
-                            if (albums.Length != 0)
+                            newResults.Add(artist with
                             {
-                                newResults.Add(artist with
+                                Releases = artistAlbumsResult.Items.Select(x => new AlbumSearchResult
                                 {
-                                    Rank = 10 + albums.Length,
-                                    Releases = albums.Select(x => new AlbumSearchResult
-                                    {
-                                        AlbumType = x.AlbumType.ToNormalizedString() == "ALBUM" ? AlbumType.Album : AlbumType.NotSet,
-                                        Name = x.Name,
-                                        NameNormalized = x.Name.ToNormalizedString() ?? x.Name,
-                                        SortName = x.Name,
-                                        SpotifyId = x.Id
-                                    }).ToArray()
-                                });
-                            }
+                                    AlbumType = x.AlbumType.ToNormalizedString() == "ALBUM" ? AlbumType.Album : AlbumType.NotSet,
+                                    Name = x.Name,
+                                    NameNormalized = x.Name.ToNormalizedString() ?? x.Name,
+                                    ReleaseDate = x.ReleaseDate,
+                                    SortName = x.Name,
+                                    SpotifyId = x.Id
+                                }).ToArray()
+                            });
                         }
+                        var matchingAlbumCount = query.AlbumKeyValues == null ? 0 : (artistAlbumsResult?.Items ?? []).Count(x => query.AlbumKeyValues?.Any(y => y.Key == x.ReleaseDate[..4] && y.Value == x.Name.ToNormalizedString()) ?? false);
+                        artist.Rank += matchingAlbumCount;
                     }
-
                     if (newResults.Count > 0)
                     {
                         results = newResults;

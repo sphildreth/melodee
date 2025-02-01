@@ -31,8 +31,6 @@ public sealed class Album : MetaDataModelBase
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? SortName { get; set; }
-
-
     public short AlbumStatus { get; set; }
 
     [NotMapped] public AlbumStatus AlbumStatusValue => SafeParser.ToEnum<AlbumStatus>(AlbumStatus);

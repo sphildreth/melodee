@@ -47,7 +47,7 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
                 AlbumMusicBrainzIds = query?.MusicBrainzIdValue == null ? null : [query.MusicBrainzIdValue.Value],
                 AlbumKeyValues =
                 [
-                    new KeyValue(query?.Year.ToString() ?? string.Empty, query?.Name)
+                    new KeyValue(query?.Year.ToString() ?? string.Empty, query?.NameNormalized)
                 ]
             }, 1, cancellationToken).ConfigureAwait(false);
             if (artistSearchResult.IsSuccess)

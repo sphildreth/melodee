@@ -2,7 +2,7 @@
 @using Melodee.Common.Services.SearchEngines
 @inject SettingService SettingService
 @inject AlbumImageSearchEngineService AlbumImageSearchEngineService
-@inject ArtistSearchEngineService ArtistImageSearchEngineService
+@inject ArtistImageSearchEngineService ArtistImageSearchEngineService
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject ILogger Logger
 
@@ -85,7 +85,7 @@
     private ImageSearchResult[] _results = [];
     private ImageSearchResult? _selectedResult;
 
-    [Parameter] public ImageSearchValue[] SearchValues { get; set; } = [];
+    [Parameter] public SearchValue[] SearchValues { get; set; } = [];
 
     [Parameter] public ImageSearchType SearchType { get; set; }
 
@@ -120,7 +120,6 @@
     protected override async Task OnInitializedAsync()
     {
         _maxResults = (await SettingService.GetValueAsync<int?>(SettingRegistry.SearchEngineDefaultPageSize)).Data ?? (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
-        await ArtistImageSearchEngineService.InitializeAsync();
         await DoSearchAsync();
     }
 
@@ -136,8 +135,8 @@
                         Name = SearchValues.First().Value
                     }, _maxResults))
                     .Data
-                    .Where(x => x.ImageUrl != null)
-                    .Select(x => new ImageSearchResult(x.ImageUrl!, x.Name, _doDeleteExistingImages))
+                    .Where(x => x.UrlValue.Nullify() != null)
+                    .Select(x => new ImageSearchResult(x.UrlValue, x.Title ?? string.Empty, _doDeleteExistingImages))
                     .ToArray();
             }
             else

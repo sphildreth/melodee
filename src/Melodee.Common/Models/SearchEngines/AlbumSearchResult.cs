@@ -18,8 +18,13 @@ public sealed record AlbumSearchResult
     public required AlbumType AlbumType { get; init; }
 
     public string AlbumTypeValue => AlbumType.ToString();
+    
+    /// <summary>Ranked, higher number the better quality of the result to the query.</summary>
+    public int Rank { get; init; }
 
     public string? ReleaseDate { get; set; }
+    
+    public int? Year => DateTime.TryParse(ReleaseDate, out var date) ? date.Year : (int?)null;
 
     public string[]? Genres { get; init; }
 

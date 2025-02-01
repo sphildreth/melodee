@@ -1,6 +1,8 @@
 @page "/media/album/{LibraryApiKey:guid}/{ApiKey:guid}"
 @using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Extensions
+@using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Services.Scanning
 @inherits MelodeeComponentBase
 
@@ -38,7 +40,15 @@
                 <RadzenButton
                     Icon="edit"
                     ButtonStyle="ButtonStyle.Info"
-                    Text="Edit" title="Edit the album"
+                    Text="Identify"
+                    title="Identify the album"
+                    Size="ButtonSize.Small"
+                    Click="@IdentifyButtonClick"/>
+                <RadzenButton
+                    Icon="edit"
+                    ButtonStyle="ButtonStyle.Info"
+                    Text="Edit"
+                    title="Edit the album"
                     Size="ButtonSize.Small"
                     Click="@EditButtonClick"/>
                 <RadzenButton
@@ -322,4 +332,40 @@
         }
     }
 
+    private async Task IdentifyButtonClick()
+    {
+        var searchValues = new SearchValue[]
+        {
+            new()
+            {
+                Key = nameof(AlbumQuery.Artist),
+                Value = _album.Artist.Name
+            },
+            new()
+            {
+                Key = nameof(AlbumQuery.ArtistMusicBrainzId),
+                Value = _album.Artist.MusicBrainzId?.ToString() ?? string.Empty
+            },
+            new()
+            {
+                Key = nameof(AlbumQuery.Name),
+                Value = _album.AlbumTitle() ?? string.Empty
+            },
+            new()
+            {
+                Key = nameof(AlbumQuery.Year),
+                Value = _album.AlbumYear()?.ToString() ?? string.Empty
+            }
+        };
+        await DialogService.OpenAsync("Identify Album", ds =>
+            @<IdentifyAlbum
+                 OnUpdateCallback="IdentifyAlbumCallback"
+                 SearchValues="searchValues"/>);
+    }
+
+    private Task IdentifyAlbumCallback(AlbumDataInfo? arg)
+    {
+        throw new NotImplementedException();
+    }
 }
+

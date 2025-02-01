@@ -124,6 +124,7 @@ builder.Services
     .AddScoped<OpenSubsonicApiService>()
     .AddScoped<AlbumImageSearchEngineService>()
     .AddScoped<ArtistImageSearchEngineService>()
+    .AddScoped<AlbumSearchEngineService>()
     .AddScoped<ArtistSearchEngineService>()
     .AddScoped<StatisticsService>()
     .AddScoped<SearchService>()
