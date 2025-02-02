@@ -55,62 +55,20 @@
     </RadzenRow>
 </RadzenStack>
 <RadzenStack>
-    <RadzenRow AlignItems="AlignItems.Center">
-        <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="@_artist.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
-        </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="6">
-            <RadzenStack
-                Orientation="Orientation.Horizontal"
-                AlignItems="AlignItems.Center"
-                JustifyContent="JustifyContent.End"
-                Gap="0.5rem">
-                <RadzenButton
-                    Icon="public"
-                    Visible="CurrentUser?.IsEditor() ?? false"
-                    ButtonStyle="ButtonStyle.Info"
-                    Text="Web Search"
-                    title="Search the web for artist"
-                    Size="ButtonSize.Small"
-                    Click="@OnInternetSearchClick"/>
-                <RadzenButton
-                    Icon="edit"
-                    ButtonStyle="ButtonStyle.Info"
-                    Visible="CurrentUser?.IsEditor() ?? false"
-                    Text="Edit"
-                    title="Edit the artist"
-                    Size="ButtonSize.Small"
-                    Click="@EditButtonClick"/>
-                @if (_artist.IsLocked)
-                {
-                    <RadzenButton Icon="lock_open"
-                                  Text="Unlock"
-                                  Visible="CurrentUser?.IsEditor() ?? false"
-                                  ButtonStyle="ButtonStyle.Warning"
-                                  title="Unlock library, will allow modifications."
-                                  Size="ButtonSize.Small"
-                                  Click="@UnlockButtonClick"/>
-                }
-                else
-                {
-                    <RadzenButton Icon="lock"
-                                  Text="Lock"
-                                  Visible="CurrentUser?.IsEditor() ?? false"
-                                  ButtonStyle="ButtonStyle.Warning"
-                                  title="Lock library, will prevent modifications."
-                                  Size="ButtonSize.Small"
-                                  Click="@LockButtonClick"/>
-                }
-                <RadzenButton Icon="delete"
-                              Visible="@((CurrentUser?.IsEditor() ?? false) && !_artist.IsLocked)"
-                              ButtonStyle="ButtonStyle.Danger"
-                              Text="Delete"
-                              title="Delete the artist and all album files. BEWARE!"
-                              Size="ButtonSize.Small"
-                              Click="@DeleteButtonClick"/>
-            </RadzenStack>
-        </RadzenColumn>
-    </RadzenRow>
+    <RadzenMenu>
+        <RadzenMenuItem Text="Delete"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="DeleteButtonClick" title="Delete the artist, all artist albums, and all album files. BEWARE!" IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
+        @if (_artist.IsLocked)
+        {
+            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="UnlockButtonClick" title="Unlock artist, will allow modifications." IconColor="@Colors.Warning" Icon="lock_open"></RadzenMenuItem>
+        }
+        else
+        {
+            <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="LockButtonClick" title="Lock artist, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
+        }
+        <RadzenMenuItem Text="Web Search" Click="OnInternetSearchClick" title="Search the web for artist." Icon="public"></RadzenMenuItem>
+    </RadzenMenu>
+    <RadzenText Text="@_artist.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
 </RadzenStack>
 <RadzenStack class="rz-mt-3">
     <RadzenRow>

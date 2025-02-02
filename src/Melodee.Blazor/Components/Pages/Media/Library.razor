@@ -19,6 +19,8 @@
 @inject DefaultImages DefaultImages
 @inject DirectoryProcessorService DirectoryProcessorService
 
+@attribute [Authorize(Roles = "Administrator,Editor")]
+
 <PageTitle>@_library.Name</PageTitle>
 
 <RadzenBreadCrumb Class="rz-pb-5">
@@ -27,41 +29,18 @@
 </RadzenBreadCrumb>
 
 <RadzenStack>
-    <RadzenRow AlignItems="AlignItems.Center">
-        <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="Media Albums" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1"
-                        style="margin: 0"/>
-        </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
-            <RadzenStack
-                Orientation="Orientation.Horizontal"
-                AlignItems="AlignItems.Center"
-                JustifyContent="JustifyContent.End"
-                Gap="0.5rem">
-                <RadzenButton Icon="mop" Visible="!_library.IsLocked" Text="Clean"
-                              title="Clean this libraries folder."
-                              Size="ButtonSize.Small"
-                              Click="@CleanButtonClick"/>
-                <RadzenButton Icon="memory" Visible="!_library.IsLocked" Text="Process"
-                              title="Run process job on this library."
-                              Size="ButtonSize.Small"
-                              Click="@ProcessButtonClick"/>
-                <RadzenButton Icon="move_group" Visible="!_library.IsLocked" Text="Move Ok"
-                              title="Move Ok to Library."
-                              Size="ButtonSize.Small"
-                              Click="@MoveOkButtonClick"/>
-                <RadzenButton Icon="delete" Disabled="!_selectedAlbums.Any()" Text="Delete"
-                              Click="@DeleteSelectedButtonClick"
-                              Size="ButtonSize.Small"
-                              ButtonStyle="ButtonStyle.Warning"/>
-                <RadzenButton Icon="delete_sweep" Text="Delete not Ok"
-                              title="Delete all not Ok status albums in library."
-                              Click="@DeleteNotOkSelectedButtonClick"
-                              Size="ButtonSize.Small"
-                              ButtonStyle="ButtonStyle.Warning"/>
-            </RadzenStack>
-        </RadzenColumn>
-    </RadzenRow>
+    <RadzenMenu>
+        <RadzenMenuItem Text="Clean"  Disabled="_library.IsLocked" Click="CleanButtonClick" title="Clean this media library directory." IconColor="@Colors.Warning" Icon="mop"></RadzenMenuItem>
+        <RadzenMenuItem Text="Process"  Disabled="_library.IsLocked" Click="ProcessButtonClick" title="Run process job on this library." Icon="memory"></RadzenMenuItem>
+        <RadzenMenuItem Text="Delete Albums"  Disabled="@(!_library.IsLocked && _selectedAlbums.Count == 0)" Click="DeleteSelectedButtonClick" title="Delete selected media albums, including album files. BEWARE!" IconColor="@Colors.Warning" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="Delete not Ok"  Disabled="_library.IsLocked" Click="DeleteNotOkSelectedButtonClick" title="Delete all not Ok status albums in library. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
+        <RadzenMenuItem Text="Move Ok"  Disabled="_library.IsLocked" Click="MoveOkButtonClick" title="Move Ok media albums to Library." Icon="move_group"></RadzenMenuItem>
+    </RadzenMenu>
+    <RadzenText
+        Text="Media Albums"
+        TextStyle="TextStyle.DisplayH6"
+        TagName="TagName.H1"
+        style="margin: 0"/>
 
     <DebounceInput class="rz-textbox rz-w-100"
                    autocomplete="off"
@@ -316,6 +295,7 @@
             {
                 Data = true
             }, "Deleting Albums", ToastTime));
+            _selectedAlbums.Clear();
         }
     }
 

@@ -32,7 +32,7 @@
         <RadzenColumn
             Size="12"
             SizeMD="6"
-            Visible="CurrentUser?.IsEditor() ?? false">
+            Visible="CurrentUser?.IsAdmin() ?? false">
             <RadzenStack
                 Orientation="Orientation.Horizontal"
                 AlignItems="AlignItems.Center"
@@ -108,7 +108,7 @@
                 <RadzenDataGridColumn Property="@nameof(Library.Name)" Title="Name">
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;" Size="ButtonSize.ExtraSmall"
-                                      Visible="@(CurrentUser?.IsEditor() ?? false)"
+                                      Visible="@(CurrentUser?.IsAdmin() ?? false)"
                                       Click=@(_ => NavigationManager.NavigateTo($"/data/libraryedit/{data.ApiKey}"))
                                       Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
                         <RadzenLink Path="@($"/data/library/{ data.ApiKey}")">@data.Name</RadzenLink>

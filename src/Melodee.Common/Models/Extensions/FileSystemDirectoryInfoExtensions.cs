@@ -18,6 +18,15 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new("^(cd|disc|disk|side|media|a|b|c|d|e|f){1,}([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    public static long FileCount(this FileSystemDirectoryInfo directory)
+    {
+        if (!directory.Exists())
+        {
+            return 0;
+        }
+        return directory.AllFileInfos(searchOption: SearchOption.AllDirectories).LongCount();
+    }
+    
     public static void Empty(this FileSystemDirectoryInfo directory)
     {
         foreach (var file in directory.AllFileInfos(searchOption: SearchOption.AllDirectories))

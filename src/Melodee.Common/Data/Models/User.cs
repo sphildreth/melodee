@@ -45,6 +45,8 @@ public class User : DataModelBase
     public Instant? LastActivityAt { get; set; }
 
     public bool IsAdmin { get; set; }
+    
+    public bool IsEditor { get; set; }
 
     /// <summary>
     ///     Can the user modify their settings, not system settings.

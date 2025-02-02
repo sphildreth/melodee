@@ -3,6 +3,7 @@
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
+@using Melodee.Common.Models.Extensions
 @using NodaTime
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
@@ -58,64 +59,25 @@
     </RadzenRow>
 </RadzenStack>
 <RadzenStack>
-    <RadzenRow AlignItems="AlignItems.Center">
-        <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="@($"[{_album.ReleaseDate.Year}] {_album.Name}")" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
-        </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="6">
-            <RadzenStack
-                Orientation="Orientation.Horizontal"
-                AlignItems="AlignItems.Center"
-                JustifyContent="JustifyContent.End"
-                Gap="0.5rem">
-                <RadzenSplitButton Click=@OnInternetSearchClick
-                                   icon="public"
-                                   title="Search the web for album"
-                                   Size="ButtonSize.Small"
-                                   Text="Web Search">
-                    <ChildContent>
-                        <RadzenSplitButtonItem Text="Album" Value="1" />
-                        <RadzenSplitButtonItem Text="Year + Album" Value="2" />
-                        <RadzenSplitButtonItem Text="Album + Artist" Value="3" />
-                    </ChildContent>
-                </RadzenSplitButton>
-                <RadzenButton
-                    Icon="edit"
-                    Visible="CurrentUser?.IsEditor() ?? false"
-                    ButtonStyle="ButtonStyle.Info"
-                    Text="Edit" title="Edit the album"
-                    Size="ButtonSize.Small"
-                    Click="@EditButtonClick"/>
-                @if (_album.IsLocked)
-                {
-                    <RadzenButton Icon="lock_open"
-                                  Text="Unlock"
-                                  ButtonStyle="ButtonStyle.Warning"
-                                  Visible="CurrentUser?.IsEditor() ?? false"
-                                  title="Unlock library, will allow modifications."
-                                  Size="ButtonSize.Small"
-                                  Click="@UnlockButtonClick"/>
-                }
-                else
-                {
-                    <RadzenButton Icon="lock"
-                                  Text="Lock"
-                                  ButtonStyle="ButtonStyle.Warning"
-                                  Visible="CurrentUser?.IsEditor() ?? false"
-                                  title="Lock library, will prevent modifications."
-                                  Size="ButtonSize.Small"
-                                  Click="@LockButtonClick"/>
-                }
-                <RadzenButton Icon="delete"
-                              Visible="@((CurrentUser?.IsEditor() ?? false) && !_album.IsLocked)"
-                              ButtonStyle="ButtonStyle.Danger"
-                              Text="Delete"
-                              title="Delete the album and all album files. BEWARE!"
-                              Size="ButtonSize.Small"
-                              Click="@DeleteButtonClick"/>
-            </RadzenStack>
-        </RadzenColumn>
-    </RadzenRow>
+    <RadzenMenu>
+        <RadzenMenuItem Text="Delete"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="DeleteButtonClick" title="Delete the album and all album files. BEWARE!" IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
+        @if (_album.IsLocked)
+        {
+            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="UnlockButtonClick" title="Unlock album, will allow modifications." IconColor="@Colors.Warning" Icon="lock_open"></RadzenMenuItem>
+        }
+        else
+        {
+            <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="LockButtonClick" title="Lock album, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
+        }
+        <RadzenMenuItem Text="Web Search" Icon="public">
+            <RadzenMenuItem Text="Album" Click="@(() => DoWebSearch(1))"></RadzenMenuItem>
+            <RadzenMenuItem Text="Album + Year" Click="@(() => DoWebSearch(2))"></RadzenMenuItem>
+            <RadzenMenuItem Text="Album + Artist" Click="@(() => DoWebSearch(3))"></RadzenMenuItem>
+            <RadzenMenuItem Text="Album + Year + Artist" Click="@(() => DoWebSearch(4))"></RadzenMenuItem>
+        </RadzenMenuItem>
+    </RadzenMenu>
+    <RadzenText Text="@($"[{_album.ReleaseDate.Year}] {_album.Name}")" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
 </RadzenStack>
 <RadzenStack class="rz-mt-3">
     <RadzenRow>
@@ -132,19 +94,19 @@
                         <RadzenTreeItem Text="Contributors">
                             <Template>
                                 <RadzenIcon Icon="groups"/>
-                                @context.Text
+                                @($"{ context.Text } {(_album.Contributors.Count > 0 ? $"({ _album.Contributors.Count })": string.Empty)}")
                             </Template>
                         </RadzenTreeItem>
                         <RadzenTreeItem Text="Files">
                             <Template>
                                 <RadzenIcon Icon="folder_data"/>
-                                @context.Text
+                                @($"{ context.Text } ({_albumDirectoryFileCount})")
                             </Template>
                         </RadzenTreeItem>
                         <RadzenTreeItem Text="Images">
                             <Template>
                                 <RadzenIcon Icon="image"/>
-                                @context.Text
+                                @($"{ context.Text } ({(_album.ImageCount ?? 0) + 1})")
                             </Template>
                         </RadzenTreeItem>
                     </RadzenTree>
@@ -353,6 +315,8 @@
         CreatedAt = default
     };
 
+    private long _albumDirectoryFileCount = 0;
+
     protected override async Task OnParametersSetAsync()
     {
         if (ApiKey != Guid.Empty)
@@ -361,7 +325,7 @@
             if (albumResult is { IsSuccess: true, Data: not null })
             {
                 _album = albumResult.Data;
-
+                _albumDirectoryFileCount = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo().FileCount();
                 switch (_album.AlbumStatusValue)
                 {
                     case AlbumStatus.New:
@@ -506,36 +470,36 @@
         NotificationService.Notify(NotificationMessageForResult(result, "Toggling Song Hatred", ToastTime));
     }
 
-    private async Task OnInternetSearchClick(RadzenSplitButtonItem? arg)
+    private async Task DoWebSearch(int searchType)
     {
         var searchTerms = new List<object>();
-        if (arg == null)
+        var an = _album.Artist.Name;
+        var title = _album.Name;
+        var year = _album.ReleaseDate.Year.ToString();
+        searchTerms.Clear();
+        switch (searchType)
         {
-            searchTerms.Add(_album.Artist.Name);
-            searchTerms.Add(_album.ReleaseDate.Year);
-            searchTerms.Add(_album.Name);
-        }
-        else
-        {
-            searchTerms.Clear();
-            switch (arg.Value)
-            {
-                case "3":
-                    searchTerms.Add(_album.Name);
-                    searchTerms.Add(_album.Artist.Name);
-                    break;
+            case 4:
+                searchTerms.Add(title);
+                searchTerms.Add(year);
+                searchTerms.Add(an);
+                break;
 
-                case "2":
-                    searchTerms.Clear();
-                    searchTerms.Add(_album.ReleaseDate.Year);
-                    searchTerms.Add(_album.Name);
-                    break;
+            case 3:
+                searchTerms.Add(title);
+                searchTerms.Add(an);
+                break;
 
-                default:
-                    searchTerms.Clear();
-                    searchTerms.Add(_album.Name);
-                    break;
-            }
+            case 2:
+                searchTerms.Clear();
+                searchTerms.Add(title);
+                searchTerms.Add(year);
+                break;
+
+            case 1:
+                searchTerms.Clear();
+                searchTerms.Add(title);
+                break;
         }
         await JsRuntime.InvokeVoidAsync("openInNewTab", Configuration.GenerateWebSearchUrl(searchTerms.ToArray()));
     }
