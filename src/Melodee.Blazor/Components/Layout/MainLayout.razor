@@ -1,13 +1,15 @@
 ﻿@inherits LayoutComponentBase
 @using Melodee.Common.Enums
 @using Microsoft.AspNetCore.Components.Authorization
+@using HttpUtility = System.Web.HttpUtility
+
 @implements IDisposable
 @inject LibraryService LibraryService
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
 @inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
-@inject IJSRuntime JSRuntime
+
 @inject CookieThemeService CookieThemeService
 
 <RadzenComponents @rendermode="InteractiveServer"/>
@@ -89,15 +91,7 @@
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody Style="margin: 10px; padding:3px;">
-                @if (_showSearchResults)
-                {
-                    <Search UserApiKey="@context.User.ToApiGuid()" UserAgent="@_userAgent"
-                            SearchTerm="@_debounceInputValue"/>
-                }
-                else
-                {
-                    @Body
-                }
+                @Body
             </RadzenBody>
         </RadzenLayout>
     </Authorized>
@@ -106,10 +100,8 @@
 @code {
     bool _sidebarExpanded = true;
     string _siteTitle = string.Empty;
-    string _userAgent = string.Empty;
 
     string _debounceInputValue = "";
-    bool _showSearchResults;
 
     MediaLibraryInfo[] _mediaLibraryInfos = [];
 
@@ -176,8 +168,6 @@
                 .Where(x => x.TypeValue is LibraryType.Inbound or LibraryType.Staging)
                 .Select(x => new MediaLibraryInfo(x.Name, $"/media/library/{x.ApiKey}"))
                 .ToArray();
-
-            _userAgent = await JSRuntime.InvokeAsync<string>("getUserAgent", []);
         }
     }
 
@@ -186,11 +176,9 @@
         _sidebarExpanded = !_sidebarExpanded;
     }
 
-
-    private void DoSearchAsync()
+    private void DoSearchAsync(string arg)
     {
-        _showSearchResults = _debounceInputValue.Nullify() != null;
-        StateHasChanged();
+        NavigationManager.NavigateTo($"/search/{HttpUtility.UrlEncode(arg)}", true);
     }
 
 }

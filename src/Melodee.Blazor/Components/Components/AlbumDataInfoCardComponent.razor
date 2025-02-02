@@ -7,10 +7,10 @@
         <RadzenImage Path="@Album.ImageUrl()" Style="width: 60px; height: 60px; margin-right: 5px;"/>
         <RadzenStack Gap="0">
             <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin:0;padding:0;">
-                <RadzenLink text="@Album.Name" class="rz-text-wrap" href="@Album.DetailUrl(FromUrl)"/>
+                <RadzenLink text="@Album.Name" class="rz-text-wrap" Path="@Album.DetailUrl(FromUrl)"/>
             </RadzenText>
             <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin:0;padding:0;">
-                <RadzenLink text="@Album.ArtistName"  class="rz-text-wrap" href="@Album.ArtistDetailUrl()"/>
+                <RadzenLink text="@Album.ArtistName"  class="rz-text-wrap" Path="@Album.ArtistDetailUrl()"/>
             </RadzenText>
             <RadzenText TextStyle="TextStyle.Overline" Style="margin:0;padding:0;">@AlbumDataInfo.InfoLineTitle</RadzenText>
             <RadzenText TextStyle="TextStyle.Body1" Style="margin:0;padding:0;">@Album.InfoLineData</RadzenText>

@@ -1,12 +1,17 @@
+@page "/search/{Query}"
+@using System.Security.Claims
 @using Melodee.Common.Models.Search
 @inject SearchService SearchService
 @inject MainLayoutProxyService MainLayoutProxyService
+@inject IJSRuntime JsRuntime
+
+@inherits MelodeeComponentBase
 
 <PageTitle>Search Results</PageTitle>
 
 <RadzenStack>
     <RadzenStack Orientation="Orientation.Horizontal">
-        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">Results for: @SearchTerm</RadzenText>
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">Results for: @Query</RadzenText>
     </RadzenStack>
     <RadzenPanel AllowCollapse="true">
         <HeaderTemplate>
@@ -75,11 +80,9 @@
 
 @code {
 
-    [Parameter] public required string SearchTerm { get; set; }
+    string _userAgent = string.Empty;
 
-    [Parameter] public Guid UserApiKey { get; set; }
-
-    [Parameter] public string? UserAgent { get; set; }
+    [Parameter] public required string Query { get; set; }
 
     SearchResult _searchResult = new([], [], [], []);
 
@@ -88,7 +91,12 @@
         MainLayoutProxyService.ToggleSpinnerVisible();
         try
         {
-            var searchResult = await SearchService.DoSearchAsync(UserApiKey, UserAgent, SearchTerm, 50, SearchInclude.Data);
+            var searchResult = await SearchService.DoSearchAsync(
+                SafeParser.ToGuid(CurrentUser?.FindFirstValue(ClaimTypes.Sid) ?? string.Empty) ?? Guid.Empty,
+                _userAgent,
+                Query,
+                50,
+                SearchInclude.Data);
             if (searchResult.IsSuccess)
             {
                 _searchResult = searchResult.Data;
@@ -98,6 +106,12 @@
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _userAgent = await JsRuntime.InvokeAsync<string>("getUserAgent", []);
     }
 
 }

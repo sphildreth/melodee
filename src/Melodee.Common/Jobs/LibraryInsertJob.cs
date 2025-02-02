@@ -471,11 +471,10 @@ public class LibraryInsertJob(
                             continue;
                         }
 
-                        Logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] MusicbrainzId [{MusicBrainzId}] NormalizedName [{Name}]",
+                        Logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] NormalizedName [{Name}]",
                             nameof(LibraryInsertJob),
                             dbArtist.Id,
                             melodeeAlbum.Id,
-                            melodeeAlbum.MusicBrainzId,
                             nameNormalized);
                         for (short i = 1; i <= melodeeAlbum.MediaCountValue(); i++)
                         {

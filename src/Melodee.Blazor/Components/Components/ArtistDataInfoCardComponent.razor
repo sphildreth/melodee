@@ -9,7 +9,7 @@
             <RadzenText TextStyle="TextStyle.Body1">
                 @if (ShowArtistLink)
                 {
-                    <RadzenLink text="@Artist.Name" class="rz-text-wrap" href="@Artist.DetailUrl()"/>
+                    <RadzenLink text="@Artist.Name" class="rz-text-wrap" Path="@Artist.DetailUrl()"/>
                 }
                 else
                 {

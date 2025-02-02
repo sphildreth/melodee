@@ -32,7 +32,7 @@ public record Query
         }
     }
 
-    public string NameNormalizedReversed => string.Join(string.Empty, NameInTagFormat.ToTags()!.Reverse()).ToNormalizedString() ?? Name;
+    public string NameNormalizedReversed => NameInTagFormat.Nullify() == null ? string.Empty : string.Join(string.Empty, NameInTagFormat.ToTags()!.Reverse()).ToNormalizedString() ?? Name;
 
     public string NameNormalized => Name.ToNormalizedString() ?? Name;
 

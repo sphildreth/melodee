@@ -11,6 +11,8 @@ public sealed class MainLayoutProxyService
 
     public event EventHandler? HeaderChanged;
     public event EventHandler? SpinnerVisibleChanged;
+    
+    public event EventHandler<string>? SearchTextChanged;
 
     public void SetHeader(string header)
     {
@@ -24,6 +26,11 @@ public sealed class MainLayoutProxyService
         SpinnerVisibleChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public void DoSearch(string query)
+    {
+        SearchTextChanged?.Invoke(this, query);
+    }
+    
     public void NotifyHeaderChanged()
     {
         HeaderChanged?.Invoke(this, EventArgs.Empty);

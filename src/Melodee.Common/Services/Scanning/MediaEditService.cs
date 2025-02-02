@@ -587,6 +587,18 @@ public sealed class MediaEditService(
         album.SetTagValue(MetaTagIdentifier.DiscTotal, nextMediaNumber, doSetSongValue: false);
         return album;
     }
+
+    public Album SetArtistOnAllSongs(Album album, CancellationToken cancellationToken = default)
+    {
+        CheckInitialized();
+
+        if (album.Songs?.Count() == 0)
+        {
+            return album;
+        }
+        album.SetTagValue(MetaTagIdentifier.AlbumArtist, album.Artist.Name);
+        return album;
+    }
     
     public async Task<Album> RenumberSongsAsync(Album album, CancellationToken cancellationToken = default)
     {

@@ -18,7 +18,7 @@
             <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin:0;padding:0;">
                 @if (ShowAlbumLink)
                 {
-                    <RadzenLink text="@Album.Name" class="rz-text-wrap" href="@Album.DetailUrl(FromUrl)"/>
+                    <RadzenLink text="@Album.Name" class="rz-text-wrap" Path="@Album.DetailUrl(FromUrl)"/>
                 }
                 else
                 {

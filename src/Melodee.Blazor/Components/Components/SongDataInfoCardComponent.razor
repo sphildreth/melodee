@@ -5,6 +5,9 @@
         <RadzenImage Path="@Song.ImageUrl()" Style="width: 50px; height: 50px; border-radius: 50%;"/>
         <RadzenStack Gap="0">
             <RadzenText TextStyle="TextStyle.Body1">@(Song.Title)</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin:0;padding:0;">
+                <RadzenLink text="@Song.AlbumName" class="rz-text-wrap" Path="@Song.AlbumDetailUrl()"/>
+            </RadzenText>
             <RadzenText TextStyle="TextStyle.Overline"
                         class="rz-display-flex rz-mt-4 rz-mb-0">@SongDataInfo.InfoLineTitle</RadzenText>
             <RadzenText TextStyle="TextStyle.Body1">@Song.InfoLineData</RadzenText>

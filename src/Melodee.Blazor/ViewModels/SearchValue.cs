@@ -1,4 +1,4 @@
-namespace Melodee.Blazor.Components.Components;
+namespace Melodee.Blazor.ViewModels;
 
 public class SearchValue
 {
