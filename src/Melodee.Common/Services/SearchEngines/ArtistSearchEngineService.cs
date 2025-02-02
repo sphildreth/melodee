@@ -212,7 +212,8 @@ public class ArtistSearchEngineService(
                             break;
                         }
 
-                        var pluginResult = await plugin.DoArtistSearchAsync(query, maxResultsValue, cancellationToken).ConfigureAwait(false);
+                        // Don't limit the number of results from the search engine as they will be put into the local database and limited on result to method call.
+                        var pluginResult = await plugin.DoArtistSearchAsync(query, int.MaxValue, cancellationToken).ConfigureAwait(false);
                         if (pluginResult is { IsSuccess: true, Data: not null })
                         {
                             result.AddRange(pluginResult.Data);

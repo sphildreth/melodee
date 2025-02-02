@@ -97,7 +97,6 @@
         {
             return;
         }
-        Console.WriteLine("++ Do Search Async");
         _isLoading = true;
         try
         {
@@ -115,7 +114,11 @@
                 .ToArray();
             if (searchName.Nullify() != null)
             {
-                _results = _results.Where(x => x.NameNormalized.Contains(searchName.ToNormalizedString() ?? searchName)).ToArray();
+                var filteredResults = _results.Where(x => x.NameNormalized.Contains(searchName.ToNormalizedString() ?? searchName)).ToArray();
+                if (filteredResults.Length > 0)
+                {
+                    _results = filteredResults;
+                }
             }
         }
         catch (Exception e)

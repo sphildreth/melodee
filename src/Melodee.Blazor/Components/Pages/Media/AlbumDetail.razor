@@ -319,6 +319,9 @@
         MainLayoutProxyService.ToggleSpinnerVisible();
         try
         {
+            _album.Status = AlbumStatus.Ok;
+            _album.StatusReasons = AlbumNeedsAttentionReasons.NotSet;
+
             var librariesResult = await LibraryService.GetStorageLibrariesAsync();
             if (librariesResult.Data.Length > 1)
             {
