@@ -23,18 +23,28 @@
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="Libraries" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+            <RadzenText
+                Text="Libraries"
+                TextStyle="TextStyle.DisplayH6"
+                TagName="TagName.H1"
+                style="margin: 0"/>
         </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+        <RadzenColumn
+            Size="12"
+            SizeMD="6"
+            Visible="CurrentUser?.IsEditor() ?? false">
             <RadzenStack
                 Orientation="Orientation.Horizontal"
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
-                <RadzenButton Icon="add_circle_outline" Text="Add"
+                <RadzenButton Icon="add_circle_outline"
+                              Text="Add"
                               Size="ButtonSize.Small"
                               Click="@AddButtonClick"/>
-                <RadzenButton Icon="delete" Disabled="!_selectedLibraries.Any()" Text="Delete"
+                <RadzenButton Icon="delete"
+                              Disabled="!_selectedLibraries.Any()"
+                              Text="Delete"
                               Click="@DeleteSelectedButtonClick"
                               Size="ButtonSize.Small"
                               ButtonStyle="ButtonStyle.Warning"/>
@@ -101,11 +111,11 @@
                                       Visible="@(CurrentUser?.IsEditor() ?? false)"
                                       Click=@(_ => NavigationManager.NavigateTo($"/data/libraryedit/{data.ApiKey}"))
                                       Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
-                        <a href="/data/library/@data.ApiKey">@data.Name</a>
+                        <RadzenLink Path="@($"/data/library/{ data.ApiKey}")">@data.Name</RadzenLink>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Library.Path)" Title="Path"/>
-                <RadzenDataGridColumn Property="@nameof(Library.TypeValue)" Title="Type" Width="100px">
+                <RadzenDataGridColumn Property="@nameof(Library.TypeValue)" Title="Type" Width="120px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             <RadzenIcon Icon="@data.LibraryTypeIconAndTitle().Item1"
@@ -114,9 +124,9 @@
                         </RadzenStack>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Library.ArtistCount)" Title="Artists" Width="80px"/>
-                <RadzenDataGridColumn Property="@nameof(Library.AlbumCount)" Title="Albums" Width="80px"/>
-                <RadzenDataGridColumn Property="@nameof(Library.SongCount)" Title="Songs" Width="80px"/>
+                <RadzenDataGridColumn Property="@nameof(Library.ArtistCount)" Title="Artists" Width="90px"/>
+                <RadzenDataGridColumn Property="@nameof(Library.AlbumCount)" Title="Albums" Width="90px"/>
+                <RadzenDataGridColumn Property="@nameof(Library.SongCount)" Title="Songs" Width="90px"/>
                 <RadzenDataGridColumn Property="@nameof(Library.CreatedAt)" Title="Created" Filterable="false"
                                       Width="120px"/>
                 <RadzenDataGridColumn Property="@nameof(Library.Tags)" Title="Tags" Width="100px">

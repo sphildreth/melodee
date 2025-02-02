@@ -29,66 +29,32 @@
 </RadzenBreadCrumb>
 
 <RadzenStack>
-    <RadzenRow AlignItems="AlignItems.Center">
-        <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0">
-                <RadzenIcon Icon="@_library.LibraryTypeIconAndTitle().Item1"
-                            title="@_library.LibraryTypeIconAndTitle().Item2"/>
-                @(_library.Name)
-            </RadzenText>
-        </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
-            <RadzenStack
-                Orientation="Orientation.Horizontal"
-                AlignItems="AlignItems.Center"
-                JustifyContent="JustifyContent.End"
-                Gap="0.5rem">
-                <RadzenButton Icon="mop" Text="Clean" Visible="!_library.IsLocked"
-                              title="Clean library, removing any empty folders."
-                              Size="ButtonSize.Small"
-                              Click="@CleanButtonClick"/>
-                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Text="Edit" title="Edit the library"
-                              Size="ButtonSize.Small"
-                              Click="@EditButtonClick"/>
-                @if (_library.IsLocked)
-                {
-                    <RadzenButton Icon="lock_open" Text="Unlock" ButtonStyle="ButtonStyle.Warning"
-                                  title="Unlock library, will allow modifications."
-                                  Size="ButtonSize.Small"
-                                  Click="@UnlockButtonClick"/>
-                }
-                else
-                {
-                    <RadzenButton Icon="lock" Text="Lock" ButtonStyle="ButtonStyle.Warning"
-                                  title="Lock library, will prevent modifications."
-                                  Size="ButtonSize.Small"
-                                  Click="@LockButtonClick"/>
-                }
-                <RadzenButton Icon="delete_sweep" Visible="!_library.IsLocked" ButtonStyle="ButtonStyle.Danger"
-                              Text="Purge" title="Delete everything in the library. BEWARE!"
-                              Size="ButtonSize.Small"
-                              Click="@PurgeButtonClick"/>
-                @if (_library.TypeValue != LibraryType.Storage)
-                {
-                    <RadzenSplitButton Icon="memory" title="Process media files into Melodee media json file."
-                                       Click="@ProcessButtonClick" Text="Process"
-                                       Size="ButtonSize.Small"
-                                       ButtonStyle="ButtonStyle.Secondary">
-                        <ChildContent>
-                            <RadzenSplitButtonItem Text="Force" Value="2"/>
-                        </ChildContent>
-                    </RadzenSplitButton>
-                }
-                else
-                {
-                    <RadzenButton Icon="database" Text="Scan" ButtonStyle="ButtonStyle.Warning"
-                                  title="Scan Melodee media json files and update database data."
-                                  Size="ButtonSize.Small"
-                                  Click="@ScanButtonClick"/>
-                }
-            </RadzenStack>
-        </RadzenColumn>
-    </RadzenRow>
+    <RadzenMenu>
+        <RadzenMenuItem Text="Clean" Disabled="_library.IsLocked" Click="CleanButtonClick" title="Clean library, removing any empty folders." Icon="mop"></RadzenMenuItem>
+        <RadzenMenuItem Text="Edit" Disabled="_library.IsLocked" Click="EditButtonClick" title="Edit library." Icon="edit"></RadzenMenuItem>
+        @if (_library.IsLocked)
+        {
+            <RadzenMenuItem Text="Unlock" Click="UnlockButtonClick" title="Unlock library, will allow modifications." IconColor="@Colors.Warning"  Icon="lock_open"></RadzenMenuItem>
+        }
+        else
+        {
+            <RadzenMenuItem Text="Purge" Click="PurgeButtonClick" title="Delete everything in the library" IconColor="@Colors.Danger"  Icon="delete_sweep"></RadzenMenuItem>
+            <RadzenMenuItem Text="Lock" Click="LockButtonClick" title="Lock library, will prevent modifications." IconColor="@Colors.Warning"  Icon="lock"></RadzenMenuItem>
+        }
+        @if (_library.TypeValue != LibraryType.Storage)
+        {
+            <RadzenMenuItem Text="Process" Click="ProcessButtonClick" title="Process media files into Melodee media json file." IconColor="@Colors.Secondary" Icon="memory"></RadzenMenuItem>
+        }
+        else
+        {
+            <RadzenMenuItem Text="Scan" Disabled="_library.IsLocked" Click="ScanButtonClick" title="Scan for Melodee media json files and update database data." IconColor="@Colors.Secondary" Icon="database"></RadzenMenuItem>
+        }
+    </RadzenMenu>
+    <RadzenText TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0">
+        <RadzenIcon Icon="@_library.LibraryTypeIconAndTitle().Item1"
+                    title="@_library.LibraryTypeIconAndTitle().Item2"/>
+        @(_library.Name)
+    </RadzenText>
 </RadzenStack>
 
 <RadzenStack class="rz-mt-3">
@@ -425,7 +391,7 @@
         }
     }
 
-    private async Task ProcessButtonClick(RadzenSplitButtonItem? arg)
+    private async Task ProcessButtonClick()
     {
         var confirm = await DialogService.Confirm("<p>Processing a library creates Melodee data files with media found. This could overwrite Melodee data files, images and songs.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
         if (confirm ?? false)
@@ -433,7 +399,7 @@
             MainLayoutProxyService.ToggleSpinnerVisible();
             try
             {
-                var force = arg?.Text == "Force";
+                var force = true;
                 await DirectoryProcessorService.InitializeAsync();
                 var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), force ? null : _library.LastScanAt, null);
                 NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", ToastTime));

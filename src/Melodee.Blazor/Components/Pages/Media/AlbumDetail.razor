@@ -38,6 +38,7 @@
 <RadzenStack>
     <RadzenMenu>
         <RadzenMenuItem Text="Edit" Icon="edit">
+            <RadzenMenuItem Text="Edit album" Icon="edit" Value="@MenuItems.EditAlbum" Click="OnMenuItemClicked"></RadzenMenuItem>
             <RadzenMenuItem Text="Move selected songs to next media" Icon="place_item" Value="@MenuItems.MoveSelectedSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
             <RadzenMenuItem Text="Renumber all songs" Icon="format_list_numbered" Value="@MenuItems.RenumberSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
         </RadzenMenuItem>
@@ -229,7 +230,8 @@
     private enum MenuItems
     {
         MoveSelectedSongs,
-        RenumberSongs
+        RenumberSongs,
+        EditAlbum
     }
 
     Common.Data.Models.Library _library = new()
@@ -509,6 +511,10 @@
                 {
                     NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
                 }
+                break;
+
+            default:
+                await DialogService.Alert("WIP; sph is working on it");
                 break;
 
         }
