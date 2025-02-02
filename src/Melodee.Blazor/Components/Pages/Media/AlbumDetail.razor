@@ -5,11 +5,12 @@
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Extensions
 @using Melodee.Common.Models.SearchEngines
+@using Melodee.Common.Plugins.MetaData.Song
 @using Melodee.Common.Plugins.Validation
 @using Melodee.Common.Services.Scanning
 @using Melodee.Common.Services.SearchEngines
 @using SixLabors.ImageSharp
-@using SQLitePCL
+
 @using ImageInfo = Melodee.Common.Models.ImageInfo
 @inherits MelodeeComponentBase
 
@@ -56,13 +57,17 @@
                     title="Identify the album"
                     Size="ButtonSize.Small"
                     Click="@IdentifyButtonClick"/>
-                <RadzenButton
-                    Icon="edit"
-                    ButtonStyle="ButtonStyle.Info"
-                    Text="Edit"
-                    title="Edit the album"
-                    Size="ButtonSize.Small"
-                    Click="@EditButtonClick"/>
+                <RadzenSplitButton Icon="edit"
+                                   title="Edit album"
+                                   Click="@EditButtonClick"
+                                   Text="Edit"
+                                   Size="ButtonSize.Small"
+                                   ButtonStyle="ButtonStyle.Info">
+                    <ChildContent>
+                        <RadzenSplitButtonItem Icon="place_item" Text="Move to next media" Value="MoveToNextMedia"/>
+                        <RadzenSplitButtonItem Icon="format_list_numbered" Text="Renumber" Value="Renumber"/>
+                    </ChildContent>
+                </RadzenSplitButton>
                 <RadzenButton
                     Icon="move_group"
                     Text="Move to Library"
@@ -176,17 +181,17 @@
                             <HeaderTemplate>
                                 <RadzenText TextStyle="TextStyle.H6"
                                             class="rz-display-flex rz-align-items-center rz-m-0">
-                                    <RadzenIcon Icon="music_note" class="rz-me-1"/>
-                                    Songs
+                                <RadzenIcon Icon="music_note" class="rz-me-1"/>
+                                @($"Songs {(_selectedSongs.Count > 0 ? $" (selected {_selectedSongs.Count})" : string.Empty)}")
                                 </RadzenText>
                             </HeaderTemplate>
                             <ChildContent>
                                 <table class="rz-mt-1">
                                     <thead>
                                     <tr>
-                                        <th scope="col" style="min-width:60px;">#</th>
+                                        <th scope="col" style="min-width:80px;">#</th>
                                         <th scope="col" style="width:90%;">Title</th>
-                                        <th scope="col">Duration</th>
+                                        <th scope="col" style="min-width:125px;">Duration</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -194,11 +199,14 @@
                                     {
                                         <tr>
                                             <td>
-                                                <span style="cursor: pointer;color: red;" @onclick="@(() => DeleteSong(song))">🗑</span>
+                                                <RadzenCheckBox TValue="bool" Value="@(_selectedSongs.Contains(song))" Change="@(args => ToggleSelectedSong(song))" />
                                                 @($"{song.MediaNumber().ToStringPadLeft(2)}.{song.SongNumber().ToStringPadLeft(3)}")
                                             </td>
                                             <td>@song.Title()</td>
-                                            <td>@CurrentUser!.FormatDuration(song.Duration().ToDuration())</td>
+                                            <td>
+                                                @CurrentUser!.FormatDuration(song.Duration().ToDuration())
+                                                <span style="cursor: pointer;color: red;" title="Delete Song" @onclick="@(() => DeleteSong(song))">🗑</span>
+                                            </td>
                                         </tr>
                                     }
                                     </tbody>
@@ -232,6 +240,8 @@
     [Parameter] public Guid LibraryApiKey { get; set; }
 
     [Parameter] public Guid ApiKey { get; set; }
+
+    List<Song> _selectedSongs = [];
 
     ShowItem _showItem = ShowItem.Overview;
 
@@ -307,21 +317,16 @@
         _maxResults = configuration.GetValue<short?>(SettingRegistry.SearchEngineDefaultPageSize) ?? configuration.GetValue<short>(SettingRegistry.DefaultsPageSize);
     }
 
-    private Task EditButtonClick()
-    {
-        throw new NotImplementedException();
-    }
 
     private async Task DeleteButtonClick()
     {
         var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
-            if (_album.Delete(_library.Path))
+            if (_album.Delete())
             {
                 NavigationManager.NavigateTo($"/media/library/{_library.ApiKey}", true);
             }
-
             NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = false }, "deleting album", ToastTime));
         }
     }
@@ -385,6 +390,8 @@
 
     private async Task IdentifyAlbumCallback(AlbumDataInfo? arg)
     {
+        DialogService.Close();
+
         if (arg?.AlbumSearchResult != null)
         {
             _album.Artist = _album.Artist with
@@ -397,7 +404,6 @@
             };
             _album.SetTagValue(MetaTagIdentifier.Title, arg.AlbumSearchResult.Name, doSetSongValue: false);
             _album.SetTagValue(MetaTagIdentifier.AlbumDate, arg.AlbumSearchResult.Year, doSetSongValue: false);
-            OperationResult<bool> result;
             if (_album.Images?.Count() == 0)
             {
                 var imageSearch = await AlbumImageSearchEngineService.DoSearchAsync(_album.ToAlbumQuery(), _maxResults);
@@ -433,27 +439,61 @@
                     }
                 }
             }
-            result = await MediaEditService.SaveMelodeeAlbum(_album);
+            var result = await MediaEditService.SaveMelodeeAlbum(_album);
             if (result.Data)
             {
                 NotificationService.Notify(NotificationMessageForResult(result, "identifying album", ToastTime));
-                NavigationManager.ReloadPage();
             }
         }
     }
 
     private async Task DeleteSong(Song song)
     {
-        // TODO BLECH
-
         _album.Songs = _album.Songs!.Except([song]);
-        await MediaEditService.SaveMelodeeAlbum(_album);
-        await MediaEditService.RenumberSongs(_album.Directory, _album.Id);
+        _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
         var result = await MediaEditService.SaveMelodeeAlbum(_album);
         if (result.Data)
         {
             NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
-            NavigationManager.ReloadPage();
+        }
+    }
+
+    private async Task EditButtonClick(RadzenSplitButtonItem arg)
+    {
+        OperationResult<bool>? result;
+        switch (arg.Value)
+        {
+            case "MoveToNextMedia":
+                _album = await MediaEditService.MoveSelectedSongsToNextMediaAsync(_album, _selectedSongs.ToArray()).ConfigureAwait(false);
+                _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
+                result = await MediaEditService.SaveMelodeeAlbum(_album);
+                if (result.Data)
+                {
+                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
+                }
+                _selectedSongs.Clear();
+                break;
+
+            case "Renumber":
+                _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
+                result = await MediaEditService.SaveMelodeeAlbum(_album);
+                if (result.Data)
+                {
+                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
+                }
+                break;
+        }
+    }
+
+    private void ToggleSelectedSong(Song song)
+    {
+        if (_selectedSongs.Contains(song))
+        {
+            _selectedSongs.Remove(song);
+        }
+        else
+        {
+            _selectedSongs.Add(song);
         }
     }
 

@@ -120,15 +120,13 @@ public static class AlbumExtensions
         return songArtists.Length > 0;
     }
 
-    public static bool Delete(this Album album, string directory)
+    public static bool Delete(this Album album)
     {
-        var dirInfo = new DirectoryInfo(Path.Combine(directory, album.ToDirectoryName()));
-        if (dirInfo.Exists)
+        if (album.Directory.Exists())
         {
-            dirInfo.Delete(true);
+            album.Directory.Delete();
             return true;
         }
-
         return false;
     }
 

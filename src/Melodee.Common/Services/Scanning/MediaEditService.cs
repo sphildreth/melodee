@@ -564,6 +564,63 @@ public sealed class MediaEditService(
         };
     }
 
+    public async Task<Album> MoveSelectedSongsToNextMediaAsync(Album album, Song[] selected, CancellationToken cancellationToken = default)
+    {
+        CheckInitialized();
+
+        if (album.Songs?.Count() == 0 || selected.Length == 0)
+        {
+            return album;
+        }
+
+        var nextMediaNumber = album.Songs!.Max(x => x.MediaNumber()) + 1;
+        foreach (var song in selected)
+        {
+            album.SetSongTagValue(song.Id, MetaTagIdentifier.DiscNumber, nextMediaNumber);
+            await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+        }
+        foreach (var song in album.Songs!)
+        {
+            album.SetSongTagValue(song.Id, MetaTagIdentifier.DiscTotal, nextMediaNumber);
+            await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+        }
+        album.SetTagValue(MetaTagIdentifier.DiscTotal, nextMediaNumber, doSetSongValue: false);
+        return album;
+    }
+    
+    public async Task<Album> RenumberSongsAsync(Album album, CancellationToken cancellationToken = default)
+    {
+        CheckInitialized();
+
+        if (album.Songs?.Count() == 0)
+        {
+            return album;
+        }
+        
+        try
+        {
+            var numberOfMedias = album.MediaCountValue();
+            var mediaLooper = 0;
+            while (mediaLooper <= numberOfMedias)
+            {
+                var looper = mediaLooper;
+                foreach (var dd in album.Songs?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i = i + 1 }) ?? [])
+                {
+                    album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, dd.x, cancellationToken);
+                }
+
+                mediaLooper++;
+            }
+            album.SetTagValue(MetaTagIdentifier.SongTotal, album.Songs!.Count());
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Renumbering Songs.");
+        }
+        return album;
+    }
+    
     public async Task<OperationResult<(bool, Guid)>> RenumberSongs(FileSystemDirectoryInfo directoryInfo, Guid albumId, CancellationToken cancellationToken = default)
     {
         CheckInitialized();

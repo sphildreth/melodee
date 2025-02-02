@@ -3,6 +3,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
+using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Serialization;
 
 namespace Melodee.Common.Models;
