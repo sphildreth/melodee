@@ -38,7 +38,7 @@ public sealed record AlbumSearchResult
 
     [JsonIgnore] public string? MusicBrainzIdRaw { get; init; }
 
-    [JsonIgnore] public Guid? MusicBrainzResourceGroupId { get; init; }
+    [JsonIgnore] public Guid? MusicBrainzResourceGroupId { get; set; }
 
     public Guid? MusicBrainzId { get; set; }
 

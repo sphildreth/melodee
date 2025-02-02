@@ -27,6 +27,8 @@ public record Album
     public AlbumType AlbumTypeValue => SafeParser.ToEnum<AlbumType>(AlbumType);
     
     public Guid? MusicBrainzId { get; init; }
+    
+    public Guid? MusicBrainzReleaseGroupId { get; set; }
 
     [MaxLength(255)]
     public string? SpotifyId { get; init; }

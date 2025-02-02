@@ -249,7 +249,7 @@ public class ArtistSearchEngineService(
                             DiscogsId = current.DiscogsId ?? r.DiscogsId,
                             ItunesId = current.ItunesId ?? r.ItunesId,
                             LastFmId = current.LastFmId ?? r.LastFmId,
-                            Name = current.Name ?? r.Name,
+                            Name = current.Name.Nullify() ?? r.Name,
                             MusicBrainzId = current.MusicBrainzId ?? r.MusicBrainzId,
                             Rank = current.Rank + 1,
                             SpotifyId = current.SpotifyId ?? r.SpotifyId,
@@ -268,6 +268,7 @@ public class ArtistSearchEngineService(
                                 else
                                 {
                                     seenAlbumRelease.MusicBrainzId ??= arRelease.MusicBrainzId;
+                                    seenAlbumRelease.MusicBrainzResourceGroupId ??= arRelease.MusicBrainzResourceGroupId;
                                     seenAlbumRelease.SpotifyId ??= arRelease.SpotifyId;
                                     seenAlbumRelease.CoverUrl ??= arRelease.CoverUrl;
                                 }
@@ -290,7 +291,6 @@ public class ArtistSearchEngineService(
                                              (x.WikiDataId != null && x.WikiDataId == newArtist.WikiDataId))
                             .FirstOrDefaultAsync(cancellationToken: cancellationToken)
                             .ConfigureAwait(false);
-
                         
                         if (artist != null)
                         {
@@ -311,7 +311,7 @@ public class ArtistSearchEngineService(
                             });
                             Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Found artist [{artist}] in database for query [{query}].");
                         }
-                        else if (artist == null)
+                        else
                         {  
                             var newDbArtist = new Artist
                             {
@@ -339,6 +339,7 @@ public class ArtistSearchEngineService(
                                     NameNormalized = x.NameNormalized,
                                     Year = SafeParser.ToDateTime(x.ReleaseDate)?.Year ?? 0,
                                     MusicBrainzId = x.MusicBrainzId,
+                                    MusicBrainzReleaseGroupId = x.MusicBrainzResourceGroupId,
                                     SpotifyId = x.SpotifyId,
                                     CoverUrl = x.CoverUrl
                                 }).ToArray();
