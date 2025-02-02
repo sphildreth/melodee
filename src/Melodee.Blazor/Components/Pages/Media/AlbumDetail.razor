@@ -383,7 +383,8 @@
                 Name = arg.AlbumSearchResult.Artist?.Name ?? _album.Artist.Name,
                 NameNormalized = arg.AlbumSearchResult.Artist?.Name.ToNormalizedString() ?? _album.Artist.NameNormalized,
                 SortName = arg.AlbumSearchResult.Artist?.SortName ?? _album.Artist.SortName,
-                SpotifyId = arg.AlbumSearchResult.Artist?.SpotifyId
+                SpotifyId = arg.AlbumSearchResult.Artist?.SpotifyId,
+                SearchEngineResultUniqueId = arg.AlbumSearchResult.Artist?.UniqueId
             };
             _album.SetTagValue(MetaTagIdentifier.Title, arg.AlbumSearchResult.Name, doSetSongValue: false);
             _album.SetTagValue(MetaTagIdentifier.AlbumDate, arg.AlbumSearchResult.Year, doSetSongValue: false);
@@ -494,6 +495,7 @@
 
     private async Task OnMenuItemClicked(MenuItemEventArgs arg)
     {
+        Console.WriteLine($"++ OnMenuItemClicked arg [{arg}]");
         OperationResult<bool>? result;
         switch ((MenuItems)arg.Value)
         {

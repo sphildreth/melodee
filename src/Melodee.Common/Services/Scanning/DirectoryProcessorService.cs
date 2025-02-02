@@ -639,7 +639,7 @@ public sealed class DirectoryProcessorService(
                                     Name = album.Artist.Name.Nullify() ?? artistFromSearch.Name,
                                     NameNormalized = album.Artist.NameNormalized.Nullify() ?? artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
                                     OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
-                                    SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId ?? artistFromSearch.UniqueId,
+                                    SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId is null or < 1 ? artistFromSearch.UniqueId : album.Artist.SearchEngineResultUniqueId,
                                     SortName = album.Artist.SortName ?? artistFromSearch.SortName,
                                     SpotifyId = album.Artist.SpotifyId ?? artistFromSearch.SpotifyId,
                                     WikiDataId = album.Artist.WikiDataId ?? artistFromSearch.WikiDataId
@@ -652,6 +652,7 @@ public sealed class DirectoryProcessorService(
 
                                     // Artist result should override any in place for Album as its more specific and likely more accurate
                                     album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId;
+                                    album.SpotifyId = artistFromSearch.Releases!.First().SpotifyId;
                                 }
 
                                 album.Status = AlbumStatus.Ok;
