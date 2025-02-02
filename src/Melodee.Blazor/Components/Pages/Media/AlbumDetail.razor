@@ -1,17 +1,15 @@
 @page "/media/album/{LibraryApiKey:guid}/{ApiKey:guid}"
-@using Melodee.Blazor.Extensions
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Extensions
 @using Melodee.Common.Models.SearchEngines
-@using Melodee.Common.Plugins.MetaData.Song
 @using Melodee.Common.Plugins.Validation
 @using Melodee.Common.Services.Scanning
 @using Melodee.Common.Services.SearchEngines
 @using SixLabors.ImageSharp
-
 @using ImageInfo = Melodee.Common.Models.ImageInfo
+
 @inherits MelodeeComponentBase
 
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -26,6 +24,7 @@
 @inject DefaultImages DefaultImages
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject IHttpClientFactory HttpClientFactory
+@inject IJSRuntime JsRuntime
 
 @attribute [Authorize(Roles = "Administrator,Editor")]
 
@@ -37,53 +36,25 @@
     <RadzenBreadCrumbItem Icon="album" Text="@_album.AlbumTitle()"/>
 </RadzenBreadCrumb>
 <RadzenStack>
-    <RadzenRow AlignItems="AlignItems.Center">
-        <RadzenColumn Size="12" SizeMD="6">
-            <RadzenText Text="@($"[{_album.AlbumYear()}] {_album.AlbumTitle()}")"
-                        TextStyle="TextStyle.DisplayH6"
-                        TagName="TagName.H1"
-                        style="margin: 0"/>
-        </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
-            <RadzenStack
-                Orientation="Orientation.Horizontal"
-                AlignItems="AlignItems.Center"
-                JustifyContent="JustifyContent.End"
-                Gap="0.5rem">
-                <RadzenButton
-                    Icon="edit"
-                    ButtonStyle="ButtonStyle.Info"
-                    Text="Identify"
-                    title="Identify the album"
-                    Size="ButtonSize.Small"
-                    Click="@IdentifyButtonClick"/>
-                <RadzenSplitButton Icon="edit"
-                                   title="Edit album"
-                                   Click="@EditButtonClick"
-                                   Text="Edit"
-                                   Size="ButtonSize.Small"
-                                   ButtonStyle="ButtonStyle.Info">
-                    <ChildContent>
-                        <RadzenSplitButtonItem Icon="place_item" Text="Move to next media" Value="MoveToNextMedia"/>
-                        <RadzenSplitButtonItem Icon="format_list_numbered" Text="Renumber" Value="Renumber"/>
-                    </ChildContent>
-                </RadzenSplitButton>
-                <RadzenButton
-                    Icon="move_group"
-                    Text="Move to Library"
-                    title="Move to Library."
-                    Size="ButtonSize.Small"
-                    Click="@MoveButtonClick"/>
-                <RadzenButton
-                    Icon="delete"
-                    ButtonStyle="ButtonStyle.Danger"
-                    Text="Delete"
-                    title="Delete the album and all album files. BEWARE!"
-                    Size="ButtonSize.Small"
-                    Click="@DeleteButtonClick"/>
-            </RadzenStack>
-        </RadzenColumn>
-    </RadzenRow>
+    <RadzenMenu>
+        <RadzenMenuItem Text="Edit" Icon="edit">
+            <RadzenMenuItem Text="Move selected songs to next media" Icon="place_item" Value="@MenuItems.MoveSelectedSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
+            <RadzenMenuItem Text="Renumber all songs" Icon="format_list_numbered" Value="@MenuItems.RenumberSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="Delete" Click="DeleteButtonClick" title="Delete the album and all album files. BEWARE!" IconColor="@Colors.Warning" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="Identify" Click="IdentifyButtonClick" title="Identify the album from search providers." Icon="edit"></RadzenMenuItem>
+        <RadzenMenuItem Text="Move to Storage" Click="MoveButtonClick" title="Move to Storage library." Icon="move_group"></RadzenMenuItem>
+        <RadzenMenuItem Text="Web Search" Icon="public">
+            <RadzenMenuItem Text="Album" Click="@(() => DoWebSearch(1))"></RadzenMenuItem>
+            <RadzenMenuItem Text="Album + Year" Click="@(() => DoWebSearch(2))"></RadzenMenuItem>
+            <RadzenMenuItem Text="Album + Artist" Click="@(() => DoWebSearch(3))"></RadzenMenuItem>
+            <RadzenMenuItem Text="Album + Year + Artist" Click="@(() => DoWebSearch(4))"></RadzenMenuItem>
+        </RadzenMenuItem>
+    </RadzenMenu>
+    <RadzenText Text="@($"[{_album.AlbumYear()}] {_album.AlbumTitle()}")"
+                TextStyle="TextStyle.DisplayH6"
+                TagName="TagName.H1"
+                style="margin: 0"/>
 </RadzenStack>
 <RadzenStack class="rz-mt-3">
     <RadzenRow>
@@ -241,7 +212,7 @@
 
     [Parameter] public Guid ApiKey { get; set; }
 
-    List<Song> _selectedSongs = [];
+    readonly List<Song> _selectedSongs = [];
 
     ShowItem _showItem = ShowItem.Overview;
 
@@ -253,6 +224,12 @@
         Contributors,
         Files,
         Images
+    }
+
+    private enum MenuItems
+    {
+        MoveSelectedSongs,
+        RenumberSongs
     }
 
     Common.Data.Models.Library _library = new()
@@ -460,29 +437,7 @@
 
     private async Task EditButtonClick(RadzenSplitButtonItem arg)
     {
-        OperationResult<bool>? result;
-        switch (arg.Value)
-        {
-            case "MoveToNextMedia":
-                _album = await MediaEditService.MoveSelectedSongsToNextMediaAsync(_album, _selectedSongs.ToArray()).ConfigureAwait(false);
-                _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
-                result = await MediaEditService.SaveMelodeeAlbum(_album);
-                if (result.Data)
-                {
-                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
-                }
-                _selectedSongs.Clear();
-                break;
 
-            case "Renumber":
-                _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
-                result = await MediaEditService.SaveMelodeeAlbum(_album);
-                if (result.Data)
-                {
-                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
-                }
-                break;
-        }
     }
 
     private void ToggleSelectedSong(Song song)
@@ -494,6 +449,68 @@
         else
         {
             _selectedSongs.Add(song);
+        }
+    }
+
+    private async Task DoWebSearch(int searchType)
+    {
+        var searchTerms = new List<object>();
+        var an = _album.Artist.Name;
+        var title = _album.AlbumTitle() ?? string.Empty;
+        var year = _album.AlbumYear()?.ToString() ?? string.Empty;
+        searchTerms.Clear();
+        switch (searchType)
+        {
+            case 4:
+                searchTerms.Add(title);
+                searchTerms.Add(year);
+                searchTerms.Add(an);
+                break;
+
+            case 3:
+                searchTerms.Add(title);
+                searchTerms.Add(an);
+                break;
+
+            case 2:
+                searchTerms.Clear();
+                searchTerms.Add(title);
+                searchTerms.Add(year);
+                break;
+
+            case 1:
+                searchTerms.Clear();
+                searchTerms.Add(title);
+                break;
+        }
+        await JsRuntime.InvokeVoidAsync("openInNewTab", Configuration.GenerateWebSearchUrl(searchTerms.ToArray()));
+    }
+
+    private async Task OnMenuItemClicked(MenuItemEventArgs arg)
+    {
+        OperationResult<bool>? result;
+        switch ((MenuItems)arg.Value)
+        {
+            case MenuItems.RenumberSongs:
+                _album = await MediaEditService.MoveSelectedSongsToNextMediaAsync(_album, _selectedSongs.ToArray()).ConfigureAwait(false);
+                _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
+                result = await MediaEditService.SaveMelodeeAlbum(_album);
+                if (result.Data)
+                {
+                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
+                }
+                _selectedSongs.Clear();
+                break;
+
+            case MenuItems.MoveSelectedSongs:
+                _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
+                result = await MediaEditService.SaveMelodeeAlbum(_album);
+                if (result.Data)
+                {
+                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
+                }
+                break;
+
         }
     }
 
