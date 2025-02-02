@@ -7,7 +7,6 @@
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject ILogger Logger
 
-
 <PageTitle>Identify Album</PageTitle>
 
 <RadzenStack>
@@ -26,7 +25,7 @@
                            autocomplete="off"
                            @bind-Value="@kv.Value"
                            @bind-Value:event="OnInput"
-                           DebounceTime="800"
+                           DebounceTime="1000"
                            MinLength="3"
                            OnValueChanged="@DoSearchAsync"
                            ForceNotifyByEnter="true"
@@ -43,6 +42,10 @@
                         Value="100"
                         ShowValue="false"
                         Mode="ProgressBarMode.Indeterminate"/>
+                }
+                @if (!_isLoading && _results.Length == 0)
+                {
+                    <p>No albums found.</p>
                 }
                 @foreach (var result in _results)
                 {
@@ -85,7 +88,6 @@
     {
         _maxResults = (await SettingService.GetValueAsync<int?>(SettingRegistry.SearchEngineDefaultPageSize)).Data ?? (await SettingService.GetValueAsync<int>(SettingRegistry.DefaultsPageSize)).Data;
         await AlbumSearchEngineService.InitializeAsync();
-      //  await DoSearchAsync();
     }
 
     private async Task DoSearchAsync()
@@ -94,6 +96,7 @@
         {
             return;
         }
+        Console.WriteLine("++ Do Search Async");
         _isLoading = true;
         try
         {
