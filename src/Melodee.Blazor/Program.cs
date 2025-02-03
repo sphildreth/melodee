@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Blazored.SessionStorage;
 using Melodee.Blazor.Components;
 using Melodee.Blazor.Filters;
@@ -39,6 +40,9 @@ using ServiceStack.OrmLite;
 using ILogger = Serilog.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Trace.Listeners.Clear();
+Trace.Listeners.Add(new ConsoleTraceListener());
 
 builder.Host.UseSerilog((hostingContext, loggerConfiguration)
     => loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration));

@@ -40,7 +40,7 @@ public class ArtistHousekeepingJob(
             var artists = await scopedContext.Artists
                 .Include(x => x.Library)
                 .Include(x => x.Albums)
-                .Where(x => !x.Library.IsLocked && !x.IsLocked && x.ImageCount == 0 && x.MetaDataStatus == readyToProcessStatus)
+                .Where(x => !x.Library.IsLocked && !x.IsLocked && (x.ImageCount == null || x.ImageCount == 0) && x.MetaDataStatus == readyToProcessStatus)
                 .ToArrayAsync(context.CancellationToken)
                 .ConfigureAwait(false);
 

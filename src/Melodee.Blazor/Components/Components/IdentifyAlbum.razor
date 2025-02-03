@@ -73,7 +73,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        await DoSearchAsync();
+     //   await DoSearchAsync();
     }
 
     private async Task SelectOrCancelClicked(bool clickedSelected)
@@ -97,6 +97,7 @@
 
     private async Task DoSearchAsync()
     {
+        MainLayoutProxyService.ToggleSpinnerVisible();
         if (_isLoading)
         {
             return;
@@ -118,11 +119,7 @@
                 .ToArray();
             if (searchName.Nullify() != null)
             {
-                var filteredResults = _results.Where(x => x.NameNormalized.Contains(searchName.ToNormalizedString() ?? searchName)).ToArray();
-                if (filteredResults.Length > 0)
-                {
-                    _results = filteredResults;
-                }
+                _results = _results.Where(x => x.NameNormalized.Contains(searchName.ToNormalizedString() ?? searchName)).ToArray();
             }
         }
         catch (Exception e)
@@ -133,6 +130,7 @@
         {
             _isLoading = false;
             await InvokeAsync(StateHasChanged);
+            MainLayoutProxyService.ToggleSpinnerVisible();
         }
     }
 

@@ -161,7 +161,7 @@ public class Spotify(
 
             if (searchResult?.Artists?.Items?.Count > 0)
             {
-                foreach (var sr in searchResult.Artists.Items)
+                foreach (var sr in searchResult.Artists?.Items?.Where(x => x.Images?.Count > 0) ?? [])
                 {
                     var biggestImageHeight = sr.Images?.Max(x => x.Height) ?? 0;
 

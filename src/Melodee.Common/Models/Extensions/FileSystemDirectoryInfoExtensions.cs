@@ -270,7 +270,7 @@ public static class FileSystemDirectoryInfoExtensions
         }
 
         highestNumberFound++;
-        return (Path.Combine(fileSystemDirectoryInfo.FullName(),
+        return (Path.Combine(fileSystemDirectoryInfo.Path,
                 $"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maxNumberLength)}-{imageType}.jpg"),
             highestNumberFound);
     }

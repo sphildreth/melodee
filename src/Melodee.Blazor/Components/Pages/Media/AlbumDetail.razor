@@ -45,6 +45,10 @@
             <RadzenMenuItem Text="Set artist on all songs" Icon="artist" Value="@MenuItems.SetArtistOnAllSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
         </RadzenMenuItem>
         <RadzenMenuItem Text="Delete" Click="DeleteButtonClick" title="Delete the album and all album files. BEWARE!" IconColor="@Colors.Warning" Icon="delete"></RadzenMenuItem>
+        @if (_selectedSongs.Count > 0)
+        {
+            <RadzenMenuItem Text="Delete Selected Songs" Click="OnMenuItemClicked" Value="@MenuItems.DeleteSelectedSongs"  title="Delete the selected songs. BEWARE!" IconColor="@Colors.Warning" Icon="remove"></RadzenMenuItem>
+        }
         <RadzenMenuItem Text="Identify" Click="IdentifyButtonClick" title="Identify the album from search providers." Icon="edit"></RadzenMenuItem>
         <RadzenMenuItem Text="Move to Storage" Click="MoveButtonClick" title="Move to Storage library." Icon="move_group"></RadzenMenuItem>
         <RadzenMenuItem Text="Set Cover Image" Click="SetCoverImageButtonClick" title="Set the album cover image." Icon="image"></RadzenMenuItem>
@@ -235,7 +239,8 @@
         MoveSelectedSongs,
         RenumberSongs,
         EditAlbum,
-        SetArtistOnAllSongs
+        SetArtistOnAllSongs,
+        DeleteSelectedSongs
     }
 
     Common.Data.Models.Library _library = new()
@@ -434,9 +439,13 @@
         }
     }
 
-    private async Task DeleteSong(Song song)
+    private Task DeleteSong(Song song)
+        => DeleteSongsAction([song]);
+
+
+    private async Task DeleteSongsAction(Song[] songs)
     {
-        _album.Songs = _album.Songs!.Except([song]);
+        _album.Songs = _album.Songs!.Except(songs);
         _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
         var result = await MediaEditService.SaveMelodeeAlbum(_album);
         if (result.Data)
@@ -502,18 +511,18 @@
         OperationResult<bool>? result;
         switch ((MenuItems)arg.Value)
         {
-            case MenuItems.RenumberSongs:
+            case MenuItems.MoveSelectedSongs:
                 _album = await MediaEditService.MoveSelectedSongsToNextMediaAsync(_album, _selectedSongs.ToArray()).ConfigureAwait(false);
                 _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
                 result = await MediaEditService.SaveMelodeeAlbum(_album);
                 if (result.Data)
                 {
-                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
+                    NotificationService.Notify(NotificationMessageForResult(result, "renumbered songs", ToastTime));
                 }
                 _selectedSongs.Clear();
                 break;
 
-            case MenuItems.MoveSelectedSongs:
+            case MenuItems.RenumberSongs:
                 _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
                 result = await MediaEditService.SaveMelodeeAlbum(_album);
                 if (result.Data)
@@ -531,6 +540,10 @@
                 }
                 break;
 
+            case MenuItems.DeleteSelectedSongs:
+                await DeleteSongsAction(_selectedSongs.ToArray());
+                _selectedSongs.Clear();
+                break;
 
             default:
                 await DialogService.Alert("WIP; sph is working on it");
