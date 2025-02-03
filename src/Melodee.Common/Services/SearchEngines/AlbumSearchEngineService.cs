@@ -12,6 +12,8 @@ using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Serilog.Events;
+using SerilogTimings;
 
 namespace Melodee.Common.Services.SearchEngines;
 
@@ -45,33 +47,35 @@ public class AlbumSearchEngineService(
     public async Task<PagedResult<AlbumSearchResult>> DoSearchAsync(AlbumQuery query, int? maxResults, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-
-        var result = new List<AlbumSearchResult>();
-        var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
-        int totalCount = 0;
-        long operationTime = 0;
-        
-        // Search for artist then return all albums for artist rank against name match
-        var searchResult = await artistSearchEngineService.DoSearchAsync(new ArtistQuery
+        using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] [{Method}] Query [{Query}]", nameof(AlbumSearchEngineService), nameof(DoSearchAsync), query))
         {
-            Name = query.Artist ?? string.Empty,
-            MusicBrainzId = query.ArtistMusicBrainzId
-        }, maxResultsValue, cancellationToken).ConfigureAwait(false);
+            var result = new List<AlbumSearchResult>();
+            var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
+            int totalCount = 0;
+            long operationTime = 0;
 
-        if (searchResult.Data.Any())
-        {
-            var artist = searchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
-            result.AddRange(artist?.Releases ?? []);
-            totalCount = artist?.Releases?.Length ?? 0;
+            // Search for artist then return all albums for artist rank against name match
+            var searchResult = await artistSearchEngineService.DoSearchAsync(new ArtistQuery
+            {
+                Name = query.Artist ?? string.Empty,
+                MusicBrainzId = query.ArtistMusicBrainzId
+            }, maxResultsValue, cancellationToken).ConfigureAwait(false);
+
+            if (searchResult.Data.Any())
+            {
+                var artist = searchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
+                result.AddRange(artist?.Releases ?? []);
+                totalCount = artist?.Releases?.Length ?? 0;
+            }
+
+            return new PagedResult<AlbumSearchResult>
+            {
+                OperationTime = operationTime,
+                CurrentPage = 1,
+                TotalCount = totalCount,
+                TotalPages = 1,
+                Data = result.OrderBy(x => x.Rank).ToArray()
+            };
         }
-
-        return new PagedResult<AlbumSearchResult>
-        {
-            OperationTime = operationTime,
-            CurrentPage = 1,
-            TotalCount = totalCount,
-            TotalPages = 1,
-            Data = result.OrderBy(x => x.Rank).ToArray()
-        };        
     }
 }

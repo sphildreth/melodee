@@ -1732,12 +1732,26 @@ public class OpenSubsonicApiService(
         {
             return authResponse with { UserInfo = BlankUserInfo };
         }
-
+        
         long totalCount = 0;
         ArtistSearchResult[] artists = [];
         AlbumSearchResult[] albums = [];
         SongSearchResult[] songs = [];
 
+        if (!request.IsValid)
+        {
+            return new ResponseModel
+            {
+                TotalCount = totalCount,
+                UserInfo = authResponse.UserInfo,
+                ResponseData = await DefaultApiResponse() with
+                {
+                    Data = new Search3Result(artists, albums, songs),
+                    DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "searchResult3"
+                }            
+            };
+        }        
+        
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();

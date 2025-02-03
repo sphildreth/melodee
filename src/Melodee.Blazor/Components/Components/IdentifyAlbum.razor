@@ -71,6 +71,10 @@
 
     [Parameter] public EventCallback<AlbumDataInfo?> OnUpdateCallback { get; set; }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        await DoSearchAsync();
+    }
 
     private async Task SelectOrCancelClicked(bool clickedSelected)
     {

@@ -163,11 +163,11 @@ public class Spotify(
             {
                 foreach (var sr in searchResult.Artists.Items)
                 {
-                    var biggestImageHeight = sr.Images.Max(x => x.Height);
+                    var biggestImageHeight = sr.Images?.Max(x => x.Height) ?? 0;
 
                     short rank = 10;
 
-                    var image = sr.Images.FirstOrDefault(x => x.Height == biggestImageHeight);
+                    var image = sr.Images?.FirstOrDefault(x => x.Height == biggestImageHeight);
                     if (image != null)
                     {
                         results.Add(new ImageSearchResult

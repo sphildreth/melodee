@@ -1,6 +1,11 @@
 <AdvancedTimer @ref="_timer" IntervalInMs="@DebounceTime" AutoStart="false" Occurring="Times.Once()"
                OnIntervalElapsed="OnElapsed"/>
-<input @ref="InnerElementReference" value="@Value" @oninput="OnTextChange" @onblur="OnBlur" @onkeydown="OnKeyPress"
+<input @ref="InnerElementReference"
+       name="@Guid.NewGuid().ToString()"
+       value="@Value"
+       @oninput="OnTextChange"
+       @onblur="OnBlur"
+       @onkeydown="OnKeyPress"
        @attributes="AdditionalAttributes"/>
 
 @code {
@@ -14,7 +19,7 @@
     /// </summary>
     public ElementReference InnerElementReference { get; private set; }
 
-    private double _intervalInMilisec = 200;
+    private double _intervalInMillisecond = 200;
 
     /// <summary>
     ///     Notification debounce timeout in ms. If set to 0 notifications happens immediately. -1 disables automatic
@@ -24,15 +29,13 @@
     [Parameter]
     public double DebounceTime
     {
-        get => _intervalInMilisec;
+        get => _intervalInMillisecond;
         set
         {
-            //if (value == _intervalInMilisec)
-            if (Math.Abs(value - _intervalInMilisec) == 0)
+            if (Math.Abs(value - _intervalInMillisecond) == 0)
             {
                 return;
             }
-
             SetTimer(value);
         }
     }
@@ -98,7 +101,7 @@
         Value = e.Value?.ToString();
         _notifiedLastChange = false;
 
-        if (_intervalInMilisec == 0) //Notify immediately
+        if (_intervalInMillisecond == 0) //Notify immediately
         {
             Notify();
         }
@@ -159,7 +162,7 @@
     {
         // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
         _timer?.Stop();
-        _intervalInMilisec = value;
+        _intervalInMillisecond = value;
         if (value <= -1)
         {
             _timer?.Stop();

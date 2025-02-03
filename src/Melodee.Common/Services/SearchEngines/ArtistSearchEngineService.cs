@@ -149,8 +149,7 @@ public class ArtistSearchEngineService(
         long operationTime = 0;
         int totalCount = 0;
 
-        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] DoSearchAsync [{DirectoryInfo}]",
-                   nameof(ArtistSearchEngineService), query))
+        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] DoSearchAsync [{Query}]", nameof(ArtistSearchEngineService), query))
         {
             
             // See if found in DbContext if not then query plugins, add to context and return results
@@ -205,26 +204,34 @@ public class ArtistSearchEngineService(
                 }
                 else
                 {
-                    foreach (var plugin in _artistSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
+
+                    try
                     {
-                        if (cancellationToken.IsCancellationRequested)
+                        foreach (var plugin in _artistSearchEnginePlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
                         {
-                            break;
-                        }
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                break;
+                            }
 
-                        // Don't limit the number of results from the search engine as they will be put into the local database and limited on result to method call.
-                        var pluginResult = await plugin.DoArtistSearchAsync(query, int.MaxValue, cancellationToken).ConfigureAwait(false);
-                        if (pluginResult is { IsSuccess: true, Data: not null })
-                        {
-                            result.AddRange(pluginResult.Data);
-                            totalCount += pluginResult.TotalCount;
-                            operationTime += pluginResult.OperationTime ?? 0;
-                        }
+                            // Don't limit the number of results from the search engine as they will be put into the local database and limited on result to method call.
+                            var pluginResult = await plugin.DoArtistSearchAsync(query, int.MaxValue, cancellationToken).ConfigureAwait(false);
+                            if (pluginResult is { IsSuccess: true, Data: not null })
+                            {
+                                result.AddRange(pluginResult.Data);
+                                totalCount += pluginResult.TotalCount;
+                                operationTime += pluginResult.OperationTime ?? 0;
+                            }
 
-                        if (plugin.StopProcessing || result.Count >= maxResultsValue)
-                        {
-                            break;
+                            if (plugin.StopProcessing || result.Count >= maxResultsValue)
+                            {
+                                break;
+                            }
                         }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e, "[{Name}] DoSearchAsync [{Query}]", nameof(ArtistSearchEngineService), query);
                     }
 
                     if (result.Count > 0)
