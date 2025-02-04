@@ -739,18 +739,15 @@ public sealed class DirectoryProcessorService(
                         {
                             if (album.MelodeeDataFileName != null)
                             {
+                                Trace.WriteLine("Deleting MelodeeDataFileName...");
                                 File.Delete(album.MelodeeDataFileName);
                             }
-
+                            Trace.WriteLine($"Writing serialized album [{ Path.Combine(albumDirectorySystemInfo.FullName(), jsonName) }]...");
                             await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), serialized, cancellationToken).ConfigureAwait(false);
                             if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                             {
-                                using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync \ud83e\ude84 DoMagic [{DirectoryInfo}]", albumDirectorySystemInfo.Name))
-                                {
-                                    await mediaEditService.DoMagic(album.Directory, album.Id, cancellationToken).ConfigureAwait(false);
-                                }
+                                await mediaEditService.DoMagic(album.Directory, album.Id, cancellationToken).ConfigureAwait(false);
                             }
-
                             artistsIdsSeen.Add(album.Artist.ArtistUniqueId());
                             artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId()) ?? []);
                             albumsIdsSeen.Add(album.ArtistAlbumUniqueId());

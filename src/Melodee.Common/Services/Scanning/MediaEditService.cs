@@ -16,6 +16,8 @@ using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Serilog.Events;
+using SerilogTimings;
 using SixLabors.ImageSharp;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
@@ -153,77 +155,81 @@ public sealed class MediaEditService(
     {
         CheckInitialized();
 
-        if (!SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicEnabled]))
+        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] :: DoMagic Directory [{DirName}]", nameof(MediaEditService), directoryInfo.FullName()))
         {
-            return new OperationResult<AlbumValidationResult>
+
+            if (!SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicEnabled]))
             {
-                Data = new AlbumValidationResult(AlbumStatus.NotSet, AlbumNeedsAttentionReasons.NotSet)
-            };
-        }
+                return new OperationResult<AlbumValidationResult>
+                {
+                    Data = new AlbumValidationResult(AlbumStatus.NotSet, AlbumNeedsAttentionReasons.NotSet)
+                };
+            }
 
-        var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
-        var albumValidResult = _albumValidator.ValidateAlbum(album);
-        album.ValidationMessages = albumValidResult.Data.Messages ?? [];
-        album.Status = albumValidResult.Data.AlbumStatus;
-        album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;
-        if (albumValidResult.Data.IsValid)
-        {
-            return new OperationResult<AlbumValidationResult>
+            var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, albumId, cancellationToken);
+            var albumValidResult = _albumValidator.ValidateAlbum(album);
+            album.ValidationMessages = albumValidResult.Data.Messages ?? [];
+            album.Status = albumValidResult.Data.AlbumStatus;
+            album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;
+            if (albumValidResult.Data.IsValid)
             {
-                Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.NotSet)
-            };
-        }
+                return new OperationResult<AlbumValidationResult>
+                {
+                    Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.NotSet)
+                };
+            }
 
-        if (!(album.Directory?.Exists() ?? false))
-        {
-            Logger.Warning("Album directory is invalid.");
-            return new OperationResult<AlbumValidationResult>
+            if (!(album.Directory?.Exists() ?? false))
             {
-                Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.AlbumCannotBeLoaded)
-            };
-        }
+                Logger.Warning("Album directory is invalid.");
+                return new OperationResult<AlbumValidationResult>
+                {
+                    Data = new AlbumValidationResult(AlbumStatus.Invalid, AlbumNeedsAttentionReasons.AlbumCannotBeLoaded)
+                };
+            }
 
-        if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRenumberSongs]))
-        {
-            albumId = (await RenumberSongs(directoryInfo, albumId, cancellationToken)).Data.Item2;
-        }
+            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRenumberSongs]))
+            {
+                albumId = (await RenumberSongs(directoryInfo, albumId, cancellationToken)).Data.Item2;
+            }
 
-        if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongArtist]))
-        {
-            albumId = (await RemoveFeaturingArtistsFromSongsArtist(directoryInfo, albumId, cancellationToken)).Data.Item2;
-        }
+            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongArtist]))
+            {
+                albumId = (await RemoveFeaturingArtistsFromSongsArtist(directoryInfo, albumId, cancellationToken)).Data.Item2;
+            }
 
-        if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle]))
-        {
-            albumId = (await RemoveFeaturingArtistsFromSongTitle(directoryInfo, albumId, cancellationToken)).Data.Item2;
-        }
+            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle]))
+            {
+                albumId = (await RemoveFeaturingArtistsFromSongTitle(directoryInfo, albumId, cancellationToken)).Data.Item2;
+            }
 
-        if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoReplaceSongsArtistSeparators]))
-        {
-            albumId = (await ReplaceAllSongArtistSeparators(directoryInfo, albumId, cancellationToken)).Data.Item2;
-        }
+            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoReplaceSongsArtistSeparators]))
+            {
+                albumId = (await ReplaceAllSongArtistSeparators(directoryInfo, albumId, cancellationToken)).Data.Item2;
+            }
 
-        if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoSetYearToCurrentIfInvalid]))
-        {
-            albumId = (await SetYearToCurrent(directoryInfo, albumId, cancellationToken)).Data.Item2;
-        }
+            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoSetYearToCurrentIfInvalid]))
+            {
+                albumId = (await SetYearToCurrent(directoryInfo, albumId, cancellationToken)).Data.Item2;
+            }
 
-        if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromAlbumTitle]))
-        {
-            albumId = (await RemoveUnwantedTextFromAlbumTitle(directoryInfo, albumId, cancellationToken)).Data.Item2;
-        }
+            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromAlbumTitle]))
+            {
+                albumId = (await RemoveUnwantedTextFromAlbumTitle(directoryInfo, albumId, cancellationToken)).Data.Item2;
+            }
 
-        if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromSongTitles]))
-        {
-            await RemoveUnwantedTextFromSongTitles(directoryInfo, albumId, cancellationToken);
-        }
+            if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromSongTitles]))
+            {
+                await RemoveUnwantedTextFromSongTitles(directoryInfo, albumId, cancellationToken);
+            }
 
-        var validationResult = _albumValidator.ValidateAlbum(album);
-        album.Status = validationResult.Data.AlbumStatus;
-        album.StatusReasons = validationResult.Data.AlbumStatusReasons;
-        album.Modified = DateTimeOffset.UtcNow;
-        await SaveAlbum(directoryInfo, album, cancellationToken);
-        return validationResult;
+            var validationResult = _albumValidator.ValidateAlbum(album);
+            album.Status = validationResult.Data.AlbumStatus;
+            album.StatusReasons = validationResult.Data.AlbumStatusReasons;
+            album.Modified = DateTimeOffset.UtcNow;
+            await SaveAlbum(directoryInfo, album, cancellationToken);
+            return validationResult;
+        }
     }
 
     private async Task<Guid> SaveAlbum(FileSystemDirectoryInfo directoryInfo, Album album, CancellationToken cancellationToken = default)
