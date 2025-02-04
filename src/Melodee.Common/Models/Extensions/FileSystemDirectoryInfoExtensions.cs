@@ -239,13 +239,6 @@ public static class FileSystemDirectoryInfoExtensions
         {
             result.Add(fileSystemDirectoryInfo);
         }
-
-        var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
-        if (skipDirPrefix.Nullify() != null)
-        {
-            return result.Where(x => !x.FullName().StartsWith(skipDirPrefix!) && !x.FullName().Contains($"{Path.DirectorySeparatorChar}{skipDirPrefix}")).ToArray();
-        }
-
         return result.ToArray();
     }
 

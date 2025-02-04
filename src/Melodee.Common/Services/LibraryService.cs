@@ -588,7 +588,6 @@ public class LibraryService(
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
         var albumValidator = new AlbumValidator(configuration);
 
-        var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
         var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
@@ -599,14 +598,6 @@ public class LibraryService(
             if (!dirInfo.Exists)
             {
                 continue;
-            }
-
-            if (skipDirPrefix != null)
-            {
-                if (dirInfo.Name.StartsWith(skipDirPrefix))
-                {
-                    continue;
-                }
             }
 
             if (duplicateDirPrefix != null)
@@ -622,16 +613,6 @@ public class LibraryService(
             {
                 if (!albumValidator.ValidateAlbum(album).Data.IsValid)
                 {
-                    if (skipDirPrefix != null)
-                    {
-                        if (dirInfo.Parent != null)
-                        {
-                            var newName = Path.Combine(dirInfo.Parent.FullName, $"{skipDirPrefix}{dirInfo.Name}-{DateTime.UtcNow.Ticks}");
-                            dirInfo.MoveTo(newName);
-                            Logger.Warning("Moved invalid album directory [{Old}] to [{New}]", dirInfo.FullName, newName);
-                        }
-                    }
-
                     continue;
                 }
 
@@ -763,7 +744,6 @@ public class LibraryService(
         }
 
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
-        var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
 
         var result = new List<MelodeeModels.Statistic>
@@ -785,13 +765,6 @@ public class LibraryService(
                 foreach (var directory in allDirectoriesInLibrary)
                 {
                     var d = new DirectoryInfo(directory);
-                    if (skipDirPrefix != null)
-                    {
-                        if (d.Name.StartsWith(skipDirPrefix))
-                        {
-                            continue;
-                        }
-                    }
 
                     if (duplicateDirPrefix != null)
                     {
@@ -822,13 +795,6 @@ public class LibraryService(
                                     foreach (var albumDirectory in Directory.GetDirectories(artistDirectory, "*", SearchOption.TopDirectoryOnly))
                                     {
                                         d = new DirectoryInfo(albumDirectory);
-                                        if (skipDirPrefix != null)
-                                        {
-                                            if (d.Name.StartsWith(skipDirPrefix))
-                                            {
-                                                continue;
-                                            }
-                                        }
 
                                         if (duplicateDirPrefix != null)
                                         {
@@ -851,13 +817,6 @@ public class LibraryService(
                                         }
                                         catch (Exception ex)
                                         {
-                                            if (skipDirPrefix != null)
-                                            {
-                                                Logger.Warning(ex,
-                                                    "! Unable to load melodee album [{FileName}]",
-                                                    melodeeFile.FullName);
-                                            }
-
                                             continue;
                                         }
 
@@ -1031,7 +990,6 @@ public class LibraryService(
             messages.Add($"Deleted [{numberDeleted.ToStringPadLeft(DisplayNumberPadLength)}] directories from library. Library now has [{libraryDirectoryCountAfterCleaning.ToStringPadLeft(DisplayNumberPadLength)}] directories.");
         }
 
-        var skipDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix).Nullify();
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
 
         var melodeeFilesDeleted = 0;
@@ -1041,14 +999,6 @@ public class LibraryService(
             {
                 foreach (var directory in allDirectoriesInLibrary)
                 {
-                    if (skipDirPrefix != null)
-                    {
-                        if (directory.Name.StartsWith(skipDirPrefix))
-                        {
-                            continue;
-                        }
-                    }
-
                     if (duplicateDirPrefix != null)
                     {
                         if (directory.Name.StartsWith(duplicateDirPrefix))

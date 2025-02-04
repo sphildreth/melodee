@@ -843,19 +843,6 @@ public sealed class MediaEditService(
         album.Status = albumValidResult.Data.AlbumStatus;
         album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;
         await SaveAlbum(album.Directory, album, cancellationToken);
-        if (album.Status == AlbumStatus.Ok)
-        {
-            var skipPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix) ?? string.Empty;
-            if (skipPrefix.Nullify() != null && album.Directory.Name.StartsWith(skipPrefix.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                var oldDirectoryName = album.Directory.FullName();
-                var newDirectoryName = album.Directory.FullName().Replace(skipPrefix.Trim(), string.Empty);
-                Directory.Move(oldDirectoryName, newDirectoryName);
-                album.Directory = (new DirectoryInfo(newDirectoryName)).ToDirectorySystemInfo();
-                await SaveAlbum(album.Directory, album, cancellationToken);
-            }
-        }
-
         return new OperationResult<bool>
         {
             Data = album.Status == AlbumStatus.Ok

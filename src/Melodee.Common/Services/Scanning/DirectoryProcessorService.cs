@@ -177,8 +177,6 @@ public sealed class DirectoryProcessorService(
         var albumsIdsSeen = new List<long?>();
         var songsIdsSeen = new List<Guid>();
 
-        var skipPrefix = _configuration.GetValue<string>(SettingRegistry.ProcessingSkippedDirectoryPrefix);
-
         var result = new DirectoryProcessorResult
         {
             DurationInMs = 0,
@@ -320,13 +318,6 @@ public sealed class DirectoryProcessorService(
                         if (plugin.StopProcessing)
                         {
                             Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
-                            if (pluginResult.Type == OperationResponseType.Error && skipPrefix.Nullify() != null)
-                            {
-                                var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
-                                directoryInfoToProcess.MoveToDirectory(Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
-                                LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);
-                            }
-
                             break;
                         }
 
@@ -789,13 +780,6 @@ public sealed class DirectoryProcessorService(
                         Errors = processingErrors,
                         Data = result
                     };
-                }
-
-                if (skipPrefix.Nullify() != null)
-                {
-                    var movedTo = $"{skipPrefix}{directoryInfoToProcess.Name}";
-                    directoryInfoToProcess.MoveToDirectory(Path.Combine(fileSystemDirectoryInfo.FullName(), movedTo));
-                    LogAndRaiseEvent(LogEventLevel.Warning, "Failed processing [{0}] moved to [{1}]", null, directoryInfoToProcess.ToString(), movedTo);
                 }
             }
 
