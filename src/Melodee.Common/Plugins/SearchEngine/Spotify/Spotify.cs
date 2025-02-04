@@ -149,6 +149,8 @@ public class Spotify(
             SearchResponse? searchResult = null;
             try
             {
+                
+                // TODO use Polly to make this more resilient with timeouts 
                 searchResult = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Artist, query.Name), cancellationToken);
             }
             catch (APIUnauthorizedException)

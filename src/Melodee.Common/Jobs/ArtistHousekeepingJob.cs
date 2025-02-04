@@ -44,6 +44,11 @@ public class ArtistHousekeepingJob(
                 .ToArrayAsync(context.CancellationToken)
                 .ConfigureAwait(false);
 
+            if (artists.Length == 0)
+            {
+                return;
+            }
+            
             var maxNumberOfImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
             if (maxNumberOfImagesAllowed == 0)
             {

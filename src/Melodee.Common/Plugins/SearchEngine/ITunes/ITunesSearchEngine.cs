@@ -3,6 +3,8 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Serialization;
+using Polly;
+using Polly.Retry;
 using Serilog;
 
 namespace Melodee.Common.Plugins.SearchEngine.ITunes;
@@ -147,7 +149,7 @@ public class ITunesSearchEngine(
             if (searchResult?.Results?.FirstOrDefault()?.ArtistId != null)
             {
                 var sr = searchResult.Results.First();
-                var mediaUrl = await GetArtistArtworkUrlAsync(httpClient, searchResult.Results.First().ArtistId.ToString()!);
+                var mediaUrl = await GetArtistArtworkUrlAsync(httpClient, searchResult.Results.First().ArtistId.ToString()!, cancellationToken);
                 if (mediaUrl.Nullify() != null)
                 {
                     results.Add(new ImageSearchResult
@@ -231,9 +233,28 @@ public class ITunesSearchEngine(
         throw new NotImplementedException();
     }
 
-    private async Task<string?> GetArtistArtworkUrlAsync(HttpClient client, string artistId)
+    private async Task<string?> GetArtistArtworkUrlAsync(HttpClient client, string artistId, CancellationToken cancellationToken = default)
+    {
+        var pipeline = new ResiliencePipelineBuilder()
+            .AddRetry(new RetryStrategyOptions
+            {
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromMinutes(2)
+            })
+            .Build();
+      
+      return await pipeline.ExecuteAsync(
+          static async (state, token) => await GetArtistArtworkUrlAsyncAction(state.client, state.artistId),
+          (client, artistId),
+          cancellationToken);     
+    }
+
+    private static async Task<string?> GetArtistArtworkUrlAsyncAction(HttpClient client, string artistId)
     {
         var url = $"https://music.apple.com/de/artist/{artistId}";
+
         var document = await client.GetStringAsync(url);
 
         var regex = new Regex("<meta property=\"og:image\" content=\"(.*png)\"");
