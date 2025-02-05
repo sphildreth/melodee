@@ -236,10 +236,10 @@ public static class AlbumExtensions
     /// </summary>
     public static int? AlbumYear(this Album album)
     {
-        return album.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
-               album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
-               album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear) ??
-               album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear);
+        return (album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
+                album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear) ??
+                album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear)) ?? 
+               SafeParser.ToDateTime(album.MetaTagValue<string?>(MetaTagIdentifier.AlbumDate))?.Year;
     }
 
     /// <summary>
@@ -448,13 +448,13 @@ public static class AlbumExtensions
 
         var minimumAlbumYear = SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMinimumAlbumYear]);
         var maximumValidAlbumYear = SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumAlbumYear]);
-        var albumDate = album.AlbumYear();
-        if (albumDate.HasValue && (albumDate < minimumAlbumYear || albumDate > maximumValidAlbumYear))
+        var albumYear = album.AlbumYear();
+        if (albumYear.HasValue && (albumYear < minimumAlbumYear || albumYear > maximumValidAlbumYear))
         {
-            throw new Exception($"Invalid year [{albumDate}] for Album [{album}], Minimum configured value is [{minimumAlbumYear}], Maximum configured value is [{maximumValidAlbumYear}].");
+            throw new Exception($"Invalid year [{albumYear}] for Album [{album}], Minimum configured value is [{minimumAlbumYear}], Maximum configured value is [{maximumValidAlbumYear}].");
         }
 
-        return $"[{albumDate}] {albumPathTitle}/";
+        return $"[{albumYear}] {albumPathTitle}/";
     }
 
     // public static string ArtistDirectoryName(this Album album, Dictionary<string, object?> configuration)

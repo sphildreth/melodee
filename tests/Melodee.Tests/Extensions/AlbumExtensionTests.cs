@@ -36,7 +36,7 @@ public class AlbumExtensionTests
                 },
                 new MetaTag<object?>
                 {
-                    Identifier = MetaTagIdentifier.AlbumDate,
+                    Identifier = MetaTagIdentifier.RecordingYear,
                     Value = 2024
                 },
                 new MetaTag<object?>

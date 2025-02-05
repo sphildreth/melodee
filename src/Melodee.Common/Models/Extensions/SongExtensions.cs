@@ -130,23 +130,15 @@ public static class SongExtensions
 
     public static int? AlbumYear(this Song song)
     {
-        return song.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
-               song.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
-               song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumDate) ??
-               song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
-    }
-
-    public static int? SongYear(this Song song)
-    {
-        return song.MetaTagValue<int?>(MetaTagIdentifier.AlbumDate) ??
-               song.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
-               song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumDate) ??
-               song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear);
+        return (song.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
+                      song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumDate) ??
+                      song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear)) ?? SafeParser.ToDateTime(song.AlbumDate())?.Year;
     }
 
     public static string? AlbumDate(this Song song)
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.Date) ??
+               song.MetaTagValue<string?>(MetaTagIdentifier.AlbumDate) ??
                song.MetaTagValue<string?>(MetaTagIdentifier.OrigAlbumDate) ??
                song.MetaTagValue<string?>(MetaTagIdentifier.RecordingDateOrYear);
     }

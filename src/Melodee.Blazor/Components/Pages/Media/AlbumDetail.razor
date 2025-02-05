@@ -395,7 +395,7 @@
                 SearchEngineResultUniqueId = arg.AlbumSearchResult.Artist?.UniqueId
             };
             _album.SetTagValue(MetaTagIdentifier.Title, arg.AlbumSearchResult.Name, doSetSongValue: false);
-            _album.SetTagValue(MetaTagIdentifier.AlbumDate, arg.AlbumSearchResult.Year, doSetSongValue: false);
+            _album.SetTagValue(MetaTagIdentifier.RecordingYear, arg.AlbumSearchResult.Year, doSetSongValue: false);
             if (_album.Images?.Count() == 0)
             {
                 var imageSearch = await AlbumImageSearchEngineService.DoSearchAsync(_album.ToAlbumQuery(), _maxResults);

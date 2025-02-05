@@ -22,14 +22,14 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
 
     public override bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier)
     {
-        return metaTagIdentifier is MetaTagIdentifier.AlbumDate or MetaTagIdentifier.RecordingYear or MetaTagIdentifier.RecordingDateOrYear or MetaTagIdentifier.OrigAlbumYear;
+        return metaTagIdentifier is MetaTagIdentifier.RecordingYear or MetaTagIdentifier.RecordingDateOrYear or MetaTagIdentifier.OrigAlbumYear;
     }
 
     public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
-        var yearValue = SafeParser.ToNumber<int>(tagValue ?? string.Empty);
-        if (DateTime.TryParse(tagValue?.ToString() ?? string.Empty, out var dateParseResult))
+        var yearValue = SafeParser.ToNumber<int?>(tagValue ?? string.Empty);
+        if (yearValue == null && DateTime.TryParse(tagValue?.ToString() ?? string.Empty, out var dateParseResult))
         {
             yearValue = dateParseResult.Year;
         }
@@ -50,7 +50,7 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
         {
             new()
             {
-                Identifier = MetaTagIdentifier.AlbumDate,
+                Identifier = MetaTagIdentifier.RecordingYear,
                 Value = yearValue
             }
         };

@@ -121,11 +121,20 @@ public class Mp3Files(
                                 },
                                 new()
                                 {
-                                    Identifier = MetaTagIdentifier.OrigAlbumYear, Value = song.AlbumYear(),
+                                    Identifier = MetaTagIdentifier.RecordingYear, Value = song.AlbumYear(),
                                     SortOrder = 100
                                 },
                                 new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
                             };
+                            var albumDate = song.AlbumDate();
+                            if (albumDate != null)
+                            {
+                                newAlbumTags.Add(new()
+                                {
+                                    Identifier = MetaTagIdentifier.AlbumDate, Value = albumDate,
+                                    SortOrder = 100
+                                }); 
+                            }
                             var genres = songsGroupedByAlbum
                                 .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
                                 .Where(x => x.Identifier == MetaTagIdentifier.Genre);

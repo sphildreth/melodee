@@ -262,7 +262,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     {
                         albumTags.Add(new MetaTag<object?>
                         {
-                            Identifier = MetaTagIdentifier.AlbumDate,
+                            Identifier = MetaTagIdentifier.RecordingYear,
                             Value = SafeParser.ToDateTime(rawValue?.OnlyAlphaNumeric() ?? string.Empty)?.Year
                         });
                         continue;

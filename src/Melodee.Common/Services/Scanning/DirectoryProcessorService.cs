@@ -644,6 +644,11 @@ public sealed class DirectoryProcessorService(
                                     // Artist result should override any in place for Album as its more specific and likely more accurate
                                     album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId;
                                     album.SpotifyId = artistFromSearch.Releases!.First().SpotifyId;
+                                    
+                                    if (!album.HasValidAlbumYear(_configuration.Configuration))
+                                    {
+                                        album.SetTagValue(MetaTagIdentifier.RecordingYear, artistFromSearch.Releases!.First().Year.ToString());
+                                    }
                                 }
 
                                 album.Status = AlbumStatus.Ok;
@@ -683,6 +688,11 @@ public sealed class DirectoryProcessorService(
                                     album.Artist.LastFmId ??= imageSearchResult.ArtistLastFmId;
                                     album.Artist.SpotifyId ??= imageSearchResult.ArtistSpotifyId;
                                     album.Artist.WikiDataId ??= imageSearchResult.ArtistWikiDataId;
+                                    
+                                    if (!album.HasValidAlbumYear(_configuration.Configuration) && imageSearchResult.ReleaseDate != null)
+                                    {
+                                        album.SetTagValue(MetaTagIdentifier.RecordingYear, imageSearchResult.ReleaseDate.ToString());
+                                    }                                    
 
                                     var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(), albumDirectorySystemInfo.GetNextFileNameForType(_maxImageCount, Data.Models.Album.FrontImageType).Item1);
                                     if (await httpClient.DownloadFileAsync(
@@ -737,7 +747,7 @@ public sealed class DirectoryProcessorService(
                             await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), serialized, cancellationToken).ConfigureAwait(false);
                             if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
                             {
-                                await mediaEditService.DoMagic(album.Directory, album.Id, cancellationToken).ConfigureAwait(false);
+                                await mediaEditService.DoMagic(album, cancellationToken).ConfigureAwait(false);
                             }
                             artistsIdsSeen.Add(album.Artist.ArtistUniqueId());
                             artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId()) ?? []);

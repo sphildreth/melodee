@@ -87,6 +87,7 @@ public class ITunesSearchEngine(
                             ItunesId = sr.CollectionId?.ToString(),
                             MediaUrl = mediaUrl,
                             Rank = rank,
+                            ReleaseDate = sr.ReleaseDate,
                             ThumbnailUrl = sr.ArtworkUrl100!,
                             Title = sr.CollectionName,
                             UniqueId = sr.CollectionId ?? 0 + sr.ArtistId ?? 0,

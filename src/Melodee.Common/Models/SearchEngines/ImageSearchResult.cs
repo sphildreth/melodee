@@ -54,4 +54,6 @@ public sealed record ImageSearchResult
     public string? ArtistLastFmId { get; init; }
 
     public string? ArtistSpotifyId { get; init; }
+    
+    public DateTime? ReleaseDate { get; set; }
 }

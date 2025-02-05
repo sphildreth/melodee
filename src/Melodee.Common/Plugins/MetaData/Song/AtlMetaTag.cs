@@ -183,6 +183,11 @@ public sealed class AtlMetaTag(
                                             Identifier = MetaTagIdentifier.OrigAlbumYear,
                                             Value = dt.Value.Year
                                         });
+                                        tags.Add(new MetaTag<object?>
+                                        {
+                                            Identifier = MetaTagIdentifier.AlbumDate,
+                                            Value = dt.Value.ToString("O")
+                                        });                                        
                                     }
                                 }
 
@@ -502,13 +507,24 @@ public sealed class AtlMetaTag(
                     break;
 
                 case "DATE":
-                    if (result.All(x => x.Identifier != MetaTagIdentifier.AlbumDate))
+                    if (result.All(x => x.Identifier != MetaTagIdentifier.RecordingYear))
                     {
-                        result.Add(new MetaTag<object?>
+                        if (SafeParser.ToNumber<int>(kp.Value) > MelodeeConfiguration.GetValue<int>(SettingRegistry.ValidationMinimumAlbumYear))
                         {
-                            Identifier = MetaTagIdentifier.AlbumDate,
-                            Value = kp.Value
-                        });
+                            result.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.RecordingYear,
+                                Value = kp.Value
+                            });
+                        }
+                        else if (SafeParser.ToDateTime(kp.Value) != null)
+                        {
+                            result.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.AlbumDate,
+                                Value = SafeParser.ToDateTime(kp.Value)!.Value.ToString("O")
+                            });
+                        }
                     }
 
                     break;

@@ -78,7 +78,7 @@ public enum MetaTagIdentifier
      */
 
     /// <summary>
-    ///     Recording year (when target format only supports year) [TYE,TYER]
+    ///     Recording year (when target format only supports year). recording year of form YYYY, always 4 bytes [TYE,TYER]
     /// </summary>
     [Description("[TYE,TYER]")] RecordingYear,
 
@@ -291,7 +291,7 @@ public enum MetaTagIdentifier
     [Description("[TDOR]")] OrigAlbumDate,
 
     /// <summary>
-    ///     Album date. [TDRL]
+    ///     Album date. This should be the album date in full ISO 8601 format. [TDRL]
     /// </summary>
     [Description("[TDRL]")] AlbumDate,
 
