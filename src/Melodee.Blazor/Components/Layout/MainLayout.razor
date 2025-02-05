@@ -10,6 +10,8 @@
 @inject NavigationManager NavigationManager
 @inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
 
+@* Without this Radzen doesn't restore the theme from cookie <shrug /> *@
+@* ReSharper disable once UnusedMember.Local *@
 @inject CookieThemeService CookieThemeService
 
 <RadzenComponents @rendermode="InteractiveServer"/>
@@ -34,10 +36,15 @@
                         </RadzenStack>
                     </RadzenColumn>
                     <RadzenColumn Size="7">
-                        <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal"
-                                     JustifyContent="JustifyContent.End">
-                            <RadzenProgressBar Visible="@MainLayoutProxyService.ShowSpinner" Style="width:100px;"
-                                               ProgressBarStyle="ProgressBarStyle.Info" Value="100" ShowValue="false"
+                        <RadzenStack
+                            AlignItems="AlignItems.Center"
+                            Orientation="Orientation.Horizontal"
+                            JustifyContent="JustifyContent.End">
+                            <RadzenProgressBar Visible="@MainLayoutProxyService.ShowSpinner"
+                                               Style="width:100px;"
+                                               ProgressBarStyle="ProgressBarStyle.Info"
+                                               Value="100"
+                                               ShowValue="false"
                                                Mode="ProgressBarMode.Indeterminate"/>
                             <DebounceInput class="rz-textbox"
                                            style="width:200px;"
@@ -49,6 +56,10 @@
                                            OnValueChanged="@DoSearchAsync"
                                            ForceNotifyByEnter="true"
                                            ForceNotifyOnBlur="true"/>
+                            <RadzenStack Orientation="Orientation.Vertical"
+                                         Gap="0.5rem"
+                                         class="rz-p-sm-2">
+                            </RadzenStack>
                             <RadzenAppearanceToggle/>
                             <RadzenProfileMenu>
                                 <ChildContent>
@@ -75,8 +86,8 @@
                     <RadzenPanelMenuItem Text="Songs" Path="/data/songs" Icon="music_note"/>
                     <RadzenPanelMenuItem Text="Shares" Path="/data/shares" Icon="share"/>
                     <RadzenPanelMenuItem Text="Users" Path="/data/users" Icon="group"/>
-                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" Visible="@AuthService.IsAdmin">
-                        <RadzenPanelMenuItem Text="Dashboard" Path="/admin/dashboard" Icon="dashboard"/>
+                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" IconColor="@Colors.Danger" Visible="@AuthService.IsAdmin">
+                        <RadzenPanelMenuItem Text="Dashboard" Path="/admin/dashboard"  Icon="dashboard"/>
                         <RadzenPanelMenuItem Text="Media" Icon="perm_media">
                             @foreach (var mediaLibraryInfo in _mediaLibraryInfos)
                             {
@@ -168,6 +179,8 @@
                 .Where(x => x.TypeValue is LibraryType.Inbound or LibraryType.Staging)
                 .Select(x => new MediaLibraryInfo(x.Name, $"/media/library/{x.ApiKey}"))
                 .ToArray();
+
+            MainLayoutProxyService.ShowSpinner = false;
         }
     }
 

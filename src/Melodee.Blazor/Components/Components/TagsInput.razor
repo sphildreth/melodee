@@ -4,12 +4,17 @@
             @foreach (var value in Value)
             {
                 <RadzenBadge IsPill="true" BadgeStyle="BadgeStyle.Primary" @onclick="() => Value.Remove(value)">
-                    @value <RadzenButton Size="ButtonSize.ExtraSmall" Click=@(args => Value.Remove(value)) Icon="close"
+                    @value <RadzenButton Size="ButtonSize.ExtraSmall" Click=@(_ => Value.Remove(value)) Icon="close"
                                          ButtonStyle="ButtonStyle.Secondary"></RadzenButton>
                 </RadzenBadge>
             }
-            <input @ref="_reference" class="@Options.InputClass" type="text" placeholder="@Options.InputPlaceholder"
-                   @bind="Input" @bind:event="oninput">
+            <input
+                @ref="_reference"
+                class="@Options.InputClass rz-textbox"
+                type="text"
+                placeholder="@Options.InputPlaceholder"
+                @bind="Input"
+                @bind:event="oninput">
         </div>
     </EditForm>
 </RadzenFieldset>
@@ -89,7 +94,7 @@
                 }
                 else
                 {
-                    var removedItem = Value[Value.Count - 1];
+                    var removedItem = Value[^1];
                     Value.RemoveAt(Value.Count - 1);
                     await OnTagRemoved.InvokeAsync(removedItem);
                     if (_reference is not null)
