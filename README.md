@@ -6,6 +6,8 @@
 
 Melodee is a music system designed to handle libraries with tens of millions of songs with ease and speed.
 
+![Melodee.Blazor](graphics/Snapshot_2025-02-04_23-06-24.png)
+
 ## Components
 
 * Melodee.Blazor - Blazor and OpenSubsonic API server
