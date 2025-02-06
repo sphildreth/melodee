@@ -464,7 +464,8 @@ public class LibraryInsertJob(
                             SpotifyId = melodeeAlbum.SpotifyId,
                             WikiDataId = melodeeAlbum.WikiDataId
                         };
-                        if (dbAlbumsToAdd.Any(x => x.Artist.Id == dbArtist.Id && x.NameNormalized == nameNormalized) || dbAlbumsToAdd.Any(x => x.MusicBrainzId != null && x.MusicBrainzId == newAlbum.MusicBrainzId))
+                        if (dbAlbumsToAdd.Any(x => x.Artist.Id == dbArtist.Id && x.NameNormalized == nameNormalized) || 
+                            dbAlbumsToAdd.Any(x => x.MusicBrainzId != null && x.MusicBrainzId == newAlbum.MusicBrainzId))
                         {
                             Logger.Warning("For artist [{Artist}] found duplicate album [{Album}]", dbArtist, newAlbum);
                             melodeeAlbum.Directory.AppendPrefix(_duplicateAlbumPrefix);

@@ -115,6 +115,10 @@
                             {
                                 <CondensedStatistic Label="Real Name" Statistic="@_artist.RealName"/>
                             }
+                            @if (@CurrentUser?.IsAdmin() ?? false)
+                            {
+                                <CondensedStatistic Label="Directory" Statistic="@_artist.Directory"/>
+                            }
                             @if (_artist.SortName.Nullify() != null)
                             {
                                 <CondensedStatistic Label="Sort Name" Statistic="@_artist.SortName"/>

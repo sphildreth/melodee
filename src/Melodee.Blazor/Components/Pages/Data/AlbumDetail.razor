@@ -127,6 +127,10 @@
                             Gap="5px">
                             <CondensedStatistic Label="Status" StatisticStyle="@AlbumStatusStyle"
                                                 Statistic="@_album.AlbumStatusValue.ToString()"/>
+                            @if (@CurrentUser?.IsAdmin() ?? false)
+                            {
+                                <CondensedStatistic Label="Directory" Statistic="@_album.Directory"/>
+                            }
                             <CondensedStatistic Label="Album Type" Statistic="@_album.AlbumTypeValue.ToString()"/>
                             <CondensedStatistic Label="Genres" Statistic="@_album.Genres?.ToCsv()"/>
                         </RadzenStack>
