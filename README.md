@@ -6,6 +6,8 @@
 
 Melodee is a music system designed to handle libraries with tens of millions of songs with ease and speed.
 
+![Melodee.Blazor](graphics/Snapshot_2025-02-04_23-06-24.png)
+
 ## Components
 
 * Melodee.Blazor - Blazor and OpenSubsonic API server
@@ -49,8 +51,10 @@ Melodee is a music system designed to handle libraries with tens of millions of 
 * OpenSubsonic API server
     * Real time transcoding. Including Ogg and Opus formats.
     * Tested with several Subsonic clients
-        * Airsonic
-        * Feishin
-        * Symphonium
-        * Sublime Music
-        * Supersonic
+        * [Airsonic (rexfix)](https://github.com/tamland/airsonic-refix)
+        * [Dsub](https://github.com/DataBiosphere/dsub)
+        * [Feishin](https://github.com/jeffvli/feishin)
+        * [Symphonium](https://symfonium.app/)
+        * [Sublime Music](https://github.com/sublime-music/sublime-music)
+        * [Supersonic](https://github.com/dweymouth/supersonic)
+        * [Ultrasonic](https://gitlab.com/ultrasonic/ultrasonic)
