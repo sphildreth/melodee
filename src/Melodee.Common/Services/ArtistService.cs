@@ -37,7 +37,6 @@ public class ArtistService(
 
     public async Task<MelodeeModels.PagedResult<ArtistDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        SqlMapper.ResetTypeHandlers();
         int artistCount;
         ArtistDataInfo[] artists = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))

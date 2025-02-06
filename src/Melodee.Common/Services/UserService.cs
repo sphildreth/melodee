@@ -46,7 +46,6 @@ public sealed class UserService(
 
     public async Task<MelodeeModels.PagedResult<User>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {   
-        SqlMapper.ResetTypeHandlers();
         int usersCount;
         User[] users = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))

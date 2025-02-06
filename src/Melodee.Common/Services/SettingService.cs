@@ -56,7 +56,6 @@ public class SettingService : ServiceBase
 
     public async Task<MelodeeModels.PagedResult<Setting>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        SqlMapper.ResetTypeHandlers();
         var settingsCount = 0;
         Setting[] settings = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))

@@ -71,10 +71,6 @@ public class ArtistSearchEngineService(
         {
             await scopedContext.Database.EnsureCreatedAsync(cancellationToken);
         }
-
-        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
-        SqlMapper.AddTypeHandler(new GuidHandler());
-        SqlMapper.AddTypeHandler(new TimeSpanHandler());        
         
         _initialized = true;
     }
@@ -89,6 +85,11 @@ public class ArtistSearchEngineService(
     
     public async Task<PagedResult<Artist>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
+        SqlMapper.ResetTypeHandlers();
+        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+        SqlMapper.AddTypeHandler(new GuidHandler());
+        SqlMapper.AddTypeHandler(new TimeSpanHandler());
+        
         int albumCount;
         Artist[] artists = [];
         await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -119,7 +120,8 @@ public class ArtistSearchEngineService(
                 }
             }
         }
-
+        SqlMapper.ResetTypeHandlers();
+        
         return new PagedResult<Artist>
         {
             TotalCount = albumCount,

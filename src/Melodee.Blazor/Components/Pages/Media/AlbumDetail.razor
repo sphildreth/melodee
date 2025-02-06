@@ -326,6 +326,7 @@
         {
             _album.Status = AlbumStatus.Ok;
             _album.StatusReasons = AlbumNeedsAttentionReasons.NotSet;
+            await MediaEditService.SaveMelodeeAlbum(_album);
 
             var librariesResult = await LibraryService.GetStorageLibrariesAsync();
             if (librariesResult.Data.Length > 1)

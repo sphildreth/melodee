@@ -303,7 +303,6 @@ public class LibraryService(
 
     public async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        SqlMapper.ResetTypeHandlers();
         var librariesCount = 0;
         Library[] libraries = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))

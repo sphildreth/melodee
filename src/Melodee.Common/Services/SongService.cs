@@ -27,7 +27,6 @@ public class SongService(
         SongDataInfo[] songs = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            SqlMapper.ResetTypeHandlers();
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
             var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Songs\"");
