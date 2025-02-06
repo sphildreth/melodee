@@ -18,6 +18,7 @@ public class PlaylistService(
 {
     public async Task<MelodeeModels.PagedResult<Playlist>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
+        SqlMapper.ResetTypeHandlers();
         int playlistCount;
         Playlist[] playlists = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))

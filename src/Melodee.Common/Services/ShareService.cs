@@ -18,6 +18,7 @@ public class ShareService(
 {
     public async Task<MelodeeModels.PagedResult<Share>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
+        SqlMapper.ResetTypeHandlers();
         int shareCount;
         Share[] shares = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
