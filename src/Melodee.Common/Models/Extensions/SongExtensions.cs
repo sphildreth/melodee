@@ -49,6 +49,12 @@ public static class SongExtensions
                 return g == Guid.Empty ? d : (T?)converter.ConvertFrom(g);
             }
 
+            if (tType == typeof(DateTime) || tType == typeof(DateTime?))
+            {
+                var dt = DateTime.Parse(vv.ToString() ?? string.Empty, CultureInfo.InvariantCulture);
+                return dt == DateTime.MinValue ? d : (T?)converter.ConvertFrom(dt);
+            }
+
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)

@@ -126,37 +126,27 @@ public class SQLiteMusicBrainzRepository(
                             rank++;
                         }
 
-                        var ssql = string.Empty;
-                        if (query.AlbumMusicBrainzIds != null)
-                        {
-                            sql = """
-                                  SELECT ReleaseType, ReleaseDate, MusicBrainzIdRaw, Name, NameNormalized, SortName, ReleaseGroupMusicBrainzIdRaw 
-                                  FROM "Album"
-                                  WHERE MusicBrainzIdRaw in ('{0}')
-                                  group by ReleaseGroupMusicBrainzIdRaw
-                                  order by ReleaseDate
-                                  """;
-                            ssql = sql.FormatSmart(string.Join(@"','", query.AlbumMusicBrainzIds));
-                        }
-                        else
-                        {
-                            sql = """
-                                  SELECT a.ReleaseType, a.ReleaseDate, a.MusicBrainzIdRaw, a.Name, a.NameNormalized, a.SortName, a.ReleaseGroupMusicBrainzIdRaw, ar.MusicBrainzIdRaw as ArtistMusicBrainzRaw
-                                  FROM "Album" a
-                                  JOIN "Artist" ar ON (a.MusicBrainzArtistId = ar.MusicBrainzArtistId)
-                                  WHERE ar.NameNormalized = '{0}'
-                                  AND ('{1}' = '' OR a.NameNormalized in ('{1}'))
-                                  AND ('{2}' = '' OR '{2}' = '0' OR SUBSTR(a.ReleaseDate, 1, 4) in ('{2}'))
-                                  group by a.ReleaseGroupMusicBrainzIdRaw 
-                                  """;
-                            ssql = sql.FormatSmart(query.NameNormalized,
-                                string.Join(@"','",
-                                    query.AlbumKeyValues?.Select(x => x.Value.ToNormalizedString()) ?? []),
-                                string.Join(@"','",
-                                    query.AlbumKeyValues?.Select(x => x.Key) ?? []));
-                        }
 
-                        var artistAlbums = db.Query<Album>(ssql).ToArray();
+                        sql = """
+                              SELECT a.ReleaseType, a.ReleaseDate, a.MusicBrainzIdRaw, a.Name, a.NameNormalized, a.SortName, a.ReleaseGroupMusicBrainzIdRaw, ar.MusicBrainzIdRaw as ArtistMusicBrainzRaw
+                              FROM "Album" a
+                              JOIN "Artist" ar ON (a.MusicBrainzArtistId = ar.MusicBrainzArtistId)
+                              WHERE ar.MusicBrainzArtistId = '{0}'
+                              AND a.DoIncludeInArtistSearch = 1
+                              """;
+                        
+                        var artistAlbums = db.Query<Album>(sql.FormatSmart(artist.MusicBrainzArtistId)).ToArray();
+                        if (artistAlbums.Length > 0)
+                        {
+                            var groupedByReleaseGroup = artistAlbums.GroupBy(x => x.ReleaseGroupMusicBrainzIdRaw);
+                            var newArtistAlbums = new List<Album>();
+                            foreach (var group in groupedByReleaseGroup)
+                            {
+                                var firstInGroup = group.OrderBy(x => x.ReleaseDate).First();
+                                newArtistAlbums.Add(firstInGroup);
+                            }
+                            artistAlbums = newArtistAlbums.ToArray();
+                        }
 
                         rank += artistAlbums.Length;
 

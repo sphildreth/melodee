@@ -43,7 +43,8 @@ public static class ArtistExtensions
         {
             Name = artist.Name,
             AlbumKeyValues = albumKeyValues,
-            MusicBrainzId = artist.MusicBrainzId.ToString()
+            MusicBrainzId = artist.MusicBrainzId.ToString(),
+            SpotifyId = artist.SpotifyId
         };
     }
 

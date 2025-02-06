@@ -67,4 +67,6 @@ public sealed record ArtistSearchResult
     ///     Similar Artists
     /// </summary>
     public ArtistSearchInfoResult[]? SimilarArtists { get; init; }
+    
+    public override string ToString() => $"{Name} ({UniqueId}) MusicBrainzId: [{MusicBrainzId}] SpotifyId: [{SpotifyId}]";
 }
