@@ -1,0 +1,264 @@
+@page "/admin/mediaartists"
+@inherits MelodeeComponentBase
+
+@using System.Web
+@using Melodee.Common.Filtering
+@using Melodee.Common.Models.Collection
+@using Melodee.Common.Models.Collection.Extensions
+@using Melodee.Common.Services.SearchEngines
+@using Artist = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Artist;
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
+
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject ILogger Logger
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject ArtistSearchEngineService ArtistSearchEngineService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject TooltipService TooltipService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Search Engine Artists</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Icon="artist" Text="Artists"/>
+</RadzenBreadCrumb>
+
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="Media Artists" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Visible="CurrentUser?.IsEditor() ?? false">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenButton Icon="add_circle_outline" Text="Add"
+                              Size="ButtonSize.Small"
+                              Click="@AddButtonClick"/>
+                <RadzenButton Icon="refresh" Text="Refresh Albums"
+                              Size="ButtonSize.Small"
+                              Click="@RefreshAlbumsButtonClick"/>
+                <RadzenButton Icon="delete" Disabled="!_selectedArtists.Any()" Text="Delete"
+                              Click="@DeleteSelectedButtonClick"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Warning"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <DebounceInput class="rz-textbox rz-w-100"
+                   autocomplete="off"
+                   @bind-Value="@_debounceInputValue"
+                   @bind-Value:event="OnInput"
+                   DebounceTime="800"
+                   MinLength="3"
+                   OnValueChanged="@DoSearchAsync"
+                   ForceNotifyByEnter="true"
+                   ForceNotifyOnBlur="true"/>
+    <RadzenRow>
+        <RadzenDataGrid
+            @ref="_grid"
+            style="height: 500px;"
+            IsLoading="@_isLoading"
+            Count="@_count"
+            Data="@_artists"
+            LoadData="@LoadData"
+            AllowSorting="true"
+            AllowFiltering="true"
+            AllowRowSelectOnRowClick="false"
+            AllowPaging="true"
+            Page="OnPage"
+            PageSize="DefaultPageSize"
+            PagerHorizontalAlign="HorizontalAlign.Center"
+            ShowPagingSummary="true"
+            PageSizeOptions="@PageSizeOptions"
+            PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
+            ColumnWidth="200px"
+            SelectionMode="DataGridSelectionMode.Multiple"
+            @bind-Value="@_selectedArtists">
+            <Columns>
+                <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox
+                            TabIndex="-1"
+                            TriState="false"
+                            TValue="bool?"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select all items" } })"
+                            Value="@(_selectedArtists.Any() != true ? false : !_artists.All(i => _selectedArtists.Contains(i)) ? null : _artists.Any(i => _selectedArtists.Contains(i)))"
+                            Change="@(args => _selectedArtists = args == true ? _artists.ToList() : [])"/>
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenCheckBox
+                            TabIndex="-1"
+                            TriState="false"
+                            Value="@(_selectedArtists.Contains(data))"
+                            InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Select item" } })"
+                            Change="@(_ => { _grid.SelectRow(data); })"
+                            TValue="bool"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Artist.Name)" Title="Name" Filterable="false">
+                    <Template Context="data">
+                        <RadzenText Text="@data.Name"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Artist.NameNormalized)" Title="Normalized" Filterable="false">
+                    <Template Context="data">
+                        <RadzenText Text="@data.NameNormalized"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Artist.AlbumCount)" Title="AlbumCount" Width="90px" Filterable="false">
+                    <Template Context="data">
+                        <RadzenText Text="@CurrentUser?.FormatNumber(data.AlbumCount)"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Artist.MusicBrainzId)" Title="MusicBrainzId" Filterable="false">
+                    <Template Context="data">
+                        <RadzenText Text="@data.MusicBrainzId?.ToString()"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Artist.SpotifyId)" Title="SpotifyId" Filterable="false">
+                    <Template Context="data">
+                        <RadzenText Text="@data.SpotifyId"/>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+
+    RadzenDataGrid<Artist> _grid = null!;
+    int _count;
+    IEnumerable<Artist> _artists = null!;
+    bool _isLoading;
+    int _currentPage = 1;
+    IList<Artist> _selectedArtists = [];
+
+    string _debounceInputValue = "";
+
+    private enum ArtistMergeState
+    {
+        ToBeMerged,
+        ToMergeInto
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await ArtistSearchEngineService.InitializeAsync();
+    }
+
+    void OnPage(PagerEventArgs args)
+    {
+        _currentPage = args.PageIndex + 1;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        _isLoading = true;
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            Dictionary<string, string>? sorting = null;
+            if (args.Sorts.Any())
+            {
+                sorting = args.Sorts.ToDictionary(x => x.Property, x => x.SortOrder == SortOrder.Ascending ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection);
+            }
+
+            FilterOperatorInfo[]? filters = null;
+            if (_debounceInputValue.Nullify() != null)
+            {
+                filters =
+                [
+                    new FilterOperatorInfo(nameof(Artist.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                ];
+            }
+            else if (args.Filters.Any())
+            {
+                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
+                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
+                        x.FilterValue))
+                    .ToArray();
+            }
+
+            var result = await ArtistSearchEngineService.ListAsync(new PagedRequest
+            {
+                FilterBy = filters,
+                Page = _currentPage,
+                PageSize = SafeParser.ToNumber<short>(args.Top),
+                OrderBy = sorting
+            });
+            _artists = result.Data;
+            _count = SafeParser.ToNumber<int>(result.TotalCount);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Loading Artists");
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+
+        _isLoading = false;
+    }
+
+    private void AddButtonClick()
+    {
+        NavigationManager.NavigateTo($"/media/mediaartists/{Guid.Empty}");
+    }
+
+    private async Task DeleteSelectedButtonClick()
+    {
+        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            // var deleteResult = await ArtistService.DeleteAsync(_selectedArtists.Select(x => x.Id).ToArray());
+            // if (deleteResult.IsSuccess)
+            // {
+            //     NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
+            //     await _grid.RefreshDataAsync();
+            //     return;
+            // }
+            //NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
+            throw new NotImplementedException();
+        }
+    }
+
+    private void ShowTooltip(ElementReference elementReference, string message)
+    {
+        TooltipService.Open(elementReference, message);
+    }
+
+    private async Task DoSearchAsync(string s)
+    {
+        await LoadData(new LoadDataArgs { Sorts = [], Filters = [] });
+    }
+
+
+    private async Task RefreshAlbumsButtonClick()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var result = await ArtistSearchEngineService.RefreshAlbums(_selectedArtists.ToArray());
+            await _grid.RefreshDataAsync();
+            NotificationService.Notify(NotificationMessageForResult(result, "refreshing albums", ToastTime));
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Refreshing Artists");
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+}
+

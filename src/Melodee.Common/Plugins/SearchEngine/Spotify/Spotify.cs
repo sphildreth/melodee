@@ -235,6 +235,14 @@ public class Spotify(
                 };
             }
 
+            if (query.Name.Nullify() == null)
+            {
+                return new PagedResult<ArtistSearchResult>(["Query Name value is invalid."])
+                {
+                    Data = []
+                };
+            }
+
             var apiAccessToken = configuration.GetValue<string>(SettingRegistry.SearchEngineSpotifyAccessToken);
 
             var config = SpotifyClientConfig.CreateDefault(); //.WithRetryHandler(new MelodeeRetryHandler());

@@ -55,6 +55,9 @@ public record Artist
     
     [NotMapped]
     public int Rank { get; set; }
+    
+    [NotMapped]
+    public int AlbumCount { get; set; }
 
     public override string ToString() => $"{Name} ({Id}) MusicBrainzId: [{MusicBrainzId}] SpotifyId: [{SpotifyId}]";
 }

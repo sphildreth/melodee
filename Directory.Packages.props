@@ -14,7 +14,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
     <PackageVersion Include="Crc32.NET" Version="1.2.0" />
-    <PackageVersion Include="Dapper" Version="2.1.35" />
+    <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="EntityFrameworkCore.Sqlite.NodaTime" Version="9.1.0" />
     <PackageVersion Include="FbNetExternalEngine.Integration" Version="6.0.0" />
     <PackageVersion Include="FFMpegCore" Version="5.1.0" />
@@ -58,13 +58,13 @@
     <PackageVersion Include="NodaTime" Version="3.2.1" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" Version="9.0.3" />
-    <PackageVersion Include="Polly.Core" Version="8.5.1" />
+    <PackageVersion Include="Polly.Core" Version="8.5.2" />
     <PackageVersion Include="Quartz.AspNetCore" Version="3.13.1" />
     <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.13.1" />
     <PackageVersion Include="Quartz.Jobs" Version="3.13.1" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.1" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.13.1" />
-    <PackageVersion Include="Radzen.Blazor" Version="5.9.6" />
+    <PackageVersion Include="Radzen.Blazor" Version="5.9.8" />
     <PackageVersion Include="Rebus" Version="8.7.1" />
     <PackageVersion Include="Rebus.Serilog" Version="8.0.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />

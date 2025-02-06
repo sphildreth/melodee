@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Dapper.SqliteHandlers;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -14,11 +16,11 @@ using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Utility;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using ServiceStack;
 using Album = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Album;
 using Artist = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Artist;
 
@@ -70,6 +72,10 @@ public class ArtistSearchEngineService(
             await scopedContext.Database.EnsureCreatedAsync(cancellationToken);
         }
 
+        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+        SqlMapper.AddTypeHandler(new GuidHandler());
+        SqlMapper.AddTypeHandler(new TimeSpanHandler());        
+        
         _initialized = true;
     }
 
@@ -80,6 +86,47 @@ public class ArtistSearchEngineService(
             throw new InvalidOperationException($"{nameof(ArtistSearchEngineService)} is not initialized.");
         }
     }
+    
+    public async Task<PagedResult<Artist>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    {
+        int albumCount;
+        Artist[] artists = [];
+        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var orderBy = pagedRequest.OrderByValue();
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Artists\"");
+            albumCount = await dbConn
+                .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
+                .ConfigureAwait(false);
+            if (!pagedRequest.IsTotalCountOnlyRequest)
+            {
+                
+                var sqlStartFragment = """
+                                       SELECT a."Id", a."Name", a."NameNormalized", a."ItunesId", a."AmgId", a."DiscogsId", a."WikiDataId", 
+                                              a."MusicBrainzId", a."LastFmId", a."SpotifyId", a."SortName" 
+                                       FROM "Artists" a
+                                       """;
+                var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment, "a");
+                var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                artists = (await dbConn
+                    .QueryAsync<Artist>(listSql, listSqlParts.Item2)
+                    .ConfigureAwait(false)).ToArray();
+                
+                foreach(var artist in artists )
+                {
+                    artist.AlbumCount = await dbConn.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM \"Albums\" WHERE \"ArtistId\" = @ArtistId", new { ArtistId = artist.Id });
+                }
+            }
+        }
+
+        return new PagedResult<Artist>
+        {
+            TotalCount = albumCount,
+            TotalPages = pagedRequest.TotalPages(albumCount),
+            Data = artists
+        };
+    }    
 
     public async Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(string artistName, int? artistId, int? maxResults, CancellationToken cancellationToken = default)
     {
@@ -456,6 +503,32 @@ public class ArtistSearchEngineService(
             TotalCount = totalCount,
             TotalPages = 1,
             Data = result?.OrderByDescending(x => x.Rank).ThenBy(x => x.SortName).ToArray() ?? []
+        };
+    }
+
+    public async Task<OperationResult<bool>> RefreshAlbums(Artist[] selectedArtists, CancellationToken cancellationToken = default)
+    {
+        var result = false;
+
+        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            foreach (var artist in selectedArtists)
+            {
+                var dbArtist = await scopedContext
+                    .Artists
+                    .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+                dbArtist?.Albums.Clear();
+            }
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var artist in selectedArtists)
+            {
+                await DoSearchAsync(new ArtistQuery { Name = artist.Name }, null, cancellationToken).ConfigureAwait(false);
+            }
+            result = true;
+        }
+        return new OperationResult<bool>
+        {
+            Data = result
         };
     }
 }
