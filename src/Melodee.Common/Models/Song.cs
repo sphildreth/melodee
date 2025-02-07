@@ -15,7 +15,7 @@ public sealed record Song
 
     public required string CrcHash { get; init; }
 
-    public long DuplicateHashCheck => SafeParser.Hash(this.AlbumTitle(), this.MediaNumber().ToString(), this.SongNumber().ToString(), this.Title().ToNormalizedString());
+    public long DuplicateHashCheck => SafeParser.Hash(this.AlbumTitle(), this.SongNumber().ToString(), this.Title().ToNormalizedString());
 
     public required FileSystemFileInfo File { get; init; }
 
@@ -27,7 +27,7 @@ public sealed record Song
 
     public int SortOrder { get; set; }
 
-    public string DisplaySummary => $"{this.MediaNumber().ToStringPadLeft(2)}/{this.MediaTotalNumber().ToStringPadLeft(2)} : {this.SongNumber().ToStringPadLeft(3)}/{this.SongTotalNumber().ToStringPadLeft(3)} : {this.Title()}";
+    public string DisplaySummary => $"{this.SongNumber().ToStringPadLeft(3)}/{this.SongTotalNumber().ToStringPadLeft(3)} : {this.Title()}";
 
     public override string ToString()
     {

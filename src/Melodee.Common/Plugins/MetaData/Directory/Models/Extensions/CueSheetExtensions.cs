@@ -96,11 +96,6 @@ public static class CueSheetExtensions
         return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.SongTotal) ?? 0;
     }
 
-    public static int MediaNumber(this CueSheet cueSheet)
-    {
-        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscNumber) ?? 0;
-    }
-
     public static int MediaCountValue(this CueSheet cueSheet)
     {
         return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ??

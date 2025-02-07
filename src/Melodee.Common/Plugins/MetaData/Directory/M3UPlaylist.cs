@@ -93,7 +93,6 @@ public sealed class M3UPlaylist(
                         {
                             new() { Identifier = MetaTagIdentifier.Album, Value = firstSong.AlbumTitle(), SortOrder = 1 },
                             new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = firstSong.AlbumArtist(), SortOrder = 2 },
-                            new() { Identifier = MetaTagIdentifier.DiscNumber, Value = firstSong.MediaNumber(), SortOrder = 4 },
                             new() { Identifier = MetaTagIdentifier.OrigAlbumYear, Value = firstSong.AlbumYear(), SortOrder = 100 },
                             new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
                         };

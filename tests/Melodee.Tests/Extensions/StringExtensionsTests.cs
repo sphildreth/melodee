@@ -107,32 +107,6 @@ public class StringExtensionsTests
     [Theory]
     [InlineData(null, null)]
     [InlineData("", null)]
-    [InlineData("Bob", null)]
-    [InlineData("Bobs Discography", null)]
-    [InlineData("Media Madness", null)]
-    [InlineData("Media 2013 Madness", null)]
-    [InlineData("Artist - [2000] Album", null)]
-    [InlineData("CD", null)]
-    [InlineData("A0", 1)] // sph; I dont know why, but these are common
-    [InlineData("A1", 1)]
-    [InlineData("AA1", 1)]
-    [InlineData("AAA1", 1)]
-    [InlineData("B2", 2)]
-    [InlineData("CD01", 1)]
-    [InlineData("CD1", 1)]
-    [InlineData("CD4", 4)]
-    [InlineData("CD04", 4)]
-    [InlineData("CD004", 4)]
-    [InlineData("DISC1", 1)]
-    [InlineData("media001", 1)]
-    public void TryToGetMediaNumberFromString(string? input, int? shouldBe)
-    {
-        Assert.Equal(shouldBe, input?.TryToGetMediaNumberFromString());
-    }
-
-    [Theory]
-    [InlineData(null, null)]
-    [InlineData("", null)]
     [InlineData("Bob", "Bob")]
     [InlineData("01 Steve Winwood.mp3", "Steve Winwood.mp3")]
     [InlineData(" 01 Steve Winwood.mp3", "Steve Winwood.mp3")]

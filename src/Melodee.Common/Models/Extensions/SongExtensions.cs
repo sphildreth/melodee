@@ -189,12 +189,6 @@ public static class SongExtensions
         return song.MetaTagValue<short?>(MetaTagIdentifier.SongTotal) ?? 0;
     }
 
-    public static short MediaNumber(this Song song)
-    {
-        var mediaNumber = song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumber) ?? 1;
-        return mediaNumber < 1 ? (short)1 : mediaNumber;
-    }
-
     public static string? MediaSubTitle(this Song song)
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.SubTitle);
@@ -203,12 +197,6 @@ public static class SongExtensions
     public static string? Genre(this Song song)
     {
         return song.MetaTagValue<string?>(MetaTagIdentifier.Genre);
-    }
-
-    public static short MediaTotalNumber(this Song song)
-    {
-        return song.MetaTagValue<short?>(MetaTagIdentifier.DiscTotal) ??
-               song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumberTotal) ?? 1;
     }
 
     public static int BitRate(this Song song)
@@ -244,10 +232,8 @@ public static class SongExtensions
         }
 
         var songNumber = song.SongNumber();
-        var mediaNumber = song.MediaNumber();
         return songNumber > 0 &&
                songNumber < SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]) &&
-               mediaNumber < SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]) &&
                song.Title().Nullify() != null;
     }
 

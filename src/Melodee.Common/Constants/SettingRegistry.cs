@@ -60,7 +60,6 @@ public static class SettingRegistry
     public const string ProcessingMaximumProcessingCount = "processing.maximumProcessingCount";
     public const string ProcessingProcessedExtension = "processing.processedExtension";
     public const string ProcessingSongTitleRemovals = "processing.songTitleRemovals";
-    public const string ProcessingStagingDirectoryScanLimit = "processing.stagingDirectoryScanLimit";
     public const string ScriptingEnabled = "scripting.enabled";
     public const string ScriptingPostDiscoveryScript = "scripting.postDiscoveryScript";
     public const string ScriptingPreDiscoveryScript = "scripting.preDiscoveryScript";
@@ -91,7 +90,6 @@ public static class SettingRegistry
     public const string TranscodingDefault = "transcoding.default";
     public const string UserInterfaceToastAutoCloseTime = "userinterface.toastAutoCloseTime";
     public const string ValidationMaximumAlbumYear = "validation.maximumAlbumYear";
-    public const string ValidationMaximumMediaNumber = "validation.maximumMediaNumber";
     public const string ValidationMaximumSongNumber = "validation.maximumSongNumber";
     public const string ValidationMinimumAlbumYear = "validation.minimumAlbumYear";
 }

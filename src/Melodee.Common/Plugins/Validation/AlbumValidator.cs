@@ -105,12 +105,10 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         {
             AreAllSongNumbersValid(album);
             AreSongsUniquelyNumbered(album);
-            AreMediaNumbersValid(album);
             DoAllSongsHaveSameAlbumArtist(album);
             AllSongTitlesDoNotHaveUnwantedText(album);
             AlbumArtistDoesNotHaveUnwantedText(album);
             AlbumTitleDoesNotHaveUnwantedText(album);
-            DoAllSongsHaveMediaNumberSet(album);
             DoesSongTotalMatchSongCount(album);
             DoesAlbumHaveCoverImage(album);
             ArtistHasSearchEngineResult(album.Artist);
@@ -213,34 +211,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         }
     }
 
-    private void DoAllSongsHaveMediaNumberSet(Album album)
-    {
-        var songsGroupedByMediaNumber = (album.Songs?.GroupBy(x => x.MediaNumber()) ?? []).ToArray();
-        if (!songsGroupedByMediaNumber.Select(x => SafeParser.ToNumber<int>(x.Key)).Order().ToArray().AreNumbersSequential())
-        {
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.SongsAreNotSequentiallyNumbered;
-        }
-
-        if (songsGroupedByMediaNumber.Any(mediaGroups => !mediaGroups.Select(x => x.SongNumber()).Order().ToArray().AreNumbersSequential()))
-        {
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaNumbersAreInvalid;
-        }
-
-        var songs = album.Songs?.ToArray() ?? [];
-        foreach (var song in songs)
-        {
-            if (song.MediaNumber() < 1)
-            {
-                _validationMessages.Add(new ValidationResultMessage
-                {
-                    Message = $"Song [{song.DisplaySummary}] has invalid media number.",
-                    Severity = ValidationResultMessageSeverity.Critical
-                });
-                _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithoutMediaNumberSet;
-            }
-        }
-    }
-
 
     private void AreSongsUniquelyNumbered(Album album)
     {
@@ -252,13 +222,10 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         }
 
         var result = true;
-        foreach (var mediaSongs in songs.GroupBy(x => x.MediaNumber()))
+        var songNumbers = album.Songs.GroupBy(x => x.SongNumber());
+        if (songNumbers.Any(group => group.Count() > 1))
         {
-            var songNumbers = mediaSongs.GroupBy(x => x.SongNumber());
-            if (songNumbers.Any(group => group.Count() > 1))
-            {
-                result = false;
-            }
+            result = false;
         }
 
         if (!result)
@@ -338,50 +305,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Severity = ValidationResultMessageSeverity.Undesired
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.TitleHasUnwantedText;
-        }
-    }
-
-    private void AreMediaNumbersValid(Album album)
-    {
-        var result = true;
-        var songs = album.Songs?.ToArray() ?? [];
-        if (songs.Length == 0)
-        {
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;
-            result = false;
-        }
-
-        var mediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().Order().ToArray();
-        if (mediaNumbers.Length != 0 && mediaNumbers.All(x => x > 0))
-        {
-            var maxMediaNumber = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMaximumMediaNumber]);
-            var minMediaNumber = 1;
-            if (mediaNumbers.Any(x => x > maxMediaNumber) ||
-                mediaNumbers.Any(x => x < minMediaNumber))
-            {
-                result = false;
-            }
-            else
-            {
-                result = Enumerable.Range(0, mediaNumbers.Length).All(i => mediaNumbers[i] == mediaNumbers[0] + i);
-            }
-        }
-
-        var songMediaTotalNumber = mediaNumbers.Max();
-        if (songMediaTotalNumber > 1)
-        {
-            // If the maximum media number is more than one, then ensure the part (TPA) (e.g. 1/2 or 1/3) is set on all. 
-            result = songs.All(x => x.MediaTotalNumber() == songMediaTotalNumber);
-        }
-
-        if (!result)
-        {
-            _validationMessages.Add(new ValidationResultMessage
-            {
-                Message = "Album media numbers are invalid.",
-                Severity = ValidationResultMessageSeverity.Critical
-            });
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaNumbersAreInvalid;
         }
     }
 

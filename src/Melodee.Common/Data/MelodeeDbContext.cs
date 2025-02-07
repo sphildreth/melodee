@@ -116,14 +116,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
-                    Id = 3,
-                    Key = SettingRegistry.ProcessingStagingDirectoryScanLimit,
-                    Comment = "Maximum number of albums to scan when processing inbound directory.",
-                    Value = "250",
-                    CreatedAt = now
-                },
-                new Setting
-                {
                     Id = 4,
                     Key = SettingRegistry.DefaultsPageSize,
                     Comment = "Default page size when view including pagination.",
@@ -435,15 +427,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Key = SettingRegistry.ScriptingPostDiscoveryScript,
                     Comment = "Script to run after processing the inbound directory, leave blank to disable.",
                     Value = "",
-                    CreatedAt = now
-                },
-                new Setting
-                {
-                    Id = 44,
-                    Category = (int)SettingCategory.Validation,
-                    Key = SettingRegistry.ValidationMaximumMediaNumber,
-                    Comment = "The maximum value a media number can have for an album.",
-                    Value = "999",
                     CreatedAt = now
                 },
                 new Setting

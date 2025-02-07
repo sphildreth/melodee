@@ -625,23 +625,6 @@ public static partial class StringExtensions
         return null;
     }
 
-    public static short? TryToGetMediaNumberFromString(this string input)
-    {
-        if (input.Nullify() == null)
-        {
-            return null;
-        }
-
-        if (FileSystemDirectoryInfoExtensions.IsDirectoryAlbumMediaDirectoryRegex.IsMatch(input))
-        {
-            var v = input.Where(char.IsDigit).ToArray();
-            var n = SafeParser.ToNumber<short?>(new string(v));
-            return n < 1 ? 1 : n;
-        }
-
-        return null;
-    }
-
     public static string? RemoveSongNumberFromString(this string input)
     {
         if (input.Nullify() == null)

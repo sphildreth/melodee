@@ -129,7 +129,6 @@ public abstract class TestsBase
             { SettingRegistry.ProcessingSongTitleRemovals, "[';', '(Remaster)', 'Remaster']" },
             { SettingRegistry.ScriptingPreDiscoveryScript, "/melodee_test/scripts/PreDiscoveryWrapper.sh" },
             { SettingRegistry.SearchEngineMusicBrainzStoragePath, "/melodee_test/search-engine-storage/musicbrainz/" },
-            { SettingRegistry.ValidationMaximumMediaNumber, 99 },
             { SettingRegistry.ValidationMaximumSongNumber, 999 },
             { SettingRegistry.ValidationMinimumAlbumYear, 1860 },
             { SettingRegistry.ValidationMaximumAlbumYear, 2035 }

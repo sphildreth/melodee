@@ -153,8 +153,7 @@ public abstract class ServiceBase
 
             foreach (var songToMove in songsToMove.ToArray())
             {
-                var existingForSongToMove = existingSongs.FirstOrDefault(x => x.MediaNumber() == songToMove.MediaNumber() &&
-                                                                              x.SongNumber() == songToMove.SongNumber());
+                var existingForSongToMove = existingSongs.FirstOrDefault(x => x.SongNumber() == songToMove.SongNumber());
                 if (existingForSongToMove != null)
                 {
                     // TODO for some reason the song.CrcHash is wrong? 
@@ -484,7 +483,7 @@ public abstract class ServiceBase
                                 },
                                 new()
                                 {
-                                    Identifier = MetaTagIdentifier.DiscNumber, Value = song.MediaNumber(), SortOrder = 4
+                                    Identifier = MetaTagIdentifier.DiscNumber, Value = 1, SortOrder = 4
                                 },
                                 new()
                                 {

@@ -171,12 +171,12 @@
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    @foreach (var song in (_album.Songs ?? []).OrderBy(x => x.MediaNumber()).ThenBy(x => x.MediaNumber()))
+                                    @foreach (var song in (_album.Songs ?? []).OrderBy(x  => x.SongNumber()))
                                     {
                                         <tr>
                                             <td>
                                                 <RadzenCheckBox TValue="bool" Value="@(_selectedSongs.Contains(song))" Change="@(args => ToggleSelectedSong(song))" />
-                                                @($"{song.MediaNumber().ToStringPadLeft(2)}.{song.SongNumber().ToStringPadLeft(3)}")
+                                                @($"{song.SongNumber().ToStringPadLeft(3)}")
                                             </td>
                                             <td>@song.Title()</td>
                                             <td>

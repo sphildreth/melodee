@@ -72,11 +72,6 @@ public enum AlbumNeedsAttentionReasons
     HasSongsWithUnwantedText = 1 << 12,
 
     /// <summary>
-    ///     One or more songs have invalid media numbers.
-    /// </summary>
-    HasSongsWithoutMediaNumberSet = 1 << 13,
-
-    /// <summary>
     ///     Artist value is set but is unknown (no MusicBrainzId set)
     /// </summary>
     HasUnknownArtist = 1 << 14,
@@ -85,16 +80,6 @@ public enum AlbumNeedsAttentionReasons
     ///     Is not a studio album (like live or broadcast).
     /// </summary>
     IsNotStudioTypeAlbum = 1 << 15,
-
-    /// <summary>
-    ///     Has media numbers set that are invalid (not sequential or fail validation based on configuration.)
-    /// </summary>
-    MediaNumbersAreInvalid = 1 << 16,
-
-    /// <summary>
-    ///     The album has a tag with total media number set that doesn't match the media numbers found on the albums songs.
-    /// </summary>
-    MediaTotalNumberDoesntMatchMediaFound = 1 << 17,
 
     /// <summary>
     ///     The number of album songs don't match the total number of songs set in the albums tag.

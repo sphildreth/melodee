@@ -111,7 +111,6 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     {
                         new() { Identifier = MetaTagIdentifier.Album, Value = songs.FirstOrDefault(x => x.AlbumTitle().Nullify() != null)?.AlbumTitle(), SortOrder = 1 },
                         new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = songs.FirstOrDefault(x => x.AlbumArtist().Nullify() != null)?.AlbumArtist(), SortOrder = 2 },
-                        new() { Identifier = MetaTagIdentifier.DiscNumber, Value = songs.FirstOrDefault(x => x.MediaNumber() > 0)?.MediaNumber(), SortOrder = 4 },
                         new() { Identifier = MetaTagIdentifier.OrigAlbumYear, Value = songs.FirstOrDefault(x => x.AlbumYear() > -1)?.AlbumYear(), SortOrder = 100 },
                         new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
                     };
