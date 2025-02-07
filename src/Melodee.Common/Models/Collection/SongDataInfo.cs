@@ -14,7 +14,6 @@ public sealed record SongDataInfo(
     Guid AlbumApiKey,
     string ArtistName,
     Guid ArtistApiKey,
-    short DiscNumber,
     long FileSize,
     double Duration,
     Instant CreatedAt,

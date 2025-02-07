@@ -67,13 +67,16 @@ public static class FileSystemDirectoryInfoExtensions
     public static FileSystemDirectoryInfo AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string prefix)
     {
         var d = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+        if (d.Name.StartsWith(prefix))
+        {
+            return fileSystemDirectoryInfo;
+        }
         var newName = $"{prefix}{d.Name}";
         var moveTo = Path.Combine(d.Parent!.FullName, newName);
         if (Directory.Exists(moveTo))
         {
             moveTo.ToDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
         }
-
         d.ToDirectorySystemInfo().MoveToDirectory(moveTo);
         return new FileSystemDirectoryInfo
         {

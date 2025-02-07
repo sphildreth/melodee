@@ -203,7 +203,6 @@ public class ArtistService(
                     byApiKey,
                     byName,
                     byMusicBrainzId);
-                throw;
             }            
         }
 

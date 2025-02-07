@@ -3,7 +3,9 @@ using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models.Collection;
+using Melodee.Common.Models.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -353,6 +355,87 @@ public class AlbumService(
             Data = result
         };
     }
-    
-    
+
+
+    public async Task<MelodeeModels.OperationResult<Album?>> FindAlbumAsync(int artistId, MelodeeModels.Album melodeeAlbum, CancellationToken cancellationToken)
+    {
+        int? id = null;
+        var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
+        var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;                    
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            try
+            {
+                string sql = string.Empty;
+
+                if (melodeeAlbum.AlbumDbId.HasValue)
+                {
+                    sql = """
+                          select a."Id"
+                          from "Albums" a 
+                          where a."Id" = @id
+                         """;
+                    id = await dbConn
+                        .QuerySingleOrDefaultAsync<int?>(sql, new { id = melodeeAlbum.AlbumDbId })
+                        .ConfigureAwait(false);                    
+                }
+                
+                if (id == null && melodeeAlbum.Id != Guid.Empty)
+                {
+                    sql = """
+                           select a."Id"
+                           from "Albums" a 
+                           where a."ApiKey" = @apiKey
+                          """;
+                    id = await dbConn
+                        .QuerySingleOrDefaultAsync<int?>(sql, new { apiKey = melodeeAlbum.Id })
+                        .ConfigureAwait(false);                    
+                }
+
+                if (id == null)
+                {
+                    sql = """
+                              select a."Id"
+                              from "Albums" a
+                              where a."ArtistId" = @artistId
+                              and (a."NameNormalized" = @name
+                              or a."MusicBrainzId" = @musicBrainzId   
+                              or a."SpotifyId" = @spotifyId);
+                              """;
+                    id = await dbConn
+                        .QuerySingleOrDefaultAsync<int?>(sql, new
+                        {
+                            artistId,
+                            name = nameNormalized,
+                            musicBrainzId = melodeeAlbum.MusicBrainzId,
+                            spotifyId = melodeeAlbum.SpotifyId,
+                        })
+                        .ConfigureAwait(false);                     
+                }
+
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "[{ServiceName}] attempting to Find Album id [{Id}], apiKey [{ApiKey}], name [{Name}] musicbrainzId [{MbId}] spotifyId [{SpotifyId}].",
+                    nameof(ArtistService),
+                    melodeeAlbum.AlbumDbId,
+                    melodeeAlbum.Id,
+                    nameNormalized,
+                    melodeeAlbum.MusicBrainzId,
+                    melodeeAlbum.SpotifyId);
+            }            
+        }
+
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Album?>("Unknown album.")
+            {
+                Data = null
+            };
+        }
+
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
+    }
 }

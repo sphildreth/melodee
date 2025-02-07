@@ -117,11 +117,6 @@
                         <RadzenText Text="@CurrentUser?.FormatNumber(data.SongNumber)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(SongDataInfo.DiscNumber)" Title="Disc #" Width="90px">
-                    <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatNumber(data.DiscNumber)"/>
-                    </Template>
-                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.FileSize)" Title="File size" Width="120px">
                     <Template Context="data">
                         <RadzenText Text="@data.FileSize.FormatFileSize()"/>

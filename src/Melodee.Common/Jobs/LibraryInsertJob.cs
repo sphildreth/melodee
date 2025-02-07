@@ -412,26 +412,14 @@ public class LibraryInsertJob(
                         Logger.Warning("Album [{Album}] has invalid Album title, unable to generate NameNormalized.", melodeeAlbum);
                         continue;
                     }
-
-                    var dbAlbumResult = await albumService.GetByApiKeyAsync(melodeeAlbum.Id, cancellationToken).ConfigureAwait(false);
-                    if (!dbAlbumResult.IsSuccess)
-                    {
-                        var albumMusicBrainzId = SafeParser.ToGuid(melodeeAlbum.MusicBrainzId);
-                        if (albumMusicBrainzId != null)
-                        {
-                            dbAlbumResult = await albumService.GetByMusicBrainzIdAsync(albumMusicBrainzId.Value, cancellationToken).ConfigureAwait(false);
-                        }
-
-                        if (!dbAlbumResult.IsSuccess)
-                        {
-                            dbAlbumResult = await albumService.GetByArtistIdAndNameNormalized(dbArtist.Id, nameNormalized, cancellationToken).ConfigureAwait(false);
-                        }
-                    }
-
+                    var dbAlbumResult = await albumService.FindAlbumAsync(dbArtist.Id, melodeeAlbum, cancellationToken).ConfigureAwait(false);
                     var dbAlbum = dbAlbumResult.Data;
-
                     var albumDirectory = melodeeAlbum.AlbumDirectoryName(_configuration.Configuration);
-                    if (dbAlbum == null)
+                    if (dbAlbum != null)
+                    {
+                        Trace.WriteLine($"[{nameof(LibraryInsertJob)}] Artist [{dbArtist.Id}] Album [{dbAlbum.Name}] already exists in db. Skipping.");
+                    }
+                    else
                     {
                         var newAlbum = new dbModels.Album
                         {
@@ -518,7 +506,6 @@ public class LibraryInsertJob(
                             newAlbumSongs.Add(s);
                             _totalSongsInserted++;
                         }
-
                         newAlbum.Songs = newAlbumSongs;
                         dbAlbumsToAdd.Add(newAlbum);
                     }
