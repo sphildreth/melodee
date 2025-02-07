@@ -56,11 +56,17 @@ public sealed class CueSheet(
                     Data = -1
                 };
             }
+            var withAudioBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionBitrate]);
+            var withAudioSamplingRate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]);
+            var withVariableBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]);
 
+            
             foreach (var cueFile in cueFiles)
             {
                 using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, cueFile.Name))
                 {
+                    await FindCueFileIfNeeded(cueFile, cancellationToken);
+
                     ICatalogDataReader? theReader = null;
                     try
                     {
@@ -114,89 +120,87 @@ public sealed class CueSheet(
 
                     if (theReader != null)
                     {
-                        var cueModel = await ParseFileAsync(cueFile?.FullName, Configuration);
-                        if (cueModel is { IsValid: true })
+                        var cueModel = await ParseFileAsync(cueFile.FullName, Configuration);
+                        if (cueModel == null)
                         {
-                            var withAudioBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionBitrate]);
-                            var withAudioSamplingRate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]);
-                            var withVariableBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]);
-                            foreach (var song in cueModel.Songs.OrderBy(x => x.SortOrder))
+                            Log.Error("Error parsing CUE [{CUEFileForAlbumDirectory}]", cueFile.FullName);
+                            return new OperationResult<int>
                             {
-                                var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
-                                var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
-                                await FFMpegArguments.FromFileInput(cueModel.MediaFileSystemFileInfo.FullName(fileSystemDirectoryInfo))
-                                    .OutputToFile(song.File.FullName(fileSystemDirectoryInfo), true, options =>
-                                    {
-                                        var seekTs = new TimeSpan(0, index.Minutes, index.Seconds);
-                                        options.Seek(seekTs);
-                                        if (untilIndex != null)
-                                        {
-                                            var untilTs = new TimeSpan(0, untilIndex.Minutes, untilIndex.Seconds);
-                                            var durationTs = untilTs - seekTs;
-                                            options.WithDuration(durationTs);
-                                        }
-
-                                        options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(withAudioBitrate));
-                                        options.WithAudioSamplingRate(withAudioSamplingRate);
-                                        options.WithVariableBitrate(withVariableBitrate);
-                                        options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
-                                    }).ProcessAsynchronously();
-                            }
-
-                            ;
-
-                            var cueAlbum = cueModel.ToAlbum(fileSystemDirectoryInfo);
-
-                            var convertedExtension = SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
-                            if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
-                            {
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
-                                fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.Nfo.HandlesExtension);
-                                if (cueFile != null)
-                                {
-                                    File.Delete(cueFile.FullName);
-                                    var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
-                                    if (cueFileMediaFile.Exists)
-                                    {
-                                        cueFileMediaFile.Delete();
-                                    }
-                                }
-                            }
-                            else if (convertedExtension.Nullify() != null && cueFile != null)
-                            {
-                                var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{convertedExtension}");
-                                cueFile.MoveTo(movedFileName);
-                                var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
-                                var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{convertedExtension}");
-                                cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
-                            }
-
-                            fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.Nfo.HandlesExtension);
-
-                            var validationResult = albumValidator.ValidateAlbum(cueAlbum);
-                            cueAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
-                            cueAlbum.Status = validationResult.Data.AlbumStatus;
-                            cueAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
-
-                            var mp3Plugin = _songPlugins.First(x => x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
-                            foreach (var song in cueModel.Songs)
-                            {
-                                var mp3SongTags = new List<MetaTag<object?>>
-                                {
-                                    new() { Identifier = MetaTagIdentifier.Album, Value = cueModel.AlbumTitle() },
-                                    new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = cueModel.Artist() },
-                                    new() { Identifier = MetaTagIdentifier.OrigAlbumDate, Value = cueModel.AlbumYear() },
-                                    new() { Identifier = MetaTagIdentifier.Genre, Value = cueModel.Genre() }
-                                };
-                                mp3SongTags.AddRange(song.Tags ?? []);
-                                var mp3Song = song with { Tags = mp3SongTags };
-                                await mp3Plugin.UpdateSongAsync(cueModel.FileSystemDirectoryInfo, mp3Song, cancellationToken).ConfigureAwait(false);
-                            }
-
-                            processedFiles++;
-                            resultType = OperationResponseType.Ok;
+                                Errors = [new Exception("Error parsing CUE")],
+                                Data = 0
+                            };
                         }
+                        Parallel.ForEach(cueModel.Songs.OrderBy(x => x.SortOrder), song =>
+                        {
+                            var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
+                            var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
+                            FFMpegArguments.FromFileInput(cueModel.MediaFileSystemFileInfo.FullName(fileSystemDirectoryInfo))
+                                .OutputToFile(song.File.FullName(fileSystemDirectoryInfo), true, options =>
+                                {
+                                    var seekTs = new TimeSpan(0, index.Minutes, index.Seconds);
+                                    options.Seek(seekTs);
+                                    if (untilIndex != null)
+                                    {
+                                        var untilTs = new TimeSpan(0, untilIndex.Minutes, untilIndex.Seconds);
+                                        var durationTs = untilTs - seekTs;
+                                        options.WithDuration(durationTs);
+                                    }
+
+                                    options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(withAudioBitrate));
+                                    options.WithAudioSamplingRate(withAudioSamplingRate);
+                                    options.WithVariableBitrate(withVariableBitrate);
+                                    options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
+                                }).ProcessSynchronously();
+                        });
+                        
+                        var cueAlbum = cueModel.ToAlbum(fileSystemDirectoryInfo);
+
+                        var convertedExtension = SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
+                        if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
+                        {
+                            fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
+                            fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
+                            fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.Nfo.HandlesExtension);
+                            File.Delete(cueFile.FullName);
+                            var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
+                            if (cueFileMediaFile.Exists)
+                            {
+                                cueFileMediaFile.Delete();
+                            }
+                        }
+                        else if (convertedExtension.Nullify() != null)
+                        {
+                            var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{convertedExtension}");
+                            cueFile.MoveTo(movedFileName);
+                            var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
+                            var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{convertedExtension}");
+                            cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
+                        }
+
+                        fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.Nfo.HandlesExtension);
+
+                        var validationResult = albumValidator.ValidateAlbum(cueAlbum);
+                        cueAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                        cueAlbum.Status = validationResult.Data.AlbumStatus;
+                        cueAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
+
+                        var mp3Plugin = _songPlugins.First(x => x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
+                        foreach (var song in cueModel.Songs)
+                        {
+                            var mp3SongTags = new List<MetaTag<object?>>
+                            {
+                                new() { Identifier = MetaTagIdentifier.Album, Value = cueModel.AlbumTitle() },
+                                new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = cueModel.Artist() },
+                                new() { Identifier = MetaTagIdentifier.OrigAlbumDate, Value = cueModel.AlbumYear() },
+                                new() { Identifier = MetaTagIdentifier.Genre, Value = cueModel.Genre() }
+                            };
+                            mp3SongTags.AddRange(song.Tags ?? []);
+                            var mp3Song = song with { Tags = mp3SongTags };
+                            await mp3Plugin.UpdateSongAsync(cueModel.FileSystemDirectoryInfo, mp3Song, cancellationToken).ConfigureAwait(false);
+                        }
+
+                        processedFiles++;
+                        resultType = OperationResponseType.Ok;
                     }
                 }
             }
@@ -213,6 +217,48 @@ public sealed class CueSheet(
             Type = resultType,
             Data = processedFiles
         };
+    }
+
+    private static string FileNameForFileLine(string line)
+    {
+        var firstQuoteIndex = line.IndexOf('"');
+        var lastQuoteIndex = line.LastIndexOf('"');
+        return line.Substring(firstQuoteIndex + 1, lastQuoteIndex - firstQuoteIndex - 1);
+    }
+
+    private static async Task FindCueFileIfNeeded(FileInfo cueFile, CancellationToken cancellationToken)
+    {
+        if (cueFile.Exists)
+        {
+            var didModify = false;
+            var cueSheetLines = new List<string>();
+            foreach (var line in await File.ReadAllLinesAsync(cueFile.FullName, cancellationToken))
+            {
+                if (line.Nullify() != null && line.StartsWith(CueSheetKeyRegistry.File, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var cueFileName = FileNameForFileLine(line);
+                    var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueFileName));
+                    if (!cueFileMediaFile.Exists)
+                    {
+                        var firstMediaFile = cueFile.Directory?.ToDirectorySystemInfo().AllMediaTypeFileInfos().FirstOrDefault();
+                        if (firstMediaFile != null)
+                        {
+                            cueSheetLines.Add($"{CueSheetKeyRegistry.File} \"{firstMediaFile.Name}\" {firstMediaFile.Extension.Replace(".", string.Empty).ToUpper()}");
+                            didModify = true;
+                        }
+                    }
+                }
+                else
+                {
+                    cueSheetLines.Add(line);
+                }
+            }
+
+            if (didModify)
+            {
+                await File.WriteAllLinesAsync(cueFile.FullName, cueSheetLines, cancellationToken);
+            }
+        }
     }
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
@@ -268,32 +314,7 @@ public sealed class CueSheet(
                     break;
 
                 case CueSheetKeyRegistry.File:
-                    if (kp.Value?.Contains(" MP3") ?? false)
-                    {
-                        cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" MP3", string.Empty))).ToFileSystemInfo();
-                    }
-
-                    if (kp.Value?.Contains(" WAVE") ?? false)
-                    {
-                        cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" WAVE", string.Empty))).ToFileSystemInfo();
-                    }
-
-                    if (kp.Value?.Contains(" BINARY") ?? false)
-                    {
-                        cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, kp.Value!.Replace(" BINARY", string.Empty))).ToFileSystemInfo();
-                    }
-
-                    var directoryInfo = new DirectoryInfo(fileInfo.DirectoryName!).ToDirectorySystemInfo();
-                    if (!cueSheetDataFile?.Exists(directoryInfo) ?? false)
-                    {
-                        // sometimes the FILE line points to a WAV when there is a MP3 or an APE file
-                        var mediaTypeFilesInDirectory = directoryInfo.AllMediaTypeFileInfos().ToArray();
-                        if (mediaTypeFilesInDirectory.Any())
-                        {
-                            cueSheetDataFile = mediaTypeFilesInDirectory.First().ToFileSystemInfo();
-                        }
-                    }
-
+                    cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, FileNameForFileLine(lineFromFile))).ToFileSystemInfo();
                     break;
 
                 case CueSheetKeyRegistry.Flags:
@@ -460,7 +481,7 @@ public sealed class CueSheet(
                             File = new FileSystemFileInfo
                             {
                                 Name = Path.GetFileName(songFileName),
-                                Size = 0
+                                Size = fileInfo.Length
                             },
                             Tags = songTags.ToArray(),
                             SortOrder = songNumber
@@ -540,11 +561,6 @@ public sealed class CueSheet(
                             break;
                         }
                     }
-                }
-
-                if (albumDate == null)
-                {
-                    throw new Exception("Unable to determine Album Year for CueFile.");
                 }
             }
 

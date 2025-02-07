@@ -312,12 +312,14 @@ public static class SongExtensions
     {
         if (songNumber < 1)
         {
-            throw new Exception($"Invalid Song number [{songNumber}]");
+            Trace.WriteLine($"File [{fileInfo}] has invalid Song number [{songNumber}]");
+            songNumber = 0;
         }
 
         if (string.IsNullOrWhiteSpace(songTitle))
         {
-            throw new Exception($"Invalid Song title [{songTitle}]");
+            Trace.WriteLine($"File [{fileInfo}] has invalid Song title [{songTitle}]");
+            songTitle = fileInfo.Name;
         }
 
         var songNumberPaddingLength = SafeParser.ToNumber<short>(maximumSongNumber.ToString().Length);

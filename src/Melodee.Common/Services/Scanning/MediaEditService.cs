@@ -263,7 +263,7 @@ public sealed class MediaEditService(
                     foreach (var song in album.Songs)
                     {
                         album.SetSongTagValue(song.Id, MetaTagIdentifier.Album, newTitle);
-                        await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                        await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                     }
                     if (doSave ?? true)
                     {
@@ -301,7 +301,7 @@ public sealed class MediaEditService(
                     if (!string.Equals(title, newTitle, StringComparison.OrdinalIgnoreCase))
                     {
                         album.SetSongTagValue(song.Id, MetaTagIdentifier.Title, newTitle);
-                        await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                        await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                         modified = true;
                     }
                 }
@@ -345,7 +345,7 @@ public sealed class MediaEditService(
                         var newSongTitle = AlbumValidator.ReplaceSongArtistSeparators(AlbumValidator.HasFeatureFragmentsRegex.Replace(songTitle.Substring(matches.Index), string.Empty).CleanString());
                         newSongTitle = newSongTitle?.TrimEnd(']', ')').Replace("\"", "'");
                         album.SetSongTagValue(song.Id, MetaTagIdentifier.Title, newSongTitle);
-                        await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                        await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                     }
                 }
                 if (doSave ?? true)
@@ -381,7 +381,7 @@ public sealed class MediaEditService(
                     var newSongArtist = AlbumValidator.ReplaceSongArtistSeparators(AlbumValidator.HasFeatureFragmentsRegex.Replace(songArtist.Substring(matches.Index), string.Empty).CleanString());
                     newSongArtist = newSongArtist?.TrimEnd(']', ')').Replace("\"", "'");
                     album.SetSongTagValue(song.Id, MetaTagIdentifier.Artist, newSongArtist);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                 }
             }
 
@@ -416,7 +416,7 @@ public sealed class MediaEditService(
                 foreach (var song in album.Songs!)
                 {
                     album.RemoveSongTagValue(song.Id, MetaTagIdentifier.Artist);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                 }
 
                 if (doSave ?? true)
@@ -451,7 +451,7 @@ public sealed class MediaEditService(
                 foreach (var song in album.Songs ?? [])
                 {
                     album.SetSongTagValue(song.Id, MetaTagIdentifier.OrigAlbumYear, year);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                 }
 
                 if (doSave ?? true)
@@ -487,7 +487,7 @@ public sealed class MediaEditService(
                 if (!string.Equals(originalTitle, newTitle, StringComparison.OrdinalIgnoreCase))
                 {
                     album.SetSongTagValue(song.Id, MetaTagIdentifier.Title, newTitle);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                     modified = true;
                 }
             }
@@ -533,7 +533,7 @@ public sealed class MediaEditService(
                 {
                     album.RemoveSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist);
                     album.RemoveSongTagValue(song.Id, MetaTagIdentifier.Artist);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                 }
 
                 if (doSave ?? true)
@@ -567,7 +567,7 @@ public sealed class MediaEditService(
                 if (!string.Equals(oldSongArtist, newSongArtist, StringComparison.OrdinalIgnoreCase))
                 {
                     album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, null);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                 }
             }
             if (doSave ?? true)
@@ -604,7 +604,7 @@ public sealed class MediaEditService(
         foreach (var song in album.Songs!)
         {
             album.SetSongTagValue(song.Id, MetaTagIdentifier.DiscTotal, nextMediaNumber);
-            await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+            await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
         }
         album.SetTagValue(MetaTagIdentifier.DiscTotal, nextMediaNumber, doSetSongValue: false);
         return album;
@@ -641,7 +641,7 @@ public sealed class MediaEditService(
                 foreach (var dd in album.Songs?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i = i + 1 }) ?? [])
                 {
                     album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, dd.x, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
                 }
 
                 mediaLooper++;
@@ -671,7 +671,7 @@ public sealed class MediaEditService(
                 foreach (var dd in album.Songs?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i = i + 1 }) ?? [])
                 {
                     album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, dd.x, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
                     numberOfSongsSeen++;
                 }
 
@@ -767,7 +767,7 @@ public sealed class MediaEditService(
                 foreach (var song in album.Songs!)
                 {
                     album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, null);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
+                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                 }
                 
                 if (doSave ?? true)

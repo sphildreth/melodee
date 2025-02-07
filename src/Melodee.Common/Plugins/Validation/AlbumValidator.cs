@@ -454,7 +454,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             result = false;
         }
 
-        if (songNumbers.Contains(0))
+        var numberOfSongs = album.SongTotalValue();
+        if (songNumbers.Contains(0) || numberOfSongs != songNumbers.Count(x => x > 0))
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithInvalidNumber;
             result = false;

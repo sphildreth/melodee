@@ -73,7 +73,7 @@ public class Mp3Files(
                     }
                 });
                 
-                await HandleDuplicates(fileSystemDirectoryInfo,songs.ToArray(), cancellationToken);                
+                await HandleDuplicates(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);                
 
                 var songMaxMediaNumber = 1;
                 if (songs.Count > 0)

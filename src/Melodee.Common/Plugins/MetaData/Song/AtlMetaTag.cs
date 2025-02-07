@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using ATL;
+using ATL.AudioData;
 using FFMpegCore;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -393,12 +394,13 @@ public sealed class AtlMetaTag(
             try
             {
                 var doDeleteComment = MelodeeConfiguration.GetValue<bool?>(SettingRegistry.ProcessingDoDeleteComments) ?? true;
+
                 var fileAtl = new Track(songFileName)
                 {
                     Album = song.AlbumTitle(),
                     AlbumArtist = song.AlbumArtist(),
                     Artist = song.SongArtist(),
-                    Comment = doDeleteComment ? null : song.Comment(),
+                    Comment = doDeleteComment ? string.Empty : song.Comment(), 
                     DiscNumber = song.MediaNumber(),
                     DiscTotal = song.MediaTotalNumber(),
                     Genre = song.Genre(),

@@ -79,7 +79,7 @@ public sealed partial class MetaTagsProcessor(IMelodeeConfiguration configuratio
                 });
             }
         }
-
+        
         return Task.FromResult(new OperationResult<IEnumerable<MetaTag<object?>>>
         {
             Data = processedTags.ToArray()
