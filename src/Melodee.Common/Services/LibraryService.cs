@@ -868,13 +868,13 @@ public class LibraryService(
                     result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Album directory missing Melodee data file", albumDirectoriesWithoutMelodeeDataFile, StatisticColorRegistry.Error, "When scanning media without a Melodee data file, media files will not get processed."));
                 }
 
-                var message = artistDirectoriesFound == library.ArtistCount ? null : $"Artist directory count [{artistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library artist count [{library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength)}].";
+                var message = artistDirectoriesFound == (library.ArtistCount ?? 0) ? null : $"Artist directory count [{artistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library artist count [{library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength)}].";
                 result.Add(new MelodeeModels.Statistic(artistDirectoriesFound == library.ArtistCount ? StatisticType.Information : StatisticType.Warning, "Artist Directories Found", artistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), artistDirectoriesFound == library.ArtistCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
 
-                message = albumDirectoriesFound == library.AlbumCount ? null : $"Album directory count [{albumDirectoriesFound}] does not match Library album count [{library.AlbumCount}].";
+                message = albumDirectoriesFound == (library.AlbumCount ?? 0) ? null : $"Album directory count [{albumDirectoriesFound}] does not match Library album count [{library.AlbumCount}].";
                 result.Add(new MelodeeModels.Statistic(albumDirectoriesFound == library.AlbumCount ? StatisticType.Information : StatisticType.Warning, "Album Directories Found", albumDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), albumDirectoriesFound == library.AlbumCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
 
-                message = songsFound == library.SongCount ? null : $"Song directory count [{songsFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(DisplayNumberPadLength)}].";
+                message = songsFound == (library.SongCount ?? 0) ? null : $"Song directory count [{songsFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(DisplayNumberPadLength)}].";
                 result.Add(new MelodeeModels.Statistic(songsFound == library.SongCount ? StatisticType.Information : StatisticType.Error, "Songs Found", songsFound.ToStringPadLeft(DisplayNumberPadLength), songsFound == library.SongCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
             }
         }
