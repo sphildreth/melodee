@@ -177,7 +177,6 @@ public sealed class CueSheet(
                             cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
                         }
 
-                        fileSystemDirectoryInfo.MarkAllFilesForExtensionsSkipped(Configuration, SimpleFileVerification.HandlesExtension, M3UPlaylist.HandlesExtension, Nfo.Nfo.HandlesExtension);
 
                         var validationResult = albumValidator.ValidateAlbum(cueAlbum);
                         cueAlbum.ValidationMessages = validationResult.Data.Messages ?? [];

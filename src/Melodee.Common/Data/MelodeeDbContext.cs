@@ -359,14 +359,6 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
-                    Id = 31,
-                    Key = SettingRegistry.ProcessingSkippedExtension,
-                    Comment = "Extension to add to file to indicate other files in the same category where processed and this file was skipped during processing, leave blank to disable.",
-                    Value = "_skipped",
-                    CreatedAt = now
-                },
-                new Setting
-                {
                     Id = 32,
                     Key = SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles,
                     Comment = "When processing over write any existing Melodee data files, otherwise skip and leave in place.",

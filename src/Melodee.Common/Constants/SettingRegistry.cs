@@ -59,7 +59,6 @@ public static class SettingRegistry
     public const string ProcessingMaximumArtistDirectoryNameLength = "processing.maximumArtistDirectoryNameLength";
     public const string ProcessingMaximumProcessingCount = "processing.maximumProcessingCount";
     public const string ProcessingProcessedExtension = "processing.processedExtension";
-    public const string ProcessingSkippedExtension = "processing.skippedExtension";
     public const string ProcessingSongTitleRemovals = "processing.songTitleRemovals";
     public const string ProcessingStagingDirectoryScanLimit = "processing.stagingDirectoryScanLimit";
     public const string ScriptingEnabled = "scripting.enabled";
