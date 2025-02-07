@@ -127,23 +127,27 @@ public class FileSystemDirectoryInfoExtensionTests
     [Fact]
     public void RenameWithPrefix()
     {
-        var testPath = @"/melodee_test/tests/dir_to_get_renamed_prefix";
-        if (!Directory.Exists(testPath))
+        var testDirectory = @"/melodee_test/tests";
+        if (Directory.Exists(testDirectory))
         {
-            Directory.CreateDirectory(testPath);
-        }
+            var testPath = @"/melodee_test/tests/dir_to_get_renamed_prefix";
+            if (!Directory.Exists(testPath))
+            {
+                Directory.CreateDirectory(testPath);
+            }
 
-        var dirInfo = new FileSystemDirectoryInfo
-        {
-            Path = testPath,
-            Name = "dir_to_get_renamed_prefix"
-        };
-        var nd = dirInfo.AppendPrefix("__batman_");
-        Assert.NotEqual(nd.FullName(), dirInfo.FullName());
-        Assert.True(Directory.Exists(nd.FullName()));
-        Assert.True(nd.Exists());
-        nd.Delete();
-        Assert.False(Directory.Exists(nd.FullName()));
+            var dirInfo = new FileSystemDirectoryInfo
+            {
+                Path = testPath,
+                Name = "dir_to_get_renamed_prefix"
+            };
+            var nd = dirInfo.AppendPrefix("__batman_");
+            Assert.NotEqual(nd.FullName(), dirInfo.FullName());
+            Assert.True(Directory.Exists(nd.FullName()));
+            Assert.True(nd.Exists());
+            nd.Delete();
+            Assert.False(Directory.Exists(nd.FullName()));
+        }
     }
 
     [Fact]
