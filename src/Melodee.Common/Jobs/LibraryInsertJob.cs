@@ -459,8 +459,9 @@ public class LibraryInsertJob(
                             SpotifyId = melodeeAlbum.SpotifyId,
                             WikiDataId = melodeeAlbum.WikiDataId
                         };
-                        if (dbAlbumsToAdd.Any(x => x.Artist.Id == dbArtist.Id && x.NameNormalized == nameNormalized) || 
-                            dbAlbumsToAdd.Any(x => x.MusicBrainzId != null && x.MusicBrainzId == newAlbum.MusicBrainzId))
+                        if (dbAlbumsToAdd.Any(x => x.Artist.Id == dbArtist.Id && x.NameNormalized == nameNormalized) ||
+                            dbAlbumsToAdd.Any(x => x.MusicBrainzId != null && x.MusicBrainzId == newAlbum.MusicBrainzId) ||
+                            dbAlbumsToAdd.Any(x => x.SpotifyId != null && x.SpotifyId == newAlbum.SpotifyId))
                         {
                             Logger.Warning("For artist [{Artist}] found duplicate album [{Album}]", dbArtist, newAlbum);
                             melodeeAlbum.Directory.AppendPrefix(_duplicateAlbumPrefix);
@@ -473,49 +474,52 @@ public class LibraryInsertJob(
                             melodeeAlbum.Id,
                             nameNormalized);
 
-                            foreach (var song in melodeeAlbum.Songs ?? [])
+                        var newAlbumSongs = new List<dbModels.Song>();
+                        foreach (var song in melodeeAlbum.Songs ?? [])
+                        {
+                            currentSong = song;
+                            var mediaFile = song.File.ToFileInfo(melodeeAlbum.Directory) ?? throw new Exception("Song File is required.");
+                            var mediaFileHash = CRC32.Calculate(mediaFile);
+                            if (mediaFileHash == null)
                             {
-                                currentSong = song;
-                                var mediaFile = song.File.ToFileInfo(melodeeAlbum.Directory) ?? throw new Exception("Song File is required.");
-                                var mediaFileHash = CRC32.Calculate(mediaFile);
-                                if (mediaFileHash == null)
-                                {
-                                    Logger.Warning("[{JobName}] Unable to calculate CRC for Song file [{FileName}",
-                                        nameof(LibraryInsertJob), mediaFile.FullName);
-                                    stopProcessingAlbum = true;
-                                    break;
-                                }
-
-                                var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
-                                var s = new dbModels.Song
-                                {
-                                    ApiKey = song.Id,
-                                    BitDepth = song.BitDepth(),
-                                    BitRate = song.BitRate(),
-                                    BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
-                                    ContentType = song.ContentType(),
-                                    CreatedAt = _now,
-                                    Duration = song.Duration() ?? throw new Exception("Song duration is required."),
-                                    FileHash = mediaFileHash,
-                                    FileName = mediaFile.Name,
-                                    FileSize = mediaFile.Length,
-                                    SamplingRate = song.SamplingRate(),
-                                    Title = songTitle,
-                                    TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
-                                    SongNumber = song.SongNumber(),
-                                    ChannelCount = song.ChannelCount(),
-                                    Genres = (song.Genre()?.Nullify() ?? melodeeAlbum.Genre()?.Nullify())?.Split('/'),
-                                    IsVbr = song.IsVbr(),
-                                    Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
-                                    MusicBrainzId = song.MetaTagValue<Guid?>(MetaTagIdentifier.MusicBrainzId),
-                                    PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
-                                    SortOrder = song.SortOrder,
-                                    TitleSort = songTitle.CleanString(true)
-                                };
-                                _totalSongsInserted++;
+                                Logger.Warning("[{JobName}] Unable to calculate CRC for Song file [{FileName}",
+                                    nameof(LibraryInsertJob), mediaFile.FullName);
+                                stopProcessingAlbum = true;
+                                break;
                             }
-                        
 
+                            var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
+                            var s = new dbModels.Song
+                            {
+                                AlbumId = newAlbum.Id,
+                                ApiKey = song.Id,
+                                BitDepth = song.BitDepth(),
+                                BitRate = song.BitRate(),
+                                BPM = song.MetaTagValue<int>(MetaTagIdentifier.Bpm),
+                                ContentType = song.ContentType(),
+                                CreatedAt = _now,
+                                Duration = song.Duration() ?? throw new Exception("Song duration is required."),
+                                FileHash = mediaFileHash,
+                                FileName = mediaFile.Name,
+                                FileSize = mediaFile.Length,
+                                SamplingRate = song.SamplingRate(),
+                                Title = songTitle,
+                                TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
+                                SongNumber = song.SongNumber(),
+                                ChannelCount = song.ChannelCount(),
+                                Genres = (song.Genre()?.Nullify() ?? melodeeAlbum.Genre()?.Nullify())?.Split('/'),
+                                IsVbr = song.IsVbr(),
+                                Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
+                                MusicBrainzId = song.MetaTagValue<Guid?>(MetaTagIdentifier.MusicBrainzId),
+                                PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
+                                SortOrder = song.SortOrder,
+                                TitleSort = songTitle.CleanString(true)
+                            };
+                            newAlbumSongs.Add(s);
+                            _totalSongsInserted++;
+                        }
+
+                        newAlbum.Songs = newAlbumSongs;
                         dbAlbumsToAdd.Add(newAlbum);
                     }
                 }

@@ -27,6 +27,12 @@ public record Artist
     [MaxLength(2000)]
     public required string NameNormalized { get; init; }
     
+    /// <summary>
+    /// Alternate names in tag form
+    /// </summary>
+    [MaxLength(4000)]
+    public string? AlternateNames { get; init; }
+    
     [Required]
     [MaxLength(2000)]
     public required string SortName { get; init; }

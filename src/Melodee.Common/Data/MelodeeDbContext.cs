@@ -789,7 +789,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Scrobbling,
                     Key = SettingRegistry.ScrobblingEnabled,
                     Comment = "Is scrobbling enabled.",
-                    Value = "false",
+                    Value = "true",
                     CreatedAt = now
                 },
                 new Setting

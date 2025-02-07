@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models.Extensions;
@@ -21,23 +22,24 @@ public static class SongExtensions
         {
             return d;
         }
-
+        
+        var tType = typeof(T?);        
+        var vv = song.Tags?.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
         try
         {
-            var vv = song.Tags?.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
             if (vv == null)
             {
                 return d;
             }
-
             if (vv is JsonElement)
             {
                 vv = vv.ToString() ?? string.Empty;
             }
-
-            var tType = typeof(T?);
-
             var converter = TypeDescriptor.GetConverter(tType);
+            if (vv is DateTime && tType == typeof(string))
+            {
+                return (T?)converter.ConvertFrom(vv.ToString() ?? string.Empty); 
+            }            
             if (tType == typeof(short) || tType == typeof(short?))
             {
                 return (T?)converter.ConvertFrom(short.Parse(vv.ToString() ?? string.Empty));

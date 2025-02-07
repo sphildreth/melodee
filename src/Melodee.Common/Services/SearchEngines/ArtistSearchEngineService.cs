@@ -23,6 +23,7 @@ using SerilogTimings;
 using ServiceStack;
 using Album = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Album;
 using Artist = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Artist;
+using StringExtensions = Melodee.Common.Extensions.StringExtensions;
 
 namespace Melodee.Common.Services.SearchEngines;
 
@@ -330,10 +331,14 @@ public class ArtistSearchEngineService(
             // See if found in DbContext if not then query plugins, add to context and return results
             await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
+                var firstTag = $"{query.NameNormalized}{StringExtensions.TagsSeparator}";
+                var inTag = $"{StringExtensions.TagsSeparator}{query.NameNormalized}{StringExtensions.TagsSeparator}";
+                var outerTag = $"{StringExtensions.TagsSeparator}{query.NameNormalized}";
                 var artists = await scopedContext
                     .Artists.Include(x => x.Albums)
                     .Where(x => x.NameNormalized == query.NameNormalized || 
                                 (x.MusicBrainzId != null && query.MusicBrainzId != null && x.MusicBrainzId == query.MusicBrainzIdValue) || 
+                                (x.AlternateNames != null && (x.AlternateNames.Contains(firstTag) || x.AlternateNames.Contains(inTag) || x.AlternateNames.Contains(outerTag))) ||
                                 (x.SpotifyId != null && query.SpotifyId != null && x.SpotifyId == query.SpotifyId))
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
@@ -421,14 +426,15 @@ public class ArtistSearchEngineService(
                         
                         artist = await scopedContext
                             .Artists
-                            .Where(x => x.NameNormalized == nameNormalized || 
-                                             (x.AmgId != null && x.AmgId == newArtist.AmgId) ||
-                                             (x.DiscogsId != null && x.DiscogsId == newArtist.DiscogsId) ||
-                                             (x.ItunesId != null && x.ItunesId == newArtist.ItunesId) ||
-                                             (x.LastFmId != null && x.LastFmId == newArtist.LastFmId) ||
-                                             (x.MusicBrainzId != null && x.MusicBrainzId == newArtist.MusicBrainzId) ||
-                                             (x.SpotifyId != null && x.SpotifyId == newArtist.SpotifyId) ||
-                                             (x.WikiDataId != null && x.WikiDataId == newArtist.WikiDataId))
+                            .Where(x => x.NameNormalized == nameNormalized ||  
+                                        (x.AlternateNames != null && (x.AlternateNames.Contains(firstTag) || x.AlternateNames.Contains(inTag) || x.AlternateNames.Contains(outerTag))) ||
+                                         (x.AmgId != null && x.AmgId == newArtist.AmgId) ||
+                                         (x.DiscogsId != null && x.DiscogsId == newArtist.DiscogsId) ||
+                                         (x.ItunesId != null && x.ItunesId == newArtist.ItunesId) ||
+                                         (x.LastFmId != null && x.LastFmId == newArtist.LastFmId) ||
+                                         (x.MusicBrainzId != null && x.MusicBrainzId == newArtist.MusicBrainzId) ||
+                                         (x.SpotifyId != null && x.SpotifyId == newArtist.SpotifyId) ||
+                                         (x.WikiDataId != null && x.WikiDataId == newArtist.WikiDataId))
                             .FirstOrDefaultAsync(cancellationToken: cancellationToken)
                             .ConfigureAwait(false);
                         
@@ -442,6 +448,7 @@ public class ArtistSearchEngineService(
                             var newDbArtist = new Artist
                             {
                                 AmgId = newArtist.AmgId,
+                                AlternateNames = "".AddTags(newArtist.AlternateNames, doNormalize: true),
                                 DiscogsId = newArtist.DiscogsId,
                                 ItunesId = newArtist.ItunesId,
                                 LastFmId = newArtist.LastFmId,

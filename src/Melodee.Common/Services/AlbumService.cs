@@ -87,7 +87,7 @@ public class AlbumService(
                 var sqlStartFragment = """
                                        SELECT a."Id", a."ApiKey", a."IsLocked", a."Name", a."NameNormalized", a."AlternateNames",
                                               ar."ApiKey" as "ArtistApiKey", ar."Name" as "ArtistName",
-                                              a."DiscCount", a."SongCount", a."Duration", a."CreatedAt", a."Tags", a."ReleaseDate", 
+                                              a."SongCount", a."Duration", a."CreatedAt", a."Tags", a."ReleaseDate", 
                                               a."AlbumStatus"
                                        FROM "Albums" a
                                        JOIN "Artists" ar ON (a."ArtistId" = ar."Id")
