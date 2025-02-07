@@ -1,8 +1,11 @@
+using Mapster;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Validation;
+using Melodee.Common.Serialization;
+using Serilog;
 
 namespace Melodee.Tests.Validation;
 
@@ -291,11 +294,16 @@ public class AlbumValidatorTests
         Assert.Equal(shouldBe, ImageValidator.IsImageAProofType(text));
     }
 
+    private Album NewTestAlbum()
+    {
+        var serializer = new Serializer(Log.Logger);
+        return serializer.Deserialize<Album>(serializer.Serialize(TestAlbum)) ?? throw new InvalidOperationException();
+    }
 
     [Fact]
     public void ValidateAlbumWithNoInvalidValidations()
     {
-        var album = TestAlbum;
+        var album = NewTestAlbum();
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
@@ -306,7 +314,7 @@ public class AlbumValidatorTests
     [Fact]
     public void ValidateAlbumWithNoCoverImage()
     {
-        var testAlbum = TestAlbum;
+        var testAlbum = NewTestAlbum();
         var album = testAlbum with
         {
             Images = []
@@ -321,7 +329,7 @@ public class AlbumValidatorTests
     [Fact]
     public void ValidateAlbumWithMissingArtist()
     {
-        var testAlbum = TestAlbum;
+        var testAlbum = NewTestAlbum();
         var albumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
         albumTags.Remove(new MetaTag<object?>
         {
@@ -344,13 +352,10 @@ public class AlbumValidatorTests
     [Fact]
     public void ValidateAlbumWithInvalidYear()
     {
-        var testAlbum = TestAlbum;
+        var testAlbum = NewTestAlbum();
         var albumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
-        albumTags.Remove(new MetaTag<object?>
-        {
-            Identifier = MetaTagIdentifier.RecordingYear,
-            Value = "1971"
-        });
+        var yearTag = albumTags.First(x => x.Identifier == MetaTagIdentifier.RecordingYear);
+        albumTags.Remove(yearTag);
         var album = testAlbum with
         {
             Tags = albumTags
@@ -366,7 +371,7 @@ public class AlbumValidatorTests
     [Fact]
     public void ValidateAlbumWithDifferentArtistsNotVariousArtists()
     {
-        var testAlbum = TestAlbum;
+        var testAlbum = NewTestAlbum();
         testAlbum.SetSongTagValue(testAlbum.Songs!.First().Id, MetaTagIdentifier.AlbumArtist, Guid.NewGuid().ToString());
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(testAlbum);
@@ -378,7 +383,7 @@ public class AlbumValidatorTests
     [Fact]
     public void ValidateAlbumWithMissingTitle()
     {
-        var testAlbum = TestAlbum;
+        var testAlbum = NewTestAlbum();
         var albumTags = (testAlbum.Tags ?? Array.Empty<MetaTag<object?>>()).ToList();
         albumTags.Remove(new MetaTag<object?>
         {

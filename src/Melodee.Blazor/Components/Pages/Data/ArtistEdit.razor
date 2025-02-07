@@ -63,7 +63,6 @@
             else
             {
                 <RadzenImage
-                    @ref="_image"
                     Path=@($"/images/{_artist.ToApiKey()}/medium")
                     Style="margin-right: 5px; width: 100%; height: auto;"
                     AlternateText="@_artist.Name"/>
@@ -87,7 +86,7 @@
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
                                 <RadzenAutoComplete
-                                    @bind-Value="@_libaryName"
+                                    @bind-Value="@_libraryName"
                                     name="LibraryId"
                                     Data="@_libraries"
                                     TextProperty="@nameof(Library.Name)"
@@ -339,7 +338,7 @@
     [Parameter] public Guid ApiKey { get; set; }
 
     string? _musicBrainzId;
-    string _libaryName;
+    string _libraryName = string.Empty;
 
     Artist _artist = new()
     {
@@ -350,9 +349,6 @@
         CreatedAt = default
     };
 
-    private RadzenImage _image;
-    private IEnumerable<ArtistDataInfo> _selectedArtistCards;
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -361,7 +357,7 @@
         _libraries = storageLibrariesResult.Data.ToList();
 
         // TODO handle differently when more than one storage library
-        _libaryName = _libraries.First().Name;
+        _libraryName = _libraries.First().Name;
 
         if (ApiKey != Guid.Empty)
         {
@@ -395,7 +391,7 @@
                 _artist.MusicBrainzId = SafeParser.ToGuid(_musicBrainzArtists.FirstOrDefault(x => x.Value == _musicBrainzId)?.Key);
             }
 
-            _artist.LibraryId = _libraries.First(x => x.Name == _libaryName).Id;
+            _artist.LibraryId = _libraries.First(x => x.Name == _libraryName).Id;
             _artist.AlternateNames = "".AddTags(_alternateNames, doNormalize: true);
             _artist.Roles = "".AddTags(_roles);
             _artist.Tags = "".AddTags(_tags);

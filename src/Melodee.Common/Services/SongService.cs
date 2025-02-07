@@ -118,7 +118,7 @@ public class SongService(
         }
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] toArray, CancellationToken cancellationToken = default)
+    public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] toArray, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

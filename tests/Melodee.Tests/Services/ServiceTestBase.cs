@@ -256,10 +256,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             CacheManager,
             MockFactory(),
             MockConfigurationFactory(),
-            GetNowPlayingRepository(),
-            GetArtistService(),
-            GetAlbumService(),
-            GetSongService());
+            GetNowPlayingRepository());
     }
 
     protected IHttpClientFactory MockHttpClientFactory()

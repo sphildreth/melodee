@@ -5,7 +5,7 @@ using Melodee.Common.Services;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class InternetRadioController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
+public class InternetRadioController(ISerializer serializer, EtagRepository etagRepository, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     //TODO
     // getInternetRadioStations

@@ -815,7 +815,7 @@ public class LibraryService(
                                         {
                                             await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFile.FullName, cancellationToken).ConfigureAwait(false);
                                         }
-                                        catch (Exception ex)
+                                        catch
                                         {
                                             continue;
                                         }
@@ -937,8 +937,6 @@ public class LibraryService(
             {
                 directoriesWithoutMediaFiles.Add(dd);
             }
-
-            ;
         });
         if (directoriesWithoutMediaFiles.Distinct().Any())
         {

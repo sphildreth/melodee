@@ -322,7 +322,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     var songDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
                     var songTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
 
-                    var fileForSong = mediaFilesForFolder.FirstOrDefault(x => x.Name.ToNormalizedString()!.Contains(songTitle.ToNormalizedString()!, StringComparison.OrdinalIgnoreCase));
+                    var fileForSong = mediaFilesForFolder?.FirstOrDefault(x => x.Name.ToNormalizedString()!.Contains(songTitle.ToNormalizedString()!, StringComparison.OrdinalIgnoreCase));
                     if (fileForSong == null)
                     {
                         Log.Warning("[{Plugin}] Could not find file for song [{SongTitle}] in [{DirName}]", DisplayName, songTitle, fileInfo.Directory?.FullName);

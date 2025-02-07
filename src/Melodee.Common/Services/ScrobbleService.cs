@@ -17,10 +17,7 @@ public class ScrobbleService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
-    INowPlayingRepository nowPlayingRepository,
-    ArtistService artistService,
-    AlbumService albumService,
-    SongService songService)
+    INowPlayingRepository nowPlayingRepository)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);

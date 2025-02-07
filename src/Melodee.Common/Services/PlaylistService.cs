@@ -12,8 +12,7 @@ namespace Melodee.Common.Services;
 public class PlaylistService(
     ILogger logger,
     ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMelodeeConfigurationFactory configurationFactory)
+    IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     public async Task<MelodeeModels.PagedResult<Playlist>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
@@ -46,7 +45,7 @@ public class PlaylistService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] playlistIds, CancellationToken cancellationToken = default)
+    public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] playlistIds, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

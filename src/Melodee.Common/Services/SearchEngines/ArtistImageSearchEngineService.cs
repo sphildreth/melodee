@@ -5,7 +5,6 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Plugins.SearchEngine;
 using Melodee.Common.Plugins.SearchEngine.ITunes;
-using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
@@ -24,7 +23,6 @@ public class ArtistImageSearchEngineService(
     SettingService settingService,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMusicBrainzRepository musicBrainzRepository,
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {

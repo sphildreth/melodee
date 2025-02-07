@@ -5,7 +5,7 @@ using Melodee.Common.Services;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class JukeboxController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
+public class JukeboxController(ISerializer serializer, EtagRepository etagRepository, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
     //TODO
     // jukeboxControl

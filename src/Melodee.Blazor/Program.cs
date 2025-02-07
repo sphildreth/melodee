@@ -280,7 +280,7 @@ app.UseSerilogRequestLogging(options =>
 {
     options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
     {
-        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value ?? string.Empty);
         diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
     };
 });

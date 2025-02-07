@@ -419,7 +419,7 @@ public static class FileSystemDirectoryInfoExtensions
                 {
                     File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
                 }
-                catch (PathTooLongException e)
+                catch (PathTooLongException)
                 {
                     Trace.WriteLine($"Aborting move. Unable to move file, path is too long. [{file}]");
                     return;

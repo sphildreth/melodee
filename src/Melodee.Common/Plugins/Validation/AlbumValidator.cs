@@ -222,8 +222,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         }
 
         var result = true;
-        var songNumbers = album.Songs.GroupBy(x => x.SongNumber());
-        if (songNumbers.Any(group => group.Count() > 1))
+        var songNumbers = album.Songs?.GroupBy(x => x.SongNumber());
+        if (songNumbers?.Any(group => group.Count() > 1) ?? false)
         {
             result = false;
         }

@@ -12,8 +12,7 @@ namespace Melodee.Common.Services;
 public class ShareService(
     ILogger logger,
     ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMelodeeConfigurationFactory configurationFactory)
+    IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     public async Task<MelodeeModels.PagedResult<Share>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
@@ -46,7 +45,7 @@ public class ShareService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] shareIds, CancellationToken cancellationToken = default)
+    public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] shareIds, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

@@ -36,15 +36,14 @@
         get => _intervalInMs;
         set
         {
-            if (value == _intervalInMs)
+            if (Math.Abs(value - _intervalInMs) < 0.000001)
             {
                 return;
             }
-
             _intervalInMs = value > 0 ? value : 1;
             if (_timer is not null)
             {
-                _timer.AutoReset = Occurring.Count == 1 ? false : true;
+                _timer.AutoReset = Occurring.Count != 1;
                 _timer.Interval = _intervalInMs;
             }
         }
