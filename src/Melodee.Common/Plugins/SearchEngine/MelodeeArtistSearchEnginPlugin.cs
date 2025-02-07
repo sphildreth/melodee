@@ -36,7 +36,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
             var startTicks = Stopwatch.GetTimestamp();
             var data = new List<ArtistSearchResult>();
 
-            if (query.MusicBrainzId != null)
+            if (query.MusicBrainzId.Nullify() != null)
             {
                 var artistByMusicBrainz = await scopedContext.Artists
                     .Select(x => new { x.Id, x.Name, x.ApiKey, x.MusicBrainzId, x.SortName, x.RealName, x.AlbumCount, x.AlternateNames })

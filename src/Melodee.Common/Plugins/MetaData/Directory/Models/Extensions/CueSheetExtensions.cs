@@ -91,18 +91,6 @@ public static class CueSheetExtensions
         return cueSheet.MetaTagValue<string?>(MetaTagIdentifier.Genre);
     }
 
-    public static int SongTotalNumber(this CueSheet cueSheet)
-    {
-        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.SongTotal) ?? 0;
-    }
-
-    public static int MediaCountValue(this CueSheet cueSheet)
-    {
-        return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscNumberTotal) ??
-               cueSheet.MetaTagValue<int?>(MetaTagIdentifier.DiscTotal) ??
-               0;
-    }
-
     public static int? AlbumYear(this CueSheet cueSheet)
     {
         return cueSheet.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear) ??

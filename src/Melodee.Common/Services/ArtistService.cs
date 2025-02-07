@@ -141,16 +141,7 @@ public class ArtistService(
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public void ClearCache(Artist artist)
-    {
-        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.ApiKey));
-        CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.NameNormalized));
-        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Id));
-        if (artist.MusicBrainzId != null)
-        {
-            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
-        }
-    }
+
 
     /// <summary>
     ///     Find the Artist using various given Ids.
@@ -251,17 +242,24 @@ public class ArtistService(
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
+    
+    public void ClearCache(Artist artist)
+    {
+        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.ApiKey));
+        CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.NameNormalized));
+        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Id));
+        if (artist.MusicBrainzId != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
+        }
+    }
 
     public async Task ClearCacheAsync(int artistId, CancellationToken cancellationToken)
     {
         var artist = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
-        if (artist?.Data != null)
-        {
-            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.Data.ApiKey));
-            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.Data.NameNormalized));
-            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Data.Id));
-        }
+        ClearCache(artist.Data!);
     }
+
 
     public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] artistIds, CancellationToken cancellationToken = default)
     {

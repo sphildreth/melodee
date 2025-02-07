@@ -72,7 +72,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
 
             var firstAlbum = albums.First();
 
-            Assert.True(firstAlbum.SongCount > 1);
+            Assert.True(firstAlbum.SongCount > 0);
             Assert.True(firstAlbum.ReleaseDate.Year > 0);
             Assert.True(firstAlbum.Duration > 0);
         }

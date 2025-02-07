@@ -949,8 +949,8 @@ public class OpenSubsonicApiService(
                     {
                         var userResult = await userService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
                         var userImageLibrary = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
-                        var userImageFileName = userResult.Data.ToAvatarFileName(userImageLibrary.Data.Path);
-                        var userImageFileInfo = new FileInfo(userImageFileName);
+                        var userImageFileName = userResult.Data?.ToAvatarFileName(userImageLibrary.Data.Path);
+                        var userImageFileInfo = new FileInfo(userImageFileName ?? string.Empty);
                         if (userImageFileInfo.Exists)
                         {
                             result = await File.ReadAllBytesAsync(userImageFileInfo.FullName, cancellationToken).ConfigureAwait(false);
@@ -1733,23 +1733,13 @@ public class OpenSubsonicApiService(
         }
         
         long totalCount = 0;
-        ArtistSearchResult[] artists = [];
-        AlbumSearchResult[] albums = [];
-        SongSearchResult[] songs = [];
+        ArtistSearchResult[] artists;
+        AlbumSearchResult[] albums;
+        SongSearchResult[] songs;
 
-        if (!request.IsValid)
-        {
-            return new ResponseModel
-            {
-                TotalCount = totalCount,
-                UserInfo = authResponse.UserInfo,
-                ResponseData = await DefaultApiResponse() with
-                {
-                    Data = new Search3Result(artists, albums, songs),
-                    DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "searchResult3"
-                }            
-            };
-        }        
+        // NOTE:
+        // From "https://opensubsonic.netlify.app/docs/endpoints/search3/" : Servers must support an empty query and return all the data to allow clients to properly access all the media information for offline sync
+        // This means that request queries when "Search3" can be empty
         
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -2145,27 +2135,23 @@ public class OpenSubsonicApiService(
         }
 
         var result = false;
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        var idValue = id ?? albumId ?? artistId;
+        var apiKey = ApiKeyFromId(idValue);
+        if (apiKey != null)
         {
-            var idValue = id ?? albumId ?? artistId;
-            var apiKey = ApiKeyFromId(idValue);
-            if (apiKey != null)
+            if (IsApiIdForArtist(idValue))
             {
-                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-                if (IsApiIdForArtist(idValue))
-                {
-                    result = (await userService.ToggleAristStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
-                }
+                result = (await userService.ToggleAristStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
+            }
 
-                if (IsApiIdForAlbum(idValue))
-                {
-                    result = (await userService.ToggleAlbumStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
-                }
+            if (IsApiIdForAlbum(idValue))
+            {
+                result = (await userService.ToggleAlbumStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
+            }
 
-                if (IsApiIdForSong(idValue))
-                {
-                    result = (await userService.ToggleSongStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
-                }
+            if (IsApiIdForSong(idValue))
+            {
+                result = (await userService.ToggleSongStarAsync(authResponse.UserInfo.Id, apiKey.Value, isStarred, cancellationToken).ConfigureAwait(false)).Data;
             }
         }
 

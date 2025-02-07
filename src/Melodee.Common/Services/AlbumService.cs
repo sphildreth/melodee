@@ -6,6 +6,7 @@ using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
@@ -107,6 +108,7 @@ public class AlbumService(
             Data = albums
         };
     }
+    
 
     public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] albumIds, CancellationToken cancellationToken = default)
     {
@@ -274,4 +276,83 @@ public class AlbumService(
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
+    
+    public void ClearCache(Album album)
+    {
+        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.ApiKey));
+        CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.NameNormalized));
+        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Id));
+        if (album.MusicBrainzId != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.MusicBrainzId.Value.ToString()));
+        }
+    }
+    
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Album album, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(album, nameof(album));
+
+        var validationResult = ValidateModel(album);
+        if (!validationResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            {
+                Data = false,
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
+            };
+        }
+
+        bool result;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbDetail = await scopedContext
+                .Albums
+                .FirstOrDefaultAsync(x => x.Id == album.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (dbDetail == null)
+            {
+                return new MelodeeModels.OperationResult<bool>
+                {
+                    Data = false,
+                    Type = MelodeeModels.OperationResponseType.NotFound
+                };
+            }
+
+            dbDetail.AlternateNames = album.AlternateNames;
+            dbDetail.AmgId = album.AmgId;
+            dbDetail.Description = album.Description;
+            dbDetail.Directory = album.Directory;
+            dbDetail.DiscogsId = album.DiscogsId;
+            dbDetail.ImageCount = album.ImageCount;
+            dbDetail.IsLocked = album.IsLocked;
+            dbDetail.ItunesId = album.ItunesId;
+            dbDetail.LastFmId = album.LastFmId;
+            dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            dbDetail.MusicBrainzId = album.MusicBrainzId;
+            dbDetail.Name = album.Name;
+            dbDetail.NameNormalized = album.NameNormalized;
+            dbDetail.Notes = album.Notes;
+            dbDetail.SortName = album.SortName;
+            dbDetail.SortOrder = album.SortOrder;
+            dbDetail.SpotifyId = album.SpotifyId;
+            dbDetail.Tags = album.Tags;
+            dbDetail.WikiDataId = album.WikiDataId;
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+
+            if (result)
+            {
+                ClearCache(dbDetail);
+            }
+        }
+
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+    
+    
 }
