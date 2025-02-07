@@ -6,6 +6,8 @@
 
 Melodee is a music system designed to handle libraries with tens of millions of songs with ease and speed.
 
+[![.NET](https://github.com/sphildreth/melodee/actions/workflows/dotnet.yml/badge.svg)](https://github.com/sphildreth/melodee/actions/workflows/dotnet.yml)
+
 ![Melodee.Blazor](graphics/Snapshot_2025-02-04_23-06-24.png)
 
 ## Components
