@@ -124,12 +124,6 @@
                         }
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.DiscCount)" Filterable="false" Title="Discs"
-                                      Width="90px">
-                    <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatNumber(data.DiscCount)"/>
-                    </Template>
-                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Filterable="false" Title="Songs"
                                       Width="90px">
                     <Template Context="data">

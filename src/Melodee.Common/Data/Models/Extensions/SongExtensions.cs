@@ -58,7 +58,7 @@ public static class SongExtensions
             Path.Combine(album.Directory, song.FileName),
             song.PlayedCount,
             song.LastPlayedAt?.ToString(),
-            song.AlbumDisc.DiscNumber,
+            1,
             song.CreatedAt.ToString(),
             album.ToApiKey(),
             album.Artist.ToApiKey(),

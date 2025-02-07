@@ -21,6 +21,7 @@ public static class SettingRegistry
     public const string ImagingMediumSize = "imaging.mediumSize";
     public const string ImagingLargeSize = "imaging.largeSize";
     public const string JobsArtistHousekeepingCronExpression = "jobs.artistHousekeeping.cronExpression";
+    public const string JobsArtistSearchEngineHousekeepingCronExpression = "jobs.artistSearchEngineHousekeeping.cronExpression";
     public const string JobsLibraryProcessCronExpression = "jobs.libraryProcess.cronExpression";
     public const string JobsLibraryInsertCronExpression = "jobs.libraryInsert.cronExpression";
     public const string JobsMusicBrainzUpdateDatabaseCronExpression = "jobs.musicbrainzUpdateDatabase.cronExpression";
@@ -77,6 +78,7 @@ public static class SettingRegistry
     public const string SearchEngineMusicBrainzImportBatchSize = "searchEngine.musicbrainz.importBatchSize";
     public const string SearchEngineMusicBrainzStoragePath = "searchEngine.musicbrainz.storagePath";
     public const string SearchEngineMusicBrainzImportLastImportTimestamp = "searchEngine.musicbrainz.importLastImportTimestamp";
+    public const string SearchEngineArtistSearchDatabaseRefreshInDays = "searchEngine.artistSearchDatabaseRefreshInDays";
     public const string SearchEngineSpotifyEnabled = "searchEngine.spotify.enabled";
     public const string SearchEngineSpotifyApiKey = "searchEngine.spotify.apiKey";
     public const string SearchEngineSpotifyClientSecret = "searchEngine.spotify.sharedSecret";

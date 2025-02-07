@@ -75,13 +75,6 @@ public class Mp3Files(
                 
                 await HandleDuplicates(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);                
 
-                var songMaxMediaNumber = 1;
-                if (songs.Count > 0)
-                {
-                    var songMediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
-                    songMaxMediaNumber = songMediaNumbers.Length != 0 ? songMediaNumbers.Max() : 1;
-                }
-
                 foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.SongArtistAlbumUniqueId()))
                 {
                     foreach (var song in songsGroupedByAlbum)
@@ -117,7 +110,7 @@ public class Mp3Files(
                                 },
                                 new()
                                 {
-                                    Identifier = MetaTagIdentifier.DiscTotal, Value = songMaxMediaNumber, SortOrder = 4
+                                    Identifier = MetaTagIdentifier.DiscTotal, Value = 1, SortOrder = 4
                                 },
                                 new()
                                 {

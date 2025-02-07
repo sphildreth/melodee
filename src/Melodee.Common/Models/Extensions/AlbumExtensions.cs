@@ -260,38 +260,6 @@ public static class AlbumExtensions
                albumYear <= SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumAlbumYear]);
     }
 
-    public static short MediaCountValue(this Album album)
-    {
-        var discTotal = album.MetaTagValue<short?>(MetaTagIdentifier.DiscTotal);
-        if (discTotal == null)
-        {
-            var discTotalToParse = album.MetaTagValue<string?>(MetaTagIdentifier.DiscNumberTotal);
-            if (discTotalToParse != null)
-            {
-                var discTotalParts = discTotalToParse.Split('/');
-                if (discTotalParts.Length > 1)
-                {
-                    discTotal = SafeParser.ToNumber<short?>(discTotalParts[1]);
-                }
-                else
-                {
-                    discTotal = SafeParser.ToNumber<short?>(discTotalToParse);
-                }
-            }
-            else
-            {
-                discTotal = album.Songs?.FirstOrDefault(x => x.MediaTotalNumber() > 0)?.MediaTotalNumber();
-            }
-        }
-
-        if (discTotal == null || (discTotal < 1 && (album.Songs?.Any() ?? false)))
-        {
-            discTotal = SafeParser.ToNumber<short>(album.Songs?.GroupBy(x => x.MediaNumber()).Count());
-        }
-
-        return discTotal ?? SafeParser.ToNumber<short>(album.Songs?.Any() ?? false ? 1 : 0);
-    }
-
     public static short SongTotalValue(this Album album)
     {
         var songTotalFromAlbum = album.MetaTagValue<short?>(MetaTagIdentifier.SongTotal);

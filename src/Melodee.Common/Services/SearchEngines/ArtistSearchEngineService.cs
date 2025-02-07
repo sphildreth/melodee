@@ -508,7 +508,7 @@ public class ArtistSearchEngineService(
         };
     }
 
-    public async Task<OperationResult<bool>> RefreshAlbums(Artist[] selectedArtists, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> RefreshArtistAlbums(Artist[] selectedArtists, CancellationToken cancellationToken = default)
     {
         var result = false;
 
@@ -518,14 +518,25 @@ public class ArtistSearchEngineService(
             {
                 var dbArtist = await scopedContext
                     .Artists
-                    .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
                 dbArtist?.Albums.Clear();
             }
+            var now = DateTime.UtcNow;
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             foreach (var artist in selectedArtists)
             {
                 await DoSearchAsync(new ArtistQuery { Name = artist.Name }, null, cancellationToken).ConfigureAwait(false);
+                var dbArtist = await scopedContext
+                    .Artists
+                    .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+                if (dbArtist != null)
+                {
+                    dbArtist.LastRefreshed = now;
+                }
             }
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             result = true;
         }
         return new OperationResult<bool>

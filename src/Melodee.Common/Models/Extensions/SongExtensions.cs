@@ -305,9 +305,6 @@ public static class SongExtensions
         int maximumSongNumber,
         int songNumber,
         string? songTitle,
-        int maximumMediaNumber,
-        int mediaNumber,
-        int totalMediaNumber,
         string? extension = null)
     {
         if (songNumber < 1)
@@ -321,25 +318,8 @@ public static class SongExtensions
             Trace.WriteLine($"File [{fileInfo}] has invalid Song title [{songTitle}]");
             songTitle = fileInfo.Name;
         }
-
         var songNumberPaddingLength = SafeParser.ToNumber<short>(maximumSongNumber.ToString().Length);
-        var songMediaNumberPaddingLength = SafeParser.ToNumber<short>(maximumMediaNumber.ToString().Length);
-
         var songNumberValue = songNumber.ToStringPadLeft(songNumberPaddingLength);
-
-        /*
-          Example when not part of a media (totalMediaNumber number is less than 2) set Song 7
-          "0007 Something.mpg"
-
-          Example media 1 Song 14
-          "001-0014 Something.mpg"
-
-          Example media 2 Song 5
-          "002-0005 Something Else.mpg"
-        */
-        var disc = totalMediaNumber > 1 ? $"{mediaNumber.ToStringPadLeft(songMediaNumberPaddingLength)}-" : string.Empty;
-
-        // Get new name for file
         var fileNameFromTitle = songTitle.ToTitleCase(false)?.ToFileNameFriendly();
         if (fileNameFromTitle != null && fileNameFromTitle.StartsWith(songNumberValue))
         {
@@ -351,7 +331,7 @@ public static class SongExtensions
                 .ToTitleCase(false);
         }
 
-        return $"{disc}{songNumberValue} {fileNameFromTitle}{extension ?? fileInfo.Extension}";
+        return $"{songNumberValue} {fileNameFromTitle}{extension ?? fileInfo.Extension}";
     }
 
     public static string ToSongFileName(this Song song, FileSystemDirectoryInfo directoryInfo)
@@ -360,9 +340,6 @@ public static class SongExtensions
             song.File.ToFileInfo(directoryInfo),
             9999,
             song.SongNumber(),
-            song.Title(),
-            999,
-            song.MediaNumber(),
-            song.MediaTotalNumber());
+            song.Title());
     }
 }

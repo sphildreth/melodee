@@ -446,7 +446,6 @@ public class LibraryInsertJob(
                             Artist = dbArtist,
                             CreatedAt = _now,
                             Directory = albumDirectory,
-                            DiscCount = melodeeAlbum.MediaCountValue(),
                             DiscogsId = melodeeAlbum.DiscogsId,
                             Duration = melodeeAlbum.TotalDuration(),
                             Genres = melodeeAlbum.Genre() == null ? null : melodeeAlbum.Genre()!.Split('/'),
@@ -477,25 +476,8 @@ public class LibraryInsertJob(
                             dbArtist.Id,
                             melodeeAlbum.Id,
                             nameNormalized);
-                        for (short i = 1; i <= melodeeAlbum.MediaCountValue(); i++)
-                        {
-                            newAlbum.Discs.Add(new dbModels.AlbumDisc
-                            {
-                                DiscNumber = i,
-                                Title = melodeeAlbum.DiscSubtitle(i),
-                                SongCount = SafeParser.ToNumber<short>(melodeeAlbum.Songs?.Where(x => x.MediaNumber() == i).Count() ?? 0)
-                            });
-                        }
 
-                        foreach (var disc in newAlbum.Discs)
-                        {
-                            if (stopProcessingAlbum)
-                            {
-                                break;
-                            }
-
-                            var songsForDisc = melodeeAlbum.Songs?.Where(x => x.MediaNumber() == disc.DiscNumber).ToArray() ?? [];
-                            foreach (var song in songsForDisc)
+                            foreach (var song in melodeeAlbum.Songs ?? [])
                             {
                                 currentSong = song;
                                 var mediaFile = song.File.ToFileInfo(melodeeAlbum.Directory) ?? throw new Exception("Song File is required.");
@@ -525,7 +507,6 @@ public class LibraryInsertJob(
                                     Title = songTitle,
                                     TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
                                     SongNumber = song.SongNumber(),
-                                    AlbumDiscId = disc.Id,
                                     ChannelCount = song.ChannelCount(),
                                     Genres = (song.Genre()?.Nullify() ?? melodeeAlbum.Genre()?.Nullify())?.Split('/'),
                                     IsVbr = song.IsVbr(),
@@ -535,11 +516,9 @@ public class LibraryInsertJob(
                                     SortOrder = song.SortOrder,
                                     TitleSort = songTitle.CleanString(true)
                                 };
-                                disc.Songs.Add(s);
-
                                 _totalSongsInserted++;
                             }
-                        }
+                        
 
                         dbAlbumsToAdd.Add(newAlbum);
                     }
@@ -566,7 +545,7 @@ public class LibraryInsertJob(
                         var melodeeAlbum = melodeeAlbumsForDirectory.First(x => x.Id == dbAlbum.ApiKey);
                         foreach (var song in melodeeAlbum.Songs ?? [])
                         {
-                            var dbSong = dbAlbum.Discs.SelectMany(x => x.Songs).FirstOrDefault(x => x.ApiKey == song.Id);
+                            var dbSong = dbAlbum.Songs.FirstOrDefault(x => x.ApiKey == song.Id);
                             if (dbSong != null)
                             {
                                 var contributorsForSong = await GetContributorsForSong(song, dbAlbum.ArtistId, dbAlbum.Id, dbSong.Id, cancellationToken);

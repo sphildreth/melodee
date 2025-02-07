@@ -9,10 +9,10 @@
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Path="@($"/data/artist/{_song.AlbumDisc?.Album?.Artist?.ApiKey}")"
-                          Text="@_song.AlbumDisc?.Album?.Artist?.Name"/>
-    <RadzenBreadCrumbItem Path="@($"/data/album/{_song.AlbumDisc?.Album?.ApiKey}")"
-                          Text="@_song.AlbumDisc?.Album?.Name"/>
+    <RadzenBreadCrumbItem Path="@($"/data/artist/{_song.Album?.Artist?.ApiKey}")"
+                          Text="@_song.Album?.Artist?.Name"/>
+    <RadzenBreadCrumbItem Path="@($"/data/album/{_song.Album?.ApiKey}")"
+                          Text="@_song.Album?.Name"/>
     <RadzenBreadCrumbItem Path="/data/songs" Text="Songs"/>
     <RadzenBreadCrumbItem Icon="music_note" Text="@_song.Title"/>
 </RadzenBreadCrumb>

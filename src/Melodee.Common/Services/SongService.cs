@@ -38,10 +38,9 @@ public class SongService(
                 var sqlStartFragment = """
                                        SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber",
                                               a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                                              ad."DiscNumber" as "DiscNumber", s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                                              s."FileSize", s."Duration", s."CreatedAt", s."Tags"
                                        FROM "Songs" s
-                                       join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                       join "Albums" a on (ad."AlbumId" = a."Id")
+                                       join "Albums" a on (s."AlbumId" = a."Id")
                                        join "Artists" ar on (a."ArtistId" = ar."Id")
                                        """;
                 var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment);
@@ -71,7 +70,7 @@ public class SongService(
                 return await scopedContext
                     .Songs
                     .Include(x => x.Contributors).ThenInclude(x => x.Artist)
-                    .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                    .Include(x => x.Album).ThenInclude(x => x.Artist)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                     .ConfigureAwait(false);

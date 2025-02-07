@@ -155,7 +155,7 @@ public class OpenSubsonicApiService(
                 var playLists = await scopedContext
                     .Playlists
                     .Include(x => x.User)
-                    .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                    .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                     .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                     .Where(x => x.UserId == authResponse.UserInfo.Id)
                     .AsSplitQuery()
@@ -198,7 +198,7 @@ public class OpenSubsonicApiService(
             var playlist = await scopedContext
                 .Playlists
                 .Include(x => x.User)
-                .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                 .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
                 .ConfigureAwait(false);
@@ -369,7 +369,7 @@ public class OpenSubsonicApiService(
             var playlist = await scopedContext
                 .Playlists
                 .Include(x => x.User)
-                .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                 .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
                 .ConfigureAwait(false);
@@ -687,7 +687,7 @@ public class OpenSubsonicApiService(
             UserInfo = authResponse.UserInfo,
             ResponseData = authResponse.ResponseData with
             {
-                Data = songResponse.Data?.ToApiChild(songResponse.Data.AlbumDisc.Album, userSong),
+                Data = songResponse.Data?.ToApiChild(songResponse.Data.Album, userSong),
                 DataPropertyName = "song"
             }
         };
@@ -731,7 +731,7 @@ public class OpenSubsonicApiService(
                 Artists = album.ContributingArtists(),
                 CoverArt = album.ToApiKey(),
                 Created = album.CreatedAt.ToString(),
-                DiscTitles = album.Discs.Select(x => new DiscTitle(x.DiscNumber, x.Title ?? string.Empty)).ToArray(),
+                DiscTitles = [],
                 DisplayArtist = album.Artist.Name,
                 Duration = album.Duration.ToSeconds(),
                 Genre = album.Genres?.ToCsv(),
@@ -746,7 +746,7 @@ public class OpenSubsonicApiService(
                 PlayCount = album.PlayedCount,
                 Played = album.LastPlayedAt.ToString(),
                 RecordLabels = album.RecordLabels(),
-                Song = album.Discs.SelectMany(x => x.Songs).OrderBy(x => x.AlbumDisc.DiscNumber).ThenBy(x => x.SongNumber)
+                Song = album.Songs.OrderBy(x => x.SongNumber)
                     .Select(x => x.ToApiChild(album, userSongsForAlbum.FirstOrDefault(us => us.SongId == x.Id)))
                     .ToArray(),
                 SongCount = album.SongCount ?? 0,
@@ -1334,7 +1334,7 @@ public class OpenSubsonicApiService(
         {
             var user = await userService.GetByUsernameAsync(apiRequest.Username!, cancellationToken).ConfigureAwait(false);
             var usersPlayQues = await scopedContext
-                .PlayQues.Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                .PlayQues.Include(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Where(x => x.UserId == user.Data!.Id)
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -1347,7 +1347,7 @@ public class OpenSubsonicApiService(
                 ChangedBy = current?.ChangedBy ?? user.Data!.UserName,
                 Changed = current?.LastUpdatedAt.ToString() ?? string.Empty,
                 Username = user.Data!.UserName,
-                Entry = usersPlayQues.Select(x => x.Song.ToApiChild(x.Song.AlbumDisc.Album, null)).ToArray()
+                Entry = usersPlayQues.Select(x => x.Song.ToApiChild(x.Song.Album, null)).ToArray()
             };
 
             return new ResponseModel
@@ -1681,14 +1681,14 @@ public class OpenSubsonicApiService(
         {
             var nowPlayingSongApiKeys = nowPlaying.Data.Select(x => x.Scrobble.SongApiKey).ToList();
             var nowPlayingSongs = await (from s in scopedContext
-                        .Songs.Include(x => x.AlbumDisc)
+                        .Songs.Include(x => x.Album)
                     where nowPlayingSongApiKeys.Contains(s.ApiKey)
                     select s)
                 .AsNoTrackingWithIdentityResolution()
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
             var nowPlayingSongIds = nowPlayingSongs.Select(x => x.Id).ToArray();
-            var nowPlayingAlbumIds = nowPlayingSongs.Select(x => x.AlbumDisc).Select(x => x.AlbumId).Distinct().ToArray();
+            var nowPlayingAlbumIds = nowPlayingSongs.Select(x => x.AlbumId).Distinct().ToArray();
             var nowPlayingSongsAlbums = await (from a in scopedContext.Albums.Include(x => x.Artist)
                     where nowPlayingAlbumIds.Contains(a.Id)
                     select a)
@@ -1705,7 +1705,7 @@ public class OpenSubsonicApiService(
 
             foreach (var nowPlayingSong in nowPlayingSongs)
             {
-                var album = nowPlayingSongsAlbums.First(x => x.Id == nowPlayingSong.AlbumDisc.AlbumId);
+                var album = nowPlayingSongsAlbums.First(x => x.Id == nowPlayingSong.AlbumId);
                 var userSong = nowPlayingUserSongs.FirstOrDefault(x => x.SongId == nowPlayingSong.Id);
                 var nowPlayingSongUniqueId = SafeParser.Hash(authResponse.UserInfo.ApiKey.ToString(), nowPlayingSong.ApiKey.ToString());
                 data.Add(nowPlayingSong.ToApiChild(album, userSong, nowPlaying.Data.FirstOrDefault(x => x.UniqueId == nowPlayingSongUniqueId)));
@@ -1937,7 +1937,7 @@ public class OpenSubsonicApiService(
                         var songIds = albumSongInfos.Select(x => x.Id).ToArray();
                         var albumSongs = await scopedContext
                             .Songs
-                            .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                            .Include(x => x.Album).ThenInclude(x => x.Artist)
                             .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                             .Where(x => songIds.Contains(x.Id))
                             .ToArrayAsync(cancellationToken)
@@ -1950,7 +1950,7 @@ public class OpenSubsonicApiService(
                             albumInfo.CalculatedRating,
                             albumInfo.PlayCount,
                             albumInfo.Played.ToString(),
-                            albumSongs.Select(x => x.ToApiChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault())).ToArray());
+                            albumSongs.Select(x => x.ToApiChild(x.Album, x.UserSongs.FirstOrDefault())).ToArray());
                     }
                 }
             }
@@ -2322,14 +2322,14 @@ public class OpenSubsonicApiService(
             var topSongsResult = await artistSearchEngineService.DoArtistTopSongsSearchAsync(artist, artistId, count, cancellationToken).ConfigureAwait(false);
             var songIds = topSongsResult.Data.Where(x => x.Id != null).Select(x => x.Id).ToArray();
             var songs = await scopedContext
-                .Songs.Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                .Songs.Include(x => x.Album).ThenInclude(x => x.Artist)
                 .Include(x => x.UserSongs.Where(us => us.UserId == authResponse.UserInfo.Id))
                 .Where(x => songIds.Contains(x.Id)).ToArrayAsync(cancellationToken).ConfigureAwait(false);
             data = (from s in songs
                     join tsr in topSongsResult.Data on s.Id equals tsr.Id
                     orderby tsr.SortOrder
                     select s
-                ).Select(x => x.ToApiChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault())).ToArray();
+                ).Select(x => x.ToApiChild(x.Album, x.UserSongs.FirstOrDefault())).ToArray();
         }
 
         return new ResponseModel
@@ -2384,13 +2384,13 @@ public class OpenSubsonicApiService(
             albums = userStarredAlbums.Select(x => x.Album.ToArtistID3(x, null)).ToArray();
 
             var userStarredSongs = await scopedContext
-                .UserSongs.Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                .UserSongs.Include(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
                 .OrderBy(x => x.Id)
                 .Take(indexLimit)
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
-            songs = userStarredSongs.Select(x => x.Song.ToApiChild(x.Song.AlbumDisc.Album, x)).ToArray();
+            songs = userStarredSongs.Select(x => x.Song.ToApiChild(x.Song.Album, x)).ToArray();
         }
 
         return new ResponseModel
@@ -2443,13 +2443,13 @@ public class OpenSubsonicApiService(
             albums = userStarredAlbums.Select(x => x.Album.ToApiChild(x)).ToArray();
 
             var userStarredSongs = await scopedContext
-                .UserSongs.Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                .UserSongs.Include(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Where(x => x.UserId == authResponse.UserInfo.Id && x.IsStarred)
                 .OrderBy(x => x.Id)
                 .Take(indexLimit)
                 .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
-            songs = userStarredSongs.Select(x => x.Song.ToApiChild(x.Song.AlbumDisc.Album, x)).ToArray();
+            songs = userStarredSongs.Select(x => x.Song.ToApiChild(x.Song.Album, x)).ToArray();
         }
 
         return new ResponseModel
@@ -2507,11 +2507,11 @@ public class OpenSubsonicApiService(
 
             var dbSongIds = (await dbConn.QueryAsync<int>(sql, new { genre, offset, takeSize = count < indexLimit ? count : indexLimit }).ConfigureAwait(false)).ToArray();
             var dbSongs = await (from s in scopedContext.Songs
-                    .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                    .Include(x => x.Album).ThenInclude(x => x.Artist)
                     .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                 join ss in dbSongIds on s.Id equals ss
                 select s).ToArrayAsync(cancellationToken).ConfigureAwait(false);
-            songs = dbSongs.Select(x => x.ToApiChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault())).ToArray();
+            songs = dbSongs.Select(x => x.ToApiChild(x.Album, x.UserSongs.FirstOrDefault())).ToArray();
         }
 
         return new ResponseModel
@@ -2540,7 +2540,7 @@ public class OpenSubsonicApiService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var userBookmarks = await scopedContext.Bookmarks
-                .Include(x => x.Song).ThenInclude(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                .Include(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
                 .Include(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                 .Where(x => x.UserId == authResponse.UserInfo.Id)
                 .ToArrayAsync(cancellationToken)
@@ -2828,11 +2828,11 @@ public class OpenSubsonicApiService(
                     })
                 .ConfigureAwait(false)).ToArray();
             var dbSongs = await (from s in scopedContext.Songs
-                    .Include(x => x.AlbumDisc).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                    .Include(x => x.Album).ThenInclude(x => x.Artist)
                     .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
                 join ss in dbSongIds on s.Id equals ss
                 select s).ToArrayAsync(cancellationToken).ConfigureAwait(false);
-            songs = dbSongs.Select(x => x.ToApiChild(x.AlbumDisc.Album, x.UserSongs.FirstOrDefault())).ToArray();
+            songs = dbSongs.Select(x => x.ToApiChild(x.Album, x.UserSongs.FirstOrDefault())).ToArray();
         }
 
         return new ResponseModel

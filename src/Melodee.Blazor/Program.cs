@@ -206,6 +206,20 @@ if (!isQuartzDisabled)
                 .StartNow()
                 .Build());
     }
+    
+    var artistSearchEngineHousekeepingCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsArtistSearchEngineHousekeepingCronExpression);
+    if (artistSearchEngineHousekeepingCronExpression.Nullify() != null)
+    {
+        await quartzScheduler.ScheduleJob(
+            JobBuilder.Create<ArtistSearchEngineRepositoryHousekeepingJob>()
+                .WithIdentity(JobKeyRegistry.ArtistSearchEngineHousekeepingJobJobKey)
+                .Build(),
+            TriggerBuilder.Create()
+                .WithIdentity("ArtistSearchEngineHousekeepingJobJobKey-trigger")
+                .WithCronSchedule(artistSearchEngineHousekeepingCronExpression!)
+                .StartNow()
+                .Build());
+    }    
 
     var libraryInboundProcessJobKeyCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsLibraryProcessCronExpression);
     if (libraryInboundProcessJobKeyCronExpression.Nullify() != null)

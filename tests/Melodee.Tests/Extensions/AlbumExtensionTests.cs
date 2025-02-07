@@ -103,12 +103,6 @@ public class AlbumExtensionTests
     }
 
     [Fact]
-    public void ValidateDiscTotalValue()
-    {
-        Assert.Equal(2, NewAlbum().MediaCountValue());
-    }
-
-    [Fact]
     public void ValidateSongTotalValueUsingSongTotal()
     {
         Assert.Equal(1, NewAlbum().SongTotalValue());

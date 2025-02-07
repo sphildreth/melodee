@@ -464,16 +464,12 @@ public sealed class CueSheet(
                     if (songNumber > 0 && !string.IsNullOrWhiteSpace(songTitle))
                     {
                         var mediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscNumber)?.Value as int? ?? 1;
-                        var totalMediaNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.DiscTotal)?.Value as int? ?? 1;
                         songTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
                         var songFileName = SongExtensions.SongFileName(
                             fileInfo,
                             SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
                             songNumber,
                             songTitle,
-                            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
-                            mediaNumber,
-                            totalMediaNumber,
                             ".mp3");
                         songs.Add(new Common.Models.Song
                         {
@@ -509,9 +505,6 @@ public sealed class CueSheet(
                 SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
                 songNumber,
                 songTitle,
-                SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumMediaNumber]),
-                mediaNumber,
-                totalMediaNumber,
                 ".mp3");
             songs.Add(new Common.Models.Song
             {

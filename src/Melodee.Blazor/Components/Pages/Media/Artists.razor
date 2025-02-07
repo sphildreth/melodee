@@ -246,7 +246,7 @@
         MainLayoutProxyService.ToggleSpinnerVisible();
         try
         {
-            var result = await ArtistSearchEngineService.RefreshAlbums(_selectedArtists.ToArray());
+            var result = await ArtistSearchEngineService.RefreshArtistAlbums(_selectedArtists.ToArray());
             await _grid.RefreshDataAsync();
             NotificationService.Notify(NotificationMessageForResult(result, "refreshing albums", ToastTime));
         }

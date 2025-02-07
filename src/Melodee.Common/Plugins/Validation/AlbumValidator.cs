@@ -110,7 +110,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             AllSongTitlesDoNotHaveUnwantedText(album);
             AlbumArtistDoesNotHaveUnwantedText(album);
             AlbumTitleDoesNotHaveUnwantedText(album);
-            DoMediaTotalMatchMediaNumbers(album);
             DoAllSongsHaveMediaNumberSet(album);
             DoesSongTotalMatchSongCount(album);
             DoesAlbumHaveCoverImage(album);
@@ -242,22 +241,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         }
     }
 
-    private void DoMediaTotalMatchMediaNumbers(Album album)
-    {
-        var songs = album.Songs?.ToArray() ?? [];
-        var mediaNumbers = songs.Select(x => x.MediaNumber()).Distinct().ToArray();
-        var albumMediaTotal = album.MediaCountValue();
-        var result = mediaNumbers.All(mediaNumber => mediaNumber <= albumMediaTotal);
-        if (!result)
-        {
-            _validationMessages.Add(new ValidationResultMessage
-            {
-                Message = $"Album media total [{albumMediaTotal}] does not match Song medias [{string.Join(',', mediaNumbers)}].",
-                Severity = ValidationResultMessageSeverity.Critical
-            });
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.MediaTotalNumberDoesntMatchMediaFound;
-        }
-    }
 
     private void AreSongsUniquelyNumbered(Album album)
     {

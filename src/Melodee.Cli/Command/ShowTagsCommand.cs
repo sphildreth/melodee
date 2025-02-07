@@ -70,7 +70,6 @@ public class ShowTagsCommand : AsyncCommand<ShowTagsSettings>
                 throw new Exception($"Media file directory [{settings.Filename}] does not exist.");
             }
 
-            var startTicks = Stopwatch.GetTimestamp();
             Log.Debug("\ud83d\udcdc Processing File [{MediaFilename}]", settings.Filename);
 
             var isValid = false;

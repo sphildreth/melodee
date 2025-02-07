@@ -142,11 +142,6 @@
                         <RadzenLink Text="@data.ArtistName" Path="@($"/data/artist/{data.ArtistApiKey}")"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.DiscCount)" Title="Discs" Width="90px">
-                    <Template Context="data">
-                        <RadzenText Text="@CurrentUser?.FormatNumber(data.DiscCount)"/>
-                    </Template>
-                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Title="Songs" Width="90px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatNumber(data.SongCount)"/>

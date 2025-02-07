@@ -183,7 +183,6 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <CondensedStatistic Label="Disc Count" Statistic="@(_album.DiscCount.ToStringPadLeft(3))"/>
                             <CondensedStatistic Label="Song Count" Statistic="@(_album.SongCount.ToStringPadLeft(4))"/>
                             <CondensedStatistic Label="Played Total"
                                                 Statistic="@(_album.PlayedCount.ToStringPadLeft(6))"/>
@@ -222,7 +221,7 @@
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    @foreach (var song in _album.Discs.SelectMany(x => x.Songs).OrderBy(x => x.AlbumDisc.DiscNumber).ThenBy(x => x.SongNumber))
+                                    @foreach (var song in _album.Songs.OrderBy(x => x.SongNumber))
                                     {
                                         <tr>
                                             <th scope="row">
@@ -239,7 +238,7 @@
                                                     @onclick="@(() => IsSongStarredClicked(song))"
                                                     Style="cursor:pointer;"/>
                                             </th>
-                                            <td>@($"{song.AlbumDisc.DiscNumber.ToStringPadLeft(2)}.{song.SongNumber.ToStringPadLeft(3)}")</td>
+                                            <td>@($"{song.SongNumber.ToStringPadLeft(3)}")</td>
                                             <td>@song.Title</td>
                                             <td>@CurrentUser!.FormatDuration(song.Duration.ToDuration())</td>
                                         </tr>
@@ -312,7 +311,6 @@
             LibraryId = 0,
             CreatedAt = default
         },
-        Discs = new List<AlbumDisc>(),
         Name = string.Empty,
         NameNormalized = string.Empty,
         Directory = string.Empty,

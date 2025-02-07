@@ -822,7 +822,7 @@ public class LibraryService(
 
                                         var aPath = $"{d.Name}/";
                                         var dbAlbum = await scopedContext
-                                            .Albums.Include(x => x.Discs).ThenInclude(x => x.Songs)
+                                            .Albums.Include(x => x.Songs)
                                             .FirstOrDefaultAsync(x => x.Directory == aPath, cancellationToken)
                                             .ConfigureAwait(false);
                                         if (dbAlbum == null)
@@ -834,7 +834,7 @@ public class LibraryService(
                                         var albumSongsFound = 0;
                                         foreach (var songFound in d.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Where(x => FileHelper.IsFileMediaType(x.Extension)).OrderBy(x => x.Name))
                                         {
-                                            var dbSong = dbAlbum?.Discs.SelectMany(x => x.Songs).FirstOrDefault(x => x.FileName == songFound.Name);
+                                            var dbSong = dbAlbum?.Songs.FirstOrDefault(x => x.FileName == songFound.Name);
                                             if (dbSong == null)
                                             {
                                                 result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Unknown song", songFound.Name, StatisticColorRegistry.Error, $"Album Id [{dbAlbum?.Id}]: Unable to find song for album"));
@@ -1012,7 +1012,7 @@ public class LibraryService(
                     {
                         var aPath = $"{directoryInfo.Name}/";
                         var dbAlbum = await scopedContext
-                            .Albums.Include(x => x.Discs).ThenInclude(x => x.Songs)
+                            .Albums.Include(x => x.Songs)
                             .FirstOrDefaultAsync(x => x.Directory == aPath, cancellationToken)
                             .ConfigureAwait(false);
                         if (dbAlbum == null)

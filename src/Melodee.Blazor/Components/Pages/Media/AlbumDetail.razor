@@ -40,7 +40,6 @@
     <RadzenMenu>
         <RadzenMenuItem Text="Edit" Icon="edit">
             <RadzenMenuItem Text="Edit album" Icon="edit" Value="@MenuItems.EditAlbum" Click="OnMenuItemClicked"></RadzenMenuItem>
-            <RadzenMenuItem Text="Move selected songs to next media" Icon="place_item" Value="@MenuItems.MoveSelectedSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
             <RadzenMenuItem Text="Renumber all songs" Icon="format_list_numbered" Value="@MenuItems.RenumberSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
             <RadzenMenuItem Text="Set artist on all songs" Icon="artist" Value="@MenuItems.SetArtistOnAllSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
         </RadzenMenuItem>
@@ -138,8 +137,6 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <CondensedStatistic Label="Disc Count"
-                                                Statistic="@(_album.MediaCountValue().ToStringPadLeft(3))"/>
                             <CondensedStatistic Label="Song Count"
                                                 Statistic="@(_album.SongTotalValue().ToStringPadLeft(4))"/>
                             <CondensedStatistic Label="Created"
@@ -236,7 +233,6 @@
 
     private enum MenuItems
     {
-        MoveSelectedSongs,
         RenumberSongs,
         EditAlbum,
         SetArtistOnAllSongs,
@@ -512,17 +508,6 @@
         OperationResult<bool>? result;
         switch ((MenuItems)arg.Value)
         {
-            case MenuItems.MoveSelectedSongs:
-                _album = await MediaEditService.MoveSelectedSongsToNextMediaAsync(_album, _selectedSongs.ToArray()).ConfigureAwait(false);
-                _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
-                result = await MediaEditService.SaveMelodeeAlbum(_album);
-                if (result.Data)
-                {
-                    NotificationService.Notify(NotificationMessageForResult(result, "renumbered songs", ToastTime));
-                }
-                _selectedSongs.Clear();
-                break;
-
             case MenuItems.RenumberSongs:
                 _album = await MediaEditService.RenumberSongsAsync(_album).ConfigureAwait(false);
                 result = await MediaEditService.SaveMelodeeAlbum(_album);

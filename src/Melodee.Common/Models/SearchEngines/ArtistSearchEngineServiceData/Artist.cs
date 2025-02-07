@@ -58,6 +58,13 @@ public record Artist
     
     [NotMapped]
     public int AlbumCount { get; set; }
+    
+    public bool? IsLocked { get; init; }
+    
+    /// <summary>
+    /// Last time the Artist albums where refreshed from search engine plugins.
+    /// </summary>
+    public DateTimeOffset? LastRefreshed { get; set; }
 
     public override string ToString() => $"{Name} ({Id}) MusicBrainzId: [{MusicBrainzId}] SpotifyId: [{SpotifyId}]";
 }

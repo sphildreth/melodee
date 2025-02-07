@@ -36,7 +36,6 @@ public static class AlbumExtensions
             album.AlternateNames,
             album.Artist.ApiKey,
             album.Artist.Name,
-            album.DiscCount ?? 0,
             album.SongCount ?? 0,
             album.Duration,
             album.CreatedAt,
@@ -63,7 +62,7 @@ public static class AlbumExtensions
     public static ArtistID3[] ContributingArtists(this Album album)
     {
         var result = new List<ArtistID3>();
-        var songsWithContributors = album.Discs.SelectMany(x => x.Songs).Where(x => x.Contributors.Count != 0).ToArray();
+        var songsWithContributors = album.Songs.Where(x => x.Contributors.Count != 0).ToArray();
         if (songsWithContributors.Length > 0)
         {
             foreach (var song in songsWithContributors)

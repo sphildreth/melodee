@@ -21,7 +21,6 @@ public static class AlbumSearchResultExtensions
             searchResult.Artist?.Name ?? string.Empty,
             0,
             0,
-            0,
             Instant.FromDateTimeUtc(DateTime.UtcNow),
             null,
             LocalDate.FromDateTime(SafeParser.ToDateTime(searchResult.ReleaseDate) ?? DateTime.MinValue),

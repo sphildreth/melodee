@@ -586,30 +586,6 @@ public sealed class MediaEditService(
         };
     }
 
-    public async Task<Album> MoveSelectedSongsToNextMediaAsync(Album album, Song[] selected, CancellationToken cancellationToken = default)
-    {
-        CheckInitialized();
-
-        if (album.Songs?.Count() == 0 || selected.Length == 0)
-        {
-            return album;
-        }
-
-        var nextMediaNumber = album.Songs!.Max(x => x.MediaNumber()) + 1;
-        foreach (var song in selected)
-        {
-            album.SetSongTagValue(song.Id, MetaTagIdentifier.DiscNumber, nextMediaNumber);
-            await _editSongPlugin.UpdateSongAsync(album.Directory!, song, cancellationToken);
-        }
-        foreach (var song in album.Songs!)
-        {
-            album.SetSongTagValue(song.Id, MetaTagIdentifier.DiscTotal, nextMediaNumber);
-            await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
-        }
-        album.SetTagValue(MetaTagIdentifier.DiscTotal, nextMediaNumber, doSetSongValue: false);
-        return album;
-    }
-
     public Album SetArtistOnAllSongs(Album album, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
@@ -633,18 +609,10 @@ public sealed class MediaEditService(
         
         try
         {
-            var numberOfMedias = album.MediaCountValue();
-            var mediaLooper = 0;
-            while (mediaLooper <= numberOfMedias)
+            foreach (var dd in album.Songs?.OrderBy(x => x.SortOrder).Select((x, i) => new { x, i = i + 1 }) ?? [])
             {
-                var looper = mediaLooper;
-                foreach (var dd in album.Songs?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i = i + 1 }) ?? [])
-                {
-                    album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
-                }
-
-                mediaLooper++;
+                album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
+                await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
             }
             album.SetTagValue(MetaTagIdentifier.SongTotal, album.Songs!.Count());
         }
@@ -655,6 +623,9 @@ public sealed class MediaEditService(
         return album;
     }
     
+    /// <summary>
+    /// This removes any concept of multi disc as with digital media it is somewhat irrelevant.
+    /// </summary>
     public async Task<OperationResult<(bool, Album)>> RenumberSongs(Album album, bool? doSave = true, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
@@ -662,23 +633,15 @@ public sealed class MediaEditService(
         var result = false;
         try
         {
-            var numberOfMedias = album.MediaCountValue();
-            var mediaLooper = 0;
             var numberOfSongsSeen = 0;
-            while (mediaLooper <= numberOfMedias)
+            foreach (var dd in album.Songs?.Select((x, i) => new { x, i = i + 1 }) ?? [])
             {
-                var looper = mediaLooper;
-                foreach (var dd in album.Songs?.Where(x => x.MediaNumber() == looper).Select((x, i) => new { x, i = i + 1 }) ?? [])
-                {
-                    album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
-                    await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
-                    numberOfSongsSeen++;
-                }
-
-                mediaLooper++;
+                album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
+                await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
+                numberOfSongsSeen++;
             }
             album.SetTagValue(MetaTagIdentifier.SongTotal, numberOfSongsSeen);
-            album.SetTagValue(MetaTagIdentifier.DiscTotal, numberOfMedias);
+            album.SetTagValue(MetaTagIdentifier.DiscTotal, 1);
             if (doSave ?? true)
             {
                 await SaveAlbum(album.Directory, album, cancellationToken);

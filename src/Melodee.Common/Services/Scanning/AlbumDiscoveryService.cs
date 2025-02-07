@@ -272,7 +272,6 @@ public sealed class AlbumDiscoveryService(
             null,
             Guid.Empty,
             x.Artist.Name,
-            x.MediaCountValue(),
             x.SongTotalValue(),
             x.TotalDuration(),
             Instant.FromDateTimeOffset(x.Created),

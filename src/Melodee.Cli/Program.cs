@@ -20,7 +20,9 @@ public static class Program
             });
             config.AddBranch<JobSettings>("job", add =>
             {
-                add.AddCommand<JobRunMusicBrainzUpdateDatabaseJobCommand>("musicbrainz-update")
+                add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("artistsearchengine-refresh")
+                    .WithDescription("Run artist search engine refresh job. This updates the local database of artists albums from search engines.");                
+                add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("musicbrainz-update")
                     .WithDescription("Run MusicBrainz update database job. This downloads MusicBrainz data dump and creates local database for Melodee when scanning metadata.");
             });
             config.AddBranch<LibrarySettings>("library", add =>

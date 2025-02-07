@@ -102,7 +102,7 @@ public sealed record Album
         }
     }
 
-    public string DisplaySummary => $"{this.MediaCountValue().ToStringPadLeft(2)} : {this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
+    public string DisplaySummary => $"{this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
 
     public Album MergeSongs(IEnumerable<Song> pluginResultData)
@@ -135,7 +135,7 @@ public sealed record Album
 
     public override string ToString()
     {
-        return $"AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] MediaCount [{this.MediaCountValue()}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+        return $"AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
     public IEnumerable<MetaTag<object?>> ModifiedTags()

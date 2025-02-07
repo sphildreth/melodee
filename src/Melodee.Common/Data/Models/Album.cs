@@ -62,8 +62,6 @@ public sealed class Album : MetaDataModelBase
 
     public short? SongCount { get; set; }
 
-    public short? DiscCount { get; set; }
-
     public double Duration { get; set; }
 
     /// <summary>
@@ -101,8 +99,8 @@ public sealed class Album : MetaDataModelBase
 
     public ICollection<Contributor> Contributors { get; set; } = new List<Contributor>();
 
-    public ICollection<AlbumDisc> Discs { get; set; } = new List<AlbumDisc>();
-
+    public ICollection<Song> Songs { get; set; } = new List<Song>();
+    
     public ICollection<UserAlbum> UserAlbums { get; set; } = new List<UserAlbum>();
 
     public override string ToString()

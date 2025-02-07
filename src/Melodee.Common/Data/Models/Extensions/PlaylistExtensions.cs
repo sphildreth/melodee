@@ -33,7 +33,7 @@ public static class PlaylistExtensions
             Entry = playlist
                 .Songs?
                 .OrderBy(x => x.PlaylistOrder)
-                .Select(x => x.Song.ToApiChild(x.Song.AlbumDisc.Album, x.Song.UserSongs.FirstOrDefault()))
+                .Select(x => x.Song.ToApiChild(x.Song.Album, x.Song.UserSongs.FirstOrDefault()))
                 .ToArray()
         };
     }

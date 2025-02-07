@@ -1,7 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Data.Validators;
-using Microsoft.EntityFrameworkCore;
+using Melodee.Common.Models.OpenSubsonic;
+using ServiceStack.DataAnnotations;
 
 namespace Melodee.Common.Data.Models;
 
@@ -10,22 +11,22 @@ namespace Melodee.Common.Data.Models;
 ///     <remarks>See https://opensubsonic.netlify.app/docs/responses/child/</remarks>
 /// </summary>
 [Serializable]
-[Index(nameof(Title))]
-[Index(nameof(AlbumDiscId), nameof(SongNumber), IsUnique = true)]
+[Microsoft.EntityFrameworkCore.Index(nameof(Title))]
+[Microsoft.EntityFrameworkCore.Index(nameof(AlbumId), nameof(SongNumber), IsUnique = true)]
 public class Song : MetaDataModelBase
 {
-    [RequiredGreaterThanZero] public int AlbumDiscId { get; set; }
-
-    public AlbumDisc AlbumDisc { get; set; } = null!;
+    public Album Album { get; set; } = null!;
+    
+    [RequiredGreaterThanZero] public int AlbumId { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    [Required]
+    [System.ComponentModel.DataAnnotations.Required]
     public required string Title { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? TitleSort { get; set; }
 
-    [Required]
+    [System.ComponentModel.DataAnnotations.Required]
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public required string TitleNormalized { get; set; }
 
@@ -62,7 +63,7 @@ public class Song : MetaDataModelBase
     [RequiredGreaterThanZero] public required int SongNumber { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralLongLength)]
-    [Required]
+    [System.ComponentModel.DataAnnotations.Required]
     public required string FileName { get; set; }
 
     /// <summary>
@@ -75,7 +76,7 @@ public class Song : MetaDataModelBase
     [RequiredGreaterThanZero] public required long FileSize { get; set; }
 
     [MaxLength(MaxLengthDefinitions.HashOrGuidLength)]
-    [Required]
+    [System.ComponentModel.DataAnnotations.Required]
     public required string FileHash { get; set; }
 
     /// <summary>
@@ -98,7 +99,7 @@ public class Song : MetaDataModelBase
     [RequiredGreaterThanZero] public required int BPM { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
-    [Required]
+    [System.ComponentModel.DataAnnotations.Required]
     public required string ContentType { get; set; }
 
     public int? ChannelCount { get; set; }
