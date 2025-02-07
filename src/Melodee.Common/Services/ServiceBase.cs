@@ -215,15 +215,13 @@ public abstract class ServiceBase
                       SET "SongCount" = (
                       	select COUNT(s.*)
                       	from "Songs" s 
-                      	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                        join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                        join "Albums" aa on (s."AlbumId" = aa."Id")	
                       	where aa."ArtistId" = a."Id"
                       ), "LastUpdatedAt" = NOW()
                       where "SongCount" <> (
                       	select COUNT(s.*)
                       	from "Songs" s 
-                      	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                        join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                        join "Albums" aa on (s."AlbumId" = aa."Id")	
                       	where aa."ArtistId" = a."Id"
                       )
                       AND a."Id" = @artistId;
@@ -254,8 +252,7 @@ public abstract class ServiceBase
                           	where a."LibraryId" = l."Id"),
                           "SongCount" = (select count(s.*) 
                           	from "Songs" s
-                          	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                          	join "Albums" aa on (ad."AlbumId" = aa."Id") 
+                          	join "Albums" aa on (s."AlbumId" = aa."Id") 
                           	join "Artists" a on (a."Id" = aa."ArtistId") 
                           	where a."LibraryId" = l."Id"),
                       	"LastUpdatedAt" = now()
@@ -350,8 +347,7 @@ public abstract class ServiceBase
                       select s."Id", s."ApiKey", LEFT(s."TitleSort", 1) as "Index", s."Title" as "Name", 'song_' || s."ApiKey" as "CoverArt", s."CalculatedRating", 0 as "AlbumCount", s."PlayedCount" as "PlayCount", s."CreatedAt" as "CreatedAt", s."LastUpdatedAt" as "LastUpdatedAt", 
                              s."LastPlayedAt" as "Played", l."Path" || a."Directory" as "Directory", us."StarredAt" as "UserStarred", us."Rating" as "UserRating"
                       from "Songs" s
-                      join "AlbumDiscs" ad on (ad."Id" = s."AlbumDiscId")
-                      join "Albums" a on (ad."AlbumId" = a."Id") 
+                      join "Albums" a on (s."AlbumId" = a."Id") 
                       join "Artists" aa on (a."ArtistId" = aa."Id")
                       join "Libraries" l on (aa."LibraryId" = l."Id")    
                       left join "UserSongs" us on (s."Id" = us."SongId" and us."UserId" = @userId)
@@ -367,11 +363,10 @@ public abstract class ServiceBase
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
-                      select s."Id" as SongId, s."ApiKey" as SongApiKey, ad."Id" as AlbumDiscId, 
+                      select s."Id" as SongId, s."ApiKey" as SongApiKey,  
                              a."Id" as "AlbumId", a."ApiKey" as AlbumApiKey, aa."Id" as AlbumArtistId, aa."ApiKey" as AlbumArtistApiKey
                       from "Songs" s 
-                      left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                      left join "Albums" a on (ad."AlbumId" = a."Id")
+                      left join "Albums" a on (s."AlbumId" = a."Id")
                       left join "Artists" aa on (a."ArtistId" = aa."Id")
                       where s."ApiKey" = @apiKeyId;
                       """;
@@ -389,8 +384,7 @@ public abstract class ServiceBase
                              aa."Name" as ArtistName, a."Name" as AlbumTitle, now() as TimePlayed, 
                              s."Title" as "SongTitle", s."Duration" as SongDuration, s."MusicBrainzId" as SongMusicBrainzId, s."SongNumber" as SongNumber
                       from "Songs" s 
-                      left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                      left join "Albums" a on (ad."AlbumId" = a."Id")
+                      left join "Albums" a on (s."AlbumId" = a."Id")
                       left join "Artists" aa on (a."ArtistId" = aa."Id")
                       where s."ApiKey" = @apiKeyId;
                       """;

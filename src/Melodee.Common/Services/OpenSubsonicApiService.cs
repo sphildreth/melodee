@@ -1587,8 +1587,7 @@ public class OpenSubsonicApiService(
         var sql = """
                   select l."Path" || aa."Directory" || a."Directory" || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration",s."BitRate", s."ContentType"
                   from "Songs" s 
-                  join "AlbumDiscs" ad on (ad."Id" = s."AlbumDiscId")
-                  join "Albums" a on (a."Id" = ad."AlbumId")
+                  join "Albums" a on (a."Id" = s."AlbumId")
                   join "Artists" aa on (a."ArtistId" = aa."Id")    
                   join "Libraries" l on (l."Id" = aa."LibraryId")
                   where s."ApiKey" = @apiKey;
@@ -1854,8 +1853,7 @@ public class OpenSubsonicApiService(
                          s."ContentType", l."Path" || aa."Directory" || a."Directory" || s."FileName" as "Path", RIGHT(s."FileName", 3) as "Suffix", 'album_' ||a."ApiKey"::varchar as "AlbumId", 
                          'artist_' || aa."ApiKey"::varchar as "ArtistId", aa."Name" as "Artist"    
                   from "Songs" s
-                  join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                  join "Albums" a on (ad."AlbumId" = a."Id")
+                  join "Albums" a on (s."AlbumId" = a."Id")
                   join "Artists" aa on (a."ArtistId" = aa."Id")
                   join "Libraries" l on (aa."LibraryId" = l."Id")
                   where s."TitleNormalized"  like @normalizedQuery
@@ -2486,16 +2484,14 @@ public class OpenSubsonicApiService(
             var totalCountSql = """
                                 select COUNT(s."Id")
                                 from "Songs" s
-                                join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                join "Albums" a on (ad."AlbumId" = a."Id")
+                                join "Albums" a on (s."AlbumId" = a."Id")
                                 join "Artists" aa on (a."ArtistId" = aa."Id")
                                 where @genre = any(a."Genres") or @genre = any(s."Genres")
                                 """;
             var sql = """
                       select s."Id"
                       from "Songs" s
-                      join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                      join "Albums" a on (ad."AlbumId" = a."Id")
+                      join "Albums" a on (s."AlbumId" = a."Id")
                       join "Artists" aa on (a."ArtistId" = aa."Id")
                       where @genre = any(a."Genres") or @genre = any(s."Genres")
                       offset @offset rows fetch next @takeSize rows only;
@@ -2809,8 +2805,7 @@ public class OpenSubsonicApiService(
             var sql = """
                       select s."Id"
                       from "Songs" s
-                      join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                      join "Albums" a on (ad."AlbumId" = a."Id")
+                      join "Albums" a on (s."AlbumId" = a."Id")
                       join "Artists" aa on (a."ArtistId" = aa."Id")
                       where (@genre = any(a."Genres") or @genre = any(s."Genres") or @genre = '')
                       and (DATE_PART('year', a."ReleaseDate"::date) between @fromYear and @toYear)

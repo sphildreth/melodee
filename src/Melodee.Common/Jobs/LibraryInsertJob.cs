@@ -265,15 +265,13 @@ public class LibraryInsertJob(
                               SET "SongCount" = (
                               	select COUNT(s.*)
                               	from "Songs" s 
-                              	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                                join "Albums" aa on (s."AlbumId" = aa."Id")	
                               	where aa."ArtistId" = a."Id"
                               ), "LastUpdatedAt" = NOW()
                               where "SongCount" <> (
                               	select COUNT(s.*)
-                              	from "Songs" s 
-                              	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                join "Albums" aa on (ad."AlbumId" = aa."Id")	
+                              	from "Songs" s
+                                join "Albums" aa on (s."AlbumId" = aa."Id")	
                               	where aa."ArtistId" = a."Id"
                               );
 
@@ -285,8 +283,7 @@ public class LibraryInsertJob(
                                   	where a."LibraryId" = l."Id"),
                                   "SongCount" = (select count(s.*) 
                                   	from "Songs" s
-                                  	join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                                  	join "Albums" aa on (ad."AlbumId" = aa."Id") 
+                                  	join "Albums" aa on (s."AlbumId" = aa."Id") 
                                   	join "Artists" a on (a."Id" = aa."ArtistId") 
                                   	where a."LibraryId" = l."Id"),
                               	"LastUpdatedAt" = now()
@@ -301,8 +298,7 @@ public class LibraryInsertJob(
                           	select c."ArtistId" as id, COUNT(*) as count
                           	from "Contributors" c 
                           	join "Songs" s on (c."SongId" = s."Id")
-                            join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                            join "Albums" aa on (ad."AlbumId" = aa."Id")
+                            join "Albums" aa on (s."AlbumId" = aa."Id")
                             join "Artists" a on (a."Id" = aa."ArtistId") 
                             WHERE a."LibraryId" = @libraryId
                           	group by c."ArtistId"

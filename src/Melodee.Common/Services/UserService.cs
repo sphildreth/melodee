@@ -923,8 +923,7 @@ public sealed class UserService(
                       from "UserSongs" us 
                       left join "Users" u on (us."UserId" = u."Id")
                       left join "Songs" s on (us."SongId" = s."Id")
-                      left join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                      left join "Albums" a on (ad."AlbumId" = a."Id")
+                      left join "Albums" a on (s."AlbumId" = a."Id")
                       where u."Id" = @userId
                       and a."ApiKey" = @albumApiKey;
                       """;

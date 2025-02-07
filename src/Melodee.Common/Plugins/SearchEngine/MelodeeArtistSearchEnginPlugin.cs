@@ -198,8 +198,7 @@ public class MelodeeArtistSearchEnginPlugin(IDbContextFactory<MelodeeDbContext> 
                               s."PlayedCount" desc, s."LastPlayedAt" desc, s."SortOrder", s."TitleSort", a."SortOrder"
                           ) as "Index", s.*
                           from "Songs" s
-                          join "AlbumDiscs" ad on (s."AlbumDiscId" = ad."Id")
-                          join "Albums" a on (ad."AlbumId" = a."Id")
+                          join "Albums" a on (s."AlbumId" = a."Id")
                           join "Artists" aa on (a."ArtistId" = aa."Id")
                           where aa."Id" = @artistId
                           order by s."PlayedCount" desc, s."LastPlayedAt" desc, s."SortOrder", s."TitleSort", a."SortOrder"
