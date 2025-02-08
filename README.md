@@ -1,20 +1,23 @@
-![Melodee](graphics/melodee_gh_card.png)
+## 🚧 *Melodee is under development, currently in beta mode.* 🚧   
 
-## 🚧 *Melodee is under development, currently in alpha mode.* 🚧
+<img src="graphics/melodee_gh_card.png" alt="logo" title="melodee" align="right" height="50px" />   
 
 # Melodee
+   
+Melodee is a music system designed to manage and stream music libraries with tens of millions of songs with ease and speed.
 
-Melodee is a music system designed to handle libraries with tens of millions of songs with ease and speed.
-
+![GitHub License](https://img.shields.io/github/license/sphildreth/melodee)
 [![.NET](https://github.com/sphildreth/melodee/actions/workflows/dotnet.yml/badge.svg)](https://github.com/sphildreth/melodee/actions/workflows/dotnet.yml)
+![Discord](https://img.shields.io/discord/1337921126210211943)
 
-![Melodee.Blazor](graphics/Snapshot_2025-02-04_23-06-24.png)
+---
 
 ## Components
 
 * Melodee.Blazor - Blazor and OpenSubsonic API server
     * Both OpenSubsonic and Subsonic 1.16.1.
     * Blazor administrative front end using [Radzen UI](https://blazor.radzen.com/) and [Blazor Server](https://learn.microsoft.com/en-us/aspnet/core/blazor/hosting-models?view=aspnetcore-9.0#blazor-server).
+    * ![Melodee.Blazor](graphics/Snapshot_2025-02-04_23-06-24.png)
 * Melodee.Cli - Command line interface
     * Execute jobs manually.
     * Library management.    
