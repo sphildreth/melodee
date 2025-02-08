@@ -74,7 +74,6 @@
     <PackageVersion Include="Serilog.Settings.Configuration" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageVersion Include="Serilog.Sinks.SQLite" Version="6.0.0" />
     <PackageVersion Include="SerilogTimings" Version="3.1.0" />
     <PackageVersion Include="ServiceStack" Version="8.5.2" />
     <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.5.2" />

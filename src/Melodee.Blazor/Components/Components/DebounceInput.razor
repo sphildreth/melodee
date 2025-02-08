@@ -27,18 +27,8 @@
     ///     Notification will only happen by pressing Enter key or onblur, if set.
     /// </summary>
     [Parameter]
-    public double DebounceTime
-    {
-        get => _intervalInMillisecond;
-        set
-        {
-            if (Math.Abs(value - _intervalInMillisecond) == 0)
-            {
-                return;
-            }
-            SetTimer(value);
-        }
-    }
+    public double DebounceTime { get; set; } = 200;
+
 
     /// <summary>
     ///     Value of the rendered HTML element. Initial field value can be set to given string or omitted (leave empty).
@@ -131,6 +121,15 @@
             Notify();
         }
     }
+
+    protected override void OnParametersSet()
+    {
+        if (Math.Abs(DebounceTime - _intervalInMillisecond) != 0)
+        {
+            SetTimer(DebounceTime);
+        }
+    }
+
 
     protected void OnElapsed(ulong count)
     {

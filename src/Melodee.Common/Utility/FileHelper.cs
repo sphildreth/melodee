@@ -12,14 +12,26 @@ public static class FileHelper
     private static readonly IEnumerable<string> MediaFileTypeExtensions =
     [
         "aac",
+        "alac",
         "ac3",
+        "bonk",
         "aiff",
         "ape",
+        "asf",
         "flac",
+        "m4a",
+        "m4b",
+        "mp1",
+        "mp2",
         "mp3",
+        "mp4",
+        "oga",
         "ogg",
+        "opus",
+        "spx",
         "sfu",
         "svg",
+        "tta",
         "wav",
         "wma"
     ];

@@ -6,9 +6,9 @@
 
     protected override void OnInitialized()
     {
-        if (DelayInMilisec > 0)
+        if (DelayInMs > 0)
         {
-            _timer = new Timer(DelayInMilisec);
+            _timer = new Timer(DelayInMs);
             _timer.Elapsed += OnDelay;
             _timer.AutoReset = false;
         }
@@ -16,7 +16,7 @@
         {
             _timer = new Timer(IntervalInMs);
             _timer.Elapsed += OnElapsed;
-            _timer.AutoReset = Occurring.Count == 1 ? false : true;
+            _timer.AutoReset = Occurring.Count != 1;
         }
 
         if (AutoStart)
@@ -26,34 +26,20 @@
     }
 
     private double _intervalInMs = 200;
+    private bool _isEnabled;
+
 
     /// <summary>
     ///     Notification timeout in ms. If set to 0 or less it set to 1 ms.
     /// </summary>
     [Parameter]
-    public double IntervalInMs
-    {
-        get => _intervalInMs;
-        set
-        {
-            if (Math.Abs(value - _intervalInMs) < 0.000001)
-            {
-                return;
-            }
-            _intervalInMs = value > 0 ? value : 1;
-            if (_timer is not null)
-            {
-                _timer.AutoReset = Occurring.Count != 1;
-                _timer.Interval = _intervalInMs;
-            }
-        }
-    }
+    public double IntervalInMs { get; set; } = 200;
 
     /// <summary>
     ///     Delay in ms. before the timer will start. If set to 0 timer will start immediately.
     /// </summary>
     [Parameter]
-    public double DelayInMilisec { get; set; }
+    public double DelayInMs { get; set; }
 
     /// <summary>
     ///     Number of times elapsed even will be fired. See <see cref="Times" /> record description.
@@ -83,31 +69,15 @@
     ///     otherwise `false`.
     /// </summary>
     [Parameter]
-    public bool IsEnabled
-    {
-        get => _timer?.Enabled ?? false;
-        set
-        {
-            if (value == _timer?.Enabled)
-            {
-                return;
-            }
+    public bool IsEnabled { get; set; }
 
-            if (value)
-            {
-                Start();
-            }
-            else
-            {
-                Stop();
-            }
-        }
-    }
+    [Parameter]
+    public EventCallback<bool> IsEnabledChanged { get; set; }
 
     /// <summary>
     ///     Starts the internal timer which will start after the set delay and fire event for the given occurrence times.
     /// </summary>
-    public void Start()
+    private void Start()
     {
         _timer?.Start();
     }
@@ -143,7 +113,7 @@
         _timer.Elapsed += OnElapsed;
 
         _timer.Interval = IntervalInMs;
-        _timer.AutoReset = Occurring.Count == 1 ? false : true;
+        _timer.AutoReset = Occurring.Count != 1;
 
         _timer.Start();
     }
@@ -160,6 +130,35 @@
 
         InvokeAsync(async () => { await OnIntervalElapsed.InvokeAsync(_eventCount); });
     }
+
+    protected override void OnParametersSet()
+    {
+        if (Math.Abs(IntervalInMs - _intervalInMs) < 0.000001)
+        {
+            return;
+        }
+        _intervalInMs = IntervalInMs > 0 ? IntervalInMs : 1;
+        if (_timer is not null)
+        {
+            _timer.AutoReset = Occurring.Count != 1;
+            _timer.Interval = _intervalInMs;
+        }
+
+        if (IsEnabled != _isEnabled)
+        {
+            _isEnabled = IsEnabled;
+            if (_isEnabled)
+            {
+                Start();
+            }
+            else
+            {
+                Stop();
+            }
+        }
+
+    }
+
 
     protected virtual void Dispose(bool disposing)
     {

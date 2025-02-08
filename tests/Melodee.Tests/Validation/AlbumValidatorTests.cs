@@ -9,7 +9,7 @@ using Serilog;
 
 namespace Melodee.Tests.Validation;
 
-public class AlbumValidatorTests
+public class AlbumValidatorTests : TestsBase
 {
     public const int ShouldBeBitRate = 320;
 
@@ -307,8 +307,19 @@ public class AlbumValidatorTests
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
-        Assert.Equal(album.Status, validationResult.Data.AlbumStatus);
-        Assert.Equal(AlbumNeedsAttentionReasons.NotSet, validationResult.Data.AlbumStatusReasons);
+       
+        if (IsTestDirectoryFound)
+        {
+            // This is because the test album has a test image set and the test image sits in the test directory. Perhaps at some point can abstract File system.
+            Assert.Equal(album.Status, validationResult.Data.AlbumStatus);
+            Assert.Equal(AlbumNeedsAttentionReasons.NotSet, validationResult.Data.AlbumStatusReasons);    
+        }
+        else
+        {
+            Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+            Assert.Equal(AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
+        }
+        
     }
 
     [Fact]
@@ -346,7 +357,15 @@ public class AlbumValidatorTests
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
-        Assert.Equal(AlbumNeedsAttentionReasons.ArtistIsNotSet | AlbumNeedsAttentionReasons.HasInvalidArtists, validationResult.Data.AlbumStatusReasons);
+        if (IsTestDirectoryFound)
+        {
+            // This is because the test album has a test image set and the test image sits in the test directory. Perhaps at some point can abstract File system.
+            Assert.Equal(AlbumNeedsAttentionReasons.ArtistIsNotSet | AlbumNeedsAttentionReasons.HasInvalidArtists, validationResult.Data.AlbumStatusReasons);    
+        }
+        else
+        {
+            Assert.Equal(AlbumNeedsAttentionReasons.ArtistIsNotSet | AlbumNeedsAttentionReasons.HasInvalidArtists | AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
+        }        
     }
 
     [Fact]
@@ -365,7 +384,15 @@ public class AlbumValidatorTests
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
-        Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidYear, validationResult.Data.AlbumStatusReasons);
+        if (IsTestDirectoryFound)
+        {
+            // This is because the test album has a test image set and the test image sits in the test directory. Perhaps at some point can abstract File system.
+            Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidYear, validationResult.Data.AlbumStatusReasons);    
+        }
+        else
+        {
+            Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidYear | AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
+        }          
     }
 
     [Fact]

@@ -256,7 +256,7 @@ public sealed class DirectoryProcessorService(
         var mediaDirectoriesToProcess = directoriesToProcess.Where(x => x.GetParent().UniqueId != fileSystemDirectoryInfo.UniqueId && x.AllMediaTypeFileInfos().Any()).ToArray();
         if (mediaDirectoriesToProcess.Length > 0)
         {
-            // This means there are subdirectories which have media files in directories which have media files, must be one album per directory.
+            // This means there are subdirectories which have media files in directories which have media files (aka 'nested'), must be one album per directory.
             foreach (var mediaDirectoryToProcess in mediaDirectoriesToProcess)
             {
 
@@ -1009,12 +1009,7 @@ public sealed class DirectoryProcessorService(
                         continue;
                     }
                 }
-
-                var fileNameNormalized = (fileInfo.Name.ToNormalizedString() ?? fileInfo.Name).Replace("AND", string.Empty);
-                var albumNameNormalized = album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty;
-                var isAlbumImage = fileNameNormalized.Contains(albumNameNormalized, StringComparison.OrdinalIgnoreCase);
-                if (isAlbumImage ||
-                    ImageHelper.IsAlbumImage(fileInfo) ||
+                if (ImageHelper.IsAlbumImage(fileInfo) ||
                     ImageHelper.IsAlbumSecondaryImage(fileInfo))
                 {
                     var pictureIdentifier = PictureIdentifier.Front;

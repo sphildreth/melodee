@@ -8,6 +8,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Utility;
+using ServiceStack;
 
 namespace Melodee.Common.Models.Extensions;
 
