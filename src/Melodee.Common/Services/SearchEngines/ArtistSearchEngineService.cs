@@ -521,16 +521,21 @@ public class ArtistSearchEngineService(
 
         await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
+            var dbConn = scopedContext.Database.GetDbConnection();
             foreach (var artist in selectedArtists)
             {
-                var dbArtist = await scopedContext
-                    .Artists
-                    .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
-                dbArtist?.Albums.Clear();
+                // var dbArtist = await scopedContext
+                //     .Artists
+                //     .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken: cancellationToken)
+                //     .ConfigureAwait(false);
+                // dbArtist?.Albums.Clear();
+                var sql = """
+                          DELETE FROM "Albums" WHERE "ArtistId" = @artistId;
+                          """;
+                await dbConn.ExecuteAsync(sql, new { artistId = artist.Id }).ConfigureAwait(false);                
             }
             var now = DateTime.UtcNow;
-            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+          //  await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             foreach (var artist in selectedArtists)
             {
                 await DoSearchAsync(new ArtistQuery { Name = artist.Name }, null, cancellationToken).ConfigureAwait(false);

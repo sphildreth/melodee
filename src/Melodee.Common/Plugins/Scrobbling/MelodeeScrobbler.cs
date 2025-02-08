@@ -46,8 +46,8 @@ public class MelodeeScrobbler(
             await dbConn.ExecuteAsync(sql, new { artistId = scrobble.ArtistId, albumId = scrobble.AlbumId, songId = scrobble.SongId }).ConfigureAwait(false);
 
             sql = """
-                  insert INTO "UserSongs" ("UserId", "SongId", "PlayedCount", "LastPlayedAt", "IsStarred", "Rating", "IsLocked", "SortOrder", "ApiKey", "CreatedAt") 
-                  values (@userId, @songId, 1, now(), false, 0, false, 0, gen_random_uuid(), now())
+                  insert INTO "UserSongs" ("UserId", "SongId", "PlayedCount", "LastPlayedAt", "IsStarred", "IsHated", "Rating", "IsLocked", "SortOrder", "ApiKey", "CreatedAt") 
+                  values (@userId, @songId, 1, now(), false, false, 0, false, 0, gen_random_uuid(), now())
                   on CONFLICT("UserId", "SongId") do update
                     set "PlayedCount" = (select "PlayedCount" + 1 from "UserSongs" where "UserId" = @userId and "SongId" = @songId),
                         "LastPlayedAt" = now();

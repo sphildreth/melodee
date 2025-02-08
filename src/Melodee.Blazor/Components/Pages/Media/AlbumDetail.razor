@@ -120,6 +120,8 @@
                                     LabelStyle="@(_album.IsValid ? "" : "color: var(--rz-color-danger);")"
                                     Label="Issues" Statistic="@_album.StatusReasons.ToString()"/>
                             }
+                            <CondensedStatistic Label="Album Type" Statistic="@_album.AlbumType.ToString()"/>
+                            <CondensedStatistic Label="Directory" Statistic="@_album.Directory.Name"/>
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>
@@ -391,7 +393,7 @@
                 SpotifyId = arg.AlbumSearchResult.Artist?.SpotifyId,
                 SearchEngineResultUniqueId = arg.AlbumSearchResult.Artist?.UniqueId
             };
-            _album.SetTagValue(MetaTagIdentifier.Title, arg.AlbumSearchResult.Name, doSetSongValue: false);
+            _album.SetTagValue(MetaTagIdentifier.Album, arg.AlbumSearchResult.Name, doSetSongValue: false);
             _album.SetTagValue(MetaTagIdentifier.RecordingYear, arg.AlbumSearchResult.Year, doSetSongValue: false);
             if (_album.Images?.Count() == 0)
             {
@@ -428,6 +430,19 @@
                     }
                 }
             }
+
+            var albumDirectorySystemInfo = new FileSystemDirectoryInfo
+            {
+                Path = Path.Combine(_library.Path, _album.ToDirectoryName()),
+                Name = _album.ToDirectoryName()
+            };
+            if (albumDirectorySystemInfo.FullName() != _album.Directory.FullName())
+            {
+                // Details have changed which causes the directory to be renamed for the folder. This matters as validations occur downstream against directory name.
+                _album.Directory.MoveToDirectory(albumDirectorySystemInfo.FullName());
+                _album.Directory = albumDirectorySystemInfo;
+            }
+
             var result = await MediaEditService.SaveMelodeeAlbum(_album);
             if (result.Data)
             {

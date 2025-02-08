@@ -2700,7 +2700,17 @@ public class OpenSubsonicApiService(
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var apiKey = ApiKeyFromId(id);
+            var apiKey = ApiKeyFromId(id);            
+            if (IsApiIdForSong(id))
+            {
+                // Some players send the first song to get an albums details. No idea why. 
+                var songApiKey = ApiKeyFromId(id);
+                if (songApiKey != null)
+                {
+                    var songInfo = await DatabaseSongIdsInfoForSongApiKey(songApiKey.Value, cancellationToken).ConfigureAwait(false);
+                    apiKey = songInfo?.AlbumApiKey ?? apiKey;
+                }
+            }
             var album = await scopedContext.Albums.FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken).ConfigureAwait(false);
             if (album != null)
             {

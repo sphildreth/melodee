@@ -94,9 +94,11 @@ public class FileSystemDirectoryInfoExtensionTests
     [InlineData("Bobs Greatest Hits Vol 2", false)]
     [InlineData("Bobs Greatest Hits", false)]
     [InlineData("Greatest Hits and Misses and Just Garbage", false)]
+    [InlineData("Special Delivery", false)]
     [InlineData("The best of Bob", false)]
     [InlineData("[1985] Best Of, The", false)]
     [InlineData("[1994] American Legends Best Of The Early Years", false)]
+    [InlineData("Delivery - [2025] Force Majeure", false)]
     public void IsDirectoryNotStudioAlbums(string input, bool shouldBe)
     {
         Assert.Equal(shouldBe, new FileSystemDirectoryInfo

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 
-[Index(nameof(ArtistId), nameof(NameNormalized), nameof(Year), IsUnique = true)]
+[Index(nameof(ArtistId), nameof(NameNormalized), nameof(Year))]
 public record Album
 {
     [Key]
