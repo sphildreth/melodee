@@ -1,6 +1,6 @@
 ## 🚧 *Melodee is under development, currently in beta mode.* 🚧   
 
-<img src="graphics/melodee_gh_card.png" alt="logo" title="melodee" align="right" height="50px" />   
+<img src="graphics/melodee_logo.png" alt="logo" title="melodee" align="right" height="60px" />   
 
 # Melodee
    
