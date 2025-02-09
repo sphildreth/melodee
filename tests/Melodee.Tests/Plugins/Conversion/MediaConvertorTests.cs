@@ -1,4 +1,6 @@
+using ATL;
 using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
@@ -15,7 +17,11 @@ public class MediaConvertorTests
         var fileInfo = new FileInfo(testFile);
         if (fileInfo.Exists)
         {
-            var convertor = new MediaConvertor(TestsBase.NewPluginsConfiguration());
+            var atlFromFlac = new Track(fileInfo.FullName);
+            var configuration = TestsBase.NewPluginsConfiguration();
+            configuration.SetSetting(SettingRegistry.ConversionEnabled, true);
+            configuration.SetSetting(SettingRegistry.ProcessingConvertedExtension, string.Empty);
+            var convertor = new MediaConvertor(configuration);
             var dirInfo = new FileSystemDirectoryInfo
             {
                 Path = @"/melodee_test/tests/",
@@ -28,8 +34,18 @@ public class MediaConvertorTests
 
             var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
+            
+            var atlFromMp3 = new Track(convertedFileInfo.FullName);
+            
+            Assert.Equal(atlFromFlac.Duration, atlFromMp3.Duration);
+            Assert.Equal(atlFromFlac.Artist, atlFromMp3.Artist);
+            Assert.Equal(atlFromFlac.Album, atlFromMp3.Album);
+            Assert.Equal(atlFromFlac.TrackNumber, atlFromMp3.TrackNumber);
+            
+            File.Delete(convertedFileInfo.FullName);
         }
     }
+
 
     [Fact]
     public async Task ValidateConvertingNonMediaFailsAsync()

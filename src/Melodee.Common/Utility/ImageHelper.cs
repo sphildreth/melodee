@@ -189,7 +189,7 @@ public static partial class ImageHelper
 
             var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit)).Nullify();
             var numberInName = SafeParser.ToNumber<int>(nameDigits);
-            var nt = NormalizedImageTypesFromFilename(fileInfo.Name);
+            var nt = NormalizedImageTypesFromFilename(fileInfo.Name.RemoveNumbers()?.RemoveStartsWith(".") ?? fileInfo.Name);
             var ntMatches = AlbumImageFileNames.Count(x => nt?.Contains(x) ?? false);
 
             if (ntMatches > 0)

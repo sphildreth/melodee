@@ -31,7 +31,7 @@ public sealed class AtlMetaTag(
     ImageConvertor imageConverter,
     IImageValidator imageValidator,
     IMelodeeConfiguration configuration) : MetaDataBase(configuration),
-    ISongPlugin
+    ISongPlugin, ISongFileUpdatePlugin
 {
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
 
@@ -91,7 +91,7 @@ public sealed class AtlMetaTag(
                     IMediaAnalysis? ffProbeMediaAnalysis = null;
                     try
                     {
-                        ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken);
+                        ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken).ConfigureAwait(false);;
 
                         if (ffProbeMediaAnalysis.PrimaryAudioStream != null)
                         {
@@ -188,7 +188,7 @@ public sealed class AtlMetaTag(
                                         {
                                             Identifier = MetaTagIdentifier.AlbumDate,
                                             Value = dt.Value.ToString("O")
-                                        });                                        
+                                        });
                                     }
                                 }
 
@@ -239,10 +239,10 @@ public sealed class AtlMetaTag(
                                 {
                                     var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
                                     var newImageFileName = Path.Combine(directoryInfo.Path, $"{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
-                                    await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken);
+                                    await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken).ConfigureAwait(false);
                                     var newImageFileInfo = new FileInfo(newImageFileName).ToFileSystemInfo();
                                     newImageFileInfo = (await imageConverter.ProcessFileAsync(directoryInfo, newImageFileInfo, cancellationToken).ConfigureAwait(false)).Data;
-                                    if ((await imageValidator.ValidateImage(newImageFileInfo.ToFileInfo(directoryInfo), pictureIdentifier, cancellationToken)).Data.IsValid)
+                                    if ((await imageValidator.ValidateImage(newImageFileInfo.ToFileInfo(directoryInfo), pictureIdentifier, cancellationToken).ConfigureAwait(false)).Data.IsValid)
                                     {
                                         images.Add(new ImageInfo
                                         {
@@ -276,7 +276,7 @@ public sealed class AtlMetaTag(
         {
             Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
         }
-        
+
 
         // Ensure that OrigAlbumYear exists and if not add with invalid date (will get set later by MetaTagProcessor.)
         if (tags.All(x => x.Identifier != MetaTagIdentifier.OrigAlbumYear))
@@ -320,6 +320,7 @@ public sealed class AtlMetaTag(
                 Log.Information("[{PluginName}] [TP1, TPE1] is not set, using value for [TP2,TPE2].", nameof(AtlMetaTag));
             }
         }
+
         if (albumTag?.Value?.ToString().Nullify() == null || artistTag?.Value?.ToString().Nullify() == null)
         {
             return new OperationResult<Models.Song>($"Song [{fileSystemFileInfo.Name}] is invalid, missing Album and/or Artist tags.")
@@ -347,7 +348,7 @@ public sealed class AtlMetaTag(
             });
         }
 
-        var metaTagsProcessorResult = await metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken);
+        var metaTagsProcessorResult = await metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemFileInfo, tags, cancellationToken).ConfigureAwait(false);
         if (!metaTagsProcessorResult.IsSuccess)
         {
             return new OperationResult<Models.Song>(metaTagsProcessorResult.Messages)
@@ -376,6 +377,7 @@ public sealed class AtlMetaTag(
         };
     }
 
+
     public async Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song, CancellationToken cancellationToken = default)
     {
         var result = false;
@@ -400,7 +402,7 @@ public sealed class AtlMetaTag(
                     Album = song.AlbumTitle(),
                     AlbumArtist = song.AlbumArtist(),
                     Artist = song.SongArtist(),
-                    Comment = doDeleteComment ? string.Empty : song.Comment(), 
+                    Comment = doDeleteComment ? string.Empty : song.Comment(),
                     DiscNumber = 1,
                     DiscTotal = 1,
                     Genre = song.Genre(),
@@ -417,7 +419,7 @@ public sealed class AtlMetaTag(
                     {
                         fileAtl.EmbeddedPictures.Clear();
                         fileAtl.EmbeddedPictures.Add(PictureInfo.fromBinaryData(
-                            await File.ReadAllBytesAsync(coverImage.FileInfo!.FullName(directoryInfo), cancellationToken),
+                            await File.ReadAllBytesAsync(coverImage.FileInfo!.FullName(directoryInfo), cancellationToken).ConfigureAwait(false),
                             PictureInfo.PIC_TYPE.Front));
                     }
                 }
@@ -440,7 +442,80 @@ public sealed class AtlMetaTag(
         };
     }
 
-    public async Task<OperationResult<bool>> RemoveImagesAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song, CancellationToken cancellationToken = default)
+    public OperationResult<bool> UpdateFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo file, MetaTagIdentifier identifier, object? value)
+    {
+        var result = false;
+        if (!file.Exists(directoryInfo))
+        {
+            return new OperationResult<bool>
+            {
+                Data = false
+            };
+        }
+
+        var songFileName = file.FullName(directoryInfo);
+        if (!File.Exists(songFileName))
+        {
+            Log.Error(new Exception($"File not found [{songFileName}]"), "[{PlugInName}] UpdateFileAsync called File [{FileName}] does not exist", nameof(AtlMetaTag), songFileName);
+            return new OperationResult<bool>
+            {
+                Data = false
+            };
+        }
+
+        try
+        {
+            var doDeleteComment = MelodeeConfiguration.GetValue<bool?>(SettingRegistry.ProcessingDoDeleteComments) ?? true;
+
+            var fileAtl = new Track(songFileName);
+            switch (identifier)
+            {
+                case MetaTagIdentifier.Album:
+                    fileAtl.Album = value?.ToString().Nullify() ?? string.Empty;
+                    break;
+
+                case MetaTagIdentifier.AlbumArtist:
+                    fileAtl.AlbumArtist = value?.ToString().Nullify() ?? string.Empty;
+                    break;
+
+                case MetaTagIdentifier.Artist:
+                    fileAtl.Artist = value?.ToString().Nullify() ?? string.Empty;
+                    break;
+
+                case MetaTagIdentifier.Comment:
+                    fileAtl.Comment = doDeleteComment ? string.Empty : value?.ToString().Nullify() ?? string.Empty;
+                    break;
+
+                case MetaTagIdentifier.DiscNumber:
+                    fileAtl.DiscNumber = SafeParser.ToNumber<short>(value);
+                    break;
+
+                case MetaTagIdentifier.DiscTotal:
+                    fileAtl.DiscTotal = SafeParser.ToNumber<short>(value);
+                    break;
+
+                case MetaTagIdentifier.Genre:
+                    fileAtl.Genre = value?.ToString().Nullify() ?? string.Empty;
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(identifier), identifier, null);
+            }
+
+            result = fileAtl.Save();
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", directoryInfo);
+        }
+
+        return new OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+
+    public OperationResult<bool> RemoveImages(FileSystemDirectoryInfo directoryInfo, Models.Song song)
     {
         var result = false;
         if (song.Tags?.Any() ?? false)
@@ -452,7 +527,7 @@ public sealed class AtlMetaTag(
                 {
                     var fileAtl = new Track(songFileName);
                     fileAtl.EmbeddedPictures.Clear();
-                    result = await fileAtl.SaveAsync();
+                    result = fileAtl.Save();
                 }
                 catch (Exception e)
                 {
@@ -583,5 +658,10 @@ public sealed class AtlMetaTag(
         }
 
         return track is { AudioFormat: { ID: > -1 }, Duration: > 0 };
+    }
+
+    public Task<OperationResult<bool>> UpdateFileAsync(FileSystemFileInfo file, MetaTagIdentifier identifier, object? value, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -109,12 +109,12 @@ public static class ArtistExtensions
             throw new Exception("Neither Artist or ArtistSort tag is set.");
         }
 
-        var artistFolderId = artist.ArtistDbId?.ToString() ??
+        var artistDirectoryId = artist.ArtistDbId?.ToString() ??
                                    artist.SearchEngineResultUniqueId?.ToString();
 
-        if (artistFolderId == null)
+        if (artistDirectoryId == null)
         {
-            artistFolderId = SafeParser.Hash(artist.MusicBrainzId?.ToString() ??
+            artistDirectoryId = SafeParser.Hash(artist.MusicBrainzId?.ToString() ??
                                              artist.SpotifyId ?? throw new Exception("Neither ArtistDbId, SearchEngineResultUniqueId, MusicBrainzId or SpotifyId is set.")).ToString();
         }
 
@@ -147,7 +147,7 @@ public static class ArtistExtensions
         }
 
         var fnSubPart = Path.Combine(fnSubPart1.ToString(), fnSubPart2);
-        var fnIdPart = $" [{artistFolderId}]";
+        var fnIdPart = $" [{artistDirectoryId}]";
         var maxFnLength = processingMaximumArtistDirectoryNameLength - (fnSubPart.Length + fnIdPart.Length) - 2;
         if (artistDirectory.Length > maxFnLength)
         {

@@ -202,6 +202,14 @@ public sealed class AlbumDiscoveryService(
             case "\"Artist\" DESC":
                 albums = albums.OrderByDescending(x => x.Artist.SortName).ToList();
                 break;
+            
+            case "\"CreatedAt\" ASC":
+                albums = albums.OrderBy(x => x.Created).ToList();
+                break;
+
+            case "\"CreatedAt\" DESC":
+                albums = albums.OrderByDescending(x => x.Created).ToList();
+                break;            
 
             case "\"Title\" ASC":
                 albums = albums.OrderBy(x => x.AlbumTitle()).ToList();
@@ -218,6 +226,8 @@ public sealed class AlbumDiscoveryService(
             case "\"Year\" DESC":
                 albums = albums.OrderByDescending(x => x.AlbumYear()).ToList();
                 break;
+            
+            
 
             case "\"Duration\" ASC":
                 albums = albums.OrderBy(x => x.Duration()).ToList();

@@ -1,0 +1,455 @@
+@page "/media/album/{LibraryApiKey:guid}/{ApiKey:guid}/edit"
+
+@inherits MelodeeComponentBase
+@using Melodee.Blazor.ViewModels
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
+@using Melodee.Common.Models.Extensions
+@using Melodee.Common.Models.SearchEngines
+@using Melodee.Common.Plugins.Validation
+@using Melodee.Common.Services.Scanning
+@using Melodee.Common.Services.SearchEngines
+@using SixLabors.ImageSharp
+@using ImageInfo = Melodee.Common.Models.ImageInfo
+
+@using ImageSearchResult = Melodee.Blazor.Components.Components.ImageSearchResult
+
+@attribute [Authorize(Roles = "Administrator,Editor")]
+
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject ILogger Logger
+@inject LibraryService LibraryService
+@inject AlbumDiscoveryService AlbumDiscoveryService
+@inject AlbumImageSearchEngineService AlbumImageSearchEngineService
+@inject ArtistSearchEngineService ArtistSearchEngineService
+@inject MediaEditService MediaEditService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject DefaultImages DefaultImages
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Media Album Add/Edit</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Path="@($"/media/library/{_library.ApiKey}")" Icon="folder" Text="@_library.Name"/>
+    <RadzenBreadCrumbItem Icon="album" Text="@_album.Title"/>
+</RadzenBreadCrumb>
+
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenButton Icon="image_search" Text="Image"
+                              Size="ButtonSize.Small"
+                              Class="rz-mr-2"
+                              Click="@SearchForImageButtonClicked"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenRow Gap="10px" RowGap="1rem" class="rz-m-0 rz-m-md-2">
+        <RadzenColumn Size="12" SizeMD="4">
+            @if (_isLoading)
+            {
+                <RadzenProgressBarCircular
+                    ProgressBarStyle="ProgressBarStyle.Primary"
+                    Value="100"
+                    ShowValue="false"
+                    Mode="ProgressBarMode.Indeterminate"/>
+            }
+            else
+            {
+                <RadzenImage
+                    Path="@_coverImage"
+                    Style="margin-right: 5px; width: 100%; height: auto;"
+                    AlternateText="@_album.Title"/>
+            }
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenTemplateForm TItem="Melodee.Blazor.ViewModels.AlbumEdit" Data="@_album" Submit="@OnSubmit"
+                                InvalidSubmit="@OnInvalidSubmit">
+                <RadzenFieldset>
+                    <RadzenStack Gap="20px" class="rz-p-2 rz-p-md-1">
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Artist" Component="Artist"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenAutoComplete
+                                    @bind-Value="@_artistName"
+                                    @bind-SelectedItem="@_selectedArtist"
+                                    name="Artist"
+                                    Data="@_artistSearchResults"
+                                    TextProperty="@nameof(ArtistSearchResult.Name)"
+                                    LoadData="@OnLoadMusicBrainzArtistData"
+                                    class="rz-w-100"
+                                    InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Artist Name" } })"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Title" Component="Title"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextBox style="display: block" Name="Title" @bind-Value="@_album.Title"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="Title" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Year" Component="Year"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenNumeric style="display: block" Name="Year" @bind-Value="@_album.Year"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="Year" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Amg Id" Component="AmgId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="AmgId" @bind-Value="@_album.AmgId"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="AmgId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("AmgId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Sort Name" Component="SortName"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextBox style="display: block" Name="SortName" @bind-Value="@_album.SortName"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="SortName" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Sort Order" Component="SortOrder"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenNumeric style="display: block" Name="SortOrder" @bind-Value="@_album.SortOrder"
+                                               class="rz-w-100"
+                                               InputAttributes="@(new Dictionary<string, object> { { "aria-label", "enter value" } })"/>
+                                <RadzenDataAnnotationValidator Component="SortOrder" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Spotify Id" Component="SpotifyId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="SpotifyId" @bind-Value="@_album.SpotifyId"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="SpotifyId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("SpotifyId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" class="rz-mt-4">
+                            <RadzenColumn Size="12" Offset="0" SizeMD="8" OffsetMD="2">
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenStack>
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+
+    short _maxResults = 10;
+    bool _isLoading = true;
+
+    List<ArtistSearchResult> _artistSearchResults = [];
+
+    string _coverImage = string.Empty;
+
+    [Parameter] public Guid LibraryApiKey { get; set; }
+
+    [Parameter] public Guid ApiKey { get; set; }
+
+    Common.Data.Models.Library _library = new()
+    {
+        Name = string.Empty,
+        Path = string.Empty,
+        Type = 0,
+        CreatedAt = default
+    };
+
+    string _artistName = string.Empty;
+    object? _selectedArtist;
+
+    Melodee.Blazor.ViewModels.AlbumEdit _album = new()
+    {
+        ArtistSearchResult = new ArtistSearchResult
+        {
+            Name = string.Empty,
+            FromPlugin = string.Empty
+        },
+        Title = string.Empty,
+        Year = 0,
+        Songs = [],
+        AlbumDirectoryFiles = []
+    };
+
+    private List<ImageInfo> _images = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var libraryResult = await LibraryService.GetByApiKeyAsync(LibraryApiKey);
+            _library = libraryResult.Data!;
+
+            var album = await AlbumDiscoveryService.AlbumByUniqueIdAsync(_library.ToFileSystemDirectoryInfo(), ApiKey);
+
+            _album = new ViewModels.AlbumEdit
+            {
+                ArtistSearchResult = new ArtistSearchResult
+                {
+                    Name = album.Artist.Name,
+                    UniqueId = album.Artist.SearchEngineResultUniqueId ?? 0,
+                    MusicBrainzId = album.Artist.MusicBrainzId,
+                    SpotifyId = album.Artist.SpotifyId,
+                    SortName = album.Artist.SortName,
+                    FromPlugin = string.Empty
+                },
+                Title = album.AlbumTitle() ?? string.Empty,
+                Genre = album.Genre(),
+                MusicBrainzId = album.MusicBrainzId?.ToString(),
+                Year = album.AlbumYear() ?? 0,
+                AmgId = album.AmgId,
+                SortOrder = album.SortOrder,
+                SpotifyId = album.SpotifyId,
+                Songs = [],
+                AlbumDirectoryFiles = []
+            };
+
+            _artistName = album.Artist.Name;
+            _selectedArtist = _album.ArtistSearchResult;
+
+            _coverImage = await album.CoverImageBase64Async() ?? DefaultImages.AlbumCoverBase64;
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+            _isLoading = false;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await AlbumDiscoveryService.InitializeAsync();
+        await MediaEditService.InitializeAsync();
+
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _maxResults = configuration.GetValue<short?>(SettingRegistry.SearchEngineDefaultPageSize) ?? configuration.GetValue<short>(SettingRegistry.DefaultsPageSize);
+
+    }
+
+    async Task OnSubmit(Melodee.Blazor.ViewModels.AlbumEdit model)
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+
+        try
+        {
+
+            var album = await AlbumDiscoveryService.AlbumByUniqueIdAsync(_library.ToFileSystemDirectoryInfo(), ApiKey);
+            album.MusicBrainzId = SafeParser.ToGuid(_album.MusicBrainzId);
+            album.AmgId = _album.AmgId;
+            album.SortOrder = _album.SortOrder;
+            album.SpotifyId = _album.SpotifyId;
+
+            if (_selectedArtist is ArtistSearchResult selectedArtist)
+            {
+                album.Artist = new Artist(selectedArtist.Name, selectedArtist.Name.ToNormalizedString() ?? selectedArtist.Name, selectedArtist.SortName)
+                {
+                    MusicBrainzId = selectedArtist.MusicBrainzId,
+                    SearchEngineResultUniqueId = selectedArtist.UniqueId,
+                    SpotifyId = selectedArtist.SpotifyId
+                };
+            }
+            album.SetTagValue(MetaTagIdentifier.Album, _album.Title);
+            album.SetTagValue(MetaTagIdentifier.Genre, _album.Genre);
+            album.SetTagValue(MetaTagIdentifier.RecordingYear, _album.Year);
+
+            if (_images.Any())
+            {
+                album.Images = _images.ToArray();
+            }
+            var result = await MediaEditService.SaveMelodeeAlbum(album);
+            if (result.Data)
+            {
+                NotificationService.Notify(NotificationMessageForResult(result, "editing album", ToastTime));
+            }
+            NavigationManager.NavigateTo($"/media/album/{LibraryApiKey}/{ApiKey}", true);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Attempting to edit [{ApiKey}]", ApiKey);
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    void OnInvalidSubmit(FormInvalidSubmitEventArgs args)
+    {
+    }
+
+    private async Task OnLoadMusicBrainzArtistData(LoadDataArgs arg)
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var searchResult = await ArtistSearchEngineService.DoSearchAsync(new ArtistQuery
+            {
+                Name = arg.Filter
+            }, 10);
+            _artistSearchResults = searchResult.Data.ToList();
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    private SearchValue[] SearchValues =>
+    [
+        new()
+        {
+            Key = "Artist",
+            Value = _album.ArtistSearchResult.Name,
+            SortOrder = 1
+        },
+        new()
+        {
+            Key = "Year",
+            Value = _album.Year.ToString(),
+            SortOrder = 1
+        },
+        new()
+        {
+            Key = "Title",
+            Value = _album.Title ?? string.Empty,
+            SortOrder = 1
+        }
+    ];
+
+    private async Task AlbumSearchImageCallback(ImageSearchResult? selectedImageSearchResult)
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+
+        DialogService.Close();
+
+        try
+        {
+            if (selectedImageSearchResult != null)
+            {
+                var httpClient = HttpClientFactory.CreateClient();
+                var album = await AlbumDiscoveryService.AlbumByUniqueIdAsync(_library.ToFileSystemDirectoryInfo(), ApiKey);
+                var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
+                var albumImageFromSearchFileName = Path.Combine(album.Directory.FullName(), album.Directory.GetNextFileNameForType(_maxResults, Common.Data.Models.Album.FrontImageType).Item1);
+
+                if (selectedImageSearchResult.ImageBytes != null)
+                {
+                    await File.WriteAllBytesAsync(albumImageFromSearchFileName, selectedImageSearchResult.ImageBytes);
+                    var newImageInfo = new System.IO.FileInfo(albumImageFromSearchFileName);
+                    var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName).ConfigureAwait(false);
+                    _images = new List<ImageInfo>
+                    {
+                        new()
+                        {
+                            FileInfo = newImageInfo.ToFileSystemInfo(),
+                            PictureIdentifier = PictureIdentifier.Front,
+                            CrcHash = Crc32.Calculate(newImageInfo),
+                            Width = imageInfo.Width,
+                            Height = imageInfo.Height,
+                            SortOrder = 1,
+                            WasEmbeddedInSong = false
+                        }
+                    };
+                }
+                else
+                {
+                    if (await httpClient.DownloadFileAsync(
+                            selectedImageSearchResult.Url,
+                            albumImageFromSearchFileName,
+                            async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front)).Data.IsValid).ConfigureAwait(false))
+                    {
+                        var newImageInfo = new System.IO.FileInfo(albumImageFromSearchFileName);
+                        var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName).ConfigureAwait(false);
+                        _images = new List<ImageInfo>
+                        {
+                            new()
+                            {
+                                FileInfo = newImageInfo.ToFileSystemInfo(),
+                                PictureIdentifier = PictureIdentifier.Front,
+                                CrcHash = Crc32.Calculate(newImageInfo),
+                                Width = imageInfo.Width,
+                                Height = imageInfo.Height,
+                                SortOrder = 1,
+                                WasEmbeddedInSong = false
+                            }
+                        };
+                    }
+                }
+
+                if (_images.FirstOrDefault() != null)
+                {
+                    var imageBytes = await File.ReadAllBytesAsync(_images.First()!.FileInfo.FullName(album.Directory));
+                    _coverImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
+                }
+
+            }
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    private async Task SearchForImageButtonClicked()
+    {
+        await DialogService.OpenAsync("Media Album Image Search", ds =>
+            @<ImageSearchUpload
+                SearchType="ImageSearchType.Album"
+                OnUpdateCallback="AlbumSearchImageCallback"
+                SearchValues="SearchValues"/>);
+    }
+
+    private Task SearchForExternalButtonClick(string amgid)
+    {
+        throw new NotImplementedException();
+    }
+
+}
+
+

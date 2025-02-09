@@ -73,14 +73,26 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                     var songDirectory = songFileInfo.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Song");
                     var newFileName = Path.Combine(songDirectory, $"{Path.GetFileNameWithoutExtension(songFileInfo.Name)}.mp3");
 
-                    await FFMpegArguments.FromFileInput(songFileInfo)
-                        .OutputToFile(newFileName, true, options =>
-                        {
-                            options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration[SettingRegistry.ConversionBitrate]));
-                            options.WithAudioSamplingRate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]));
-                            options.WithVariableBitrate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]));
-                            options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
-                        }).ProcessAsynchronously();
+                    try
+                    {
+                        await FFMpegArguments.FromFileInput(songFileInfo)
+                            .OutputToFile(newFileName, true, options =>
+                            {
+                                options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration[SettingRegistry.ConversionBitrate]));
+                                options.WithAudioSamplingRate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]));
+                                options.WithVariableBitrate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]));
+                                options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
+                            }).ProcessAsynchronously();
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
+                    }
+                    var newFileInfo = new FileInfo(newFileName);
+                    while (!newFileInfo.CanWriteTo())
+                    {
+                        await Task.Delay(100, cancellationToken);
+                    }
                     var newAtl = new Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))
                     {

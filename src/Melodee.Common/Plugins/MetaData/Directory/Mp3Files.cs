@@ -5,13 +5,16 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
+using Melodee.Common.Services.Scanning;
 using Melodee.Common.Utility;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using Artist = Melodee.Common.Models.Artist;
 
 namespace Melodee.Common.Plugins.MetaData.Directory;
 
@@ -73,7 +76,8 @@ public class Mp3Files(
                     }
                 });
                 
-                await HandleDuplicates(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);                
+                await HandleDuplicates(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);   
+                EnsureSortOrderSet(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);
 
                 foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.SongArtistAlbumUniqueId()))
                 {
@@ -192,6 +196,15 @@ public class Mp3Files(
         {
             Data = processedFileCount
         };
+    }
+
+    private void EnsureSortOrderSet(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] songs, CancellationToken cancellationToken)
+    {
+        Trace.WriteLine($"Ensuring sort order is set on songs...");
+        foreach (var song in songs)
+        {
+            song.SortOrder = (song.SongNumber() + (song.MediaNumber() * MediaEditService.SortOrderMediaMultiplier)) - MediaEditService.SortOrderMediaMultiplier;
+        }
     }
 
     private Task HandleDuplicates(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] seenSongs, CancellationToken cancellationToken = default)

@@ -542,7 +542,7 @@
                 break;
 
             default:
-                await DialogService.Alert("WIP; sph is working on it");
+                NavigationManager.NavigateTo($"/media/album/{LibraryApiKey}/{ApiKey}/edit", true);
                 break;
 
         }

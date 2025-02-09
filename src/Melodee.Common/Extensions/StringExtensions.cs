@@ -329,6 +329,42 @@ public static partial class StringExtensions
     {
         return string.IsNullOrEmpty(input) ? null : OnlyAlphaNumericRegex().Replace(input, " ").Nullify();
     }
+    
+    public static string? RemoveNumbers(this string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return null;
+        }
+        return string.Join(" ", 
+            input.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(word => new string(word.Where(c => !char.IsDigit(c)).ToArray()))
+                .Where(word => !string.IsNullOrWhiteSpace(word)));
+    }
+    
+
+    public static int? ExtractNumber(this string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return null;
+        }
+        var numbers = new string(input.Where(char.IsDigit).ToArray());
+        return int.TryParse(numbers, out int result) ? result : null;
+    }
+    
+    public static string? ExtractLetters(this string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return null;
+        }
+        return new string(input.ToLower()
+            .Where(c => c is >= 'a' and <= 'z')
+            .ToArray());
+    }
+    
+
 
     /// <summary>
     ///     If the given input is a tag delimited string, return an enumeration of tags, otherwise return null.

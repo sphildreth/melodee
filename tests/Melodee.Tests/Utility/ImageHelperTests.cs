@@ -82,6 +82,9 @@ public sealed class ImageHelperTests
     [InlineData("Covers-001.jpg", true)]
     [InlineData("Scan_01-Covers.jpg", true)]
     [InlineData("Kim Wilde - You Came (2006) (Cover).jpg", true)]
+    [InlineData("folder.jpg", true)]
+    [InlineData("1folder.jpg", true)]
+    [InlineData("1.folder.jpg", true)]
     public void FileIsAlbumImage(string fileName, bool expected)
     {
         Assert.Equal(expected, ImageHelper.IsAlbumImage(new FileInfo(fileName)));

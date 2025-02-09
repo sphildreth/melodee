@@ -746,7 +746,7 @@ public class OpenSubsonicApiService(
                 PlayCount = album.PlayedCount,
                 Played = album.LastPlayedAt.ToString(),
                 RecordLabels = album.RecordLabels(),
-                Song = album.Songs.OrderBy(x => x.SongNumber)
+                Song = album.Songs.OrderBy(x => x.SortOrder)
                     .Select(x => x.ToApiChild(album, userSongsForAlbum.FirstOrDefault(us => us.SongId == x.Id)))
                     .ToArray(),
                 SongCount = album.SongCount ?? 0,

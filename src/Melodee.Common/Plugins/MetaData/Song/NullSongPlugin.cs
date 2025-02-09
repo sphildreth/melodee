@@ -1,3 +1,4 @@
+using Melodee.Common.Enums;
 using Melodee.Common.Models;
 
 namespace Melodee.Common.Plugins.MetaData.Song;
@@ -41,4 +42,5 @@ public class NullSongPlugin : ISongPlugin
     {
         return Task.FromResult(new OperationResult<bool> { Data = true });
     }
+
 }

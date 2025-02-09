@@ -65,8 +65,14 @@ public sealed class CueSheet(
             {
                 using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, cueFile.Name))
                 {
-                    await FindCueFileIfNeeded(cueFile, cancellationToken);
-
+                    var foundMediaForCueFile = await FindCueFileIfNeeded(cueFile, cancellationToken);
+                    if (!foundMediaForCueFile)
+                    {
+                        return new OperationResult<int>("Invalid CUE file.")
+                        {
+                            Data = -1
+                        };
+                    }
                     ICatalogDataReader? theReader = null;
                     try
                     {
@@ -225,8 +231,15 @@ public sealed class CueSheet(
         return line.Substring(firstQuoteIndex + 1, lastQuoteIndex - firstQuoteIndex - 1);
     }
 
-    private static async Task FindCueFileIfNeeded(FileInfo cueFile, CancellationToken cancellationToken)
+    /// <summary>
+    /// Sometimes CUE files have WAV when the actual file is MP3. This tries to fix that.
+    /// </summary>
+    /// <param name="cueFile"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>False if the media for the Cue file was not found.</returns>
+    private static async Task<bool> FindCueFileIfNeeded(FileInfo cueFile, CancellationToken cancellationToken)
     {
+        var result = false;
         if (cueFile.Exists)
         {
             var didModify = false;
@@ -244,7 +257,12 @@ public sealed class CueSheet(
                         {
                             cueSheetLines.Add($"{CueSheetKeyRegistry.File} \"{firstMediaFile.Name}\" {firstMediaFile.Extension.Replace(".", string.Empty).ToUpper()}");
                             didModify = true;
+                            result = true;
                         }
+                    }
+                    else
+                    {
+                        result = true;
                     }
                 }
                 else
@@ -252,12 +270,18 @@ public sealed class CueSheet(
                     cueSheetLines.Add(line);
                 }
             }
-
+            var fileLineCount = cueSheetLines.Count(x => x.StartsWith(CueSheetKeyRegistry.File, StringComparison.InvariantCultureIgnoreCase));
+            if (fileLineCount > 1)
+            {
+                Log.Warning("CUE file [{CueFile}] has more than one file line. This is not supported by this plugin.", cueFile.FullName);
+                return false;
+            }
             if (didModify)
             {
                 await File.WriteAllLinesAsync(cueFile.FullName, cueSheetLines, cancellationToken);
             }
         }
+        return result;
     }
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)

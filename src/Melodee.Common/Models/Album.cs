@@ -55,7 +55,7 @@ public sealed record Album
 
     /// <summary>
     ///     This is the directory that is holding the melodee.json file. At creation this is likely equal to Original but when
-    ///     moved into another library folder this gets updated and Original does not.
+    ///     moved into another library directory this gets updated and Original does not.
     /// </summary>
     public required FileSystemDirectoryInfo Directory { get; set; }
 

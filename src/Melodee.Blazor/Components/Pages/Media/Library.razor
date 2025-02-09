@@ -98,7 +98,7 @@
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)"
                                       Size="ButtonSize.ExtraSmall"
-                                      Click=@(_ => NavigationManager.NavigateTo($"/media/albumedit/{data.ApiKey}"))
+                                      Click=@(_ => NavigationManager.NavigateTo($"/media/album/{_library.ApiKey}/{data.ApiKey}/edit"))
                                       Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
                         <RadzenImage Path="@data.ImageBase64(DefaultImages.AlbumCoverBytes)"
                                      Style="margin-right: 5px; width: 32px; height: 32px;"
@@ -241,8 +241,7 @@
                     .ToArray();
             }
 
-            var result = await AlbumDiscoveryService.AlbumsDataInfosForDirectoryAsync(
-                _library.ToFileSystemDirectoryInfo(),
+            var result = await AlbumDiscoveryService.AlbumsDataInfosForDirectoryAsync(_library.ToFileSystemDirectoryInfo(),
                 new PagedRequest
                 {
                     FilterBy = filters,

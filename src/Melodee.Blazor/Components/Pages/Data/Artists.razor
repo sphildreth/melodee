@@ -109,7 +109,7 @@
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)"
                                       Size="ButtonSize.ExtraSmall"
-                                      Click=@(_ => NavigationManager.NavigateTo($"/data/artistedit/{data.ApiKey}"))
+                                      Click=@(_ => NavigationManager.NavigateTo($"/data/artist/{data.ApiKey}/edit"))
                                       Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
                         <RadzenImage Path=@($"/images/{data.ToApiKey()}/35") Style="margin-right: 5px;"
                                      AlternateText="@data.Name"/>
@@ -255,7 +255,7 @@
 
     private void AddButtonClick()
     {
-        NavigationManager.NavigateTo($"/data/artistedit/{Guid.Empty}");
+        NavigationManager.NavigateTo($"/data/artist/{Guid.Empty}/edit");
     }
 
     private async Task MergeSelectedButtonClick()

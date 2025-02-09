@@ -391,7 +391,7 @@ public static class AlbumExtensions
     }
 
     /// <summary>
-    ///     Return the path to the Albums folder, this does not include the Artists and Library path.
+    ///     Return the path to the Albums directory, this does not include the Artists and Library path.
     /// </summary>
     public static string AlbumDirectoryName(this Album album, Dictionary<string, object?> configuration)
     {

@@ -16,7 +16,7 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static readonly Regex IsDirectoryDiscographyRegex = new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new("^(cd|disc|disk|side|media|a|b|c|d|e|f){1,}([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new(@"^(cd|disc|disk|side|media|a|b|c|d|e|f){1,}\s*([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static long FileCount(this FileSystemDirectoryInfo directory)
     {
@@ -188,6 +188,12 @@ public static class FileSystemDirectoryInfoExtensions
         return !string.IsNullOrWhiteSpace(dir) && IsDirectoryAlbumMediaDirectoryRegex.IsMatch(dir);
     }
 
+    public static int? TryParseMediaNumber(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var dir = fileSystemDirectoryInfo.Name;
+        return string.IsNullOrWhiteSpace(dir) ? null : dir.ExtractNumber();
+    }
+    
     public static IEnumerable<FileSystemDirectoryInfo> AllAlbumMediaDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var result = new List<FileSystemDirectoryInfo>();
@@ -221,7 +227,11 @@ public static class FileSystemDirectoryInfoExtensions
         return results.ToArray();
     }
 
-    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(this FileSystemDirectoryInfo fileSystemDirectoryInfo, IMelodeeConfiguration configuration, Instant? modifiedSince, SearchOption searchOption)
+    public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(
+        this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        IMelodeeConfiguration configuration,
+        Instant? modifiedSince,
+        SearchOption searchOption)
     {
         if (string.IsNullOrWhiteSpace(fileSystemDirectoryInfo.Path))
         {
@@ -236,7 +246,11 @@ public static class FileSystemDirectoryInfoExtensions
 
         var result = new List<FileSystemDirectoryInfo>();
         var modifiedSinceValue = modifiedSince?.ToDateTimeUtc() ?? DateTime.MinValue;
-        result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption).OrderBy(x => x.LastWriteTimeUtc) where dir.LastWriteTimeUtc >= modifiedSinceValue && dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension)) select dir.ToDirectorySystemInfo());
+        result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption)
+                .OrderBy(x => x.LastWriteTimeUtc)
+            where dir.LastWriteTimeUtc >= modifiedSinceValue &&
+                  dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension))
+            select dir.ToDirectorySystemInfo());
         if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
             .Any(x => x.LastWriteTimeUtc >= modifiedSinceValue && FileHelper.IsFileMediaType(x.Extension)))
         {

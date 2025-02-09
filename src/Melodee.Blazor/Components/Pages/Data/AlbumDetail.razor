@@ -229,7 +229,7 @@
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    @foreach (var song in _album.Songs.OrderBy(x => x.SongNumber))
+                                    @foreach (var song in _album.Songs.OrderBy(x => x.SortOrder))
                                     {
                                         <tr>
                                             <th scope="row">

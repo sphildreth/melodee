@@ -78,6 +78,9 @@ public sealed class DirectoryProcessorService(
     private IScriptPlugin _preDiscoveryScript = new NullScript();
 
     private ISongPlugin[] _songPlugins = [];
+
+    private ISongFileUpdatePlugin _songFileUpdatePlugin = null!;
+    
     private bool _stopProcessingTriggered;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
@@ -102,6 +105,8 @@ public sealed class DirectoryProcessorService(
             new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration)
         ];
 
+        _songFileUpdatePlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration); 
+        
         _conversionPlugins =
         [
             new ImageConvertor(_configuration),
@@ -264,7 +269,35 @@ public sealed class DirectoryProcessorService(
                 {
                     if (mediaDirectoryToProcess.IsAlbumMediaDirectory())
                     {
-                        Logger.Debug(":: [{ServiceName}] Skipping nested album media directory [{Dir}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName());
+                        // A media directory (e.g. 'Disc 1') ensure files in directory have Media Number set and move up one directory.
+                        var mediaFiles = mediaDirectoryToProcess.AllMediaTypeFileInfos().ToArray();
+                        foreach (var mediaFile in mediaFiles)
+                        {
+                            if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                            {
+                                break;
+                            }
+
+                            var discNumber = mediaDirectoryToProcess.TryParseMediaNumber() ?? 1;
+                            _songFileUpdatePlugin.UpdateFile(fileSystemDirectoryInfo, mediaFile.ToFileSystemInfo(), MetaTagIdentifier.DiscNumber, discNumber);
+                            mediaFile.MoveTo(Path.Combine(mediaDirectoryToProcess.Parent()!.FullName(), $"{discNumber}.{ mediaFile.Name }"));                            
+                        }
+
+                        var imageFiles = mediaDirectoryToProcess.AllFileImageTypeFileInfos().ToArray();
+                        foreach (var imageFile in imageFiles)
+                        {
+                            if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                            {
+                                break;
+                            }
+                            var discNumber = mediaDirectoryToProcess.TryParseMediaNumber() ?? 1;
+                            imageFile.MoveTo(Path.Combine(mediaDirectoryToProcess.Parent()!.FullName(), $"{discNumber}.{ imageFile.Name }")); 
+                        }
+                        directoriesToProcess.Remove(mediaDirectoryToProcess);
+                        if (!directoriesToProcess.Contains(mediaDirectoryToProcess.Parent()!))
+                        {
+                            directoriesToProcess.Add(mediaDirectoryToProcess.Parent()!);
+                        }
                         continue;
                     }
                     var newDir = new DirectoryInfo(Path.Combine(fileSystemDirectoryInfo.FullName(), Guid.NewGuid().ToString()));
@@ -898,7 +931,7 @@ public sealed class DirectoryProcessorService(
             imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
         }
 
-        // Sometimes the album is in a directory with the parent holding an image artist that is not a discography folder 
+        // Sometimes the album is in a directory with the parent holding an image artist that is not a discography directory 
         var parents = album.OriginalDirectory.GetParents().ToArray();
         var lookAtParentDirectoriesCount = parents.Length < 2 ? parents.Length : 2;
         for (var i = 0; i < lookAtParentDirectoriesCount; i++)

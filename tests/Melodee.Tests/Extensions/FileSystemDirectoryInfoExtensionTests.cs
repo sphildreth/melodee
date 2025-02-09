@@ -53,8 +53,12 @@ public class FileSystemDirectoryInfoExtensionTests
     [InlineData("CD01", true)]
     [InlineData("CD14", true)]
     [InlineData("CD1", true)]
+    [InlineData("CD 1", true)]
     [InlineData("DISC1", true)]
+    [InlineData("Disc 1", true)]
+    [InlineData("Disc 01", true)]
     [InlineData("media001", true)]
+    [InlineData("media 001", true)]
     public void IsDirectoryAlbumMedia(string input, bool shouldBe)
     {
         Assert.Equal(shouldBe, new FileSystemDirectoryInfo
@@ -192,7 +196,7 @@ public class FileSystemDirectoryInfoExtensionTests
     }
 
     [Fact]
-    public void NextImageNumberInFolder()
+    public void NextImageNumberInDirectory()
     {
         var testPath = @"/melodee_test/tests/image_number_tests/";
         if (Directory.Exists(testPath))

@@ -45,19 +45,20 @@ public static class SongExtensions
             {
                 return (T?)converter.ConvertFrom(short.Parse(vv.ToString() ?? string.Empty));
             }
-
             if (tType == typeof(Guid) || tType == typeof(Guid?))
             {
                 var g = Guid.Parse(vv.ToString() ?? string.Empty);
                 return g == Guid.Empty ? d : (T?)converter.ConvertFrom(g);
             }
-
             if (tType == typeof(DateTime) || tType == typeof(DateTime?))
             {
                 var dt = DateTime.Parse(vv.ToString() ?? string.Empty, CultureInfo.InvariantCulture);
                 return dt == DateTime.MinValue ? d : (T?)converter.ConvertFrom(dt);
             }
-
+            if (tType == typeof(string) && vv is int || vv is int? )
+            {
+                return (T?)converter.ConvertFrom(vv?.ToString() ?? string.Empty);
+            }
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)
@@ -179,9 +180,21 @@ public static class SongExtensions
 
     public static DateTime? AlbumDateValue(this Song song)
     {
-        return song.AlbumDate().Nullify() == null ? null : DateTime.Parse(song.AlbumDate()!, CultureInfo.InvariantCulture);
+        var albumDate = song.AlbumDate();
+        var year = SafeParser.ToNumber<int?>(albumDate);
+        if (year != null)
+        {
+            return DateTime.Parse($"01/01/{ year }", CultureInfo.InvariantCulture);
+        }
+        return albumDate.Nullify() == null ? null : DateTime.Parse(albumDate!, CultureInfo.InvariantCulture);
     }
 
+    public static short MediaNumber(this Song song)
+    {
+        var mediaNumber = song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumber) ?? 1;
+        return mediaNumber < 1 ? (short)1 : mediaNumber;
+    }    
+    
     public static int SongNumber(this Song song)
     {
         return song.MetaTagValue<int?>(MetaTagIdentifier.TrackNumber) ?? 0;

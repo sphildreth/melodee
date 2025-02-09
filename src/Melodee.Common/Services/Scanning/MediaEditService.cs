@@ -1,3 +1,4 @@
+using System.IO.Hashing;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
@@ -19,6 +20,7 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 using SixLabors.ImageSharp;
+using Crc32 = Melodee.Common.Utility.Crc32;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
 namespace Melodee.Common.Services.Scanning;
@@ -36,6 +38,8 @@ public sealed class MediaEditService(
     ISerializer serializer,
     IHttpClientFactory httpClientFactory) : ServiceBase(logger, cacheManager, contextFactory)
 {
+    public const int SortOrderMediaMultiplier = 10000;
+    
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private string _directoryLibrary = null!;
@@ -636,7 +640,18 @@ public sealed class MediaEditService(
             var numberOfSongsSeen = 0;
             foreach (var dd in album.Songs?.Select((x, i) => new { x, i = i + 1 }) ?? [])
             {
-                album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
+                album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);                
+                /*
+                 * Calculate a unique sort number so that albums which have multiple medias stay in order. This matters for albums like concept albums
+                 * where the songs are intended to play in order (e.g. Dream Theater - [2016] The Astonishing).
+                 * media 1 track 1 sort is 1
+                 * media 1 track 20 sort is 20
+                 * media 2 track 1 sort is 10001
+                 * media 2 track 20 sort is 10020
+                 * media 3 track 1 sort is 20001
+                 * media 3 track 20 sort is 20020
+                 */
+                dd.x.SortOrder = (dd.i + (dd.x.MediaNumber() * SortOrderMediaMultiplier)) - SortOrderMediaMultiplier;
                 await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
                 numberOfSongsSeen++;
             }
