@@ -123,6 +123,10 @@
                             {
                                 <CondensedStatistic Label="Sort Name" Statistic="@_artist.SortName"/>
                             }
+                            @if (_artist.AlternateNames.Nullify() != null)
+                            {
+                                <CondensedStatistic Label="Alternate Name" Statistic="@_artist.AlternateNames"/>
+                            }
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>
