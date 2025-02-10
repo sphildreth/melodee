@@ -8,6 +8,7 @@ Melodee is a music system designed to manage and stream music libraries with ten
 
 ![GitHub License](https://img.shields.io/github/license/sphildreth/melodee)
 [![.NET](https://github.com/sphildreth/melodee/actions/workflows/dotnet.yml/badge.svg)](https://github.com/sphildreth/melodee/actions/workflows/dotnet.yml)
+[![CodeQL](https://github.com/sphildreth/melodee/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/sphildreth/melodee/actions/workflows/github-code-scanning/codeql)
 <a href="https://discord.gg/bfMnEUrvbp">
 ![Discord](https://img.shields.io/discord/1337921126210211943)
 </a>
