@@ -1,40 +1,66 @@
 ---
 layout: page
-title: Docsy Jekyll Theme
+title: Melodee
 permalink: /
 ---
 
-# Welcome to Docsy Jekyll
+# Melodee Music System
 
-This is a starter template for a docsy jekyll theme.
+* This page is a work in progress to document all things around setting up and using Melodee. *
 
-![assets/img/docsy-jekyll.png](assets/img/docsy-jekyll.png)
+## What is Melodee?
 
-## Purpose
+Melodee is a streaming music server that serves to both OpenSubsonic and Subsonic clients. Melodee includes the ability to organize, edit and manage music files and user access.
 
-GitHub pages uses Jekyll natively, so when I make documentation, I typically
-look for Jekyll templates. Why? Using Jekyll means that I can use markdown,
-and allow for users to easily contribute, and build automatically just by
-way of pushing to a master branch (or general GitHub pages).
-I found Docsy, a beautiful Hugo template, but it requires hugo with GoLang
-which doesn't render natively on GitHub pages. For this reason, I've spent
-some time creating a custom Jekyll template that is (almost) as beautiful,
-and includes all the features that I might want.
+Melodee handles media to library in every step:
+  1. Converts, cleans, normalizes and validates inbound media found in inbound library to staging library.
+  2. Allows for manual editing of media in staging library before adding to storage libraries. This allows editing of inbound media without serving to API users.
+  3. Allows for manual or automated job execution to scan ready media into storage libraries and main database.
+  4. Serves Subsonic clients data from main database and streams from storage libraries.
 
 ## Features
 
-What are these features? You should see the {% include doc.html name="Getting Started" path="getting-started" %}
-guide for a complete summary. Briefly:
+Some major features of Melodee include:
+ - Process inbound music to prepare for adding to storage library.
+    * Convert media to standard format.
+    * Apply regex based rules for editing metadata.
+    * Does configuration driven magic
+        * Validation.
+        * Song renumbering.
+        * Removes featuring/with artist from song titles.
+        * Removes unwanted text from song and album titles.
+ - Plugin based architecture.
+    * Plugins to parse NFO, M3U, SFV metadata files.
+    * Plugins to read and edit tags for 22 types of media files, including: AAC, AC3, M4A, Flac, Ogg, Ape, MP3, WAV, WMA.
+    * Search engines to find album and artist metadata and images and scrobble.
+        * iTunes
+        * LastFM
+        * MusicBrainz
+            * Downloads and creates local MusicBrainz SQLite database for faster metadata lookup.
+        * Spotify
+  - Job engine
+    * Uses cron like scheduling.
+    * Scans inbound, staging and storage libraries for new media and updates.
+  - Multiple storage library support
+    * Storage libraries hold music media files, artist and album images.
+    * Allows for configuration of multiple music storage libraries (e.g. across many NAS storage points)
+  - Web (Blazor Server) UI Editor
+    * Edit meta data.
+    * Edit album and band photos.
+    * Manage users and user permissions.
+    * Manage configuration options.
+  - Robust configuration system
+  - OpenSubsonic API server
+    * Real time transcoding. Including Ogg and Opus formats.
+    * Tested with several Subsonic clients
+        * [Airsonic (rexfix)](https://github.com/tamland/airsonic-refix)
+        * [Dsub](https://github.com/DataBiosphere/dsub)
+        * [Feishin](https://github.com/jeffvli/feishin)
+        * [Symphonium](https://symfonium.app/)
+        * [Sublime Music](https://github.com/sublime-music/sublime-music)
+        * [Supersonic](https://github.com/dweymouth/supersonic)
+        * [Ultrasonic](https://gitlab.com/ultrasonic/ultrasonic)
 
- - *User interaction* including consistent permalinks, links to ask questions via GitHub issues, and edit the file on GitHub directly.
- - *Search* across posts, documentation, and other site pages, with an ability to exclude from search.
- - *External Search* meaning an ability to link any page tag to trigger an external search.
- - *Documentation* A documentation collection that was easy to organize on the filesystem, render with nested headings for the user, and refer to in markdown.
- - *Pages* A separate folder for more traditional pages (e.g, about).
- - *Navigation*: Control over the main navigation on the left of the page, and automatic generation of table of contents for each page on the right.
- - *News* A posts feed for news and updates, along with an archive (organized by year).
- - *Templates* or specifically, "includes" that make it easy to create an alert, documentation link, or other content.
- - *Continuous Integration* recipes to preview the site
 
 
 For features, getting started with development, see the {% include doc.html name="Getting Started" path="getting-started" %} page. Would you like to request a feature or contribute?
