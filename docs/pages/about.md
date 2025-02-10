@@ -5,9 +5,7 @@ permalink: /about/
 
 # About
 
-This is a [starter template](https://vsoch.github.io/docsy-jekyll/) for a Docsy jekyll theme, based
-on the Beautiful [Docsy](https://github.com/google/docsy) that renders with Hugo. This version is intended for
-native deployment on GitHub pages. See the [repository]({{ site.repo }}) for more details.
+This is the documentation site for the open source project Melodee.
 
 ## Support
 

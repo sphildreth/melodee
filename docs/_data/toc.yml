@@ -2,24 +2,15 @@
   url: docs
   links:
     - title: "Getting Started"
-      url: "docs/getting-started"
+      url: "docs"
       children:
-        - title: Features
-          url: "docs/getting-started#getting-started"
-        - title: Development
-          url: "docs/getting-started#development"
-        - title: Customization
-          url: "docs/getting-started#customization"
-    - title: Versioning
-      url: "docs/versioning"
+        - title: Installation
+          url: "installing"
+        - title: Configuration
+          url: "configuration"
+        - title: Libraries
+          url: "libraries"
+    - title: API
+      url: "api"
     - title: "About"
       url: "about"
-    - title: "News"
-      url: "news"
-- title: "Extras"
-  url: "docs/extras"
-  links:
-    - title: Quizzes
-      url: "docs/extras/example-quiz"
-    - title: Tags Page
-      url: "tags"

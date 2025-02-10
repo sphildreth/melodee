@@ -43,7 +43,7 @@ version_params:
   versioning: true
 
   # Disable so older versions cannot be searched
-  allow_search: true  
+  allow_search: true
 
   # Allow these versions to be searched
   search_versions:
@@ -102,9 +102,3 @@ defaults:
       type: "pages"
     values:
       layout: "page"
-  -
-    scope:
-      path: "posts"
-      type: "posts"
-    values:
-      layout: "post"
