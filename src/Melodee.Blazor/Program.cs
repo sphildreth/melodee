@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Blazored.SessionStorage;
 using Melodee.Blazor.Components;
+using Melodee.Blazor.Constants;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Middleware;
 using Melodee.Blazor.Services;
@@ -186,7 +187,7 @@ app.UseStatusCodePagesWithRedirects("/Error");
 
 #region Scheduling Quartz Jobs with Configuration
 
-var isQuartzDisabled = SafeParser.ToBoolean(builder.Configuration["QuartzDisabled"]);
+var isQuartzDisabled = SafeParser.ToBoolean(builder.Configuration[AppSettingsKeys.QuartzDisabled]);
 if (!isQuartzDisabled)
 {
     var quartzScheduler = app.Services.GetRequiredService<IScheduler>();

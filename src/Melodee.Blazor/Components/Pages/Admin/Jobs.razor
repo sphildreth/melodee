@@ -7,14 +7,21 @@
 @using IScheduler = Quartz.IScheduler
 
 @inject IScheduler Scheduler
+@inject IConfiguration AppSettingsConfiguration
 
 @attribute [Authorize(Roles = "Administrator")]
 
-@if (_jobs.Count == 0)
+@if (AppSettingsConfiguration.GetValue<bool>(AppSettingsKeys.QuartzDisabled))
+{
+    <p>Jobs are disabled in the appsettings.json file. Set the setting "@AppSettingsKeys.QuartzDisabled" to "false" (or remove entirely) enable.</p>
+}
+else if (_jobs.Count == 0)
 {
     <p>No jobs found</p>
     <p>Check your configuration and enable the Cron Expressions for Jobs.</p>
 }
+
+
 
 <RadzenDataList
     AllowVirtualization="false"

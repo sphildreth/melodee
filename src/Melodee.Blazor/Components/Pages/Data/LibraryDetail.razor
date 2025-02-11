@@ -10,6 +10,7 @@
 @using Library = Melodee.Common.Data.Models.Library
 @using IScheduler = Quartz.IScheduler
 
+@inject IConfiguration AppSettingsConfiguration
 @inject IScheduler Scheduler
 @inject ILogger Logger
 @inject DialogService DialogService
@@ -41,11 +42,11 @@
             <RadzenMenuItem Text="Purge" Click="PurgeButtonClick" title="Delete everything in the library" IconColor="@Colors.Danger"  Icon="delete_sweep"></RadzenMenuItem>
             <RadzenMenuItem Text="Lock" Click="LockButtonClick" title="Lock library, will prevent modifications." IconColor="@Colors.Warning"  Icon="lock"></RadzenMenuItem>
         }
-        @if (_library.TypeValue != LibraryType.Storage)
+        @if (_areJobsEnabled && _library.TypeValue != LibraryType.Storage)
         {
             <RadzenMenuItem Text="Process" Click="ProcessButtonClick" title="Process media files into Melodee media json file." IconColor="@Colors.Secondary" Icon="memory"></RadzenMenuItem>
         }
-        else
+        else if(_areJobsEnabled)
         {
             <RadzenMenuItem Text="Scan" Disabled="_library.IsLocked" Click="ScanButtonClick" title="Scan for Melodee media json files and update database data." IconColor="@Colors.Secondary" Icon="database"></RadzenMenuItem>
         }
@@ -230,6 +231,8 @@
         Type = (int)LibraryType.NotSet
     };
 
+    private bool _areJobsEnabled = false;
+
     private enum ShowItem
     {
         Overview = 1,
@@ -285,19 +288,21 @@
         _isLoading = false;
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        var dataResult = await LibraryService.GetByApiKeyAsync(ApiKey);
+        if (dataResult is { IsSuccess: true, Data: not null })
+        {
+            _library = dataResult.Data;
+        }
+
+    }
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        if (ApiKey != Guid.Empty)
-        {
-            var dataResult = await LibraryService.GetByApiKeyAsync(ApiKey);
-            if (dataResult is { IsSuccess: true, Data: not null })
-            {
-                _library = dataResult.Data;
-            }
-        }
+        _areJobsEnabled = !AppSettingsConfiguration.GetValue<bool>(AppSettingsKeys.QuartzDisabled);
     }
 
     private async Task PurgeButtonClick()

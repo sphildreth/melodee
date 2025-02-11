@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
+using ServiceStack;
 using SixLabors.ImageSharp;
 using Crc32 = Melodee.Common.Utility.Crc32;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
@@ -842,17 +843,30 @@ public sealed class MediaEditService(
         };
     }
 
-    public async Task<OperationResult<bool>> SaveMelodeeAlbum(Album album, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> SaveMelodeeAlbum(Album album, bool? forceIsOk = null, CancellationToken cancellationToken = default)
     {
         album.Modified = DateTimeOffset.UtcNow;
-        var albumValidResult = _albumValidator.ValidateAlbum(album);
-        album.ValidationMessages = albumValidResult.Data.Messages ?? [];
-        album.Status = albumValidResult.Data.AlbumStatus;
-        album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;
+        if (!(forceIsOk ?? false))
+        {
+            var albumValidResult = _albumValidator.ValidateAlbum(album);
+            album.ValidationMessages = albumValidResult.Data.Messages ?? [];
+            album.Status = albumValidResult.Data.AlbumStatus;
+            album.StatusReasons = albumValidResult.Data.AlbumStatusReasons;
+        }
+        else
+        {
+            album.Status = AlbumStatus.Ok;
+            album.StatusReasons = AlbumNeedsAttentionReasons.NotSet;
+        }
+
         await SaveAlbum(album.Directory, album, cancellationToken).ConfigureAwait(false);
         return new OperationResult<bool>
         {
             Data = album.Status == AlbumStatus.Ok
         };
     }
+
+    public Task<OperationResult<bool>> ManuallyValidateAlbum(Album album, CancellationToken cancellationToken = default)
+        => SaveMelodeeAlbum(album, true, cancellationToken);
+
 }

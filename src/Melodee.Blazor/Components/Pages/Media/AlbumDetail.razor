@@ -40,6 +40,7 @@
     <RadzenMenu>
         <RadzenMenuItem Text="Edit" Icon="edit">
             <RadzenMenuItem Text="Edit album" Icon="edit" Value="@MenuItems.EditAlbum" Click="OnMenuItemClicked"></RadzenMenuItem>
+            <RadzenMenuItem Text="Manually validate album" Icon="data_check" Value="@MenuItems.ManuallyValidateAlbum" Click="OnMenuItemClicked"></RadzenMenuItem>
             <RadzenMenuItem Text="Renumber all songs" Icon="format_list_numbered" Value="@MenuItems.RenumberSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
             <RadzenMenuItem Text="Set artist on all songs" Icon="artist" Value="@MenuItems.SetArtistOnAllSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
         </RadzenMenuItem>
@@ -237,6 +238,7 @@
     {
         RenumberSongs,
         EditAlbum,
+        ManuallyValidateAlbum,
         SetArtistOnAllSongs,
         DeleteSelectedSongs
     }
@@ -322,10 +324,6 @@
         MainLayoutProxyService.ToggleSpinnerVisible();
         try
         {
-            _album.Status = AlbumStatus.Ok;
-            _album.StatusReasons = AlbumNeedsAttentionReasons.NotSet;
-            await MediaEditService.SaveMelodeeAlbum(_album);
-
             var librariesResult = await LibraryService.GetStorageLibrariesAsync();
             if (librariesResult.Data.Length > 1)
             {
@@ -334,7 +332,7 @@
             }
 
             var storageLibrary = librariesResult.Data.First();
-            var moveResult = await LibraryService.MoveAlbumsFromLibraryToLibrary(
+            await LibraryService.MoveAlbumsFromLibraryToLibrary(
                 _library.Name,
                 storageLibrary.Name,
                 a => a.Id == _album.Id,
@@ -523,7 +521,15 @@
                 result = await MediaEditService.SaveMelodeeAlbum(_album);
                 if (result.Data)
                 {
-                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
+                    NotificationService.Notify(NotificationMessageForResult(result, "renumbered songs", ToastTime));
+                }
+                break;
+
+            case MenuItems.ManuallyValidateAlbum:
+                result = await MediaEditService.ManuallyValidateAlbum(_album);
+                if (result.Data)
+                {
+                    NotificationService.Notify(NotificationMessageForResult(result, "manually validated album", ToastTime));
                 }
                 break;
 
@@ -532,7 +538,7 @@
                 result = await MediaEditService.SaveMelodeeAlbum(_album);
                 if (result.Data)
                 {
-                    NotificationService.Notify(NotificationMessageForResult(result, "deleted song", ToastTime));
+                    NotificationService.Notify(NotificationMessageForResult(result, "set artists on all songs", ToastTime));
                 }
                 break;
 

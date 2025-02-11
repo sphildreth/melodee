@@ -347,12 +347,6 @@ public class LibraryService(
         var movedCount = 0;
         foreach (var album in albums)
         {
-            if (!albumValidator.ValidateAlbum(album).Data.IsValid)
-            {
-                Logger.Debug("[{ServiceName}] Not moving invalid album [{Album}]", nameof(LibraryService), album.ToString());
-                continue;
-            }
-
             var artistDirectory = album.Artist.ToDirectoryName(configuration.GetValue<short>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
             var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);
             var libraryAlbumPath = Path.Combine(library.Path, artistDirectory, albumDirectory);
@@ -611,11 +605,6 @@ public class LibraryService(
             var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumFile, cancellationToken).ConfigureAwait(false);
             if (album != null)
             {
-                if (!albumValidator.ValidateAlbum(album).Data.IsValid)
-                {
-                    continue;
-                }
-
                 if (condition(album))
                 {
                     albumsToMove.Add(album);

@@ -424,7 +424,7 @@
 
                 if (_images.FirstOrDefault() != null)
                 {
-                    var imageBytes = await File.ReadAllBytesAsync(_images.First()!.FileInfo.FullName(album.Directory));
+                    var imageBytes = await File.ReadAllBytesAsync(_images.First().FileInfo!.FullName(album.Directory));
                     _coverImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
                 }
 
