@@ -37,33 +37,43 @@ public static class SongExtensions
                 vv = vv.ToString() ?? string.Empty;
             }
             var converter = TypeDescriptor.GetConverter(tType);
-            if (vv is DateTime && tType == typeof(string))
-            {
-                return (T?)converter.ConvertFrom(vv.ToString() ?? string.Empty); 
-            }            
             if (tType == typeof(short) || tType == typeof(short?))
             {
-                return (T?)converter.ConvertFrom(short.Parse(vv.ToString() ?? string.Empty));
+                var vvv = short.Parse(vv?.ToString() ?? string.Empty);
+                return (T?)(object)vvv;
             }
+            if (tType == typeof(int) || tType == typeof(int?))
+            {
+                var vvv = int.Parse(vv?.ToString() ?? string.Empty);
+                return (T?)(object)vvv;
+            }            
             if (tType == typeof(Guid) || tType == typeof(Guid?))
             {
                 var g = Guid.Parse(vv.ToString() ?? string.Empty);
-                return g == Guid.Empty ? d : (T?)converter.ConvertFrom(g);
+                return g == Guid.Empty && tType == typeof(Guid?) ? d : (T?)converter.ConvertFrom(g);
             }
+            if (vv is DateTime && tType == typeof(string))
+            {
+                return (T?)converter.ConvertFrom(vv.ToString() ?? string.Empty); 
+            }              
             if (tType == typeof(DateTime) || tType == typeof(DateTime?))
             {
                 var dt = DateTime.Parse(vv.ToString() ?? string.Empty, CultureInfo.InvariantCulture);
-                return dt == DateTime.MinValue ? d : (T?)converter.ConvertFrom(dt);
+                return dt == DateTime.MinValue ? d : (T)Convert.ChangeType(vv, tType);
             }
             if (tType == typeof(string) && vv is int || vv is int? )
             {
                 return (T?)converter.ConvertFrom(vv?.ToString() ?? string.Empty);
             }
+            if (vv is T)
+            {
+                return (T?)vv;
+            }
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)
         {
-            Trace.WriteLine(e);
+            Trace.WriteLine($"Song [{ song}] MetaTagIdentifier [{metaTagIdentifier.ToString()}] Value [{vv}] to type [{tType}] [{ e }]");
         }
 
         return d;
@@ -124,7 +134,9 @@ public static class SongExtensions
 
     public static long? SongArtistAlbumUniqueId(this Song song)
     {
-        return SafeParser.Hash(song.AlbumArtist() ?? string.Empty, song.AlbumTitle() ?? string.Empty);
+        return SafeParser.Hash(song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist() ?? string.Empty, 
+            song.MediaNumber().ToString(), 
+            song.AlbumTitle() ?? string.Empty);
     }
 
     public static string? AlbumArtist(this Song song)

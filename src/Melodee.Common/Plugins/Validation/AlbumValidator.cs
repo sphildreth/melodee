@@ -113,7 +113,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             DoesAlbumHaveCoverImage(album);
             ArtistHasSearchEngineResult(album.Artist);
             AlbumIsStudioTypeAlbum(album);
-            AllSongsHaveAnArtist(album);
         }
         catch (Exception e)
         {
@@ -143,20 +142,6 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Severity = ValidationResultMessageSeverity.Critical
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.IsNotStudioTypeAlbum;
-        }
-    }
-
-    private void AllSongsHaveAnArtist(Album album)
-    {
-        var anySongsWithoutArtists = album.Songs?.Any(x => x.AlbumArtist().Nullify() == null) ?? false;
-        if (anySongsWithoutArtists)
-        {
-            _validationMessages.Add(new ValidationResultMessage
-            {
-                Message = "Album has songs with no artist, will need manual validation.",
-                Severity = ValidationResultMessageSeverity.Critical
-            });
-            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasSongsWithoutArtists;
         }
     }
 
@@ -346,7 +331,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
     private void AreAllSongNumbersValid(Album album)
     {
         var result = true;
-        var songs = album.Songs?.ToArray() ?? [];
+        var songs = album.Songs?.OrderBy(x => x.SortOrder).ToArray() ?? [];
         if (songs.Length == 0)
         {
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasNoSongs;

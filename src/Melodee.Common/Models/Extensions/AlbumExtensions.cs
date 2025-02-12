@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
@@ -13,6 +14,8 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class AlbumExtensions
 {
+    private const int MinimumLengthForSoundtrackRecordingTitle = 2;
+    
     public static readonly Regex SoundtrackRecordingArtistParseRegex = new(@"(soundtrack|(\(*\s*ost\))*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static string[] SoundtrackTypeAlbumGenres
@@ -49,7 +52,7 @@ public static class AlbumExtensions
     
     public static long? ArtistAlbumUniqueId(this Album album)
     {
-        return SafeParser.Hash(album.Artist.Name?.ToString() ?? string.Empty, album.AlbumTitle() ?? string.Empty);
+        return SafeParser.Hash(album.Artist.Name.ToNormalizedString() ?? album.Artist.Name, album.AlbumTitle() ?? string.Empty);
     }
     
     public static bool IsStudioTypeAlbum(this Album album)
@@ -59,9 +62,12 @@ public static class AlbumExtensions
 
     public static bool IsSoundTrackTypeAlbum(this Album album)
     {
+        var albumTitle = album.AlbumTitle() ?? string.Empty;
+        
         return SoundtrackTypeAlbumGenres.Contains(album.Genre()?.ToNormalizedString() ?? string.Empty) ||
-               SoundtrackRecordingArtistParseRegex.IsMatch(album.AlbumTitle() ?? string.Empty);
+               (albumTitle.Length > MinimumLengthForSoundtrackRecordingTitle && SoundtrackRecordingArtistParseRegex.IsMatch(albumTitle));
     }
+
 
     public static bool IsOriginalCastTypeAlbum(this Album album)
     {
@@ -137,31 +143,28 @@ public static class AlbumExtensions
         {
             return d;
         }
-
+        var tType = typeof(T?);        
+        var vv = album.Tags?.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
         try
         {
-            var vv = album.Tags?.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
             if (vv == null)
             {
                 return d;
             }
-
             var converter = TypeDescriptor.GetConverter(typeof(T?));
             if (typeof(T?) == typeof(short?))
             {
                 return SafeParser.ToNumber<T?>(vv.ToString());
             }
-
             if (vv is JsonElement)
             {
                 vv = vv.ToString() ?? string.Empty;
             }
-
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)
         {
-            Trace.WriteLine($"Album [{album}] Exception [{e}]");
+            Trace.WriteLine($"Song [{ album}] MetaTagIdentifier [{metaTagIdentifier.ToString()}] Value [{vv}] to type [{tType}] [{ e }]");            
         }
 
         return d;

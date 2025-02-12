@@ -107,9 +107,24 @@ public class AlbumValidatorTests : TestsBase
                         },
                         new MetaTag<object?>
                         {
+                            Identifier = MetaTagIdentifier.RecordingDate,
+                            Value = "11/01/1971"
+                        },                        
+                        new MetaTag<object?>
+                        {
                             Identifier = MetaTagIdentifier.TrackNumber,
                             Value = "1"
                         },
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.DiscNumber,
+                            Value = "1"
+                        },             
+                        new MetaTag<object?>
+                        {
+                            Identifier = MetaTagIdentifier.DiscTotal,
+                            Value = "1"
+                        },                         
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Title,

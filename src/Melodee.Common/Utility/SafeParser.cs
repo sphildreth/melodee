@@ -365,7 +365,11 @@ public static class SafeParser
         {
             return null;
         }
-
+        input = input
+            .Replace("$", "__x24f")
+            .Replace("%", "__x25f")
+            .Replace("&", "and")
+            .Replace("?", "__x3f");
         return Regex.Replace(PathSanitizer.SanitizeFilename(input, ' ') ?? string.Empty, @"\s+", " ").Trim();
     }
 

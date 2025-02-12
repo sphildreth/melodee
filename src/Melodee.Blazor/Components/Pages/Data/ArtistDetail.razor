@@ -4,6 +4,7 @@
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
 @using Melodee.Common.Models.Collection
+@using Melodee.Common.Models.Extensions
 @using Artist = Melodee.Common.Data.Models.Artist
 
 @inject ArtistService ArtistService
@@ -54,6 +55,13 @@
         </RadzenColumn>
     </RadzenRow>
 </RadzenStack>
+@if (_alertMessages.Any())
+{
+    foreach (var alert in _alertMessages)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Warning" Size="AlertSize.Small" Icon="warning" AllowClose="false" Text="@alert" />
+    }
+}
 <RadzenStack>
     <RadzenMenu>
         <RadzenMenuItem Text="Delete"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="DeleteButtonClick" title="Delete the artist, all artist albums, and all album files. BEWARE!" IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
@@ -304,6 +312,8 @@
         { nameof(AlbumDataInfo.ReleaseDate), PagedRequest.OrderAscDirection }
     };
 
+    private List<string> _alertMessages = [];
+
     async Task PageChanged(PagerEventArgs args)
     {
         _currentPage = args.PageIndex + 1;
@@ -327,6 +337,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        _alertMessages.Clear();
         if (ApiKey != Guid.Empty)
         {
             var artistResult = await ArtistService.GetByApiKeyAsync(ApiKey);
@@ -340,6 +351,12 @@
                     ArtistId = 0,
                     CreatedAt = default
                 };
+
+                var artistDirectory = Path.Combine(_artist.Library.Path, _artist.Directory).ToDirectoryInfo();
+                if (!artistDirectory.Exists())
+                {
+                    _alertMessages.Add($"Artist directory [{ artistDirectory.FullName()}] is not found.");
+                }
                 await LoadAlbums();
             }
         }

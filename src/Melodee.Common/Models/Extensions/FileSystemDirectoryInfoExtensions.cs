@@ -1,9 +1,12 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using NodaTime;
 using Serilog;
 using SearchOption = System.IO.SearchOption;
@@ -18,6 +21,65 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new(@"^(cd|disc|disk|side|media|a|b|c|d|e|f){1,}\s*([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    public static async Task<KeyValuePair<string, List<FileInfo>>[]> FindDuplicatesAsync(this FileSystemDirectoryInfo directory, string searchPattern = "*.*", CancellationToken cancellationToken = default)
+    {
+        var fileGroups = new ConcurrentDictionary<long, ConcurrentDictionary<string, List<FileInfo>>>();
+        var files = Directory.GetFiles(directory.FullName(), searchPattern, SearchOption.AllDirectories);
+
+        await Parallel.ForEachAsync(files, cancellationToken, async (filePath, token) =>
+        {
+            try
+            {
+                var fileInfo = new FileInfo(filePath);
+                var fileSize = fileInfo.Length;
+
+                // Group by file size first
+                var sizeGroup = fileGroups.GetOrAdd(fileSize, _ => new ConcurrentDictionary<string, List<FileInfo>>());
+
+                // Only calculate hash if there's another file of the same size
+                if (sizeGroup.Count > 0)
+                {
+                    var hash = await CalculateFileHashAsync(filePath, token);
+                    sizeGroup.AddOrUpdate(
+                        hash,
+                        key => new List<FileInfo> { fileInfo },
+                        (key, existingList) =>
+                        {
+                            lock (existingList)
+                            {
+                                existingList.Add(fileInfo);
+                                return existingList;
+                            }
+                        });
+                }
+                else
+                {
+                    sizeGroup.TryAdd("pending", new List<FileInfo> { fileInfo });
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Console.WriteLine($"Error processing file {filePath}: {ex.Message}");
+            }
+        });
+
+        // Combine all duplicates across size groups
+        var result =  fileGroups
+                        .Where(g => g.Value.Count > 1)
+                        .SelectMany(x => x.Value)
+                        .Where(x => !x.Key.Equals("pending")).ToArray();
+
+        return result;
+    }
+
+    private static async Task<string> CalculateFileHashAsync(string filePath, CancellationToken cancellationToken)
+    {
+        using var md5 = MD5.Create();
+        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var hash = await md5.ComputeHashAsync(stream, cancellationToken);
+        return BitConverter.ToString(hash).Replace("-", "").ToLower();
+    }
+    
     public static long FileCount(this FileSystemDirectoryInfo directory)
     {
         if (!directory.Exists())

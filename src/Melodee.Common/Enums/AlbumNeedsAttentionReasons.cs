@@ -109,10 +109,5 @@ public enum AlbumNeedsAttentionReasons
     /// <summary>
     ///     The first song should be numbered 1.
     /// </summary>
-    HasInvalidFirstSongNumber = 1 << 23,
-
-    /// <summary>
-    ///     Has songs that have no artist set.
-    /// </summary>
-    HasSongsWithoutArtists = 1 << 24
+    HasInvalidFirstSongNumber = 1 << 23
 }

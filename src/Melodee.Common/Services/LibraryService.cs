@@ -602,13 +602,20 @@ public class LibraryService(
                 }
             }
 
-            var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumFile, cancellationToken).ConfigureAwait(false);
-            if (album != null)
+            try
             {
-                if (condition(album))
+                var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumFile, cancellationToken).ConfigureAwait(false);
+                if (album != null)
                 {
-                    albumsToMove.Add(album);
+                    if (condition(album))
+                    {
+                        albumsToMove.Add(album);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "[{ServiceName}] Failed to deserialize album from file [{AlbumFile}]", nameof(LibraryService), albumFile);
             }
 
             if (albumsToMove.Count >= maxAlbumProcessingCount)

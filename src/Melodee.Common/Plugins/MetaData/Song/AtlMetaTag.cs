@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using ATL;
 using ATL.AudioData;
+using Commons;
 using FFMpegCore;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -172,9 +173,7 @@ public sealed class AtlMetaTag(
                             if (v != null)
                             {
                                 var identifier = SafeParser.ToEnum<MetaTagIdentifier>(metaTagIdentifier.Key);
-                                if (metaTagIdentifier.Key == (int)MetaTagIdentifier.Date ||
-                                    metaTagIdentifier.Key == (int)MetaTagIdentifier.AlbumDate ||
-                                    metaTagIdentifier.Key == (int)MetaTagIdentifier.RecordingDate)
+                                if (metaTagIdentifier.Key is (int)MetaTagIdentifier.Date or (int)MetaTagIdentifier.AlbumDate or (int)MetaTagIdentifier.RecordingDate)
                                 {
                                     var dt = SafeParser.ToDateTime(v);
                                     if (dt.HasValue)
@@ -192,8 +191,7 @@ public sealed class AtlMetaTag(
                                     }
                                 }
 
-                                if (identifier == MetaTagIdentifier.DiscNumber ||
-                                    identifier == MetaTagIdentifier.DiscTotal)
+                                if (identifier is MetaTagIdentifier.DiscNumber or MetaTagIdentifier.DiscTotal)
                                 {
                                     // Every album with songs has at least one disc
                                     if (SafeParser.ToNumber<short>(v) < 1)
@@ -233,6 +231,12 @@ public sealed class AtlMetaTag(
                             var pictureIndex = 0;
                             foreach (var embeddedPicture in fileAtl.EmbeddedPictures)
                             {
+                                if (embeddedPicture.NativeFormat is ImageFormat.Unsupported or ImageFormat.Undefined)
+                                {
+                                    Log.Warning("[{PluginName}] embedded image format [{Format}] is not supported.", nameof(AtlMetaTag), embeddedPicture.NativeFormat);
+                                    continue;
+                                }
+
                                 var imageInfo = Image.Load(embeddedPicture.PictureData);
                                 var imageCrcHash = Crc32.Calculate(embeddedPicture.PictureData);
                                 if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)

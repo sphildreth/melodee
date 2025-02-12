@@ -311,7 +311,6 @@ public sealed record Album
         {
             result.Directory = d;
         }
-
         return result;
     }
 }

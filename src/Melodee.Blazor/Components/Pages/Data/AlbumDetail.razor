@@ -22,7 +22,6 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JsRuntime
 
-
 <PageTitle>@_album.Name</PageTitle>
 
 <RadzenStack>
@@ -65,6 +64,15 @@
         </RadzenColumn>
     </RadzenRow>
 </RadzenStack>
+
+@if (_alertMessages.Any())
+{
+    foreach (var alert in _alertMessages)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Warning" Icon="warning" Size="AlertSize.Small" AllowClose="false" Text="@alert" />
+    }
+}
+
 <RadzenStack>
     <RadzenMenu>
         <RadzenMenuItem Text="Delete"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="DeleteButtonClick" title="Delete the album and all album files. BEWARE!" IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
@@ -327,15 +335,19 @@
 
     private long _albumDirectoryFileCount = 0;
 
+    private List<string> _alertMessages = [];
+
     protected override async Task OnParametersSetAsync()
     {
+        _alertMessages.Clear();
         if (ApiKey != Guid.Empty)
         {
             var albumResult = await AlbumService.GetByApiKeyAsync(ApiKey);
             if (albumResult is { IsSuccess: true, Data: not null })
             {
                 _album = albumResult.Data;
-                _albumDirectoryFileCount = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo().FileCount();
+                var albumDirectory = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
+                _albumDirectoryFileCount = albumDirectory.FileCount();
                 switch (_album.AlbumStatusValue)
                 {
                     case AlbumStatus.New:
@@ -348,7 +360,6 @@
                         AlbumStatusStyle = "color: var(--rz-success)";
                         break;
                 }
-
                 _userAlbum = await UserService.UserAlbumAsync(CurrentUsersId, _album.ApiKey) ?? new UserAlbum
                 {
                     UserId = 0,
@@ -356,6 +367,11 @@
                     CreatedAt = default
                 };
                 _userSongs = await UserService.UserSongsForAlbumAsync(CurrentUsersId, _album.ApiKey) ?? [];
+                if (!albumDirectory.Exists())
+                {
+                    _alertMessages.Add($"Album directory [{ albumDirectory.FullName()}] is not found.");
+                }
+
             }
         }
     }

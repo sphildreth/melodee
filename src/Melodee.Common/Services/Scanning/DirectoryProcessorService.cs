@@ -449,11 +449,7 @@ public sealed class DirectoryProcessorService(
                     }
                 }
 
-
-                Trace.WriteLine($"Loading [{albumsForDirectory.Count}] album directories");
-
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
-                //var albumAndJsonFile = new Dictionary<Album, string>();
                 Trace.WriteLine("Loading images for album...");
                 foreach (var album in albumsForDirectory.Take(_maxAlbumProcessingCount))
                 {

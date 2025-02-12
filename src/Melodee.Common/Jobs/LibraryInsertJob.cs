@@ -102,9 +102,6 @@ public class LibraryInsertJob(
             var messagesForJobRun = new List<string>();
             var exceptionsForJobRun = new List<Exception>();
 
-            Trace.Listeners.Clear();
-            Trace.Listeners.Add(new ConsoleTraceListener());
-
             await albumDiscoveryService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
             await directoryProcessorService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
 
@@ -186,7 +183,7 @@ public class LibraryInsertJob(
                         batches);
                     for (var batch = 0; batch < batches; batch++)
                     {
-                        var melodeeFilesForDirectory = new List<Album>();
+                        var melodeeAlbumsForDirectory = new List<Album>();
                         foreach (var melodeeFileInfo in melodeeFilesToProcessForLibrary.Skip(_batchSize * batch).Take(_batchSize))
                         {
                             try
@@ -202,14 +199,25 @@ public class LibraryInsertJob(
 
                                 try
                                 {
-                                    var melodeeFile = await Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileInfo.FullName, context.CancellationToken).ConfigureAwait(false);
-                                    if (melodeeFile == null || !_albumValidator.ValidateAlbum(melodeeFile).Data.IsValid)
+                                    var melodeeAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileInfo.FullName, context.CancellationToken).ConfigureAwait(false);
+                                    if (melodeeAlbum == null)
                                     {
-                                        Logger.Warning("[{JobName}] Invalid Melodee file [{MelodeeFile}]", nameof(LibraryInsertJob), melodeeFile?.ToString() ?? melodeeFileInfo.FullName);
+                                        Logger.Warning("[{JobName}] Unable to load melodee file [{MelodeeFile}]",
+                                            nameof(LibraryInsertJob),
+                                            melodeeAlbum?.ToString() ?? melodeeFileInfo.FullName);
+                                        continue;
+                                    }
+                                    var validationResult = _albumValidator.ValidateAlbum(melodeeAlbum);
+                                    if (!validationResult.Data.IsValid)
+                                    {
+                                        Logger.Warning("[{JobName}] Invalid Melodee file [{MelodeeFile}] validation result [{ValidationResult}]",
+                                            nameof(LibraryInsertJob),
+                                            melodeeAlbum?.ToString() ?? melodeeFileInfo.FullName,
+                                            validationResult.Data.ToString());
                                         continue;
                                     }
 
-                                    melodeeFilesForDirectory.Add(melodeeFile);
+                                    melodeeAlbumsForDirectory.Add(melodeeAlbum);
                                 }
                                 catch
                                 {
@@ -234,13 +242,13 @@ public class LibraryInsertJob(
                             }
                         }
 
-                        var processedArtistsResult = await ProcessArtistsAsync(libraryIndex.library, melodeeFilesForDirectory, context.CancellationToken);
+                        var processedArtistsResult = await ProcessArtistsAsync(libraryIndex.library, melodeeAlbumsForDirectory, context.CancellationToken);
                         if (!processedArtistsResult)
                         {
                             continue;
                         }
 
-                        var processedAlbumsResult = await ProcessAlbumsAsync(melodeeFilesForDirectory, context.CancellationToken);
+                        var processedAlbumsResult = await ProcessAlbumsAsync(melodeeAlbumsForDirectory, context.CancellationToken);
                         if (!processedAlbumsResult)
                         {
                             continue;

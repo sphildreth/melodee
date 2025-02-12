@@ -87,8 +87,7 @@ public class Mp3Files(
                         {
                             break;
                         }
-
-                        var foundAlbum = albums.FirstOrDefault(x => x.ArtistAlbumUniqueId() == songsGroupedByAlbum.Key);
+                        var foundAlbum = albums.FirstOrDefault(x => x.Artist.NameNormalized == (song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist()) && x.AlbumTitle() == song.AlbumTitle());
                         if (foundAlbum != null)
                         {
                             albums.Remove(foundAlbum);
@@ -207,31 +206,25 @@ public class Mp3Files(
         }
     }
 
-    private Task HandleDuplicates(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] seenSongs, CancellationToken cancellationToken = default)
+    private async Task HandleDuplicates(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] seenSongs, CancellationToken cancellationToken = default)
     {
         Trace.WriteLine($"Checking for duplicate files in [{fileSystemDirectoryInfo.FullName()}]...");
 
         if (seenSongs.Length == 0)
         {
-            return Task.CompletedTask;
+            return;
+        }
+
+        var ss = seenSongs.ToList();
+        var foundDuplicates = await fileSystemDirectoryInfo.FindDuplicatesAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        foreach (var dup in foundDuplicates.SelectMany(x => x.Value))
+        {
+            dup.Delete();
+            Trace.WriteLine($"Deleted duplicate: {dup.FullName}");
+            ss.RemoveAll(x => x.File.FullName(fileSystemDirectoryInfo) == dup.FullName);
         }
         
-        // Delete any files that are duplicate by length and CRC value
-        var files = fileSystemDirectoryInfo.AllFileInfos(searchOption: SearchOption.AllDirectories)
-            .GroupBy(f => new { f.Length, Hash = Crc32.Calculate(f) })
-            .Where(g => g.Count() > 1)
-            .ToArray();
-
-        foreach (var group in files)
-        {
-            var filesToDelete = group.Skip(1).ToList();
-            foreach (var file in filesToDelete)
-            {
-                File.Delete(file.FullName);
-                Trace.WriteLine($"Deleted duplicate: {file.FullName}");
-            }
-        }
-        var duplicateSongs = seenSongs.GroupBy(x => x.DuplicateHashCheck).Where(x => x.Count() > 1).ToArray();
+        var duplicateSongs = ss.GroupBy(x => x.DuplicateHashCheck).Where(x => x.Count() > 1).ToArray();
         if (duplicateSongs.Any())
         {
             foreach (var duplicateGroup in duplicateSongs)
@@ -246,7 +239,7 @@ public class Mp3Files(
                 }
             }
         }
-        return Task.CompletedTask;
+        
     }
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)

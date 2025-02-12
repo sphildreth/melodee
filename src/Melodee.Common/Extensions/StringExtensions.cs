@@ -476,21 +476,23 @@ public static partial class StringExtensions
 
     public static string ToAlphanumericName(this string input, bool stripSpaces = true, bool stripCommas = true)
     {
+        const char separator = '_';
         if (string.IsNullOrEmpty(input))
         {
             return input;
         }
 
         input = input.ToLower()
-            .Replace("$", "s")
-            .Replace("%", "per");
+            .Replace("$", "__x24f")
+            .Replace("%", "__x25f");
         input = WebUtility.HtmlDecode(input);
         input = input.ScrubHtml().ToLower()
-            .Replace("&", "and");
+            .Replace("&", "and")
+            .Replace("?", "__x3f");
         var arr = input.ToCharArray();
-        arr = Array.FindAll(arr, c => (c == ',' && !stripCommas) || (char.IsWhiteSpace(c) && !stripSpaces) || char.IsLetterOrDigit(c));
+        arr = Array.FindAll(arr, c => (c == ',' && !stripCommas) || (char.IsWhiteSpace(c) && !stripSpaces) || c == separator || char.IsLetterOrDigit(c));
         input = new string(arr).RemoveDiacritics().RemoveUnicodeAccents().Transliteration();
-        input = Regex.Replace(input, $"[^A-Za-z0-9{(!stripSpaces ? @"\s" : string.Empty)}{(!stripCommas ? "," : string.Empty)}]+", string.Empty);
+        input = Regex.Replace(input, $"[^A-Za-z0-9_{(!stripSpaces ? @"\s" : string.Empty)}{(!stripCommas ? "," : string.Empty)}]+", string.Empty);
         return input;
     }
 

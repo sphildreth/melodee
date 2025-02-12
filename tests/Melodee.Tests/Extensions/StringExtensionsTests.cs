@@ -1,5 +1,7 @@
 ﻿using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Utility;
+using Melodee.Tests.Services;
 
 namespace Melodee.Tests.Extensions;
 
@@ -20,6 +22,15 @@ public class StringExtensionsTests
         Assert.Equal(shouldBe, string1.DoStringsMatch(string2));
     }
 
+    [Theory]
+    [InlineData("Bob", "Bob")]
+    [InlineData("Special Delivery", "Special Delivery")]
+    [InlineData("June 1943", "June 1943")]
+    [InlineData("Why ask Why?", "Why Ask Why__x3f")]
+    [InlineData("?", "__x3f")]
+    [InlineData("$$$", "__x24f__x24f__x24f")]
+    public void ValidateToFileNameFriendly(string? input, string? shouldBe) => Assert.Equal(shouldBe, input?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly());
+    
     [Theory]
     [InlineData("Bob", "Bob")]
     [InlineData("Bob    ", "Bob")]
