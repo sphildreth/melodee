@@ -54,7 +54,7 @@ public static class Program
             config.AddBranch<ValidateSettings>("validate", add =>
             {
                 add.AddCommand<ValidateCommand>("album")
-                    .WithDescription("Validate a Melodee album data file (melodee.json).");
+                    .WithDescription("Validate a metadata album data file (melodee.json).");
             });
             config.AddBranch<ShowTagsSettings>("tags", add =>
             {

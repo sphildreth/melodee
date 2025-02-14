@@ -674,7 +674,7 @@ public class LibraryService(
 
         var result = new List<MelodeeModels.Statistic>();
 
-        // Get all melodee albums in library path
+        // Get all metadata albums in library path
         var libraryDirectory = new DirectoryInfo(library.Path);
         var melodeeFileSystemInfosForLibrary = libraryDirectory.GetFileSystemInfos(MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories).ToArray();
         if (melodeeFileSystemInfosForLibrary.Length == 0)
@@ -1031,7 +1031,7 @@ public class LibraryService(
         //     }
         //     catch (Exception ex)
         //     {
-        //         Logger.Warning(ex, "! Unable to load melodee album [{FileName}]", melodeeJsonFile);
+        //         Logger.Warning(ex, "! Unable to load metadata album [{FileName}]", melodeeJsonFile);
         //         File.Delete(melodeeJsonFile);
         //         melodeeFilesDeleted++;
         //     }

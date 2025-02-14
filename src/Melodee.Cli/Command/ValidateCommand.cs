@@ -2,6 +2,7 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Models;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.Validation;

@@ -10,6 +10,7 @@ public sealed record SongDataInfo(
     string Title,
     string TitleNormalized,
     int SongNumber,
+    LocalDate ReleaseDate,
     string AlbumName,
     Guid AlbumApiKey,
     string ArtistName,

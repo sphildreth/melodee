@@ -7,6 +7,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Validation;
@@ -18,6 +19,7 @@ using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Quartz;
+using Rebus.Bus;
 using Serilog;
 using SmartFormat;
 using SearchOption = System.IO.SearchOption;
@@ -39,7 +41,8 @@ public class LibraryInsertJob(
     ArtistService artistService,
     AlbumService albumService,
     AlbumDiscoveryService albumDiscoveryService,
-    DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
+    DirectoryProcessorService directoryProcessorService,
+    IBus bus) : JobBase(logger, configurationFactory)
 {
     private IAlbumValidator _albumValidator = null!;
     private int _batchSize;
@@ -214,7 +217,12 @@ public class LibraryInsertJob(
                                             nameof(LibraryInsertJob),
                                             melodeeAlbum?.ToString() ?? melodeeFileInfo.FullName,
                                             validationResult.Data.ToString());
-                                        continue;
+                                        await bus.SendLocal(new MelodeeAlbumReprocessEvent(melodeeAlbum!.Directory.FullName())).ConfigureAwait(false);
+                                        if (File.Exists(melodeeAlbum!.MelodeeDataFileName!))
+                                        {
+                                            File.Delete(melodeeAlbum!.MelodeeDataFileName!);
+                                        }
+                                        continue;                                        
                                     }
 
                                     melodeeAlbumsForDirectory.Add(melodeeAlbum);
@@ -227,12 +235,17 @@ public class LibraryInsertJob(
                                     {
                                         var moveDirectoryTo = Path.Combine(stagingLibrary.Data.Path, albumDirectoryToMove.Name);
                                         albumDirectoryToMove.MoveTo(moveDirectoryTo);
-                                        File.Delete(Path.Combine(moveDirectoryTo, Album.JsonFileName));
+                                        var p = Path.Combine(moveDirectoryTo, Album.JsonFileName);
+                                        if (File.Exists(p))
+                                        {
+                                            File.Delete(p);
+                                        }
                                         Logger.Warning(
                                             "[{JobName}] Invalid Melodee File. Deleted and moved directory [{From}] to staging [{To}]",
                                             nameof(LibraryInsertJob),
                                             albumDirectoryToMove,
                                             moveDirectoryTo);
+                                        await bus.SendLocal(new MelodeeAlbumReprocessEvent(moveDirectoryTo)).ConfigureAwait(false);                                        
                                     }
                                 }
                             }
@@ -242,13 +255,13 @@ public class LibraryInsertJob(
                             }
                         }
 
-                        var processedArtistsResult = await ProcessArtistsAsync(libraryIndex.library, melodeeAlbumsForDirectory, context.CancellationToken);
+                        var processedArtistsResult = await ProcessArtistsAsync(bus, libraryIndex.library, melodeeAlbumsForDirectory, context.CancellationToken);
                         if (!processedArtistsResult)
                         {
                             continue;
                         }
 
-                        var processedAlbumsResult = await ProcessAlbumsAsync(melodeeAlbumsForDirectory, context.CancellationToken);
+                        var processedAlbumsResult = await ProcessAlbumsAsync(bus, melodeeAlbumsForDirectory, context.CancellationToken);
                         if (!processedAlbumsResult)
                         {
                             continue;
@@ -377,7 +390,7 @@ public class LibraryInsertJob(
     /// <summary>
     ///     For all albums with songs, add to db albums
     /// </summary>
-    private async Task<bool> ProcessAlbumsAsync(List<Album> melodeeAlbumsForDirectory, CancellationToken cancellationToken)
+    private async Task<bool> ProcessAlbumsAsync(IBus bus, List<Album> melodeeAlbumsForDirectory, CancellationToken cancellationToken)
     {
         var currentAlbum = melodeeAlbumsForDirectory.FirstOrDefault();
         var currentSong = currentAlbum?.Songs?.FirstOrDefault();
@@ -386,13 +399,11 @@ public class LibraryInsertJob(
             await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbAlbumsToAdd = new List<dbModels.Album>();
-                var stopProcessingAlbum = false;
                 foreach (var melodeeAlbum in melodeeAlbumsForDirectory)
                 {
-                    if (stopProcessingAlbum)
+                    if (cancellationToken.IsCancellationRequested)
                     {
-                        stopProcessingAlbum = false;
-                        continue;
+                        break;
                     }
 
                     currentAlbum = melodeeAlbum;
@@ -473,17 +484,29 @@ public class LibraryInsertJob(
                         var newAlbumSongs = new List<dbModels.Song>();
                         foreach (var song in melodeeAlbum.Songs ?? [])
                         {
-                            currentSong = song;
-                            var mediaFile = song.File.ToFileInfo(melodeeAlbum.Directory) ?? throw new Exception("Song File is required.");
-                            var mediaFileHash = CRC32.Calculate(mediaFile);
-                            if (mediaFileHash == null)
+                            if (cancellationToken.IsCancellationRequested)
                             {
-                                Logger.Warning("[{JobName}] Unable to calculate CRC for Song file [{FileName}",
-                                    nameof(LibraryInsertJob), mediaFile.FullName);
-                                stopProcessingAlbum = true;
+                                newAlbumSongs.Clear();
                                 break;
                             }
-
+                            
+                            currentSong = song;
+                            var mediaFile = song.File.ToFileInfo(melodeeAlbum.Directory);
+                            if (!mediaFile.Exists)
+                            {
+                                newAlbumSongs.Clear();
+                                Logger.Warning("[{JobName}] Unable to find media file [{FileName}], deleting metadata album [{Album}] and triggering reprocess event.",
+                                    nameof(LibraryInsertJob),
+                                    mediaFile.FullName,
+                                    melodeeAlbum.MelodeeDataFileName);
+                                await bus.SendLocal(new MelodeeAlbumReprocessEvent(melodeeAlbum!.Directory.FullName())).ConfigureAwait(false);
+                                if (File.Exists(melodeeAlbum!.MelodeeDataFileName!))
+                                {
+                                    File.Delete(melodeeAlbum!.MelodeeDataFileName!);
+                                }
+                                break;
+                            }
+                            var mediaFileHash = CRC32.Calculate(mediaFile);
                             var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
                             var s = new dbModels.Song
                             {
@@ -514,8 +537,11 @@ public class LibraryInsertJob(
                             newAlbumSongs.Add(s);
                             _totalSongsInserted++;
                         }
-                        newAlbum.Songs = newAlbumSongs;
-                        dbAlbumsToAdd.Add(newAlbum);
+                        if (newAlbumSongs.Any())
+                        {
+                            newAlbum.Songs = newAlbumSongs;
+                            dbAlbumsToAdd.Add(newAlbum);
+                        }
                     }
                 }
 
@@ -594,7 +620,7 @@ public class LibraryInsertJob(
     /// <summary>
     ///     For given albums, add to the db album and db song artists.
     /// </summary>
-    private async Task<bool> ProcessArtistsAsync(dbModels.Library library, List<Album> melodeeAlbumsForDirectory, CancellationToken cancellationToken)
+    private async Task<bool> ProcessArtistsAsync(IBus bus, dbModels.Library library, List<Album> melodeeAlbumsForDirectory, CancellationToken cancellationToken)
     {
         Artist? currentArtist = null;
 

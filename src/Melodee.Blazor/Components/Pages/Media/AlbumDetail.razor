@@ -2,12 +2,14 @@
 @using Melodee.Blazor.ViewModels
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
+@using Melodee.Common.MessageBus.Events
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Extensions
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Plugins.Validation
 @using Melodee.Common.Services.Scanning
 @using Melodee.Common.Services.SearchEngines
+@using Rebus.Bus
 @using SixLabors.ImageSharp
 @using ImageInfo = Melodee.Common.Models.ImageInfo
 
@@ -26,6 +28,7 @@
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JsRuntime
+@inject IBus Bus
 
 @attribute [Authorize(Roles = "Administrator,Editor")]
 
@@ -51,6 +54,7 @@
         }
         <RadzenMenuItem Text="Identify" Click="IdentifyButtonClick" title="Identify the album from search providers." Icon="edit"></RadzenMenuItem>
         <RadzenMenuItem Text="Move to Storage" Click="MoveButtonClick" title="Move to Storage library." Icon="move_group"></RadzenMenuItem>
+        <RadzenMenuItem Text="Reprocess Album" Click="ReprocessAlbumButtonClick" title="Reprocess the album." Icon="refresh"></RadzenMenuItem>
         <RadzenMenuItem Text="Set Cover Image" Click="SetCoverImageButtonClick" title="Set the album cover image." Icon="image"></RadzenMenuItem>
         <RadzenMenuItem Text="Web Search" Icon="public">
             <RadzenMenuItem Text="Album" Click="@(() => DoWebSearch(1))"></RadzenMenuItem>
@@ -654,6 +658,11 @@
                  SearchType="ImageSearchType.Album"
                  OnUpdateCallback="AlbumSearchImageCallback"
                  SearchValues="SearchValues"/>);
+    }
+
+    private async Task ReprocessAlbumButtonClick()
+    {
+        await Bus.SendLocal(new MelodeeAlbumReprocessEvent(_album.Directory.FullName())).ConfigureAwait(false);
     }
 
 }

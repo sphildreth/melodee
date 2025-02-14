@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Data.SqlTypes;
 using System.Diagnostics;
 using Dapper;
 using IdSharp.Common.Utils;
@@ -178,7 +179,7 @@ public abstract class ServiceBase
             foreach (var songToMove in songsToMove)
             {
                 var toFile = Path.Combine(existingDir.FullName, songToMove.File.Name);
-                if (!File.Exists(toFile))
+                if (File.Exists(songToMove.File.FullName(albumToMoveDir)) && !File.Exists(toFile))
                 {
                     Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService), songToMove.File.Name);
                     File.Move(songToMove.File.FullName(albumToMoveDir), toFile);

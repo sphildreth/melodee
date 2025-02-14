@@ -4,6 +4,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
@@ -71,7 +72,7 @@ public class ProcessInboundCommand : AsyncCommand<LibraryProcessSettings>
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         });
-
+        
         if (settings.Verbose)
         {
             Trace.Listeners.Add(new ConsoleTraceListener());

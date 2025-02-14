@@ -2,6 +2,7 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
+using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
@@ -44,6 +45,8 @@ public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         });
+        services.AddRebusHandler<AlbumUpdatedEventHandler>();
+        
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())

@@ -2,11 +2,13 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Jobs;
+using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
+using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
 using Microsoft.EntityFrameworkCore;
@@ -42,7 +44,6 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
             .CreateLogger();
 
         var serializer = new Serializer(Log.Logger);
-        var cacheManager = new MemoryCacheManager(Log.Logger, TimeSpan.FromDays(1), serializer);
 
         var services = new ServiceCollection();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
@@ -55,90 +56,52 @@ public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
         services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
+        services.AddSingleton(serializer);
+        services.AddSingleton<ISerializer, Serializer>();
+        services.AddSingleton<ICacheManager>(opt
+            => new MemoryCacheManager(opt.GetRequiredService<ILogger>(),
+                new TimeSpan(1, 0, 0, 0),
+                opt.GetRequiredService<ISerializer>()));
+        
         services.AddRebus(configure =>
         {
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         });
+        services.AddRebusHandler<AlbumUpdatedEventHandler>();
+        services.AddRebusHandler<MelodeeAlbumReprocessEventHandler>();
 
+        services.AddScoped<LibraryService>();
+        services.AddScoped<AlbumService>();
+        services.AddScoped<ArtistService>();
+        services.AddScoped<AlbumDiscoveryService>();
+        services.AddScoped<MediaEditService>();
+        services.AddScoped<ArtistSearchEngineService>();
+        services.AddScoped<SettingService>();
+        services.AddScoped<AlbumImageSearchEngineService>();
+        services.AddScoped<LibraryInsertJob>();
+        services.AddScoped<DirectoryProcessorService>();
+        
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
         {
-            var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
-            var configFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
-            var bus = scope.ServiceProvider.GetRequiredService<IBus>();
+            // var job = new LibraryInsertJob
+            // (
+            //     scope.ServiceProvider.GetRequiredService<ILogger>(),
+            //     scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),
+            //     scope.ServiceProvider.GetRequiredService<LibraryService>(),
+            //     scope.ServiceProvider.GetRequiredService<ISerializer>(),
+            //     scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>(),
+            //     scope.ServiceProvider.GetRequiredService<ArtistService>(),                
+            //     scope.ServiceProvider.GetRequiredService<AlbumService>(),
+            //     scope.ServiceProvider.GetRequiredService<AlbumDiscoveryService>(),
+            //     scope.ServiceProvider.GetRequiredService<DirectoryProcessorService>(),
+            //     scope.ServiceProvider.GetRequiredService<IBus>()
+            // );
 
-            var libraryService = new LibraryService(Log.Logger,
-                cacheManager,
-                dbFactory,
-                configFactory,
-                serializer,
-                bus);
-
-            var configurationFactory = new MelodeeConfigurationFactory(dbFactory);
-
-            var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-
-            var settingService = new SettingService(Log.Logger, cacheManager, configFactory, dbFactory);
-
-            var job = new LibraryInsertJob
-            (
-                Log.Logger,
-                configurationFactory,
-                libraryService,
-                serializer,
-                dbFactory,
-                new ArtistService(Log.Logger, cacheManager, configFactory, dbFactory, serializer, httpClientFactory),
-                new AlbumService(Log.Logger, cacheManager, dbFactory),
-                new AlbumDiscoveryService(Log.Logger, cacheManager, dbFactory, configFactory, serializer),
-                new DirectoryProcessorService(
-                    Log.Logger,
-                    cacheManager,
-                    dbFactory,
-                    configFactory,
-                    libraryService,
-                    serializer,
-                    new MediaEditService(
-                        Log.Logger,
-                        cacheManager,
-                        dbFactory,
-                        configFactory,
-                        libraryService,
-                        new AlbumDiscoveryService(
-                            Log.Logger,
-                            cacheManager,
-                            dbFactory,
-                            configFactory,
-                            serializer),
-                        serializer,
-                        httpClientFactory
-                    ),
-                    new ArtistSearchEngineService
-                    (
-                        Log.Logger,
-                        cacheManager,
-                        settingService,
-                        configFactory,
-                        dbFactory,
-                        scope.ServiceProvider.GetRequiredService<IDbContextFactory<ArtistSearchEngineServiceDbContext>>(),
-                        scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>()
-                    ),
-                    new AlbumImageSearchEngineService
-                    (
-                        Log.Logger,
-                        cacheManager,
-                        serializer,
-                        settingService,
-                        configFactory,
-                        dbFactory,
-                        scope.ServiceProvider.GetRequiredService<IMusicBrainzRepository>(),
-                        httpClientFactory
-                    ),
-                    httpClientFactory
-                )
-            );
-
+            var job = scope.ServiceProvider.GetRequiredService<LibraryInsertJob>();
+            
             job.OnProcessingEvent += (_, e) => { Log.Information(e.ToString()); };
 
             var jobExecutionContext = new JobExecutionContext(CancellationToken.None);

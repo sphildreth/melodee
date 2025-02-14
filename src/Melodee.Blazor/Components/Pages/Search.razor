@@ -1,5 +1,6 @@
 @page "/search/{Query}"
 @using System.Security.Claims
+@using Melodee.Blazor.Components.Pages.Data
 @using Melodee.Common.Models.Search
 @inject SearchService SearchService
 @inject MainLayoutProxyService MainLayoutProxyService
@@ -13,11 +14,11 @@
     <RadzenStack Orientation="Orientation.Horizontal">
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-m-0">Results for: @Query</RadzenText>
     </RadzenStack>
-    <RadzenPanel AllowCollapse="true">
+    <RadzenPanel AllowCollapse="true" Visible="_searchResult.Artists.Any()">
         <HeaderTemplate>
-            <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-m-0">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-display-flex rz-m-0">
                 <RadzenIcon Icon="artist" class="rz-me-1"/>
-                Artists
+                Artists (@_searchResult.Artists.Length)
             </RadzenText>
         </HeaderTemplate>
         <ChildContent>
@@ -34,46 +35,109 @@
             </RadzenStack>
         </ChildContent>
     </RadzenPanel>
-    <RadzenPanel AllowCollapse="true">
+    <RadzenPanel AllowCollapse="true" Visible="_searchResult.Albums.Any()">
         <HeaderTemplate>
-            <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-m-0">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-display-flex rz-m-0">
                 <RadzenIcon Icon="album" class="rz-me-1"/>
-                Albums
+                Albums (@_searchResult.Albums.Length)
             </RadzenText>
         </HeaderTemplate>
         <ChildContent>
-            <RadzenStack
-                Orientation="Orientation.Horizontal"
-                Wrap="FlexWrap.Wrap"
-                JustifyContent="JustifyContent.Left"
-                class="rz-p-2"
-                Gap="10px">
-                @foreach (var album in _searchResult.Albums)
-                {
-                    <AlbumDataInfoCardComponent Album="@album"/>
-                }
-            </RadzenStack>
+            <RadzenTable AllowAlternatingRows="true">
+                <RadzenTableHeader>
+                    <RadzenTableHeaderRow>
+                        <RadzenTableHeaderCell>
+                            Artist
+                        </RadzenTableHeaderCell>
+                        <RadzenTableHeaderCell>
+                            Album
+                        </RadzenTableHeaderCell>
+                        <RadzenTableHeaderCell style="width: 100px;">
+                            Year
+                        </RadzenTableHeaderCell>
+                    </RadzenTableHeaderRow>
+                </RadzenTableHeader>
+                <RadzenTableBody>
+                    @foreach (var album in _searchResult.Albums)
+                    {
+                        <RadzenTableRow>
+                            <RadzenTableCell>
+                                <RadzenLink Path="@($"/data/artist/{album.ArtistApiKey}")">
+                                    <RadzenImage Path="@($"/images/artist_{album.ArtistApiKey}/80")"
+                                                 Style="width: 30px; height: 30px; margin-right: 5px;"/>
+                                    @album.ArtistName
+                                </RadzenLink>
+                            </RadzenTableCell>
+                            <RadzenTableCell>
+                                <RadzenLink Path="@($"/data/album/{album.ApiKey}")">
+                                    <RadzenImage Path="@($"/images/album_{album.ApiKey}/80")"
+                                                 Style="width: 30px; height: 30px; margin-right: 5px;"/>
+                                    @album.Name
+                                </RadzenLink>
+                            </RadzenTableCell>
+                            <RadzenTableCell>
+                                @album.ReleaseDate.Year
+                            </RadzenTableCell>
+                        </RadzenTableRow>
+                    }
+                </RadzenTableBody>
+            </RadzenTable>
         </ChildContent>
     </RadzenPanel>
-    <RadzenPanel AllowCollapse="true">
+    <RadzenPanel AllowCollapse="true" Visible="_searchResult.Songs.Any()">
         <HeaderTemplate>
-            <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-m-0">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-display-flex rz-m-0">
                 <RadzenIcon Icon="album" class="rz-me-1"/>
-                Songs
+                Songs  (@_searchResult.Songs.Length)
             </RadzenText>
         </HeaderTemplate>
         <ChildContent>
-            <RadzenStack
-                Orientation="Orientation.Horizontal"
-                Wrap="FlexWrap.Wrap"
-                JustifyContent="JustifyContent.Left"
-                class="rz-p-2"
-                Gap="10px">
-                @foreach (var song in _searchResult.Songs)
-                {
-                    <SongDataInfoCardComponent Song="@song"/>
-                }
-            </RadzenStack>
+            <RadzenTable AllowAlternatingRows="true">
+                <RadzenTableHeader>
+                    <RadzenTableHeaderRow>
+                        <RadzenTableHeaderCell>
+                            Artist
+                        </RadzenTableHeaderCell>
+                        <RadzenTableHeaderCell>
+                            Album
+                        </RadzenTableHeaderCell>
+                        <RadzenTableHeaderCell style="width: 100px;">
+                            Year
+                        </RadzenTableHeaderCell>
+                        <RadzenTableHeaderCell>
+                            Title
+                        </RadzenTableHeaderCell>
+                    </RadzenTableHeaderRow>
+                </RadzenTableHeader>
+                <RadzenTableBody>
+                    @foreach (var song in _searchResult.Songs)
+                    {
+                        <RadzenTableRow>
+                            <RadzenTableCell>
+                                <RadzenLink Path="@($"/data/artist/{song.ArtistApiKey}")">
+                                    <RadzenImage Path="@($"/images/artist_{song.ArtistApiKey}/80")"
+                                                 Style="width: 30px; height: 30px; margin-right: 5px;"/>
+                                    @song.ArtistName
+                                </RadzenLink>
+                            </RadzenTableCell>
+                            <RadzenTableCell>
+                                <RadzenLink Path="@($"/data/album/{song.AlbumApiKey}")">
+                                    <RadzenImage Path="@($"/images/album_{song.AlbumApiKey}/80")"
+                                                 Style="width: 30px; height: 30px; margin-right: 5px;"/>
+                                    @song.AlbumName
+                                </RadzenLink>
+                            </RadzenTableCell>
+                            <RadzenTableCell>
+                                @song.ReleaseDate.Year
+                            </RadzenTableCell>
+                            <RadzenTableCell>
+                                @song.Title
+                            </RadzenTableCell>
+                        </RadzenTableRow>
+                    }
+                </RadzenTableBody>
+            </RadzenTable>
+
         </ChildContent>
     </RadzenPanel>
 </RadzenStack>

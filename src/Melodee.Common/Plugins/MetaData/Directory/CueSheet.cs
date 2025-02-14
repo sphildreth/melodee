@@ -489,7 +489,6 @@ public sealed class CueSheet(
                         songTags.ForEach(x => x.AddProcessedBy(nameof(CueSheet)));
                         var songFileName = SongExtensions.SongFileName(
                             fileInfo,
-                            SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
                             songNumber,
                             songTitle,
                             ".mp3");
@@ -522,7 +521,6 @@ public sealed class CueSheet(
         {
             var songFileName = SongExtensions.SongFileName(
                 fileInfo,
-                SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumSongNumber]),
                 songNumber,
                 songTitle,
                 ".mp3");

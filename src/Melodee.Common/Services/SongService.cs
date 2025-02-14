@@ -36,7 +36,7 @@ public class SongService(
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 var sqlStartFragment = """
-                                       SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber",
+                                       SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                                               a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
                                               s."FileSize", s."Duration", s."CreatedAt", s."Tags"
                                        FROM "Songs" s

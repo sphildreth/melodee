@@ -2,10 +2,12 @@ using System.Diagnostics;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
+using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
+using Melodee.Common.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +49,7 @@ public class LibraryAlbumStatusReportCommand : AsyncCommand<LibraryAlbumStatusRe
         services.AddSingleton<IDbConnectionFactory>(opt =>
             new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
         services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
+            
         services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
         services.AddSingleton(Log.Logger);
         services.AddRebus(configure =>

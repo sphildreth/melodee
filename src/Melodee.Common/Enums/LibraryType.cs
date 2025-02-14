@@ -10,7 +10,7 @@ public enum LibraryType
     Inbound,
 
     /// <summary>
-    ///     Processed metadata into Melodee Albums, should be 1
+    ///     Processed metadata into metadata albums, should be 1
     /// </summary>
     Staging,
 

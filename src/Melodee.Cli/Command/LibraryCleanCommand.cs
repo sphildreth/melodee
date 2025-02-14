@@ -1,6 +1,7 @@
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
+using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;

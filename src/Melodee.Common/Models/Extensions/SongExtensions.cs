@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
@@ -315,8 +316,8 @@ public static class SongExtensions
         return Path.GetExtension(song.File.Name);
     }
 
-    public static string SongFileName(FileInfo fileInfo,
-        int maximumSongNumber,
+    public static string SongFileName(
+        FileInfo fileInfo,
         int songNumber,
         string? songTitle,
         string? extension = null)
@@ -332,8 +333,7 @@ public static class SongExtensions
             Trace.WriteLine($"File [{fileInfo}] has invalid Song title [{songTitle}]");
             songTitle = fileInfo.Name;
         }
-        var songNumberPaddingLength = SafeParser.ToNumber<short>(maximumSongNumber.ToString().Length);
-        var songNumberValue = songNumber.ToStringPadLeft(songNumberPaddingLength);
+        var songNumberValue = songNumber.ToStringPadLeft(MelodeeConfiguration.SongFileNameNumberPadding);
         var fileNameFromTitle = songTitle.ToTitleCase(false)?.ToFileNameFriendly();
         if (fileNameFromTitle != null && fileNameFromTitle.StartsWith(songNumberValue))
         {
@@ -352,7 +352,6 @@ public static class SongExtensions
     {
         return SongFileName(
             song.File.ToFileInfo(directoryInfo),
-            9999,
             song.SongNumber(),
             song.Title());
     }

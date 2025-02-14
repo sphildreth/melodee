@@ -14,6 +14,8 @@ namespace Melodee.Common.Configuration;
 /// <param name="Configuration">Initial configuration from database.</param>
 public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : IMelodeeConfiguration
 {
+    public const int SongFileNameNumberPadding = 4;
+    
     public const string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
 
     public const string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";

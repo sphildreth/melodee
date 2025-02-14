@@ -258,7 +258,7 @@ public sealed class DirectoryProcessorService(
         }
 
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
-        var mediaDirectoriesToProcess = directoriesToProcess.Where(x => x.GetParent().UniqueId != fileSystemDirectoryInfo.UniqueId && x.AllMediaTypeFileInfos().Any()).ToArray();
+        var mediaDirectoriesToProcess = directoriesToProcess.Where(x => x != fileSystemDirectoryInfo && x.GetParent().UniqueId != fileSystemDirectoryInfo.UniqueId && x.AllMediaTypeFileInfos().Any()).ToArray();
         if (mediaDirectoriesToProcess.Length > 0)
         {
             // This means there are subdirectories which have media files in directories which have media files (aka 'nested'), must be one album per directory.
@@ -581,30 +581,30 @@ public sealed class DirectoryProcessorService(
                                     break;
                                 }
 
-                                var oldSongFilename = Path.Combine(album.Directory.FullName(), song.File.OriginalName!);
-                                if (!File.Exists(oldSongFilename))
+                                if (song.File.OriginalName != null)
                                 {
-                                    Logger.Warning("Unable to find song by original name [{OriginalName}]", oldSongFilename);
-                                    continue;
-                                }
-
-                                var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(), song.ToSongFileName(albumDirectorySystemInfo));
-                                if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    File.Copy(oldSongFilename, newSongFileName, true);
-                                    if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                                    var oldSongFilename = Path.Combine(album.Directory.FullName(), song.File.OriginalName!);
+                                    if (!File.Exists(oldSongFilename))
                                     {
-                                        try
-                                        {
-                                            File.Delete(oldSongFilename);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
-                                        }
+                                        continue;
                                     }
-
-                                    song.File.Name = Path.GetFileName(newSongFileName);
+                                    var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(), song.ToSongFileName(albumDirectorySystemInfo));
+                                    if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        File.Copy(oldSongFilename, newSongFileName, true);
+                                        if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                                        {
+                                            try
+                                            {
+                                                File.Delete(oldSongFilename);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
+                                            }
+                                        }
+                                        song.File.Name = Path.GetFileName(newSongFileName);
+                                    }
                                 }
                             }
 
@@ -919,7 +919,7 @@ public sealed class DirectoryProcessorService(
         CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
         // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as
         // there might be nested albums each with their own artist image directories.
         foreach (var dir in album.ImageDirectories())
@@ -928,7 +928,7 @@ public sealed class DirectoryProcessorService(
         }
 
         // Sometimes the album is in a directory with the parent holding an image artist that is not a discography directory 
-        var parents = album.OriginalDirectory.GetParents().ToArray();
+        var parents = album.Directory.GetParents().ToArray();
         var lookAtParentDirectoriesCount = parents.Length < 2 ? parents.Length : 2;
         for (var i = 0; i < lookAtParentDirectoriesCount; i++)
         {
@@ -1002,7 +1002,7 @@ public sealed class DirectoryProcessorService(
     private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.OriginalDirectory.Path, SearchOption.TopDirectoryOnly).ToList();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
         // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image directories.
         foreach (var dir in album.ImageDirectories())
         {

@@ -341,7 +341,7 @@ public static class AlbumExtensions
         }
 
         // If there is only a single Album json file in the directory with the image, its logical that image is for that Album.
-        var albumJsonFilesInDirectory = album.OriginalDirectory.FileInfosForExtension(Album.JsonFileName).Count();
+        var albumJsonFilesInDirectory = album.Directory.FileInfosForExtension(Album.JsonFileName).Count();
         if (albumJsonFilesInDirectory == 1)
         {
             return true;

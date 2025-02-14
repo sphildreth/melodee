@@ -2,6 +2,7 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
+using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
@@ -54,7 +55,7 @@ public class LibraryStatsCommand : AsyncCommand<LibraryStatsSettings>
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         });
-
+       
         var serviceProvider = services.BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
