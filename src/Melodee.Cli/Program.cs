@@ -22,7 +22,7 @@ public static class Program
             {
                 add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("artistsearchengine-refresh")
                     .WithDescription("Run artist search engine refresh job. This updates the local database of artists albums from search engines.");                
-                add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("musicbrainz-update")
+                add.AddCommand<JobRunMusicBrainzUpdateDatabaseJobCommand>("musicbrainz-update")
                     .WithDescription("Run MusicBrainz update database job. This downloads MusicBrainz data dump and creates local database for Melodee when scanning metadata.");
             });
             config.AddBranch<LibrarySettings>("library", add =>
