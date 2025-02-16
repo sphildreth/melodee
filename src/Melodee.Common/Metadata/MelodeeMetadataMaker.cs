@@ -16,6 +16,7 @@ using Melodee.Common.Models.SpecialArtists;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
+using ServiceStack;
 using SixLabors.ImageSharp;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
@@ -78,7 +79,7 @@ public class MelodeeMetadataMaker(
 
 
         var albumImages = new List<ImageInfo>();
-        var foundAlbumImages = (await FindImagesForAlbum(album, imageConvertor, imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
+        var foundAlbumImages = (await album.FindImages(songPlugin, imageConvertor, imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
         if (foundAlbumImages.Length != 0)
         {
             foreach (var foundAlbumImage in foundAlbumImages)
@@ -293,64 +294,4 @@ public class MelodeeMetadataMaker(
         };
     }
 
-
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, CancellationToken cancellationToken = default)
-    {
-        var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
-        var index = 1;
-        foreach (var imageFile in imageFiles.Order())
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-
-            var fileInfo = new FileInfo(imageFile);
-
-            if (album.IsFileForAlbum(fileInfo))
-            {
-                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false)).Data.IsValid)
-                {
-                    // Try converting (resizing and padding if needed) image and then revalidate
-                    await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
-                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false)).Data.IsValid)
-                    {
-                        continue;
-                    }
-                }
-
-                if (ImageHelper.IsAlbumImage(fileInfo) ||
-                    ImageHelper.IsAlbumSecondaryImage(fileInfo))
-                {
-                    var pictureIdentifier = PictureIdentifier.Front;
-                    if (ImageHelper.IsAlbumSecondaryImage(fileInfo))
-                    {
-                        pictureIdentifier = PictureIdentifier.SecondaryFront;
-                    }
-
-                    var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
-                    var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
-                    imageInfos.Add(new ImageInfo
-                    {
-                        CrcHash = Crc32.Calculate(fileInfo),
-                        FileInfo = new FileSystemFileInfo
-                        {
-                            Name = fileInfo.Name,
-                            Size = fileInfoFileSystemInfo.Size,
-                            OriginalName = fileInfo.Name
-                        },
-                        OriginalFilename = fileInfo.Name,
-                        PictureIdentifier = pictureIdentifier,
-                        Width = imageInfo.Width,
-                        Height = imageInfo.Height,
-                        SortOrder = index
-                    });
-                    index++;
-                }
-            }
-        }
-
-        return imageInfos;
-    }
 }

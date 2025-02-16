@@ -80,6 +80,8 @@ public sealed class DirectoryProcessorService(
 
     private ISongFileUpdatePlugin _songFileUpdatePlugin = null!;
     
+    private IAlbumNamesInDirectoryPlugin _albumNamesInDirectoryPlugin = null!;
+    
     private bool _stopProcessingTriggered;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
@@ -102,8 +104,8 @@ public sealed class DirectoryProcessorService(
         [
             new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration)
         ];
-
-        _songFileUpdatePlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration); 
+        _songFileUpdatePlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
+        _albumNamesInDirectoryPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
         
         _conversionPlugins =
         [
@@ -113,7 +115,7 @@ public sealed class DirectoryProcessorService(
 
         _directoryPlugins =
         [
-            new CueSheet(_songPlugins, _albumValidator, _configuration)
+            new CueSheet(serializer, _songPlugins, _albumValidator, _configuration)
             {
                 IsEnabled = _configuration.GetValue<bool>(SettingRegistry.PluginEnabledCueSheet)
             },
@@ -403,52 +405,17 @@ public sealed class DirectoryProcessorService(
 
                     try
                     {
-                        var albumImages = new List<ImageInfo>();
-                        var foundAlbumImages = (await FindImagesForAlbum(album, _imageConvertor, _imageValidator, 2, cancellationToken).ConfigureAwait(false)).ToArray();
-                        if (foundAlbumImages.Length != 0)
-                        {
-                            foreach (var foundAlbumImage in foundAlbumImages)
-                            {
-                                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                                {
-                                    break;
-                                }
-
-                                if (!albumImages.Any(x => x.IsCrcHashMatch(foundAlbumImage.CrcHash)))
-                                {
-                                    albumImages.Add(foundAlbumImage);
-                                }
-                            }
-                        }
-
-                        album.Images = albumImages.ToArray();
-
-                        // Look in the album directory and see if there are any artist images. 
-                        // Most of the time an artist image is one up from an album directory in the 'artist' directory.
-                        var artistImages = new List<ImageInfo>();
-                        var foundArtistImages = (await FindImagesForArtist(album,
-                            _imageConvertor,
-                            _imageValidator,
-                            99,
-                            _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
-                            cancellationToken).ConfigureAwait(false)).ToArray();
-                        if (foundArtistImages.Length != 0)
-                        {
-                            foreach (var foundArtistImage in foundArtistImages)
-                            {
-                                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                                {
-                                    break;
-                                }
-
-                                if (!artistImages.Any(x => x.IsCrcHashMatch(foundArtistImage.CrcHash)))
-                                {
-                                    artistImages.Add(foundArtistImage);
-                                }
-                            }
-                        }
-
-                        album.Artist = new Artist(album.Artist.Name, album.Artist.NameNormalized, album.Artist.SortName, artistImages);
+                        album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _imageConvertor, _imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
+                        
+                        album.Artist = new Artist(album.Artist.Name,
+                            album.Artist.NameNormalized,
+                            album.Artist.SortName,
+                            (await album.FindArtistImages(_imageConvertor,
+                                    _imageValidator,
+                                    _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
+                                    cancellationToken)
+                                .ConfigureAwait(false)).ToArray());
+                        
                         if (album.IsSoundTrackTypeAlbum() && album.Songs != null)
                         {
                             // If the album has different artists and is soundtrack then ensure artist is set to special VariousArtists
@@ -494,14 +461,6 @@ public sealed class DirectoryProcessorService(
                                 Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);
                                 continue;
                             }
-
-                            var imageFileInfo = new FileInfo(oldImageFileName);
-                            if (albumDirectorySystemInfo.FileIsLikelyDuplicateByCrcAndExtension(imageFileInfo))
-                            {
-                                Logger.Debug("Skipping duplicate image [{ImageName}]", image.FileInfo!.Name);
-                                continue;
-                            }
-
                             var newImageFileName = Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
                             if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                             {
@@ -701,48 +660,50 @@ public sealed class DirectoryProcessorService(
                                 }
                             }
                         }
+                        
+                        album.RenumberImages();
 
-                        Trace.WriteLine("Validating album...");
+                        var isMagicEnabled = _configuration.GetValue<bool>(SettingRegistry.MagicEnabled);
+                        
                         var validationResult = _albumValidator.ValidateAlbum(album);
                         album.ValidationMessages = validationResult.Data.Messages ?? [];
                         album.Status = validationResult.Data.AlbumStatus;
                         album.StatusReasons = validationResult.Data.AlbumStatusReasons;
-                        Trace.WriteLine($"Validating album: status [{album.Status.ToString()}] reasons [{(album.StatusReasons == AlbumNeedsAttentionReasons.NotSet ? "None" : album.StatusReasons.ToString())}]");
 
-                        Trace.WriteLine("Serializing album...");
                         var serialized = serializer.Serialize(album);
                         var jsonName = album.ToMelodeeJsonName(_configuration, true);
                         if (jsonName.Nullify() != null)
                         {
-                            Trace.WriteLine($"Writing serialized album [{ Path.Combine(albumDirectorySystemInfo.FullName(), jsonName) }]...");
                             await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), serialized, cancellationToken).ConfigureAwait(false);
-                            if (_configuration.GetValue<bool>(SettingRegistry.MagicEnabled))
-                            {
-                                await mediaEditService.DoMagic(album, cancellationToken).ConfigureAwait(false);
-                            }
+                            
                             artistsIdsSeen.Add(album.Artist.ArtistUniqueId());
                             artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId()) ?? []);
                             albumsIdsSeen.Add(album.ArtistAlbumUniqueId());
-                            songsIdsSeen.AddRange(album.Songs?.Select(x => x.Id) ?? []);
+                            songsIdsSeen.AddRange(album.Songs?.Select(x => x.Id) ?? []);                            
+                            
+                            var albumCouldBeMagicfied = album;
+                            if (isMagicEnabled)
+                            {
+                                await mediaEditService.DoMagic(album, cancellationToken).ConfigureAwait(false);
+                                albumCouldBeMagicfied = await Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), cancellationToken).ConfigureAwait(false) ?? album;
+                            }
+                            if (albumCouldBeMagicfied.IsValid)
+                            {
+                                numberOfValidAlbumsProcessed++;
+                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\udc4d Found valid album [{albumCouldBeMagicfied}]");
+                                if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
+                                {
+                                    LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
+                                    _stopProcessingTriggered = true;
+                                    break;
+                                }
+                            }                            
                         }
                         else
                         {
                             processingMessages.Add($"Unable to determine JsonName for Album [{album}]");
                         }
-
                         numberOfAlbumsProcessed++;
-
-                        if (album.IsValid)
-                        {
-                            numberOfValidAlbumsProcessed++;
-                            LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\udc4d Found valid album [{album}]");
-                            if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
-                            {
-                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
-                                _stopProcessingTriggered = true;
-                                break;
-                            }
-                        }
                     }
                     catch (Exception e)
                     {
@@ -855,168 +816,5 @@ public sealed class DirectoryProcessorService(
         }
 
         OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
-    }
-
-    //TODO make this use the Artist method to get images for an artist
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForArtist(Album album,
-        ImageConvertor imageConvertor,
-        IImageValidator imageValidator,
-        short maxImageCount,
-        bool doDeleteOriginal,
-        CancellationToken cancellationToken = default)
-    {
-        var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
-        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as
-        // there might be nested albums each with their own artist image directories.
-        foreach (var dir in album.ImageDirectories())
-        {
-            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
-        }
-
-        // Sometimes the album is in a directory with the parent holding an image artist that is not a discography directory 
-        var parents = album.Directory.GetParents().ToArray();
-        var lookAtParentDirectoriesCount = parents.Length < 2 ? parents.Length : 2;
-        for (var i = 0; i < lookAtParentDirectoriesCount; i++)
-        {
-            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(parents[i].FullName(), SearchOption.TopDirectoryOnly));
-        }
-
-        var index = 1;
-        foreach (var imageFile in imageFiles.Order())
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-
-            var fileInfo = new FileInfo(imageFile);
-            if (ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
-            {
-                // Move the image if not in the album directory
-                if (fileInfo.DirectoryName != album.Directory.FullName())
-                {
-                    var imageFileName = album.Directory.GetNextFileNameForType(Data.Models.Artist.ImageType).Item1;
-                    File.Copy(fileInfo.FullName, imageFileName, true);
-                    if (doDeleteOriginal)
-                    {
-                        File.Delete(fileInfo.FullName);
-                    }
-
-                    fileInfo = new FileInfo(imageFileName);
-                }
-
-                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken).ConfigureAwait(false)).Data.IsValid)
-                {
-                    // Try converting (resizing and padding if needed) image and then revalidate
-                    await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
-                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken)).Data.IsValid)
-                    {
-                        continue;
-                    }
-                }
-
-                var pictureIdentifier = PictureIdentifier.Band;
-                if (ImageHelper.IsArtistSecondaryImage(fileInfo))
-                {
-                    pictureIdentifier = PictureIdentifier.BandSecondary;
-                }
-
-                var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
-                var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
-                imageInfos.Add(new ImageInfo
-                {
-                    CrcHash = Crc32.Calculate(fileInfo),
-                    FileInfo = new FileSystemFileInfo
-                    {
-                        Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxImageCount)}-{pictureIdentifier}.jpg",
-                        Size = fileInfoFileSystemInfo.Size,
-                        OriginalName = fileInfo.Name
-                    },
-                    OriginalFilename = fileInfo.Name,
-                    PictureIdentifier = pictureIdentifier,
-                    Width = imageInfo.Width,
-                    Height = imageInfo.Height,
-                    SortOrder = index
-                });
-                index++;
-            }
-        }
-
-        return imageInfos;
-    }
-
-    private static async Task<IEnumerable<ImageInfo>> FindImagesForAlbum(Album album, ImageConvertor imageConvertor, IImageValidator imageValidator, short maxNumberOfImagesLength, CancellationToken cancellationToken = default)
-    {
-        var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
-        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as there might be nested albums each with their own image directories.
-        foreach (var dir in album.ImageDirectories())
-        {
-            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly).Select(x => $"{dir.Name}-{x}"));
-        }
-
-        var index = 1;
-        foreach (var imageFile in imageFiles.Order())
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-
-            var fileInfo = new FileInfo(imageFile);
-
-            if (album.IsFileForAlbum(fileInfo))
-            {
-                // Move the image if not in the album directory
-                if (fileInfo.DirectoryName != album.Directory.FullName())
-                {
-                    var newFileInfoName = Path.Combine(album.Directory.FullName(), $"{Path.GetFileNameWithoutExtension(fileInfo.Name)}-{fileInfo.Directory!.Name}{Path.GetExtension(fileInfo.Name)}");
-                    File.Move(fileInfo.FullName, newFileInfoName);
-                    fileInfo = new FileInfo(newFileInfoName);
-                }
-
-                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false)).Data.IsValid)
-                {
-                    // Try converting (resizing and padding if needed) image and then revalidate
-                    await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
-                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false)).Data.IsValid)
-                    {
-                        continue;
-                    }
-                }
-                if (ImageHelper.IsAlbumImage(fileInfo) ||
-                    ImageHelper.IsAlbumSecondaryImage(fileInfo))
-                {
-                    var pictureIdentifier = PictureIdentifier.Front;
-                    if (ImageHelper.IsAlbumSecondaryImage(fileInfo))
-                    {
-                        pictureIdentifier = PictureIdentifier.SecondaryFront;
-                    }
-
-                    var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
-                    var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
-                    imageInfos.Add(new ImageInfo
-                    {
-                        CrcHash = Crc32.Calculate(fileInfo),
-                        FileInfo = new FileSystemFileInfo
-                        {
-                            //TODO use the directory helper to get next image number
-                            Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
-                            Size = fileInfoFileSystemInfo.Size,
-                            OriginalName = fileInfo.Name
-                        },
-                        OriginalFilename = fileInfo.Name,
-                        PictureIdentifier = pictureIdentifier,
-                        Width = imageInfo.Width,
-                        Height = imageInfo.Height,
-                        SortOrder = index
-                    });
-                    index++;
-                }
-            }
-        }
-
-        return imageInfos;
     }
 }

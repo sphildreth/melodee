@@ -47,8 +47,10 @@ public class ParseCommand : CommandBase<ParseSettings>
 
             var isValid = false;
 
-            var cue = new CueSheet([
-                new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
+            var cue = new CueSheet(
+            serializer,
+            [
+                    new AtlMetaTag(new MetaTagsProcessor(config, serializer), imageConvertor, imageValidator, config)
             ], albumValidator, config);
             if (cue.DoesHandleFile(fileInfo.Directory.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo()))
             {

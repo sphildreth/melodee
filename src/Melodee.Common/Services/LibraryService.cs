@@ -200,6 +200,11 @@ public class LibraryService(
             }
 
             dbLibrary.PurgePath();
+            
+            await scopedContext.Contributors.Include(x => x.Artist)
+                .Where(x => x.Artist != null && x.Artist.LibraryId == libraryId)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
 
             await scopedContext
                 .Artists
@@ -551,9 +556,9 @@ public class LibraryService(
             };
         }
 
-        if (library.TypeValue != LibraryType.Storage)
+        if (library.TypeValue == LibraryType.Inbound)
         {
-            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this rebuild process requires a library type of 'Storage' ({(int)LibraryType.Storage}).")
+            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this rebuild process requires media already be processed.")
             {
                 Data = false
             };

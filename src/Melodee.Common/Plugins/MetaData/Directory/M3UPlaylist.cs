@@ -146,12 +146,7 @@ public sealed class M3UPlaylist(
                             Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                         };
-
-                        var validationResult = albumValidator.ValidateAlbum(m3UAlbum);
-                        m3UAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
-                        m3UAlbum.Status = validationResult.Data.AlbumStatus;
-                        m3UAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
-
+                        
                         var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {
@@ -161,6 +156,11 @@ public sealed class M3UPlaylist(
                                 m3UAlbum = m3UAlbum.Merge(existingAlbum);
                             }
                         }
+                        
+                        var validationResult = albumValidator.ValidateAlbum(m3UAlbum);
+                        m3UAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                        m3UAlbum.Status = validationResult.Data.AlbumStatus;
+                        m3UAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;                        
 
                         var serialized = serializer.Serialize(m3UAlbum);
                         await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
@@ -170,7 +170,11 @@ public sealed class M3UPlaylist(
                             Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
                         }
 
-                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration), m3UAlbum.Status.ToString());
+                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]", 
+                            DisplayName, 
+                            m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration), 
+                            m3UAlbum.Status.ToString(),
+                            m3UAlbum.StatusReasons.ToString());                        
                         processedFiles++;
                     }
                 }

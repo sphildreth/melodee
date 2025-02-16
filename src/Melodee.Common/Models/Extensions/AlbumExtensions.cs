@@ -8,7 +8,13 @@ using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.SearchEngines;
+using Melodee.Common.Plugins.Conversion.Image;
+using Melodee.Common.Plugins.MetaData.Directory;
+using Melodee.Common.Plugins.Validation;
+using Melodee.Common.Services.Scanning;
 using Melodee.Common.Utility;
+using Microsoft.AspNetCore.DataProtection.KeyManagement.Internal;
+using SixLabors.ImageSharp;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -326,23 +332,22 @@ public static class AlbumExtensions
                 }
             }
         }
-
         return result.ToArray();
     }
 
     /// <summary>
-    ///     Is the given File related to this Album.
+    ///     Is the given File related to this Album. There can be multiple albums in a directory and images for each.
     /// </summary>
-    public static bool IsFileForAlbum(this Album album, FileSystemInfo fileSystemInfo)
+    public static bool IsFileForAlbum(this Album album, IAlbumNamesInDirectoryPlugin albumNamesInDirectoryPlugin, FileSystemInfo fileSystemInfo)
     {
         if (!fileSystemInfo.Exists)
         {
             return false;
         }
 
-        // If there is only a single Album json file in the directory with the image, its logical that image is for that Album.
-        var albumJsonFilesInDirectory = album.Directory.FileInfosForExtension(Album.JsonFileName).Count();
-        if (albumJsonFilesInDirectory == 1)
+        // If there is only a single Album in the directory with the image, its logical that image is for that Album.
+        var albumNamesInDirectory = albumNamesInDirectoryPlugin.AlbumNamesInDirectory(album.Directory);
+        if (albumNamesInDirectory.Data.Length == 1)
         {
             return true;
         }
@@ -374,14 +379,9 @@ public static class AlbumExtensions
 
             if (album.Songs != null)
             {
-                foreach (var song in album.Songs)
+                if (album.Songs.Select(song => song.Title()?.ToAlphanumericName() ?? string.Empty).Any(normalizedSongName => normalizedName.Contains(normalizedSongName)))
                 {
-                    var normalizedSongArtist = song.SongArtist()?.ToAlphanumericName() ?? string.Empty;
-                    var normalizedSongName = song.Title()?.ToAlphanumericName() ?? string.Empty;
-                    if (normalizedName.Contains(normalizedSongName))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
@@ -389,6 +389,8 @@ public static class AlbumExtensions
         {
             Trace.WriteLine($"Error trying to determine if file [{fileSystemInfo.FullName}] is for Album [{album}] Ex [{e.Message}]", "Error");
         }
+        
+        // Even if multiple albums in same directory if the image name matches the cover name regex it
 
         return false;
     }
@@ -540,4 +542,204 @@ public static class AlbumExtensions
             Year = album.AlbumYear() ?? 0
         };
     }
+
+    public static bool RenumberImages(this Album album, CancellationToken cancellationToken = default)
+    {
+        if (album.Images?.Count() < 1)
+        {
+            return false;
+        }
+        var renumberedImages = new  List<ImageInfo>();
+        foreach(var ii in album.Images!.OrderBy(x => x.SortOrder).Select((x, i) => (x, i)).ToArray())
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            var newFilename = $"{ImageInfo.ImageFilePrefix}{(ii.i + 1).ToStringPadLeft(MelodeeConfiguration.ImageNameNumberPadding)}-{ii.x.PictureIdentifier.ToString()}.jpg";
+            if (ii.x.FileInfo.Exists(album.Directory))
+            {
+                File.Move(ii.x.FileInfo.FullName(album.Directory), Path.Combine(album.Directory.FullName(), newFilename), true);
+                renumberedImages.Add(ii.x with
+                {
+                    FileInfo = new FileSystemFileInfo
+                    {
+                        Name = newFilename,
+                        Size = ii.x.FileInfo?.Size ?? 0,
+                        OriginalName = ii.x.FileInfo?.OriginalName
+                    },
+                });
+            }
+        }
+        album.Images = renumberedImages.ToArray();
+        return true;
+    }
+
+    public static async Task<IEnumerable<ImageInfo>> FindImages(this Album album, IAlbumNamesInDirectoryPlugin albumNamesInDirectoryPlugin,  ImageConvertor imageConvertor, IImageValidator imageValidator, CancellationToken cancellationToken = default)
+    {
+        var imageInfos = new List<ImageInfo>();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
+        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as
+        // there might be nested albums each with their own album image directories.
+        foreach (var dir in album.ImageDirectories())
+        {
+            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
+        }        
+        var index = 1;
+        foreach (var imageFile in imageFiles.Order())
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+
+            var fileInfo = new FileInfo(imageFile);
+
+            if (album.IsFileForAlbum(albumNamesInDirectoryPlugin, fileInfo))
+            {
+                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false)).Data.IsValid)
+                {
+                    // Try converting (resizing and padding if needed) image and then revalidate
+                    await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
+                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false)).Data.IsValid)
+                    {
+                        continue;
+                    }
+                }
+                
+                var pictureIdentifier = PictureIdentifier.Front;
+                if (ImageHelper.IsAlbumSecondaryImage(fileInfo))
+                {
+                    pictureIdentifier = PictureIdentifier.SecondaryFront;
+                }
+
+                var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+                var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
+
+                var crc32 = Crc32.Calculate(fileInfo);
+                if (imageInfos.Any(x => x.IsCrcHashMatch(crc32)))
+                {
+                    Trace.WriteLine($"Album find images is skipping duplicate image [{imageFile}] with crc32 [{crc32}]");
+                    continue;
+                }
+                imageInfos.Add(new ImageInfo
+                {
+                    CrcHash = crc32,
+                    FileInfo = new FileSystemFileInfo
+                    {
+                        Name = fileInfo.Name,
+                        Size = fileInfoFileSystemInfo.Size,
+                        OriginalName = fileInfo.Name
+                    },
+                    OriginalFilename = fileInfo.Name,
+                    PictureIdentifier = pictureIdentifier,
+                    Width = imageInfo.Width,
+                    Height = imageInfo.Height,
+                    SortOrder = index
+                });
+                index++;
+            }
+        }
+
+        return imageInfos;
+    }    
+    
+
+    /// <summary>
+    /// Look in the album directory and see if there are any artist images. Most of the time an artist image is one up from an album directory in the 'artist' directory.
+    /// </summary>
+    public static async Task<IEnumerable<ImageInfo>> FindArtistImages(this Album album,
+        ImageConvertor imageConvertor,
+        IImageValidator imageValidator,
+        bool doDeleteOriginal,
+        CancellationToken cancellationToken = default)
+    {
+        var imageInfos = new List<ImageInfo>();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
+        // If there are directories in the album directory that contains images include the images in that; we don't want to do AllDirectories as
+        // there might be nested albums each with their own artist image directories.
+        foreach (var dir in album.ImageDirectories())
+        {
+            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
+        }
+
+        // Sometimes the album is in a directory with the parent holding an image artist that is not a discography directory 
+        var parents = album.Directory.GetParents().ToArray();
+        var lookAtParentDirectoriesCount = parents.Length < 2 ? parents.Length : 2;
+        for (var i = 0; i < lookAtParentDirectoriesCount; i++)
+        {
+            imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(parents[i].FullName(), SearchOption.TopDirectoryOnly));
+        }
+
+        var index = 1;
+        foreach (var imageFile in imageFiles.Order())
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+
+            var fileInfo = new FileInfo(imageFile);
+            if (ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
+            {
+                // Move the image if not in the album directory
+                if (fileInfo.DirectoryName != album.Directory.FullName())
+                {
+                    var imageFileName = album.Directory.GetNextFileNameForType(Data.Models.Artist.ImageType).Item1;
+                    File.Copy(fileInfo.FullName, imageFileName, true);
+                    if (doDeleteOriginal)
+                    {
+                        File.Delete(fileInfo.FullName);
+                    }
+
+                    fileInfo = new FileInfo(imageFileName);
+                }
+
+                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken).ConfigureAwait(false)).Data.IsValid)
+                {
+                    // Try converting (resizing and padding if needed) image and then revalidate
+                    await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
+                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
+                    {
+                        continue;
+                    }
+                }
+
+                var pictureIdentifier = PictureIdentifier.Band;
+                if (ImageHelper.IsArtistSecondaryImage(fileInfo))
+                {
+                    pictureIdentifier = PictureIdentifier.BandSecondary;
+                }
+
+                var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+                var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
+               
+                var crc32 = Crc32.Calculate(fileInfo);
+                if (imageInfos.Any(x => x.IsCrcHashMatch(crc32)))
+                {
+                    Trace.WriteLine($"Album find artist images is skipping duplicate image [{imageFile}] with crc32 [{crc32}]");
+                    continue;
+                }
+                imageInfos.Add(new ImageInfo
+                {
+                    CrcHash = Crc32.Calculate(fileInfo),
+                    FileInfo = new FileSystemFileInfo
+                    {
+                        Name = fileInfo.Name,
+                        Size = fileInfoFileSystemInfo.Size,
+                        OriginalName = fileInfo.Name
+                    },
+                    OriginalFilename = fileInfo.Name,
+                    PictureIdentifier = pictureIdentifier,
+                    Width = imageInfo.Width,
+                    Height = imageInfo.Height,
+                    SortOrder = index
+                });
+                index++;
+            }
+        }
+
+        return imageInfos;
+    }    
+    
 }

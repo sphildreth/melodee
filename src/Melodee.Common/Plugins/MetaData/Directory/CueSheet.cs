@@ -12,6 +12,7 @@ using Melodee.Common.Plugins.MetaData.Directory.Models;
 using Melodee.Common.Plugins.MetaData.Directory.Models.Extensions;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Validation;
+using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using Serilog;
 using Serilog.Events;
@@ -23,6 +24,7 @@ namespace Melodee.Common.Plugins.MetaData.Directory;
 ///     If a CUE file is found then split out the MP3 into Songs.
 /// </summary>
 public sealed class CueSheet(
+    ISerializer serializer,
     IEnumerable<ISongPlugin> songPlugins,
     IAlbumValidator albumValidator,
     IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration),
@@ -183,12 +185,16 @@ public sealed class CueSheet(
                             cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
                         }
 
-
-                        var validationResult = albumValidator.ValidateAlbum(cueAlbum);
-                        cueAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
-                        cueAlbum.Status = validationResult.Data.AlbumStatus;
-                        cueAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
-
+                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueAlbum.ToMelodeeJsonName(MelodeeConfiguration));
+                        if (File.Exists(stagingAlbumDataName))
+                        {
+                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);
+                            if (existingAlbum != null)
+                            {
+                                cueAlbum = cueAlbum.Merge(existingAlbum);
+                            }
+                        }                       
+                       
                         var mp3Plugin = _songPlugins.First(x => x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
                         foreach (var song in cueModel.Songs)
                         {
@@ -204,6 +210,20 @@ public sealed class CueSheet(
                             await mp3Plugin.UpdateSongAsync(cueModel.FileSystemDirectoryInfo, mp3Song, cancellationToken).ConfigureAwait(false);
                         }
 
+                        var validationResult = albumValidator.ValidateAlbum(cueAlbum);
+                        cueAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                        cueAlbum.Status = validationResult.Data.AlbumStatus;
+                        cueAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
+
+                        var serialized = serializer.Serialize(cueAlbum);
+                        await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
+                        
+                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]", 
+                            DisplayName, 
+                            cueAlbum.ToMelodeeJsonName(MelodeeConfiguration), 
+                            cueAlbum.Status.ToString(),
+                            cueAlbum.StatusReasons.ToString());                        
+                        
                         processedFiles++;
                         resultType = OperationResponseType.Ok;
                     }

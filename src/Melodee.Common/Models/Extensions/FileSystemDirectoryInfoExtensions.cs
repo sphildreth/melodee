@@ -102,17 +102,6 @@ public static class FileSystemDirectoryInfoExtensions
         }
     }
 
-    public static bool FileIsLikelyDuplicateByCrcAndExtension(this FileSystemDirectoryInfo directory, FileInfo file)
-    {
-        if (!directory.Exists() || !file.Exists)
-        {
-            return false;
-        }
-
-        var crc = Crc32.Calculate(file);
-        return crc.Nullify() != null && directory.AllFileInfos($"*{file.Extension}", SearchOption.AllDirectories).Any(ff => Crc32.Calculate(ff) == crc);
-    }
-
     public static bool DoesDirectoryHaveImageFiles(this FileSystemDirectoryInfo directory)
     {
         return directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileImageType(x.Extension));

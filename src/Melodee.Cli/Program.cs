@@ -36,6 +36,8 @@ public static class Program
                 add.AddCommand<ProcessInboundCommand>("process")
                     .WithAlias("p")
                     .WithDescription("Process media in given library into staging library.");
+                add.AddCommand<LibraryPurgeCommand>("purge")
+                    .WithDescription("Purge library, deleting artists, albums, album songs and resetting library stats. CAUTION: Destructive!");             
                 add.AddCommand<LibraryMoveOkCommand>("move-ok")
                     .WithAlias("m")
                     .WithDescription("Move 'Ok' status albums into the given library.");
@@ -67,10 +69,13 @@ public static class Program
         });
 
 
-        var version = typeof(Program).Assembly.GetName().Version;
-        AnsiConsole.MarkupLine($":musical_note: Melodee Command Line Interface v{version}");
-        AnsiConsole.MarkupLine("");
-
+        var doShowVersion = args.Length < 4 || (args.Length > 3 && args[2] == "--verbose" && args[3]?.ToUpper() != "FALSE");
+        if (doShowVersion)
+        {
+            var version = typeof(Program).Assembly.GetName().Version;
+            AnsiConsole.MarkupLine($":musical_note: Melodee Command Line Interface v{version}");
+            AnsiConsole.MarkupLine("");
+        }
         return app.Run(args);
     }
 }

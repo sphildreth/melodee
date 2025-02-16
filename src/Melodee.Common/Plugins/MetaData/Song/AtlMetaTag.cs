@@ -10,6 +10,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Conversion.Image;
+using Melodee.Common.Plugins.MetaData.Directory;
 using Melodee.Common.Plugins.MetaData.Song.Extensions;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
@@ -32,7 +33,7 @@ public sealed class AtlMetaTag(
     ImageConvertor imageConverter,
     IImageValidator imageValidator,
     IMelodeeConfiguration configuration) : MetaDataBase(configuration),
-    ISongPlugin, ISongFileUpdatePlugin
+    ISongPlugin, ISongFileUpdatePlugin, IAlbumNamesInDirectoryPlugin
 {
     public override string Id => "0F622E4B-64CD-4033-8B23-BA2001F045FA";
 
@@ -664,8 +665,25 @@ public sealed class AtlMetaTag(
         return track is { AudioFormat: { ID: > -1 }, Duration: > 0 };
     }
 
-    public Task<OperationResult<bool>> UpdateFileAsync(FileSystemFileInfo file, MetaTagIdentifier identifier, object? value, CancellationToken cancellationToken = default)
+    public OperationResult<string[]> AlbumNamesInDirectory(FileSystemDirectoryInfo directoryInfo)
     {
-        throw new NotImplementedException();
+        var result = new List<string>();
+
+        if (directoryInfo.Exists())
+        {
+            foreach (var file in directoryInfo.AllMediaTypeFileInfos())
+            {
+                var fileAtl = new Track(file.FullName);
+                var album = fileAtl.Album;
+                if (!string.IsNullOrWhiteSpace(album) && !result.Contains(album))
+                {
+                    result.Add(album);
+                }
+            }
+        }
+        return new OperationResult<string[]>
+        {
+            Data = result.ToArray()
+        };
     }
 }

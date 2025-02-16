@@ -164,11 +164,6 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                     };
 
-                    var validationResult = albumValidator.ValidateAlbum(sfvAlbum);
-                    sfvAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
-                    sfvAlbum.Status = validationResult.Data.AlbumStatus;
-                    sfvAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
-
                     var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                     if (File.Exists(stagingAlbumDataName))
                     {
@@ -186,6 +181,11 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                             Log.Error(e, "Unable to merge existing album [{StagingAlbumDataName}]", stagingAlbumDataName);
                         }
                     }
+                    
+                    var validationResult = albumValidator.ValidateAlbum(sfvAlbum);
+                    sfvAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
+                    sfvAlbum.Status = validationResult.Data.AlbumStatus;
+                    sfvAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
 
                     var serialized = serializer.Serialize(sfvAlbum);
                     await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
@@ -195,7 +195,11 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}]", DisplayName, sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration), sfvAlbum.Status.ToString());
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]", 
+                        DisplayName, 
+                        sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration), 
+                        sfvAlbum.Status.ToString(),
+                        sfvAlbum.StatusReasons.ToString());
                     processedFiles++;
                 }
             }
@@ -315,11 +319,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
             if (fi.Exists)
             {
                 var calculated = Crc32.Calculate(fi);
-                var doesMatch = string.Equals(calculated, crcHash, StringComparison.OrdinalIgnoreCase);
-
-                Trace.WriteLine($"IsCrCHashAccurate File [{filename}] DoesMatch [{doesMatch}] Expected [{crcHash}] Calculated [{calculated}]", "Information");
-
-                return doesMatch;
+                return string.Equals(calculated, crcHash, StringComparison.OrdinalIgnoreCase);
             }
         }
         catch (Exception e)

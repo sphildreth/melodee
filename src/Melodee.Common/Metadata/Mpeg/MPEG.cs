@@ -29,13 +29,15 @@ namespace Melodee.Common.Metadata.Mpeg
 
 		private BinaryReader _br;
         public bool IsValid => SafeParser.ToNumber<int>(Bitrate) > 0 && 
-                               SafeParser.ToNumber<int>(Frequency) > 0 && 
+                               IsFrequencyOk && 
                                IsLayerOk && 
                                IsVersionOk && 
                                IsMp3MimeType;
         public bool IsLayerOk => Layer.Equals("Layer I") || Layer.Equals("Layer II") || Layer.Equals("Layer III");
         
-        public bool IsMp3MimeType => MimeType == "audio/mpeg" || MimeType == "audio/mp3";
+        public bool IsFrequencyOk => SafeParser.ToNumber<int>(Frequency) > 95 || Frequency.Equals("reserved");
+        
+        public bool IsMp3MimeType => MimeType is "audio/mpeg" or "audio/mp3";
         
         public string? MimeType => MimeTypes.GetMimeType(Filename);
         

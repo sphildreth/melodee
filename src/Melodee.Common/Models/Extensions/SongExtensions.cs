@@ -139,6 +139,14 @@ public static class SongExtensions
             song.MediaNumber().ToString(), 
             song.AlbumTitle() ?? string.Empty);
     }
+    
+    public static long? SongUniqueId(this Song song)
+    {
+        return SafeParser.Hash(song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist() ?? string.Empty, 
+            song.MediaNumber().ToString(), 
+            song.SongNumber().ToString(),
+            song.Title().ToNormalizedString() ?? song.Title());
+    }    
 
     public static string? AlbumArtist(this Song song)
     {

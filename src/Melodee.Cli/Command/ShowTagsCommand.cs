@@ -61,7 +61,7 @@ public class ShowTagsCommand : CommandBase<ShowTagsSettings>
                         .Header("Only Tags")
                         .Collapse()
                         .RoundedBorder()
-                        .BorderColor(Color.Yellow));
+                        .BorderColor(Color.Green));
             }
             else if (settings.Verbose)
             {
@@ -70,7 +70,7 @@ public class ShowTagsCommand : CommandBase<ShowTagsSettings>
                         .Header("File Info")
                         .Collapse()
                         .RoundedBorder()
-                        .BorderColor(Color.Yellow));
+                        .BorderColor(Color.Green));
             }
 
             return isValid ? 0 : 1;

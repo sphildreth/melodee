@@ -49,7 +49,7 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
         var testDirectory = @"/melodee_test/staging";
         var dir = new DirectoryInfo(testDirectory);
         // Only run if the test staging directory exists and if the test staging directory has directories (otherwise no albums to return).
-        if (dir.Exists && Directory.GetDirectories(testDirectory).Length > 0)
+        if (dir.Exists && Directory.GetDirectories(testDirectory).Length > 0 && Directory.EnumerateFiles(testDirectory).Any())
         {
             var rd = new AlbumDiscoveryService(
                 Logger,

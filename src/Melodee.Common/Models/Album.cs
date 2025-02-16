@@ -180,7 +180,7 @@ public sealed record Album
         {
             foreach (var song in otherAlbum.Songs)
             {
-                if (Songs != null && !Songs.Select(x => x.Id).Contains(song.Id))
+                if (Songs != null && !Songs.Select(x => x.SongUniqueId()).Contains(song.SongUniqueId()))
                 {
                     songs.Add(song);
                 }
@@ -227,7 +227,7 @@ public sealed record Album
             ValidationMessages = messages.Distinct().ToArray(),
             MelodeeDataFileName = MelodeeDataFileName,
             OriginalDirectory = OriginalDirectory,
-            Songs = (Songs ?? Array.Empty<Song>()).ToArray(),
+            Songs = songs.ToArray(),
             SortOrder = SortOrder,
             Status = isAlbumOk ? AlbumStatus.Ok : isAlbumInvalid ? AlbumStatus.Invalid : AlbumStatus.New,
             Tags = tags,

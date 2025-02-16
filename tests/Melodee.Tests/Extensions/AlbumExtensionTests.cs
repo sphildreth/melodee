@@ -2,11 +2,13 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Plugins.MetaData.Song;
+using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Utility;
 
 namespace Melodee.Tests.Extensions;
 
-public class AlbumExtensionTests
+public class AlbumExtensionTests : TestsBase
 {
     public static Album NewAlbum()
     {
@@ -94,11 +96,14 @@ public class AlbumExtensionTests
     [InlineData(@"/melodee_test/inbound/00-k 2024/00--fire_proof-(dzb707)-web-2024.sfv", false)]
     [InlineData(@"/melodee_test/inbound/00-k 2024/00-kittie-vultures-ep-web-2024.sfv", false)]
     [InlineData("batman", false)]
-    public void ValidateFileIsForAlbum(string fileName, bool shouldBe)
+    public async Task ValidateFileIsForAlbum(string fileName, bool shouldBe)
     {
         if (File.Exists(fileName))
         {
-            Assert.Equal(shouldBe, NewAlbum().IsFileForAlbum(new FileInfo(fileName)));
+            var config = await MockConfigurationFactory().GetConfigurationAsync();
+            Assert.Equal(shouldBe, NewAlbum()
+                    .IsFileForAlbum(new AtlMetaTag(new MetaTagsProcessor(config, Serializer), GetImageConvertor(), GetImageValidator(), config),
+                        new FileInfo(fileName)));
         }
     }
 

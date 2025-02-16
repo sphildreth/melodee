@@ -3,8 +3,11 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.SearchEngines;
+using Melodee.Common.Plugins.Conversion.Image;
+using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Utility;
 using NodaTime;
+using SixLabors.ImageSharp;
 
 namespace Melodee.Common.Models.Extensions;
 
