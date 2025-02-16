@@ -113,6 +113,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             DoesAlbumHaveCoverImage(album);
             ArtistHasSearchEngineResult(album.Artist);
             AlbumIsStudioTypeAlbum(album);
+            DoAllSongHaveValidDurations(album);
         }
         catch (Exception e)
         {
@@ -130,6 +131,29 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Messages = _validationMessages
             }
         };
+    }
+
+    private void DoAllSongHaveValidDurations(Album album)
+    {
+        if (album.Songs?.Count() < 1)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album has no songs.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });  
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidSongs;
+        }
+        var durations = album.Songs?.Select(x => x.Duration()).ToArray() ?? [];
+        if (durations.Any(x => x is null or 0))
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album has songs with invalid song durations.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidSongs;
+        }
     }
 
     private void AlbumIsStudioTypeAlbum(Album album)

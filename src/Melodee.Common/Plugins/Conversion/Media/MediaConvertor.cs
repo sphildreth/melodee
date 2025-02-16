@@ -77,14 +77,14 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
 
                     try
                     {
-                        await FFMpegArguments.FromFileInput(songFileInfo)
+                        FFMpegArguments.FromFileInput(songFileInfo)
                             .OutputToFile(newFileName, true, options =>
                             {
                                 options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration[SettingRegistry.ConversionBitrate]));
                                 options.WithAudioSamplingRate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]));
                                 options.WithVariableBitrate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]));
                                 options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
-                            }).ProcessAsynchronously();
+                            }).ProcessSynchronously();
                     }
                     catch (Exception)
                     {
@@ -94,6 +94,12 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                     while (!newFileInfo.CanWriteTo())
                     {
                         await Task.Delay(100, cancellationToken);
+                    }
+                    mpeg = new Mpeg(newFileName);
+                    await mpeg.ReadAsync(cancellationToken).ConfigureAwait(false);
+                    if (!mpeg.IsValid)
+                    {
+                        //throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
                     }
                     var newAtl = new Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))

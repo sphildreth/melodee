@@ -56,8 +56,7 @@ public class Mp3Files(
         {
             using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] ProcessDirectoryAsync [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.Name))
             {
-                var songsSeenCount = 0;
-                await Parallel.ForEachAsync(fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.TopDirectoryOnly), cancellationToken, async (fileSystemInfo, tt) =>
+                foreach(var fileSystemInfo in fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.TopDirectoryOnly))
                 {
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in songPlugins.OrderBy(x => x.SortOrder))
@@ -83,12 +82,10 @@ public class Mp3Files(
                             processedFileCount++;
                         }
                     }
-
-                    songsSeenCount++;
-                });
+                }
                 
                 await HandleDuplicates(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);   
-                EnsureSortOrderSet(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);
+                EnsureSortOrderSet(songs.ToArray());
 
                 foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.SongArtistAlbumUniqueId()))
                 {
@@ -199,11 +196,12 @@ public class Mp3Files(
 
         return new OperationResult<int>(messages)
         {
+            Errors = errors.ToArray(),
             Data = processedFileCount
         };
     }
 
-    private void EnsureSortOrderSet(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] songs, CancellationToken cancellationToken)
+    private void EnsureSortOrderSet(Common.Models.Song[] songs)
     {
         Trace.WriteLine($"Ensuring sort order is set on songs...");
         foreach (var song in songs)

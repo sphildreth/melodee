@@ -18,6 +18,11 @@ public static class Program
                 add.AddCommand<ConfigurationSetCommand>("set")
                     .WithDescription("Modify Melodee configuration.");
             });
+            config.AddBranch<ShowMpegInfoSettings>("file", add =>
+            {
+                add.AddCommand<ShowMpegInfoCommand>("mpeg")
+                    .WithDescription("Load given file and show MPEG info and if Melodee thinks this is a valid MPEG file.");
+            });            
             config.AddBranch<JobSettings>("job", add =>
             {
                 add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("artistsearchengine-refresh")

@@ -63,7 +63,6 @@
 
   <ItemGroup>
     <Folder Include="MessageBus\"/>
-    <Folder Include="Metadata\Mpeg\" />
     <Folder Include="Migrations\"/>
   </ItemGroup>
 

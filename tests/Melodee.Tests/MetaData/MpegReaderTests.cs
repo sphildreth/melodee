@@ -33,6 +33,20 @@ public class MpegReaderTests
     }    
     
     [Fact]
+    public async Task  ReadValidConvertedFromFlacMp32()
+    {
+        var testFile = @"/melodee_test/tests/testconvertedfromflac.mp3";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var mpeg = new Mpeg(fileInfo.FullName);
+            await mpeg.ReadAsync();
+            Assert.NotNull(mpeg.Bitrate);
+            Assert.True(mpeg.IsValid);
+        }
+    }      
+    
+    [Fact]
     public async Task  ReadValidMp3Mpeg25()
     {
         var testFile = @"/melodee_test/tests/testmpeg-2-5.mp3";
