@@ -66,7 +66,6 @@ public sealed class DirectoryProcessorService(
     private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private bool _initialized;
     private int _maxAlbumProcessingCount;
-    private short _maxImageCount;
 
     /// <summary>
     ///     These plugins create albums from media files.
@@ -93,7 +92,6 @@ public sealed class DirectoryProcessorService(
         _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(token).ConfigureAwait(false);
 
         _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
-        _maxImageCount = _configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages, value => value < 1 ? SafeParser.ToNumber<short>(short.MaxValue.ToString().Length) : SafeParser.ToNumber<short>(value.ToString().Length));
 
         _directoryStaging = (await libraryService.GetStagingLibraryAsync(token).ConfigureAwait(false)).Data.Path;
 
@@ -257,62 +255,7 @@ public sealed class DirectoryProcessorService(
             }
         }
 
-        var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(_configuration, lastProcessDate, SearchOption.AllDirectories).ToList();
-        var mediaDirectoriesToProcess = directoriesToProcess.Where(x => x != fileSystemDirectoryInfo && x.GetParent().UniqueId != fileSystemDirectoryInfo.UniqueId && x.AllMediaTypeFileInfos().Any()).ToArray();
-        if (mediaDirectoriesToProcess.Length > 0)
-        {
-            // This means there are subdirectories which have media files in directories which have media files (aka 'nested'), must be one album per directory.
-            foreach (var mediaDirectoryToProcess in mediaDirectoriesToProcess)
-            {
-
-                try
-                {
-                    if (mediaDirectoryToProcess.IsAlbumMediaDirectory())
-                    {
-                        // A media directory (e.g. 'Disc 1') ensure files in directory have Media Number set and move up one directory.
-                        var mediaFiles = mediaDirectoryToProcess.AllMediaTypeFileInfos().ToArray();
-                        foreach (var mediaFile in mediaFiles)
-                        {
-                            if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                            {
-                                break;
-                            }
-
-                            var discNumber = mediaDirectoryToProcess.TryParseMediaNumber() ?? 1;
-                            _songFileUpdatePlugin.UpdateFile(fileSystemDirectoryInfo, mediaFile.ToFileSystemInfo(), MetaTagIdentifier.DiscNumber, discNumber);
-                            mediaFile.MoveTo(Path.Combine(mediaDirectoryToProcess.Parent()!.FullName(), $"{discNumber}.{ mediaFile.Name }"));                            
-                        }
-
-                        var imageFiles = mediaDirectoryToProcess.AllFileImageTypeFileInfos().ToArray();
-                        foreach (var imageFile in imageFiles)
-                        {
-                            if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                            {
-                                break;
-                            }
-                            var discNumber = mediaDirectoryToProcess.TryParseMediaNumber() ?? 1;
-                            imageFile.MoveTo(Path.Combine(mediaDirectoryToProcess.Parent()!.FullName(), $"{discNumber}.{ imageFile.Name }")); 
-                        }
-                        directoriesToProcess.Remove(mediaDirectoryToProcess);
-                        if (!directoriesToProcess.Contains(mediaDirectoryToProcess.Parent()!))
-                        {
-                            directoriesToProcess.Add(mediaDirectoryToProcess.Parent()!);
-                        }
-                        continue;
-                    }
-                    var newDir = new DirectoryInfo(Path.Combine(fileSystemDirectoryInfo.FullName(), Guid.NewGuid().ToString()));
-                    mediaDirectoryToProcess.MoveToDirectory(newDir.FullName);
-                    Logger.Debug(":: [{ServiceName}] :: Moved nested album [{Moved}] to [{NewName}]", nameof(DirectoryProcessorService), mediaDirectoryToProcess.FullName(), newDir.FullName);
-                    directoriesToProcess.Remove(mediaDirectoryToProcess);
-                    directoriesToProcess.Add(newDir.ToDirectorySystemInfo());
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e, "Error processing album media directory [{Dir}]", mediaDirectoryToProcess.FullName());
-                }
-            }
-        }
-
+        var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
         if (directoriesToProcess.Count > 0)
         {
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
@@ -461,7 +404,7 @@ public sealed class DirectoryProcessorService(
                     try
                     {
                         var albumImages = new List<ImageInfo>();
-                        var foundAlbumImages = (await FindImagesForAlbum(album, _imageConvertor, _imageValidator, _maxImageCount, cancellationToken).ConfigureAwait(false)).ToArray();
+                        var foundAlbumImages = (await FindImagesForAlbum(album, _imageConvertor, _imageValidator, 2, cancellationToken).ConfigureAwait(false)).ToArray();
                         if (foundAlbumImages.Length != 0)
                         {
                             foreach (var foundAlbumImage in foundAlbumImages)
@@ -486,7 +429,7 @@ public sealed class DirectoryProcessorService(
                         var foundArtistImages = (await FindImagesForArtist(album,
                             _imageConvertor,
                             _imageValidator,
-                            _maxImageCount,
+                            99,
                             _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
                             cancellationToken).ConfigureAwait(false)).ToArray();
                         if (foundArtistImages.Length != 0)
@@ -667,16 +610,20 @@ public sealed class DirectoryProcessorService(
 
                                 if (artistFromSearch.Releases?.FirstOrDefault() != null)
                                 {
-                                    album.AlbumDbId = album.AlbumDbId ?? artistFromSearch.Releases!.First().Id;
-                                    album.AlbumType = album.AlbumType == AlbumType.NotSet ? artistFromSearch.Releases!.First().AlbumType : album.AlbumType;
-
-                                    // Artist result should override any in place for Album as its more specific and likely more accurate
-                                    album.MusicBrainzId = artistFromSearch.Releases!.First().MusicBrainzId;
-                                    album.SpotifyId = artistFromSearch.Releases!.First().SpotifyId;
-                                    
-                                    if (!album.HasValidAlbumYear(_configuration.Configuration))
+                                    var searchResultRelease = artistFromSearch.Releases.FirstOrDefault(x => x.Year == album.AlbumYear() && x.NameNormalized == album.AlbumTitle().ToNormalizedString());
+                                    if (searchResultRelease != null)
                                     {
-                                        album.SetTagValue(MetaTagIdentifier.RecordingYear, artistFromSearch.Releases!.First().Year.ToString());
+                                        album.AlbumDbId = album.AlbumDbId ?? searchResultRelease.Id;
+                                        album.AlbumType = album.AlbumType == AlbumType.NotSet ? searchResultRelease.AlbumType : album.AlbumType;
+
+                                        // Artist result should override any in place for Album as its more specific and likely more accurate
+                                        album.MusicBrainzId = searchResultRelease.MusicBrainzId;
+                                        album.SpotifyId = searchResultRelease.SpotifyId;
+
+                                        if (!album.HasValidAlbumYear(_configuration.Configuration))
+                                        {
+                                            album.SetTagValue(MetaTagIdentifier.RecordingYear, searchResultRelease.Year.ToString());
+                                        }
                                     }
                                 }
 
@@ -723,7 +670,7 @@ public sealed class DirectoryProcessorService(
                                         album.SetTagValue(MetaTagIdentifier.RecordingYear, imageSearchResult.ReleaseDate.ToString());
                                     }                                    
 
-                                    var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(), albumDirectorySystemInfo.GetNextFileNameForType(_maxImageCount, Data.Models.Album.FrontImageType).Item1);
+                                    var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(), albumDirectorySystemInfo.GetNextFileNameForType(Data.Models.Album.FrontImageType).Item1);
                                     if (await httpClient.DownloadFileAsync(
                                             imageSearchResult.MediaUrl,
                                             albumImageFromSearchFileName,
@@ -949,7 +896,7 @@ public sealed class DirectoryProcessorService(
                 // Move the image if not in the album directory
                 if (fileInfo.DirectoryName != album.Directory.FullName())
                 {
-                    var imageFileName = album.Directory.GetNextFileNameForType(maxImageCount, Data.Models.Artist.ImageType).Item1;
+                    var imageFileName = album.Directory.GetNextFileNameForType(Data.Models.Artist.ImageType).Item1;
                     File.Copy(fileInfo.FullName, imageFileName, true);
                     if (doDeleteOriginal)
                     {

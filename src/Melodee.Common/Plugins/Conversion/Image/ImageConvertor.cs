@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
@@ -56,7 +57,26 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             var largeImageSize = MelodeeConfiguration.GetValue<int>(SettingRegistry.ImagingLargeSize);
 
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
-            var imageInfo = await SixLabors.ImageSharp.Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+
+            SixLabors.ImageSharp.ImageInfo? imageInfo = null;
+            try
+            {
+                imageInfo = await SixLabors.ImageSharp.Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine($"Deleting invalid image file [{fileInfo.FullName}] due to error: {e.Message}");
+                fileInfo.Delete();
+                return new OperationResult<FileSystemFileInfo>
+                {
+                    Errors = new[]
+                    {
+                        new Exception($"Deleting invalid image file [{fileInfo.FullName}] due to error: {e.Message}")
+                    },
+                    Data = fileSystemInfo
+                };
+            }
+            
 
             var larger = imageInfo.Width;
             if (larger < smallImageSize)

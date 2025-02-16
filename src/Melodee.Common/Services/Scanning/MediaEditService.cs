@@ -34,7 +34,6 @@ public sealed class MediaEditService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
-    LibraryService libraryService,
     AlbumDiscoveryService albumDiscoveryService,
     ISerializer serializer,
     IHttpClientFactory httpClientFactory) : ServiceBase(logger, cacheManager, contextFactory)
@@ -43,7 +42,6 @@ public sealed class MediaEditService(
     
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
-    private string _directoryLibrary = null!;
 
     private ISongPlugin _editSongPlugin = new NullSongPlugin();
     private ImageConvertor _imageConvertor = new(new MelodeeConfiguration([]));
@@ -57,9 +55,6 @@ public sealed class MediaEditService(
         _imageValidator = new ImageValidator(_configuration);
         _imageConvertor = new ImageConvertor(_configuration);
         _editSongPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
-
-        // TODO this needs to support multiple storage libraries
-        _directoryLibrary = (await libraryService.GetStorageLibrariesAsync(token)).Data.OrderBy(x => x.SortOrder).First().Path;
 
         await albumDiscoveryService.InitializeAsync(configuration, token).ConfigureAwait(false);
 
@@ -246,8 +241,8 @@ public sealed class MediaEditService(
         CheckInitialized();
 
         var serialized = serializer.Serialize(album);
-        var albumStagingDirInfo = new DirectoryInfo(directoryInfo.FullName());
-        var jsonName = Path.Combine(albumStagingDirInfo.FullName, album.ToMelodeeJsonName(_configuration, true));
+        var albumDirectory = new DirectoryInfo(directoryInfo.FullName());
+        var jsonName = Path.Combine(albumDirectory.FullName, album.ToMelodeeJsonName(_configuration, true));
         await File.WriteAllTextAsync(jsonName, serialized, cancellationToken);
     }
 
@@ -641,7 +636,7 @@ public sealed class MediaEditService(
             var numberOfSongsSeen = 0;
             foreach (var dd in album.Songs?.Select((x, i) => new { x, i = i + 1 }) ?? [])
             {
-                album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);                
+                album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);          
                 /*
                  * Calculate a unique sort number so that albums which have multiple medias stay in order. This matters for albums like concept albums
                  * where the songs are intended to play in order (e.g. Dream Theater - [2016] The Astonishing).
@@ -806,42 +801,6 @@ public sealed class MediaEditService(
         };
     }
 
-    public async Task<OperationResult<bool>> MoveAlbumsToLibraryAsync(FileSystemDirectoryInfo directoryInfo, Guid[] albumIds, CancellationToken cancellationToken = default)
-    {
-        CheckInitialized();
-
-        if (albumIds.Length == 0)
-        {
-            return new OperationResult<bool>
-            {
-                Data = false
-            };
-        }
-
-        var result = false;
-        try
-        {
-            foreach (var selectedAlbumId in albumIds)
-            {
-                var album = await albumDiscoveryService.AlbumByUniqueIdAsync(directoryInfo, selectedAlbumId, cancellationToken);
-                var albumStagingDirInfo = new DirectoryInfo(Path.Combine(directoryInfo.FullName(), album.ToDirectoryName()));
-                var albumLibraryDirInfo = new DirectoryInfo(Path.Combine(_directoryLibrary, album.ToDirectoryName()));
-                albumLibraryDirInfo.ToDirectorySystemInfo().MoveToDirectory(albumLibraryDirInfo.FullName);
-            }
-
-            directoryInfo.DeleteAllEmptyDirectories();
-            result = true;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Moving Albums To library.");
-        }
-
-        return new OperationResult<bool>
-        {
-            Data = result
-        };
-    }
 
     public async Task<OperationResult<bool>> SaveMelodeeAlbum(Album album, bool? forceIsOk = null, CancellationToken cancellationToken = default)
     {

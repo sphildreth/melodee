@@ -5,6 +5,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
+using Melodee.Common.Metadata;
 using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.Scrobbling;
@@ -91,6 +92,28 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         _dbConnection.Dispose();
     }
 
+    protected AlbumDiscoveryService GetAlbumDiscoveryService()
+    {
+        return new AlbumDiscoveryService(
+            Log.Logger,
+            CacheManager,
+            MockFactory(),
+            MockConfigurationFactory(),
+            Serializer);
+    }
+
+    protected MediaEditService GetMediaEditService()
+    {
+        return new MediaEditService(
+            Log.Logger,
+            CacheManager,
+            MockFactory(),
+            MockConfigurationFactory(),
+            GetAlbumDiscoveryService(),
+            Serializer,
+            MockHttpClientFactory());
+    }
+    
     protected IDbContextFactory<MelodeeDbContext> MockFactory()
     {
         var mockFactory = new Mock<IDbContextFactory<MelodeeDbContext>>();
@@ -245,8 +268,22 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockFactory(),
             MockConfigurationFactory(),
             Serializer,
-            MockBus()
+            MockBus(),
+            GetMelodeeMetadataMaker()
         );
+    }
+
+    protected MelodeeMetadataMaker GetMelodeeMetadataMaker()
+    {
+        return new MelodeeMetadataMaker
+        (
+            Logger, 
+            MockConfigurationFactory(), 
+            Serializer, 
+            GetArtistSearchEngineService(), 
+            GetAlbumImageSearchEngineService(), 
+            MockHttpClientFactory(), 
+            GetMediaEditService());
     }
 
     protected ScrobbleService GetScrobbleService()

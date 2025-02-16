@@ -407,7 +407,7 @@
                     {
                         var httpClient = HttpClientFactory.CreateClient();
                         var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
-                        var albumImageFromSearchFileName = Path.Combine(_album.Directory.FullName(), _album.Directory.GetNextFileNameForType(_maxResults, Common.Data.Models.Album.FrontImageType).Item1);
+                        var albumImageFromSearchFileName = Path.Combine(_album.Directory.FullName(), _album.Directory.GetNextFileNameForType(Common.Data.Models.Album.FrontImageType).Item1);
                         if (await httpClient.DownloadFileAsync(
                                 imageSearchResult.MediaUrl,
                                 albumImageFromSearchFileName,
@@ -592,7 +592,7 @@
             {
                 var httpClient = HttpClientFactory.CreateClient();
                 var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
-                var albumImageFromSearchFileName = Path.Combine(_album.Directory.FullName(), _album.Directory.GetNextFileNameForType(_maxResults, Common.Data.Models.Album.FrontImageType).Item1);
+                var albumImageFromSearchFileName = Path.Combine(_album.Directory.FullName(), _album.Directory.GetNextFileNameForType(Common.Data.Models.Album.FrontImageType).Item1);
 
                 if (selectedImageSearchResult.ImageBytes != null)
                 {

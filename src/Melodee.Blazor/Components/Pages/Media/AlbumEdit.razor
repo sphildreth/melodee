@@ -376,7 +376,7 @@
                 var httpClient = HttpClientFactory.CreateClient();
                 var album = await AlbumDiscoveryService.AlbumByUniqueIdAsync(_library.ToFileSystemDirectoryInfo(), ApiKey);
                 var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
-                var albumImageFromSearchFileName = Path.Combine(album.Directory.FullName(), album.Directory.GetNextFileNameForType(_maxResults, Common.Data.Models.Album.FrontImageType).Item1);
+                var albumImageFromSearchFileName = Path.Combine(album.Directory.FullName(), album.Directory.GetNextFileNameForType(Common.Data.Models.Album.FrontImageType).Item1);
 
                 if (selectedImageSearchResult.ImageBytes != null)
                 {

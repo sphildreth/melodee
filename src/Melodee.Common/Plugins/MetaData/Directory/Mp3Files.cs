@@ -5,7 +5,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
@@ -44,6 +43,7 @@ public class Mp3Files(
 
         var albums = new List<Album>();
         var messages = new List<string>();
+        var errors = new List<Exception>();
         var viaPlugins = new List<string>
         {
             DisplayName
@@ -52,16 +52,20 @@ public class Mp3Files(
 
         var maxAlbumProcessingCount = MelodeeConfiguration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
 
-        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-        if (dirInfo.Exists)
+        if (fileSystemDirectoryInfo.Exists())
         {
             using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] ProcessDirectoryAsync [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.Name))
             {
-                await Parallel.ForEachAsync(dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly), cancellationToken, async (fileSystemInfo, tt) =>
+                var songsSeenCount = 0;
+                await Parallel.ForEachAsync(fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.TopDirectoryOnly), cancellationToken, async (fileSystemInfo, tt) =>
                 {
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in songPlugins.OrderBy(x => x.SortOrder))
                     {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
                             var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
@@ -70,10 +74,17 @@ public class Mp3Files(
                                 songs.Add(pluginResult.Data);
                                 viaPlugins.Add($"{nameof(Mp3Files)}:{plugin.DisplayName}");
                             }
-
+                            else
+                            {
+                                Trace.WriteLine($"Unable to process file: [{fsi}]");
+                            }
+                            errors.AddRange(pluginResult.Errors ?? []);
                             messages.AddRange(pluginResult.Messages ?? []);
+                            processedFileCount++;
                         }
                     }
+
+                    songsSeenCount++;
                 });
                 
                 await HandleDuplicates(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);   
@@ -95,12 +106,7 @@ public class Mp3Files(
                         }
                         else
                         {
-                            var songTotal = song.SongTotalNumber();
-                            if (songTotal < 1)
-                            {
-                                songTotal = SafeParser.ToNumber<short>(songsGroupedByAlbum.Count());
-                            }
-
+                            var songTotal =  SafeParser.ToNumber<short>(songsGroupedByAlbum.Count());
                             var newAlbumTags = new List<MetaTag<object?>>
                             {
                                 new()

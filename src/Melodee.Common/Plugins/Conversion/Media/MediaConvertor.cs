@@ -4,6 +4,7 @@ using FFMpegCore.Enums;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
+using Melodee.Common.Metadata.Mpeg;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.MetaData;
@@ -53,10 +54,10 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
         {
             return new OperationResult<FileSystemFileInfo>
             {
-                Errors = new[]
-                {
+                Errors =
+                [
                     new Exception("Invalid file type. This convertor only processes Media type files.")
-                },
+                ],
                 Data = fileSystemInfo
             };
         }
@@ -64,12 +65,13 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
         var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
         if (fileInfo.Exists && SafeParser.ToBoolean(Configuration[SettingRegistry.ConversionEnabled]))
         {
-            var fileAtl = new Track(fileSystemInfo.FullName(directoryInfo));
-            if (ShouldMediaSongBeConverted(fileAtl))
+            var mpeg = new Mpeg(fileInfo.FullName);
+            await mpeg.ReadAsync(cancellationToken).ConfigureAwait(false);
+            if (!mpeg.IsValid)
             {
                 using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
-                    var songFileInfo = fileAtl.FileInfo();
+                    var songFileInfo = fileInfo;
                     var songDirectory = songFileInfo.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Song");
                     var newFileName = Path.Combine(songDirectory, $"{Path.GetFileNameWithoutExtension(songFileInfo.Name)}.mp3");
 

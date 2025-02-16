@@ -179,6 +179,13 @@ public class StringExtensionsTests
     }
 
     [Theory]
+    [InlineData("", null)]
+    [InlineData("123batman", "123")]
+    [InlineData("1batman2", "12")]
+    [InlineData(".1 2 3 4 5 !", "12345")]
+    public void ValidateParsingNumberFromFileName(string input, string? shouldBe) => Assert.Equal(shouldBe, input.ToNumberOnly());
+
+    [Theory]
     [InlineData(null, null)]
     [InlineData(" ", null)]
     [InlineData("Bob Jones", "Bob Jones")]

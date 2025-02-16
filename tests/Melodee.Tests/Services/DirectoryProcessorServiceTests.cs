@@ -15,20 +15,7 @@ public class DirectoryProcessorServiceTests : ServiceTestBase
             MockConfigurationFactory(),
             MockLibraryService(),
             Serializer,
-            new MediaEditService(
-                Log.Logger,
-                CacheManager,
-                MockFactory(),
-                MockConfigurationFactory(),
-                MockLibraryService(),
-                new AlbumDiscoveryService(
-                    Log.Logger,
-                    CacheManager,
-                    MockFactory(),
-                    MockConfigurationFactory(),
-                    Serializer),
-                Serializer,
-                MockHttpClientFactory()),
+            GetMediaEditService(),
             GetArtistSearchEngineService(),
             GetAlbumImageSearchEngineService(),
             MockHttpClientFactory()

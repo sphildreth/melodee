@@ -76,7 +76,7 @@ public class ArtistHousekeepingJob(
                 {
                     continue;
                 }
-                var imageFileName = artistFileDirectory.GetNextFileNameForType(maxNumberOfImagesAllowed, Artist.ImageType).Item1;
+                var imageFileName = artistFileDirectory.GetNextFileNameForType(Artist.ImageType).Item1;
                 if (await httpClient.DownloadFileAsync(
                         albumImageSearchResult.Data.First().MediaUrl,
                         imageFileName,

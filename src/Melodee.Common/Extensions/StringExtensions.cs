@@ -329,6 +329,15 @@ public static partial class StringExtensions
     {
         return string.IsNullOrEmpty(input) ? null : OnlyAlphaNumericRegex().Replace(input, " ").Nullify();
     }
+
+    public static string? ToNumberOnly(this string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return null;
+        }
+        return new string(input.Where(char.IsDigit).ToArray());
+    }
     
     public static string? RemoveNumbers(this string? input)
     {

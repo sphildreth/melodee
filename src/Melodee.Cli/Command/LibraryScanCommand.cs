@@ -2,26 +2,17 @@ using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Jobs;
-using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
-using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
-using Melodee.Common.Services.Caching;
-using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 using Quartz.Impl;
 using Rebus.Bus;
-using Rebus.Config;
-using Rebus.Transport.InMem;
 using Serilog;
-using ServiceStack.Data;
-using ServiceStack.OrmLite;
 using Spectre.Console.Cli;
 
 namespace Melodee.Cli.Command;
@@ -29,79 +20,27 @@ namespace Melodee.Cli.Command;
 /// <summary>
 ///     This runs the job that scans all the library type libraries
 /// </summary>
-public class LibraryScanCommand : AsyncCommand<LibraryScanSettings>
+public class LibraryScanCommand : CommandBase<LibraryScanSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, LibraryScanSettings settings)
     {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
-            .Build();
-
-        Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(configuration)
-            .CreateLogger();
-
-        var serializer = new Serializer(Log.Logger);
-
-        var services = new ServiceCollection();
-        services.AddDbContextFactory<MelodeeDbContext>(opt =>
-            opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-        services.AddDbContextFactory<ArtistSearchEngineServiceDbContext>(opt 
-            => opt.UseSqlite(configuration.GetConnectionString("ArtistSearchEngineConnection")));        
-        services.AddHttpClient();
-        services.AddSingleton<IDbConnectionFactory>(_ =>
-            new OrmLiteConnectionFactory(configuration.GetConnectionString("MusicBrainzConnection"), SqliteDialect.Provider));
-        services.AddScoped<IMusicBrainzRepository, SQLiteMusicBrainzRepository>();
-        services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
-        services.AddSingleton(Log.Logger);
-        services.AddSingleton(serializer);
-        services.AddSingleton<ISerializer, Serializer>();
-        services.AddSingleton<ICacheManager>(opt
-            => new MemoryCacheManager(opt.GetRequiredService<ILogger>(),
-                new TimeSpan(1, 0, 0, 0),
-                opt.GetRequiredService<ISerializer>()));
-        
-        services.AddRebus(configure =>
+        using (var scope = CreateServiceProvider().CreateScope())
         {
-            return configure
-                .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
-        });
-        services.AddRebusHandler<AlbumUpdatedEventHandler>();
-        services.AddRebusHandler<MelodeeAlbumReprocessEventHandler>();
+           
+            var job = new LibraryInsertJob
+            (
+                scope.ServiceProvider.GetRequiredService<ILogger>(),
+                scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),
+                scope.ServiceProvider.GetRequiredService<LibraryService>(),
+                scope.ServiceProvider.GetRequiredService<ISerializer>(),
+                scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>(),
+                scope.ServiceProvider.GetRequiredService<ArtistService>(),
+                scope.ServiceProvider.GetRequiredService<AlbumService>(),
+                scope.ServiceProvider.GetRequiredService<AlbumDiscoveryService>(),
+                scope.ServiceProvider.GetRequiredService<DirectoryProcessorService>(),
+                scope.ServiceProvider.GetRequiredService<IBus>()
+            );            
 
-        services.AddScoped<LibraryService>();
-        services.AddScoped<AlbumService>();
-        services.AddScoped<ArtistService>();
-        services.AddScoped<AlbumDiscoveryService>();
-        services.AddScoped<MediaEditService>();
-        services.AddScoped<ArtistSearchEngineService>();
-        services.AddScoped<SettingService>();
-        services.AddScoped<AlbumImageSearchEngineService>();
-        services.AddScoped<LibraryInsertJob>();
-        services.AddScoped<DirectoryProcessorService>();
-        
-        var serviceProvider = services.BuildServiceProvider();
-
-        using (var scope = serviceProvider.CreateScope())
-        {
-            // var job = new LibraryInsertJob
-            // (
-            //     scope.ServiceProvider.GetRequiredService<ILogger>(),
-            //     scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>(),
-            //     scope.ServiceProvider.GetRequiredService<LibraryService>(),
-            //     scope.ServiceProvider.GetRequiredService<ISerializer>(),
-            //     scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>(),
-            //     scope.ServiceProvider.GetRequiredService<ArtistService>(),                
-            //     scope.ServiceProvider.GetRequiredService<AlbumService>(),
-            //     scope.ServiceProvider.GetRequiredService<AlbumDiscoveryService>(),
-            //     scope.ServiceProvider.GetRequiredService<DirectoryProcessorService>(),
-            //     scope.ServiceProvider.GetRequiredService<IBus>()
-            // );
-
-            var job = scope.ServiceProvider.GetRequiredService<LibraryInsertJob>();
-            
             job.OnProcessingEvent += (_, e) => { Log.Information(e.ToString()); };
 
             var jobExecutionContext = new JobExecutionContext(CancellationToken.None);

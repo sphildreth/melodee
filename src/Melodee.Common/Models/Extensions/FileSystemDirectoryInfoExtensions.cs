@@ -291,7 +291,6 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static IEnumerable<FileSystemDirectoryInfo> GetFileSystemDirectoryInfosToProcess(
         this FileSystemDirectoryInfo fileSystemDirectoryInfo,
-        IMelodeeConfiguration configuration,
         Instant? modifiedSince,
         SearchOption searchOption)
     {
@@ -321,10 +320,9 @@ public static class FileSystemDirectoryInfoExtensions
         return result.ToArray();
     }
 
-    public static (string, int) GetNextFileNameForType(this FileSystemDirectoryInfo fileSystemDirectoryInfo, short maximumNumberOfImageTypeAllowed, string imageType)
+    public static (string, int) GetNextFileNameForType(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string imageType)
     {
         var highestNumberFound = 0;
-        var maxNumberLength = SafeParser.ToNumber<short>(maximumNumberOfImageTypeAllowed.ToString().Length);
         var allImagesInDirectory = fileSystemDirectoryInfo.AllFileImageTypeFileInfos().ToArray();
         if (allImagesInDirectory.Length != 0)
         {
@@ -332,7 +330,7 @@ public static class FileSystemDirectoryInfoExtensions
             {
                 if (image.Name.EndsWith($"{imageType}.jpg", StringComparison.OrdinalIgnoreCase))
                 {
-                    var number = SafeParser.ToNumber<short>(image.Name.Substring(ImageInfo.ImageFilePrefix.Length, maxNumberLength));
+                    var number = SafeParser.ToNumber<short>(image.Name.ToNumberOnly());
                     if (number > highestNumberFound)
                     {
                         highestNumberFound = number;
@@ -343,7 +341,7 @@ public static class FileSystemDirectoryInfoExtensions
 
         highestNumberFound++;
         return (Path.Combine(fileSystemDirectoryInfo.Path,
-                $"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(maxNumberLength)}-{imageType}.jpg"),
+                $"{ImageInfo.ImageFilePrefix}{highestNumberFound.ToStringPadLeft(MelodeeConfiguration.ImageNameNumberPadding)}-{imageType}.jpg"),
             highestNumberFound);
     }
 

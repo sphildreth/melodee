@@ -12,6 +12,7 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Jobs;
 using Melodee.Common.MessageBus.EventHandlers;
+using Melodee.Common.Metadata;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.MetaData.Song;
@@ -136,7 +137,8 @@ builder.Services
     .AddScoped<StatisticsService>()
     .AddScoped<SearchService>()
     .AddScoped<ShareService>()
-    .AddScoped<PlaylistService>();
+    .AddScoped<PlaylistService>()
+    .AddScoped<MelodeeMetadataMaker>();
 
 #endregion
 

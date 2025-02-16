@@ -1,66 +1,22 @@
 using Melodee.Cli.CommandSettings;
-using Melodee.Common.Configuration;
-using Melodee.Common.Data;
 using Melodee.Common.Enums;
-using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
-using Melodee.Common.Services.Caching;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Rebus.Bus;
-using Rebus.Config;
-using Rebus.Transport.InMem;
-using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Json;
 
 namespace Melodee.Cli.Command;
 
-public class LibraryMoveOkCommand : AsyncCommand<LibraryMoveOkSettings>
+public class LibraryMoveOkCommand : CommandBase<LibraryMoveOkSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, LibraryMoveOkSettings settings)
     {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
-            .Build();
-
-        Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(configuration)
-            .CreateLogger();
-
-        var serializer = new Serializer(Log.Logger);
-        var cacheManager = new MemoryCacheManager(Log.Logger, TimeSpan.FromDays(1), serializer);
-
-        var services = new ServiceCollection();
-        services.AddDbContextFactory<MelodeeDbContext>(opt =>
-            opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), o => o.UseNodaTime()));
-        services.AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>();
-        services.AddRebus(configure =>
+        using (var scope = CreateServiceProvider().CreateScope())
         {
-            return configure
-                .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
-        });
-        services.AddRebusHandler<AlbumUpdatedEventHandler>();
-        
-        var serviceProvider = services.BuildServiceProvider();
-
-        using (var scope = serviceProvider.CreateScope())
-        {
-            var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MelodeeDbContext>>();
-            var configFactory = scope.ServiceProvider.GetRequiredService<IMelodeeConfigurationFactory>();
-            var bus = scope.ServiceProvider.GetRequiredService<IBus>();
-
-            var libraryService = new LibraryService(Log.Logger,
-                cacheManager,
-                dbFactory,
-                configFactory,
-                serializer,
-                bus);
+            var serializer = scope.ServiceProvider.GetRequiredService<ISerializer>();
+            var libraryService = scope.ServiceProvider.GetRequiredService<LibraryService>();
 
             libraryService.OnProcessingProgressEvent += (sender, e) =>
             {

@@ -207,18 +207,17 @@ public class FileSystemDirectoryInfoExtensionTests
                 Path = testPath,
                 Name = testPath
             };
-            short maxAllowed = 2;
-            var nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, Artist.ImageType);
+            var nextImage = fileDirectoryInfo.GetNextFileNameForType(Artist.ImageType);
             Assert.NotNull(nextImage.Item1);
             Assert.True(nextImage.Item2 > 0);
             var artistTypeCount = nextImage.Item2;
 
-            nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, "Front");
+            nextImage = fileDirectoryInfo.GetNextFileNameForType("Front");
             Assert.NotNull(nextImage.Item1);
             Assert.True(nextImage.Item2 > 0);
             Assert.NotEqual(artistTypeCount, nextImage.Item2);
 
-            nextImage = fileDirectoryInfo.GetNextFileNameForType(maxAllowed, Guid.NewGuid().ToString());
+            nextImage = fileDirectoryInfo.GetNextFileNameForType(Guid.NewGuid().ToString());
             Assert.NotNull(nextImage.Item1);
             Assert.True(nextImage.Item2 > 0);
             Assert.NotEqual(artistTypeCount, nextImage.Item2);

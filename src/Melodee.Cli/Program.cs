@@ -21,7 +21,7 @@ public static class Program
             config.AddBranch<JobSettings>("job", add =>
             {
                 add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("artistsearchengine-refresh")
-                    .WithDescription("Run artist search engine refresh job. This updates the local database of artists albums from search engines.");                
+                    .WithDescription("Run artist search engine refresh job. This updates the local database of artists albums from search engines.");
                 add.AddCommand<JobRunMusicBrainzUpdateDatabaseJobCommand>("musicbrainz-update")
                     .WithDescription("Run MusicBrainz update database job. This downloads MusicBrainz data dump and creates local database for Melodee when scanning metadata.");
             });
@@ -39,6 +39,9 @@ public static class Program
                 add.AddCommand<LibraryMoveOkCommand>("move-ok")
                     .WithAlias("m")
                     .WithDescription("Move 'Ok' status albums into the given library.");
+                add.AddCommand<LibraryRebuildCommand>("rebuild")
+                    .WithAlias("r")
+                    .WithDescription("Rebuild melodee metadata albums in the given library.");
                 add.AddCommand<LibraryScanCommand>("scan")
                     .WithAlias("s")
                     .WithDescription("Scan all non inbound and staging libraries for database updates from albums.");
