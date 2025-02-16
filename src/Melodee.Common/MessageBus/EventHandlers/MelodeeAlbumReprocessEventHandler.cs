@@ -7,7 +7,7 @@ using Serilog;
 
 namespace Melodee.Common.MessageBus.EventHandlers;
 
-public sealed class MelodeeAlbumReprocessEventHandler(ILogger logger, DirectoryProcessorService directoryProcessorService) : IHandleMessages<MelodeeAlbumReprocessEvent>
+public sealed class MelodeeAlbumReprocessEventHandler(ILogger logger, DirectoryProcessorToStagingService directoryProcessorToStagingService) : IHandleMessages<MelodeeAlbumReprocessEvent>
 {
     public async Task Handle(MelodeeAlbumReprocessEvent message)
     {
@@ -18,8 +18,8 @@ public sealed class MelodeeAlbumReprocessEventHandler(ILogger logger, DirectoryP
             return;
         }
         logger.Debug("[{HandlerName}]: Reprocessing metadata album directory [{DirName}]", nameof(MelodeeAlbumReprocessEventHandler), directoryToReProcess.FullName);
-        await directoryProcessorService.InitializeAsync();
-        var result = await directoryProcessorService.ProcessDirectoryAsync(directoryToReProcess.ToDirectorySystemInfo(), null, null);
+        await directoryProcessorToStagingService.InitializeAsync();
+        var result = await directoryProcessorToStagingService.ProcessDirectoryAsync(directoryToReProcess.ToDirectorySystemInfo(), null, null);
         if (!result.IsSuccess)
         {
             logger.Warning("[{HandlerName}]: unable to process metadata album directory [{DirName}] Result [{Result}]", 

@@ -62,7 +62,7 @@ public class ProcessInboundCommand : CommandBase<LibraryProcessSettings>
                 new Panel(grid)
                     .Header("Configuration"));
 
-            var processor = scope.ServiceProvider.GetRequiredService<DirectoryProcessorService>();
+            var processor = scope.ServiceProvider.GetRequiredService<DirectoryProcessorToStagingService>();
             var dirInfo = new DirectoryInfo(libraryToProcess.Path);
             if (!dirInfo.Exists)
             {

@@ -37,7 +37,7 @@ public class LibraryScanCommand : CommandBase<LibraryScanSettings>
                 scope.ServiceProvider.GetRequiredService<ArtistService>(),
                 scope.ServiceProvider.GetRequiredService<AlbumService>(),
                 scope.ServiceProvider.GetRequiredService<AlbumDiscoveryService>(),
-                scope.ServiceProvider.GetRequiredService<DirectoryProcessorService>(),
+                scope.ServiceProvider.GetRequiredService<DirectoryProcessorToStagingService>(),
                 scope.ServiceProvider.GetRequiredService<IBus>()
             );            
 

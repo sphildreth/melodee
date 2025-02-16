@@ -33,9 +33,9 @@ using ImageInfo = Melodee.Common.Models.ImageInfo;
 namespace Melodee.Common.Services.Scanning;
 
 /// <summary>
-///     Take a given directory and process all the directories in it.
+///     Take a given directory and process all the directories in it putting processed files into the staging library.
 /// </summary>
-public sealed class DirectoryProcessorService(
+public sealed class DirectoryProcessorToStagingService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
@@ -266,11 +266,25 @@ public sealed class DirectoryProcessorService(
 
         var httpClient = httpClientFactory.CreateClient();
 
+        var dontDeleteExistingMelodeeFiles = _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
+        
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
             Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
             try
             {
+                if (!dontDeleteExistingMelodeeFiles)
+                {
+                    foreach (var existingMelodeeFile in directoryInfoToProcess.MelodeeJsonFiles())
+                    {
+                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                        {
+                            break;
+                        }
+                        existingMelodeeFile.Delete();
+                    }
+                }
+
                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                 {
                     break;
@@ -588,11 +602,11 @@ public sealed class DirectoryProcessorService(
 
                                 album.Status = AlbumStatus.Ok;
 
-                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
+                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                             }
                             else
                             {
-                                LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from search engine for artist [{searchRequest}]");
+                                LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorToStagingService)}] No result from search engine for artist [{searchRequest}]");
                             }
                         }
 
@@ -651,12 +665,12 @@ public sealed class DirectoryProcessorService(
                                                 WasEmbeddedInSong = false
                                             }
                                         };
-                                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
+                                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
                                     }
                                 }
                                 else
                                 {
-                                    LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorService)}] No result from album search engine for album [{albumImageSearchRequest}]");
+                                    LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorToStagingService)}] No result from album search engine for album [{albumImageSearchRequest}]");
                                 }
                             }
                         }
@@ -690,10 +704,10 @@ public sealed class DirectoryProcessorService(
                             if (albumCouldBeMagicfied.IsValid)
                             {
                                 numberOfValidAlbumsProcessed++;
-                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\udc4d Found valid album [{albumCouldBeMagicfied}]");
+                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\udc4d Found valid album [{albumCouldBeMagicfied}]");
                                 if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
                                 {
-                                    LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
+                                    LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
                                     _stopProcessingTriggered = true;
                                     break;
                                 }
@@ -707,7 +721,7 @@ public sealed class DirectoryProcessorService(
                     }
                     catch (Exception e)
                     {
-                        LogAndRaiseEvent(LogEventLevel.Error, $"[{nameof(DirectoryProcessorService)}] Error processing directory [{fileSystemDirectoryInfo}]", e);
+                        LogAndRaiseEvent(LogEventLevel.Error, $"[{nameof(DirectoryProcessorToStagingService)}] Error processing directory [{fileSystemDirectoryInfo}]", e);
                     }
                 }
             }

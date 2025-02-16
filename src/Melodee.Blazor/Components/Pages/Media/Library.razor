@@ -17,7 +17,7 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject DefaultImages DefaultImages
-@inject DirectoryProcessorService DirectoryProcessorService
+@inject DirectoryProcessorToStagingService DirectoryProcessorToStagingService
 
 @attribute [Authorize(Roles = "Administrator,Editor")]
 
@@ -305,8 +305,8 @@
             MainLayoutProxyService.ToggleSpinnerVisible();
             try
             {
-                await DirectoryProcessorService.InitializeAsync();
-                var result = await DirectoryProcessorService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), _library.LastScanAt, null);
+                await DirectoryProcessorToStagingService.InitializeAsync();
+                var result = await DirectoryProcessorToStagingService.ProcessDirectoryAsync(_library.ToFileSystemDirectoryInfo(), _library.LastScanAt, null);
                 NotificationService.Notify(NotificationMessageForResult(result, "started library scan job", ToastTime));
             }
             finally

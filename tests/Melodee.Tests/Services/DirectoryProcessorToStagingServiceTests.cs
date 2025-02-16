@@ -4,11 +4,11 @@ using Serilog;
 
 namespace Melodee.Tests.Services;
 
-public class DirectoryProcessorServiceTests : ServiceTestBase
+public class DirectoryProcessorToStagingServiceTests : ServiceTestBase
 {
-    private DirectoryProcessorService CreateDirectoryProcessorService()
+    private DirectoryProcessorToStagingService CreateDirectoryProcessorService()
     {
-        return new DirectoryProcessorService(
+        return new DirectoryProcessorToStagingService(
             Log.Logger,
             CacheManager,
             MockFactory(),

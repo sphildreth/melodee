@@ -1,4 +1,7 @@
+using System.Globalization;
+using ATL;
 using Melodee.Common.Utility;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Melodee.Common.Metadata.Mpeg;
 
@@ -7,7 +10,9 @@ namespace Melodee.Common.Metadata.Mpeg;
 /// </summary>
 public class Mpeg
 {
-    public long Length { get; set; }
+    public double LengthMs { get; set; }
+    
+    public TimeSpan Length => TimeSpan.FromMilliseconds(LengthMs);
     public long AudioBytes { get; set; }
 
     public long FileSize { get; set; }
@@ -43,6 +48,8 @@ public class Mpeg
     public bool IsFrequencyOk => SafeParser.ToNumber<int>(Frequency) > 95 || Frequency.Equals("reserved");
 
     public bool IsMp3MimeType => MimeType is "audio/mpeg" or "audio/mp3";
+    
+    public bool IsLengthOk => LengthMs > 0;
 
     public string? MimeType => MimeTypes.GetMimeType(Filename);
 
@@ -69,15 +76,23 @@ public class Mpeg
                 ParseHeader(headerBytes);
             }
         }
-
+        
         var fileInfo = new FileInfo(Filename);
         FileSize = fileInfo.Length;
         AudioBytes = FileSize - HeaderPosition;
         var bitrate = SafeParser.ToNumber<int>(Bitrate);
         if (bitrate > 0)
         {
-            Length = AudioBytes * 8 / (1000 * bitrate);
-        }
+            LengthMs = AudioBytes * 8 / (1000 * bitrate);
+        }        
+        if (!IsValid)
+        {
+            var track = new Track(Filename);
+            Frequency = track.SampleRate.ToString(CultureInfo.InvariantCulture);
+            Bitrate = track.Bitrate.ToString();
+            AudioBytes = track.TechnicalInformation.AudioDataSize;
+            LengthMs = track.DurationMs;
+        }        
     }
 
     private void CalculateLength()
@@ -88,7 +103,7 @@ public class Mpeg
         var bitrate = Convert.ToInt32(Bitrate);
         if (bitrate > 0)
         {
-            Length = AudioBytes * 8 / (1000 * bitrate);
+            LengthMs = AudioBytes * 8 / (1000 * bitrate);
         }
     }
 

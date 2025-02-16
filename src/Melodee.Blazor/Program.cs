@@ -127,7 +127,7 @@ builder.Services
     .AddScoped<UserService>()
     .AddScoped<AlbumDiscoveryService>()
     .AddScoped<MediaEditService>()
-    .AddScoped<DirectoryProcessorService>()
+    .AddScoped<DirectoryProcessorToStagingService>()
     .AddScoped<ImageConversionService>()
     .AddScoped<OpenSubsonicApiService>()
     .AddScoped<AlbumImageSearchEngineService>()

@@ -41,7 +41,7 @@ public class LibraryInsertJob(
     ArtistService artistService,
     AlbumService albumService,
     AlbumDiscoveryService albumDiscoveryService,
-    DirectoryProcessorService directoryProcessorService,
+    DirectoryProcessorToStagingService directoryProcessorToStagingService,
     IBus bus) : JobBase(logger, configurationFactory)
 {
     private IAlbumValidator _albumValidator = null!;
@@ -106,7 +106,7 @@ public class LibraryInsertJob(
             var exceptionsForJobRun = new List<Exception>();
 
             await albumDiscoveryService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
-            await directoryProcessorService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
+            await directoryProcessorToStagingService.InitializeAsync(_configuration, context.CancellationToken).ConfigureAwait(false);
 
             _ignorePerformers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredPerformers], serializer);
             _ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(_configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);

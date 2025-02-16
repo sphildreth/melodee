@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
@@ -467,7 +468,7 @@ public static class FileSystemDirectoryInfoExtensions
     ///     This exists because in some systems where data is on one mapped drive it cannot be "Moved" to another mapped drive
     ///     ("Cross link" error), it must be copied and then deleted.
     /// </summary>
-    public static void MoveToDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string destination, string? dontMoveFileName = null)
+    public static void MoveToDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string destination, string? dontMoveFileName = null, bool? isNestedDirectory = false)
     {
         if (!Directory.Exists(destination))
         {
@@ -496,12 +497,15 @@ public static class FileSystemDirectoryInfoExtensions
         foreach (var d in directories)
         {
             var dd = Path.Combine(toMove, Path.GetFileName(d)).ToDirectoryInfo();
-            dd.MoveToDirectory(Path.Combine(destination, Path.GetFileName(d)), dontMoveFileName);
+            dd.MoveToDirectory(Path.Combine(destination, Path.GetFileName(d)), dontMoveFileName, true);
         }
 
-        Directory.Delete(toMove, true);
-        var dirInfo = new DirectoryInfo(destination);
-        fileSystemDirectoryInfo.Path = destination;
-        fileSystemDirectoryInfo.Name = dirInfo.Name;
+        if (!(isNestedDirectory ?? false))
+        {
+            Directory.Delete(toMove, true);
+            var dirInfo = new DirectoryInfo(destination);
+            fileSystemDirectoryInfo.Path = destination;
+            fileSystemDirectoryInfo.Name = dirInfo.Name;
+        }
     }
 }

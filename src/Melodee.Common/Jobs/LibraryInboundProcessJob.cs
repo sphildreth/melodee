@@ -20,7 +20,7 @@ public sealed class LibraryInboundProcessJob(
     ILogger logger,
     IMelodeeConfigurationFactory configurationFactory,
     LibraryService libraryService,
-    DirectoryProcessorService directoryProcessorService) : JobBase(logger, configurationFactory)
+    DirectoryProcessorToStagingService directoryProcessorToStagingService) : JobBase(logger, configurationFactory)
 {
     public override async Task Execute(IJobExecutionContext context)
     {
@@ -52,8 +52,8 @@ public sealed class LibraryInboundProcessJob(
         try
         {
             dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.InProcess.ToString());
-            await directoryProcessorService.InitializeAsync(null, context.CancellationToken).ConfigureAwait(false);
-            var result = await directoryProcessorService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
+            await directoryProcessorToStagingService.InitializeAsync(null, context.CancellationToken).ConfigureAwait(false);
+            var result = await directoryProcessorToStagingService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = directoryInbound,
                 Name = directoryInbound

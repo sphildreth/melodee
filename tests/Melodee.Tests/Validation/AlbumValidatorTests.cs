@@ -322,18 +322,8 @@ public class AlbumValidatorTests : TestsBase
         var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
-       
-        if (IsTestDirectoryFound)
-        {
-            // This is because the test album has a test image set and the test image sits in the test directory. Perhaps at some point can abstract File system.
-            Assert.Equal(album.Status, validationResult.Data.AlbumStatus);
-            Assert.Equal(AlbumNeedsAttentionReasons.NotSet, validationResult.Data.AlbumStatusReasons);    
-        }
-        else
-        {
-            Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
-            Assert.Equal(AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
-        }
+        Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
+        Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidSongs, validationResult.Data.AlbumStatusReasons);
         
     }
 
@@ -349,7 +339,7 @@ public class AlbumValidatorTests : TestsBase
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
-        Assert.Equal(AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
+        Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidSongs | AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
     }
 
     [Fact]
@@ -372,15 +362,8 @@ public class AlbumValidatorTests : TestsBase
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
-        if (IsTestDirectoryFound)
-        {
-            // This is because the test album has a test image set and the test image sits in the test directory. Perhaps at some point can abstract File system.
-            Assert.Equal(AlbumNeedsAttentionReasons.ArtistIsNotSet | AlbumNeedsAttentionReasons.HasInvalidArtists, validationResult.Data.AlbumStatusReasons);    
-        }
-        else
-        {
-            Assert.Equal(AlbumNeedsAttentionReasons.ArtistIsNotSet | AlbumNeedsAttentionReasons.HasInvalidArtists | AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
-        }        
+        Assert.Equal(AlbumNeedsAttentionReasons.ArtistIsNotSet | AlbumNeedsAttentionReasons.HasInvalidArtists | AlbumNeedsAttentionReasons.HasInvalidSongs, validationResult.Data.AlbumStatusReasons);
+       
     }
 
     [Fact]
@@ -399,15 +382,7 @@ public class AlbumValidatorTests : TestsBase
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
-        if (IsTestDirectoryFound)
-        {
-            // This is because the test album has a test image set and the test image sits in the test directory. Perhaps at some point can abstract File system.
-            Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidYear, validationResult.Data.AlbumStatusReasons);    
-        }
-        else
-        {
-            Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidYear | AlbumNeedsAttentionReasons.HasNoImages, validationResult.Data.AlbumStatusReasons);
-        }          
+        Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidSongs | AlbumNeedsAttentionReasons.HasInvalidYear, validationResult.Data.AlbumStatusReasons);
     }
 
     [Fact]
