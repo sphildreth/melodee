@@ -86,9 +86,9 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                                 options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                             }).ProcessSynchronously();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
+                        throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3", ex);
                     }
                     var newFileInfo = new FileInfo(newFileName);
                     while (!newFileInfo.CanWriteTo())

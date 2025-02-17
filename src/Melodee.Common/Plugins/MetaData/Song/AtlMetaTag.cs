@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using ATL;
-using ATL.AudioData;
 using Commons;
 using FFMpegCore;
 using Melodee.Common.Configuration;
@@ -15,7 +14,6 @@ using Melodee.Common.Plugins.MetaData.Song.Extensions;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Utility;
-using Quartz.Logging;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -93,7 +91,7 @@ public sealed class AtlMetaTag(
                     IMediaAnalysis? ffProbeMediaAnalysis = null;
                     try
                     {
-                        ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken).ConfigureAwait(false);;
+                        ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken).ConfigureAwait(false);
 
                         if (ffProbeMediaAnalysis.PrimaryAudioStream != null)
                         {
@@ -212,7 +210,7 @@ public sealed class AtlMetaTag(
 
                     var adData1 = fileAtl.AdditionalFields.ToDictionary();
                     var adData2 = ffProbeMediaAnalysis?.Format.Tags?.ToDictionary() ?? new Dictionary<string, string>();
-                    var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge(new[] { adData1, adData2 }));
+                    var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge([adData1, adData2]));
                     foreach (var additionalTag in additionalTags)
                     {
                         // Additional tag values override any in place
@@ -322,7 +320,6 @@ public sealed class AtlMetaTag(
                     Value = albumArtistTag.Value
                 });
                 artistTag = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
-                Log.Information("[{PluginName}] [TP1, TPE1] is not set, using value for [TP2,TPE2].", nameof(AtlMetaTag));
             }
         }
 
@@ -342,7 +339,7 @@ public sealed class AtlMetaTag(
         tags.First(x => x.Identifier == MetaTagIdentifier.Album).SortOrder = 1;
         tags.First(x => x.Identifier == MetaTagIdentifier.Artist).SortOrder = 2;
 
-        // Ensure that AlbumArtist is set, if has fragments will get cleaned up by MetaTag Processor
+        // Ensure that AlbumArtist is set, if it has fragments will get cleaned up by MetaTag Processor
         if (tags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
         {
             tags.Add(new MetaTag<object?>
