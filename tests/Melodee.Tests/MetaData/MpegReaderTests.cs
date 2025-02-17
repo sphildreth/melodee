@@ -33,6 +33,34 @@ public class MpegReaderTests
     }    
     
     [Fact]
+    public async Task  ReadValidTest6()
+    {
+        var testFile = @"/melodee_test/tests/test6.mp3";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var mpeg = new Mpeg(fileInfo.FullName);
+            await mpeg.ReadAsync();
+            Assert.NotNull(mpeg.Bitrate);
+            Assert.True(mpeg.IsValid);
+        }
+    }        
+    
+    [Fact]
+    public async Task  ReadTestMultiChannel()
+    {
+        var testFile = @"/melodee_test/tests/testmultichannel.flac";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var mpeg = new Mpeg(fileInfo.FullName);
+            await mpeg.ReadAsync();
+            Assert.NotNull(mpeg.Bitrate);
+            Assert.True(mpeg.IsValid);
+        }
+    }           
+    
+    [Fact]
     public async Task  ReadValidConvertedFromFlacMp32()
     {
         var testFile = @"/melodee_test/tests/testconvertedfromflac.mp3";

@@ -6,6 +6,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Metadata.Mpeg;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Conversion.Image;
@@ -88,34 +89,23 @@ public sealed class AtlMetaTag(
                         }
                     }
 
-                    IMediaAnalysis? ffProbeMediaAnalysis = null;
-                    try
+                    var mpeg = new Mpeg(fileSystemFileInfo.FullName(directoryInfo));
+                    await mpeg.ReadAsync(cancellationToken);
+                    mediaAudios.Add(new MediaAudio<object?>
                     {
-                        ffProbeMediaAnalysis = await FFProbe.AnalyseAsync(fileSystemFileInfo.FullName(directoryInfo), cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                        if (ffProbeMediaAnalysis.PrimaryAudioStream != null)
-                        {
-                            mediaAudios.Add(new MediaAudio<object?>
-                            {
-                                Identifier = MediaAudioIdentifier.CodecLongName,
-                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.CodecLongName
-                            });
-                            mediaAudios.Add(new MediaAudio<object?>
-                            {
-                                Identifier = MediaAudioIdentifier.Channels,
-                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.Channels
-                            });
-                            mediaAudios.Add(new MediaAudio<object?>
-                            {
-                                Identifier = MediaAudioIdentifier.ChannelLayout,
-                                Value = ffProbeMediaAnalysis.PrimaryAudioStream.ChannelLayout
-                            });
-                        }
-                    }
-                    catch (Exception e)
+                        Identifier = MediaAudioIdentifier.CodecLongName,
+                        Value = mpeg.Version
+                    });
+                    mediaAudios.Add(new MediaAudio<object?>
                     {
-                        Log.Error(e, "FileSystemFileInfo [{FileSystemFileInfo}]", fileSystemFileInfo);
-                    }
+                        Identifier = MediaAudioIdentifier.Channels,
+                        Value = mpeg.Channels
+                    });
+                    mediaAudios.Add(new MediaAudio<object?>
+                    {
+                        Identifier = MediaAudioIdentifier.ChannelLayout,
+                        Value = mpeg.ChannelMode
+                    });
 
                     if (fileAtl.IsVBR)
                     {
@@ -209,8 +199,7 @@ public sealed class AtlMetaTag(
                     }
 
                     var adData1 = fileAtl.AdditionalFields.ToDictionary();
-                    var adData2 = ffProbeMediaAnalysis?.Format.Tags?.ToDictionary() ?? new Dictionary<string, string>();
-                    var additionalTags = MetaTagsForTagDictionary(DictionaryExtensions.Merge([adData1, adData2]));
+                    var additionalTags = MetaTagsForTagDictionary(adData1);
                     foreach (var additionalTag in additionalTags)
                     {
                         // Additional tag values override any in place
@@ -223,6 +212,8 @@ public sealed class AtlMetaTag(
                         tags.Add(additionalTag);
                     }
 
+
+                    
                     if (fileAtl.EmbeddedPictures.Any() && SafeParser.ToBoolean(Configuration[SettingRegistry.ImagingDoLoadEmbeddedImages]))
                     {
                         try

@@ -26,6 +26,9 @@ public class Mpeg
     public bool Padding { get; set; }
     public bool Private { get; set; }
     public string ChannelMode { get; set; }
+    
+    public int Channels { get; set; }
+    
     public string ModeExtension { get; set; }
     public bool CopyRight { get; set; }
     public bool Original { get; set; }
@@ -43,9 +46,9 @@ public class Mpeg
 
     public bool IsBitrateOk => SafeParser.ToNumber<int>(Bitrate) > 0;
 
-    public bool IsLayerOk => Layer.Equals("Layer I") || Layer.Equals("Layer II") || Layer.Equals("Layer III");
+    public bool IsLayerOk => Layer.Equals("Layer I") || Layer.Equals("Layer II") || Layer.Equals("Layer III") || string.Equals(Layer, "reserved", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsFrequencyOk => SafeParser.ToNumber<int>(Frequency) > 95 || Frequency.Equals("reserved");
+    public bool IsFrequencyOk => SafeParser.ToNumber<int>(Frequency) > 95 || string.Equals(Frequency, "reserved", StringComparison.OrdinalIgnoreCase);
 
     public bool IsMp3MimeType => MimeType is "audio/mpeg" or "audio/mp3";
     
@@ -88,9 +91,11 @@ public class Mpeg
         if (!IsValid)
         {
             var track = new Track(Filename);
-            Frequency = track.SampleRate.ToString(CultureInfo.InvariantCulture);
-            Bitrate = track.Bitrate.ToString();
             AudioBytes = track.TechnicalInformation.AudioDataSize;
+            Bitrate = track.Bitrate.ToString();
+            ChannelMode = track.ChannelsArrangement.Description;
+            Channels = track.ChannelsArrangement.NbChannels;
+            Frequency = track.SampleRate.ToString(CultureInfo.InvariantCulture);
             LengthMs = track.DurationMs;
         }        
     }
@@ -296,11 +301,13 @@ public class Mpeg
             {
                 //"11"
                 ChannelMode = "Single Channel";
+                Channels = 1;
             }
             else
             {
                 //"10"
                 ChannelMode = "Dual Channel";
+                Channels = 2;
             }
         }
         else
@@ -309,11 +316,13 @@ public class Mpeg
             {
                 //"01"
                 ChannelMode = "Joint Stereo";
+                Channels = 2;
             }
             else
             {
                 //"00"
                 ChannelMode = "Stereo";
+                Channels = 2;
             }
         }
     }
