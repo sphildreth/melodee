@@ -2,12 +2,14 @@ using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
+using Melodee.Common.Services;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 
 namespace Melodee.Common.Plugins.Scrobbling;
 
 public class MelodeeScrobbler(
+    AlbumService albumService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     INowPlayingRepository nowPlayingRepository) : IScrobbler
 {
@@ -56,6 +58,12 @@ public class MelodeeScrobbler(
             await nowPlayingRepository
                 .RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), scrobble.SongId.ToString()), cancellationToken)
                 .ConfigureAwait(false);
+            
+            var album = await albumService.GetAsync(scrobble.AlbumId, cancellationToken).ConfigureAwait(false);
+            if (album.IsSuccess)
+            {
+                albumService.ClearCache(album.Data!);   
+            }
         }
 
         return new OperationResult<bool>

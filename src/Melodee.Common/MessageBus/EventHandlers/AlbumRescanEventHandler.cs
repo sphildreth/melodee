@@ -129,12 +129,12 @@ public sealed class AlbumRescanEventHandler(
                         if (albumDbSong == null)
                         {
                             var mediaFileHash = CRC32.Calculate(mediaFile);
-                            var melodeeSong = melodeeAlbum.Songs?.FirstOrDefault(x => string.Equals(x.CrcHash, mediaFileHash, StringComparison.OrdinalIgnoreCase));
+                            var melodeeSong = melodeeAlbum.Songs?.FirstOrDefault(x => x.File.Name == mediaFile.Name);
                             if (melodeeSong == null)
                             {
-                                logger.Warning("[{Name}] Unable to find song with hash [{Hash}] in album metadata.",
+                                logger.Warning("[{Name}] Unable to find melodee song with name [{Name}] in album metadata.",
                                     nameof(AlbumRescanEventHandler),
-                                    mediaFileHash);
+                                    mediaFile.Name);
                                 return;
                             }
 
@@ -191,6 +191,15 @@ public sealed class AlbumRescanEventHandler(
                                 scopedContext.Contributors.AddRange(dbContributorsToAdd);
                             }
 
+                            if (dbAlbum.Songs.Any(x => x.SongNumber == dbSong.SongNumber))
+                            {
+                                logger.Warning("[{Name}] Duplicate song number [{SongNumber}] found in album [{AlbumName}].",
+                                    nameof(AlbumRescanEventHandler),
+                                    dbSong.SongNumber,
+                                    dbAlbum.Name);
+                                return;
+                            }
+                            
                             dbAlbum.Songs.Add(dbSong);
                             logger.Information("[{Name}] Adding song [{SongName}] to album [{AlbumName}].",
                                 nameof(AlbumRescanEventHandler),

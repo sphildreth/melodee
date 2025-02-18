@@ -291,6 +291,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         return new ScrobbleService(
             Logger,
             CacheManager,
+            GetAlbumService(),
             MockFactory(),
             MockConfigurationFactory(),
             GetNowPlayingRepository());

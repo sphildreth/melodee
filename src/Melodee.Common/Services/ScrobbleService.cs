@@ -15,6 +15,7 @@ namespace Melodee.Common.Services;
 public class ScrobbleService(
     ILogger logger,
     ICacheManager cacheManager,
+    AlbumService albumService,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
     INowPlayingRepository nowPlayingRepository)
@@ -32,7 +33,7 @@ public class ScrobbleService(
 
         _scrobblers =
         [
-            new MelodeeScrobbler(ContextFactory, nowPlayingRepository)
+            new MelodeeScrobbler(albumService, ContextFactory, nowPlayingRepository)
             {
                 IsEnabled = true
             },
