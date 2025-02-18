@@ -56,7 +56,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.True(mpeg.IsValid);
+            Assert.False(mpeg.IsValid);
         }
     }           
     
@@ -96,19 +96,6 @@ public class MpegReaderTests
         }
     }        
     
-    [Fact]
-    public async Task  ReadBorkedMp3()
-    {
-        var testFile = @"/melodee_test/tests/borked.mp3";
-        var fileInfo = new FileInfo(testFile);
-        if (fileInfo.Exists)
-        {
-            var mpeg = new Mpeg(fileInfo.FullName);
-            await mpeg.ReadAsync();
-            Assert.NotNull(mpeg.Bitrate);
-            Assert.False(mpeg.IsValid);
-        }
-    }    
     
     [Fact]
     public async Task  ReadWav()

@@ -93,8 +93,8 @@ public class Mpeg
             var track = new Track(Filename);
             AudioBytes = track.TechnicalInformation.AudioDataSize;
             Bitrate = track.Bitrate.ToString();
-            ChannelMode = track.ChannelsArrangement.Description;
-            Channels = track.ChannelsArrangement.NbChannels;
+            ChannelMode = track.ChannelsArrangement?.Description;
+            Channels = track.ChannelsArrangement?.NbChannels ?? 0;
             Frequency = track.SampleRate.ToString(CultureInfo.InvariantCulture);
             LengthMs = track.DurationMs;
         }        
