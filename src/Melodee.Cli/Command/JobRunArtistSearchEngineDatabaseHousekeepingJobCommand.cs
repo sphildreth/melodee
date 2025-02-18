@@ -24,7 +24,7 @@ public class JobRunArtistSearchEngineDatabaseHousekeepingJobCommand : CommandBas
                 scope.ServiceProvider.GetRequiredService<ArtistSearchEngineService>(),
                 scope.ServiceProvider.GetRequiredService<IDbContextFactory<ArtistSearchEngineServiceDbContext>>()
             );
-            var jc = new JobExecutionContext(CancellationToken.None);
+            var jc = new MelodeeJobExecutionContext(CancellationToken.None);
             if (settings.BatchSize != null)
             {
                 jc.Put(JobMapNameRegistry.BatchSize, settings.BatchSize);

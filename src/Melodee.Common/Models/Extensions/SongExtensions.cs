@@ -8,7 +8,9 @@ using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Plugins.Conversion.Image;
+using Melodee.Common.Services;
 using Melodee.Common.Utility;
+using NodaTime;
 using ServiceStack;
 
 namespace Melodee.Common.Models.Extensions;
@@ -363,4 +365,213 @@ public static class SongExtensions
             song.SongNumber(),
             song.Title());
     }
+    
+    private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
+    [
+        MetaTagIdentifier.Artist,
+        MetaTagIdentifier.Composer,
+        MetaTagIdentifier.Conductor,
+        MetaTagIdentifier.Engineer,
+        MetaTagIdentifier.InterpretedRemixedOrOtherwiseModifiedBy,
+        MetaTagIdentifier.Lyricist,
+        MetaTagIdentifier.MixDj,
+        MetaTagIdentifier.MixEngineer,
+        MetaTagIdentifier.MusicianCredit,
+        MetaTagIdentifier.OriginalArtist,
+        MetaTagIdentifier.OriginalLyricist,
+        MetaTagIdentifier.Producer
+    ];    
+    
+    public static async Task<Melodee.Common.Data.Models.Contributor[]> GetContributorsForSong(this Song song,
+        Instant now,
+        ArtistService artistService,
+        int artistId,
+        int albumId,
+        int songId,
+        string[] ignorePerformers, 
+        string[] ignoreProduction, 
+        string[] ignorePublishers,
+        CancellationToken token)
+    {
+        var dbContributorsToAdd = new List<Melodee.Common.Data.Models.Contributor>();
+        foreach (var contributorTag in ContributorMetaTagIdentifiers)
+        {
+            var tagValue = song.MetaTagValue<string?>(contributorTag)?.CleanStringAsIs();
+            if (!dbContributorsToAdd.Any(x => (x.ArtistId == artistId || x.ContributorName == tagValue) && x.MetaTagIdentifierValue == contributorTag))
+            {
+                var contributorForTag = await CreateContributorForSongAndTag(song,
+                    artistService,
+                    contributorTag,
+                    albumId,
+                    songId,
+                    now,
+                    null,
+                    null,
+                    ignorePerformers,
+                    ignoreProduction,
+                    ignorePublishers,
+                    token);
+                if (contributorForTag != null)
+                {
+                    dbContributorsToAdd.Add(contributorForTag);
+                }
+            }
+        }
+
+        foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.OrdinalIgnoreCase)) ?? [])
+        {
+            var subRole = tmclTag.Value!.ToString()!.Substring(6).Trim();
+            var tagValue = song.MetaTagValue<string?>(tmclTag.Identifier)?.CleanStringAsIs();
+            if (!dbContributorsToAdd.Any(x => (x.ArtistId == artistId || x.ContributorName == tagValue) &&
+                                              x.MetaTagIdentifierValue == tmclTag.Identifier))
+            {
+                var contributorForTag = await CreateContributorForSongAndTag(song,
+                    artistService,
+                    tmclTag.Identifier,
+                    albumId,
+                    songId,
+                    now,
+                    subRole,
+                    null,
+                    ignorePerformers,
+                    ignoreProduction,
+                    ignorePublishers,
+                    token);
+                if (contributorForTag != null)
+                {
+                    dbContributorsToAdd.Add(contributorForTag);
+                }
+            }
+        }
+
+        var songPublisherTag = song.MetaTagValue<string?>(MetaTagIdentifier.Publisher);
+        if (songPublisherTag != null)
+        {
+            var publisherName = songPublisherTag.CleanStringAsIs();
+            if (!dbContributorsToAdd.Any(x => x.ContributorName == publisherName && x.MetaTagIdentifierValue == MetaTagIdentifier.Publisher))
+            {
+                var publisherTag = await CreateContributorForSongAndTag(song,
+                    artistService,
+                    MetaTagIdentifier.Publisher,
+                    albumId,
+                    null,
+                    now,
+                    null,
+                    publisherName,
+                    ignorePerformers,
+                    ignoreProduction,
+                    ignorePublishers,
+                    token);
+                if (publisherTag != null && dbContributorsToAdd.All(x => x.ContributorTypeValue != ContributorType.Publisher))
+                {
+                    dbContributorsToAdd.Add(publisherTag);
+                }
+            }
+        }
+
+        return dbContributorsToAdd.ToArray();
+    }
+
+    private static async Task<Melodee.Common.Data.Models.Contributor?> CreateContributorForSongAndTag(this Song song,
+        ArtistService artistService,
+        MetaTagIdentifier tag,
+        int dbAlbumId,
+        int? dbSongId,
+        Instant now,
+        string? subRole,
+        string? contributorName,
+        string[] ignorePerformers, 
+        string[] ignoreProduction, 
+        string[] ignorePublishers,
+        CancellationToken cancellationToken = default)
+    {
+        var contributorNameValue = contributorName.Nullify()?.CleanStringAsIs() ?? song.MetaTagValue<string?>(tag)?.CleanStringAsIs();
+        if (contributorNameValue.Nullify() != null)
+        {
+            var artist = contributorNameValue == null ? null : await artistService.GetByNameNormalized(contributorNameValue.ToNormalizedString() ?? contributorName!, cancellationToken).ConfigureAwait(false);
+            var contributorType = DetermineContributorType(tag);
+            if (DoMakeContributorForTageTypeAndValue(ignorePerformers, ignoreProduction, ignorePublishers, contributorType, contributorNameValue))
+            {
+                return new Melodee.Common.Data.Models.Contributor
+                {
+                    AlbumId = dbAlbumId,
+                    ArtistId = artist?.Data?.Id,
+                    ContributorName = contributorNameValue,
+                    ContributorType = SafeParser.ToNumber<int>(contributorType),
+                    CreatedAt = now,
+                    MetaTagIdentifier = SafeParser.ToNumber<int>(tag),
+                    Role = tag.GetEnumDescriptionValue(),
+                    SongId = dbSongId,
+                    SubRole = subRole?.CleanStringAsIs()
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private static bool DoMakeContributorForTageTypeAndValue(string[] ignorePerformers, string[] ignoreProduction, string[] ignorePublishers, ContributorType type, string? contributorName)
+    {
+        switch (type)
+        {
+            case ContributorType.Performer:
+                if (ignorePerformers.Contains(contributorName.ToNormalizedString()))
+                {
+                    return false;
+                }
+
+                break;
+
+            case ContributorType.Production:
+                if (ignoreProduction.Contains(contributorName.ToNormalizedString()))
+                {
+                    return false;
+                }
+
+                break;
+
+            case ContributorType.Publisher:
+                if (ignorePublishers.Contains(contributorName.ToNormalizedString()))
+                {
+                    return false;
+                }
+
+                break;
+        }
+
+        return true;
+    }
+
+    private static ContributorType DetermineContributorType(MetaTagIdentifier tag)
+    {
+        switch (tag)
+        {
+            case MetaTagIdentifier.AlbumArtist:
+            case MetaTagIdentifier.Artist:
+            case MetaTagIdentifier.Artists:
+            case MetaTagIdentifier.Composer:
+            case MetaTagIdentifier.Conductor:
+            case MetaTagIdentifier.MusicianCredit:
+            case MetaTagIdentifier.OriginalArtist:
+            case MetaTagIdentifier.OriginalLyricist:
+                return ContributorType.Performer;
+
+            case MetaTagIdentifier.EncodedBy:
+            case MetaTagIdentifier.Engineer:
+            case MetaTagIdentifier.Group:
+            case MetaTagIdentifier.InterpretedRemixedOrOtherwiseModifiedBy:
+            case MetaTagIdentifier.InvolvedPeople:
+            case MetaTagIdentifier.Lyricist:
+            case MetaTagIdentifier.MixDj:
+            case MetaTagIdentifier.MixEngineer:
+            case MetaTagIdentifier.Producer:
+                return ContributorType.Production;
+
+            case MetaTagIdentifier.Publisher:
+                return ContributorType.Publisher;
+        }
+
+        return ContributorType.NotSet;
+    }    
+    
 }

@@ -4,11 +4,14 @@ using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
+using Melodee.Common.MessageBus.Events;
+using Melodee.Common.Metadata;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using Rebus.Bus;
 using Serilog;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
@@ -18,7 +21,8 @@ namespace Melodee.Common.Services;
 public class AlbumService(
     ILogger logger,
     ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory)
+    IDbContextFactory<MelodeeDbContext> contextFactory,
+    IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:album:apikey:{0}";
@@ -358,7 +362,7 @@ public class AlbumService(
     }
 
 
-    public async Task<MelodeeModels.OperationResult<Album?>> FindAlbumAsync(int artistId, MelodeeModels.Album melodeeAlbum, CancellationToken cancellationToken)
+    public async Task<MelodeeModels.OperationResult<Album?>> FindAlbumAsync(int artistId, MelodeeModels.Album melodeeAlbum, CancellationToken cancellationToken = default)
     {
         int? id = null;
         var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
@@ -438,5 +442,40 @@ public class AlbumService(
         }
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> RescanAsync(int[] albumIds, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrEmpty(albumIds, nameof(albumIds));
+
+        var result = false;
+
+        foreach (var albumId in albumIds)
+        {
+            var albumResult = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);
+            if (!albumResult.IsSuccess)
+            {
+                return new MelodeeModels.OperationResult<bool>("Unknown album.")
+                {
+                    Data = false
+                };
+            }
+            var album = albumResult.Data!;
+            var albumDirectory = Path.Combine(album.Artist.Library.Path, album.Artist.Directory, album.Directory);
+            if (!Directory.Exists(albumDirectory))
+            {
+                logger.Error("Album directory [{AlbumDirectory}] does not exist.", albumDirectory);
+                return new MelodeeModels.OperationResult<bool>($"Album directory not found [{albumDirectory}].")
+                {
+                    Data = false
+                };
+            }
+            await bus.SendLocal(new AlbumRescanEvent(album.Id, albumDirectory)).ConfigureAwait(false);
+        }
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
     }
 }

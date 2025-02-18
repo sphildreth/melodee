@@ -72,7 +72,7 @@ public class ArtistHousekeepingJob(
                         1,
                         context.CancellationToken)
                     .ConfigureAwait(false);
-                if (!albumImageSearchResult.IsSuccess)
+                if (!albumImageSearchResult.IsSuccess || albumImageSearchResult.Data.Length == 0)
                 {
                     continue;
                 }

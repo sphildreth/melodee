@@ -7,7 +7,9 @@ using Serilog;
 
 namespace Melodee.Common.MessageBus.EventHandlers;
 
-public sealed class MelodeeAlbumReprocessEventHandler(ILogger logger, DirectoryProcessorToStagingService directoryProcessorToStagingService) : IHandleMessages<MelodeeAlbumReprocessEvent>
+public sealed class MelodeeAlbumReprocessEventHandler(
+    ILogger logger,
+    DirectoryProcessorToStagingService directoryProcessorToStagingService) : IHandleMessages<MelodeeAlbumReprocessEvent>
 {
     public async Task Handle(MelodeeAlbumReprocessEvent message)
     {

@@ -246,7 +246,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected AlbumService GetAlbumService()
     {
-        return new AlbumService(Logger, CacheManager, MockFactory());
+        return new AlbumService(Logger, CacheManager, MockFactory(), MockBus());
     }
 
     protected SongService GetSongService()

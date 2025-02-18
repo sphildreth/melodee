@@ -85,6 +85,7 @@
         {
             <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="LockButtonClick" title="Lock album, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
         }
+        <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="RescanButtonClick" title="Rebuild metadata and rescan album folder." Icon="refresh"></RadzenMenuItem>
         <RadzenMenuItem Text="Set Cover Image" Visible="CurrentUser?.IsEditor() ?? false" Click="SetCoverImageButtonClick" title="Set the album cover image." Icon="image"></RadzenMenuItem>
         <RadzenMenuItem Text="Web Search" Icon="public">
             <RadzenMenuItem Text="Album" Click="@(() => DoWebSearch(1))"></RadzenMenuItem>
@@ -122,7 +123,7 @@
                         <RadzenTreeItem Text="Images">
                             <Template>
                                 <RadzenIcon Icon="image"/>
-                                @($"{ context.Text } ({(_album.ImageCount ?? 0) + 1})")
+                                @($"{ context.Text } ({(_album.ImageCount ?? 0)})")
                             </Template>
                         </RadzenTreeItem>
                     </RadzenTree>
@@ -602,4 +603,15 @@
                  OnUpdateCallback="AlbumSearchImageCallback"
                  SearchValues="SearchValues"/>);
     }
+
+    private async Task RescanButtonClick()
+    {
+        var confirm = await DialogService.Confirm("Are you sure?", "Rescan confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            var rescanresult = await AlbumService.RescanAsync([_album.Id]);
+            NotificationService.Notify(NotificationMessageForResult(rescanresult, "submitting album rescan job", ToastTime));
+        }
+    }
+
 }

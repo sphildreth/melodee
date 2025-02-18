@@ -170,6 +170,7 @@ builder.Services.AddRebus((configurer, provider) =>
         .Sagas(s => s.StoreInMemory())
         .Timeouts(t => t.StoreInMemory());
 });
+builder.Services.AddRebusHandler<AlbumRescanEventHandler>();
 builder.Services.AddRebusHandler<AlbumUpdatedEventHandler>();
 builder.Services.AddRebusHandler<MelodeeAlbumReprocessEventHandler>();
 builder.Services.AddRebusHandler<SearchHistoryEventHandler>();

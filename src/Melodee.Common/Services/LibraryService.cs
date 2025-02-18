@@ -533,6 +533,106 @@ public class LibraryService(
         CacheManager.Remove(CacheKeyDetailLibraryByType.FormatSmart(library.Type));
         CacheManager.Remove(CacheKeyMediaLibraries);
     }
+
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAggregatesAsync(int libraryId, CancellationToken cancellationToken = default)
+    {
+        
+        var libraryResult = await GetAsync(libraryId, cancellationToken).ConfigureAwait(false);
+        var library = libraryResult.Data;
+        
+        if (!libraryResult.IsSuccess || library == null)
+        {
+            return new MelodeeModels.OperationResult<bool>("Invalid From library Name")
+            {
+                Data = false
+            };
+        }
+
+        if (library.IsLocked)
+        {
+            return new MelodeeModels.OperationResult<bool>("From library is locked.")
+            {
+                Data = false
+            };
+        }
+
+        bool result;
+        
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var sql = """
+                      UPDATE "Artists" a
+                      SET "AlbumCount" = (select COUNT(*) from "Albums" where "ArtistId" = a."Id"), "LastUpdatedAt" = NOW()
+                      where "AlbumCount" <> (select COUNT(*) from "Albums" where "ArtistId" = a."Id");
+                                                     
+                      UPDATE "Artists" a
+                      SET "SongCount" = (
+                      	select COUNT(s.*)
+                      	from "Songs" s 
+                        join "Albums" aa on (s."AlbumId" = aa."Id")	
+                      	where aa."ArtistId" = a."Id"
+                      ), "LastUpdatedAt" = NOW()
+                      where "SongCount" <> (
+                      	select COUNT(s.*)
+                      	from "Songs" s
+                        join "Albums" aa on (s."AlbumId" = aa."Id")	
+                      	where aa."ArtistId" = a."Id"
+                      );
+
+                      UPDATE "Libraries" l 
+                      set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
+                          "AlbumCount" = (select count(aa.*) 
+                          	from "Albums" aa 
+                          	join "Artists" a on (a."Id" = aa."ArtistId") 
+                          	where a."LibraryId" = l."Id"),
+                          "SongCount" = (select count(s.*) 
+                          	from "Songs" s
+                          	join "Albums" aa on (s."AlbumId" = aa."Id") 
+                          	join "Artists" a on (a."Id" = aa."ArtistId") 
+                          	where a."LibraryId" = l."Id"),
+                      	"LastUpdatedAt" = now()
+                      where l."Id" = @libraryId;
+                      """;
+            await dbConn
+                .ExecuteAsync(sql, new { libraryId = library.Id })
+                .ConfigureAwait(false);
+
+            sql = """
+                  with performerSongCounts as (
+                  	select c."ArtistId" as id, COUNT(*) as count
+                  	from "Contributors" c 
+                  	join "Songs" s on (c."SongId" = s."Id")
+                    join "Albums" aa on (s."AlbumId" = aa."Id")
+                    join "Artists" a on (a."Id" = aa."ArtistId") 
+                    WHERE a."LibraryId" = @libraryId
+                  	group by c."ArtistId"
+                  )
+                  UPDATE "Artists"
+                  set "SongCount" = c.count, "LastUpdatedAt" = NOW()
+                  from performerSongCounts c
+                  where c.id = "Artists"."Id";
+                  """;
+            await dbConn
+                .ExecuteAsync(sql, new { libraryId = library.Id })
+                .ConfigureAwait(false);
+
+            var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+            dbLibrary.LastScanAt = now;
+            dbLibrary.LastUpdatedAt = now;
+            result = (await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false)) > 0;
+            
+            ClearCache(dbLibrary);
+            
+        }
+        
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+        
+    }
     
     public async Task<MelodeeModels.OperationResult<bool>> Rebuild(string libraryName, bool settingsVerbose, CancellationToken cancellationToken = default)
     {

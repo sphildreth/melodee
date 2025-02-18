@@ -231,9 +231,19 @@ public sealed class AtlMetaTag(
                                 var imageCrcHash = Crc32.Calculate(embeddedPicture.PictureData);
                                 if (directoryInfo.GetFileForCrcHash("jpg", imageCrcHash) == null)
                                 {
+                                    var doSaveEmbeddedImage = true;
                                     var pictureIdentifier = SafeParser.ToEnum<PictureIdentifier>(embeddedPicture.PicType);
-                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{(pictureIndex + 1).ToStringPadLeft(2)}-{embeddedPicture.PicType.ToString()}.jpg");
-                                    await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken).ConfigureAwait(false);
+                                    var newImageFileName = Path.Combine(directoryInfo.Path, $"{ImageInfo.ImageFilePrefix}{(pictureIndex + 1).ToStringPadLeft(Common.Configuration.MelodeeConfiguration.ImageNameNumberPadding)}-{embeddedPicture.PicType.ToString()}.jpg");
+                                    if (File.Exists(newImageFileName))
+                                    {
+                                        var embeddedPictureDataInfo = Image.Identify(embeddedPicture.PictureData);
+                                        var exitingImageInfo = await Image.IdentifyAsync(newImageFileName, cancellationToken);
+                                        doSaveEmbeddedImage = embeddedPictureDataInfo?.Width > exitingImageInfo?.Width;
+                                    }
+                                    if(doSaveEmbeddedImage)
+                                    {
+                                        await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken).ConfigureAwait(false);                                        
+                                    }
                                     var newImageFileInfo = new FileInfo(newImageFileName).ToFileSystemInfo();
                                     newImageFileInfo = (await imageConverter.ProcessFileAsync(directoryInfo, newImageFileInfo, cancellationToken).ConfigureAwait(false)).Data;
                                     if ((await imageValidator.ValidateImage(newImageFileInfo.ToFileInfo(directoryInfo), pictureIdentifier, cancellationToken).ConfigureAwait(false)).Data.IsValid)
