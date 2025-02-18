@@ -61,6 +61,8 @@ public static class SettingRegistry
     public const string ProcessingMaximumProcessingCount = "processing.maximumProcessingCount";
     public const string ProcessingProcessedExtension = "processing.processedExtension";
     public const string ProcessingSongTitleRemovals = "processing.songTitleRemovals";
+    public const string RegisterPrivateCode = "register.privateCode";
+    public const string RegisterDisabled = "register.disabled";
     public const string ScriptingEnabled = "scripting.enabled";
     public const string ScriptingPostDiscoveryScript = "scripting.postDiscoveryScript";
     public const string ScriptingPreDiscoveryScript = "scripting.preDiscoveryScript";

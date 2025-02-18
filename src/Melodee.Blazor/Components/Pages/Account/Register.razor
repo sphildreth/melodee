@@ -1,85 +1,124 @@
 @page "/account/register"
+@using Melodee.Common.Data.Models
 
 @attribute [AllowAnonymous]
 
 @inject NavigationManager NavigationManager
 @inject UserService UserService
 @inject NotificationService NotificationService
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 
 <PageTitle>Register</PageTitle>
-<RadzenRow
-    Gap="0"
-    class="rz-my-12 rz-mx-auto rz-border-radius-6 rz-shadow-10"
-    Style="width: 100%; max-width: 800px; overflow: hidden;">
-    <RadzenColumn>
-        <RadzenStack>
-            <RadzenCard class="rz-shadow-0 rz-border-radius-0">
-                <RadzenText Style="margin-bottom:5px;">Fill out this form and click Register to create a new user
-                    account.
-                </RadzenText>
-                <RadzenTemplateForm TItem="ViewModels.Register" Data="@_model" Submit="@OnSubmit"
-                                    InvalidSubmit="@OnInvalidSubmit">
-                    <RadzenFieldset>
-                        <RadzenStack Gap="20px" class="rz-p-2 rz-p-md-1">
 
-                            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                                <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                    <RadzenLabel Text="Username" Component="Username"/>
-                                </RadzenColumn>
-                                <RadzenColumn Size="12" SizeMD="10">
-                                    <RadzenTextBox style="display: block" Name="Username" @bind-Value="@_model.Username"
-                                                   Placeholder="Username"
-                                                   class="rz-w-100"/>
-                                    <RadzenDataAnnotationValidator Component="Username" Popup="false"
-                                                                   Style="position: absolute"/>
-                                </RadzenColumn>
-                            </RadzenRow>
-                            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                                <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                    <RadzenLabel Text="Email" Component="EmailAddress"/>
-                                </RadzenColumn>
-                                <RadzenColumn Size="12" SizeMD="10">
-                                    <RadzenTextBox style="display: block" Name="EmailAddress"
-                                                   @bind-Value="@_model.EmailAddress" Placeholder="Email address"
-                                                   class="rz-w-100"/>
-                                    <RadzenDataAnnotationValidator Component="EmailAddress" Popup="false"
-                                                                   Style="position: absolute"/>
-                                </RadzenColumn>
-                            </RadzenRow>
-                            <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                                <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                    <RadzenLabel Text="Password" Component="Password"/>
-                                </RadzenColumn>
-                                <RadzenColumn Size="12" SizeMD="10">
-                                    <RadzenPassword style="display: block" Name="Password"
-                                                    @bind-Value="@_model.Password"
-                                                    Placeholder="Password"
-                                                    class="rz-w-100"/>
-                                    <RadzenDataAnnotationValidator Component="Password" Popup="false"
-                                                                   Style="position: absolute"/>
-                                </RadzenColumn>
-                            </RadzenRow>
-                            <RadzenRow>
-                                <RadzenProgressBar Visible="@_isLoading" Style="width:100px;"
-                                                   ProgressBarStyle="ProgressBarStyle.Info" Value="100"
-                                                   ShowValue="false" Mode="ProgressBarMode.Indeterminate"/>
-                                <RadzenButton Disabled="@(_isLoading)" ButtonType="ButtonType.Submit" Text="Register"
-                                              Style="width: 100%"/>
-                            </RadzenRow>
-                        </RadzenStack>
-                    </RadzenFieldset>
-                </RadzenTemplateForm>
-            </RadzenCard>
-        </RadzenStack>
-    </RadzenColumn>
-</RadzenRow>
+@if (_isRegistrationDisabled)
+{
+    <div class="warning-banner rz-mt-3">
+        <p>❌ Registration is currently closed.</p>
+    </div>
+}
+else
+{
+    <RadzenRow
+        Gap="0"
+        class="rz-my-12 rz-mx-auto rz-border-radius-6 rz-shadow-10"
+        Style="width: 100%; max-width: 800px; overflow: hidden;">
+        <RadzenColumn>
+            <RadzenStack>
+                <RadzenCard class="rz-shadow-0 rz-border-radius-0">
+                    <RadzenText Style="margin-bottom:5px;">Fill out this form and click Register to create a new user
+                        account.
+                    </RadzenText>
+                    <RadzenTemplateForm TItem="ViewModels.Register" Data="@_model" Submit="@OnSubmit"
+                                        InvalidSubmit="@OnInvalidSubmit">
+                        <RadzenFieldset>
+                            <RadzenStack Gap="20px" class="rz-p-2 rz-p-md-1">
+
+                                <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                                    <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                        <RadzenLabel Text="Username" Component="Username"/>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="10">
+                                        <RadzenTextBox style="display: block" Name="Username" @bind-Value="@_model.Username"
+                                                       Placeholder="Username"
+                                                       class="rz-w-100"/>
+                                        <RadzenDataAnnotationValidator Component="Username" Popup="false"
+                                                                       Style="position: absolute"/>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                                    <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                        <RadzenLabel Text="Email" Component="EmailAddress"/>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="10">
+                                        <RadzenTextBox style="display: block" Name="EmailAddress"
+                                                       @bind-Value="@_model.EmailAddress" Placeholder="Email address"
+                                                       class="rz-w-100"/>
+                                        <RadzenDataAnnotationValidator Component="EmailAddress" Popup="false"
+                                                                       Style="position: absolute"/>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                                    <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                        <RadzenLabel Text="Password" Component="Password"/>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="10">
+                                        <RadzenPassword style="display: block" Name="Password"
+                                                        @bind-Value="@_model.Password"
+                                                        Placeholder="Password"
+                                                        class="rz-w-100"/>
+                                        <RadzenDataAnnotationValidator Component="Password" Popup="false"
+                                                                       Style="position: absolute"/>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                @if (_registerPrivateCodeLength > 0)
+                                {
+                                    <div class="warning-banner">
+                                        <p>🔒 Registering a new account requires an access code to be entered. Whoever invited you can provide this code to you.</p>
+                                        <p>If you do not have the code, kindly go away 👉.</p>
+                                    </div>
+                                    <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                                        <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                            <RadzenLabel Text="Access Code" Component="RegisterCode"/>
+                                        </RadzenColumn>
+                                        <RadzenColumn Size="12" SizeMD="10">
+                                            <RadzenSecurityCode required Name="RegisterCode" @bind-Value=@_registerPrivateCode Count="@_registerPrivateCodeLength" Gap="5px"/>
+                                        </RadzenColumn>
+                                    </RadzenRow>
+                                }
+                                <RadzenRow>
+                                    <RadzenProgressBar Visible="@_isLoading" Style="width:100px;"
+                                                       ProgressBarStyle="ProgressBarStyle.Info" Value="100"
+                                                       ShowValue="false" Mode="ProgressBarMode.Indeterminate"/>
+                                    <RadzenButton Disabled="@(_isLoading)" ButtonType="ButtonType.Submit" Text="Register"
+                                                  Style="width: 100%"/>
+                                </RadzenRow>
+                            </RadzenStack>
+                        </RadzenFieldset>
+                    </RadzenTemplateForm>
+                </RadzenCard>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+}
 
 @code {
 
     bool _isLoading;
+    bool _isRegistrationDisabled;
     readonly ViewModels.Register _model = new();
+    string? _registerPrivateCode;
+    int _registerPrivateCodeLength = 0;
 
-    void ShowErrorMessage()
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        var config = await ConfigurationFactory.GetConfigurationAsync();
+        _registerPrivateCodeLength = config.GetValue<string>(SettingRegistry.RegisterPrivateCode)?.Length ?? 0;
+        _isRegistrationDisabled = config.GetValue<bool>(SettingRegistry.RegisterDisabled);
+    }
+
+    void ShowErrorMessage(string? message)
     {
         NotificationService.Notify(new NotificationMessage
         {
@@ -89,7 +128,7 @@
             DetailContent = ns =>
                 @<RadzenStack>
                     <RadzenText TextStyle="TextStyle.Subtitle1">Melodee is unable to create a new user account for you.
-                        Perhaps your email is banned?
+                        @(message ?? "Perhaps your email is banned?")
                     </RadzenText>
                     <RadzenButton Text="Close" Click="@(args => ns.Messages.Clear())"></RadzenButton>
                 </RadzenStack>
@@ -98,10 +137,11 @@
 
     async Task OnSubmit(ViewModels.Register model)
     {
+        string? errorMessage = null;
         _isLoading = true;
         try
         {
-            var result = await UserService.RegisterAsync(model.Username ?? string.Empty, model.EmailAddress ?? string.Empty, model.Password ?? string.Empty);
+            var result = await UserService.RegisterAsync(model.Username ?? string.Empty, model.EmailAddress ?? string.Empty, model.Password ?? string.Empty, _registerPrivateCode);
             if (result.IsSuccess)
             {
                 NotificationService.Notify(new NotificationMessage
@@ -111,21 +151,22 @@
                     SummaryContent = _ => @<RadzenText TextStyle="TextStyle.H6">Successfully registered!</RadzenText>,
                     DetailContent = ns =>
                         @<RadzenStack>
-                            <RadzenText TextStyle="TextStyle.Subtitle1">Registered new account, you should get an email,
-                                be sure and click the validate button.
+                            <RadzenText TextStyle="TextStyle.Subtitle1">Registered new account, you should get an email, be sure and click the validate button.
                             </RadzenText>
                             <RadzenButton Text="Close" Click="@(args => ns.Messages.Clear())"></RadzenButton>
                         </RadzenStack>
                 });
                 NavigationManager.NavigateTo("/");
             }
+
+            errorMessage = result.Messages?.FirstOrDefault();
         }
         finally
         {
             _isLoading = false;
         }
 
-        ShowErrorMessage();
+        ShowErrorMessage(errorMessage);
     }
 
     void OnInvalidSubmit(FormInvalidSubmitEventArgs args)

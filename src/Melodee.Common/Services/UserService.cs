@@ -299,7 +299,11 @@ public sealed class UserService(
         return user;
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> RegisterAsync(string username, string emailAddress, string plainTextPassword, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> RegisterAsync(string username,
+        string emailAddress,
+        string plainTextPassword,
+        string? registerPrivateCode,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
         Guard.Against.NullOrWhiteSpace(plainTextPassword, nameof(plainTextPassword));
@@ -318,6 +322,17 @@ public sealed class UserService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+            
+            var configuredRegisterPrivateCode = configuration.GetValue<string>(SettingRegistry.RegisterPrivateCode);
+            if (configuredRegisterPrivateCode != null && registerPrivateCode != configuredRegisterPrivateCode)
+            {
+                return new MelodeeModels.OperationResult<User?>("Invalid access code.")
+                {
+                    Data = null,
+                    Type = MelodeeModels.OperationResponseType.Unauthorized
+                };
+            }
+            
             var usersPublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64();
             var emailNormalized = emailAddress.ToNormalizedString() ?? emailAddress.ToUpperInvariant();
             var newUser = new User

@@ -149,14 +149,14 @@ public sealed class UserServiceTests : ServiceTestBase
         var sleepTime = 200;
 
         var userService = GetUserService();
-        var registerResult = await userService.RegisterAsync(emailAddress, emailAddress, emailAddress);
+        var registerResult = await userService.RegisterAsync(emailAddress, emailAddress, emailAddress, null);
         AssertResultIsSuccessful(registerResult);
         Assert.Equal(emailAddress, registerResult.Data!.Email);
 
         Thread.Sleep(sleepTime);
 
         // Register a second user to ensure that only the fist gets deleted
-        var registerResult2 = await userService.RegisterAsync(emailAddress2, emailAddress2, emailAddress);
+        var registerResult2 = await userService.RegisterAsync(emailAddress2, emailAddress2, emailAddress, null);
         AssertResultIsSuccessful(registerResult2);
         Assert.Equal(emailAddress2, registerResult2.Data!.Email);
 

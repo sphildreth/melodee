@@ -1463,7 +1463,17 @@ public class OpenSubsonicApiService(
 
     public async Task<ResponseModel> CreateUserAsync(CreateUserRequest request, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
-        var registerResult = await userService.RegisterAsync(request.Username, request.Email, request.Password, cancellationToken).ConfigureAwait(false);
+        var requirePrivateCode = (await Configuration.Value).GetValue<string>(SettingRegistry.RegisterPrivateCode);
+        if (requirePrivateCode.Nullify() != null)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                IsSuccess = false,
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, new Error(10, "Private code is configured. User registration must be done via the server."))
+            };
+        }
+        var registerResult = await userService.RegisterAsync(request.Username, request.Email, request.Password, null, cancellationToken).ConfigureAwait(false);
         var result = registerResult.IsSuccess;
         if (!result)
         {

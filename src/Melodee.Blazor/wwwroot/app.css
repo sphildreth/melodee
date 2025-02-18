@@ -31,3 +31,11 @@ h1:focus {
 i.filled-icon {
   font-variation-settings: 'FILL' 1;
 }
+
+.warning-banner {
+  padding: 20px;
+  width: 80%;
+  background-color: #f44336;
+  color: white;
+  margin: auto;
+}
