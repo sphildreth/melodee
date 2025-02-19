@@ -3,6 +3,7 @@ using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Models.Collection;
+using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -14,23 +15,68 @@ namespace Melodee.Common.Services;
 public class SongService(
     ILogger logger,
     ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory)
+    IDbContextFactory<MelodeeDbContext> contextFactory,
+    INowPlayingRepository NowPlayingRepository)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:song:apikey:{0}";
     private const string CacheKeyDetailByTitleNormalizedTemplate = "urn:song:titlenormalized:{0}";
     private const string CacheKeyDetailTemplate = "urn:song:{0}";
 
+    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListNowPlayingAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    {
+        int songCount = 0;
+        SongDataInfo[] songs = [];
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var nowPlaying = await NowPlayingRepository.GetNowPlayingAsync(cancellationToken).ConfigureAwait(false);
+            if (nowPlaying.Data.Length > 0)
+            {
+                var nowPlayingSongIds = nowPlaying.Data.Select(x => x.Scrobble.SongId).ToArray();
+
+                var orderBy = pagedRequest.OrderByValue();
+                var dbConn = scopedContext.Database.GetDbConnection();
+                songCount = nowPlayingSongIds.Length;
+                
+                if (!pagedRequest.IsTotalCountOnlyRequest)
+                {
+                    var sqlStartFragment = """
+                                           SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
+                                                  a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
+                                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                                           FROM "Songs" s
+                                           join "Albums" a on (s."AlbumId" = a."Id")
+                                           join "Artists" ar on (a."ArtistId" = ar."Id")
+                                           where s."Id" in ('{0}')
+                                           """.FormatSmart(string.Join(@"','", nowPlayingSongIds));
+
+                    var listSql = $"{sqlStartFragment} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                    songs = (await dbConn
+                        .QueryAsync<SongDataInfo>(listSql)
+                        .ConfigureAwait(false)).ToArray();
+                }
+            }
+        }
+
+        return new MelodeeModels.PagedResult<SongDataInfo>
+        {
+            TotalCount = songCount,
+            TotalPages = pagedRequest.TotalPages(songCount),
+            Data = songs
+        };
+    }
+    
+    
     public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        int albumCount;
+        int songCount;
         SongDataInfo[] songs = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
             var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Songs\"");
-            albumCount = await dbConn
+            songCount = await dbConn
                 .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
                 .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
@@ -53,8 +99,8 @@ public class SongService(
 
         return new MelodeeModels.PagedResult<SongDataInfo>
         {
-            TotalCount = albumCount,
-            TotalPages = pagedRequest.TotalPages(albumCount),
+            TotalCount = songCount,
+            TotalPages = pagedRequest.TotalPages(songCount),
             Data = songs
         };
     }

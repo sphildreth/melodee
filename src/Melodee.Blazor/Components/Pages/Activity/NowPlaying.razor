@@ -1,0 +1,52 @@
+@page "/activity/nowplaying"
+@using Melodee.Common.Filtering
+@using Melodee.Common.Models.Collection
+@using Melodee.Common.Plugins.Scrobbling
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
+@inherits MelodeeComponentBase
+
+@inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
+@inject INowPlayingRepository NowPlayingRepository
+@inject SongService SongService
+
+<PageTitle>Now Playing</PageTitle>
+
+<RadzenPanel AllowCollapse="true">
+    <HeaderTemplate>
+        <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-display-flex rz-m-0">
+            <RadzenIcon Icon="sound_sampler" class="rz-me-1"/>
+            Now Playing
+        </RadzenText>
+    </HeaderTemplate>
+    <ChildContent>
+        <RadzenStack Orientation="Orientation.Horizontal">
+            @if (_nowPlayingSongs.Length == 0)
+            {
+                <RadzenText Text="No songs are currently playing." class="rz-m-2" />
+            }
+            @foreach (var nowPlayingSong in _nowPlayingSongs)
+            {
+                <SongDataInfoCardComponent Song="@nowPlayingSong"/>
+            }
+        </RadzenStack>
+    </ChildContent>
+</RadzenPanel>
+
+
+@code {
+
+    SongDataInfo[] _nowPlayingSongs = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        var songListResult = await SongService.ListNowPlayingAsync(new PagedRequest
+        {
+            Page = 1,
+            PageSize = 50
+        });
+        _nowPlayingSongs = songListResult.Data.ToArray();
+    }
+
+}

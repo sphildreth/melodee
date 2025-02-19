@@ -251,7 +251,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected SongService GetSongService()
     {
-        return new SongService(Logger, CacheManager, MockFactory());
+        return new SongService(Logger, CacheManager, MockFactory(), GetNowPlayingRepository());
     }
 
     protected PlaylistService GetPlaylistService()
