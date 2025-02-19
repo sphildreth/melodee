@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Drawing;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Data.Validators;
 using Melodee.Common.Enums;
@@ -74,7 +75,7 @@ public sealed class Artist : MetaDataModelBase
     public ICollection<Contributor> Contributors { get; set; } = new List<Contributor>();
 
     public ICollection<UserArtist> UserArtists { get; set; } = new List<UserArtist>();
-
+    
     [InverseProperty(nameof(ArtistRelation.Artist))]
     public ICollection<ArtistRelation> RelatedArtists { get; set; } = new List<ArtistRelation>();
 

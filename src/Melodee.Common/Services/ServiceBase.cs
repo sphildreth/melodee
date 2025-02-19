@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Data.SqlTypes;
 using System.Diagnostics;
 using Dapper;
 using IdSharp.Common.Utils;
@@ -80,8 +79,12 @@ public abstract class ServiceBase
                 {
                     if (image.FileInfo != null)
                     {
-                        File.Move(image.FileInfo.FullName(albumToMoveDir), Path.Combine(existingDir.FullName, image.FileInfo.Name));
-                        Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);
+                        var imagePath = image.FileInfo.FullName(albumToMoveDir);
+                        if(File.Exists(imagePath))
+                        {
+                            File.Move(imagePath,Path.Combine(existingDir.FullName, image.FileInfo.Name));
+                            Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);
+                        }
                     }
 
                     modifiedExistingDirectory = true;
@@ -498,7 +501,7 @@ public abstract class ServiceBase
                                 new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
                             };
                             var genres = songsGroupedByAlbum
-                                .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
+                                .SelectMany(x => x.Tags ?? [])
                                 .Where(x => x.Identifier == MetaTagIdentifier.Genre);
                             newAlbumTags.AddRange(genres
                                 .GroupBy(x => x.Value)

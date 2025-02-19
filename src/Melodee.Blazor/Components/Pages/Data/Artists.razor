@@ -266,6 +266,7 @@
             var library = await LibraryService.GetAsync(selectedArtist.LibraryId);
             if (library is { IsSuccess: true, Data: not null })
             {
+                selectedArtist.State = ArtistMergeState.ToBeMerged;
                 _selectedArtistDataInfos.Add(selectedArtist);
             }
         }

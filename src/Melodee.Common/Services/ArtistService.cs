@@ -142,7 +142,6 @@ public class ArtistService(
     }
 
 
-
     /// <summary>
     ///     Find the Artist using various given Ids.
     /// </summary>
@@ -160,15 +159,15 @@ public class ArtistService(
                 if (byId.HasValue)
                 {
                     sql = """
-                          select a."Id"
-                          from "Artists" a 
-                          where a."Id" = @id
-                         """;
+                           select a."Id"
+                           from "Artists" a 
+                           where a."Id" = @id
+                          """;
                     id = await dbConn
                         .QuerySingleOrDefaultAsync<int?>(sql, new { id = byId })
-                        .ConfigureAwait(false);                    
+                        .ConfigureAwait(false);
                 }
-                
+
                 if (id == null && byApiKey != Guid.Empty)
                 {
                     sql = """
@@ -178,22 +177,21 @@ public class ArtistService(
                           """;
                     id = await dbConn
                         .QuerySingleOrDefaultAsync<int?>(sql, new { apiKey = byApiKey })
-                        .ConfigureAwait(false);                    
+                        .ConfigureAwait(false);
                 }
 
                 if (id == null)
                 {
                     sql = """
-                              select a."Id"
-                              from "Artists" a 
-                              where a."MusicBrainzId" = @musicBrainzId   
-                              or a."NameNormalized" = @name
-                              """;
+                          select a."Id"
+                          from "Artists" a 
+                          where a."MusicBrainzId" = @musicBrainzId   
+                          or a."NameNormalized" = @name
+                          """;
                     id = await dbConn
                         .QuerySingleOrDefaultAsync<int?>(sql, new { name = byName, musicBrainzId = byMusicBrainzId })
-                        .ConfigureAwait(false);                     
+                        .ConfigureAwait(false);
                 }
-
             }
             catch (Exception e)
             {
@@ -203,7 +201,7 @@ public class ArtistService(
                     byApiKey,
                     byName,
                     byMusicBrainzId);
-            }            
+            }
         }
 
         if (id == null)
@@ -241,7 +239,7 @@ public class ArtistService(
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
-    
+
     public void ClearCache(Artist artist)
     {
         CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.ApiKey));
@@ -555,6 +553,7 @@ public class ArtistService(
 
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
             var libraryIdsToUpdate = new List<int>();
+            var artistAlternateNamesToMerge = new List<string>();
             foreach (var artistApiKeyToMerge in artistIdsToMerge)
             {
                 var dbArtist = await scopedContext
@@ -570,6 +569,20 @@ public class ArtistService(
                     {
                         Data = false
                     };
+                }
+
+                artistAlternateNamesToMerge.Add(dbArtist.NameNormalized);
+                artistAlternateNamesToMerge.AddRange(dbArtist.AlternateNames.ToTags() ?? []);
+
+                var artistPinType = (int)UserPinType.Artist;
+                var userPins = await scopedContext.UserPins
+                    .Where(x => x.PinType == artistPinType && x.PinId == dbArtist.Id)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                foreach (var userPin in userPins)
+                {
+                    userPin.PinId = dbArtistToMergeInto.Id;
+                    userPin.LastUpdatedAt = now;
                 }
 
                 foreach (var albumToMerge in dbArtist.Albums)
@@ -611,6 +624,7 @@ public class ArtistService(
                     .ConfigureAwait(false);
 
                 scopedContext.Artists.Remove(dbArtist);
+
                 var saveResult = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 if (saveResult > 0)
                 {
@@ -627,11 +641,21 @@ public class ArtistService(
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    Directory.Delete(dbArtist.ToFileSystemDirectoryInfo().FullName(), true);
+                    var dirPath = dbArtist.ToFileSystemDirectoryInfo().FullName();
+                    if (Directory.Exists(dirPath))
+                    {
+                        Directory.Delete(dirPath, true);    
+                    }
                 }
 
                 libraryIdsToUpdate.Add(dbArtist.Library.Id);
             }
+
+            if (dbArtistToMergeInto.AlternateNames == null)
+            {
+                artistAlternateNamesToMerge.AddRange(dbArtistToMergeInto.AlternateNames.ToTags() ?? []);
+            }
+            dbArtistToMergeInto.AlternateNames = "".AddTags(artistAlternateNamesToMerge.Distinct(), doNormalize: true);
 
             await UpdateArtistAggregateValuesByIdAsync(dbArtistToMergeInto.Id, cancellationToken).ConfigureAwait(false);
             foreach (var libraryId in libraryIdsToUpdate.Distinct())

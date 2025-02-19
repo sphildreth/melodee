@@ -742,6 +742,7 @@ public class OpenSubsonicApiService(
                 MusicBrainzId = album.MusicBrainzId?.ToString(),
                 Name = album.Name,
                 OriginalAlbumDate = album.OriginalReleaseDate?.ToItemDate() ?? album.ReleaseDate.ToItemDate(),
+                OriginalReleaseDate = album.OriginalReleaseDate?.ToItemDate() ?? album.ReleaseDate.ToItemDate(),
                 Parent = album.ToApiKey(),
                 PlayCount = album.PlayedCount,
                 Played = album.LastPlayedAt.ToString(),
