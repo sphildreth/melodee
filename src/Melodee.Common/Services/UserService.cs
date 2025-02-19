@@ -8,6 +8,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Services.Interfaces;
@@ -36,6 +37,7 @@ public sealed class UserService(
     ArtistService artistService,
     AlbumService albumService,
     SongService songService,
+    PlaylistService playlistService,
     IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -217,11 +219,65 @@ public sealed class UserService(
             {
                 await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    return await scopedContext
+                    var user = await scopedContext
                         .Users
+                        .Include(x => x.Pins)
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                         .ConfigureAwait(false);
+
+                    if (user?.Pins.Count > 0)
+                    {
+                        foreach (var pin in user.Pins)
+                        {
+                            switch (pin.PinTypeValue)
+                            {
+                                case UserPinType.Artist:
+                                    var artistResult = await artistService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
+                                    if (artistResult.IsSuccess && artistResult.Data != null)
+                                    {
+                                        pin.Icon = "artist";
+                                        pin.ImageUrl = $"/images/{ artistResult.Data.ToApiKey()}/80";
+                                        pin.LinkUrl = $"/data/artist/ { artistResult.Data.ApiKey }";
+                                        pin.Text = artistResult.Data.Name;
+                                    }
+                                    break;
+                                case UserPinType.Album:
+                                    var albumResult = await albumService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
+                                    if (albumResult.IsSuccess && albumResult.Data != null)
+                                    {
+                                        pin.Icon = "album";
+                                        pin.ImageUrl = $"/images/{ albumResult.Data.ToApiKey()}/80";
+                                        pin.LinkUrl = $"/data/album/ { albumResult.Data.ApiKey }";
+                                        pin.Text = albumResult.Data.Name;
+                                    }
+                                    break;
+                                case UserPinType.Song:
+                                    var songResult = await songService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
+                                    if (songResult.IsSuccess && songResult.Data != null)
+                                    {
+                                        pin.Icon = "music_note";
+                                        pin.ImageUrl = $"/images/{ songResult.Data.ToApiKey()}/80";
+                                        pin.LinkUrl = $"/data/album/ { songResult.Data.Album.ApiKey }";
+                                        pin.Text = songResult.Data.Title;
+                                    }                                    
+                                    break;
+                                case UserPinType.Playlist:
+                                    var playlistResult = await playlistService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
+                                    if (playlistResult.IsSuccess && playlistResult.Data != null)
+                                    {
+                                        pin.Icon = "playlist_play";
+                                        pin.ImageUrl = $"/images/{ playlistResult.Data.ToApiKey()}/80";
+                                        pin.LinkUrl = $"/data/playlist/ { playlistResult.Data.ApiKey }";
+                                        pin.Text = playlistResult.Data.Name;
+                                    }                                     
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+                        }
+                    }
+                    return user;
                 }
             }
         }, cancellationToken).ConfigureAwait(false);
@@ -836,6 +892,45 @@ public sealed class UserService(
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<bool>> TogglePinnedAsync(int userId, UserPinType pinType, int pinId, CancellationToken cancellationToken = default)
+    {
+        var result = false;
+        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var userPinTypeValue = (int)pinType;
+            var userPin = await scopedContext
+                .UserPins
+                .Where(x => x.UserId == userId && x.PinId == pinId && x.PinType == userPinTypeValue)
+                .FirstOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (userPin == null)
+            {
+                userPin = new UserPin
+                {
+                    UserId = userId,
+                    PinId = pinId,
+                    PinType = userPinTypeValue,
+                    CreatedAt = now
+                };
+                scopedContext.UserPins.Add(userPin);
+            }
+            else
+            {
+                scopedContext.UserPins.Remove(userPin);
+            }
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+            var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+            ClearCache(user.Data!);
+        }
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+
     public async Task<MelodeeModels.OperationResult<bool>> ToggleSongStarAsync(int userId, Guid songApiKey, bool isStarred, CancellationToken cancellationToken = default)
     {
         var result = false;
@@ -974,5 +1069,21 @@ public sealed class UserService(
         rs.Append(Encoding.UTF8.GetString(randomBytes).ToBase64());
 
         return rs.ToString();
+    }
+
+    public async Task<bool> IsPinned(int userId, UserPinType pinType, int pinId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var sql = """
+                      select COUNT(up.*)
+                      from "UserPins" up 
+                      where up."UserId" = @userId
+                        and up."PinId" = @pinId
+                        and up."PinType" = @pinType;
+                      """;
+            var dbConn = scopedContext.Database.GetDbConnection();
+            return (await dbConn.ExecuteScalarAsync<int>(sql, new { userId, pinType = (int)pinType, pinId }).ConfigureAwait(false)) > 0;
+        }
     }
 }

@@ -48,6 +48,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<UserAlbum> UserAlbums { get; set; }
 
     public DbSet<UserArtist> UserArtists { get; set; }
+    
+    public DbSet<UserPin> UserPins { get; set; }
 
     public DbSet<UserSong> UserSongs { get; set; }
 

@@ -97,4 +97,6 @@ public class User : DataModelBase
     public ICollection<UserArtist> UserArtists { get; set; } = new List<UserArtist>();
 
     public ICollection<UserSong> UserSongs { get; set; } = new List<UserSong>();
+
+    public ICollection<UserPin> Pins { get; set; } = new List<UserPin>();
 }

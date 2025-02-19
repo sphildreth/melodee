@@ -1,15 +1,46 @@
 ﻿@page "/"
+@using Melodee.Blazor.ViewModels
+@using Melodee.Common.Data.Models
 @using Melodee.Common.Enums
 @using Melodee.Common.Models.Collection
+
+@using TextStyle = Radzen.Blazor.TextStyle
 @inherits MelodeeComponentBase
 
 @inject StatisticsService StatisticsService
+@inject UserService UserService
 @inject ArtistService ArtistService
 @inject AlbumService AlbumService
 
 <PageTitle>Dashboard</PageTitle>
 
 <RadzenStack>
+    @if (_userPins.Length > 0)
+    {
+        <RadzenRow>
+            <RadzenPanel AllowCollapse="true">
+                <HeaderTemplate>
+                    <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                        <RadzenIcon Icon="keep" class="rz-me-1"/>
+                        Your pins
+                    </RadzenText>
+                </HeaderTemplate>
+                <ChildContent>
+                    <RadzenStack
+                        Orientation="Orientation.Horizontal"
+                        Wrap="FlexWrap.Wrap"
+                        JustifyContent="JustifyContent.Left"
+                        class="rz-p-2"
+                        Gap="8px">
+                        @foreach (var pin in _userPins)
+                        {
+                            <UserPinCardComponent UserPin="@pin"/>
+                        }
+                    </RadzenStack>
+                </ChildContent>
+            </RadzenPanel>
+        </RadzenRow>
+    }
     <RadzenRow>
         <RadzenPanel AllowCollapse="true">
             <HeaderTemplate>
@@ -100,6 +131,7 @@
 
     AlbumDataInfo[] _latestAlbums = [];
     ArtistDataInfo[] _latestArtists = [];
+    UserPin[] _userPins = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -126,6 +158,12 @@
             }
         });
         _latestArtists = artistLatestResult.Data.ToArray();
+
+        var userResult = await UserService.GetAsync(CurrentUser?.UserId() ?? 0);
+        if (userResult.IsSuccess && userResult.Data != null)
+        {
+            _userPins = userResult.Data.Pins?.ToArray() ?? [];
+        }
     }
 
     private Task ProcessInbound()

@@ -44,6 +44,9 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
+                <RadzenIcon Icon="@(_isPinned ? "keep" : "keep_off")" class="filled-icon"
+                            IconColor="@(_isPinned ? "#99CCFF" : "#C9C9C7")"
+                            @onclick="@TogglePinned" Style="cursor:pointer;"/>
                 <RadzenRating Value="@_userArtist.Rating" Change="@UserRatingChange"/>
                 <RadzenIcon Icon="thumb_down" class="filled-icon"
                             IconColor="@(_userArtist.IsHated ? "#A2A415" : "#C9C9C7")"
@@ -287,6 +290,8 @@
 
     ShowItem _showItem = ShowItem.Overview;
 
+    bool _isPinned;
+
     IEnumerable<AlbumDataInfo> _albums = [];
 
     private enum ShowItem
@@ -358,6 +363,8 @@
                     _alertMessages.Add($"Artist directory [{ artistDirectory.FullName()}] is not found.");
                 }
                 await LoadAlbums();
+
+                _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Artist, _artist.Id);
             }
         }
     }
@@ -424,6 +431,13 @@
     private async Task OnInternetSearchClick()
     {
         await JsRuntime.InvokeVoidAsync("openInNewTab", Configuration.GenerateWebSearchUrl([_artist.Name]));
+    }
+
+    private async Task TogglePinned()
+    {
+        _isPinned = !_isPinned;
+        var result = await UserService.TogglePinnedAsync(CurrentUsersId, UserPinType.Artist, _artist.Id);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Pin", ToastTime));
     }
 
 }

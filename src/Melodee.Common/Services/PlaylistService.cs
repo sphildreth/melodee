@@ -1,3 +1,4 @@
+using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
@@ -5,6 +6,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Common.Services;
@@ -15,6 +17,9 @@ public class PlaylistService(
     IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
+    private const string CacheKeyDetailByApiKeyTemplate = "urn:playlist:apikey:{0}";
+    private const string CacheKeyDetailTemplate = "urn:playlist:{0}";
+    
     public async Task<MelodeeModels.PagedResult<Playlist>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int playlistCount;
@@ -44,6 +49,27 @@ public class PlaylistService(
             Data = playlists
         };
     }
+    
+    public async Task<MelodeeModels.OperationResult<Playlist?>> GetAsync(int id, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, id, nameof(id));
+
+        var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                return await scopedContext
+                    .Playlists
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }, cancellationToken);
+        return new MelodeeModels.OperationResult<Playlist?>
+        {
+            Data = result
+        };
+    }    
 
     public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] playlistIds, CancellationToken cancellationToken = default)
     {

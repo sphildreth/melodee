@@ -53,6 +53,9 @@
                 AlignItems="AlignItems.Center"
                 JustifyContent="JustifyContent.End"
                 Gap="0.5rem">
+                <RadzenIcon Icon="@(_isPinned ? "keep" : "keep_off")" class="filled-icon"
+                            IconColor="@(_isPinned ? "#99CCFF" : "#C9C9C7")"
+                            @onclick="@TogglePinned" Style="cursor:pointer;"/>
                 <RadzenRating Value="@_userAlbum.Rating" Change="@UserRatingChange"/>
                 <RadzenIcon Icon="thumb_down" class="filled-icon"
                             IconColor="@(_userAlbum.IsHated ? "#A2A415" : "#C9C9C7")"
@@ -294,6 +297,8 @@
 
     ShowItem _showItem = ShowItem.Overview;
 
+    bool _isPinned;
+
     private enum ShowItem
     {
         Overview = 1,
@@ -372,6 +377,8 @@
                 {
                     _alertMessages.Add($"Album directory [{ albumDirectory.FullName()}] is not found.");
                 }
+
+                _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Album, _album.Id);
 
             }
         }
@@ -612,6 +619,13 @@
             var rescanresult = await AlbumService.RescanAsync([_album.Id]);
             NotificationService.Notify(NotificationMessageForResult(rescanresult, "submitting album rescan job", ToastTime));
         }
+    }
+
+    private async Task TogglePinned()
+    {
+        _isPinned = !_isPinned;
+        var result = await UserService.TogglePinnedAsync(CurrentUsersId, UserPinType.Album, _album.Id);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Pin", ToastTime));
     }
 
 }
