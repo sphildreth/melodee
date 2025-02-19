@@ -55,7 +55,7 @@ public class Mpeg
 
     public bool IsVideoType => MimeType.Nullify() != null && MimeType!.StartsWith("VIDEO/", StringComparison.OrdinalIgnoreCase);
     
-    public bool IsMp3MimeType => MimeType.Nullify() != null && MimeType!.StartsWith("AUDIO/", StringComparison.OrdinalIgnoreCase);
+    public bool IsMp3MimeType => MimeType is "audio/mpeg" or "audio/mp3";
     
     public bool IsLengthOk => LengthMs > 0;
 
