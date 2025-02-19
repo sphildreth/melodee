@@ -56,7 +56,7 @@ public class MelodeeScrobbler(
                   """;
             await dbConn.ExecuteAsync(sql, new { userId = user.Id, songId = scrobble.SongId }).ConfigureAwait(false);
             await nowPlayingRepository
-                .RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), scrobble.SongId.ToString()), cancellationToken)
+                .RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), scrobble.SongApiKey.ToString()), cancellationToken)
                 .ConfigureAwait(false);
             
             var album = await albumService.GetAsync(scrobble.AlbumId, cancellationToken).ConfigureAwait(false);

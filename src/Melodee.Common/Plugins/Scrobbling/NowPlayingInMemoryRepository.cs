@@ -1,13 +1,15 @@
 using System.Collections.Concurrent;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
+using ServiceStack.OrmLite;
 
 namespace Melodee.Common.Plugins.Scrobbling;
 
 public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
 {
+    private const int MaximumMinutesAgo = 60;
+    
     private static readonly ConcurrentDictionary<long, NowPlayingInfo> Storage = new();
-
 
     public Task RemoveNowPlayingAsync(long uniqueId, CancellationToken token = default)
     {
@@ -40,9 +42,22 @@ public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
 
     public Task<OperationResult<NowPlayingInfo[]>> GetNowPlayingAsync(CancellationToken token = default)
     {
+        RemoveExpiredNonScrobbledEntries();
+        
         return Task.FromResult(new OperationResult<NowPlayingInfo[]>
         {
             Data = Storage.Values.ToArray()
         });
+    }
+
+    private static void RemoveExpiredNonScrobbledEntries()
+    {
+        foreach (var nowPlaying in Storage.Values)
+        {
+            if (nowPlaying.Scrobble.MinutesAgo > MaximumMinutesAgo)
+            {
+                Storage.TryRemove(nowPlaying.UniqueId, out var existing);
+            }
+        }
     }
 }
