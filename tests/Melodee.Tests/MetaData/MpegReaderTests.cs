@@ -14,7 +14,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.True(mpeg.IsValid);
+            Assert.False(mpeg.IsAudioNeedsConversion);
         }
     }
     
@@ -28,7 +28,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.True(mpeg.IsValid);
+            Assert.False(mpeg.IsAudioNeedsConversion);
         }
     }    
     
@@ -42,7 +42,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.True(mpeg.IsValid);
+            Assert.False(mpeg.IsAudioNeedsConversion);
         }
     }        
     
@@ -56,7 +56,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.False(mpeg.IsValid);
+            Assert.True(mpeg.IsAudioNeedsConversion);
         }
     }           
     
@@ -70,7 +70,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.True(mpeg.IsValid);
+            Assert.False(mpeg.IsAudioNeedsConversion);
         }
     }      
     
@@ -107,7 +107,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.False(mpeg.IsValid);
+            Assert.True(mpeg.IsAudioNeedsConversion);
         }
     }       
     
@@ -121,7 +121,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.False(mpeg.IsValid);
+            Assert.True(mpeg.IsAudioNeedsConversion);
         }
     }      
     
@@ -135,9 +135,37 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.False(mpeg.IsValid);
+            Assert.True(mpeg.IsAudioNeedsConversion);
         }
     }  
+    
+    [Fact]
+    public async Task  ReadTestMp4()
+    {
+        var testFile = @"/melodee_test/tests/test.mp4";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var mpeg = new Mpeg(fileInfo.FullName);
+            await mpeg.ReadAsync();
+            Assert.NotNull(mpeg.Bitrate);
+            Assert.False(mpeg.IsAudioNeedsConversion);
+        }
+    }      
+    
+    [Fact]
+    public async Task  ReadTestMov()
+    {
+        var testFile = @"/melodee_test/tests/test.mov";
+        var fileInfo = new FileInfo(testFile);
+        if (fileInfo.Exists)
+        {
+            var mpeg = new Mpeg(fileInfo.FullName);
+            await mpeg.ReadAsync();
+            Assert.NotNull(mpeg.Bitrate);
+            Assert.False(mpeg.IsAudioNeedsConversion);
+        }
+    }      
     
     [Fact]
     public async Task  ReadFlac()
@@ -149,7 +177,7 @@ public class MpegReaderTests
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync();
             Assert.NotNull(mpeg.Bitrate);
-            Assert.False(mpeg.IsValid);
+            Assert.True(mpeg.IsAudioNeedsConversion);
         }
     }      
        

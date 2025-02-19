@@ -1,5 +1,7 @@
 using System.Globalization;
 using ATL;
+using J2N.Text;
+using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
@@ -38,25 +40,28 @@ public class Mpeg
 
     private BinaryReader _br;
 
+    public bool IsAudioNeedsConversion => IsValid && !IsMp3MimeType && !IsVideoType && IsLengthOk;
+    
     public bool IsValid => IsBitrateOk &&
                            IsFrequencyOk &&
                            IsLayerOk &&
-                           IsVersionOk &&
-                           IsMp3MimeType;
+                           IsVersionOk;
 
     public bool IsBitrateOk => SafeParser.ToNumber<int>(Bitrate) > 0;
 
-    public bool IsLayerOk => Layer.Equals("Layer I") || Layer.Equals("Layer II") || Layer.Equals("Layer III") || string.Equals(Layer, "reserved", StringComparison.OrdinalIgnoreCase);
+    public bool IsLayerOk => Layer.Nullify() != null && (Layer.Equals("Layer I") || Layer.Equals("Layer II") || Layer.Equals("Layer III") || string.Equals(Layer, "reserved", StringComparison.OrdinalIgnoreCase));
 
     public bool IsFrequencyOk => SafeParser.ToNumber<int>(Frequency) > 95 || string.Equals(Frequency, "reserved", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsMp3MimeType => MimeType is "audio/mpeg" or "audio/mp3";
+    public bool IsVideoType => MimeType.Nullify() != null && MimeType!.StartsWith("VIDEO/", StringComparison.OrdinalIgnoreCase);
+    
+    public bool IsMp3MimeType => MimeType.Nullify() != null && MimeType!.StartsWith("AUDIO/", StringComparison.OrdinalIgnoreCase);
     
     public bool IsLengthOk => LengthMs > 0;
 
     public string? MimeType => MimeTypes.GetMimeType(Filename);
 
-    public bool IsVersionOk => Version.Equals("MPEG Version 1") || Version.Equals("MPEG Version 2") || Version.Equals("MPEG Version 2.5");
+    public bool IsVersionOk => Version.Nullify() != null && (Version.Equals("MPEG Version 1") || Version.Equals("MPEG Version 2") || Version.Equals("MPEG Version 2.5"));
 
     public void Read(string fileName)
     {
@@ -112,8 +117,13 @@ public class Mpeg
         }
     }
 
-    public void ParseHeader(byte[] headerBytes)
+    public void ParseHeader(byte[]? headerBytes)
     {
+        var hb = BitReader.ToBitBools(headerBytes);
+        if (hb.Length < 1)
+        {
+            return;
+        }
         var boolHeader = BitReader.ToBitBools(headerBytes);
         ParseVersion(boolHeader[11], boolHeader[12]);
         ParseLayer(boolHeader[13], boolHeader[14]);
@@ -986,7 +996,7 @@ public class Mpeg
     }
 
 
-    private byte[] FindHeader()
+    private byte[]? FindHeader()
     {
         var thisByte = _br.ReadByte();
         while (_br.BaseStream.Position < _br.BaseStream.Length)

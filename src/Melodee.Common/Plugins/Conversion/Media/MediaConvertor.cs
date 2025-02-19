@@ -67,7 +67,7 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
         {
             var mpeg = new Mpeg(fileInfo.FullName);
             await mpeg.ReadAsync(cancellationToken).ConfigureAwait(false);
-            if (!mpeg.IsValid)
+            if (mpeg.IsAudioNeedsConversion)
             {
                 using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
@@ -97,9 +97,9 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                     }
                     mpeg = new Mpeg(newFileName);
                     await mpeg.ReadAsync(cancellationToken).ConfigureAwait(false);
-                    if (!mpeg.IsValid)
+                    if (mpeg.IsAudioNeedsConversion)
                     {
-                        //throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
+                        throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
                     }
                     var newAtl = new Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))

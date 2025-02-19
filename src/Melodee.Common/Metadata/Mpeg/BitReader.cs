@@ -75,8 +75,12 @@ public class BitReader
         return myChars;
     }
 
-    public static bool[] ToBitBools(byte[] myBytes)
+    public static bool[] ToBitBools(byte[]? myBytes)
     {
+        if (myBytes == null)
+        {
+            return [];
+        }
         var myBools = new bool[myBytes.Length * 8];
         var i = 0;
         foreach (var b in myBytes)
