@@ -5,6 +5,7 @@
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
+@using Melodee.Common.Models.Extensions
 @using Melodee.Common.Services.Scanning
 @using FileInfo = FileInfo
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
@@ -31,9 +32,14 @@
 <RadzenStack>
     <RadzenMenu>
         <RadzenMenuItem Text="Clean"  Disabled="_library.IsLocked" Click="CleanButtonClick" title="Clean this media library directory." IconColor="@Colors.Warning" Icon="mop"></RadzenMenuItem>
-        <RadzenMenuItem Text="Process"  Disabled="_library.IsLocked" Click="ProcessButtonClick" title="Run process job on this library." Icon="memory"></RadzenMenuItem>
         <RadzenMenuItem Text="Delete Albums"  Disabled="@(!_library.IsLocked && _selectedAlbums.Count == 0)" Click="DeleteSelectedButtonClick" title="Delete selected media albums, including album files. BEWARE!" IconColor="@Colors.Warning" Icon="delete"></RadzenMenuItem>
-        <RadzenMenuItem Text="Delete not Ok"  Disabled="_library.IsLocked" Click="DeleteNotOkSelectedButtonClick" title="Delete all not Ok status albums in library. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
+        <RadzenMenuItem Text="Delete" Disabled="_library.IsLocked" conColor="@Colors.Warning" Icon="delete">
+            <RadzenMenuItem Text="Delete not Ok"  Click="DeleteNotOkSelectedButtonClick" title="Delete all not Ok status albums in library. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
+            <RadzenMenuItem Text="Delete with less than 4 songs"  Click="DeleteLessThanFourSongsButtonClick" title="Delete all albums with less than 4 songs. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
+            <RadzenMenuItem Text="Delete less than 10 minutes"  Click="DeleteLessThan10MinutesButtonClick" title="Delete all albums with duration less than 10 minutes. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
+
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="Process"  Disabled="_library.IsLocked" Click="ProcessButtonClick" title="Run process job on this library." Icon="memory"></RadzenMenuItem>
         <RadzenMenuItem Text="Move Ok"  Disabled="_library.IsLocked" Click="MoveOkButtonClick" title="Move Ok media albums to Library." Icon="move_group"></RadzenMenuItem>
     </RadzenMenu>
     <RadzenText
@@ -114,7 +120,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.ArtistName)" Title="Artist" Width="150px">
                     <Template Context="data">
-                        @if (data.ApiKey != Guid.Empty)
+                        @if (data.ArtistApiKey != Guid.Empty)
                         {
                             <RadzenLink Text="@data.ArtistName" Path="@($"/data/artist/{data.ArtistApiKey}")"/>
                         }
@@ -259,7 +265,7 @@
         }
         finally
         {
-            MainLayoutProxyService.ToggleSpinnerVisible();
+            MainLayoutProxyService.ToggleSpinnerVisible(false);
         }
 
         _isLoading = false;
@@ -351,6 +357,43 @@
     private Task CleanButtonClick()
     {
         throw new NotImplementedException();
+    }
+
+    private async Task DeleteLessThanFourSongsButtonClick()
+    {
+        var didDelete = await AlbumDiscoveryService.DeleteAlbumsAsync(_library.ToFileSystemDirectoryInfo(), album => album.Songs?.Count() < 4);
+
+        if (didDelete)
+        {
+            if (_grid != null)
+            {
+                await _grid.RefreshDataAsync();
+            }
+            NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool>
+            {
+                Data = true
+            }, "deleted albums", ToastTime));
+            _selectedAlbums.Clear();
+        }
+    }
+
+    private async Task DeleteLessThan10MinutesButtonClick()
+    {
+        var lessThanDurationMs = TimeSpan.FromMinutes(10).TotalMilliseconds;
+        var didDelete = await AlbumDiscoveryService.DeleteAlbumsAsync(_library.ToFileSystemDirectoryInfo(), album => album.TotalDuration() < lessThanDurationMs);
+
+        if (didDelete)
+        {
+            if (_grid != null)
+            {
+                await _grid.RefreshDataAsync();
+            }
+            NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool>
+            {
+                Data = true
+            }, "deleted albums", ToastTime));
+            _selectedAlbums.Clear();
+        }
     }
 
 }

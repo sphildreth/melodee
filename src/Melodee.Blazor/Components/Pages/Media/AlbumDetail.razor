@@ -116,14 +116,16 @@
                             Gap="5px">
                             @if (_album.IsValid)
                             {
-                                <CondensedStatistic Label="Status" StatisticStyle="color: var(--rz-success)"
+                                <CondensedStatistic Label="Status"
+                                                    StatisticStyle="color: var(--rz-success)"
                                                     Statistic="Ok"/>
                             }
                             else
                             {
                                 <CondensedStatistic
                                     LabelStyle="@(_album.IsValid ? "" : "color: var(--rz-color-danger);")"
-                                    Label="Issues" Statistic="@_album.StatusReasons.ToString()"/>
+                                    Label="Issues"
+                                    Statistic="@_album.StatusReasons.ToString()"/>
                             }
                             <CondensedStatistic Label="Album Type" Statistic="@_album.AlbumType.ToString()"/>
                             <CondensedStatistic Label="Directory" Statistic="@_album.Directory.Name"/>
@@ -188,7 +190,7 @@
                                             <td>@song.Title()</td>
                                             <td>
                                                 @CurrentUser!.FormatDuration(song.Duration().ToDuration())
-                                                <span style="cursor: pointer;color: red;" title="Delete Song" @onclick="@(() => DeleteSong(song))">🗑</span>
+                                                <RadzenIcon IconColor="@Colors.Warning" Style="cursor:pointer;" title="Delete Song" Icon="delete" @onclick="@(() => DeleteSong(song))" />
                                             </td>
                                         </tr>
                                     }

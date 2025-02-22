@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
@@ -266,6 +267,32 @@ public sealed class AlbumDiscoveryService(
         };
     }
 
+    public async Task<bool> DeleteAlbumsAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, Func<Album, bool> condition, CancellationToken cancellationToken = default)
+    {
+        CheckInitialized();
+
+        var result = false;
+        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, new PagedRequest() { PageSize = short.MaxValue }, cancellationToken);
+        if (albumsForDirectoryInfo.Data.Any())
+        {
+            foreach (var album in albumsForDirectoryInfo.Data)
+            {
+                if (!condition(album))
+                {
+                    continue;
+                }
+                var fileInfo = new FileInfo(album.MelodeeDataFileName ?? string.Empty);
+                if (fileInfo.DirectoryName == null)
+                {
+                    continue;
+                }
+                Directory.Delete(fileInfo.DirectoryName, true);
+                result = true;
+            }
+        }
+        return result;
+    }
+    
     public async Task<PagedResult<AlbumDataInfo>> AlbumsDataInfosForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         PagedRequest pagedRequest,
@@ -308,39 +335,35 @@ public sealed class AlbumDiscoveryService(
     {
         CheckInitialized();
 
-        var albums = new List<Album>();
-        var errors = new List<Exception>();
-        var messages = new List<string>();
+        var albums = new ConcurrentBag<Album>();
+        var errors = new ConcurrentBag<Exception>();
+        var messages = new ConcurrentBag<string>();
 
         try
         {
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
             if (dirInfo.Exists)
             {
-                foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        break;
-                    }
-
-                    try
-                    {
-                        var r = await Album.DeserializeAndInitializeAlbumAsync(serializer, jsonFile.FullName, cancellationToken).ConfigureAwait(false);
-                        if (r != null)
-                        {
-                            r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
-                            r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
-                            albums.Add(r);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
-                        messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
-                        jsonFile.Delete();
-                    }
-                }
+             //   foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
+             await Parallel.ForEachAsync(dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories), cancellationToken, async (jsonFile, token) =>
+             {
+                 try
+                 {
+                     var r = await Album.DeserializeAndInitializeAlbumAsync(serializer, jsonFile.FullName, token).ConfigureAwait(false);
+                     if (r != null)
+                     {
+                         r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
+                         r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
+                         albums.Add(r);
+                     }
+                 }
+                 catch (Exception e)
+                 {
+                     Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
+                     messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
+                     jsonFile.Delete();
+                 }
+             });
             }
         }
         catch (Exception e)
@@ -352,7 +375,7 @@ public sealed class AlbumDiscoveryService(
         return new OperationResult<IEnumerable<Album>?>(messages)
         {
             Errors = errors,
-            Data = albums.Count == 0 ? null : albums.ToArray()
+            Data = albums.IsEmpty ? null : albums.ToArray()
         };
     }
 }

@@ -641,6 +641,19 @@ public static class AlbumExtensions
             }
         }
 
+        // When there are multiple images for the same type take the higher resolution image for each
+        if (imageInfos.Count > 0)
+        {
+            var bestImages = new List<ImageInfo>();
+            var imagesGroupedByType = imageInfos.GroupBy(x => x.PictureIdentifier).ToArray();
+            foreach (var groupedByType in imagesGroupedByType.Where(x => x.Count() > 1))
+            {
+                // get the best image in the group by resolution
+                bestImages.Add(groupedByType.OrderByDescending(x => x.Width * x.Height).First());
+            }
+            imageInfos = bestImages;
+        }
+        
         return imageInfos;
     }    
     
@@ -738,7 +751,20 @@ public static class AlbumExtensions
                 index++;
             }
         }
-
+        
+        // When there are multiple images for the same type take the higher resolution image for each
+        if (imageInfos.Count > 0)
+        {
+            var bestImages = new List<ImageInfo>();
+            var imagesGroupedByType = imageInfos.GroupBy(x => x.PictureIdentifier).ToArray();
+            foreach (var groupedByType in imagesGroupedByType.Where(x => x.Count() > 1))
+            {
+                // get the best image in the group by resolution
+                bestImages.Add(groupedByType.OrderByDescending(x => x.Width * x.Height).First());
+            }
+            imageInfos = bestImages;
+        }
+        
         return imageInfos;
     }    
     

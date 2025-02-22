@@ -127,7 +127,7 @@ public sealed class StatisticsService(
                 "group"));
 
             results.Add(new Statistic(StatisticType.Count,
-                "Users: Starred artists",
+                "Users: Favorited artists",
                 await scopedContext.UserArtists.CountAsync(x => x.StarredAt != null, cancellationToken)
                     .ConfigureAwait(false),
                 null,
@@ -136,7 +136,7 @@ public sealed class StatisticsService(
                 "analytics"));
 
             results.Add(new Statistic(StatisticType.Count,
-                "Users: Starred albums",
+                "Users: Favorited albums",
                 await scopedContext.UserAlbums.CountAsync(x => x.StarredAt != null, cancellationToken)
                     .ConfigureAwait(false),
                 null,
@@ -145,7 +145,7 @@ public sealed class StatisticsService(
                 "analytics"));
 
             results.Add(new Statistic(StatisticType.Count,
-                "Users: Starred songs",
+                "Users: Favorited songs",
                 await scopedContext.UserSongs.CountAsync(x => x.StarredAt != null, cancellationToken)
                     .ConfigureAwait(false),
                 null,
