@@ -225,6 +225,7 @@ public sealed class AlbumRescanEventHandler(
                         dbAlbum.SongCount = SafeParser.ToNumber<short>(dbAlbum.Songs.Count);
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                         await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
+                        artistService.ClearCache(dbAlbum.Artist);
                         albumService.ClearCache(dbAlbum);
                     }
                 }

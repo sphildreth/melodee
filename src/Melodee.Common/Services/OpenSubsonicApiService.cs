@@ -764,7 +764,7 @@ public class OpenSubsonicApiService(
                     .ToArray(),
                 SongCount = album.SongCount ?? 0,
                 SortName = album.SortName,
-                Starred = userAlbum?.LastUpdatedAt?.ToString(),
+                Starred = userAlbum?.StarredAt?.ToString(),
                 Title = album.Name,
                 UserRating = userAlbum?.Rating,
                 Year = album.ReleaseDate.Year
