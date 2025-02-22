@@ -575,6 +575,7 @@ public class LibraryInsertJob(
     private async Task<bool> ProcessArtistsAsync(IBus bus, dbModels.Library library, List<Album> melodeeAlbumsForDirectory, CancellationToken cancellationToken)
     {
         Artist? currentArtist = null;
+        Artist? lastAddedArtist = null;
 
         try
         {
@@ -595,27 +596,31 @@ public class LibraryInsertJob(
                     var dbArtist = dbArtistId == null ? null : await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistId, cancellationToken).ConfigureAwait(false);
                     if (!dbArtistResult.IsSuccess || dbArtist == null)
                     {
-                        Logger.Debug("[{JobName}] Creating new artist for NormalizedName [{Name}]",
-                            nameof(LibraryInsertJob),
-                            artist.NameNormalized);
+                        lastAddedArtist = artist;
                         var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
+                        
+                        Logger.Debug("[{JobName}] Creating new artist for NormalizedName [{Name}] with directory [{Directory}]",
+                            nameof(LibraryInsertJob),
+                            artist.NameNormalized,
+                            newArtistDirectory);
+                        
                         dbArtistsToAdd.Add(new dbModels.Artist
                         {
-                            AmgId = artist.AmgId,
+                            AmgId = artist.AmgId?.CleanStringAsIs(),
                             ApiKey = artist.Id,
                             CreatedAt = _now,
                             Directory = newArtistDirectory,
-                            DiscogsId = artist.DiscogsId,
-                            ItunesId = artist.ItunesId,
-                            LastFmId = artist.LastFmId,
+                            DiscogsId = artist.DiscogsId?.CleanStringAsIs(),
+                            ItunesId = artist.ItunesId?.CleanStringAsIs(),
+                            LastFmId = artist.LastFmId?.CleanStringAsIs(),
                             LibraryId = library.Id,
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
                             MusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId),
-                            Name = artist.Name,
+                            Name = artist.Name.CleanStringAsIs() ?? artist.Name,
                             NameNormalized = artist.NameNormalized,
-                            SortName = artist.SortName,
-                            SpotifyId = artist.SpotifyId,
-                            WikiDataId = artist.WikiDataId
+                            SortName = artist.SortName?.CleanStringAsIs() ?? artist.SortName,
+                            SpotifyId = artist.SpotifyId?.CleanStringAsIs(),
+                            WikiDataId = artist.WikiDataId?.CleanStringAsIs()
                         });
                     }
                 }
@@ -633,7 +638,7 @@ public class LibraryInsertJob(
         }
         catch (Exception e)
         {
-            Logger.Error(e, "[{JobName}] [{MethodName}] error processing artist [{Artist}]", nameof(LibraryInsertJob), nameof(ProcessArtistsAsync), currentArtist);
+            Logger.Error(e, "[{JobName}] [{MethodName}] error processing artist [{Artist}]", nameof(LibraryInsertJob), nameof(ProcessArtistsAsync), serializer.Serialize(lastAddedArtist ?? currentArtist));
         }
 
         return false;

@@ -14,6 +14,39 @@ public static class PathSanitizer
     /// </summary>
     private static readonly char[] InvalidPathChars;
 
+    private static string? ReturnCleanAscii(string? s)
+    {
+        if (s == null)
+        {
+            return null;
+        }
+        var sb = new StringBuilder(s.Length);
+        foreach (var c in s)
+        {
+            switch ((int)c)
+            {
+                // you probably don't want 127 either
+                case > 127:
+                // I bet you don't want control characters 
+                case < 32:
+                    continue;
+            }
+
+            switch (c)
+            {
+                case '%':
+                case '?':
+                    continue;
+                default:
+                    sb.Append(c);
+                    break;
+            }
+        }
+
+        
+        return sb.ToString();
+    }    
+    
     static PathSanitizer()
     {
         // set up the two arrays -- sorted once for speed.
@@ -96,6 +129,6 @@ public static class PathSanitizer
         }
 
         // we're done.
-        return result.ToString();
+        return ReturnCleanAscii(result.ToString());
     }
 }

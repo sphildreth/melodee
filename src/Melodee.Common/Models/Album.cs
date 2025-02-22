@@ -5,6 +5,7 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
 
 namespace Melodee.Common.Models;
 
@@ -98,7 +99,7 @@ public sealed record Album
                 return SortOrder.ToString();
             }
 
-            return this.ToDirectoryName();
+            return SafeParser.Hash(Directory.Name).ToString();
         }
     }
 
@@ -135,7 +136,12 @@ public sealed record Album
 
     public override string ToString()
     {
-        return $"AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+        var statusSummary = "OK";
+        if (Status != AlbumStatus.Ok)
+        {
+            statusSummary = $"{StatusReasons.ToString()}";
+        }
+        return $"\u251c { statusSummary} \u2524 AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
     public IEnumerable<MetaTag<object?>> ModifiedTags()
@@ -311,6 +317,10 @@ public sealed record Album
         {
             result.Directory = d;
         }
-        return result;
+        if (result != null)
+        {
+            result.MelodeeDataFileName = fullPathToMelodeeDataFile;
+        }
+        return result;        
     }
 }

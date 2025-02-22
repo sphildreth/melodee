@@ -711,7 +711,11 @@ public sealed class DirectoryProcessorToStagingService(
                                     _stopProcessingTriggered = true;
                                     break;
                                 }
-                            }                            
+                            }
+                            else
+                            {
+                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\ude3f Found invalid album [{albumCouldBeMagicfied}]");
+                            }
                         }
                         else
                         {

@@ -142,7 +142,7 @@ public class Mp3Files(
                                 .Select((genre, i) => new MetaTag<object?>
                                 {
                                     Identifier = MetaTagIdentifier.Genre,
-                                    Value = genre.Key,
+                                    Value = genre.Key?.ToString()?.CleanStringAsIs(),
                                     SortOrder = 5 + i
                                 }));
                             var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();

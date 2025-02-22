@@ -29,6 +29,7 @@ public class StringExtensionsTests
     [InlineData("Why ask Why?", "Why Ask Why__x3f")]
     [InlineData("?", "__x3f")]
     [InlineData("$$$", "__x24f__x24f__x24f")]
+    [InlineData("Inhaler - Open Wide (2025) Mp3 320kbps [PMEDIA] \\u2B50\\uFE0F", "Inhaler Open Wide 2025 Mp3 320kbps Pmedia U2b50ufe0f")]
     public void ValidateToFileNameFriendly(string? input, string? shouldBe) => Assert.Equal(shouldBe, input?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly());
     
     [Theory]
@@ -46,7 +47,9 @@ public class StringExtensionsTests
     [InlineData("With", "With")]
     [InlineData("Show Me \t \u0026 Wrong", "Show Me & Wrong")]
     [InlineData("Penguin Café", "Penguin Café")]
-    [InlineData("Abcdefghijklmnopqrstuvwxyz0123456789-.!?", "Abcdefghijklmnopqrstuvwxyz0123456789-.!?")]
+    [InlineData("Bob Sinclar\u0000\uFEFF", "Bob Sinclar")]
+    [InlineData("Bob Sinclar\uFEFF", "Bob Sinclar")]
+    [InlineData("Abcdefghijklmnopqrstuvwxyz0123456789-.!?", "Abcdefghijklmnopqrstuvwxyz0123456789-.!?")] 
     public void CleanString(string input, string shouldBe)
     {
         Assert.Equal(shouldBe, input.CleanString());

@@ -667,6 +667,18 @@ public class OpenSubsonicApiService(
         }
 
         var songId = ApiKeyFromId(apiKey) ?? Guid.Empty;
+        if (songId == Guid.Empty)
+        {
+            Logger.Warning("Invalid song id [{SongId}] for Request [{Request}]", apiKey, apiRequest);
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                ResponseData = authResponse.ResponseData with
+                {
+                    Error = Error.InvalidApiKeyError
+                }
+            };
+        }
         var songResponse = await songService.GetByApiKeyAsync(songId, cancellationToken);
         if (!songResponse.IsSuccess)
         {

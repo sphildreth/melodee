@@ -315,7 +315,6 @@ public static partial class StringExtensions
         {
             return input;
         }
-
         return ReplaceMultipleSpacesRegex().Replace(CleanStringReplacementRegex().Replace(result, string.Empty), " ").Trim();
     }
 
@@ -923,6 +922,7 @@ public static partial class StringExtensions
     [GeneratedRegex("␀+|\t+|\r+|\\s+|\r+|@+")]
     public static partial Regex ReplaceWithCharacter();
 
-    [GeneratedRegex(@"(\\0|\\u0+|\\x0+|\t|\r|\n|␀)", RegexOptions.IgnoreCase)]
+    //Regex.Replace(input, @"[\uFEFF\u0000-\u001F\u007F\u0080-\uFFFF]|\p{C}", string.Empty)
+    [GeneratedRegex(@"(\\0|\\u0+|\\x0+|\u0000|\uFEFF|\t|\r|\n|␀)", RegexOptions.IgnoreCase)]
     private static partial Regex CleanStringReplacementRegex();
 }
