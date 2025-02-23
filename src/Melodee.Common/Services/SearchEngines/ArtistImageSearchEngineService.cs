@@ -21,6 +21,7 @@ public class ArtistImageSearchEngineService(
     ICacheManager cacheManager,
     ISerializer serializer,
     SettingService settingService,
+    SpotifyClientBuilder spotifyClientBuilder,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IHttpClientFactory httpClientFactory)
@@ -34,7 +35,7 @@ public class ArtistImageSearchEngineService(
 
         var searchEngines = new List<IArtistImageSearchEnginePlugin>
         {
-            new Spotify(Logger, configuration, settingService)
+            new Spotify(Logger, configuration, spotifyClientBuilder, settingService)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             },

@@ -15,6 +15,7 @@ namespace Melodee.Common.Plugins.SearchEngine.Spotify;
 public class Spotify(
     ILogger logger,
     IMelodeeConfiguration configuration,
+    SpotifyClientBuilder spotifyClientBuilder,
     SettingService settingService)
     : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin, IAlbumImageSearchEnginePlugin, IArtistImageSearchEnginePlugin
 {
@@ -37,26 +38,27 @@ public class Spotify(
 
             var apiAccessToken = configuration.GetValue<string>(SettingRegistry.SearchEngineSpotifyAccessToken);
 
-            var config = SpotifyClientConfig.CreateDefault();
-
             if (string.IsNullOrWhiteSpace(apiAccessToken))
             {
                 var request = new ClientCredentialsRequest(apiClientId, apiClientSecret);
-                var response = await new OAuthClient(config).RequestToken(request, cancellationToken);
+                var response = await new OAuthClient(spotifyClientBuilder.Config).RequestToken(request, cancellationToken);
                 apiAccessToken = response.AccessToken;
                 await settingService.SetAsync(SettingRegistry.SearchEngineSpotifyAccessToken, apiAccessToken, cancellationToken);
             }
 
-            var spotify = new SpotifyClient(config.WithToken(apiAccessToken));
+            var spotify = await spotifyClientBuilder.BuildClient(apiAccessToken);
             SearchResponse? searchResult = null;
             try
             {
-                searchResult = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Album, query.Name), cancellationToken);
+                if (spotify != null)
+                {
+                    searchResult = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Album, query.Name), cancellationToken);
+                }
             }
             catch (APIUnauthorizedException)
             {
                 var request = new ClientCredentialsRequest(apiClientId, apiClientSecret);
-                var response = await new OAuthClient(config).RequestToken(request, cancellationToken);
+                var response = await new OAuthClient(spotifyClientBuilder.Config).RequestToken(request, cancellationToken);
                 apiAccessToken = response.AccessToken;
                 await settingService.SetAsync(SettingRegistry.SearchEngineSpotifyAccessToken, apiAccessToken, cancellationToken);
             }

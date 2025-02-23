@@ -179,7 +179,7 @@ public sealed class AlbumDiscoveryService(
                         var filterStatusValue = SafeParser.ToEnum<AlbumStatus>(filterBy.Value);
                         albums = albums.Where(x => x.Status == filterStatusValue).ToList();
                         break;
-
+                    
                     case "NameNormalized":
                         albums = albums.Where(x =>
                             (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(filterBy.Value.ToString() ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)) ||
@@ -211,6 +211,22 @@ public sealed class AlbumDiscoveryService(
             case "\"CreatedAt\" DESC":
                 albums = albums.OrderByDescending(x => x.Created).ToList();
                 break;            
+            
+            case "\"Duration\" ASC":
+                albums = albums.OrderBy(x => x.Duration()).ToList();
+                break;
+
+            case "\"Duration\" DESC":
+                albums = albums.OrderByDescending(x => x.Duration()).ToList();
+                break;
+            
+            case "\"NeedsAttentionReasonsValue\" ASC":
+                albums = albums.OrderBy(x => x.StatusReasons).ToList();
+                break;
+
+            case "\"NeedsAttentionReasonsValue\" DESC":
+                albums = albums.OrderByDescending(x => x.StatusReasons).ToList();
+                break;            
 
             case "\"Title\" ASC":
                 albums = albums.OrderBy(x => x.AlbumTitle()).ToList();
@@ -228,16 +244,6 @@ public sealed class AlbumDiscoveryService(
                 albums = albums.OrderByDescending(x => x.AlbumYear()).ToList();
                 break;
             
-            
-
-            case "\"Duration\" ASC":
-                albums = albums.OrderBy(x => x.Duration()).ToList();
-                break;
-
-            case "\"Duration\" DESC":
-                albums = albums.OrderByDescending(x => x.Duration()).ToList();
-                break;
-
             case "\"Status\" ASC":
                 albums = albums.OrderBy(x => x.Status).ToList();
                 break;
@@ -292,6 +298,17 @@ public sealed class AlbumDiscoveryService(
         }
         return result;
     }
+
+    public async Task<OperationResult<Dictionary<AlbumNeedsAttentionReasons, int>>> AlbumsCountByStatusAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    {
+        CheckInitialized();
+        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, new PagedRequest { PageSize = short.MaxValue}, cancellationToken);
+
+        return new OperationResult<Dictionary<AlbumNeedsAttentionReasons, int>>
+        {
+            Data = albumsForDirectoryInfo.Data.GroupBy(x => x.StatusReasons).ToDictionary(x => x.Key, x => x.Count())
+        };
+    }
     
     public async Task<PagedResult<AlbumDataInfo>> AlbumsDataInfosForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
@@ -318,7 +335,8 @@ public sealed class AlbumDiscoveryService(
         )
         {
             ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
-            MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName)
+            MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName),
+            NeedsAttentionReasons = (int)x.StatusReasons
         });
 
         var d = await Task.WhenAll(data);

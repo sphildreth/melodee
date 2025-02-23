@@ -3,12 +3,14 @@ using Melodee.Common.Data;
 using Melodee.Common.Metadata;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +20,7 @@ using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
 using Spectre.Console.Cli;
+using SpotifyAPI.Web;
 
 namespace Melodee.Cli.Command;
 
@@ -42,6 +45,7 @@ public abstract class CommandBase<T> : AsyncCommand<T> where T : Spectre.Console
             .CreateLogger();
 
         services.AddSingleton(Log.Logger);
+        services.AddHttpContextAccessor();
         services.AddSingleton<ISerializer, Serializer>();
         services.AddHttpClient();
         services.AddDbContextFactory<MelodeeDbContext>(opt =>
@@ -65,7 +69,8 @@ public abstract class CommandBase<T> : AsyncCommand<T> where T : Spectre.Console
             return configure
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         });
-
+        services.AddSingleton(SpotifyClientConfig.CreateDefault());
+        services.AddScoped<SpotifyClientBuilder>();
         services.AddScoped<AlbumDiscoveryService>();
         services.AddScoped<AlbumImageSearchEngineService>();
         services.AddScoped<ArtistSearchEngineService>();

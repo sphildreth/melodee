@@ -900,7 +900,16 @@ public static partial class StringExtensions
             Trace.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
         }
         return text;
-    }    
+    }
+
+    public static bool IsSimilar(this string? input, string? compareTo, int threshold = 2)
+    {
+        if (input == null || compareTo == null)
+        {
+            return true;
+        }
+        return Fastenshtein.Levenshtein.Distance(input.Nullify() ?? string.Empty, compareTo.Nullify() ?? string.Empty) <= threshold;
+    }
 
     public static string? ToSafeXmlString(this string? input)
     {

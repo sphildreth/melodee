@@ -368,4 +368,14 @@ public class StringExtensionsTests
     {
         Assert.Equal(shouldBe, input.TryToDetectAlbumType());
     }
+
+    [Theory]
+    [InlineData("Batman", "Robin", false)]
+    [InlineData("ARAPU", "AR-AB", false)]
+    [InlineData("Batman", "Batman", true)]
+    [InlineData("BATMAN", "BATMAN", true)]
+    [InlineData("Batman", "batman", true)]
+    [InlineData("Batman", "Batma", true)]
+    public void ValidateIsSimilar(string? one, string? two, bool shouldBe) => Assert.Equal(shouldBe, one.IsSimilar(two));
+
 }

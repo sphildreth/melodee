@@ -13,6 +13,7 @@ using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
@@ -163,6 +164,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockDbContextFactory());
     }
 
+    protected SpotifyClientBuilder MockSpotifyClientBuilder()
+    {
+        var mockFactory = new Mock<SpotifyClientBuilder>();
+        return mockFactory.Object;
+    }
 
     protected ArtistSearchEngineService GetArtistSearchEngineService()
     {
@@ -170,6 +176,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             Logger,
             CacheManager,
             MockSettingService(),
+            MockSpotifyClientBuilder(),
             MockConfigurationFactory(),
             MockFactory(),
             MockArtistSearchEngineFactory(),
@@ -200,6 +207,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockConfigurationFactory(),
             MockFactory(),
             GetMusicBrainzRepository(),
+            MockSpotifyClientBuilder(),
             MockHttpClientFactory());
     }
 

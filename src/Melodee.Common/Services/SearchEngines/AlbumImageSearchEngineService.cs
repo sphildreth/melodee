@@ -27,6 +27,7 @@ public class AlbumImageSearchEngineService(
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMusicBrainzRepository musicBrainzRepository,
+    SpotifyClientBuilder spotifyClientBuilder,
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -46,7 +47,7 @@ public class AlbumImageSearchEngineService(
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)
             },
-            new Spotify(Logger, configuration, settingService)
+            new Spotify(Logger, configuration, spotifyClientBuilder, settingService)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineSpotifyEnabled)
             },

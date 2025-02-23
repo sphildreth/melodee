@@ -1,5 +1,6 @@
 @page "/media/library/{ApiKey:guid}"
 @inherits MelodeeComponentBase
+@using J2N
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
 @using Melodee.Common.Filtering
@@ -37,7 +38,6 @@
             <RadzenMenuItem Text="Delete not Ok"  Click="DeleteNotOkSelectedButtonClick" title="Delete all not Ok status albums in library. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
             <RadzenMenuItem Text="Delete with less than 4 songs"  Click="DeleteLessThanFourSongsButtonClick" title="Delete all albums with less than 4 songs. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
             <RadzenMenuItem Text="Delete less than 10 minutes"  Click="DeleteLessThan10MinutesButtonClick" title="Delete all albums with duration less than 10 minutes. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
-
         </RadzenMenuItem>
         <RadzenMenuItem Text="Process"  Disabled="_library.IsLocked" Click="ProcessButtonClick" title="Run process job on this library." Icon="memory"></RadzenMenuItem>
         <RadzenMenuItem Text="Move Ok"  Disabled="_library.IsLocked" Click="MoveOkButtonClick" title="Move Ok media albums to Library." Icon="move_group"></RadzenMenuItem>
@@ -130,6 +130,11 @@
                         }
                     </Template>
                 </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.NeedsAttentionReasonsValue)" Filterable="false" Title="Status Reasons" Width="200px">
+                    <Template Context="data">
+                        <RadzenText Text="@data.NeedsAttentionReasonsValue.ToString()"/>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.SongCount)" Filterable="false" Title="Songs"
                                       Width="90px">
                     <Template Context="data">
@@ -192,19 +197,11 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        MainLayoutProxyService.ToggleSpinnerVisible();
-        try
+        var libraryResult = await LibraryService.GetByApiKeyAsync(ApiKey);
+        _library = libraryResult.Data!;
+        if (_grid != null)
         {
-            var libraryResult = await LibraryService.GetByApiKeyAsync(ApiKey);
-            _library = libraryResult.Data!;
-            if (_grid != null)
-            {
-                await _grid.RefreshDataAsync();
-            }
-        }
-        finally
-        {
-            MainLayoutProxyService.ToggleSpinnerVisible();
+            await _grid.RefreshDataAsync();
         }
     }
 
@@ -258,6 +255,7 @@
 
             _albums = result.Data;
             _count = SafeParser.ToNumber<int>(result.TotalCount);
+
         }
         catch (Exception e)
         {

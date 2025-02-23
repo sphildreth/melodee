@@ -610,6 +610,7 @@ public sealed class DirectoryProcessorToStagingService(
                             }
                         }
 
+                        Trace.WriteLine("Testing for album images...");
                         // If album has no images then see if ImageSearchEngine can find any
                         if (album.Images?.Count() == 0)
                         {
@@ -679,6 +680,7 @@ public sealed class DirectoryProcessorToStagingService(
 
                         var isMagicEnabled = _configuration.GetValue<bool>(SettingRegistry.MagicEnabled);
                         
+                        Trace.WriteLine("Validating album...");
                         var validationResult = _albumValidator.ValidateAlbum(album);
                         album.ValidationMessages = validationResult.Data.Messages ?? [];
                         album.Status = validationResult.Data.AlbumStatus;

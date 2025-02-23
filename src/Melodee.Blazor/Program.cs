@@ -19,6 +19,7 @@ using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
+using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
@@ -39,6 +40,7 @@ using Rebus.Transport.InMem;
 using Serilog;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
+using SpotifyAPI.Web;
 using ILogger = Serilog.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -115,6 +117,8 @@ builder.Services
         ArtistBytes = File.ReadAllBytes("wwwroot/images/artist.jpg"),
         PlaylistImageBytes = File.ReadAllBytes("wwwroot/images/playlist.jpg")
     })
+    .AddSingleton(SpotifyClientConfig.CreateDefault())
+    .AddScoped<SpotifyClientBuilder>()
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>()
     .AddSingleton<EtagRepository>()
