@@ -164,9 +164,9 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockDbContextFactory());
     }
 
-    protected SpotifyClientBuilder MockSpotifyClientBuilder()
+    protected ISpotifyClientBuilder MockSpotifyClientBuilder()
     {
-        var mockFactory = new Mock<SpotifyClientBuilder>();
+        var mockFactory = new Mock<ISpotifyClientBuilder>();
         return mockFactory.Object;
     }
 

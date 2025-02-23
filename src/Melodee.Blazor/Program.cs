@@ -118,7 +118,7 @@ builder.Services
         PlaylistImageBytes = File.ReadAllBytes("wwwroot/images/playlist.jpg")
     })
     .AddSingleton(SpotifyClientConfig.CreateDefault())
-    .AddScoped<SpotifyClientBuilder>()
+    .AddScoped<ISpotifyClientBuilder, SpotifyClientBuilder>()
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>()
     .AddSingleton<EtagRepository>()

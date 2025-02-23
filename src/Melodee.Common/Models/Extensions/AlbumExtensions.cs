@@ -408,6 +408,11 @@ public static class AlbumExtensions
 
         var albumTitle = albumTitleValue;
         var albumPathTitle = albumTitle.ToAlphanumericName(false, false).ToDirectoryNameFriendly()?.ToTitleCase(false);
+        if (albumPathTitle.Nullify() == null)
+        {
+            albumPathTitle = album.Directory.Name.Split(' ').Last().Nullify();
+            Trace.WriteLine($"Using directory name [{albumPathTitle} as Album Path Title for album [{album}]");
+        }
         if (string.IsNullOrEmpty(albumPathTitle))
         {
             throw new Exception($"Unable to determine Album Path for Album [{album}].");
@@ -651,6 +656,7 @@ public static class AlbumExtensions
                 // get the best image in the group by resolution
                 bestImages.Add(groupedByType.OrderByDescending(x => x.Width * x.Height).First());
             }
+            bestImages.AddRange(imagesGroupedByType.Where(x => x.Count() == 1).SelectMany(x => x));
             imageInfos = bestImages;
         }
         

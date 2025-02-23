@@ -70,7 +70,7 @@ public abstract class CommandBase<T> : AsyncCommand<T> where T : Spectre.Console
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         });
         services.AddSingleton(SpotifyClientConfig.CreateDefault());
-        services.AddScoped<SpotifyClientBuilder>();
+        services.AddScoped<ISpotifyClientBuilder, SpotifyClientBuilder>();
         services.AddScoped<AlbumDiscoveryService>();
         services.AddScoped<AlbumImageSearchEngineService>();
         services.AddScoped<ArtistSearchEngineService>();

@@ -92,6 +92,7 @@ public class AlbumExtensionTests : TestsBase
 
     [Theory]
     [InlineData(@"/melodee_test/inbound/00-k 2024/00-holy_truth-fire_proof-(dzb707)-web-2024.sfv", true)]
+    [InlineData(@"/melodee_test/inbound/bingo bango/i-01-Front.jpg", true)]
     [InlineData(@"/melodee_test/inbound/00-k 2024/03-holy_truth-flako_el_dark_cowboy.mp3", true)]
     [InlineData(@"/melodee_test/inbound/00-k 2024/00--fire_proof-(dzb707)-web-2024.sfv", false)]
     [InlineData(@"/melodee_test/inbound/00-k 2024/00-kittie-vultures-ep-web-2024.sfv", false)]

@@ -15,7 +15,7 @@ namespace Melodee.Common.Plugins.SearchEngine.Spotify;
 public class Spotify(
     ILogger logger,
     IMelodeeConfiguration configuration,
-    SpotifyClientBuilder spotifyClientBuilder,
+    ISpotifyClientBuilder spotifyClientBuilder,
     SettingService settingService)
     : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin, IAlbumImageSearchEnginePlugin, IArtistImageSearchEnginePlugin
 {

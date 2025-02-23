@@ -21,7 +21,7 @@ public class ArtistImageSearchEngineService(
     ICacheManager cacheManager,
     ISerializer serializer,
     SettingService settingService,
-    SpotifyClientBuilder spotifyClientBuilder,
+    ISpotifyClientBuilder spotifyClientBuilder,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IHttpClientFactory httpClientFactory)

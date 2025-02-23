@@ -33,7 +33,7 @@ public class ArtistSearchEngineService(
     ILogger logger,
     ICacheManager cacheManager,
     SettingService settingService,
-    SpotifyClientBuilder spotifyClientBuilder,
+    ISpotifyClientBuilder spotifyClientBuilder,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> melodeeDbContextFactory,
     IDbContextFactory<ArtistSearchEngineServiceDbContext> artistSearchEngineServiceDbContextFactory,

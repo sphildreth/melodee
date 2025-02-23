@@ -48,6 +48,7 @@ public static class FileSystemDirectoryInfoExtensions
                         {
                             lock (existingList)
                             {
+                                // This file is duplicate and we want to delete
                                 existingList.Add(fileInfo);
                                 return existingList;
                             }
@@ -55,6 +56,7 @@ public static class FileSystemDirectoryInfoExtensions
                 }
                 else
                 {
+                    // This is the file from the duplicates we want to keep
                     sizeGroup.TryAdd("pending", new List<FileInfo> { fileInfo });
                 }
             }

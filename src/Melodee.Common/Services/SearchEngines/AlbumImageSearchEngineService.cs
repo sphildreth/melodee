@@ -27,7 +27,7 @@ public class AlbumImageSearchEngineService(
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMusicBrainzRepository musicBrainzRepository,
-    SpotifyClientBuilder spotifyClientBuilder,
+    ISpotifyClientBuilder spotifyClientBuilder,
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {

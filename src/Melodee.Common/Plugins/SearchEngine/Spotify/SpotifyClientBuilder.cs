@@ -4,7 +4,7 @@ using SpotifyAPI.Web;
 
 namespace Melodee.Common.Plugins.SearchEngine.Spotify;
 
-public class SpotifyClientBuilder(IHttpContextAccessor httpContextAccessor, SpotifyClientConfig spotifyClientConfig)
+public class SpotifyClientBuilder(IHttpContextAccessor httpContextAccessor, SpotifyClientConfig spotifyClientConfig) : ISpotifyClientBuilder
 {
     public SpotifyClientConfig Config => spotifyClientConfig;
     

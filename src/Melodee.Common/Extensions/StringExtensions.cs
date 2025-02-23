@@ -492,11 +492,12 @@ public static partial class StringExtensions
 
         input = input.ToLower()
             .Replace("$", "__x24f")
-            .Replace("%", "__x25f");
+            .Replace("%", "__x25f")
+            .Replace("?", "__x3f")
+            .Replace("!", "__x21");
         input = WebUtility.HtmlDecode(input);
         input = input.ScrubHtml().ToLower()
-            .Replace("&", "and")
-            .Replace("?", "__x3f");
+            .Replace("&", "and");
         var arr = input.ToCharArray();
         arr = Array.FindAll(arr, c => (c == ',' && !stripCommas) || (char.IsWhiteSpace(c) && !stripSpaces) || c == separator || char.IsLetterOrDigit(c));
         input = new string(arr).RemoveDiacritics().RemoveUnicodeAccents().Transliteration();
