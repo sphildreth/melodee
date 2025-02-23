@@ -213,6 +213,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             {
                 AlbumCoverBytes = [],
                 ArtistBytes = [],
+                PlaylistImageBytes = [],
                 UserAvatarBytes = []
             },
             MockConfigurationFactory(),
@@ -230,6 +231,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetScrobbleService(),
             GetLibraryService(),
             GetArtistSearchEngineService(),
+            GetPlaylistService(),
+            Serializer,
             MockBus());
     }
 

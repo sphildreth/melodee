@@ -94,6 +94,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Path = "/storage/images/users/",
                     Type = (int)LibraryType.UserImages,
                     CreatedAt = now
+                },
+                new Library
+                {
+                    Id = 5,
+                    Name = "Playlist Data",
+                    Description = "Library where playlist data is stored.",
+                    Path = "/storage/playlists/",
+                    Type = (int)LibraryType.Playlist,
+                    CreatedAt = now
                 });
         });
 

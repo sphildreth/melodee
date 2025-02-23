@@ -10,6 +10,8 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Collection;
+using Melodee.Common.Models.Collection.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.DTO;
@@ -18,6 +20,7 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.OpenSubsonic.Searching;
 using Melodee.Common.Plugins.Conversion.Image;
+using Melodee.Common.Serialization;
 using Melodee.Common.Services.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
@@ -62,6 +65,8 @@ public class OpenSubsonicApiService(
     ScrobbleService scrobbleService,
     LibraryService libraryService,
     ArtistSearchEngineService artistSearchEngineService,
+    PlaylistService playlistService,
+    ISerializer serializer,
     IBus bus
 )
     : ServiceBase(logger, cacheManager, contextFactory)
@@ -90,6 +95,16 @@ public class OpenSubsonicApiService(
     private static bool IsApiIdForSong(string? id)
     {
         return id.Nullify() != null && (id?.StartsWith($"song{OpenSubsonicServer.ApiIdSeparator}") ?? false);
+    }
+
+    private static bool IsApiIdForPlaylist(string? id)
+    {
+        return id.Nullify() != null && (id?.StartsWith($"playlist{OpenSubsonicServer.ApiIdSeparator}") ?? false);
+    }
+
+    private static bool IsApiIdForDynamicPlaylist(string? id)
+    {
+        return id.Nullify() != null && (id?.StartsWith($"dpl{OpenSubsonicServer.ApiIdSeparator}") ?? false);
     }
 
     private static Guid? ApiKeyFromId(string? id)
@@ -145,7 +160,7 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
-        Playlist[] data = [];
+        var data = new List<Playlist>();
         var sql = string.Empty;
 
         try
@@ -161,7 +176,72 @@ public class OpenSubsonicApiService(
                     .AsSplitQuery()
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
-                data = playLists.Select(x => x.ToApiPlaylist()).ToArray();
+                data = playLists.Select(x => x.ToApiPlaylist(false)).ToList();
+
+                var isDynamicPlaylistsDisabled = (await Configuration.Value).GetValue<bool>(SettingRegistry.PlaylistDynamicPlaylistsDisabled);
+                if (!isDynamicPlaylistsDisabled)
+                {
+                    var dbConn = scopedContext.Database.GetDbConnection();
+                    var playlistLibrary = await libraryService.GetPlaylistLibraryAsync(cancellationToken).ConfigureAwait(false);
+                    var dynamicPlaylistsJsonFiles = (Path.Combine(playlistLibrary.Data.Path, "dynamic")).ToDirectoryInfo().AllFileInfos("*.json").ToArray();
+                    if (dynamicPlaylistsJsonFiles.Any())
+                    {
+                        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+                        var dynamicPlaylists = new List<DynamicPlaylist>();
+                        foreach (var dynamicPlaylistJsonFile in dynamicPlaylistsJsonFiles)
+                        {
+                            dynamicPlaylists.Add(serializer.Deserialize<DynamicPlaylist>(await File.ReadAllTextAsync(dynamicPlaylistJsonFile.FullName, cancellationToken).ConfigureAwait(false))!);
+                        }
+
+                        foreach (var dp in dynamicPlaylists.Where(x => x.IsEnabled))
+                        {
+
+                            try
+                            {
+                                if (dp.IsPublic || (dp.ForUserId != null && dp.ForUserId == authResponse.UserInfo.ApiKey))
+                                {
+                                    var dpWhere = dp.PrepareSongSelectionWhere(authResponse.UserInfo);
+                                    sql = $"""
+                                           SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
+                                                  a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
+                                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                                           FROM "Songs" s
+                                           join "Albums" a on (s."AlbumId" = a."Id")
+                                           join "Artists" ar on (a."ArtistId" = ar."Id")
+                                           left join "UserSongs" us on (s."Id" = us."SongId")
+                                           where {dpWhere}
+                                           """;
+                                    var songDataInfosForDp = (await dbConn
+                                        .QueryAsync<SongDataInfo>(sql)
+                                        .ConfigureAwait(false) ?? []).ToArray();
+                                    data.Add(new dbModels.Playlist
+                                    {
+                                        Id = 1,
+                                        IsLocked = false,
+                                        SortOrder = 0,
+                                        ApiKey = dp.Id,
+                                        CreatedAt = now,
+                                        Description = dp.Comment,
+                                        Name = dp.Name,
+                                        Comment = dp.Comment,
+                                        User = ServiceUser.Instance.Value,
+                                        IsPublic = true,
+                                        SongCount = SafeParser.ToNumber<short>(songDataInfosForDp.Count()),
+                                        Duration = songDataInfosForDp.Sum(x => x.Duration),
+                                        AllowedUserIds = authResponse.UserInfo.UserName,
+                                        Songs = []
+                                    }.ToApiPlaylist(false, true));
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.Warning(e, "[{Name}] error loading dynamic playlist [{Playlist}]", nameof(OpenSubsonicApiService), dp.Name);
+                                throw;
+                            }
+                            
+                        }
+                    }
+                }
             }
         }
         catch (Exception e)
@@ -174,7 +254,7 @@ public class OpenSubsonicApiService(
             UserInfo = authResponse.UserInfo,
             ResponseData = await DefaultApiResponse() with
             {
-                Data = data,
+                Data = data.ToArray(),
                 DataPropertyName = "playlists",
                 DataDetailPropertyName = "playlist"
             }
@@ -366,15 +446,97 @@ public class OpenSubsonicApiService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var apiKey = ApiKeyFromId(id);
-            var playlist = await scopedContext
-                .Playlists
-                .Include(x => x.User)
-                .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
-                .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
-                .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
-                .ConfigureAwait(false);
 
-            data = playlist?.ToApiPlaylist();
+            if (IsApiIdForDynamicPlaylist(id))
+            {
+                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+                var dbConn = scopedContext.Database.GetDbConnection();
+                var dynamicPlaylist = await libraryService.GetDynamicPlaylistAsync(apiKey ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
+                var dp = dynamicPlaylist.Data;
+                if (dp == null)
+                {
+                    Logger.Warning("Invalid dynamic playlist id [{Id}] for Request [{Request}]", apiKey, apiRequest);
+                    return new ResponseModel
+                    {
+                        UserInfo = BlankUserInfo,
+                        ResponseData = authResponse.ResponseData with
+                        {
+                            Error = Error.InvalidApiKeyError
+                        }
+                    };
+                }
+                var dpWhere = dp.PrepareSongSelectionWhere(authResponse.UserInfo);
+                var dpOrderBy = dp.SongSelectionOrder ?? "RANDOM()";
+                
+                // TODO is this paged somehow? I dont see anything in documentation about clients paging playlists.
+                var offset = 0;
+                var fetch = dp.SongLimit ?? 100;
+                
+                var sql = $"""
+                           SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
+                                  a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
+                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                           FROM "Songs" s
+                           join "Albums" a on (s."AlbumId" = a."Id")
+                           join "Artists" ar on (a."ArtistId" = ar."Id")
+                           left join "UserSongs" us on (s."Id" = us."SongId")
+                           where {dpWhere}
+                           order by {dpOrderBy}
+                           offset {offset} rows fetch next {fetch} rows only;
+                           """;
+                var songDataInfosForDp = (await dbConn
+                    .QueryAsync<SongDataInfo>(sql)
+                    .ConfigureAwait(false) ?? []).ToArray();
+                
+                var songs = await scopedContext
+                    .Songs
+                    .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
+                    .Include(x => x.Album).ThenInclude(x => x.Artist).ThenInclude(x => x.Library)
+                    .Where(x => songDataInfosForDp.Select(y => y.Id).Contains(x.Id))
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                var dpSongs = new List<dbModels.PlaylistSong>();
+                foreach (var songDataInfo in songDataInfosForDp.Select((x, i) => new { x, i }))
+                {
+                    var song = songs.FirstOrDefault(x => x.Id == songDataInfo.x.Id);
+                    if (song != null)
+                    {
+                        dpSongs.Add(songDataInfo.x.ToPlaylistSong(songDataInfo.i, song));
+                    }
+                }
+                data = new dbModels.Playlist
+                {
+                    Id = 1,
+                    IsLocked = false,
+                    SortOrder = 0,
+                    ApiKey = dp.Id,
+                    CreatedAt = now,
+                    Description = dp.Comment,
+                    Name = dp.Name,
+                    Comment = null,
+                    User = ServiceUser.Instance.Value,
+                    IsPublic = true,
+                    SongCount = SafeParser.ToNumber<short>(songDataInfosForDp.Count()),
+                    Duration = songDataInfosForDp.Sum(x => x.Duration),
+                    AllowedUserIds = authResponse.UserInfo.UserName,
+                    Songs = dpSongs
+                }.ToApiPlaylist(true, true);
+            }
+
+            else
+            {
+
+
+                var playlist = await scopedContext
+                    .Playlists
+                    .Include(x => x.User)
+                    .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.Album).ThenInclude(x => x.Artist)
+                    .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
+                    .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
+                    .ConfigureAwait(false);
+
+                data = playlist?.ToApiPlaylist();
+            }
         }
 
         return new ResponseModel
@@ -385,7 +547,7 @@ public class OpenSubsonicApiService(
             {
                 IsSuccess = data != null,
                 Data = data,
-                DataPropertyName = "playlist"
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "playlist"
             }
         };
     }
@@ -679,6 +841,7 @@ public class OpenSubsonicApiService(
                 }
             };
         }
+
         var songResponse = await songService.GetByApiKeyAsync(songId, cancellationToken);
         if (!songResponse.IsSuccess)
         {
@@ -918,6 +1081,8 @@ public class OpenSubsonicApiService(
             return authResponse with { UserInfo = BlankUserInfo };
         }
 
+        var isForPlaylist = IsApiIdForDynamicPlaylist(apiId) || IsApiIdForPlaylist(apiId);
+        
         var badEtag = Instant.MinValue.ToEtag();
         var sizeValue = size ?? ImageSizeRegistry.Large;
         var imageBytesAndEtag = await CacheManager.GetAsync(GenerateImageCacheKeyForApiId(apiId, sizeValue), async () =>
@@ -955,6 +1120,39 @@ public class OpenSubsonicApiService(
                         if (result == null)
                         {
                             result = defaultImages.ArtistBytes;
+                            eTag = badEtag;
+                        }
+                    }
+                    else if (IsApiIdForDynamicPlaylist(apiId))
+                    {
+                        // Dynamic playlists don't exist in the database they are created on demand from configured json files.
+                        var dynamicPlaylist = await libraryService.GetDynamicPlaylistAsync(apiKey ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
+                        var playlistImageFileInfo = new FileInfo(dynamicPlaylist.Data?.ImageFileName ?? string.Empty);
+                        if (playlistImageFileInfo.Exists)
+                        {
+                            result = await File.ReadAllBytesAsync(playlistImageFileInfo.FullName, cancellationToken).ConfigureAwait(false);
+                            eTag = playlistImageFileInfo.LastWriteTimeUtc.ToEtag();
+                        }
+                        else
+                        {
+                            result = defaultImages.PlaylistImageBytes;
+                            eTag = badEtag;
+                        }
+                    }
+                    else if (IsApiIdForPlaylist(apiId))
+                    {
+                        var playlist = await playlistService.GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+                        var playlistLibrary = await libraryService.GetPlaylistLibraryAsync(cancellationToken).ConfigureAwait(false);
+                        var playlistImageFilename = playlist.Data?.ToImageFileName(playlistLibrary.Data.Path);
+                        var playlistImageFileInfo = new FileInfo(playlistImageFilename ?? string.Empty);
+                        if (playlistImageFileInfo.Exists)
+                        {
+                            result = await File.ReadAllBytesAsync(playlistImageFileInfo.FullName, cancellationToken).ConfigureAwait(false);
+                            eTag = playlistImageFileInfo.LastWriteTimeUtc.ToEtag();
+                        }
+                        else
+                        {
+                            result = defaultImages.PlaylistImageBytes;
                             eTag = badEtag;
                         }
                     }
@@ -1019,7 +1217,7 @@ public class OpenSubsonicApiService(
                         }
                     }
 
-                    if (result != null)
+                    if (result != null && !isForPlaylist)
                     {
                         if (!string.Equals(sizeValue, ImageSizeRegistry.Large, StringComparison.OrdinalIgnoreCase))
                         {
@@ -1077,7 +1275,7 @@ public class OpenSubsonicApiService(
                 DataPropertyName = string.Empty,
                 DataDetailPropertyName = string.Empty,
                 Etag = imageBytesAndEtag.Etag,
-                ContentType = "image/jpeg"
+                ContentType = isForPlaylist ? "image/gif" : "image/jpeg"
             }
         };
     }
@@ -1197,9 +1395,10 @@ public class OpenSubsonicApiService(
     {
         if (!apiRequest.RequiresAuthentication)
         {
+            var user = apiRequest.Username == null ? null : await userService.GetByUsernameAsync(apiRequest.Username, cancellationToken).ConfigureAwait(false);
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = user?.Data?.ToUserInfo() ?? BlankUserInfo,
                 ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
             };
         }
@@ -1461,6 +1660,7 @@ public class OpenSubsonicApiService(
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty, new Error(10, "Private code is configured. User registration must be done via the server."))
             };
         }
+
         var registerResult = await userService.RegisterAsync(request.Username, request.Email, request.Password, null, cancellationToken).ConfigureAwait(false);
         var result = registerResult.IsSuccess;
         if (!result)
@@ -1729,7 +1929,7 @@ public class OpenSubsonicApiService(
         {
             return authResponse with { UserInfo = BlankUserInfo };
         }
-        
+
         long totalCount = 0;
         ArtistSearchResult[] artists;
         AlbumSearchResult[] albums;
@@ -1738,7 +1938,7 @@ public class OpenSubsonicApiService(
         // NOTE:
         // From "https://opensubsonic.netlify.app/docs/endpoints/search3/" : Servers must support an empty query and return all the data to allow clients to properly access all the media information for offline sync
         // This means that request queries when "Search3" can be empty
-        
+
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -2698,7 +2898,7 @@ public class OpenSubsonicApiService(
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var apiKey = ApiKeyFromId(id);            
+            var apiKey = ApiKeyFromId(id);
             if (IsApiIdForSong(id))
             {
                 // Some players send the first song to get an albums details. No idea why. 
@@ -2709,6 +2909,7 @@ public class OpenSubsonicApiService(
                     apiKey = songInfo?.AlbumApiKey ?? apiKey;
                 }
             }
+
             var album = await scopedContext.Albums.FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken).ConfigureAwait(false);
             if (album != null)
             {

@@ -40,7 +40,7 @@ public class ProcessInboundCommand : CommandBase<LibraryProcessSettings>
 
             var libraryService = scope.ServiceProvider.GetRequiredService<LibraryService>();
 
-            var libraryToProcess = (await libraryService.ListAsync(new PagedRequest())).Data?.FirstOrDefault(x => x.Name == settings.LibraryName);
+            var libraryToProcess = (await libraryService.ListAsync(new PagedRequest())).Data?.FirstOrDefault(x => string.Equals(x.Name, settings.LibraryName, StringComparison.OrdinalIgnoreCase));
             if (libraryToProcess == null)
             {
                 throw new Exception($"Library with name [{settings.LibraryName}] not found.");

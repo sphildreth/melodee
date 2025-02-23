@@ -12,4 +12,8 @@ public sealed record DefaultImages
     public string AlbumCoverBase64 => $"data:image/png;base64,{Convert.ToBase64String(AlbumCoverBytes)}";
 
     public string ArtistBase64 => $"data:image/png;base64,{Convert.ToBase64String(ArtistBytes)}";
+    
+    public required byte[] PlaylistImageBytes { get; init; }
+    
+    public string PlaylistImageBase64 => $"data:image/png;base64,{Convert.ToBase64String(PlaylistImageBytes)}";
 }

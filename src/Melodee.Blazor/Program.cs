@@ -112,7 +112,8 @@ builder.Services
     {
         UserAvatarBytes = File.ReadAllBytes("wwwroot/images/avatar.png"),
         AlbumCoverBytes = File.ReadAllBytes("wwwroot/images/album.jpg"),
-        ArtistBytes = File.ReadAllBytes("wwwroot/images/artist.jpg")
+        ArtistBytes = File.ReadAllBytes("wwwroot/images/artist.jpg"),
+        PlaylistImageBytes = File.ReadAllBytes("wwwroot/images/playlist.jpg")
     })
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>()

@@ -22,5 +22,10 @@ public enum LibraryType
     /// <summary>
     ///     User images library, should be 1
     /// </summary>
-    UserImages
+    UserImages,
+    
+    /// <summary>
+    ///     Holds data related to playlists including smart definitions and images, should be 1
+    /// </summary>
+    Playlist
 }

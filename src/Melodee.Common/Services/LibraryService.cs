@@ -114,6 +114,25 @@ public class LibraryService(
             Data = result
         };
     }
+    
+    public async Task<MelodeeModels.OperationResult<Library>> GetPlaylistLibraryAsync(CancellationToken cancellationToken = default)
+    {
+        const int libraryType = (int)LibraryType.Playlist;
+        var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
+        {
+            var library = await LibraryByType(libraryType, cancellationToken);
+            if (library == null)
+            {
+                throw new Exception("Playlist library not found. A Library record must be setup with a type of '5' (Playlist).");
+            }
+
+            return library;
+        }, cancellationToken).ConfigureAwait(false);
+        return new MelodeeModels.OperationResult<Library>
+        {
+            Data = result
+        };
+    }    
 
     public async Task<MelodeeModels.OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
@@ -1312,4 +1331,34 @@ public class LibraryService(
     }
 
 
+    /// <summary>
+    /// Look in the dynamic playlist directory and find the json file with the matching Id.
+    /// </summary>
+    public async Task<MelodeeModels.OperationResult<MelodeeModels.DynamicPlaylist?>> GetDynamicPlaylistAsync(Guid apiKey, CancellationToken cancellationToken)
+    {
+        Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+        
+        MelodeeModels.DynamicPlaylist? result = null;
+        
+        var playlistLibrary = await GetPlaylistLibraryAsync(cancellationToken).ConfigureAwait(false);
+        var dynamicPlaylistsJsonFiles = (Path.Combine(playlistLibrary.Data.Path, "dynamic")).ToDirectoryInfo().AllFileInfos("*.json").ToArray();
+
+        foreach (var dynamicPlaylistsJsonFile in dynamicPlaylistsJsonFiles)
+        { 
+            var dp = serializer.Deserialize<MelodeeModels.DynamicPlaylist>(await File.ReadAllBytesAsync(dynamicPlaylistsJsonFile.FullName, cancellationToken).ConfigureAwait(false));
+            if (dp?.Id == apiKey)
+            {
+                result = dp;
+                break;
+            }
+        }
+        if (result != null)
+        {
+            result.ImageFileName = Path.Combine(playlistLibrary.Data.Path, "images", $"{result.Id.ToString()}.gif");
+        }
+        return new MelodeeModels.OperationResult<MelodeeModels.DynamicPlaylist?>
+        {
+            Data = result
+        };
+    }
 }

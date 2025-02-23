@@ -67,21 +67,23 @@ public record Playlist : IOpenSubsonicToXml
 
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<playlist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" comment=\"{Comment.ToSafeXmlString()}\" owner=\"{Owner}\" public=\"{Public.ToLowerCaseString()}\" songCount=\"{SongCount}\" duration=\"{Duration}\" created=\"{Created}\" coverArt=\"{CoverArt}\"");
+        var result = new StringBuilder($"<playlist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" comment=\"{Comment.ToSafeXmlString()}\" owner=\"{Owner}\" public=\"{Public.ToLowerCaseString()}\" songCount=\"{SongCount}\" duration=\"{Duration}\" created=\"{Created}\" coverArt=\"{CoverArt}\">");
         if (AllowedUsers != null)
         {
-            result.Append('>');
             foreach (var allowedUser in AllowedUsers)
             {
                 result.Append($"<allowedUser>{allowedUser.ToSafeXmlString()}</allowedUser>");
             }
+        }
 
-            result.Append("/playlist");
-        }
-        else
+        if (Entry != null)
         {
-            result.Append("/>");
+            foreach (var song in Entry ?? [])
+            {
+                result.Append(song.ToXml("entry"));
+            }
         }
+        result.Append("</playlist>");
 
         return result.ToString();
     }

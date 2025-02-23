@@ -9,6 +9,10 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(UserId), nameof(Name), IsUnique = true)]
 public class Playlist : DataModelBase
 {
+    public const string DynamicPlaylistDirectoryName = "dynamic";
+    
+    public const string ImagesDirectoryName = "images";
+    
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Name { get; set; }
@@ -30,12 +34,7 @@ public class Playlist : DataModelBase
     public double Duration { get; set; }
 
     /// <summary>
-    ///     This is true when there is a custom image for the playlist, otherwise serve the default playlist image.
-    /// </summary>
-    public bool HasCustomImage { get; set; }
-
-    /// <summary>
-    ///     Pipe seperated list. Example 'terrible|sexy|Songs about Love'
+    ///     Pipe seperated list. 
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? AllowedUserIds { get; set; }

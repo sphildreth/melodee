@@ -20,6 +20,16 @@ public class PlaylistService(
     private const string CacheKeyDetailByApiKeyTemplate = "urn:playlist:apikey:{0}";
     private const string CacheKeyDetailTemplate = "urn:playlist:{0}";
     
+    public async Task ClearCacheAsync(int playlistId, CancellationToken cancellationToken = default)
+    {
+        var playlist = await GetAsync(playlistId, cancellationToken).ConfigureAwait(false);
+        if (playlist.Data != null)
+        {
+            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(playlist.Data.ApiKey));
+            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(playlist.Data.Id));
+        }
+    }    
+    
     public async Task<MelodeeModels.PagedResult<Playlist>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int playlistCount;
@@ -49,6 +59,31 @@ public class PlaylistService(
             Data = playlists
         };
     }
+    
+    public async Task<MelodeeModels.OperationResult<Playlist?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+
+        var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var dbConn = scopedContext.Database.GetDbConnection();
+                return await dbConn
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Playlists\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
+                    .ConfigureAwait(false);
+            }
+        }, cancellationToken);
+        if (id == null)
+        {
+            return new MelodeeModels.OperationResult<Playlist?>("Unknown playlist.")
+            {
+                Data = null
+            };
+        }
+
+        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
+    }    
     
     public async Task<MelodeeModels.OperationResult<Playlist?>> GetAsync(int id, CancellationToken cancellationToken = default)
     {
