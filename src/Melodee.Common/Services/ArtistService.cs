@@ -306,6 +306,14 @@ public class ArtistService(
                     Directory.Delete(artistDirectory, true);
                 }
 
+                var artistContributors = await scopedContext.Contributors.Where(x => x.ArtistId == artistId).ToListAsync(cancellationToken).ConfigureAwait(false);
+                if (artistContributors.Count > 0)
+                {
+                    foreach (var artistContributor in artistContributors)
+                    {
+                        scopedContext.Contributors.Remove(artistContributor);
+                    }
+                }
                 scopedContext.Artists.Remove(artist);
                 libraryIds.Add(artist.LibraryId);
             }
@@ -600,28 +608,36 @@ public class ArtistService(
 
                 foreach (var albumToMerge in dbArtist.Albums)
                 {
-                    var albumToMergeDirectory = Path.Combine(dbArtist.Library.Path, dbArtist.Directory, albumToMerge.Directory);
-                    var albumToMergeNewDirectory = Path.Combine(dbArtistToMergeInto.Library.Path, dbArtistToMergeInto.Directory, albumToMerge.Directory);
-                    if (Directory.Exists(albumToMergeDirectory) && !Directory.Exists(albumToMergeNewDirectory))
+
+                    try
                     {
-                        albumToMergeDirectory.ToDirectoryInfo().MoveToDirectory(albumToMergeNewDirectory);
-                    }
-                    else if (Directory.Exists(albumToMergeNewDirectory))
-                    {
-                        var albumJsonFiles = Directory.GetFiles(albumToMergeNewDirectory, MelodeeModels.Album.JsonFileName, SearchOption.TopDirectoryOnly);
-                        if (albumJsonFiles.Length > 0)
+                        var albumToMergeDirectory = Path.Combine(dbArtist.Library.Path, dbArtist.Directory, albumToMerge.Directory);
+                        var albumToMergeNewDirectory = Path.Combine(dbArtistToMergeInto.Library.Path, dbArtistToMergeInto.Directory, albumToMerge.Directory);
+                        if (Directory.Exists(albumToMergeDirectory) && !Directory.Exists(albumToMergeNewDirectory))
                         {
-                            var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumJsonFiles[0], cancellationToken).ConfigureAwait(false);
-                            if (album != null)
+                            albumToMergeDirectory.ToDirectoryInfo().MoveToDirectory(albumToMergeNewDirectory);
+                        }
+                        else if (Directory.Exists(albumToMergeNewDirectory))
+                        {
+                            var albumJsonFiles = Directory.GetFiles(albumToMergeNewDirectory, MelodeeModels.Album.JsonFileName, SearchOption.TopDirectoryOnly);
+                            if (albumJsonFiles.Length > 0)
                             {
-                                await ProcessExistingDirectoryMoveMergeAsync(configuration, serializer, album, albumToMergeDirectory, cancellationToken).ConfigureAwait(false);
+                                var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumJsonFiles[0], cancellationToken).ConfigureAwait(false);
+                                if (album != null)
+                                {
+                                    await ProcessExistingDirectoryMoveMergeAsync(configuration, serializer, album, albumToMergeDirectory, cancellationToken).ConfigureAwait(false);
+                                }
                             }
                         }
-                    }
 
-                    albumToMerge.Directory = albumToMergeNewDirectory;
-                    albumToMerge.ArtistId = dbArtistToMergeInto.Id;
-                    albumToMerge.LastUpdatedAt = now;
+                        albumToMerge.Directory = albumToMergeNewDirectory;
+                        albumToMerge.ArtistId = dbArtistToMergeInto.Id;
+                        albumToMerge.LastUpdatedAt = now;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e, "Error attempting to merge album [{Album}] into artist [{Artist}]", albumToMerge.Directory, dbArtistToMergeInto.Name);
+                    }
                 }
 
                 foreach (var userArtistToMerge in dbArtist.UserArtists)
