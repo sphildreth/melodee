@@ -85,8 +85,10 @@ public static class ArtistExtensions
         return artistName.Nullify() != null && CastRecordingArtistOrAlbumTitleParseRegex.IsMatch(artistName);
     }
 
-    public static long? ArtistUniqueId(this Artist artist) 
-        => SafeParser.Hash(artist.Name?.ToString());
+    public static long? ArtistUniqueId(this Artist artist)
+    {
+        return SafeParser.Hash(artist.Name?.ToString());
+    }
 
     public static bool IsVariousArtist(this Artist artist)
     {
@@ -113,12 +115,12 @@ public static class ArtistExtensions
         }
 
         var artistDirectoryId = artist.ArtistDbId?.ToString() ??
-                                   artist.SearchEngineResultUniqueId?.ToString();
+                                artist.SearchEngineResultUniqueId?.ToString();
 
         if (artistDirectoryId == null)
         {
             artistDirectoryId = SafeParser.Hash(artist.MusicBrainzId?.ToString() ??
-                                             artist.SpotifyId ?? throw new Exception("Neither ArtistDbId, SearchEngineResultUniqueId, MusicBrainzId or SpotifyId is set.")).ToString();
+                                                artist.SpotifyId ?? throw new Exception("Neither ArtistDbId, SearchEngineResultUniqueId, MusicBrainzId or SpotifyId is set.")).ToString();
         }
 
         var artistDirectory = artistNameToUse.ToAlphanumericName(false, false).ToDirectoryNameFriendly()?.ToTitleCase(false);

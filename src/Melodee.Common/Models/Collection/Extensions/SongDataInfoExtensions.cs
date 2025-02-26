@@ -5,12 +5,11 @@ namespace Melodee.Common.Models.Collection.Extensions;
 
 public static class SongDataInfoExtensions
 {
-       
     public static string AlbumDetailUrl(this SongDataInfo songDataInfo)
     {
         return $"/data/album/{songDataInfo.AlbumApiKey}";
-    }        
-    
+    }
+
     public static string ImageUrl(this SongDataInfo songDataInfo, int? size = null)
     {
         return $"/images/{songDataInfo.ToApiKey()}/{size ?? 80}";
@@ -32,5 +31,4 @@ public static class SongDataInfoExtensions
             PlaylistOrder = playlistOrder
         };
     }
-    
 }

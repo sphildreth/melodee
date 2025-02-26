@@ -41,7 +41,7 @@ public record Query
     public Guid? MusicBrainzIdValue => SafeParser.ToGuid(MusicBrainzId);
 
     public string? MusicBrainzId { get; init; }
-    
+
     public string? SpotifyId { get; init; }
 
     public string Country { get; init; } = "US";

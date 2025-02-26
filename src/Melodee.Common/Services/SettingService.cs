@@ -26,7 +26,7 @@ public class SettingService : ServiceBase
     /// <summary>
     /// This is required for Mocking in unit tests.
     /// </summary>
-    public SettingService() 
+    public SettingService()
     {
     }
 

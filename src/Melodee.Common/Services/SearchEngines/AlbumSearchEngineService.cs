@@ -25,24 +25,23 @@ public class AlbumSearchEngineService(
     ArtistSearchEngineService artistSearchEngineService)
     : ServiceBase(logger, cacheManager, melodeeDbContextFactory)
 {
-
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private bool _initialized;
-    
+
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken cancellationToken = default)
     {
         _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
         await artistSearchEngineService.InitializeAsync(_configuration, cancellationToken);
         _initialized = true;
     }
-    
+
     private void CheckInitialized()
     {
         if (!_initialized)
         {
             throw new InvalidOperationException($"{nameof(AlbumSearchEngineService)} is not initialized.");
         }
-    }    
+    }
 
     public async Task<PagedResult<AlbumSearchResult>> DoSearchAsync(AlbumQuery query, int? maxResults, CancellationToken cancellationToken = default)
     {
@@ -51,7 +50,7 @@ public class AlbumSearchEngineService(
         {
             var result = new List<AlbumSearchResult>();
             var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
-            int totalCount = 0;
+            var totalCount = 0;
             long operationTime = 0;
 
             // Search for artist then return all albums for artist rank against name match

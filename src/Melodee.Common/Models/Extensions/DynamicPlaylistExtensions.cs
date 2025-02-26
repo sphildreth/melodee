@@ -10,6 +10,7 @@ public static class DynamicPlaylistExtensions
         {
             return null;
         }
+
         return dynamicPlaylist.SongSelectionWhere.Replace("%userId%", user.Id.ToString());
     }
 }

@@ -315,6 +315,7 @@ public static partial class StringExtensions
         {
             return input;
         }
+
         return ReplaceMultipleSpacesRegex().Replace(CleanStringReplacementRegex().Replace(result, string.Empty), " ").Trim();
     }
 
@@ -335,21 +336,23 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         return new string(input.Where(char.IsDigit).ToArray());
     }
-    
+
     public static string? RemoveNumbers(this string? input)
     {
         if (string.IsNullOrEmpty(input))
         {
             return null;
         }
-        return string.Join(" ", 
+
+        return string.Join(" ",
             input.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                 .Select(word => new string(word.Where(c => !char.IsDigit(c)).ToArray()))
                 .Where(word => !string.IsNullOrWhiteSpace(word)));
     }
-    
+
 
     public static int? ExtractNumber(this string? input)
     {
@@ -357,21 +360,22 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         var numbers = new string(input.Where(char.IsDigit).ToArray());
-        return int.TryParse(numbers, out int result) ? result : null;
+        return int.TryParse(numbers, out var result) ? result : null;
     }
-    
+
     public static string? ExtractLetters(this string? input)
     {
         if (string.IsNullOrEmpty(input))
         {
             return null;
         }
+
         return new string(input.ToLower()
             .Where(c => c is >= 'a' and <= 'z')
             .ToArray());
     }
-    
 
 
     /// <summary>
@@ -807,7 +811,7 @@ public static partial class StringExtensions
 
         return Encoding.UTF8.GetString(bytes);
     }
-    
+
     public static string ReplaceNonCharacters(this string aString, char replacement)
     {
         var sb = new StringBuilder(aString.Length);
@@ -828,7 +832,7 @@ public static partial class StringExtensions
             }
             else
             {
-                char c = aString[i];
+                var c = aString[i];
                 if (IsCharacter(c))
                 {
                     sb.Append(c);
@@ -839,17 +843,18 @@ public static partial class StringExtensions
                 }
             }
         }
+
         return sb.ToString();
     }
 
     public static bool IsCharacter(int point)
     {
         return point < 0xFDD0 || // everything below here is fine
-               point > 0xFDEF &&    // exclude the 0xFFD0...0xFDEF non-characters
-               (point & 0xfffE) != 0xFFFE; // exclude all other non-characters
-    }  
-    
-    
+               (point > 0xFDEF && // exclude the 0xFFD0...0xFDEF non-characters
+                (point & 0xfffE) != 0xFFFE); // exclude all other non-characters
+    }
+
+
     /// <summary>
     /// Removes diacritics (accents) from a string.
     /// </summary>
@@ -865,7 +870,7 @@ public static partial class StringExtensions
         var originalText = text;
 
         text = text.ReplaceNonCharacters(' ');
-        
+
         // Normalize the string to decompose characters into their base form and combining characters
         try
         {
@@ -876,11 +881,11 @@ public static partial class StringExtensions
             Trace.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
         }
 
-        
+
         // Create a StringBuilder to store the result
         var result = new StringBuilder();
 
-        foreach (char c in text)
+        foreach (var c in text)
         {
             // Check if the character is a non-spacing mark (accent)
             if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
@@ -900,6 +905,7 @@ public static partial class StringExtensions
             text = invalidCharactersRegex.Replace(text, "");
             Trace.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
         }
+
         return text;
     }
 
@@ -909,6 +915,7 @@ public static partial class StringExtensions
         {
             return true;
         }
+
         return Fastenshtein.Levenshtein.Distance(input.Nullify() ?? string.Empty, compareTo.Nullify() ?? string.Empty) <= threshold;
     }
 

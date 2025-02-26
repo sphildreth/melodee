@@ -76,7 +76,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
                     Data = fileSystemInfo
                 };
             }
-            
+
 
             var larger = imageInfo.Width;
             if (larger < smallImageSize)

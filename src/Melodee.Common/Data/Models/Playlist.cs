@@ -10,9 +10,9 @@ namespace Melodee.Common.Data.Models;
 public class Playlist : DataModelBase
 {
     public const string DynamicPlaylistDirectoryName = "dynamic";
-    
+
     public const string ImagesDirectoryName = "images";
-    
+
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string Name { get; set; }

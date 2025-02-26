@@ -213,7 +213,6 @@ public sealed class AtlMetaTag(
                     }
 
 
-                    
                     if (fileAtl.EmbeddedPictures.Any() && SafeParser.ToBoolean(Configuration[SettingRegistry.ImagingDoLoadEmbeddedImages]))
                     {
                         try
@@ -240,10 +239,12 @@ public sealed class AtlMetaTag(
                                         var exitingImageInfo = await Image.IdentifyAsync(newImageFileName, cancellationToken);
                                         doSaveEmbeddedImage = embeddedPictureDataInfo?.Width > exitingImageInfo?.Width;
                                     }
-                                    if(doSaveEmbeddedImage)
+
+                                    if (doSaveEmbeddedImage)
                                     {
-                                        await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken).ConfigureAwait(false);                                        
+                                        await File.WriteAllBytesAsync(newImageFileName, embeddedPicture.PictureData, cancellationToken).ConfigureAwait(false);
                                     }
+
                                     var newImageFileInfo = new FileInfo(newImageFileName).ToFileSystemInfo();
                                     newImageFileInfo = (await imageConverter.ProcessFileAsync(directoryInfo, newImageFileInfo, cancellationToken).ConfigureAwait(false)).Data;
                                     if ((await imageValidator.ValidateImage(newImageFileInfo.ToFileInfo(directoryInfo), pictureIdentifier, cancellationToken).ConfigureAwait(false)).Data.IsValid)
@@ -679,6 +680,7 @@ public sealed class AtlMetaTag(
                 }
             }
         }
+
         return new OperationResult<string[]>
         {
             Data = result.ToArray()

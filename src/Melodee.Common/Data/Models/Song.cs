@@ -16,7 +16,7 @@ namespace Melodee.Common.Data.Models;
 public class Song : MetaDataModelBase
 {
     public Album Album { get; set; } = null!;
-    
+
     [RequiredGreaterThanZero] public int AlbumId { get; set; }
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
@@ -88,7 +88,8 @@ public class Song : MetaDataModelBase
     /// <summary>
     /// The length of the song in milliseconds
     /// </summary>
-    [RequiredGreaterThanZero] public required double Duration { get; set; }
+    [RequiredGreaterThanZero]
+    public required double Duration { get; set; }
 
     [RequiredGreaterThanZero] public required int SamplingRate { get; set; }
 

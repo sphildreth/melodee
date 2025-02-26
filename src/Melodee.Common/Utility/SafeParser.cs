@@ -365,6 +365,7 @@ public static class SafeParser
         {
             return null;
         }
+
         input = input
             .Replace("$", "__x24f")
             .Replace("%", "__x25f")

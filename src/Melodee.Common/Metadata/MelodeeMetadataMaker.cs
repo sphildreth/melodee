@@ -46,7 +46,7 @@ public class MelodeeMetadataMaker(
                 Data = null
             };
         }
-        
+
         var isFound = directoryInfo.AllMediaTypeFileInfos().Any();
         if (isFound && doCreateOnlyIfMissing)
         {
@@ -55,9 +55,9 @@ public class MelodeeMetadataMaker(
                 Data = null
             };
         }
-        
+
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
-        
+
         await artistSearchEngineService.InitializeAsync(configuration, cancellationToken).ConfigureAwait(false);
         await mediaEditService.InitializeAsync(configuration, cancellationToken).ConfigureAwait(false);
 
@@ -265,7 +265,7 @@ public class MelodeeMetadataMaker(
                 }
                 else
                 {
-                 Log.Warning("[{Name}] No result from album search engine for album [{albumImageSearchRequest}]", nameof(MelodeeMetadataMaker), albumImageSearchRequest);
+                    Log.Warning("[{Name}] No result from album search engine for album [{albumImageSearchRequest}]", nameof(MelodeeMetadataMaker), albumImageSearchRequest);
                 }
             }
         }
@@ -292,8 +292,8 @@ public class MelodeeMetadataMaker(
 
         if (album?.IsValid ?? false)
         {
-            logger.Information("[{Name}] \ud83d\udc4d created valid melodee metadata album file [{Filename}]", 
-                nameof(MelodeeMetadataMaker), 
+            logger.Information("[{Name}] \ud83d\udc4d created valid melodee metadata album file [{Filename}]",
+                nameof(MelodeeMetadataMaker),
                 Path.Combine(directoryInfo.FullName(), jsonName));
         }
 
@@ -302,5 +302,4 @@ public class MelodeeMetadataMaker(
             Data = album
         };
     }
-
 }

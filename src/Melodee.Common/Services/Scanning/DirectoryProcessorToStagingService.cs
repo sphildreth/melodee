@@ -79,9 +79,9 @@ public sealed class DirectoryProcessorToStagingService(
     private ISongPlugin[] _songPlugins = [];
 
     private ISongFileUpdatePlugin _songFileUpdatePlugin = null!;
-    
+
     private IAlbumNamesInDirectoryPlugin _albumNamesInDirectoryPlugin = null!;
-    
+
     private bool _stopProcessingTriggered;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
@@ -106,7 +106,7 @@ public sealed class DirectoryProcessorToStagingService(
         ];
         _songFileUpdatePlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
         _albumNamesInDirectoryPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
-        
+
         _conversionPlugins =
         [
             new ImageConvertor(_configuration),
@@ -267,7 +267,7 @@ public sealed class DirectoryProcessorToStagingService(
         var httpClient = httpClientFactory.CreateClient();
 
         var dontDeleteExistingMelodeeFiles = _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
-        
+
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
             Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
@@ -281,6 +281,7 @@ public sealed class DirectoryProcessorToStagingService(
                         {
                             break;
                         }
+
                         existingMelodeeFile.Delete();
                     }
                 }
@@ -420,7 +421,7 @@ public sealed class DirectoryProcessorToStagingService(
                     try
                     {
                         album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _imageConvertor, _imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
-                        
+
                         album.Artist = new Artist(album.Artist.Name,
                             album.Artist.NameNormalized,
                             album.Artist.SortName,
@@ -429,7 +430,7 @@ public sealed class DirectoryProcessorToStagingService(
                                     _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
                                     cancellationToken)
                                 .ConfigureAwait(false)).ToArray());
-                        
+
                         if (album.IsSoundTrackTypeAlbum() && album.Songs != null)
                         {
                             // If the album has different artists and is soundtrack then ensure artist is set to special VariousArtists
@@ -475,6 +476,7 @@ public sealed class DirectoryProcessorToStagingService(
                                 Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);
                                 continue;
                             }
+
                             var newImageFileName = Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
                             if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                             {
@@ -504,6 +506,7 @@ public sealed class DirectoryProcessorToStagingService(
                                     {
                                         continue;
                                     }
+
                                     var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(), song.ToSongFileName(albumDirectorySystemInfo));
                                     if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
                                     {
@@ -519,6 +522,7 @@ public sealed class DirectoryProcessorToStagingService(
                                                 Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
                                             }
                                         }
+
                                         song.File.Name = Path.GetFileName(newSongFileName);
                                     }
                                 }
@@ -638,11 +642,11 @@ public sealed class DirectoryProcessorToStagingService(
                                     album.Artist.LastFmId ??= imageSearchResult.ArtistLastFmId;
                                     album.Artist.SpotifyId ??= imageSearchResult.ArtistSpotifyId;
                                     album.Artist.WikiDataId ??= imageSearchResult.ArtistWikiDataId;
-                                    
+
                                     if (!album.HasValidAlbumYear(_configuration.Configuration) && imageSearchResult.ReleaseDate != null)
                                     {
                                         album.SetTagValue(MetaTagIdentifier.RecordingYear, imageSearchResult.ReleaseDate.ToString());
-                                    }                                    
+                                    }
 
                                     var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(), albumDirectorySystemInfo.GetNextFileNameForType(Data.Models.Album.FrontImageType).Item1);
                                     if (await httpClient.DownloadFileAsync(
@@ -675,11 +679,11 @@ public sealed class DirectoryProcessorToStagingService(
                                 }
                             }
                         }
-                        
+
                         album.RenumberImages();
 
                         var isMagicEnabled = _configuration.GetValue<bool>(SettingRegistry.MagicEnabled);
-                        
+
                         Trace.WriteLine("Validating album...");
                         var validationResult = _albumValidator.ValidateAlbum(album);
                         album.ValidationMessages = validationResult.Data.Messages ?? [];
@@ -691,18 +695,19 @@ public sealed class DirectoryProcessorToStagingService(
                         if (jsonName.Nullify() != null)
                         {
                             await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), serialized, cancellationToken).ConfigureAwait(false);
-                            
+
                             artistsIdsSeen.Add(album.Artist.ArtistUniqueId());
                             artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId()) ?? []);
                             albumsIdsSeen.Add(album.ArtistAlbumUniqueId());
-                            songsIdsSeen.AddRange(album.Songs?.Select(x => x.Id) ?? []);                            
-                            
+                            songsIdsSeen.AddRange(album.Songs?.Select(x => x.Id) ?? []);
+
                             var albumCouldBeMagicfied = album;
                             if (isMagicEnabled)
                             {
                                 await mediaEditService.DoMagic(album, cancellationToken).ConfigureAwait(false);
                                 albumCouldBeMagicfied = await Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), cancellationToken).ConfigureAwait(false) ?? album;
                             }
+
                             if (albumCouldBeMagicfied.IsValid)
                             {
                                 numberOfValidAlbumsProcessed++;
@@ -723,6 +728,7 @@ public sealed class DirectoryProcessorToStagingService(
                         {
                             processingMessages.Add($"Unable to determine JsonName for Album [{album}]");
                         }
+
                         numberOfAlbumsProcessed++;
                     }
                     catch (Exception e)

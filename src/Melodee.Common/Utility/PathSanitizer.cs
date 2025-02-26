@@ -20,6 +20,7 @@ public static class PathSanitizer
         {
             return null;
         }
+
         var sb = new StringBuilder(s.Length);
         foreach (var c in s)
         {
@@ -43,10 +44,10 @@ public static class PathSanitizer
             }
         }
 
-        
+
         return sb.ToString();
-    }    
-    
+    }
+
     static PathSanitizer()
     {
         // set up the two arrays -- sorted once for speed.

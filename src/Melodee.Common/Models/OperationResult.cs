@@ -116,6 +116,4 @@ public record OperationResult<T>
             _messages.Add(message);
         }
     }
-
-
 }

@@ -73,12 +73,12 @@ public sealed class AlbumRescanEventHandler(
                         logger.Warning("[{Name}] Album directory [{AlbumDir}] does not exist. Deleted album.", nameof(AlbumRescanEventHandler), message.AlbumDirectory);
                         return;
                     }
-                    
+
                     var processResult = await melodeeMetadataMaker.MakeMetadataFileAsync(message.AlbumDirectory, false, cancellationToken).ConfigureAwait(false);
                     if (!processResult.IsSuccess)
                     {
                         logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}].", nameof(AlbumRescanEventHandler), message.AlbumDirectory);
-                    }                    
+                    }
 
                     var dbUpdatesDone = false;
 
@@ -199,7 +199,7 @@ public sealed class AlbumRescanEventHandler(
                                     dbAlbum.Name);
                                 return;
                             }
-                            
+
                             dbAlbum.Songs.Add(dbSong);
                             logger.Information("[{Name}] Adding song [{SongName}] to album [{AlbumName}].",
                                 nameof(AlbumRescanEventHandler),
@@ -217,6 +217,7 @@ public sealed class AlbumRescanEventHandler(
                         {
                             dbAlbum.LastUpdatedAt = now;
                         }
+
                         dbUpdatesDone = true;
                     }
 

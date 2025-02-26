@@ -181,7 +181,7 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                             Log.Error(e, "Unable to merge existing album [{StagingAlbumDataName}]", stagingAlbumDataName);
                         }
                     }
-                    
+
                     var validationResult = albumValidator.ValidateAlbum(sfvAlbum);
                     sfvAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
                     sfvAlbum.Status = validationResult.Data.AlbumStatus;
@@ -195,9 +195,9 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]", 
-                        DisplayName, 
-                        sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration), 
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
+                        DisplayName,
+                        sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration),
                         sfvAlbum.Status.ToString(),
                         sfvAlbum.StatusReasons.ToString());
                     processedFiles++;

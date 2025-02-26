@@ -57,7 +57,7 @@ public class SQLiteMusicBrainzRepository(
         var data = new List<ArtistSearchResult>();
 
         var maxLuceneResults = 10;
-        int totalCount = 0;
+        var totalCount = 0;
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
         var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath) ?? throw new InvalidOperationException($"Invalid setting for [{SettingRegistry.SearchEngineMusicBrainzStoragePath}]");
@@ -134,7 +134,7 @@ public class SQLiteMusicBrainzRepository(
                               WHERE ar.MusicBrainzArtistId = '{0}'
                               AND a.DoIncludeInArtistSearch = 1
                               """;
-                        
+
                         var artistAlbums = db.Query<Album>(sql.FormatSmart(artist.MusicBrainzArtistId)).ToArray();
                         if (artistAlbums.Length > 0)
                         {
@@ -145,6 +145,7 @@ public class SQLiteMusicBrainzRepository(
                                 var firstInGroup = group.OrderBy(x => x.ReleaseDate).First();
                                 newArtistAlbums.Add(firstInGroup);
                             }
+
                             artistAlbums = newArtistAlbums.ToArray();
                         }
 

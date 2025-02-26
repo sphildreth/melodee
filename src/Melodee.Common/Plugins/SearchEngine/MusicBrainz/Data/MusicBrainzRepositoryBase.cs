@@ -53,6 +53,7 @@ public abstract class MusicBrainzRepositoryBase(ILogger logger, IMelodeeConfigur
         {
             return [];
         }
+
         var result = new ConcurrentBag<T>();
         Parallel.ForEach(File.ReadLines(file), lineFromFile =>
         {

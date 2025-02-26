@@ -179,7 +179,7 @@ public sealed class AlbumDiscoveryService(
                         var filterStatusValue = SafeParser.ToEnum<AlbumStatus>(filterBy.Value);
                         albums = albums.Where(x => x.Status == filterStatusValue).ToList();
                         break;
-                    
+
                     case "NameNormalized":
                         albums = albums.Where(x =>
                             (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(filterBy.Value.ToString() ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)) ||
@@ -203,15 +203,15 @@ public sealed class AlbumDiscoveryService(
             case "\"Artist\" DESC":
                 albums = albums.OrderByDescending(x => x.Artist.SortName).ToList();
                 break;
-            
+
             case "\"CreatedAt\" ASC":
                 albums = albums.OrderBy(x => x.Created).ToList();
                 break;
 
             case "\"CreatedAt\" DESC":
                 albums = albums.OrderByDescending(x => x.Created).ToList();
-                break;            
-            
+                break;
+
             case "\"Duration\" ASC":
                 albums = albums.OrderBy(x => x.Duration()).ToList();
                 break;
@@ -219,14 +219,14 @@ public sealed class AlbumDiscoveryService(
             case "\"Duration\" DESC":
                 albums = albums.OrderByDescending(x => x.Duration()).ToList();
                 break;
-            
+
             case "\"NeedsAttentionReasonsValue\" ASC":
                 albums = albums.OrderBy(x => x.StatusReasons).ToList();
                 break;
 
             case "\"NeedsAttentionReasonsValue\" DESC":
                 albums = albums.OrderByDescending(x => x.StatusReasons).ToList();
-                break;            
+                break;
 
             case "\"Title\" ASC":
                 albums = albums.OrderBy(x => x.AlbumTitle()).ToList();
@@ -243,7 +243,7 @@ public sealed class AlbumDiscoveryService(
             case "\"Year\" DESC":
                 albums = albums.OrderByDescending(x => x.AlbumYear()).ToList();
                 break;
-            
+
             case "\"Status\" ASC":
                 albums = albums.OrderBy(x => x.Status).ToList();
                 break;
@@ -287,29 +287,32 @@ public sealed class AlbumDiscoveryService(
                 {
                     continue;
                 }
+
                 var fileInfo = new FileInfo(album.MelodeeDataFileName ?? string.Empty);
                 if (fileInfo.DirectoryName == null)
                 {
                     continue;
                 }
+
                 Directory.Delete(fileInfo.DirectoryName, true);
                 result = true;
             }
         }
+
         return result;
     }
 
     public async Task<OperationResult<Dictionary<AlbumNeedsAttentionReasons, int>>> AlbumsCountByStatusAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, new PagedRequest { PageSize = short.MaxValue}, cancellationToken);
+        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
 
         return new OperationResult<Dictionary<AlbumNeedsAttentionReasons, int>>
         {
             Data = albumsForDirectoryInfo.Data.GroupBy(x => x.StatusReasons).ToDictionary(x => x.Key, x => x.Count())
         };
     }
-    
+
     public async Task<PagedResult<AlbumDataInfo>> AlbumsDataInfosForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo,
         PagedRequest pagedRequest,
@@ -362,26 +365,26 @@ public sealed class AlbumDiscoveryService(
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
             if (dirInfo.Exists)
             {
-             //   foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
-             await Parallel.ForEachAsync(dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories), cancellationToken, async (jsonFile, token) =>
-             {
-                 try
-                 {
-                     var r = await Album.DeserializeAndInitializeAlbumAsync(serializer, jsonFile.FullName, token).ConfigureAwait(false);
-                     if (r != null)
-                     {
-                         r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
-                         r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
-                         albums.Add(r);
-                     }
-                 }
-                 catch (Exception e)
-                 {
-                     Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
-                     messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
-                     jsonFile.Delete();
-                 }
-             });
+                //   foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
+                await Parallel.ForEachAsync(dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories), cancellationToken, async (jsonFile, token) =>
+                {
+                    try
+                    {
+                        var r = await Album.DeserializeAndInitializeAlbumAsync(serializer, jsonFile.FullName, token).ConfigureAwait(false);
+                        if (r != null)
+                        {
+                            r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
+                            r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
+                            albums.Add(r);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
+                        messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
+                        jsonFile.Delete();
+                    }
+                });
             }
         }
         catch (Exception e)

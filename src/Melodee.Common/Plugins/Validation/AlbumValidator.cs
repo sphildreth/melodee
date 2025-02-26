@@ -141,9 +141,10 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             {
                 Message = "Album has no songs.",
                 Severity = ValidationResultMessageSeverity.Critical
-            });  
+            });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasInvalidSongs;
         }
+
         var durations = album.Songs?.Select(x => x.Duration()).ToArray() ?? [];
         if (durations.Any(x => x is null or 0))
         {

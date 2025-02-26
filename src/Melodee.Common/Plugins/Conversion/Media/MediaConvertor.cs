@@ -90,17 +90,20 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                     {
                         throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3", ex);
                     }
+
                     var newFileInfo = new FileInfo(newFileName);
                     while (!newFileInfo.CanWriteTo())
                     {
                         await Task.Delay(100, cancellationToken);
                     }
+
                     mpeg = new Mpeg(newFileName);
                     await mpeg.ReadAsync(cancellationToken).ConfigureAwait(false);
                     if (mpeg.IsAudioNeedsConversion)
                     {
                         throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
                     }
+
                     var newAtl = new Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))
                     {

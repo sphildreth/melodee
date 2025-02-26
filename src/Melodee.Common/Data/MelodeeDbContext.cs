@@ -12,7 +12,7 @@ namespace Melodee.Common.Data;
 public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbContext(options)
 {
     public DbSet<Album> Albums { get; set; }
-    
+
     public DbSet<Artist> Artists { get; set; }
 
     public DbSet<ArtistRelation> ArtistRelation { get; set; }
@@ -48,7 +48,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<UserAlbum> UserAlbums { get; set; }
 
     public DbSet<UserArtist> UserArtists { get; set; }
-    
+
     public DbSet<UserPin> UserPins { get; set; }
 
     public DbSet<UserSong> UserSongs { get; set; }
@@ -694,7 +694,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Refresh albums for artists from search engine database every x days, set to zero to not refresh.",
                     Value = "14",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 400,
@@ -892,7 +892,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Cron expression to run the artist search engine house keeping job, set empty to disable. Default of '0 0 0 * * ?' will run every day at 00:00. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
                     Value = "0 0 0 * * ?",
                     CreatedAt = now
-                }                
+                }
             );
         });
 

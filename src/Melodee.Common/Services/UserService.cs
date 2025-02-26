@@ -47,7 +47,7 @@ public sealed class UserService(
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
 
     public async Task<MelodeeModels.PagedResult<User>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
-    {   
+    {
         int usersCount;
         User[] users = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -237,46 +237,51 @@ public sealed class UserService(
                                     if (artistResult.IsSuccess && artistResult.Data != null)
                                     {
                                         pin.Icon = "artist";
-                                        pin.ImageUrl = $"/images/{ artistResult.Data.ToApiKey()}/80";
-                                        pin.LinkUrl = $"/data/artist/ { artistResult.Data.ApiKey }";
+                                        pin.ImageUrl = $"/images/{artistResult.Data.ToApiKey()}/80";
+                                        pin.LinkUrl = $"/data/artist/ {artistResult.Data.ApiKey}";
                                         pin.Text = artistResult.Data.Name;
                                     }
+
                                     break;
                                 case UserPinType.Album:
                                     var albumResult = await albumService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
                                     if (albumResult.IsSuccess && albumResult.Data != null)
                                     {
                                         pin.Icon = "album";
-                                        pin.ImageUrl = $"/images/{ albumResult.Data.ToApiKey()}/80";
-                                        pin.LinkUrl = $"/data/album/ { albumResult.Data.ApiKey }";
+                                        pin.ImageUrl = $"/images/{albumResult.Data.ToApiKey()}/80";
+                                        pin.LinkUrl = $"/data/album/ {albumResult.Data.ApiKey}";
                                         pin.Text = albumResult.Data.Name;
                                     }
+
                                     break;
                                 case UserPinType.Song:
                                     var songResult = await songService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
                                     if (songResult.IsSuccess && songResult.Data != null)
                                     {
                                         pin.Icon = "music_note";
-                                        pin.ImageUrl = $"/images/{ songResult.Data.ToApiKey()}/80";
-                                        pin.LinkUrl = $"/data/album/ { songResult.Data.Album.ApiKey }";
+                                        pin.ImageUrl = $"/images/{songResult.Data.ToApiKey()}/80";
+                                        pin.LinkUrl = $"/data/album/ {songResult.Data.Album.ApiKey}";
                                         pin.Text = songResult.Data.Title;
-                                    }                                    
+                                    }
+
                                     break;
                                 case UserPinType.Playlist:
                                     var playlistResult = await playlistService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
                                     if (playlistResult.IsSuccess && playlistResult.Data != null)
                                     {
                                         pin.Icon = "playlist_play";
-                                        pin.ImageUrl = $"/images/{ playlistResult.Data.ToApiKey()}/80";
-                                        pin.LinkUrl = $"/data/playlist/ { playlistResult.Data.ApiKey }";
+                                        pin.ImageUrl = $"/images/{playlistResult.Data.ToApiKey()}/80";
+                                        pin.LinkUrl = $"/data/playlist/ {playlistResult.Data.ApiKey}";
                                         pin.Text = playlistResult.Data.Name;
-                                    }                                     
+                                    }
+
                                     break;
                                 default:
                                     throw new ArgumentOutOfRangeException();
                             }
                         }
                     }
+
                     return user;
                 }
             }
@@ -378,7 +383,7 @@ public sealed class UserService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
-            
+
             var configuredRegisterPrivateCode = configuration.GetValue<string>(SettingRegistry.RegisterPrivateCode);
             if (configuredRegisterPrivateCode != null && registerPrivateCode != configuredRegisterPrivateCode)
             {
@@ -388,7 +393,7 @@ public sealed class UserService(
                     Type = MelodeeModels.OperationResponseType.Unauthorized
                 };
             }
-            
+
             var usersPublicKey = EncryptionHelper.GenerateRandomPublicKeyBase64();
             var emailNormalized = emailAddress.ToNormalizedString() ?? emailAddress.ToUpperInvariant();
             var newUser = new User
@@ -920,6 +925,7 @@ public sealed class UserService(
             {
                 scopedContext.UserPins.Remove(userPin);
             }
+
             result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
             var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
             ClearCache(user.Data!);
@@ -1083,7 +1089,7 @@ public sealed class UserService(
                         and up."PinType" = @pinType;
                       """;
             var dbConn = scopedContext.Database.GetDbConnection();
-            return (await dbConn.ExecuteScalarAsync<int>(sql, new { userId, pinType = (int)pinType, pinId }).ConfigureAwait(false)) > 0;
+            return await dbConn.ExecuteScalarAsync<int>(sql, new { userId, pinType = (int)pinType, pinId }).ConfigureAwait(false) > 0;
         }
     }
 }

@@ -26,8 +26,8 @@ public static class SongExtensions
         {
             return d;
         }
-        
-        var tType = typeof(T?);        
+
+        var tType = typeof(T?);
         var vv = song.Tags?.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
         try
         {
@@ -35,48 +35,57 @@ public static class SongExtensions
             {
                 return d;
             }
+
             if (vv is JsonElement)
             {
                 vv = vv.ToString() ?? string.Empty;
             }
+
             var converter = TypeDescriptor.GetConverter(tType);
             if (tType == typeof(short) || tType == typeof(short?))
             {
                 var vvv = short.Parse(vv?.ToString() ?? string.Empty);
                 return (T?)(object)vvv;
             }
+
             if (tType == typeof(int) || tType == typeof(int?))
             {
                 var vvv = int.Parse(vv?.ToString() ?? string.Empty);
                 return (T?)(object)vvv;
-            }            
+            }
+
             if (tType == typeof(Guid) || tType == typeof(Guid?))
             {
                 var g = Guid.Parse(vv.ToString() ?? string.Empty);
                 return g == Guid.Empty && tType == typeof(Guid?) ? d : (T?)converter.ConvertFrom(g);
             }
+
             if (vv is DateTime && tType == typeof(string))
             {
-                return (T?)converter.ConvertFrom(vv.ToString() ?? string.Empty); 
-            }              
+                return (T?)converter.ConvertFrom(vv.ToString() ?? string.Empty);
+            }
+
             if (tType == typeof(DateTime) || tType == typeof(DateTime?))
             {
                 var dt = DateTime.Parse(vv.ToString() ?? string.Empty, CultureInfo.InvariantCulture);
                 return dt == DateTime.MinValue ? d : (T)Convert.ChangeType(vv, tType);
             }
-            if (tType == typeof(string) && vv is int || vv is int? )
+
+            if ((tType == typeof(string) && vv is int) || vv is int?)
             {
                 return (T?)converter.ConvertFrom(vv?.ToString() ?? string.Empty);
             }
+
             if (vv is T)
             {
                 return (T?)vv;
             }
+
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)
         {
-            Trace.WriteLine($"Song [{ song}] MetaTagIdentifier [{metaTagIdentifier.ToString()}] Value [{vv}] to type [{tType}] [{ e }]");
+            Trace.WriteLine($"Song [{song}] MetaTagIdentifier [{metaTagIdentifier.ToString()}] Value [{vv}] to type [{tType}] [{e}]");
         }
 
         return d;
@@ -137,18 +146,18 @@ public static class SongExtensions
 
     public static long? SongArtistAlbumUniqueId(this Song song)
     {
-        return SafeParser.Hash(song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist() ?? string.Empty, 
-            song.MediaNumber().ToString(), 
+        return SafeParser.Hash(song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist() ?? string.Empty,
+            song.MediaNumber().ToString(),
             song.AlbumTitle() ?? string.Empty);
     }
-    
+
     public static long? SongUniqueId(this Song song)
     {
-        return SafeParser.Hash(song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist() ?? string.Empty, 
-            song.MediaNumber().ToString(), 
+        return SafeParser.Hash(song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist() ?? string.Empty,
+            song.MediaNumber().ToString(),
             song.SongNumber().ToString(),
             song.Title().ToNormalizedString() ?? song.Title());
-    }    
+    }
 
     public static string? AlbumArtist(this Song song)
     {
@@ -164,8 +173,8 @@ public static class SongExtensions
     public static int? AlbumYear(this Song song)
     {
         return (song.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
-                      song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumDate) ??
-                      song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear)) ?? SafeParser.ToDateTime(song.AlbumDate())?.Year;
+                song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumDate) ??
+                song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear)) ?? SafeParser.ToDateTime(song.AlbumDate())?.Year;
     }
 
     public static string? AlbumDate(this Song song)
@@ -207,8 +216,9 @@ public static class SongExtensions
         var year = SafeParser.ToNumber<int?>(albumDate);
         if (year != null)
         {
-            return DateTime.Parse($"01/01/{ year }", CultureInfo.InvariantCulture);
+            return DateTime.Parse($"01/01/{year}", CultureInfo.InvariantCulture);
         }
+
         return albumDate.Nullify() == null ? null : DateTime.Parse(albumDate!, CultureInfo.InvariantCulture);
     }
 
@@ -216,8 +226,8 @@ public static class SongExtensions
     {
         var mediaNumber = song.MetaTagValue<short?>(MetaTagIdentifier.DiscNumber) ?? 1;
         return mediaNumber < 1 ? (short)1 : mediaNumber;
-    }    
-    
+    }
+
     public static int SongNumber(this Song song)
     {
         return song.MetaTagValue<int?>(MetaTagIdentifier.TrackNumber) ?? 0;
@@ -343,6 +353,7 @@ public static class SongExtensions
             Trace.WriteLine($"File [{fileInfo}] has invalid Song title [{songTitle}]");
             songTitle = fileInfo.Name;
         }
+
         var songNumberValue = songNumber.ToStringPadLeft(MelodeeConfiguration.SongFileNameNumberPadding);
         var fileNameFromTitle = songTitle.ToTitleCase(false)?.ToFileNameFriendly();
         if (fileNameFromTitle != null && fileNameFromTitle.StartsWith(songNumberValue))
@@ -365,7 +376,7 @@ public static class SongExtensions
             song.SongNumber(),
             song.Title());
     }
-    
+
     private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
     [
         MetaTagIdentifier.Artist,
@@ -380,16 +391,16 @@ public static class SongExtensions
         MetaTagIdentifier.OriginalArtist,
         MetaTagIdentifier.OriginalLyricist,
         MetaTagIdentifier.Producer
-    ];    
-    
+    ];
+
     public static async Task<Melodee.Common.Data.Models.Contributor[]> GetContributorsForSong(this Song song,
         Instant now,
         ArtistService artistService,
         int artistId,
         int albumId,
         int songId,
-        string[] ignorePerformers, 
-        string[] ignoreProduction, 
+        string[] ignorePerformers,
+        string[] ignoreProduction,
         string[] ignorePublishers,
         CancellationToken token)
     {
@@ -480,8 +491,8 @@ public static class SongExtensions
         Instant now,
         string? subRole,
         string? contributorName,
-        string[] ignorePerformers, 
-        string[] ignoreProduction, 
+        string[] ignorePerformers,
+        string[] ignoreProduction,
         string[] ignorePublishers,
         CancellationToken cancellationToken = default)
     {
@@ -572,6 +583,5 @@ public static class SongExtensions
         }
 
         return ContributorType.NotSet;
-    }    
-    
+    }
 }

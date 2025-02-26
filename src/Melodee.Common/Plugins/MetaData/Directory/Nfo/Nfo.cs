@@ -88,7 +88,7 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     var validationResult = albumValidator.ValidateAlbum(nfoAlbum);
                     nfoAlbum.ValidationMessages = validationResult.Data.Messages ?? [];
                     nfoAlbum.Status = validationResult.Data.AlbumStatus;
-                    nfoAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;                    
+                    nfoAlbum.StatusReasons = validationResult.Data.AlbumStatusReasons;
 
                     var serialized = serializer.Serialize(nfoAlbum);
                     await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
@@ -97,13 +97,13 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                         nfoFile.Delete();
                         Log.Information("[{Plugin}] Deleted NFO File [{FileName}]", DisplayName, nfoFile.Name);
                     }
-                    
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]", 
-                        DisplayName, 
-                        nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration), 
+
+                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
+                        DisplayName,
+                        nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration),
                         nfoAlbum.Status.ToString(),
-                        nfoAlbum.StatusReasons.ToString());                      
-                    
+                        nfoAlbum.StatusReasons.ToString());
+
                     processedFiles++;
                 }
             }

@@ -67,10 +67,10 @@ public static class FileSystemDirectoryInfoExtensions
         });
 
         // Combine all duplicates across size groups
-        var result =  fileGroups
-                        .Where(g => g.Value.Count > 1)
-                        .SelectMany(x => x.Value)
-                        .Where(x => !x.Key.Equals("pending")).ToArray();
+        var result = fileGroups
+            .Where(g => g.Value.Count > 1)
+            .SelectMany(x => x.Value)
+            .Where(x => !x.Key.Equals("pending")).ToArray();
 
         return result;
     }
@@ -82,16 +82,17 @@ public static class FileSystemDirectoryInfoExtensions
         var hash = await md5.ComputeHashAsync(stream, cancellationToken);
         return BitConverter.ToString(hash).Replace("-", "").ToLower();
     }
-    
+
     public static long FileCount(this FileSystemDirectoryInfo directory)
     {
         if (!directory.Exists())
         {
             return 0;
         }
+
         return directory.AllFileInfos(searchOption: SearchOption.AllDirectories).LongCount();
     }
-    
+
     public static void Empty(this FileSystemDirectoryInfo directory)
     {
         foreach (var file in directory.AllFileInfos(searchOption: SearchOption.AllDirectories))
@@ -125,12 +126,14 @@ public static class FileSystemDirectoryInfoExtensions
         {
             return fileSystemDirectoryInfo;
         }
+
         var newName = $"{prefix}{d.Name}";
         var moveTo = Path.Combine(d.Parent!.FullName, newName);
         if (Directory.Exists(moveTo))
         {
             moveTo.ToDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
         }
+
         d.ToDirectorySystemInfo().MoveToDirectory(moveTo);
         return new FileSystemDirectoryInfo
         {
@@ -247,7 +250,7 @@ public static class FileSystemDirectoryInfoExtensions
         var dir = fileSystemDirectoryInfo.Name;
         return string.IsNullOrWhiteSpace(dir) ? null : dir.ExtractNumber();
     }
-    
+
     public static IEnumerable<FileSystemDirectoryInfo> AllAlbumMediaDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var result = new List<FileSystemDirectoryInfo>();
@@ -309,6 +312,7 @@ public static class FileSystemDirectoryInfoExtensions
         {
             result.Add(fileSystemDirectoryInfo);
         }
+
         return result.ToArray();
     }
 

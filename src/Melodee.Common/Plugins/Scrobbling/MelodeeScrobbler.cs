@@ -58,11 +58,11 @@ public class MelodeeScrobbler(
             await nowPlayingRepository
                 .RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), scrobble.SongApiKey.ToString()), cancellationToken)
                 .ConfigureAwait(false);
-            
+
             var album = await albumService.GetAsync(scrobble.AlbumId, cancellationToken).ConfigureAwait(false);
             if (album.IsSuccess)
             {
-                albumService.ClearCache(album.Data!);   
+                albumService.ClearCache(album.Data!);
             }
         }
 

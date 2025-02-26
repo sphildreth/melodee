@@ -13,12 +13,12 @@ public static class FileInfoExtensions
             OriginalName = fileInfo.Name
         };
     }
-    
+
     public static bool CanWriteTo(this FileInfo fileInfo)
     {
         try
         {
-            using (FileStream fs = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            using (var fs = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
             {
                 return true;
             }

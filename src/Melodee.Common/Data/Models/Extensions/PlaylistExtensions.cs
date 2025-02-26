@@ -8,14 +8,15 @@ public static class PlaylistExtensions
     public static string ToImageFileName(this Playlist playlist, string libraryPath)
     {
         return Path.Combine(libraryPath, Playlist.ImagesDirectoryName, $"{playlist.Id.ToStringPadLeft(8)}.gif");
-    }    
-    
+    }
+
     public static string ToCoverArtId(this Playlist playlist, bool? isDynamicPlaylist = false)
     {
         if (isDynamicPlaylist ?? false)
         {
-            return $"dpl{OpenSubsonicServer.ApiIdSeparator}{playlist.ApiKey}";    
+            return $"dpl{OpenSubsonicServer.ApiIdSeparator}{playlist.ApiKey}";
         }
+
         return playlist.ToApiKey();
     }
 
@@ -23,8 +24,9 @@ public static class PlaylistExtensions
     {
         if (isDynamicPlaylist ?? false)
         {
-            return $"dpl{OpenSubsonicServer.ApiIdSeparator}{playlist.ApiKey}";    
+            return $"dpl{OpenSubsonicServer.ApiIdSeparator}{playlist.ApiKey}";
         }
+
         return $"playlist{OpenSubsonicServer.ApiIdSeparator}{playlist.ApiKey}";
     }
 
@@ -43,11 +45,13 @@ public static class PlaylistExtensions
             Changed = playlist.LastUpdatedAt?.ToString() ?? playlist.CreatedAt.ToString(),
             CoverArt = playlist.ToCoverArtId(isDynamicPlaylist),
             AllowedUsers = playlist.AllowedUserIds?.ToTags()?.ToArray() ?? [],
-            Entry = includeSongs ? playlist
-                .Songs?
-                .OrderBy(x => x.PlaylistOrder)
-                .Select(x => x.Song.ToApiChild(x.Song.Album, x.Song.UserSongs.FirstOrDefault()))
-                .ToArray() : null
+            Entry = includeSongs
+                ? playlist
+                    .Songs?
+                    .OrderBy(x => x.PlaylistOrder)
+                    .Select(x => x.Song.ToApiChild(x.Song.Album, x.Song.UserSongs.FirstOrDefault()))
+                    .ToArray()
+                : null
         };
     }
 }

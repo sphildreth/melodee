@@ -644,10 +644,10 @@ public class LibraryService(
                 .ExecuteAsync(sql, new { libraryId = library.Id })
                 .ConfigureAwait(false);
 
-            var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken).ConfigureAwait(false);
             dbLibrary.LastScanAt = now;
             dbLibrary.LastUpdatedAt = now;
-            result = (await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false)) > 0;
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
 
             ClearCache(dbLibrary);
         }
@@ -703,7 +703,7 @@ public class LibraryService(
 
         var directoriesProcessed = 0;
         var totalFilesFound = 0;
-        
+
 
         foreach (var directoryInfo in directoriesToProcess)
         {
@@ -711,15 +711,18 @@ public class LibraryService(
             {
                 break;
             }
+
             if (directoriesProcessed > maxAlbumProcessingCount)
             {
                 break;
             }
+
             var isFound = directoryInfo.AllMediaTypeFileInfos().Any();
             if (isFound && doCreateOnlyMissing)
             {
                 continue;
-            }            
+            }
+
             var processResult = await melodeeMetadataMaker.MakeMetadataFileAsync(directoryInfo.FullName(), doCreateOnlyMissing, cancellationToken).ConfigureAwait(false);
             if (processResult.IsSuccess)
             {
@@ -1018,6 +1021,7 @@ public class LibraryService(
                                             // Artists can exist only as contributors or related artists and have no albums.
                                             artistsWithoutAlbumsInDirectories++;
                                         }
+
                                         // If the artist isn't in the database, clearly none of the artists folders will be in the database.                                        
                                         continue;
                                     }
@@ -1047,7 +1051,6 @@ public class LibraryService(
                                         // If the album isn't in the database, clearly none of the albums songs will be in the database.
                                         else
                                         {
-
                                             var albumSongsFound = 0;
                                             foreach (var songFound in d.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Where(x => FileHelper.IsFileMediaType(x.Extension)).OrderBy(x => x.Name))
                                             {
@@ -1344,7 +1347,7 @@ public class LibraryService(
         MelodeeModels.DynamicPlaylist? result = null;
 
         var playlistLibrary = await GetPlaylistLibraryAsync(cancellationToken).ConfigureAwait(false);
-        var dynamicPlaylistsJsonFiles = (Path.Combine(playlistLibrary.Data.Path, "dynamic")).ToDirectoryInfo().AllFileInfos("*.json").ToArray();
+        var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToDirectoryInfo().AllFileInfos("*.json").ToArray();
 
         foreach (var dynamicPlaylistsJsonFile in dynamicPlaylistsJsonFiles)
         {

@@ -60,7 +60,6 @@ public class LibraryInsertJob(
     private int _totalSongsInserted;
 
 
-
     /// <summary>
     ///     This is raised when a Log event happens to return activity to caller.
     /// </summary>
@@ -124,6 +123,8 @@ public class LibraryInsertJob(
                     librariesToProcess.Count(),
                     0,
                     "Started library processing libraries."));
+
+            var totalMelodeeFilesProcessed = 0;
             await using (var scopedContext = await contextFactory.CreateDbContextAsync(context.CancellationToken).ConfigureAwait(false))
             {
                 foreach (var libraryIndex in librariesToProcess.Select((library, index) => new { library, index }))
@@ -161,9 +162,9 @@ public class LibraryInsertJob(
                     }
                     else
                     {
-                        allMelodeeFilesInLibrary = Directory.GetFiles(libraryIndex.library.Path, Album.JsonFileName, SearchOption.AllDirectories);                        
-
+                        allMelodeeFilesInLibrary = Directory.GetFiles(libraryIndex.library.Path, Album.JsonFileName, SearchOption.AllDirectories);
                     }
+
                     Parallel.ForEach(allMelodeeFilesInLibrary, melodeeFile =>
                     {
                         var f = new FileInfo(melodeeFile);
@@ -211,6 +212,7 @@ public class LibraryInsertJob(
                                             melodeeAlbum?.ToString() ?? melodeeFileInfo.FullName);
                                         continue;
                                     }
+
                                     var validationResult = _albumValidator.ValidateAlbum(melodeeAlbum);
                                     if (!validationResult.Data.IsValid)
                                     {
@@ -223,7 +225,8 @@ public class LibraryInsertJob(
                                         {
                                             File.Delete(melodeeAlbum!.MelodeeDataFileName!);
                                         }
-                                        continue;                                        
+
+                                        continue;
                                     }
 
                                     melodeeAlbumsForDirectory.Add(melodeeAlbum);
@@ -241,12 +244,13 @@ public class LibraryInsertJob(
                                         {
                                             File.Delete(p);
                                         }
+
                                         Logger.Warning(
                                             "[{JobName}] Invalid Melodee File. Deleted and moved directory [{From}] to staging [{To}]",
                                             nameof(LibraryInsertJob),
                                             albumDirectoryToMove,
                                             moveDirectoryTo);
-                                        await bus.SendLocal(new MelodeeAlbumReprocessEvent(moveDirectoryTo)).ConfigureAwait(false);                                        
+                                        await bus.SendLocal(new MelodeeAlbumReprocessEvent(moveDirectoryTo)).ConfigureAwait(false);
                                     }
                                 }
                             }
@@ -275,10 +279,12 @@ public class LibraryInsertJob(
                                 batches,
                                 batch,
                                 $"Batch [{batch}] of [{batches}] for library [{libraryIndex.library.Name}]."));
+
+                        totalMelodeeFilesProcessed += melodeeAlbumsForDirectory.Count();
                     }
 
                     await libraryService.UpdateAggregatesAsync(libraryIndex.library.Id, context.CancellationToken).ConfigureAwait(false);
-                    
+
                     var newLibraryScanHistory = new dbModels.LibraryScanHistory
                     {
                         LibraryId = libraryIndex.library.Id,
@@ -322,7 +328,13 @@ public class LibraryInsertJob(
                 Log.Error(exception, "[{JobName}] Processing Exception", nameof(LibraryInsertJob));
             }
 
-            Log.Debug("ℹ️ [{JobName}] Completed. Processed [{NumberOfAlbumsUpdated}] albums, [{NumberOfSongsUpdated}] songs in [{ElapsedTime}]", nameof(LibraryInsertJob), _totalAlbumsInserted, _totalSongsInserted, Stopwatch.GetElapsedTime(startTicks));
+            Log.Information(
+                "ℹ️ [{JobName}] Completed. Processed [{NumberOfMelodeeAlbumsSeen}] melodee data albums and inserted [{NumberOfAlbumsUpdated}] db albums, [{NumberOfSongsUpdated}] db songs in [{ElapsedTime}]",
+                nameof(LibraryInsertJob),
+                totalMelodeeFilesProcessed,
+                _totalAlbumsInserted,
+                _totalSongsInserted,
+                Stopwatch.GetElapsedTime(startTicks));
         }
         catch (Exception e)
         {
@@ -374,6 +386,7 @@ public class LibraryInsertJob(
                         Logger.Warning("Album [{Album}] has invalid Album title, unable to generate NameNormalized.", melodeeAlbum);
                         continue;
                     }
+
                     var dbAlbumResult = await albumService.FindAlbumAsync(dbArtist.Id, melodeeAlbum, cancellationToken).ConfigureAwait(false);
                     var dbAlbum = dbAlbumResult.Data;
                     var albumDirectory = melodeeAlbum.AlbumDirectoryName(_configuration.Configuration);
@@ -432,7 +445,7 @@ public class LibraryInsertJob(
                                 newAlbumSongs.Clear();
                                 break;
                             }
-                            
+
                             currentSong = song;
                             var mediaFile = song.File.ToFileInfo(melodeeAlbum.Directory);
                             if (!mediaFile.Exists)
@@ -447,8 +460,10 @@ public class LibraryInsertJob(
                                 {
                                     File.Delete(melodeeAlbum!.MelodeeDataFileName!);
                                 }
+
                                 break;
                             }
+
                             var mediaFileHash = CRC32.Calculate(mediaFile);
                             var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
                             var s = new dbModels.Song
@@ -480,6 +495,7 @@ public class LibraryInsertJob(
                             newAlbumSongs.Add(s);
                             _totalSongsInserted++;
                         }
+
                         if (newAlbumSongs.Any())
                         {
                             newAlbum.Songs = newAlbumSongs;
@@ -598,12 +614,12 @@ public class LibraryInsertJob(
                     {
                         lastAddedArtist = artist;
                         var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
-                        
+
                         Logger.Debug("[{JobName}] Creating new artist for NormalizedName [{Name}] with directory [{Directory}]",
                             nameof(LibraryInsertJob),
                             artist.NameNormalized,
                             newArtistDirectory);
-                        
+
                         dbArtistsToAdd.Add(new dbModels.Artist
                         {
                             AmgId = artist.AmgId?.CleanStringAsIs(),
@@ -643,6 +659,4 @@ public class LibraryInsertJob(
 
         return false;
     }
-
-
 }

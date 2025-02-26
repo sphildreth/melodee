@@ -31,6 +31,7 @@ public sealed class Album : MetaDataModelBase
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     public string? SortName { get; set; }
+
     public short AlbumStatus { get; set; }
 
     [NotMapped] public AlbumStatus AlbumStatusValue => SafeParser.ToEnum<AlbumStatus>(AlbumStatus);
@@ -100,7 +101,7 @@ public sealed class Album : MetaDataModelBase
     public ICollection<Contributor> Contributors { get; set; } = new List<Contributor>();
 
     public ICollection<Song> Songs { get; set; } = new List<Song>();
-    
+
     public ICollection<UserAlbum> UserAlbums { get; set; } = new List<UserAlbum>();
 
     public override string ToString()

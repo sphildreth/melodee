@@ -83,6 +83,7 @@ public record Playlist : IOpenSubsonicToXml
                 result.Append(song.ToXml("entry"));
             }
         }
+
         result.Append("</playlist>");
 
         return result.ToString();

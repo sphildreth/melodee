@@ -31,16 +31,17 @@ public sealed record AlbumDataInfo(
     ///     This is populated when the record is created from a Media Album file.
     /// </summary>
     public byte[]? ImageBytes { get; set; }
-    
+
     /// <summary>
     ///     This is populated when the record is created from a Search Engine result.
     /// </summary>
     public AlbumSearchResult? AlbumSearchResult { get; init; }
-    
+
     /// <summary>
     ///     This is populated when the record is created from a Search Engine result, not a Melodee database record. This is likely an external public url.
     /// </summary>
     public string? CoverUrl { get; set; }
+
     public int? NeedsAttentionReasons { get; set; }
 
     public object? State { get; set; }

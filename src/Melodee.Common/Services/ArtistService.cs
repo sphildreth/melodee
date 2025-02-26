@@ -154,7 +154,7 @@ public class ArtistService(
             var dbConn = scopedContext.Database.GetDbConnection();
             try
             {
-                string sql = string.Empty;
+                var sql = string.Empty;
 
                 if (byId.HasValue)
                 {
@@ -180,17 +180,28 @@ public class ArtistService(
                         .ConfigureAwait(false);
                 }
 
-                if (id == null)
+                if (id == null && (byMusicBrainzId != null || bySpotifyId != null))
                 {
                     sql = """
                           select a."Id"
                           from "Artists" a 
                           where a."MusicBrainzId" = @musicBrainzId  
                           or a."SpotifyId" = @spotifyId
-                          or a."NameNormalized" = @name
                           """;
                     id = await dbConn
-                        .QuerySingleOrDefaultAsync<int?>(sql, new { name = byName, musicBrainzId = byMusicBrainzId, spotifyId = bySpotifyId  })
+                        .QuerySingleOrDefaultAsync<int?>(sql, new { musicBrainzId = byMusicBrainzId, spotifyId = bySpotifyId })
+                        .ConfigureAwait(false);
+                }
+
+                if (id == null)
+                {
+                    sql = """
+                          select a."Id"
+                          from "Artists" a 
+                          where a."NameNormalized" = @name
+                          """;
+                    id = await dbConn
+                        .QuerySingleOrDefaultAsync<int?>(sql, new { name = byName })
                         .ConfigureAwait(false);
                 }
             }
@@ -646,7 +657,7 @@ public class ArtistService(
                     var dirPath = dbArtist.ToFileSystemDirectoryInfo().FullName();
                     if (Directory.Exists(dirPath))
                     {
-                        Directory.Delete(dirPath, true);    
+                        Directory.Delete(dirPath, true);
                     }
                 }
 
@@ -657,6 +668,7 @@ public class ArtistService(
             {
                 artistAlternateNamesToMerge.AddRange(dbArtistToMergeInto.AlternateNames.ToTags() ?? []);
             }
+
             dbArtistToMergeInto.AlternateNames = "".AddTags(artistAlternateNamesToMerge.Distinct(), doNormalize: true);
 
             await UpdateArtistAggregateValuesByIdAsync(dbArtistToMergeInto.Id, cancellationToken).ConfigureAwait(false);

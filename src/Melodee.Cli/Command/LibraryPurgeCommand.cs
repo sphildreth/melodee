@@ -43,10 +43,11 @@ public class LibraryPurgeCommand : CommandBase<LibraryScanSettings>
                         .BorderColor(Color.Red));
                 return 0;
             }
+
             var result = await libraryService.PurgeLibraryAsync(library.Id);
 
             var serializer = scope.ServiceProvider.GetRequiredService<ISerializer>();
-            
+
             if (!result.IsSuccess && settings.Verbose)
             {
                 AnsiConsole.Write(
@@ -71,6 +72,7 @@ public class LibraryPurgeCommand : CommandBase<LibraryScanSettings>
             {
                 AnsiConsole.MarkupLine("[green]Successful[/]");
             }
+
             return 1;
         }
     }

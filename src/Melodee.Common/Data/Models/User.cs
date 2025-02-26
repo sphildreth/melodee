@@ -45,7 +45,7 @@ public class User : DataModelBase
     public Instant? LastActivityAt { get; set; }
 
     public bool IsAdmin { get; set; }
-    
+
     public bool IsEditor { get; set; }
 
     /// <summary>

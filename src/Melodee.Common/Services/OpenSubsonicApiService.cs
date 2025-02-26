@@ -183,7 +183,7 @@ public class OpenSubsonicApiService(
                 {
                     var dbConn = scopedContext.Database.GetDbConnection();
                     var playlistLibrary = await libraryService.GetPlaylistLibraryAsync(cancellationToken).ConfigureAwait(false);
-                    var dynamicPlaylistsJsonFiles = (Path.Combine(playlistLibrary.Data.Path, "dynamic")).ToDirectoryInfo().AllFileInfos("*.json").ToArray();
+                    var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToDirectoryInfo().AllFileInfos("*.json").ToArray();
                     if (dynamicPlaylistsJsonFiles.Any())
                     {
                         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
@@ -195,7 +195,6 @@ public class OpenSubsonicApiService(
 
                         foreach (var dp in dynamicPlaylists.Where(x => x.IsEnabled))
                         {
-
                             try
                             {
                                 if (dp.IsPublic || (dp.ForUserId != null && dp.ForUserId == authResponse.UserInfo.ApiKey))
@@ -238,7 +237,6 @@ public class OpenSubsonicApiService(
                                 Logger.Warning(e, "[{Name}] error loading dynamic playlist [{Playlist}]", nameof(OpenSubsonicApiService), dp.Name);
                                 throw;
                             }
-                            
                         }
                     }
                 }
@@ -465,13 +463,14 @@ public class OpenSubsonicApiService(
                         }
                     };
                 }
+
                 var dpWhere = dp.PrepareSongSelectionWhere(authResponse.UserInfo);
                 var dpOrderBy = dp.SongSelectionOrder ?? "RANDOM()";
-                
+
                 // TODO is this paged somehow? I dont see anything in documentation about clients paging playlists.
                 var offset = 0;
                 var fetch = dp.SongLimit ?? 100;
-                
+
                 var sql = $"""
                            SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                                   a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
@@ -487,7 +486,7 @@ public class OpenSubsonicApiService(
                 var songDataInfosForDp = (await dbConn
                     .QueryAsync<SongDataInfo>(sql)
                     .ConfigureAwait(false) ?? []).ToArray();
-                
+
                 var songs = await scopedContext
                     .Songs
                     .Include(x => x.UserSongs.Where(ua => ua.UserId == authResponse.UserInfo.Id))
@@ -504,6 +503,7 @@ public class OpenSubsonicApiService(
                         dpSongs.Add(songDataInfo.x.ToPlaylistSong(songDataInfo.i, song));
                     }
                 }
+
                 data = new dbModels.Playlist
                 {
                     Id = 1,
@@ -525,8 +525,6 @@ public class OpenSubsonicApiService(
 
             else
             {
-
-
                 var playlist = await scopedContext
                     .Playlists
                     .Include(x => x.User)
@@ -1082,7 +1080,7 @@ public class OpenSubsonicApiService(
         }
 
         var isForPlaylist = IsApiIdForDynamicPlaylist(apiId) || IsApiIdForPlaylist(apiId);
-        
+
         var badEtag = Instant.MinValue.ToEtag();
         var sizeValue = size ?? ImageSizeRegistry.Large;
         var imageBytesAndEtag = await CacheManager.GetAsync(GenerateImageCacheKeyForApiId(apiId, sizeValue), async () =>

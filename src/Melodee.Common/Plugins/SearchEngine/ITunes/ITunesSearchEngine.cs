@@ -245,11 +245,11 @@ public class ITunesSearchEngine(
                 Delay = TimeSpan.FromMinutes(2)
             })
             .Build();
-      
-      return await pipeline.ExecuteAsync(
-          static async (state, token) => await GetArtistArtworkUrlAsyncAction(state.client, state.artistId),
-          (client, artistId),
-          cancellationToken);     
+
+        return await pipeline.ExecuteAsync(
+            static async (state, token) => await GetArtistArtworkUrlAsyncAction(state.client, state.artistId),
+            (client, artistId),
+            cancellationToken);
     }
 
     private static async Task<string?> GetArtistArtworkUrlAsyncAction(HttpClient client, string artistId)

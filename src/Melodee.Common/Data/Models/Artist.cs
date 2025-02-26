@@ -75,7 +75,7 @@ public sealed class Artist : MetaDataModelBase
     public ICollection<Contributor> Contributors { get; set; } = new List<Contributor>();
 
     public ICollection<UserArtist> UserArtists { get; set; } = new List<UserArtist>();
-    
+
     [InverseProperty(nameof(ArtistRelation.Artist))]
     public ICollection<ArtistRelation> RelatedArtists { get; set; } = new List<ArtistRelation>();
 

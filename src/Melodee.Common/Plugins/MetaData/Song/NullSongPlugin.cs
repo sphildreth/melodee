@@ -42,5 +42,4 @@ public class NullSongPlugin : ISongPlugin
     {
         return Task.FromResult(new OperationResult<bool> { Data = true });
     }
-
 }

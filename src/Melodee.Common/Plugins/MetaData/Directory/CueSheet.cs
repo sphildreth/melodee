@@ -58,11 +58,12 @@ public sealed class CueSheet(
                     Data = -1
                 };
             }
+
             var withAudioBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionBitrate]);
             var withAudioSamplingRate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]);
             var withVariableBitrate = SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]);
 
-            
+
             foreach (var cueFile in cueFiles)
             {
                 using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, cueFile.Name))
@@ -75,6 +76,7 @@ public sealed class CueSheet(
                             Data = -1
                         };
                     }
+
                     ICatalogDataReader? theReader = null;
                     try
                     {
@@ -138,6 +140,7 @@ public sealed class CueSheet(
                                 Data = 0
                             };
                         }
+
                         Parallel.ForEach(cueModel.Songs.OrderBy(x => x.SortOrder), song =>
                         {
                             var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
@@ -160,7 +163,7 @@ public sealed class CueSheet(
                                     options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                                 }).ProcessSynchronously();
                         });
-                        
+
                         var cueAlbum = cueModel.ToAlbum(fileSystemDirectoryInfo);
 
                         var convertedExtension = SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
@@ -193,8 +196,8 @@ public sealed class CueSheet(
                             {
                                 cueAlbum = cueAlbum.Merge(existingAlbum);
                             }
-                        }                       
-                       
+                        }
+
                         var mp3Plugin = _songPlugins.First(x => x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
                         foreach (var song in cueModel.Songs)
                         {
@@ -217,13 +220,13 @@ public sealed class CueSheet(
 
                         var serialized = serializer.Serialize(cueAlbum);
                         await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
-                        
-                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]", 
-                            DisplayName, 
-                            cueAlbum.ToMelodeeJsonName(MelodeeConfiguration), 
+
+                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
+                            DisplayName,
+                            cueAlbum.ToMelodeeJsonName(MelodeeConfiguration),
                             cueAlbum.Status.ToString(),
-                            cueAlbum.StatusReasons.ToString());                        
-                        
+                            cueAlbum.StatusReasons.ToString());
+
                         processedFiles++;
                         resultType = OperationResponseType.Ok;
                     }
@@ -290,17 +293,20 @@ public sealed class CueSheet(
                     cueSheetLines.Add(line);
                 }
             }
+
             var fileLineCount = cueSheetLines.Count(x => x.StartsWith(CueSheetKeyRegistry.File, StringComparison.InvariantCultureIgnoreCase));
             if (fileLineCount > 1)
             {
                 Log.Warning("CUE file [{CueFile}] has more than one file line. This is not supported by this plugin.", cueFile.FullName);
                 return false;
             }
+
             if (didModify)
             {
                 await File.WriteAllLinesAsync(cueFile.FullName, cueSheetLines, cancellationToken);
             }
         }
+
         return result;
     }
 

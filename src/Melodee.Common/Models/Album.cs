@@ -141,7 +141,8 @@ public sealed record Album
         {
             statusSummary = $"{StatusReasons.ToString()}";
         }
-        return $"\u251c { statusSummary} \u2524 AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+
+        return $"\u251c {statusSummary} \u2524 AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
     public IEnumerable<MetaTag<object?>> ModifiedTags()
@@ -317,10 +318,12 @@ public sealed record Album
         {
             result.Directory = d;
         }
+
         if (result != null)
         {
             result.MelodeeDataFileName = fullPathToMelodeeDataFile;
         }
-        return result;        
+
+        return result;
     }
 }

@@ -8,7 +8,7 @@ namespace Melodee.Common.Plugins.Scrobbling;
 public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
 {
     private const int MaximumMinutesAgo = 60;
-    
+
     private static readonly ConcurrentDictionary<long, NowPlayingInfo> Storage = new();
 
     public Task RemoveNowPlayingAsync(long uniqueId, CancellationToken token = default)
@@ -43,7 +43,7 @@ public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
     public Task<OperationResult<NowPlayingInfo[]>> GetNowPlayingAsync(CancellationToken token = default)
     {
         RemoveExpiredNonScrobbledEntries();
-        
+
         return Task.FromResult(new OperationResult<NowPlayingInfo[]>
         {
             Data = Storage.Values.ToArray()

@@ -50,22 +50,24 @@ public class ArtistHousekeepingJob(
             {
                 return;
             }
-            
+
             var maxNumberOfImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
             if (maxNumberOfImagesAllowed == 0)
             {
                 maxNumberOfImagesAllowed = short.MaxValue;
             }
+
             Logger.Debug("[{JobName}] found [{Count}] artists without images.", nameof(ArtistHousekeepingJob), artists.Length);
 
             var updatedArtists = new List<Artist>();
-            
+
             foreach (var artist in artists)
             {
                 if (context.CancellationToken.IsCancellationRequested)
                 {
                     break;
                 }
+
                 var artistFileDirectory = artist.ToFileSystemDirectoryInfo();
                 var albumImageSearchResult = await imageSearchEngine.DoSearchAsync(
                         artist.ToArtistQuery(artist.Albums.Select(x => x.ToKeyValue()).ToArray()),
@@ -76,6 +78,7 @@ public class ArtistHousekeepingJob(
                 {
                     continue;
                 }
+
                 var imageFileName = artistFileDirectory.GetNextFileNameForType(Artist.ImageType).Item1;
                 if (await httpClient.DownloadFileAsync(
                         albumImageSearchResult.Data.First().MediaUrl,

@@ -151,7 +151,6 @@ public class Spotify(
             SearchResponse? searchResult = null;
             try
             {
-                
                 // TODO use Polly to make this more resilient with timeouts 
                 searchResult = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Artist, query.Name), cancellationToken);
             }
@@ -313,9 +312,11 @@ public class Spotify(
                                 }).ToArray()
                             });
                         }
+
                         var matchingAlbumCount = query.AlbumKeyValues == null ? 0 : (artistAlbumsResult?.Items ?? []).Count(x => query.AlbumKeyValues?.Any(y => y.Key == x.ReleaseDate[..4] && y.Value == x.Name.ToNormalizedString()) ?? false);
                         artist.Rank += matchingAlbumCount;
                     }
+
                     if (newResults.Count > 0)
                     {
                         results = newResults;

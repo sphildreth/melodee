@@ -39,7 +39,7 @@ public sealed class MediaEditService(
     IHttpClientFactory httpClientFactory) : ServiceBase(logger, cacheManager, contextFactory)
 {
     public const int SortOrderMediaMultiplier = 10000;
-    
+
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
 
@@ -137,6 +137,7 @@ public sealed class MediaEditService(
                 {
                     await SaveAlbum(album.Directory, album, cancellationToken);
                 }
+
                 return new OperationResult<Album?>
                 {
                     Data = album
@@ -157,12 +158,11 @@ public sealed class MediaEditService(
     public async Task<OperationResult<AlbumValidationResult>> DoMagic(Album album, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        
+
         var directoryInfo = album.Directory!;
 
         using (Operation.At(LogEventLevel.Debug).Time("[{Name}] :: DoMagic Directory [{DirName}]", nameof(MediaEditService), directoryInfo.FullName()))
         {
-
             if (!SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicEnabled]))
             {
                 return new OperationResult<AlbumValidationResult>
@@ -204,27 +204,27 @@ public sealed class MediaEditService(
 
             if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveFeaturingArtistFromSongTitle]))
             {
-                album = (await RemoveFeaturingArtistsFromSongTitle(album, false,cancellationToken).ConfigureAwait(false)).Data.Item2;
+                album = (await RemoveFeaturingArtistsFromSongTitle(album, false, cancellationToken).ConfigureAwait(false)).Data.Item2;
             }
 
             if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoReplaceSongsArtistSeparators]))
             {
-                album = (await ReplaceAllSongArtistSeparators(album, false,cancellationToken).ConfigureAwait(false)).Data.Item2;
+                album = (await ReplaceAllSongArtistSeparators(album, false, cancellationToken).ConfigureAwait(false)).Data.Item2;
             }
 
             if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoSetYearToCurrentIfInvalid]))
             {
-                album = (await SetYearToCurrent(album, false,cancellationToken).ConfigureAwait(false)).Data.Item2;
+                album = (await SetYearToCurrent(album, false, cancellationToken).ConfigureAwait(false)).Data.Item2;
             }
 
             if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromAlbumTitle]))
             {
-                album = (await RemoveUnwantedTextFromAlbumTitle(album, false,cancellationToken).ConfigureAwait(false)).Data.Item2;
+                album = (await RemoveUnwantedTextFromAlbumTitle(album, false, cancellationToken).ConfigureAwait(false)).Data.Item2;
             }
 
             if (SafeParser.ToBoolean(_configuration.Configuration[SettingRegistry.MagicDoRemoveUnwantedTextFromSongTitles]))
             {
-                album = (await RemoveUnwantedTextFromSongTitles(album, false,cancellationToken).ConfigureAwait(false)).Data.Item2;
+                album = (await RemoveUnwantedTextFromSongTitles(album, false, cancellationToken).ConfigureAwait(false)).Data.Item2;
             }
 
             var validationResult = _albumValidator.ValidateAlbum(album);
@@ -265,11 +265,11 @@ public sealed class MediaEditService(
                         album.SetSongTagValue(song.Id, MetaTagIdentifier.Album, newTitle);
                         await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                     }
+
                     if (doSave ?? true)
                     {
                         await SaveAlbum(album.Directory, album, cancellationToken);
                     }
-            
                 }
             }
         }
@@ -348,6 +348,7 @@ public sealed class MediaEditService(
                         await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                     }
                 }
+
                 if (doSave ?? true)
                 {
                     await SaveAlbum(album.Directory, album, cancellationToken);
@@ -570,6 +571,7 @@ public sealed class MediaEditService(
                     await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                 }
             }
+
             if (doSave ?? true)
             {
                 await SaveAlbum(album.Directory, album, cancellationToken);
@@ -594,10 +596,11 @@ public sealed class MediaEditService(
         {
             return album;
         }
+
         album.SetTagValue(MetaTagIdentifier.AlbumArtist, album.Artist.Name);
         return album;
     }
-    
+
     public async Task<Album> RenumberSongsAsync(Album album, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
@@ -606,7 +609,7 @@ public sealed class MediaEditService(
         {
             return album;
         }
-        
+
         try
         {
             foreach (var dd in album.Songs?.OrderBy(x => x.SortOrder).Select((x, i) => new { x, i = i + 1 }) ?? [])
@@ -614,15 +617,17 @@ public sealed class MediaEditService(
                 album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
                 await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
             }
+
             album.SetTagValue(MetaTagIdentifier.SongTotal, album.Songs!.Count());
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Renumbering Songs.");
         }
+
         return album;
     }
-    
+
     /// <summary>
     /// This removes any concept of multi disc as with digital media it is somewhat irrelevant.
     /// </summary>
@@ -636,7 +641,7 @@ public sealed class MediaEditService(
             var numberOfSongsSeen = 0;
             foreach (var dd in album.Songs?.Select((x, i) => new { x, i = i + 1 }) ?? [])
             {
-                album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);          
+                album.SetSongTagValue(dd.x.Id, MetaTagIdentifier.TrackNumber, dd.i);
                 /*
                  * Calculate a unique sort number so that albums which have multiple medias stay in order. This matters for albums like concept albums
                  * where the songs are intended to play in order (e.g. Dream Theater - [2016] The Astonishing).
@@ -647,16 +652,18 @@ public sealed class MediaEditService(
                  * media 3 track 1 sort is 20001
                  * media 3 track 20 sort is 20020
                  */
-                dd.x.SortOrder = (dd.i + (dd.x.MediaNumber() * SortOrderMediaMultiplier)) - SortOrderMediaMultiplier;
+                dd.x.SortOrder = dd.i + dd.x.MediaNumber() * SortOrderMediaMultiplier - SortOrderMediaMultiplier;
                 await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == dd.x.Id), cancellationToken);
                 numberOfSongsSeen++;
             }
+
             album.SetTagValue(MetaTagIdentifier.SongTotal, numberOfSongsSeen);
             album.SetTagValue(MetaTagIdentifier.DiscTotal, 1);
             if (doSave ?? true)
             {
                 await SaveAlbum(album.Directory, album, cancellationToken);
             }
+
             result = true;
         }
         catch (Exception ex)
@@ -743,7 +750,7 @@ public sealed class MediaEditService(
                     album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, null);
                     await _editSongPlugin.UpdateSongAsync(album.Directory!, album.Songs!.First(x => x.Id == song.Id), cancellationToken);
                 }
-                
+
                 if (doSave ?? true)
                 {
                     await SaveAlbum(album.Directory, album, cancellationToken);
@@ -826,6 +833,7 @@ public sealed class MediaEditService(
     }
 
     public Task<OperationResult<bool>> ManuallyValidateAlbum(Album album, CancellationToken cancellationToken = default)
-        => SaveMelodeeAlbum(album, true, cancellationToken);
-
+    {
+        return SaveMelodeeAlbum(album, true, cancellationToken);
+    }
 }

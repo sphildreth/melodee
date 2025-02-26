@@ -114,7 +114,7 @@ public class AlbumService(
             Data = albums
         };
     }
-    
+
 
     public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] albumIds, CancellationToken cancellationToken = default)
     {
@@ -282,7 +282,7 @@ public class AlbumService(
 
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
-    
+
     public void ClearCache(Album album)
     {
         OpenSubsonicApiService.ClearImageCacheForApiId(album.ToApiKey(), CacheManager);
@@ -294,7 +294,7 @@ public class AlbumService(
             CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.MusicBrainzId.Value.ToString()));
         }
     }
-    
+
     public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Album album, CancellationToken cancellationToken = default)
     {
         Guard.Against.Null(album, nameof(album));
@@ -366,27 +366,27 @@ public class AlbumService(
     {
         int? id = null;
         var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
-        var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;                    
+        var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
 
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             try
             {
-                string sql = string.Empty;
+                var sql = string.Empty;
 
                 if (melodeeAlbum.AlbumDbId.HasValue)
                 {
                     sql = """
-                          select a."Id"
-                          from "Albums" a 
-                          where a."Id" = @id
-                         """;
+                           select a."Id"
+                           from "Albums" a 
+                           where a."Id" = @id
+                          """;
                     id = await dbConn
                         .QuerySingleOrDefaultAsync<int?>(sql, new { id = melodeeAlbum.AlbumDbId })
-                        .ConfigureAwait(false);                    
+                        .ConfigureAwait(false);
                 }
-                
+
                 if (id == null && melodeeAlbum.Id != Guid.Empty)
                 {
                     sql = """
@@ -396,30 +396,29 @@ public class AlbumService(
                           """;
                     id = await dbConn
                         .QuerySingleOrDefaultAsync<int?>(sql, new { apiKey = melodeeAlbum.Id })
-                        .ConfigureAwait(false);                    
+                        .ConfigureAwait(false);
                 }
 
                 if (id == null)
                 {
                     sql = """
-                              select a."Id"
-                              from "Albums" a
-                              where a."ArtistId" = @artistId
-                              and (a."NameNormalized" = @name
-                              or a."MusicBrainzId" = @musicBrainzId   
-                              or a."SpotifyId" = @spotifyId);
-                              """;
+                          select a."Id"
+                          from "Albums" a
+                          where a."ArtistId" = @artistId
+                          and (a."NameNormalized" = @name
+                          or a."MusicBrainzId" = @musicBrainzId   
+                          or a."SpotifyId" = @spotifyId);
+                          """;
                     id = await dbConn
                         .QuerySingleOrDefaultAsync<int?>(sql, new
                         {
                             artistId,
                             name = nameNormalized,
                             musicBrainzId = melodeeAlbum.MusicBrainzId,
-                            spotifyId = melodeeAlbum.SpotifyId,
+                            spotifyId = melodeeAlbum.SpotifyId
                         })
-                        .ConfigureAwait(false);                     
+                        .ConfigureAwait(false);
                 }
-
             }
             catch (Exception e)
             {
@@ -430,7 +429,7 @@ public class AlbumService(
                     nameNormalized,
                     melodeeAlbum.MusicBrainzId,
                     melodeeAlbum.SpotifyId);
-            }            
+            }
         }
 
         if (id == null)
@@ -460,6 +459,7 @@ public class AlbumService(
                     Data = false
                 };
             }
+
             var album = albumResult.Data!;
             var albumDirectory = Path.Combine(album.Artist.Library.Path, album.Artist.Directory, album.Directory);
             if (!Directory.Exists(albumDirectory))
@@ -470,6 +470,7 @@ public class AlbumService(
                     Data = false
                 };
             }
+
             await bus.SendLocal(new AlbumRescanEvent(album.Id, albumDirectory)).ConfigureAwait(false);
         }
 

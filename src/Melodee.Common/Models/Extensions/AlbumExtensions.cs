@@ -21,7 +21,7 @@ namespace Melodee.Common.Models.Extensions;
 public static class AlbumExtensions
 {
     private const int MinimumLengthForSoundtrackRecordingTitle = 2;
-    
+
     public static readonly Regex SoundtrackRecordingArtistParseRegex = new(@"(soundtrack|(\(*\s*ost\))*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static string[] SoundtrackTypeAlbumGenres
@@ -55,12 +55,12 @@ public static class AlbumExtensions
     {
         return new KeyValue(album.AlbumDbId?.ToString() ?? album.MusicBrainzId?.ToString() ?? album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle() ?? string.Empty, album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle());
     }
-    
+
     public static long? ArtistAlbumUniqueId(this Album album)
     {
         return SafeParser.Hash(album.Artist.Name.ToNormalizedString() ?? album.Artist.Name, album.AlbumTitle() ?? string.Empty);
     }
-    
+
     public static bool IsStudioTypeAlbum(this Album album)
     {
         return album.Directory.IsDirectoryStudioAlbums() && album.AlbumType is AlbumType.Album or AlbumType.EP;
@@ -69,7 +69,7 @@ public static class AlbumExtensions
     public static bool IsSoundTrackTypeAlbum(this Album album)
     {
         var albumTitle = album.AlbumTitle() ?? string.Empty;
-        
+
         return SoundtrackTypeAlbumGenres.Contains(album.Genre()?.ToNormalizedString() ?? string.Empty) ||
                (albumTitle.Length > MinimumLengthForSoundtrackRecordingTitle && SoundtrackRecordingArtistParseRegex.IsMatch(albumTitle));
     }
@@ -139,6 +139,7 @@ public static class AlbumExtensions
             album.Directory.Delete();
             return true;
         }
+
         return false;
     }
 
@@ -149,7 +150,8 @@ public static class AlbumExtensions
         {
             return d;
         }
-        var tType = typeof(T?);        
+
+        var tType = typeof(T?);
         var vv = album.Tags?.FirstOrDefault(x => x.Identifier == metaTagIdentifier)?.Value;
         try
         {
@@ -157,20 +159,23 @@ public static class AlbumExtensions
             {
                 return d;
             }
+
             var converter = TypeDescriptor.GetConverter(typeof(T?));
             if (typeof(T?) == typeof(short?))
             {
                 return SafeParser.ToNumber<T?>(vv.ToString());
             }
+
             if (vv is JsonElement)
             {
                 vv = vv.ToString() ?? string.Empty;
             }
+
             return (T?)converter.ConvertFrom(vv);
         }
         catch (Exception e)
         {
-            Trace.WriteLine($"Song [{ album}] MetaTagIdentifier [{metaTagIdentifier.ToString()}] Value [{vv}] to type [{tType}] [{ e }]");            
+            Trace.WriteLine($"Song [{album}] MetaTagIdentifier [{metaTagIdentifier.ToString()}] Value [{vv}] to type [{tType}] [{e}]");
         }
 
         return d;
@@ -247,7 +252,7 @@ public static class AlbumExtensions
     {
         return (album.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                 album.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear) ??
-                album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear)) ?? 
+                album.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumYear)) ??
                SafeParser.ToDateTime(album.MetaTagValue<string?>(MetaTagIdentifier.AlbumDate))?.Year;
     }
 
@@ -332,6 +337,7 @@ public static class AlbumExtensions
                 }
             }
         }
+
         return result.ToArray();
     }
 
@@ -389,7 +395,7 @@ public static class AlbumExtensions
         {
             Trace.WriteLine($"Error trying to determine if file [{fileSystemInfo.FullName}] is for Album [{album}] Ex [{e.Message}]", "Error");
         }
-        
+
         // Even if multiple albums in same directory if the image name matches the cover name regex it
 
         return false;
@@ -413,6 +419,7 @@ public static class AlbumExtensions
             albumPathTitle = album.Directory.Name.Split(' ').Last().Nullify();
             Trace.WriteLine($"Using directory name [{albumPathTitle} as Album Path Title for album [{album}]");
         }
+
         if (string.IsNullOrEmpty(albumPathTitle))
         {
             throw new Exception($"Unable to determine Album Path for Album [{album}].");
@@ -554,13 +561,15 @@ public static class AlbumExtensions
         {
             return false;
         }
-        var renumberedImages = new  List<ImageInfo>();
-        foreach(var ii in album.Images!.OrderBy(x => x.SortOrder).Select((x, i) => (x, i)).ToArray())
+
+        var renumberedImages = new List<ImageInfo>();
+        foreach (var ii in album.Images!.OrderBy(x => x.SortOrder).Select((x, i) => (x, i)).ToArray())
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
+
             var newFilename = $"{ImageInfo.ImageFilePrefix}{(ii.i + 1).ToStringPadLeft(MelodeeConfiguration.ImageNameNumberPadding)}-{ii.x.PictureIdentifier.ToString()}.jpg";
             if (ii.x.FileInfo.Exists(album.Directory))
             {
@@ -572,15 +581,16 @@ public static class AlbumExtensions
                         Name = newFilename,
                         Size = ii.x.FileInfo?.Size ?? 0,
                         OriginalName = ii.x.FileInfo?.OriginalName
-                    },
+                    }
                 });
             }
         }
+
         album.Images = renumberedImages.ToArray();
         return true;
     }
 
-    public static async Task<IEnumerable<ImageInfo>> FindImages(this Album album, IAlbumNamesInDirectoryPlugin albumNamesInDirectoryPlugin,  ImageConvertor imageConvertor, IImageValidator imageValidator, CancellationToken cancellationToken = default)
+    public static async Task<IEnumerable<ImageInfo>> FindImages(this Album album, IAlbumNamesInDirectoryPlugin albumNamesInDirectoryPlugin, ImageConvertor imageConvertor, IImageValidator imageValidator, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
@@ -589,7 +599,8 @@ public static class AlbumExtensions
         foreach (var dir in album.ImageDirectories())
         {
             imageFiles.AddRange(ImageHelper.ImageFilesInDirectory(dir.FullName, SearchOption.TopDirectoryOnly));
-        }        
+        }
+
         var index = 1;
         foreach (var imageFile in imageFiles.Order())
         {
@@ -611,7 +622,7 @@ public static class AlbumExtensions
                         continue;
                     }
                 }
-                
+
                 var pictureIdentifier = PictureIdentifier.Front;
                 if (ImageHelper.IsAlbumSecondaryImage(fileInfo))
                 {
@@ -627,6 +638,7 @@ public static class AlbumExtensions
                     Trace.WriteLine($"Album find images is skipping duplicate image [{imageFile}] with crc32 [{crc32}]");
                     continue;
                 }
+
                 imageInfos.Add(new ImageInfo
                 {
                     CrcHash = crc32,
@@ -656,13 +668,14 @@ public static class AlbumExtensions
                 // get the best image in the group by resolution
                 bestImages.Add(groupedByType.OrderByDescending(x => x.Width * x.Height).First());
             }
+
             bestImages.AddRange(imagesGroupedByType.Where(x => x.Count() == 1).SelectMany(x => x));
             imageInfos = bestImages;
         }
-        
+
         return imageInfos;
-    }    
-    
+    }
+
 
     /// <summary>
     /// Look in the album directory and see if there are any artist images. Most of the time an artist image is one up from an album directory in the 'artist' directory.
@@ -732,13 +745,14 @@ public static class AlbumExtensions
 
                 var imageInfo = await Image.LoadAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
                 var fileInfoFileSystemInfo = fileInfo.ToFileSystemInfo();
-               
+
                 var crc32 = Crc32.Calculate(fileInfo);
                 if (imageInfos.Any(x => x.IsCrcHashMatch(crc32)))
                 {
                     Trace.WriteLine($"Album find artist images is skipping duplicate image [{imageFile}] with crc32 [{crc32}]");
                     continue;
                 }
+
                 imageInfos.Add(new ImageInfo
                 {
                     CrcHash = Crc32.Calculate(fileInfo),
@@ -757,7 +771,7 @@ public static class AlbumExtensions
                 index++;
             }
         }
-        
+
         // When there are multiple images for the same type take the higher resolution image for each
         if (imageInfos.Count > 0)
         {
@@ -768,10 +782,10 @@ public static class AlbumExtensions
                 // get the best image in the group by resolution
                 bestImages.Add(groupedByType.OrderByDescending(x => x.Width * x.Height).First());
             }
+
             imageInfos = bestImages;
         }
-        
+
         return imageInfos;
-    }    
-    
+    }
 }

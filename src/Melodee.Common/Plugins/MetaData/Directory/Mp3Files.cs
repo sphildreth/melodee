@@ -56,7 +56,7 @@ public class Mp3Files(
         {
             using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] ProcessDirectoryAsync [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.Name))
             {
-                foreach(var fileSystemInfo in fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.TopDirectoryOnly))
+                foreach (var fileSystemInfo in fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.TopDirectoryOnly))
                 {
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in songPlugins.OrderBy(x => x.SortOrder))
@@ -65,6 +65,7 @@ public class Mp3Files(
                         {
                             break;
                         }
+
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
                             var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
@@ -77,14 +78,15 @@ public class Mp3Files(
                             {
                                 Trace.WriteLine($"Unable to process file: [{fsi}]");
                             }
+
                             errors.AddRange(pluginResult.Errors ?? []);
                             messages.AddRange(pluginResult.Messages ?? []);
                             processedFileCount++;
                         }
                     }
                 }
-                
-                await HandleDuplicates(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);   
+
+                await HandleDuplicates(fileSystemDirectoryInfo, songs.ToArray(), cancellationToken);
                 EnsureSortOrderSet(songs.ToArray());
 
                 foreach (var songsGroupedByAlbum in songs.GroupBy(x => x.SongArtistAlbumUniqueId()))
@@ -95,6 +97,7 @@ public class Mp3Files(
                         {
                             break;
                         }
+
                         var foundAlbum = albums.FirstOrDefault(x => x.Artist.NameNormalized == (song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist()) && x.AlbumTitle() == song.AlbumTitle());
                         if (foundAlbum != null)
                         {
@@ -103,7 +106,7 @@ public class Mp3Files(
                         }
                         else
                         {
-                            var songTotal =  SafeParser.ToNumber<short>(songsGroupedByAlbum.Count());
+                            var songTotal = SafeParser.ToNumber<short>(songsGroupedByAlbum.Count());
                             var newAlbumTags = new List<MetaTag<object?>>
                             {
                                 new()
@@ -128,12 +131,13 @@ public class Mp3Files(
                             var albumDate = song.AlbumDate();
                             if (albumDate != null)
                             {
-                                newAlbumTags.Add(new()
+                                newAlbumTags.Add(new MetaTag<object?>
                                 {
                                     Identifier = MetaTagIdentifier.AlbumDate, Value = albumDate,
                                     SortOrder = 100
-                                }); 
+                                });
                             }
+
                             var genres = songsGroupedByAlbum
                                 .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
                                 .Where(x => x.Identifier == MetaTagIdentifier.Genre);
@@ -178,6 +182,7 @@ public class Mp3Files(
             {
                 break;
             }
+
             var validationResult = albumValidator.ValidateAlbum(album);
             album.ValidationMessages = validationResult.Data.Messages ?? [];
             album.Status = validationResult.Data.AlbumStatus;
@@ -206,7 +211,7 @@ public class Mp3Files(
         Trace.WriteLine($"Ensuring sort order is set on songs...");
         foreach (var song in songs)
         {
-            song.SortOrder = (song.SongNumber() + (song.MediaNumber() * MediaEditService.SortOrderMediaMultiplier)) - MediaEditService.SortOrderMediaMultiplier;
+            song.SortOrder = song.SongNumber() + song.MediaNumber() * MediaEditService.SortOrderMediaMultiplier - MediaEditService.SortOrderMediaMultiplier;
         }
     }
 
@@ -227,7 +232,7 @@ public class Mp3Files(
             Trace.WriteLine($"Deleted duplicate: {dup.FullName}");
             ss.RemoveAll(x => x.File.FullName(fileSystemDirectoryInfo) == dup.FullName);
         }
-        
+
         var duplicateSongs = ss.GroupBy(x => x.DuplicateHashCheck).Where(x => x.Count() > 1).ToArray();
         if (duplicateSongs.Any())
         {
@@ -243,7 +248,6 @@ public class Mp3Files(
                 }
             }
         }
-        
     }
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)

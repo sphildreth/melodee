@@ -26,7 +26,6 @@ public class LibraryScanCommand : CommandBase<LibraryScanSettings>
     {
         using (var scope = CreateServiceProvider().CreateScope())
         {
-           
             var job = new LibraryInsertJob
             (
                 scope.ServiceProvider.GetRequiredService<ILogger>(),
@@ -39,7 +38,7 @@ public class LibraryScanCommand : CommandBase<LibraryScanSettings>
                 scope.ServiceProvider.GetRequiredService<AlbumDiscoveryService>(),
                 scope.ServiceProvider.GetRequiredService<DirectoryProcessorToStagingService>(),
                 scope.ServiceProvider.GetRequiredService<IBus>()
-            );            
+            );
 
             job.OnProcessingEvent += (_, e) => { Log.Information(e.ToString()); };
 
@@ -51,5 +50,3 @@ public class LibraryScanCommand : CommandBase<LibraryScanSettings>
         }
     }
 }
-
-

@@ -26,7 +26,7 @@ public class ArtistSearchEngineRepositoryHousekeepingJob(
     {
         var startTimeStamp = Stopwatch.GetTimestamp();
         Logger.Information("[{JobName}] Starting job.", nameof(ArtistSearchEngineRepositoryHousekeepingJob));
-        
+
         var configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
         var refreshInDays = configuration.GetValue<int?>(SettingRegistry.SearchEngineArtistSearchDatabaseRefreshInDays) ?? 0;
         if (refreshInDays == 0)
@@ -43,7 +43,7 @@ public class ArtistSearchEngineRepositoryHousekeepingJob(
         var refreshOtherThanDateTime = refreshOlderThan.ToDateTimeUtc();
 
         Logger.Information("[{JobName}] Refreshing Artist Search Engine Repository older than [{RefreshOlderThan}]", nameof(ArtistSearchEngineRepositoryHousekeepingJob), refreshOlderThan);
-        
+
         await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(context.CancellationToken).ConfigureAwait(false))
         {
             // Refresh a batch of albums for Artists, this is to prevent rate limiting issues. 
@@ -65,6 +65,7 @@ public class ArtistSearchEngineRepositoryHousekeepingJob(
             {
                 Logger.Information("[{JobName}] No artists need refreshing.", nameof(ArtistSearchEngineRepositoryHousekeepingJob));
             }
+
             Logger.Information("[{JobName}] Completed job in [{Elapsed}].", nameof(ArtistSearchEngineRepositoryHousekeepingJob), Stopwatch.GetElapsedTime(startTimeStamp));
         }
     }

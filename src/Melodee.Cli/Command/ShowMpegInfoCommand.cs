@@ -51,8 +51,8 @@ public class ShowMpegInfoCommand : CommandBase<ShowMpegInfoSettings>
                     .Header("MPEG Info")
                     .Collapse()
                     .RoundedBorder()
-                    .BorderColor(mpeg.IsValid ? Color.Green : Color.Red));            
-            
+                    .BorderColor(mpeg.IsValid ? Color.Green : Color.Red));
+
             return mpeg.IsValid ? 0 : 1;
         }
     }

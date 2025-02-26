@@ -8,7 +8,7 @@ public class MelodeeJobExecutionContext(CancellationToken cancellation) : IJobEx
     public const string ForceMode = "ForceMode";
     public const string ScanJustDirectory = "ScanJustDirectory";
     public const string Verbose = "Verbose";
-    
+
     private readonly Dictionary<object, object> _dataMap = new();
 
     public void Put(object key, object objectValue)
@@ -43,4 +43,3 @@ public class MelodeeJobExecutionContext(CancellationToken cancellation) : IJobEx
     public TimeSpan JobRunTime { get; } = TimeSpan.Zero;
     public CancellationToken CancellationToken { get; } = cancellation;
 }
-

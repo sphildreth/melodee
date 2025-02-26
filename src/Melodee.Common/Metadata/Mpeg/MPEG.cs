@@ -13,7 +13,7 @@ namespace Melodee.Common.Metadata.Mpeg;
 public class Mpeg
 {
     public double LengthMs { get; set; }
-    
+
     public TimeSpan Length => TimeSpan.FromMilliseconds(LengthMs);
     public long AudioBytes { get; set; }
 
@@ -28,9 +28,9 @@ public class Mpeg
     public bool Padding { get; set; }
     public bool Private { get; set; }
     public string ChannelMode { get; set; }
-    
+
     public int Channels { get; set; }
-    
+
     public string ModeExtension { get; set; }
     public bool CopyRight { get; set; }
     public bool Original { get; set; }
@@ -41,7 +41,7 @@ public class Mpeg
     private BinaryReader _br;
 
     public bool IsAudioNeedsConversion => IsValid && !IsMp3MimeType && !IsVideoType && IsLengthOk;
-    
+
     public bool IsValid => IsBitrateOk &&
                            IsFrequencyOk &&
                            IsLayerOk &&
@@ -54,9 +54,9 @@ public class Mpeg
     public bool IsFrequencyOk => SafeParser.ToNumber<int>(Frequency) > 95 || string.Equals(Frequency, "reserved", StringComparison.OrdinalIgnoreCase);
 
     public bool IsVideoType => MimeType.Nullify() != null && MimeType!.StartsWith("VIDEO/", StringComparison.OrdinalIgnoreCase);
-    
+
     public bool IsMp3MimeType => MimeType is "audio/mpeg" or "audio/mp3";
-    
+
     public bool IsLengthOk => LengthMs > 0;
 
     public string? MimeType => MimeTypes.GetMimeType(Filename);
@@ -84,7 +84,7 @@ public class Mpeg
                 ParseHeader(headerBytes);
             }
         }
-        
+
         var fileInfo = new FileInfo(Filename);
         FileSize = fileInfo.Length;
         AudioBytes = FileSize - HeaderPosition;
@@ -92,7 +92,8 @@ public class Mpeg
         if (bitrate > 0)
         {
             LengthMs = AudioBytes * 8 / (1000 * bitrate);
-        }        
+        }
+
         if (!IsValid)
         {
             var track = new Track(Filename);
@@ -102,7 +103,7 @@ public class Mpeg
             Channels = track.ChannelsArrangement?.NbChannels ?? 0;
             Frequency = track.SampleRate.ToString(CultureInfo.InvariantCulture);
             LengthMs = track.DurationMs;
-        }        
+        }
     }
 
     private void CalculateLength()
@@ -124,6 +125,7 @@ public class Mpeg
         {
             return;
         }
+
         var boolHeader = BitReader.ToBitBools(headerBytes);
         ParseVersion(boolHeader[11], boolHeader[12]);
         ParseLayer(boolHeader[13], boolHeader[14]);

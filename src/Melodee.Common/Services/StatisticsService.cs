@@ -152,14 +152,14 @@ public sealed class StatisticsService(
                 null,
                 13,
                 "analytics"));
-            
+
             results.Add(new Statistic(StatisticType.Information,
                 "Total: Song Mb",
                 (await scopedContext.Songs.SumAsync(x => x.FileSize, cancellationToken).ConfigureAwait(false)).FormatFileSize(),
                 null,
                 null,
                 14,
-                "bar_chart"));         
+                "bar_chart"));
 
             results.Add(new Statistic(StatisticType.Information,
                 "Total: Song Duration",
@@ -167,7 +167,7 @@ public sealed class StatisticsService(
                 null,
                 null,
                 15,
-                "bar_chart"));              
+                "bar_chart"));
         }
 
         return new OperationResult<Statistic[]>

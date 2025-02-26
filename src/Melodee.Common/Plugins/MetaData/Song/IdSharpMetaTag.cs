@@ -160,5 +160,4 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
     {
         throw new NotImplementedException();
     }
-
 }

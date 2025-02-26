@@ -25,7 +25,7 @@ public class SongService(
 
     public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListNowPlayingAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        int songCount = 0;
+        var songCount = 0;
         SongDataInfo[] songs = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -37,7 +37,7 @@ public class SongService(
                 var orderBy = pagedRequest.OrderByValue();
                 var dbConn = scopedContext.Database.GetDbConnection();
                 songCount = nowPlayingSongIds.Length;
-                
+
                 if (!pagedRequest.IsTotalCountOnlyRequest)
                 {
                     var sqlStartFragment = """
@@ -65,8 +65,8 @@ public class SongService(
             Data = songs
         };
     }
-    
-    
+
+
     public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         int songCount;

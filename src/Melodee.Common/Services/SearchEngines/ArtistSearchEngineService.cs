@@ -75,7 +75,7 @@ public class ArtistSearchEngineService(
         {
             await scopedContext.Database.EnsureCreatedAsync(cancellationToken);
         }
-        
+
         _initialized = true;
     }
 
@@ -86,14 +86,14 @@ public class ArtistSearchEngineService(
             throw new InvalidOperationException($"{nameof(ArtistSearchEngineService)} is not initialized.");
         }
     }
-    
+
     public async Task<PagedResult<Artist>> ListAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         SqlMapper.ResetTypeHandlers();
         SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
         SqlMapper.AddTypeHandler(new GuidHandler());
         SqlMapper.AddTypeHandler(new TimeSpanHandler());
-        
+
         int albumCount;
         Artist[] artists = [];
         await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -106,7 +106,6 @@ public class ArtistSearchEngineService(
                 .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                
                 var sqlStartFragment = """
                                        SELECT a."Id", a."Name", a."NameNormalized", a."ItunesId", a."AmgId", a."DiscogsId", a."WikiDataId", 
                                               a."MusicBrainzId", a."LastFmId", a."SpotifyId", a."SortName" 
@@ -117,29 +116,30 @@ public class ArtistSearchEngineService(
                 artists = (await dbConn
                     .QueryAsync<Artist>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
-                
-                foreach(var artist in artists )
+
+                foreach (var artist in artists)
                 {
                     artist.AlbumCount = await dbConn.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM \"Albums\" WHERE \"ArtistId\" = @ArtistId", new { ArtistId = artist.Id });
                 }
             }
         }
+
         SqlMapper.ResetTypeHandlers();
-        
+
         return new PagedResult<Artist>
         {
             TotalCount = albumCount,
             TotalPages = pagedRequest.TotalPages(albumCount),
             Data = artists
         };
-    }    
+    }
 
     public async Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(string artistName, int? artistId, int? maxResults, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
-        int totalCount = 0;
+        var totalCount = 0;
         long operationTime = 0;
 
         var artistIdValue = artistId;
@@ -200,17 +200,19 @@ public class ArtistSearchEngineService(
                 // Various artist is a mess and has hundreds of thousands of albums. Make the admin manually validate various artists.
                 Logger.Warning("[{Name}]:[{MethodName}] various artists albums require manual validation.",
                     nameof(ArtistSearchEngineService),
-                    nameof(GetArtistFromSearchProviders));                        
+                    nameof(GetArtistFromSearchProviders));
                 return null;
-            }         
+            }
+
             var theater = new Theater();
             if (query.NameNormalized.IsSimilar(theater.Name.ToNormalizedString()))
             {
                 Logger.Warning("[{Name}]:[{MethodName}] theater albums require manual validation.",
                     nameof(ArtistSearchEngineService),
-                    nameof(GetArtistFromSearchProviders));                        
+                    nameof(GetArtistFromSearchProviders));
                 return null;
             }
+
             var pluginsResult = new ConcurrentBag<ArtistSearchResult>();
             var breakFlag = false;
             await Parallel.ForEachAsync(
@@ -218,32 +220,34 @@ public class ArtistSearchEngineService(
                     .Where(x => x.IsEnabled)
                     .OrderBy(x => x.SortOrder)
                     .TakeWhile(_ => !Volatile.Read(ref breakFlag)), cancellationToken, async (plugin, tt) =>
-            {
-                if (cancellationToken.IsCancellationRequested)
                 {
-                    Volatile.Write(ref breakFlag, true);
-                }
-                var startTicks = Stopwatch.GetTimestamp();
-                // Don't limit the number of results from the search engine as they will be put into the local database and limited on result to method call.
-                var pluginResult = await plugin.DoArtistSearchAsync(query, int.MaxValue, tt).ConfigureAwait(false);
-                if (pluginResult is { IsSuccess: true, Data: not null })
-                {
-                    foreach (var d in pluginResult.Data)
+                    if (cancellationToken.IsCancellationRequested)
                     {
-                        if (d.Name.ToNormalizedString().IsSimilar(query.NameNormalized))
+                        Volatile.Write(ref breakFlag, true);
+                    }
+
+                    var startTicks = Stopwatch.GetTimestamp();
+                    // Don't limit the number of results from the search engine as they will be put into the local database and limited on result to method call.
+                    var pluginResult = await plugin.DoArtistSearchAsync(query, int.MaxValue, tt).ConfigureAwait(false);
+                    if (pluginResult is { IsSuccess: true, Data: not null })
+                    {
+                        foreach (var d in pluginResult.Data)
                         {
-                            pluginsResult.Add(d);
+                            if (d.Name.ToNormalizedString().IsSimilar(query.NameNormalized))
+                            {
+                                pluginsResult.Add(d);
+                            }
                         }
                     }
-                }
-                Logger.Debug("[{Plugin}] performed artist search. Elapsed [{ElapsedTime}]",
-                    plugin.DisplayName,
-                    Stopwatch.GetElapsedTime(startTicks).TotalMilliseconds);
-                if (plugin.StopProcessing)
-                {
-                    Volatile.Write(ref breakFlag, true);
-                }
-            });
+
+                    Logger.Debug("[{Plugin}] performed artist search. Elapsed [{ElapsedTime}]",
+                        plugin.DisplayName,
+                        Stopwatch.GetElapsedTime(startTicks).TotalMilliseconds);
+                    if (plugin.StopProcessing)
+                    {
+                        Volatile.Write(ref breakFlag, true);
+                    }
+                });
             if (pluginsResult.Count > 0)
             {
                 var startTicks = Stopwatch.GetTimestamp();
@@ -262,9 +266,9 @@ public class ArtistSearchEngineService(
                         Rank = 1,
                         SortName = pluginResult.SortName,
                         SpotifyId = pluginResult.SpotifyId,
-                        WikiDataId = pluginResult.WikiDataId,
+                        WikiDataId = pluginResult.WikiDataId
                     };
-                    var seenArtist = artistsFromSearchResult.FirstOrDefault(x => x.MusicBrainzId == artistFromSearchResult.MusicBrainzId 
+                    var seenArtist = artistsFromSearchResult.FirstOrDefault(x => x.MusicBrainzId == artistFromSearchResult.MusicBrainzId
                                                                                  || x.SpotifyId == artistFromSearchResult.SpotifyId);
                     if (seenArtist == null)
                     {
@@ -316,9 +320,10 @@ public class ArtistSearchEngineService(
                             seenAlbumRelease.CoverUrl ??= arRelease.CoverUrl;
                         }
                     }
+
                     artistFromSearchResult.Releases = combinedNewArtistReleases.Where(x => x.AlbumType is AlbumType.Album or AlbumType.EP).ToArray();
-                    artistsFromSearchResult.Add(artistFromSearchResult);                      
-                   
+                    artistsFromSearchResult.Add(artistFromSearchResult);
+
                     if (artistFromSearchResult.SpotifyId == null && artistFromSearchResult.MusicBrainzId == null)
                     {
                         Logger.Warning("[{Name}]:[{MethodName}] unable to find artist for query [{Query}].",
@@ -328,11 +333,12 @@ public class ArtistSearchEngineService(
                         return null;
                     }
                 }
+
                 foreach (var artistFromSearchResult in artistsFromSearchResult)
                 {
                     if (artistFromSearchResult.Releases?.Length > 0 && query.AlbumKeyValues?.Length > 0)
                     {
-                        foreach(var queryAlbum in query.AlbumKeyValues )
+                        foreach (var queryAlbum in query.AlbumKeyValues)
                         {
                             var matchingAlbumsOnName = artistFromSearchResult.Releases.Where(x => x.NameNormalized == queryAlbum.Value).ToArray();
                             if (matchingAlbumsOnName.Any())
@@ -345,9 +351,11 @@ public class ArtistSearchEngineService(
                                 }
                             }
                         }
+
                         artistFromSearchResult.Releases = artistFromSearchResult.Releases.OrderByDescending(x => x.Rank).ToArray();
                     }
                 }
+
                 var newArtist = artistsFromSearchResult.OrderByDescending(x => x.Rank).FirstOrDefault();
 
                 Logger.Debug("[{Name}]:[{MethodName}] artist for query [{Query}] return [{ArtistId}] with [{AlbumCount}] albums in [{ElapsedTime}] ms.",
@@ -357,7 +365,7 @@ public class ArtistSearchEngineService(
                     newArtist?.ToString(),
                     newArtist?.Releases?.Length,
                     Stopwatch.GetElapsedTime(startTicks).TotalMilliseconds
-                );                
+                );
                 return newArtist;
             }
         }
@@ -368,7 +376,7 @@ public class ArtistSearchEngineService(
 
         return null;
     }
-    
+
     public async Task<PagedResult<ArtistSearchResult>> DoSearchAsync(ArtistQuery query, int? maxResults, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
@@ -378,11 +386,10 @@ public class ArtistSearchEngineService(
         var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
 
         long operationTime = 0;
-        int totalCount = 0;
+        var totalCount = 0;
 
         using (Operation.At(LogEventLevel.Debug).Time("[{Name}] DoSearchAsync [{Query}]", nameof(ArtistSearchEngineService), query))
         {
-            
             // See if found in DbContext if not then query plugins, add to context and return results
             await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -391,13 +398,13 @@ public class ArtistSearchEngineService(
                 var outerTag = $"{StringExtensions.TagsSeparator}{query.NameNormalized}";
                 var artists = await scopedContext
                     .Artists.Include(x => x.Albums)
-                    .Where(x => x.NameNormalized == query.NameNormalized || 
-                                (x.MusicBrainzId != null && query.MusicBrainzId != null && x.MusicBrainzId == query.MusicBrainzIdValue) || 
+                    .Where(x => x.NameNormalized == query.NameNormalized ||
+                                (x.MusicBrainzId != null && query.MusicBrainzId != null && x.MusicBrainzId == query.MusicBrainzIdValue) ||
                                 (x.AlternateNames != null && (x.AlternateNames.Contains(firstTag) || x.AlternateNames.Contains(inTag) || x.AlternateNames.Contains(outerTag))) ||
                                 (x.SpotifyId != null && query.SpotifyId != null && x.SpotifyId == query.SpotifyId))
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
-               
+
                 if (artists.Length > 0 && query.AlbumKeyValues?.Length > 0)
                 {
                     foreach (var ar in artists)
@@ -416,9 +423,9 @@ public class ArtistSearchEngineService(
                         }
                     }
                 }
-                
+
                 var artist = artists.OrderByDescending(x => x.Rank).FirstOrDefault();
-               
+
                 if (artist != null)
                 {
                     if (artist.Albums.Count == 0)
@@ -458,9 +465,10 @@ public class ArtistSearchEngineService(
                                     alreadyInList!.SpotifyId ??= alreadyInList?.SpotifyId;
                                 }
                             }
+
                             artist.Albums = albumsToAdd.ToArray();
                             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                            Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Updated existing artist [{artist}] added [{artist.Albums.Count}] albums.");        
+                            Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Updated existing artist [{artist}] added [{artist.Albums.Count}] albums.");
                             var artistId = artist.Id;
                             artist = await scopedContext
                                 .Artists
@@ -469,37 +477,38 @@ public class ArtistSearchEngineService(
                                 .ConfigureAwait(false);
                         }
                     }
+
                     result.Add(artist.ToArtistSearchResult(nameof(ArtistSearchEngineService)));
                     Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Found artist [{artist}] in database for query [{query}].");
                 }
                 else
                 {
                     var newArtist = await GetArtistFromSearchProviders(query, maxResultsValue, cancellationToken).ConfigureAwait(false);
-                    if(newArtist != null)
+                    if (newArtist != null)
                     {
                         var nameNormalized = newArtist.Name.ToNormalizedString() ?? newArtist.Name;
-                        
+
                         artist = await scopedContext
                             .Artists
-                            .Where(x => x.NameNormalized == nameNormalized ||  
+                            .Where(x => x.NameNormalized == nameNormalized ||
                                         (x.AlternateNames != null && (x.AlternateNames.Contains(firstTag) || x.AlternateNames.Contains(inTag) || x.AlternateNames.Contains(outerTag))) ||
-                                         (x.AmgId != null && x.AmgId == newArtist.AmgId) ||
-                                         (x.DiscogsId != null && x.DiscogsId == newArtist.DiscogsId) ||
-                                         (x.ItunesId != null && x.ItunesId == newArtist.ItunesId) ||
-                                         (x.LastFmId != null && x.LastFmId == newArtist.LastFmId) ||
-                                         (x.MusicBrainzId != null && x.MusicBrainzId == newArtist.MusicBrainzId) ||
-                                         (x.SpotifyId != null && x.SpotifyId == newArtist.SpotifyId) ||
-                                         (x.WikiDataId != null && x.WikiDataId == newArtist.WikiDataId))
-                            .FirstOrDefaultAsync(cancellationToken: cancellationToken)
+                                        (x.AmgId != null && x.AmgId == newArtist.AmgId) ||
+                                        (x.DiscogsId != null && x.DiscogsId == newArtist.DiscogsId) ||
+                                        (x.ItunesId != null && x.ItunesId == newArtist.ItunesId) ||
+                                        (x.LastFmId != null && x.LastFmId == newArtist.LastFmId) ||
+                                        (x.MusicBrainzId != null && x.MusicBrainzId == newArtist.MusicBrainzId) ||
+                                        (x.SpotifyId != null && x.SpotifyId == newArtist.SpotifyId) ||
+                                        (x.WikiDataId != null && x.WikiDataId == newArtist.WikiDataId))
+                            .FirstOrDefaultAsync(cancellationToken)
                             .ConfigureAwait(false);
-                        
+
                         if (artist != null)
                         {
                             result.Add(artist.ToArtistSearchResult(nameof(ArtistSearchEngineService)));
                             Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Found artist [{artist}] in database for query [{query}].");
                         }
                         else
-                        {  
+                        {
                             var newDbArtist = new Artist
                             {
                                 AmgId = newArtist.AmgId,
@@ -547,11 +556,13 @@ public class ArtistSearchEngineService(
                                         alreadyInList!.SpotifyId ??= alreadyInList?.SpotifyId;
                                     }
                                 }
-                                newDbArtist.Albums = albumsToAdd.ToArray();                              
-                            }                            
+
+                                newDbArtist.Albums = albumsToAdd.ToArray();
+                            }
+
                             scopedContext.Artists.Add(newDbArtist);
                             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                            newArtist = newArtist with { UniqueId = newDbArtist.Id, Releases = albums.Select(x => x.ToAlbumSearchResult(x.Artist, nameof(ArtistSearchEngineService))).ToArray()};
+                            newArtist = newArtist with { UniqueId = newDbArtist.Id, Releases = albums.Select(x => x.ToAlbumSearchResult(x.Artist, nameof(ArtistSearchEngineService))).ToArray() };
                             result.Add(newArtist);
                             Trace.WriteLine($"[{nameof(ArtistSearchEngineService)}] Added artist [{newArtist}] with [{newDbArtist.Albums.Count}] albums to database.");
                         }
@@ -582,24 +593,27 @@ public class ArtistSearchEngineService(
                 var sql = """
                           DELETE FROM "Albums" WHERE "ArtistId" = @artistId;
                           """;
-                await dbConn.ExecuteAsync(sql, new { artistId = artist.Id }).ConfigureAwait(false);                
+                await dbConn.ExecuteAsync(sql, new { artistId = artist.Id }).ConfigureAwait(false);
             }
+
             var now = DateTime.UtcNow;
             foreach (var artist in selectedArtists)
             {
                 await DoSearchAsync(new ArtistQuery { Name = artist.Name }, null, cancellationToken).ConfigureAwait(false);
                 var dbArtist = await scopedContext
                     .Artists
-                    .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken: cancellationToken)
+                    .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken)
                     .ConfigureAwait(false);
                 if (dbArtist != null)
                 {
                     dbArtist.LastRefreshed = now;
                 }
             }
+
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             result = true;
         }
+
         return new OperationResult<bool>
         {
             Data = result

@@ -73,7 +73,7 @@ public class MusicBrainzUpdateDatabaseJob(
 
             // Simple way to skip downloading for debugging
             var doDownload = true;
-            
+
             using (var client = httpClientFactory.CreateClient())
             {
                 var storageStagingDirectory = new FileSystemDirectoryInfo

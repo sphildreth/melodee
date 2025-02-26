@@ -80,9 +80,9 @@ public abstract class ServiceBase
                     if (image.FileInfo != null)
                     {
                         var imagePath = image.FileInfo.FullName(albumToMoveDir);
-                        if(File.Exists(imagePath))
+                        if (File.Exists(imagePath))
                         {
-                            File.Move(imagePath,Path.Combine(existingDir.FullName, image.FileInfo.Name));
+                            File.Move(imagePath, Path.Combine(existingDir.FullName, image.FileInfo.Name));
                             Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);
                         }
                     }

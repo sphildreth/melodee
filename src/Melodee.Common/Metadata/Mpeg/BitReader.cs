@@ -81,6 +81,7 @@ public class BitReader
         {
             return [];
         }
+
         var myBools = new bool[myBytes.Length * 8];
         var i = 0;
         foreach (var b in myBytes)

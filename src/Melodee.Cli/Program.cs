@@ -22,7 +22,7 @@ public static class Program
             {
                 add.AddCommand<ShowMpegInfoCommand>("mpeg")
                     .WithDescription("Load given file and show MPEG info and if Melodee thinks this is a valid MPEG file.");
-            });            
+            });
             config.AddBranch<JobSettings>("job", add =>
             {
                 add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("artistsearchengine-refresh")
@@ -42,7 +42,7 @@ public static class Program
                     .WithAlias("p")
                     .WithDescription("Process media in given library into staging library.");
                 add.AddCommand<LibraryPurgeCommand>("purge")
-                    .WithDescription("Purge library, deleting artists, albums, album songs and resetting library stats. CAUTION: Destructive!");             
+                    .WithDescription("Purge library, deleting artists, albums, album songs and resetting library stats. CAUTION: Destructive!");
                 add.AddCommand<LibraryMoveOkCommand>("move-ok")
                     .WithAlias("m")
                     .WithDescription("Move 'Ok' status albums into the given library.");
@@ -81,6 +81,7 @@ public static class Program
             AnsiConsole.MarkupLine($":musical_note: Melodee Command Line Interface v{version}");
             AnsiConsole.MarkupLine("");
         }
+
         return app.Run(args);
     }
 }
