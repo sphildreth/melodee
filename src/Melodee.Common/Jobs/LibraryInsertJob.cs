@@ -352,7 +352,7 @@ public class LibraryInsertJob(
                     currentAlbum = melodeeAlbum;
                     var artistName = melodeeAlbum.Artist.Name.CleanStringAsIs() ?? throw new Exception("Album artist is required.");
                     var artistNormalizedName = artistName.ToNormalizedString() ?? artistName;
-                    var dbArtistResult = await artistService.FindArtistAsync(melodeeAlbum.Artist.ArtistDbId, melodeeAlbum.Artist.Id, artistNormalizedName, melodeeAlbum.Artist.MusicBrainzId, cancellationToken).ConfigureAwait(false);
+                    var dbArtistResult = await artistService.FindArtistAsync(melodeeAlbum.Artist.ArtistDbId, melodeeAlbum.Artist.Id, artistNormalizedName, melodeeAlbum.Artist.MusicBrainzId, melodeeAlbum.Artist.SpotifyId, cancellationToken).ConfigureAwait(false);
                     var dbArtistId = dbArtistResult.Data?.Id;
                     var dbArtist = dbArtistId == null ? null : await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistId, cancellationToken).ConfigureAwait(false);
                     if (dbArtist == null)
@@ -591,7 +591,7 @@ public class LibraryInsertJob(
                 foreach (var artist in artists)
                 {
                     currentArtist = artist;
-                    var dbArtistResult = await artistService.FindArtistAsync(artist.ArtistDbId, artist.Id, artist.NameNormalized, artist.MusicBrainzId, cancellationToken).ConfigureAwait(false);
+                    var dbArtistResult = await artistService.FindArtistAsync(artist.ArtistDbId, artist.Id, artist.NameNormalized, artist.MusicBrainzId, artist.SpotifyId, cancellationToken).ConfigureAwait(false);
                     var dbArtistId = dbArtistResult.Data?.Id;
                     var dbArtist = dbArtistId == null ? null : await scopedContext.Artists.FirstOrDefaultAsync(x => x.Id == dbArtistId, cancellationToken).ConfigureAwait(false);
                     if (!dbArtistResult.IsSuccess || dbArtist == null)

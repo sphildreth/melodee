@@ -74,7 +74,7 @@ public sealed class AlbumRescanEventHandler(
                         return;
                     }
                     
-                    var processResult = await melodeeMetadataMaker.MakeMetadataFileAsync(message.AlbumDirectory, cancellationToken).ConfigureAwait(false);
+                    var processResult = await melodeeMetadataMaker.MakeMetadataFileAsync(message.AlbumDirectory, false, cancellationToken).ConfigureAwait(false);
                     if (!processResult.IsSuccess)
                     {
                         logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}].", nameof(AlbumRescanEventHandler), message.AlbumDirectory);

@@ -12,27 +12,30 @@ namespace Melodee.Cli.Command;
 ///     For the given library rebuild all of the Melodee data files from files in place (no conversion, no manipulations to
 ///     any files in place).
 /// </summary>
-public class LibraryRebuildCommand : CommandBase<LibraryProcessSettings>
+public class LibraryRebuildCommand : CommandBase<LibraryRebuildSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, LibraryProcessSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, LibraryRebuildSettings settings)
     {
         using (var scope = CreateServiceProvider().CreateScope())
         {
             var serializer = scope.ServiceProvider.GetRequiredService<ISerializer>();
             var libraryService = scope.ServiceProvider.GetRequiredService<LibraryService>();
 
-            var cleanResult = await libraryService.CleanLibraryAsync(settings.LibraryName);
-            if (!cleanResult.IsSuccess)
+            if (!settings.CreateOnlyMissing)
             {
-                AnsiConsole.Write(
-                    new Panel(new JsonText(serializer.Serialize(cleanResult) ?? string.Empty))
-                        .Header("Not successful")
-                        .Collapse()
-                        .RoundedBorder()
-                        .BorderColor(Color.Yellow));
+                var cleanResult = await libraryService.CleanLibraryAsync(settings.LibraryName);
+                if (!cleanResult.IsSuccess)
+                {
+                    AnsiConsole.Write(
+                        new Panel(new JsonText(serializer.Serialize(cleanResult) ?? string.Empty))
+                            .Header("Not successful")
+                            .Collapse()
+                            .RoundedBorder()
+                            .BorderColor(Color.Yellow));
+                }
             }
 
-            var result = await libraryService.Rebuild(settings.LibraryName, settings.Verbose).ConfigureAwait(false);
+            var result = await libraryService.Rebuild(settings.LibraryName, settings.CreateOnlyMissing, settings.Verbose).ConfigureAwait(false);
             if (!result.IsSuccess)
             {
                 AnsiConsole.Write(

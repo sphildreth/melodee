@@ -145,7 +145,7 @@ public class ArtistService(
     /// <summary>
     ///     Find the Artist using various given Ids.
     /// </summary>
-    public async Task<MelodeeModels.OperationResult<Artist?>> FindArtistAsync(int? byId, Guid byApiKey, string? byName, Guid? byMusicBrainzId, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Artist?>> FindArtistAsync(int? byId, Guid byApiKey, string? byName, Guid? byMusicBrainzId, string? bySpotifyId, CancellationToken cancellationToken = default)
     {
         int? id = null;
 
@@ -185,22 +185,24 @@ public class ArtistService(
                     sql = """
                           select a."Id"
                           from "Artists" a 
-                          where a."MusicBrainzId" = @musicBrainzId   
+                          where a."MusicBrainzId" = @musicBrainzId  
+                          or a."SpotifyId" = @spotifyId
                           or a."NameNormalized" = @name
                           """;
                     id = await dbConn
-                        .QuerySingleOrDefaultAsync<int?>(sql, new { name = byName, musicBrainzId = byMusicBrainzId })
+                        .QuerySingleOrDefaultAsync<int?>(sql, new { name = byName, musicBrainzId = byMusicBrainzId, spotifyId = bySpotifyId  })
                         .ConfigureAwait(false);
                 }
             }
             catch (Exception e)
             {
-                Logger.Error(e, "[{ServiceName}] attempting to Find Artist id [{Id}], apiKey [{ApiKey}], name [{Name}] musicbrainzId [{MbId}]",
+                Logger.Error(e, "[{ServiceName}] attempting to Find Artist id [{Id}], apiKey [{ApiKey}], name [{Name}] musicbrainzId [{MbId}] spotifyId [{SpotifyId}]",
                     nameof(ArtistService),
                     byId,
                     byApiKey,
                     byName,
-                    byMusicBrainzId);
+                    byMusicBrainzId,
+                    bySpotifyId);
             }
         }
 

@@ -34,7 +34,7 @@ public class MelodeeMetadataMaker(
     /// <summary>
     /// For a given directory generate a Melodee Metadata file (melodee.json). Does not modify files in place. 
     /// </summary>
-    public async Task<OperationResult<Album?>> MakeMetadataFileAsync(string directory, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Album?>> MakeMetadataFileAsync(string directory, bool doCreateOnlyIfMissing, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(directory, nameof(directory));
 
@@ -42,6 +42,15 @@ public class MelodeeMetadataMaker(
         if (!directoryInfo.Exists())
         {
             return new OperationResult<Album?>($"Directory does not exist [{directory}] does not exist")
+            {
+                Data = null
+            };
+        }
+        
+        var isFound = directoryInfo.AllMediaTypeFileInfos().Any();
+        if (isFound && doCreateOnlyIfMissing)
+        {
+            return new OperationResult<Album?>($"Directory already contains melodee metadata file [{directory}]")
             {
                 Data = null
             };
