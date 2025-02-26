@@ -6,6 +6,7 @@ using NodaTime;
 namespace Melodee.Common.Data.Models;
 
 [Index(nameof(MusicBrainzId), IsUnique = true)]
+[Index(nameof(SpotifyId), IsUnique = true)]
 [Serializable]
 public abstract class MetaDataModelBase : DataModelBase
 {
