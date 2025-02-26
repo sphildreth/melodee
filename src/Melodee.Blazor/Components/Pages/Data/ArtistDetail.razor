@@ -77,6 +77,7 @@
         {
             <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="LockButtonClick" title="Lock artist, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
         }
+        <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="RescanButtonClick" title="Rebuild metadata and rescan artists albums." Icon="refresh"></RadzenMenuItem>
         <RadzenMenuItem Text="Web Search" Click="OnInternetSearchClick" title="Search the web for artist." Icon="public"></RadzenMenuItem>
     </RadzenMenu>
     <RadzenText Text="@_artist.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
@@ -438,6 +439,16 @@
         _isPinned = !_isPinned;
         var result = await UserService.TogglePinnedAsync(CurrentUsersId, UserPinType.Artist, _artist.Id);
         NotificationService.Notify(NotificationMessageForResult(result, "Toggling Pin", ToastTime));
+    }
+
+    private async Task RescanButtonClick()
+    {
+        var confirm = await DialogService.Confirm("Are you sure?", "Rescan confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            var rescanresult = await ArtistService.RescanAsync([_artist.Id]);
+            NotificationService.Notify(NotificationMessageForResult(rescanresult, "submitting artist rescan job", ToastTime));
+        }
     }
 
 }

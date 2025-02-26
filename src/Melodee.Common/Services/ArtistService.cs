@@ -7,6 +7,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Conversion.Image;
@@ -15,6 +16,7 @@ using Melodee.Common.Services.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using Rebus.Bus;
 using Serilog;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
@@ -27,7 +29,8 @@ public class ArtistService(
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ISerializer serializer,
-    IHttpClientFactory httpClientFactory)
+    IHttpClientFactory httpClientFactory,
+    IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:artist:apikey:{0}";
@@ -270,6 +273,40 @@ public class ArtistService(
         ClearCache(artist.Data!);
     }
 
+    public async Task<MelodeeModels.OperationResult<bool>> RescanAsync(int[] artistIds, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrEmpty(artistIds, nameof(artistIds));
+
+        var result = false;
+        
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            foreach (var artistId in artistIds)
+            {
+                var artistResult = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
+                if (!artistResult.IsSuccess)
+                {
+                    return new MelodeeModels.OperationResult<bool>("Unknown artist.")
+                    {
+                        Data = false
+                    };
+                }
+                var artist = artistResult.Data!;
+                var artistAlbums = await scopedContext.Albums.Where(x => x.ArtistId == artistId).ToListAsync(cancellationToken).ConfigureAwait(false);
+                foreach (var album in artistAlbums)
+                {
+                    var albumDirectory = Path.Combine(artist.Library.Path, artist.Directory, album.Directory);
+                    await bus.SendLocal(new AlbumRescanEvent(album.Id, albumDirectory)).ConfigureAwait(false);
+                    result = true;
+                }
+            }
+        }
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
 
     public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] artistIds, CancellationToken cancellationToken = default)
     {
