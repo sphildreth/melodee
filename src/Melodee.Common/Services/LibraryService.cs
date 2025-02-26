@@ -649,7 +649,8 @@ public class LibraryService(
             dbLibrary.LastUpdatedAt = now;
             result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
 
-            ClearCache(dbLibrary);
+            // As we don't know how many artists, or contributors, where updated, safer to clear all cache.
+            CacheManager.Clear();
         }
 
         return new MelodeeModels.OperationResult<bool>
