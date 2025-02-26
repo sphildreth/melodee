@@ -284,21 +284,14 @@ public class ArtistService(
             foreach (var artistId in artistIds)
             {
                 var artistResult = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
-                if (!artistResult.IsSuccess)
+                if (!artistResult.IsSuccess || artistResult.Data == null)
                 {
                     return new MelodeeModels.OperationResult<bool>("Unknown artist.")
                     {
                         Data = false
                     };
                 }
-                var artist = artistResult.Data!;
-                var artistAlbums = await scopedContext.Albums.Where(x => x.ArtistId == artistId).ToListAsync(cancellationToken).ConfigureAwait(false);
-                foreach (var album in artistAlbums)
-                {
-                    var albumDirectory = Path.Combine(artist.Library.Path, artist.Directory, album.Directory);
-                    await bus.SendLocal(new AlbumRescanEvent(album.Id, albumDirectory)).ConfigureAwait(false);
-                    result = true;
-                }
+                await bus.SendLocal(new ArtistRescanEvent(artistResult.Data.Id, Path.Combine(artistResult.Data.Library.Path, artistResult.Data.Directory))).ConfigureAwait(false);
             }
         }
 
@@ -403,7 +396,7 @@ public class ArtistService(
 
             dbDetail.AlternateNames = artist.AlternateNames;
             dbDetail.AmgId = artist.AmgId;
-            dbDetail.Biography = artist.Biography;
+            dbDetail.Biography = artist.Biography.Nullify();
             dbDetail.Description = artist.Description;
             dbDetail.Directory = artist.Directory;
             dbDetail.DiscogsId = artist.DiscogsId;
@@ -737,5 +730,25 @@ public class ArtistService(
                 Data = true
             };
         }
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> LockUnlockArtistAsync(int artistId, bool doLock, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
+
+        var artistResult = await GetAsync(artistId,cancellationToken).ConfigureAwait(false);
+        if (!artistResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<bool>($"Unknown artist to lock [{artistId}].")
+            {
+                Data = false
+            };
+        }
+        artistResult.Data!.IsLocked = doLock;
+        var result = (await UpdateAsync(artistResult.Data, cancellationToken).ConfigureAwait(false))?.Data ?? false;
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
     }
 }

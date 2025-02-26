@@ -613,12 +613,15 @@ public static class AlbumExtensions
 
             if (album.IsFileForAlbum(albumNamesInDirectoryPlugin, fileInfo))
             {
-                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false)).Data.IsValid)
+                var validationResult = await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false); 
+                if (!validationResult.Data.IsValid)
                 {
                     // Try converting (resizing and padding if needed) image and then revalidate
-                    await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
-                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false)).Data.IsValid)
+                    await imageConvertor.ProcessFileAsync(fileInfo.Directory!.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
+                    validationResult = await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false);
+                    if (!validationResult.Data.IsValid)
                     {
+                        Trace.WriteLine($"Album find images is skipping invalid image [{imageFile}] ValidationResult [{validationResult.Data}");
                         continue;
                     }
                 }
@@ -639,6 +642,7 @@ public static class AlbumExtensions
                     continue;
                 }
 
+                var fileFileSystemDirectoryInfo = fileInfo.Directory!.ToDirectorySystemInfo();
                 imageInfos.Add(new ImageInfo
                 {
                     CrcHash = crc32,
@@ -648,31 +652,33 @@ public static class AlbumExtensions
                         Size = fileInfoFileSystemInfo.Size,
                         OriginalName = fileInfo.Name
                     },
+                    DirectoryInfo = fileFileSystemDirectoryInfo == album.Directory ? null : fileFileSystemDirectoryInfo,
                     OriginalFilename = fileInfo.Name,
                     PictureIdentifier = pictureIdentifier,
                     Width = imageInfo.Width,
                     Height = imageInfo.Height,
-                    SortOrder = index
+                    SortOrder = index + (int)pictureIdentifier * 1000
                 });
                 index++;
             }
         }
-
-        // When there are multiple images for the same type take the higher resolution image for each
-        if (imageInfos.Count > 0)
+        // If there are images, but not a primary image, then take the first secondary and make it the primary
+        if (imageInfos.Count != 0 && imageInfos.All(x => x.PictureIdentifier != PictureIdentifier.Front))
         {
-            var bestImages = new List<ImageInfo>();
-            var imagesGroupedByType = imageInfos.GroupBy(x => x.PictureIdentifier).ToArray();
-            foreach (var groupedByType in imagesGroupedByType.Where(x => x.Count() > 1))
+            var firstSecondaryImage = imageInfos
+                .OrderBy(x => x.SortOrder)
+                .First(x => x.PictureIdentifier == PictureIdentifier.SecondaryFront);
+            imageInfos.Remove(firstSecondaryImage);
+            var newImageInfos = new List<ImageInfo>
             {
-                // get the best image in the group by resolution
-                bestImages.Add(groupedByType.OrderByDescending(x => x.Width * x.Height).First());
-            }
-
-            bestImages.AddRange(imagesGroupedByType.Where(x => x.Count() == 1).SelectMany(x => x));
-            imageInfos = bestImages;
+                firstSecondaryImage with
+                {
+                    PictureIdentifier = PictureIdentifier.Front
+                }
+            };
+            newImageInfos.AddRange(imageInfos);
+            imageInfos = newImageInfos;
         }
-
         return imageInfos;
     }
 
@@ -771,21 +777,6 @@ public static class AlbumExtensions
                 index++;
             }
         }
-
-        // When there are multiple images for the same type take the higher resolution image for each
-        if (imageInfos.Count > 0)
-        {
-            var bestImages = new List<ImageInfo>();
-            var imagesGroupedByType = imageInfos.GroupBy(x => x.PictureIdentifier).ToArray();
-            foreach (var groupedByType in imagesGroupedByType.Where(x => x.Count() > 1))
-            {
-                // get the best image in the group by resolution
-                bestImages.Add(groupedByType.OrderByDescending(x => x.Width * x.Height).First());
-            }
-
-            imageInfos = bestImages;
-        }
-
         return imageInfos;
     }
 }

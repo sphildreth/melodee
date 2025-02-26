@@ -13,6 +13,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject IJSRuntime JsRuntime
 
 <PageTitle>@_artist.Name</PageTitle>
@@ -71,7 +72,7 @@
         <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
         @if (_artist.IsLocked)
         {
-            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="UnlockButtonClick" title="Unlock artist, will allow modifications." IconColor="@Colors.Warning" Icon="lock_open"></RadzenMenuItem>
+            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Click="UnlockButtonClick" title="Unlock artist, will allow modifications." IconColor="@Colors.Warning" Icon="lock_open"></RadzenMenuItem>
         }
         else
         {
@@ -97,7 +98,7 @@
                         <RadzenTreeItem Text="Images">
                             <Template>
                                 <RadzenIcon Icon="image"/>
-                                @context.Text
+                                @($"{ context.Text } ({(_artist.ImageCount ?? 0)})")
                             </Template>
                         </RadzenTreeItem>
                         <RadzenTreeItem Text="Relationships">
@@ -244,10 +245,36 @@
                         </RadzenPanel>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="4">
-                        <RadzenImage
-                            Path=@($"/images/{_artist.ToApiKey()}/350")
-                            Style="margin:auto;display: block;"
-                            AlternateText="@_artist.Name"/>
+
+                        <RadzenStack orientation="Orientation.Vertical" class="rz-h-100">
+                            @if (_artistImagesInByteBase64.Length < 2)
+                            {
+                                <RadzenImage
+                                    Path=@($"/images/{_artist.ToApiKey()}/400")
+                                    Style="margin:auto;display: block;"
+                                    AlternateText="@_artist.Name"/>
+                            }
+                            @if (_artistImagesInByteBase64.Length > 1)
+                            {
+                                <RadzenCarousel
+                                    Auto="false"
+                                    Style="height: 400px; width: 400px;"
+                                    class="rz-mx-auto"
+                                    ButtonStyle="ButtonStyle.Base"
+                                    ButtonSize="ButtonSize.Small"
+                                    ButtonVariant="Variant.Text">
+                                    <Items>
+                                        @foreach (var image in _artistImagesInByteBase64)
+                                        {
+                                            <RadzenCarouselItem>
+                                                <RadzenImage Path="@image" class="rz-h-100"/>
+                                            </RadzenCarouselItem>
+                                        }
+                                    </Items>
+                                </RadzenCarousel>
+                            }
+                            <Markdown Content="@(_artist.Biography ?? _biographyNoAvailablePlaceholder)" />
+                        </RadzenStack>
                     </RadzenColumn>
                 </RadzenRow>
             }
@@ -286,6 +313,10 @@
         LibraryId = 0,
         CreatedAt = default
     };
+
+    string[] _artistImagesInByteBase64 = [];
+
+    string? _biographyNoAvailablePlaceholder = string.Empty;
 
     string MetaDataModelStyle { get; set; } = string.Empty;
 
@@ -341,6 +372,14 @@
         _isLoading = false;
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _biographyNoAvailablePlaceholder = configuration.GetValue<string>(SettingRegistry.ArtistBiographyPlaceHolderText);
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         _alertMessages.Clear();
@@ -365,6 +404,26 @@
                 }
                 await LoadAlbums();
 
+                if (_artist.ImageCount > 1)
+                {
+                    var albumsImagesInByteBase64 = new List<(int, string)>();
+                    await Parallel.ForEachAsync(artistDirectory.AllFileImageTypeFileInfos()
+                        .OrderBy(x => x.Name)
+                        .Select((x, i) => new
+                        {
+                            index = i,
+                            file =x.ToFileSystemInfo()
+                        }), CancellationToken.None, async (albumImage, token) =>
+                    {
+                        var imageBase64 = await albumImage.file.ImageBase64(artistDirectory, cancellationToken: token);
+                        if (imageBase64 != null)
+                        {
+                            albumsImagesInByteBase64.Add((albumImage.index, imageBase64));
+                        }
+                    });
+                    _artistImagesInByteBase64 = albumsImagesInByteBase64.OrderBy(x => x.Item1).Select(x => x.Item2).ToArray();
+                }
+
                 _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Artist, _artist.Id);
             }
         }
@@ -385,14 +444,18 @@
         NavigationManager.NavigateTo($"/data/artist/{_artist.ApiKey}/edit", true);
     }
 
-    private Task UnlockButtonClick()
+    private async Task UnlockButtonClick()
     {
-        throw new NotImplementedException();
+        var result = await ArtistService.LockUnlockArtistAsync(_artist.Id, true);
+        NotificationService.Notify(NotificationMessageForResult(result, "unlocking Artist", ToastTime));
+        _artist.IsLocked = false;
     }
 
-    private Task LockButtonClick()
+    private async Task LockButtonClick()
     {
-        throw new NotImplementedException();
+        var result = await ArtistService.LockUnlockArtistAsync(_artist.Id, true);
+        NotificationService.Notify(NotificationMessageForResult(result, "locking Artist", ToastTime));
+        _artist.IsLocked = true;
     }
 
     private async Task DeleteButtonClick()

@@ -408,6 +408,7 @@ public class LibraryInsertJob(
                             DiscogsId = melodeeAlbum.DiscogsId,
                             Duration = melodeeAlbum.TotalDuration(),
                             Genres = melodeeAlbum.Genre() == null ? null : melodeeAlbum.Genre()!.Split('/'),
+                            ImageCount = melodeeAlbum.Images?.Count(),
                             IsCompilation = melodeeAlbum.IsVariousArtistTypeAlbum(),
                             ItunesId = melodeeAlbum.ItunesId,
                             LastFmId = melodeeAlbum.LastFmId,

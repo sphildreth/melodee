@@ -25,6 +25,7 @@
     <PackageReference Include="Lucene.Net"/>
     <PackageReference Include="Lucene.Net.Analysis.Common"/>
     <PackageReference Include="Mapster"/>
+    <PackageReference Include="Markdig" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore"/>
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore"/>

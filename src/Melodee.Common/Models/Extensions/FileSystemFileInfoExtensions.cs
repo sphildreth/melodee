@@ -25,4 +25,15 @@ public static class FileSystemFileInfoExtensions
     {
         return Path.GetExtension(fileSystemFileInfo.FullName(directoryInfo));
     }
+    
+    public static async Task<string?> ImageBase64(this FileSystemFileInfo fileInfo, FileSystemDirectoryInfo directoryInfo, CancellationToken cancellationToken = default)
+    {
+        var fi = new FileInfo(fileInfo.FullName(directoryInfo));
+        if (fi.Exists)
+        {
+            var imageBytes = await File.ReadAllBytesAsync(fi.FullName, cancellationToken).ConfigureAwait(false);
+            return $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";    
+        }
+        return null;
+    }     
 }

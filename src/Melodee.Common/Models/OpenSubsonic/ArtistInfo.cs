@@ -14,7 +14,8 @@ public record ArtistInfo(
     string? Biography = null,
     Guid? MusicBrainzArtistId = null,
     string? LastFmUrl = null,
-    Artist[]? SimilarArtist = null) : NamedInfo(Id,
+    Artist[]? SimilarArtist = null,
+    bool? IsArtistInfo2 = null) : NamedInfo(Id,
     Name,
     SmallImageUrl,
     MediumImageUrl,
@@ -24,8 +25,8 @@ public record ArtistInfo(
 {
     public override string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder("<artistInfo>");
-        result.Append($"<biography>{Biography.ToSafeXmlString()}</biography>");
+        var result = new StringBuilder(IsArtistInfo2 ?? false ? "<artistInfo2>" : "<artistInfo>");
+        result.Append($"<biography>{Biography.ToHtmlString().ToSafeXmlString()}</biography>");
         result.Append($"<musicBrainzId>{MusicBrainzArtistId}</musicBrainzId>");
         result.Append($"<lastFmUrl>{LastFmUrl}</lastFmUrl>");
         result.Append($"<smallImageUrl>{SmallImageUrl}</smallImageUrl>");
@@ -39,7 +40,7 @@ public record ArtistInfo(
             }
         }
 
-        result.Append("</artistInfo>");
+        result.Append(IsArtistInfo2 ?? false ? "</artistInfo2>" : "</artistInfo>");
         return result.ToString();
     }
 }

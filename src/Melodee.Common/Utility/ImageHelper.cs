@@ -222,16 +222,14 @@ public static partial class ImageHelper
         if (FileHelper.IsFileImageType(fileInfo.Extension))
         {
             var normalizedName = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
+            var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
+            var numberInName = SafeParser.ToNumber<int>(nameDigits);
             if (AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 return true;
             }
 
-            if (AlbumImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
-            {
-                var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit));
-                return SafeParser.ToNumber<int>(nameDigits) > 1;
-            }
+            return numberInName > 1 || AlbumImageFileNames.Any(artistImage => normalizedName.Contains(artistImage));
         }
 
         return false;

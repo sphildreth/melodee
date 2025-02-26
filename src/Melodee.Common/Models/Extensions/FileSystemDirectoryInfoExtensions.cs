@@ -306,7 +306,7 @@ public static class FileSystemDirectoryInfoExtensions
                 .OrderBy(x => x.LastWriteTimeUtc)
             where dir.LastWriteTimeUtc >= modifiedSinceValue &&
                   dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension))
-            select dir.ToDirectorySystemInfo());
+            select dir.ToFileSystemDirectoryInfo());
         if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
             .Any(x => x.LastWriteTimeUtc >= modifiedSinceValue && FileHelper.IsFileMediaType(x.Extension)))
         {

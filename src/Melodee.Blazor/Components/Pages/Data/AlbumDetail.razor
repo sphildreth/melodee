@@ -7,6 +7,7 @@
 @using Melodee.Common.Enums
 @using Melodee.Common.Models.Extensions
 @using Melodee.Common.Plugins.Validation
+@using Microsoft.VisualBasic.FileIO
 @using NodaTime
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
@@ -82,14 +83,14 @@
         <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
         @if (_album.IsLocked)
         {
-            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="UnlockButtonClick" title="Unlock album, will allow modifications." IconColor="@Colors.Warning" Icon="lock_open"></RadzenMenuItem>
+            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Click="UnlockButtonClick" title="Unlock album, will allow modifications." IconColor="@Colors.Warning" Icon="lock_open"></RadzenMenuItem>
         }
         else
         {
             <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="LockButtonClick" title="Lock album, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
         }
         <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="RescanButtonClick" title="Rebuild metadata and rescan album folder." Icon="refresh"></RadzenMenuItem>
-        <RadzenMenuItem Text="Set Cover Image" Visible="CurrentUser?.IsEditor() ?? false" Click="SetCoverImageButtonClick" title="Set the album cover image." Icon="image"></RadzenMenuItem>
+        <RadzenMenuItem Text="Set Cover Image" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="SetCoverImageButtonClick" title="Set the album cover image." Icon="image"></RadzenMenuItem>
         <RadzenMenuItem Text="Web Search" Icon="public">
             <RadzenMenuItem Text="Album" Click="@(() => DoWebSearch(1))"></RadzenMenuItem>
             <RadzenMenuItem Text="Album + Year" Click="@(() => DoWebSearch(2))"></RadzenMenuItem>
@@ -270,12 +271,34 @@
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="4">
                         <ArtistDataInfoCardComponent
-                            Style="width: 350px;"
+                            Style="width: 400px;"
                             Artist="@_album.Artist.ToArtistDataInfo()"/>
-                        <RadzenImage
-                            Path=@($"/images/{_album.ToApiKey()}/350")
-                            Style="margin:auto;display: block;"
-                            AlternateText="@_album.Name"/>
+                        @if (_albumsImagesInByteBase64.Length < 2)
+                        {
+                            <RadzenImage
+                                Path=@($"/images/{_album.ToApiKey()}/400")
+                                Style="margin:auto;display: block;"
+                                AlternateText="@_album.Name"/>
+                        }
+                        @if (_albumsImagesInByteBase64.Length > 1)
+                        {
+                            <RadzenCarousel
+                                Auto="false"
+                                Style="height: 400px; width: 400px;"
+                                class="rz-mx-auto"
+                                ButtonStyle="ButtonStyle.Base"
+                                ButtonSize="ButtonSize.Small"
+                                ButtonVariant="Variant.Text">
+                                <Items>
+                                    @foreach (var image in _albumsImagesInByteBase64)
+                                    {
+                                        <RadzenCarouselItem>
+                                            <RadzenImage Path="@image" class="rz-h-100"/>
+                                        </RadzenCarouselItem>
+                                    }
+                                </Items>
+                            </RadzenCarousel>
+                        }
                     </RadzenColumn>
                 </RadzenRow>
             }
@@ -339,9 +362,12 @@
         CreatedAt = default
     };
 
+    string[] _albumsImagesInByteBase64 = [];
+
     private long _albumDirectoryFileCount = 0;
 
     private List<string> _alertMessages = [];
+    private FileSystemDirectoryInfo _albumDirectory;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -352,8 +378,8 @@
             if (albumResult is { IsSuccess: true, Data: not null })
             {
                 _album = albumResult.Data;
-                var albumDirectory = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
-                _albumDirectoryFileCount = albumDirectory.FileCount();
+                _albumDirectory = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
+                _albumDirectoryFileCount = _albumDirectory.FileCount();
                 switch (_album.AlbumStatusValue)
                 {
                     case AlbumStatus.New:
@@ -373,11 +399,30 @@
                     CreatedAt = default
                 };
                 _userSongs = await UserService.UserSongsForAlbumAsync(CurrentUsersId, _album.ApiKey) ?? [];
-                if (!albumDirectory.Exists())
+                if (!_albumDirectory.Exists())
                 {
-                    _alertMessages.Add($"Album directory [{ albumDirectory.FullName()}] is not found.");
+                    _alertMessages.Add($"Album directory [{ _albumDirectory.FullName()}] is not found.");
                 }
 
+                if (_album.ImageCount > 1)
+                {
+                    var albumsImagesInByteBase64 = new List<(int, string)>();
+                    await Parallel.ForEachAsync(_albumDirectory.AllFileImageTypeFileInfos()
+                        .OrderBy(x => x.Name)
+                        .Select((x, i) => new
+                        {
+                            index = i,
+                            file =x.ToFileSystemInfo()
+                        }), CancellationToken.None, async (albumImage, token) =>
+                    {
+                        var imageBase64 = await albumImage.file.ImageBase64(_albumDirectory, cancellationToken: token);
+                        if (imageBase64 != null)
+                        {
+                            albumsImagesInByteBase64.Add((albumImage.index, imageBase64));
+                        }
+                    });
+                    _albumsImagesInByteBase64 = albumsImagesInByteBase64.OrderBy(x => x.Item1).Select(x => x.Item2).ToArray();
+                }
                 _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Album, _album.Id);
 
             }
@@ -399,14 +444,18 @@
         throw new NotImplementedException();
     }
 
-    private Task UnlockButtonClick()
+    private async Task UnlockButtonClick()
     {
-        throw new NotImplementedException();
+        var result = await AlbumService.LockUnlockAlbumAsync(_album.Id, false);
+        NotificationService.Notify(NotificationMessageForResult(result, "unlocking Album", ToastTime));
+        _album.IsLocked = false;
     }
 
-    private Task LockButtonClick()
+    private async Task LockButtonClick()
     {
-        throw new NotImplementedException();
+        var result = await AlbumService.LockUnlockAlbumAsync(_album.Id, true);
+        NotificationService.Notify(NotificationMessageForResult(result, "locking Album", ToastTime));
+        _album.IsLocked = true;
     }
 
     private async Task DeleteButtonClick()

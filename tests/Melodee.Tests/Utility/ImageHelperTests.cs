@@ -72,6 +72,7 @@ public sealed class ImageHelperTests
     [InlineData("Mazzy Star-ghost highway-remastered-CD.jpg", false)]
     [InlineData("Mazzy Star-ghost highway-remastered-booklet-front.jpg", false)]
     [InlineData("release 10.jpg", false)]
+    [InlineData("3-4.jpg", false)]
     [InlineData("Front-Scans.jpg", true)]
     [InlineData("Front Cover.jpg", true)]
     [InlineData("front.jpg", true)]
@@ -116,6 +117,10 @@ public sealed class ImageHelperTests
     [InlineData("Covers-002.jpg", true)]
     [InlineData("Mazzy Star-ghost highway-remastered-CD.jpg", true)]
     [InlineData("Mazzy Star-ghost highway-remastered-booklet-front.jpg", true)]
+    [InlineData("3-4.jpg", true)]
+    [InlineData("back.jpg", true)]
+    [InlineData("cd.jpg", true)]
+    [InlineData("1-2 FRONT-INLAY.jpg", true)]
     public void FileIsAlbumSecondaryImage(string fileName, bool expected)
     {
         Assert.Equal(expected, ImageHelper.IsAlbumSecondaryImage(new FileInfo(fileName)));

@@ -98,7 +98,7 @@
     {
         await using (var ms = new MemoryStream())
         {
-            await e.File.OpenReadStream().CopyToAsync(ms);
+            await e.File.OpenReadStream(MelodeeConfiguration.MaximumUploadFileSize).CopyToAsync(ms);
             _imageBytes = ms.ToArray();
             _selectedResult = new ImageSearchResult(string.Empty, e.File.Name, _doDeleteExistingImages, _imageBytes);
             StateHasChanged();

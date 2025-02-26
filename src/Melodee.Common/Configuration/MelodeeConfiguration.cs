@@ -21,6 +21,8 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
     public const string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
 
     public const string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
+    
+    public const int MaximumUploadFileSize = 10 * 1024 * 1024;
 
     public const int BatchSizeDefault = 250;
 

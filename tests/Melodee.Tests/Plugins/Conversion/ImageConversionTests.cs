@@ -15,17 +15,12 @@ public class ImageConversionTests
         if (fileInfo.Exists)
         {
             var convertor = new ImageConvertor(TestsBase.NewPluginsConfiguration());
-            var dirInfo = new FileSystemDirectoryInfo
-            {
-                Path = @"/melodee_test/tests/",
-                Name = "tests"
-            };
-            var convertorResult = await convertor.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
+            var convertorResult = await convertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo());
             Assert.NotNull(convertorResult);
             Assert.True(convertorResult.IsSuccess);
             Assert.NotNull(convertorResult.Data);
 
-            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
+            var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(fileInfo.ToDirectorySystemInfo()));
             Assert.True(convertedFileInfo.Exists);
         }
     }

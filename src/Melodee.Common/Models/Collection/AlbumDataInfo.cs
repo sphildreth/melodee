@@ -54,5 +54,5 @@ public sealed record AlbumDataInfo(
 
     public static string InfoLineTitle => "Year | Song Count | Duration";
 
-    public string InfoLineData => $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()}";
+    public string InfoLineData => $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()} {(IsLocked ? " | \ud83d\udd12" : string.Empty)}";
 }

@@ -39,9 +39,9 @@
         }
         else
         {
-            <RadzenMenuItem Text="Purge" Click="PurgeButtonClick" title="Delete everything in the library" IconColor="@Colors.Danger"  Icon="delete_sweep"></RadzenMenuItem>
             <RadzenMenuItem Text="Lock" Click="LockButtonClick" title="Lock library, will prevent modifications." IconColor="@Colors.Warning"  Icon="lock"></RadzenMenuItem>
         }
+        <RadzenMenuItem Text="Purge" Disabled="_library.IsLocked" Click="PurgeButtonClick" title="Delete everything in the library" IconColor="@Colors.Danger"  Icon="delete_sweep"></RadzenMenuItem>
         @if (_areJobsEnabled && _library.TypeValue != LibraryType.Storage)
         {
             <RadzenMenuItem Text="Process" Click="ProcessButtonClick" title="Process media files into Melodee media json file." IconColor="@Colors.Secondary" Icon="memory"></RadzenMenuItem>

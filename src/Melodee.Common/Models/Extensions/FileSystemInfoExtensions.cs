@@ -11,7 +11,7 @@ public static class FileSystemInfoExtensions
         {
             Path = dir.FullName,
             Name = dir.Name
-        };
+        };        
     }
 
     public static FileSystemFileInfo ToFileSystemInfo(this FileSystemInfo fileInfo)
@@ -19,4 +19,6 @@ public static class FileSystemInfoExtensions
         var fi = new FileInfo(fileInfo.FullName);
         return FileInfoExtensions.ToFileSystemInfo(fi);
     }
+    
+   
 }

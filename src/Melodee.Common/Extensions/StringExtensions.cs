@@ -4,10 +4,12 @@ using System.Net;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
+using Markdig;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
+using Markdown = MarkdownDeep.Markdown;
 
 namespace Melodee.Common.Extensions;
 
@@ -922,6 +924,11 @@ public static partial class StringExtensions
     public static string? ToSafeXmlString(this string? input)
     {
         return SecurityElement.Escape(input);
+    }
+
+    public static string? ToHtmlString(this string? input)
+    {
+        return input.Nullify() == null ? null : Markdig.Markdown.ToHtml(input!);
     }
 
     [GeneratedRegex("[^a-zA-Z0-9 -.:]")]

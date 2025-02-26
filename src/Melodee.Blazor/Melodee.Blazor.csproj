@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Markdig" />
     <PackageReference Include="Radzen.Blazor"/>
     <PackageReference Include="Asp.Versioning.Http"/>
     <PackageReference Include="Blazored.SessionStorage"/>

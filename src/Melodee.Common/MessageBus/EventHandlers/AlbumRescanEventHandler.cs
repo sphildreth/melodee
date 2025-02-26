@@ -62,6 +62,14 @@ public sealed class AlbumRescanEventHandler(
                 }
                 else
                 {
+                    if (dbAlbum.IsLocked || dbAlbum.Artist.IsLocked)
+                    {
+                        logger.Warning("[{Name}] Artist or album is locked. Skipping rescan request [{AlbumDir}].",
+                            nameof(AlbumRescanEventHandler),
+                            message.AlbumDirectory);
+                        return;
+                    }
+                    
                     var albumDirectory = message.AlbumDirectory.ToDirectoryInfo();
 
                     // Ensure albums directory exists
@@ -225,8 +233,11 @@ public sealed class AlbumRescanEventHandler(
                     {
                         dbAlbum.SongCount = SafeParser.ToNumber<short>(dbAlbum.Songs.Count);
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                        await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
-                        artistService.ClearCache(dbAlbum.Artist);
+                        if (!message.IsFromArtistScan)
+                        {
+                            await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
+                            artistService.ClearCache(dbAlbum.Artist);
+                        }
                         albumService.ClearCache(dbAlbum);
                     }
                 }

@@ -2837,7 +2837,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> GetArtistInfoAsync(string id, int? count, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> GetArtistInfoAsync(string id, int? count, bool isArtistInfo2, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -2868,7 +2868,8 @@ public class OpenSubsonicApiService(
                     artist.Biography,
                     artist.MusicBrainzId,
                     artist.LastFmId,
-                    similarArtists);
+                    similarArtists, 
+                    isArtistInfo2);
             }
         }
 
@@ -2879,7 +2880,7 @@ public class OpenSubsonicApiService(
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
-                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "artistInfo"
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : isArtistInfo2 ? "artistInfo2" : "artistInfo"
             }
         };
     }

@@ -468,9 +468,9 @@ public sealed class DirectoryProcessorToStagingService(
 
                         var albumImagesToMove = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
                         var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
-                        foreach (var image in albumImagesToMove.Concat(artistImageToMove))
+                        foreach (var image in albumImagesToMove.Concat(artistImageToMove).OrderBy(x => x.SortOrder))
                         {
-                            var oldImageFileName = Path.Combine(album.Directory.FullName(), image.FileInfo!.OriginalName!);
+                            var oldImageFileName = Path.Combine((image.DirectoryInfo ?? album.Directory).FullName(), image.FileInfo!.OriginalName!);
                             if (!File.Exists(oldImageFileName))
                             {
                                 Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);

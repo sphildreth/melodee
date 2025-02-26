@@ -2,6 +2,7 @@ namespace Melodee.Common.Constants;
 
 public static class SettingRegistry
 {
+    public const string ArtistBiographyPlaceHolderText = "artist.biographyPlaceHolderText";
     public const string ConversionBitrate = "conversion.bitrate";
     public const string ConversionEnabled = "conversion.enabled";
     public const string ConversionSamplingRate = "conversion.samplingRate";

@@ -1,0 +1,19 @@
+@using Markdig
+
+@inject System.Net.Http.HttpClient Http
+
+@if (Content != null)
+{
+    @((MarkupString)BuildHtmlFromMarkdown(Content))
+}
+
+@functions {
+
+    [Parameter] public string? Content { get; set; }
+
+    private string BuildHtmlFromMarkdown(string value) => Markdig.Markdown.ToHtml(
+        markdown: value,
+        pipeline: new MarkdownPipelineBuilder().UseAdvancedExtensions().Build()
+    );
+
+}

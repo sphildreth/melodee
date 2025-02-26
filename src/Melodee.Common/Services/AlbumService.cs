@@ -471,9 +471,29 @@ public class AlbumService(
                 };
             }
 
-            await bus.SendLocal(new AlbumRescanEvent(album.Id, albumDirectory)).ConfigureAwait(false);
+            await bus.SendLocal(new AlbumRescanEvent(album.Id, albumDirectory, false)).ConfigureAwait(false);
         }
 
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> LockUnlockAlbumAsync(int albumId, bool doLock, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, albumId, nameof(albumId));
+
+        var artistResult = await GetAsync(albumId,cancellationToken).ConfigureAwait(false);
+        if (!artistResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<bool>($"Unknown album to lock [{albumId}].")
+            {
+                Data = false
+            };
+        }
+        artistResult.Data!.IsLocked = doLock;
+        var result = (await UpdateAsync(artistResult.Data, cancellationToken).ConfigureAwait(false))?.Data ?? false;
         return new MelodeeModels.OperationResult<bool>
         {
             Data = result

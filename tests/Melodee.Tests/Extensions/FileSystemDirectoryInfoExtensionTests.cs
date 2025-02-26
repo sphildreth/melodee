@@ -6,6 +6,31 @@ namespace Melodee.Tests.Extensions;
 
 public class FileSystemDirectoryInfoExtensionTests
 {
+    [Fact]
+    public void ValidateDirectoryNameForFileInfo()
+    {
+        var coverName = "cover.jpg";
+        var testPath = @"/melodee_test/tests/image_number_tests/";
+        var filename = Path.Combine(testPath, coverName);
+        var fileInfo = new FileInfo(filename);
+        var fileDirectory = fileInfo.ToDirectorySystemInfo();
+        Assert.Equal(fileInfo.FullName, fileDirectory.Path);
+        Assert.Equal("image_number_tests", fileDirectory.Name);
+    }
+    
+    [Fact]
+    public void ValidateFileNameForFileDirectory()
+    {
+        var coverName = "cover.jpg";
+        var testPath = @"/melodee_test/tests/image_number_tests/";
+        var filename = Path.Combine(testPath, coverName);
+        var fileInfo = new FileInfo(filename);
+        var fileDirectory = fileInfo.ToDirectorySystemInfo();
+        var fileSystemInfo = fileInfo.ToFileSystemInfo();
+        Assert.Equal(fileInfo.FullName, fileSystemInfo.FullName(fileDirectory));
+        Assert.Equal(coverName, fileSystemInfo.Name);
+    }    
+    
     [Theory]
     [InlineData("Bobs Discography", true)]
     [InlineData("Bobs Discography (1940-1999)", true)]
