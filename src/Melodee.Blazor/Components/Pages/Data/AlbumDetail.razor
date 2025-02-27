@@ -73,24 +73,36 @@
 {
     foreach (var alert in _alertMessages)
     {
-        <RadzenAlert AlertStyle="AlertStyle.Warning" Icon="warning" Size="AlertSize.Small" AllowClose="false" Text="@alert" />
+        <RadzenAlert AlertStyle="AlertStyle.Warning" Icon="warning" Size="AlertSize.Small" AllowClose="false"
+                     Text="@alert"/>
     }
 }
 
 <RadzenStack>
     <RadzenMenu>
-        <RadzenMenuItem Text="Delete"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="DeleteButtonClick" title="Delete the album and all album files. BEWARE!" IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
-        <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
+        <RadzenMenuItem Text="Delete" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked"
+                        Click="DeleteButtonClick" title="Delete the album and all album files. BEWARE!"
+                        IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked"
+                        Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
         @if (_album.IsLocked)
         {
-            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Click="UnlockButtonClick" title="Unlock album, will allow modifications." IconColor="@Colors.Warning" Icon="lock_open"></RadzenMenuItem>
+            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Click="UnlockButtonClick"
+                            title="Unlock album, will allow modifications." IconColor="@Colors.Warning"
+                            Icon="lock_open"></RadzenMenuItem>
         }
         else
         {
-            <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="LockButtonClick" title="Lock album, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
+            <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked"
+                            Click="LockButtonClick" title="Lock album, will prevent modifications."
+                            IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
         }
-        <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="RescanButtonClick" title="Rebuild metadata and rescan album folder." Icon="refresh"></RadzenMenuItem>
-        <RadzenMenuItem Text="Set Cover Image" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked" Click="SetCoverImageButtonClick" title="Set the album cover image." Icon="image"></RadzenMenuItem>
+        <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked"
+                        Click="RescanButtonClick" title="Rebuild metadata and rescan album folder."
+                        Icon="refresh"></RadzenMenuItem>
+        <RadzenMenuItem Text="Set Cover Image" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_album.IsLocked"
+                        Click="SetCoverImageButtonClick" title="Set the album cover image."
+                        Icon="image"></RadzenMenuItem>
         <RadzenMenuItem Text="Web Search" Icon="public">
             <RadzenMenuItem Text="Album" Click="@(() => DoWebSearch(1))"></RadzenMenuItem>
             <RadzenMenuItem Text="Album + Year" Click="@(() => DoWebSearch(2))"></RadzenMenuItem>
@@ -98,7 +110,8 @@
             <RadzenMenuItem Text="Album + Year + Artist" Click="@(() => DoWebSearch(4))"></RadzenMenuItem>
         </RadzenMenuItem>
     </RadzenMenu>
-    <RadzenText Text="@($"[{_album.ReleaseDate.Year}] {_album.Name}")" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
+    <RadzenText Text="@($"[{_album.ReleaseDate.Year}] {_album.Name}")" TextStyle="TextStyle.DisplayH6"
+                TagName="TagName.H1" style="margin: 0"/>
 </RadzenStack>
 <RadzenStack class="rz-mt-3">
     <RadzenRow>
@@ -115,19 +128,19 @@
                         <RadzenTreeItem Text="Contributors">
                             <Template>
                                 <RadzenIcon Icon="groups"/>
-                                @($"{ context.Text } {(_album.Contributors.Count > 0 ? $"({ _album.Contributors.Count })": string.Empty)}")
+                                @($"{context.Text} {(_album.Contributors.Count > 0 ? $"({_album.Contributors.Count})" : string.Empty)}")
                             </Template>
                         </RadzenTreeItem>
                         <RadzenTreeItem Text="Files">
                             <Template>
                                 <RadzenIcon Icon="folder_data"/>
-                                @($"{ context.Text } ({_albumDirectoryFileCount})")
+                                @($"{context.Text} ({_albumDirectoryFileCount})")
                             </Template>
                         </RadzenTreeItem>
                         <RadzenTreeItem Text="Images">
                             <Template>
                                 <RadzenIcon Icon="image"/>
-                                @($"{ context.Text } ({(_album.ImageCount ?? 0)})")
+                                @($"{context.Text} ({(_album.ImageCount ?? 0)})")
                             </Template>
                         </RadzenTreeItem>
                     </RadzenTree>
@@ -314,7 +327,8 @@
     ///     When this is set, is it used if the album gets deleted to return the user back (like viewing albums for an artist
     ///     return to the artist detail)
     /// </summary>
-    [Parameter] public string? FromUrl { get; set; }
+    [Parameter]
+    public string? FromUrl { get; set; }
 
     string AlbumStatusStyle { get; set; } = string.Empty;
 
@@ -392,6 +406,7 @@
                         AlbumStatusStyle = "color: var(--rz-success)";
                         break;
                 }
+
                 _userAlbum = await UserService.UserAlbumAsync(CurrentUsersId, _album.ApiKey) ?? new UserAlbum
                 {
                     UserId = 0,
@@ -401,7 +416,7 @@
                 _userSongs = await UserService.UserSongsForAlbumAsync(CurrentUsersId, _album.ApiKey) ?? [];
                 if (!_albumDirectory.Exists())
                 {
-                    _alertMessages.Add($"Album directory [{ _albumDirectory.FullName()}] is not found.");
+                    _alertMessages.Add($"Album directory [{_albumDirectory.FullName()}] is not found.");
                 }
 
                 if (_album.ImageCount > 1)
@@ -412,7 +427,7 @@
                         .Select((x, i) => new
                         {
                             index = i,
-                            file =x.ToFileSystemInfo()
+                            file = x.ToFileSystemInfo()
                         }), CancellationToken.None, async (albumImage, token) =>
                     {
                         var imageBase64 = await albumImage.file.ImageBase64(_albumDirectory, cancellationToken: token);
@@ -423,8 +438,8 @@
                     });
                     _albumsImagesInByteBase64 = albumsImagesInByteBase64.OrderBy(x => x.Item1).Select(x => x.Item2).ToArray();
                 }
-                _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Album, _album.Id);
 
+                _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Album, _album.Id);
             }
         }
     }
@@ -584,6 +599,7 @@
                 searchTerms.Add(title);
                 break;
         }
+
         await JsRuntime.InvokeVoidAsync("openInNewTab", Configuration.GenerateWebSearchUrl(searchTerms.ToArray()));
     }
 
@@ -615,34 +631,33 @@
 
         DialogService.Close();
 
-         try
-         {
-             if (selectedImageSearchResult != null)
-             {
-                 var httpClient = HttpClientFactory.CreateClient();
-                 var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
-                 var albumPath = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
-                 var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Common.Data.Models.Album.FrontImageType}.jpg");
-                          if (selectedImageSearchResult.ImageBytes != null)
-                          {
-                                 await File.WriteAllBytesAsync(newAlbumCoverFilename, selectedImageSearchResult.ImageBytes);
-                             }
-                             else
-                             {
-                                 if (await httpClient.DownloadFileAsync(
-                                         selectedImageSearchResult.Url,
-                                         newAlbumCoverFilename,
-                                         async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front)).Data.IsValid).ConfigureAwait(false))
-                                 {
-                                 }
-                             }
-                             var result = await AlbumService.UpdateAsync(_album);
-                             if (result.Data)
-                             {
-                                 NotificationService.Notify(NotificationMessageForResult(result, "set cover image", ToastTime));
-                             }
-                             NavigationManager.Refresh(true);
-             }
+        try
+        {
+            if (selectedImageSearchResult != null)
+            {
+                var httpClient = HttpClientFactory.CreateClient();
+                var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
+                var albumPath = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
+                var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Common.Data.Models.Album.FrontImageType}.jpg");
+                if (File.Exists(newAlbumCoverFilename))
+                {
+                    File.Delete(newAlbumCoverFilename);
+                }
+                if (selectedImageSearchResult.ImageBytes != null)
+                {
+                    await File.WriteAllBytesAsync(newAlbumCoverFilename, selectedImageSearchResult.ImageBytes);
+                }
+                else
+                {
+                    await httpClient.DownloadFileAsync(selectedImageSearchResult.Url, newAlbumCoverFilename);
+                }
+                var result = await AlbumService.UpdateAsync(_album);
+                if (result.Data)
+                {
+                    NotificationService.Notify(NotificationMessageForResult(result, "set cover image", ToastTime));
+                }
+                NavigationManager.Refresh(true);
+            }
         }
         finally
         {
@@ -655,9 +670,9 @@
     {
         await DialogService.OpenAsync("Image Search", ds =>
             @<ImageSearchUpload
-                 SearchType="ImageSearchType.Album"
-                 OnUpdateCallback="AlbumSearchImageCallback"
-                 SearchValues="SearchValues"/>);
+                SearchType="ImageSearchType.Album"
+                OnUpdateCallback="AlbumSearchImageCallback"
+                SearchValues="SearchValues"/>);
     }
 
     private async Task RescanButtonClick()

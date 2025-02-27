@@ -432,11 +432,12 @@ public class LibraryInsertJob(
                             continue;
                         }
 
-                        Logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] NormalizedName [{Name}]",
+                        Logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] NormalizedName [{Name}] Directory [{Directory}]",
                             nameof(LibraryInsertJob),
                             dbArtist.Id,
                             melodeeAlbum.Id,
-                            nameNormalized);
+                            nameNormalized,
+                            melodeeAlbum.Directory.FullName());
 
                         var newAlbumSongs = new List<dbModels.Song>();
                         foreach (var song in melodeeAlbum.Songs ?? [])
@@ -614,12 +615,14 @@ public class LibraryInsertJob(
                     if (!dbArtistResult.IsSuccess || dbArtist == null)
                     {
                         lastAddedArtist = artist;
+                        
                         var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
 
-                        Logger.Debug("[{JobName}] Creating new artist for NormalizedName [{Name}] with directory [{Directory}]",
+                        Logger.Debug("[{JobName}] Creating new artist for NormalizedName [{Name}] with directory [{Directory}] for albums [{Album}]",
                             nameof(LibraryInsertJob),
                             artist.NameNormalized,
-                            newArtistDirectory);
+                            newArtistDirectory, 
+                            string.Empty.AddTags(melodeeAlbumsForDirectory.Where(x => x.Artist.NameNormalized == artist.NameNormalized).Select(x => x.MelodeeDataFileName)));
 
                         dbArtistsToAdd.Add(new dbModels.Artist
                         {
