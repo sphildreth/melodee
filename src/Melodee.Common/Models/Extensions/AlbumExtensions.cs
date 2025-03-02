@@ -1,12 +1,16 @@
+using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Mapster;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Imaging;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.MetaData.Directory;
@@ -14,7 +18,7 @@ using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Utility;
 using Microsoft.AspNetCore.DataProtection.KeyManagement.Internal;
-using SixLabors.ImageSharp;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -489,6 +493,12 @@ public static class AlbumExtensions
     //     return Path.Combine(fnSubPart, $"{artistDirectory}{fnIdPart}");
     // }
 
+    public static decimal TotalDurationInMinutes(this Album album)
+    {
+        var songTotalDuration = album.Songs?.Sum(x => x.Duration()) ?? 0;
+        return songTotalDuration > 0 ? new TimeInfo(SafeParser.ToNumber<decimal>(songTotalDuration)).Minutes : 0;
+    }
+    
     public static double TotalDuration(this Album album)
     {
         return album.Songs?.Sum(x => x.Duration()) ?? 0;
@@ -590,7 +600,7 @@ public static class AlbumExtensions
         return true;
     }
 
-    public static async Task<IEnumerable<ImageInfo>> FindImages(this Album album, IAlbumNamesInDirectoryPlugin albumNamesInDirectoryPlugin, ImageConvertor imageConvertor, IImageValidator imageValidator, CancellationToken cancellationToken = default)
+    public static async Task<IEnumerable<ImageInfo>> FindImages(this Album album, IAlbumNamesInDirectoryPlugin albumNamesInDirectoryPlugin, int duplicateThreshold, ImageConvertor imageConvertor, IImageValidator imageValidator, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
@@ -657,7 +667,7 @@ public static class AlbumExtensions
                     PictureIdentifier = pictureIdentifier,
                     Width = imageInfo.Width,
                     Height = imageInfo.Height,
-                    SortOrder = index + (int)pictureIdentifier * 1000
+                    SortOrder = index + (int)pictureIdentifier * 1000 + (imageInfo.Width + imageInfo.Height)
                 });
                 index++;
             }
@@ -677,6 +687,36 @@ public static class AlbumExtensions
                 }
             };
             newImageInfos.AddRange(imageInfos);
+            imageInfos = newImageInfos;
+        }
+
+        // Compare images to attempt to find duplicate images ignoring resolution
+        if (imageInfos.Count > 1)
+        {
+            var newImageInfos = new List<ImageInfo>();
+            var imageInfosByCrc = imageInfos.ToDictionary(x => x.CrcHash);
+            var seenImageBytes = new List<byte[]>();
+            foreach (var imageInfo in imageInfos.OrderBy(x => x.SortOrder))
+            {
+                if (imageInfosByCrc.TryGetValue(imageInfo.CrcHash, out var existingImageInfo))
+                {
+                    if (imageInfo != existingImageInfo && existingImageInfo.Width == imageInfo.Width && existingImageInfo.Height == imageInfo.Height)
+                    {
+                        Trace.WriteLine($"Album find images is skipping duplicate image [{imageInfo.FileInfo.Name}] with crc32 [{imageInfo.CrcHash}]");
+                        continue;
+                    }
+                }
+                var imageFullname = imageInfo.FileInfo.FullName(imageInfo.DirectoryInfo ?? album.Directory);
+                var imageBytes = await File.ReadAllBytesAsync(imageFullname, cancellationToken).ConfigureAwait(false);
+                if (seenImageBytes.Any(x => ImageHasher.Similarity(x, imageBytes) > duplicateThreshold))
+                {
+                    Trace.WriteLine($"Album find images is skipping duplicate image [{imageInfo.FileInfo.Name}] with crc32 [{imageInfo.CrcHash}]");
+                    continue;
+                }
+                seenImageBytes.Add(imageBytes);
+                newImageInfos.Add(imageInfo);
+                
+            }
             imageInfos = newImageInfos;
         }
         return imageInfos;

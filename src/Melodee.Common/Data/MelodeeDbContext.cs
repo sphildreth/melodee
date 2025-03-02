@@ -509,6 +509,24 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
+                    Id = 1303,
+                    Category = (int)SettingCategory.Validation,
+                    Key = SettingRegistry.ValidationMinimumSongCount,
+                    Comment = "Minimum number of songs an album has to have to be considered valid, set to 0 to disable check.",
+                    Value = "3",
+                    CreatedAt = now
+                },
+                new Setting
+                {
+                    Id = 1304,
+                    Category = (int)SettingCategory.Validation,
+                    Key = SettingRegistry.ValidationMinimumAlbumDuration,
+                    Comment = "Minimum duration of an album to be considered valid (in minutes), set to 0 to disable check.",
+                    Value = "10",
+                    CreatedAt = now
+                },               
+                new Setting
+                {
                     Id = 100,
                     Category = (int)SettingCategory.Api,
                     Key = SettingRegistry.OpenSubsonicServerSupportedVersion,

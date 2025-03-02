@@ -1,6 +1,7 @@
 @page "/data/artists"
 @inherits MelodeeComponentBase
 @using System.Web
+
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
@@ -225,10 +226,7 @@
             }
             else if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
-                        x.FilterValue))
-                    .ToArray();
+                filters = args.Filters.Select(x => x.ToFilterOperatorInfo()).ToArray();
             }
 
             var result = await ArtistService.ListAsync(new PagedRequest

@@ -166,6 +166,15 @@ public sealed class CueSheet(
 
                         var cueAlbum = cueModel.ToAlbum(fileSystemDirectoryInfo);
 
+                        if (cueAlbum.Songs?.Count() == 0)
+                        {
+                            // If no songs are found, regardless of everything else, the Cue is garbage.
+                            return new OperationResult<int>("No songs found in CUE file.")
+                            {
+                                Data = 0
+                            };
+                        }
+                        
                         var convertedExtension = SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {

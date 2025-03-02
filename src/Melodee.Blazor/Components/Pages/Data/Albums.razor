@@ -1,4 +1,5 @@
 @page "/data/albums"
+
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
@@ -221,12 +222,9 @@
                     new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, FilterOperatorInfo.OrJoinOperator)
                 ];
             }
-            else if (args.Filters.Any(x => x.Property != nameof(AlbumDataInfo.ArtistName)))
+            else if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
-                        x.FilterValue))
-                    .ToArray();
+                filters = args.Filters.Select(x => x.ToFilterOperatorInfo()).ToArray();
             }
 
             PagedResult<AlbumDataInfo> result;

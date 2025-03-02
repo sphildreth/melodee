@@ -1,4 +1,5 @@
 using System.Text;
+using Mapster;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;
@@ -27,7 +28,7 @@ public record Directory(string Id, string? Parent, string Name, string? Starred,
         {
             foreach (var child in Child)
             {
-                result.Append(child.ToXml($"<child id=\"{child.Id}\" parent=\"{child.Parent}\" title=\"{child.Title.ToSafeXmlString()}\" artist=\"{child.Artist.ToSafeXmlString()}\" isDir=\"{(child.IsDir ?? false).ToLowerCaseString()}\" coverArt=\"{child.CoverArt}\"/>"));
+                result.Append(child.ToXml("child"));
             }
         }
 

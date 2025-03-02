@@ -50,11 +50,17 @@ public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
         });
     }
 
+    public Task ClearNowPlayingAsync(CancellationToken token = default)
+    {
+        Storage.Clear();
+        return Task.CompletedTask;
+    }
+
     private static void RemoveExpiredNonScrobbledEntries()
     {
         foreach (var nowPlaying in Storage.Values)
         {
-            if (nowPlaying.Scrobble.MinutesAgo > MaximumMinutesAgo)
+            if (nowPlaying.Scrobble.IsExpired)
             {
                 Storage.TryRemove(nowPlaying.UniqueId, out var existing);
             }

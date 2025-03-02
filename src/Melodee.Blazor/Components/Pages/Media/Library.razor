@@ -33,7 +33,7 @@
 <RadzenStack>
     <RadzenMenu>
         <RadzenMenuItem Text="Clean"  Disabled="_library.IsLocked" Click="CleanButtonClick" title="Clean this media library directory." IconColor="@Colors.Warning" Icon="mop"></RadzenMenuItem>
-        <RadzenMenuItem Text="Delete Albums"  Disabled="@(!_library.IsLocked && _selectedAlbums.Count == 0)" Click="DeleteSelectedButtonClick" title="Delete selected media albums, including album files. BEWARE!" IconColor="@Colors.Warning" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="Delete Albums"  Disabled="@(!_library.IsLocked && _selectedAlbums.Count == 0)" Click="DeleteSelectedButtonClick" title="Delete selected media albums, including album files. BEWARE!" IconColor="@Colors.Warning" Icon="remove"></RadzenMenuItem>
         <RadzenMenuItem Text="Delete" Disabled="_library.IsLocked" conColor="@Colors.Warning" Icon="delete">
             <RadzenMenuItem Text="Delete not Ok"  Click="DeleteNotOkSelectedButtonClick" title="Delete all not Ok status albums in library. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
             <RadzenMenuItem Text="Delete with less than 4 songs"  Click="DeleteLessThanFourSongsButtonClick" title="Delete all albums with less than 4 songs. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>

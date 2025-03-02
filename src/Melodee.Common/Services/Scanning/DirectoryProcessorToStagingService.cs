@@ -66,6 +66,7 @@ public sealed class DirectoryProcessorToStagingService(
     private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private bool _initialized;
     private int _maxAlbumProcessingCount;
+    private int _duplicateThreshold;
 
     /// <summary>
     ///     These plugins create albums from media files.
@@ -95,6 +96,8 @@ public sealed class DirectoryProcessorToStagingService(
 
         _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
 
+        _duplicateThreshold = _configuration.GetValue<int?>(SettingRegistry.ImagingDuplicateThreshold) ?? MelodeeConfiguration.DefaultImagingDuplicateThreshold;
+        
         _directoryStaging = (await libraryService.GetStagingLibraryAsync(token).ConfigureAwait(false)).Data.Path;
 
         _albumValidator = new AlbumValidator(_configuration);
@@ -408,7 +411,6 @@ public sealed class DirectoryProcessorToStagingService(
                         Logger.Error(ex, "Error loading Album json file [{0}]", melodeeJsonFile.FullName);
                     }
                 }
-
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
                 Trace.WriteLine("Loading images for album...");
                 foreach (var album in albumsForDirectory.Take(_maxAlbumProcessingCount))
@@ -420,7 +422,7 @@ public sealed class DirectoryProcessorToStagingService(
 
                     try
                     {
-                        album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _imageConvertor, _imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
+                        album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _duplicateThreshold, _imageConvertor, _imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
 
                         album.Artist = new Artist(album.Artist.Name,
                             album.Artist.NameNormalized,

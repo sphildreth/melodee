@@ -109,5 +109,15 @@ public enum AlbumNeedsAttentionReasons
     /// <summary>
     ///     The first song should be numbered 1.
     /// </summary>
-    HasInvalidFirstSongNumber = 1 << 23
+    HasInvalidFirstSongNumber = 1 << 23,
+    
+    /// <summary>
+    ///     The album's song count is less than the configured minimum song for validation.
+    /// </summary>
+    HasLessThanMinimumSongs = 1 << 24,
+    
+    /// <summary>
+    ///     The album's length is less than the configured minimum duration for validation.
+    /// </summary>
+    HasLessThanMinimumDuration = 1 << 25
 }

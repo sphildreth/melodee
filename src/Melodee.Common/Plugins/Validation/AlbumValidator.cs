@@ -114,6 +114,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             ArtistHasSearchEngineResult(album.Artist);
             AlbumIsStudioTypeAlbum(album);
             DoAllSongHaveValidDurations(album);
+            ValidateMinimums(album);
         }
         catch (Exception e)
         {
@@ -133,6 +134,31 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
         };
     }
 
+    private void ValidateMinimums(Album album)
+    {
+        var minimumSongCount = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMinimumSongCount]);
+        if (minimumSongCount > 0 && album.Songs?.Count() < minimumSongCount)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album song count is less than the minimum song count.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasLessThanMinimumSongs;
+        }
+        
+        var minimumAlbumDuration = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMinimumAlbumDuration]);
+        if (minimumAlbumDuration > 0 && album.TotalDurationInMinutes() < minimumAlbumDuration)
+        {
+            _validationMessages.Add(new ValidationResultMessage
+            {
+                Message = "Album duration is less than the minimum album duration.",
+                Severity = ValidationResultMessageSeverity.Critical
+            });
+            _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasLessThanMinimumDuration;
+        }
+    }
+    
     private void DoAllSongHaveValidDurations(Album album)
     {
         if (album.Songs?.Count() < 1)

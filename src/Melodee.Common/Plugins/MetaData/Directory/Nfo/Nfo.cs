@@ -397,6 +397,11 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                 songs = s;
             }
 
+            if (songs.Count == 0)
+            {
+                // If no songs are found, regardless of everything else, the NFO is garbage.
+                return null;
+            }
             var artistName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
             var albumName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
             var result = new Album

@@ -30,6 +30,7 @@ public class ArtistService(
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ISerializer serializer,
     IHttpClientFactory httpClientFactory,
+    AlbumService albumService,
     IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -746,6 +747,30 @@ public class ArtistService(
         }
         artistResult.Data!.IsLocked = doLock;
         var result = (await UpdateAsync(artistResult.Data, cancellationToken).ConfigureAwait(false))?.Data ?? false;
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAlbumsForArtist(int artistId, int[] albumIdsToDelete, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
+        
+        var artistResult = await GetAsync(artistId,cancellationToken).ConfigureAwait(false);
+        if (!artistResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<bool>($"Unknown artist [{artistId}].")
+            {
+                Data = false
+            };
+        }
+        var deleteResult = await albumService.DeleteAsync(albumIdsToDelete, cancellationToken).ConfigureAwait(false);
+        var result = deleteResult.IsSuccess;
+        if (deleteResult.IsSuccess)
+        {
+            ClearCache(artistResult.Data!);
+        }
         return new MelodeeModels.OperationResult<bool>
         {
             Data = result

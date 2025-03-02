@@ -3,9 +3,11 @@
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
+@using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Extensions
 @using Artist = Melodee.Common.Data.Models.Artist
+@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 
 @inject ArtistService ArtistService
 @inject AlbumService AlbumService
@@ -69,6 +71,7 @@
 <RadzenStack>
     <RadzenMenu>
         <RadzenMenuItem Text="Delete"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="DeleteButtonClick" title="Delete the artist, all artist albums, and all album files. BEWARE!" IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="@($"Delete Albums ({_selectedAlbums.Count})")"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_selectedAlbums.Count == 0" Click="DeleteAlbumsButtonClick" title="Delete the selected albums. BEWARE!" IconColor="@Colors.Danger" Icon="remove"></RadzenMenuItem>
         <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
         @if (_artist.IsLocked)
         {
@@ -213,11 +216,39 @@
                     <RadzenColumn Size="12" SizeMD="8">
                         <RadzenPanel>
                             <HeaderTemplate>
+
                                 <RadzenText TextStyle="TextStyle.H6"
                                             class="rz-display-flex rz-align-items-center rz-m-0">
                                     <RadzenIcon Icon="album" class="rz-me-1"/>
                                     Albums
                                 </RadzenText>
+                                <RadzenStack orientation="Orientation.Horizontal" class="rz-ml-auto">
+                                    <DebounceInput class="rz-textbox"
+                                                   style="width:200px;"
+                                                   autocomplete="off"
+                                                   @bind-Value="@_debounceAlbumFilterValue"
+                                                   @bind-Value:event="OnInput"
+                                                   DebounceTime="1000"
+                                                   MinLength="2"
+                                                   OnValueChanged="@FilterAlbumsAsync"
+                                                   ForceNotifyByEnter="true"
+                                                   ForceNotifyOnBlur="true"/>
+                                    <RadzenSplitButton Icon="sort" Text="Sort" Click="@(async (args) =>
+                                                                                      {
+                                                                                          _albumSort = SafeParser.ToEnum<AlbumSort>(args.Value);
+                                                                                          await LoadAlbums();
+                                                                                      })">
+                                        <ChildContent>
+                                            <RadzenSplitButtonItem Icon="date_range" Text="Release Date ⬆️" Value="@AlbumSort.ReleaseDate.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="date_range" Text="Release Date ⬇️" Value="@AlbumSort.ReleaseDateDesc.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="timelapse" Text="Duration ⬆️" Value="@AlbumSort.Duration.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="timelapse" Text="Duration ⬇️" Value="@AlbumSort.DurationDesc.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="music_note" Text="Song Count ⬆️" Value="@AlbumSort.SongCount.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="music_note" Text="Song Count ⬇️" Value="@AlbumSort.SongCountDesc.ToString()"/>
+                                        </ChildContent>
+                                    </RadzenSplitButton>
+                                </RadzenStack>
+
                             </HeaderTemplate>
                             <ChildContent>
                                 @if (_isLoading)
@@ -228,9 +259,13 @@
                                         ShowValue="false"
                                         Mode="ProgressBarMode.Indeterminate"/>
                                 }
-                                @foreach (var album in _albums.OrderByDescending(x => x.ReleaseDate))
+                                @foreach (var album in _albums)
                                 {
-                                    <AlbumDataInfoCardCompactComponent FromUrl=@($"/data/artist/{ _artist.ApiKey}") Album="@album"/>
+                                    <AlbumDataInfoCardCompactComponent
+                                        FromUrl=@($"/data/artist/{ _artist.ApiKey}")
+                                        Checked="@(_selectedAlbums.Any() == true && (_albums.All(i => _selectedAlbums.Contains(album)) && _albums.Any(i => _selectedAlbums.Contains(album))))"
+                                        CheckedChanged="@((bool arg) => ToggleAlbumSelected(arg, album))"
+                                        Album="@album"/>
                                 }
                                 <RadzenPager
                                     ShowPagingSummary="true"
@@ -286,7 +321,7 @@
 
     private const string PagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
 
-    int _totalAlbumCount = 0;
+    int _totalAlbumCount;
 
     [Parameter] public Guid ApiKey { get; set; }
 
@@ -317,13 +352,26 @@
 
     string? _biographyNoAvailablePlaceholder = string.Empty;
 
-    string MetaDataModelStyle { get; set; } = string.Empty;
-
     ShowItem _showItem = ShowItem.Overview;
 
     bool _isPinned;
 
     IEnumerable<AlbumDataInfo> _albums = [];
+
+    IList<AlbumDataInfo> _selectedAlbums = [];
+
+    string _albumSortDirection = PagedRequest.OrderDescDirection;
+    AlbumSort _albumSort = AlbumSort.ReleaseDate;
+
+    private enum AlbumSort
+    {
+        ReleaseDate = 1,
+        ReleaseDateDesc,
+        Duration,
+        DurationDesc,
+        SongCount,
+        SongCountDesc
+    }
 
     private enum ShowItem
     {
@@ -343,12 +391,8 @@
     int? _currentPage = 1;
     readonly short _pageSize = 50;
 
-    readonly Dictionary<string, string> _orderBy = new()
-    {
-        { nameof(AlbumDataInfo.ReleaseDate), PagedRequest.OrderAscDirection }
-    };
-
     private List<string> _alertMessages = [];
+    private string _debounceAlbumFilterValue;
 
     async Task PageChanged(PagerEventArgs args)
     {
@@ -359,11 +403,49 @@
     private async Task LoadAlbums()
     {
         _isLoading = true;
+
+         Dictionary<string, string> orderBy;
+        switch (_albumSort)
+        {
+            case AlbumSort.Duration:
+            case AlbumSort.DurationDesc:
+                orderBy = new Dictionary<string, string>
+                {
+                    { nameof(AlbumDataInfo.Duration), _albumSort == AlbumSort.Duration ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection }
+                };
+                break;
+
+            case AlbumSort.SongCount:
+            case AlbumSort.SongCountDesc:
+                orderBy = new Dictionary<string, string>
+                {
+                    { nameof(AlbumDataInfo.SongCount), _albumSort == AlbumSort.SongCount ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection }
+                };
+                break;
+
+            default:
+                orderBy = new Dictionary<string, string>
+                {
+                    { nameof(AlbumDataInfo.ReleaseDate), _albumSort == AlbumSort.ReleaseDate ? PagedRequest.OrderAscDirection : PagedRequest.OrderDescDirection }
+                };
+                break;
+        }
+
+        FilterOperatorInfo[]? filters = null;
+        if (_debounceAlbumFilterValue.Nullify() != null)
+        {
+            filters = new[]
+            {
+                new FilterOperatorInfo(nameof(AlbumDataInfo.Name), FilterOperator.Contains, _debounceAlbumFilterValue)
+            };
+        }
+
         var albumListResult = await AlbumService.ListForArtistApiKeyAsync(new PagedRequest
         {
+            FilterBy = filters,
             Page = _currentPage,
             PageSize = _pageSize,
-            OrderBy = _orderBy
+            OrderBy = orderBy
         }, _artist.ApiKey);
 
         _albums = albumListResult.Data;
@@ -405,22 +487,22 @@
 
                 if (_artist.ImageCount > 1)
                 {
-                    var albumsImagesInByteBase64 = new List<(int, string)>();
+                    var artistImagesInBase64 = new List<(int, string)>();
                     await Parallel.ForEachAsync(artistDirectory.AllFileImageTypeFileInfos()
                         .OrderBy(x => x.Name)
                         .Select((x, i) => new
                         {
                             index = i,
                             file =x.ToFileSystemInfo()
-                        }), CancellationToken.None, async (albumImage, token) =>
+                        }), CancellationToken.None, async (artistImage, token) =>
                     {
-                        var imageBase64 = await albumImage.file.ImageBase64(artistDirectory, cancellationToken: token);
+                        var imageBase64 = await artistImage.file.ImageBase64(artistDirectory, cancellationToken: token);
                         if (imageBase64 != null)
                         {
-                            albumsImagesInByteBase64.Add((albumImage.index, imageBase64));
+                            artistImagesInBase64.Add((artistImage.index, imageBase64));
                         }
                     });
-                    _artistImagesInByteBase64 = albumsImagesInByteBase64.OrderBy(x => x.Item1).Select(x => x.Item2).ToArray();
+                    _artistImagesInByteBase64 = artistImagesInBase64.OrderBy(x => x.Item1).Select(x => x.Item2).ToArray();
                 }
 
                 _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Artist, _artist.Id);
@@ -511,6 +593,41 @@
             var rescanresult = await ArtistService.RescanAsync([_artist.Id]);
             NotificationService.Notify(NotificationMessageForResult(rescanresult, "submitting artist rescan job", ToastTime));
         }
+    }
+
+    private void ToggleAlbumSelected(bool? selected, AlbumDataInfo album)
+    {
+        var ss = selected ?? false;
+        if (_selectedAlbums.Contains(album) && !ss)
+        {
+            _selectedAlbums.Remove(album);
+        }
+
+        if (!_selectedAlbums.Contains(album) && ss)
+        {
+            _selectedAlbums.Add(album);
+        }
+        StateHasChanged();
+    }
+
+    private async Task DeleteAlbumsButtonClick()
+    {
+        var confirm = await DialogService.Confirm("Are you sure?", $"Delete {_selectedAlbums.Count} albums", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm ?? false)
+        {
+            var deleteResult = await ArtistService.DeleteAlbumsForArtist(_artist.Id, _selectedAlbums.Select(x => x.Id).ToArray());
+            if (deleteResult.IsSuccess)
+            {
+                NavigationManager.Refresh(true);
+            }
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "deleted artist albums", ToastTime));
+        }
+    }
+
+    private Task FilterAlbumsAsync(string arg)
+    {
+        _debounceAlbumFilterValue = arg;
+        return LoadAlbums();
     }
 
 }

@@ -88,7 +88,8 @@ public class MelodeeMetadataMaker(
 
 
         var albumImages = new List<ImageInfo>();
-        var foundAlbumImages = (await album.FindImages(songPlugin, imageConvertor, imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
+        var duplicateThreshold = configuration.GetValue<int?>(SettingRegistry.ImagingDuplicateThreshold) ?? MelodeeConfiguration.DefaultImagingDuplicateThreshold;
+        var foundAlbumImages = (await album.FindImages(songPlugin, duplicateThreshold, imageConvertor, imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
         if (foundAlbumImages.Length != 0)
         {
             foreach (var foundAlbumImage in foundAlbumImages)

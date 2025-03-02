@@ -186,10 +186,7 @@
             }
             else if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
-                        x.FilterValue))
-                    .ToArray();
+                filters = args.Filters.Select(x => x.ToFilterOperatorInfo()).ToArray();
             }
 
             var result = await SongService.ListAsync(new PagedRequest

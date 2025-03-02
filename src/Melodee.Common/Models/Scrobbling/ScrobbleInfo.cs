@@ -33,5 +33,7 @@ public record ScrobbleInfo(
 {
     public Instant LastScrobbledAt { get; set; }
 
+    public bool IsExpired => MinutesAgo * 1000 > SongDuration;
+    
     public int MinutesAgo => (LastScrobbledAt - CreatedAt).Minutes;
 }

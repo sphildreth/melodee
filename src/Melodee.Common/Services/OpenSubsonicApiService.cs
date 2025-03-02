@@ -2147,7 +2147,7 @@ public class OpenSubsonicApiService(
             ResponseData = await DefaultApiResponse() with
             {
                 Data = data,
-                DataPropertyName = "directory"
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "directory"
             }
         };
     }

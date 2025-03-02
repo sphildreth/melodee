@@ -6,6 +6,15 @@
     Variant="Variant.Filled"
     class="rz-mx-auto rz-my-1 rz-p-1">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Gap="2px" class="rz-p-1">
+        @if (CheckedChanged != null)
+        {
+            <RadzenCheckBox
+                TabIndex="-1"
+                TValue="bool"
+                Style="margin-right: 10px; margin-top: 20px;"
+                Value="@Checked"
+                Change="@CheckedChanged"/>
+        }
         @if (Album.ApiKey != Guid.Empty)
         {
             <RadzenImage Path="@Album.ImageUrl()" Style="width: 60px; height: 60px; margin-right: 5px;"/>
@@ -35,4 +44,7 @@
     [Parameter] public AlbumDataInfo Album { get; set; } = null!;
     [Parameter] public string? FromUrl { get; set; }
     [Parameter] public bool ShowAlbumLink { get; set; } = true;
+    [Parameter] public bool Checked { get; set; } = false;
+    [Parameter] public Action<bool>? CheckedChanged { get; set; }
+
 }

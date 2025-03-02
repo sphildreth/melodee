@@ -72,7 +72,7 @@ public sealed class SearchService(
                     new FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), FilterOperator.Contains, searchTermNormalized),
                     new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains, searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
-            }, cancellationToken);
+            }, null, cancellationToken);
             albums = albumResult.Data.ToList();
         }
 

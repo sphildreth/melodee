@@ -115,6 +115,15 @@ public sealed class M3UPlaylist(
                         var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
                         var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
 
+                        if (songs.Count == 0)
+                        {
+                            // If no songs are found, regardless of everything else, the M3U is garbage.
+                            return new OperationResult<int>($"Unable to find Songs for directory [{fileSystemDirectoryInfo}]")
+                            {
+                                Data = 0
+                            };
+                        }
+                        
                         var m3UAlbum = new Album
                         {
                             AlbumType = albumName.TryToDetectAlbumType(),

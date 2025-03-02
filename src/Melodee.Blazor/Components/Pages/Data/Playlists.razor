@@ -94,6 +94,12 @@
                             TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(Playlist.Name)"
+                                      Title="Name">
+                    <Template Context="data">
+                        <RadzenText Text="@data.Name"/>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Playlist.CreatedAt)" Title="Created" Filterable="false"
                                       Width="120px">
                     <Template Context="data">
@@ -154,10 +160,7 @@
             }
             else if (args.Filters.Any())
             {
-                filters = args.Filters.Select(x => new FilterOperatorInfo(x.Property,
-                        SafeParser.ToEnum<FilterOperator>(x.FilterOperator.ToDictionary()),
-                        x.FilterValue))
-                    .ToArray();
+                filters = args.Filters.Select(x => x.ToFilterOperatorInfo()).ToArray();
             }
 
             var result = await PlaylistService.ListAsync(new PagedRequest

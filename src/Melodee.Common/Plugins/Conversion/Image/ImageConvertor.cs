@@ -102,7 +102,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
 
             var didModify = false;
             var imageBytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken);
-            if (!string.Equals(".jpg", fileInfo.Extension, StringComparison.OrdinalIgnoreCase))
+            if(imageInfo.Metadata.DecodedImageFormat != SixLabors.ImageSharp.Formats.Jpeg.JpegFormat.Instance)
             {
                 imageBytes = ConvertToJpegFormatViaSixLabors(imageBytes);
                 didModify = true;
@@ -130,7 +130,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             Data = fileInfo.ToFileSystemInfo()
         };
     }
-
+    
     public static byte[] ResizeAndPadToBeSquare(ReadOnlySpan<byte> imageBytes, int width)
     {
         if (imageBytes.Length == 0)

@@ -1,7 +1,9 @@
 @page "/admin/dashboard"
+@using Melodee.Common.Plugins.Scrobbling
 @inherits MelodeeComponentBase
 
 @inject ICacheManager CacheManager
+@inject INowPlayingRepository NowPlayingInMemoryRepository
 @inject NotificationService NotificationService
 
 @attribute [Authorize(Roles = "Administrator")]
@@ -21,6 +23,12 @@
                     Click="@ClearCacheClicked"
                     Size="ButtonSize.Small"
                     ButtonStyle="ButtonStyle.Warning"/>
+                <RadzenButton
+                    Icon="sweep"
+                    Text="Clear Now Playing"
+                    Click="@ClearNowPlayingClicked"
+                    Size="ButtonSize.Small"
+                    ButtonStyle="ButtonStyle.Warning"/>
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
@@ -32,6 +40,12 @@
     {
         CacheManager.Clear();
         NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = true }, "cleared cache", ToastTime));
+    }
+
+    private async Task ClearNowPlayingClicked()
+    {
+        await NowPlayingInMemoryRepository.ClearNowPlayingAsync();
+        NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = true }, "cleared now playing", ToastTime));
     }
 
 }

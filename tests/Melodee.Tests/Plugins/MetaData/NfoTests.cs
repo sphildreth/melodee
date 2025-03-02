@@ -89,8 +89,8 @@ public class NfoTests : TestsBase
         {
             var nfo = new Nfo(Serializer, GetAlbumValidator(), NewPluginsConfiguration());
             var nfoParserResult = await nfo.AlbumForNfoFileAsync(fileInfo, fileInfo.Directory?.ToDirectorySystemInfo());
-            Assert.NotNull(nfoParserResult);
-            Assert.NotNull(nfoParserResult.Songs);
+            Assert.Null(nfoParserResult);
+            Assert.Null(nfoParserResult?.Songs);
         }
     }
 }

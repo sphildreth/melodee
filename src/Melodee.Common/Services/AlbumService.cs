@@ -13,6 +13,8 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Rebus.Bus;
 using Serilog;
+using System.Linq.Dynamic.Core;
+using Melodee.Common.Filtering;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -47,6 +49,7 @@ public class AlbumService(
 
     public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListForArtistApiKeyAsync(MelodeeModels.PagedRequest pagedRequest, Guid filterToArtistApiKey, CancellationToken cancellationToken = default)
     {
+       
         int albumCount;
         AlbumDataInfo[] albums = [];
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -57,18 +60,27 @@ public class AlbumService(
                 .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                var aristAlbums = await scopedContext
-                    .Albums.Include(x => x.Artist)
-                    .Where(x => x.Artist.ApiKey == filterToArtistApiKey)
-                    .OrderByDescending(x => x.ReleaseDate).ThenBy(x => x.Name)
-                    .Skip(pagedRequest.SkipValue)
-                    .Take(pagedRequest.TakeValue)
-                    .ToListAsync(cancellationToken)
-                    .ConfigureAwait(false);
-                albums = aristAlbums.Select(x => x.ToAlbumDataInfo()).ToArray();
+                var dbConn = scopedContext.Database.GetDbConnection();
+                var filterBy = pagedRequest.FilterBy?.FirstOrDefault(x => x.PropertyName == "Name")?.Value.ToString().ToNormalizedString();
+                var sql = """
+                          SELECT a."Id", a."ApiKey", a."IsLocked", a."Name", a."NameNormalized", a."AlternateNames",
+                            ar."ApiKey" as "ArtistApiKey", ar."Name" as "ArtistName",
+                            a."SongCount", a."Duration", a."CreatedAt", a."Tags", a."ReleaseDate", 
+                            a."AlbumStatus"
+                          FROM "Albums" a
+                          JOIN "Artists" ar ON (a."ArtistId" = ar."Id")
+                          where ar."ApiKey" = '{0}'
+                          and ('{1}' = '' or a."NameNormalized" LIKE '%{1}%')
+                          ORDER BY a.{2} OFFSET {3} ROWS FETCH NEXT {4} ROWS only;
+                          """.FormatSmart(filterToArtistApiKey.ToString(), filterBy ?? string.Empty, pagedRequest.OrderByValue(), pagedRequest.SkipValue, pagedRequest.TakeValue);
+                albums = (await dbConn
+                    .QueryAsync<AlbumDataInfo>(sql)
+                    .ConfigureAwait(false)).ToArray();                
+                
+                
             }
         }
-
+        
         return new MelodeeModels.PagedResult<AlbumDataInfo>
         {
             TotalCount = albumCount,
@@ -77,7 +89,7 @@ public class AlbumService(
         };
     }
 
-    public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, string? filteringColumnNamePrefix = null, CancellationToken cancellationToken = default)
     {
         int albumCount;
         AlbumDataInfo[] albums = [];
@@ -85,7 +97,7 @@ public class AlbumService(
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
-            var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Albums\"");
+            var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(a.*) FROM \"Albums\" a JOIN \"Artists\" ar ON (a.\"ArtistId\" = ar.\"Id\")  ", filteringColumnNamePrefix ?? "a");
             albumCount = await dbConn
                 .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
                 .ConfigureAwait(false);
@@ -99,7 +111,7 @@ public class AlbumService(
                                        FROM "Albums" a
                                        JOIN "Artists" ar ON (a."ArtistId" = ar."Id")
                                        """;
-                var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment, "a");
+                var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment, filteringColumnNamePrefix ?? "a");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 albums = (await dbConn
                     .QueryAsync<AlbumDataInfo>(listSql, listSqlParts.Item2)
@@ -168,6 +180,7 @@ public class AlbumService(
                 await UpdateLibraryAggregateStatsByIdAsync(libraryId, cancellationToken).ConfigureAwait(false);
             }
 
+            Logger.Information("Deleted albums [{AlbumIds}].", albumIds);
             result = true;
         }
 

@@ -182,17 +182,18 @@ public static partial class ImageHelper
         if (FileHelper.IsFileImageType(fileInfo.Extension))
         {
             var normalizedName = Path.GetFileNameWithoutExtension(fileInfo.Name).ToNormalizedString() ?? fileInfo.Name;
-            if (AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit)).Nullify();
+            var numberInName = SafeParser.ToNumber<int>(nameDigits);
+
+            var isNormalizedNameOnlyDigits = normalizedName == nameDigits;
+            if (!isNormalizedNameOnlyDigits && AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 return false;
             }
-
-            var nameDigits = string.Join(string.Empty, fileInfo.Name.Where(char.IsDigit)).Nullify();
-            var numberInName = SafeParser.ToNumber<int>(nameDigits);
             var nt = NormalizedImageTypesFromFilename(fileInfo.Name.RemoveNumbers()?.RemoveStartsWith(".") ?? fileInfo.Name);
             var ntMatches = AlbumImageFileNames.Count(x => nt?.Contains(x) ?? false);
 
-            if (ntMatches > 0)
+            if (isNormalizedNameOnlyDigits || ntMatches > 0)
             {
                 // Primary image is 00 and 01, sometimes images have year in them, so if 00 or 01 or greater than minimum year
                 return numberInName is > 1860 or < 2;

@@ -18,6 +18,8 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
 
     public const int ImageNameNumberPadding = 2;
 
+    public const int DefaultImagingDuplicateThreshold = 80;
+
     public const string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
 
     public const string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";

@@ -21,6 +21,7 @@ public static class SettingRegistry
     public const string ImagingSmallSize = "imaging.smallSize";
     public const string ImagingMediumSize = "imaging.mediumSize";
     public const string ImagingLargeSize = "imaging.largeSize";
+    public const string ImagingDuplicateThreshold = "imaging.duplicateThreshold";
     public const string JobsArtistHousekeepingCronExpression = "jobs.artistHousekeeping.cronExpression";
     public const string JobsArtistSearchEngineHousekeepingCronExpression = "jobs.artistSearchEngineHousekeeping.cronExpression";
     public const string JobsLibraryProcessCronExpression = "jobs.libraryProcess.cronExpression";
@@ -97,4 +98,6 @@ public static class SettingRegistry
     public const string ValidationMaximumAlbumYear = "validation.maximumAlbumYear";
     public const string ValidationMaximumSongNumber = "validation.maximumSongNumber";
     public const string ValidationMinimumAlbumYear = "validation.minimumAlbumYear";
+    public const string ValidationMinimumSongCount = "validation.minimumSongCount";
+    public const string ValidationMinimumAlbumDuration = "validation.minimumAlbumDuration";
 }
