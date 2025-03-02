@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Melodee.Common.Models.OpenSubsonic.Searching;
 
-public record Search3Result(ArtistSearchResult[] Artist, AlbumSearchResult[] Album, SongSearchResult[] Song) : IOpenSubsonicToXml
+public record SearchResult3(ArtistSearchResult[] Artist, AlbumSearchResult[] Album, SongSearchResult[] Song) : IOpenSubsonicToXml
 {
     public string ToXml(string? nodeName = null)
     {

@@ -1920,7 +1920,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> SearchAsync(SearchRequest request, ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> SearchAsync(SearchRequest request, bool isSearch3, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -2057,15 +2057,14 @@ public class OpenSubsonicApiService(
             }
         }
 
-
         return new ResponseModel
         {
             TotalCount = totalCount,
             UserInfo = authResponse.UserInfo,
             ResponseData = await DefaultApiResponse() with
             {
-                Data = new Search3Result(artists, albums, songs),
-                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : "searchResult3"
+                Data = isSearch3 ? new SearchResult3(artists, albums, songs) : new SearchResult2(artists, albums, songs),
+                DataPropertyName = apiRequest.IsXmlRequest ? string.Empty : isSearch3 ? "searchResult3" : "searchResult2"
             }
         };
     }

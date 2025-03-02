@@ -12,9 +12,19 @@ public class SearchingController(ISerializer serializer, EtagRepository etagRepo
     // Deprecated says to use search2
     //search
 
-    //TODO
-    // By file structure, versus ID tags
-    //search2
+    /// <summary>
+    ///     Returns albums, artists and songs matching the given search criteria. Supports paging through the result.
+    /// </summary>
+    /// <param name="request">Search request options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/search2.view")]
+    [Route("/rest/search2")]
+    public Task<IActionResult> Search2Async(SearchRequest request, CancellationToken cancellationToken = default)
+    {
+        return MakeResult(openSubsonicApiService.SearchAsync(request, false, ApiRequest, cancellationToken));
+    }
 
 
     /// <summary>
@@ -26,8 +36,8 @@ public class SearchingController(ISerializer serializer, EtagRepository etagRepo
     [HttpPost]
     [Route("/rest/search3.view")]
     [Route("/rest/search3")]
-    public Task<IActionResult> SearchAsync(SearchRequest request, CancellationToken cancellationToken = default)
+    public Task<IActionResult> Search3Async(SearchRequest request, CancellationToken cancellationToken = default)
     {
-        return MakeResult(openSubsonicApiService.SearchAsync(request, ApiRequest, cancellationToken));
+        return MakeResult(openSubsonicApiService.SearchAsync(request, true, ApiRequest, cancellationToken));
     }
 }
