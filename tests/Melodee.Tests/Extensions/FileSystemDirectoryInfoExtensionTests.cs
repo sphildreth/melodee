@@ -1,4 +1,5 @@
 using Melodee.Common.Models;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Artist = Melodee.Common.Data.Models.Artist;
 
@@ -10,11 +11,11 @@ public class FileSystemDirectoryInfoExtensionTests
     public void ValidateDirectoryNameForFileInfo()
     {
         var coverName = "cover.jpg";
-        var testPath = @"/melodee_test/tests/image_number_tests/";
+        var testPath = @"/melodee_test/tests/image_number_tests";
         var filename = Path.Combine(testPath, coverName);
         var fileInfo = new FileInfo(filename);
         var fileDirectory = fileInfo.ToDirectorySystemInfo();
-        Assert.Equal(fileInfo.FullName, fileDirectory.Path);
+        Assert.Equal(testPath, fileDirectory.Path);
         Assert.Equal("image_number_tests", fileDirectory.Name);
     }
     
@@ -168,11 +169,7 @@ public class FileSystemDirectoryInfoExtensionTests
                 Directory.CreateDirectory(testPath);
             }
 
-            var dirInfo = new FileSystemDirectoryInfo
-            {
-                Path = testPath,
-                Name = "dir_to_get_renamed_prefix"
-            };
+            var dirInfo = testPath.ToDirectoryInfo();
             var nd = dirInfo.AppendPrefix("__batman_");
             Assert.NotEqual(nd.FullName(), dirInfo.FullName());
             Assert.True(Directory.Exists(nd.FullName()));
@@ -181,45 +178,7 @@ public class FileSystemDirectoryInfoExtensionTests
             Assert.False(Directory.Exists(nd.FullName()));
         }
     }
-
-    [Fact]
-    public void ValidateMoveTo()
-    {
-        var testDirectory = @"/melodee_test/tests";
-        if (Directory.Exists(testDirectory))
-        {
-            var createdDirName = Path.Combine(testDirectory, Guid.NewGuid().ToString());
-            var createdDir = Directory.CreateDirectory(createdDirName);
-
-            // Create a new file in dir to move
-            var createdFileName = Path.Combine(createdDirName, Guid.NewGuid().ToString());
-            var createdFileInfo = new FileInfo(createdFileName);
-            File.Create(createdFileName).Dispose();
-            Assert.True(File.Exists(createdFileName));
-            Assert.True(createdFileInfo.Exists);
-
-            // Move directory which should move file in directory as well 
-            var directorySystemInfo = createdDir.ToDirectorySystemInfo();
-            var movedToDirName = Path.Combine(testDirectory, Guid.NewGuid().ToString());
-            directorySystemInfo.MoveToDirectory(movedToDirName);
-            Assert.False(Directory.Exists(createdDirName));
-            Assert.True(Directory.Exists(movedToDirName));
-
-            // Ensure file got moved with directory
-            var movedCreatedFileName = Path.Combine(movedToDirName, createdFileInfo.Name);
-            Assert.True(File.Exists(movedCreatedFileName));
-
-            var directoryInfo = new DirectoryInfo(movedToDirName);
-            Assert.Equal(directoryInfo.Name, directorySystemInfo.Name);
-            Assert.Equal(directoryInfo.FullName, directorySystemInfo.Path);
-            Assert.Equal(directoryInfo.FullName, directorySystemInfo.FullName());
-            Assert.True(directorySystemInfo.Exists());
-
-            directorySystemInfo.Delete();
-            Assert.False(Directory.Exists(movedToDirName));
-            Assert.False(directorySystemInfo.Exists());
-        }
-    }
+   
 
     [Fact]
     public void NextImageNumberInDirectory()

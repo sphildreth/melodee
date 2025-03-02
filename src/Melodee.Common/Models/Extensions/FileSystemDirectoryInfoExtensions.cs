@@ -133,7 +133,6 @@ public static class FileSystemDirectoryInfoExtensions
         {
             moveTo.ToDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
         }
-
         d.ToDirectorySystemInfo().MoveToDirectory(moveTo);
         return new FileSystemDirectoryInfo
         {

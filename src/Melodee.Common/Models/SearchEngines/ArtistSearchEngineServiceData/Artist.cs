@@ -14,35 +14,35 @@ namespace Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 [Index(nameof(MusicBrainzId), IsUnique = true)]
 [Index(nameof(LastFmId), IsUnique = true)]
 [Index(nameof(SpotifyId), IsUnique = true)]
-public record Artist
+public sealed class Artist
 {
-    [Key] public int Id { get; init; }
+    [Key] public int Id { get; set; }
 
-    [Required] [MaxLength(2000)] public required string Name { get; init; }
+    [Required] [MaxLength(2000)] public required string Name { get; set; }
 
-    [Required] [MaxLength(2000)] public required string NameNormalized { get; init; }
+    [Required] [MaxLength(2000)] public required string NameNormalized { get; set; }
 
     /// <summary>
     /// Alternate names in tag form
     /// </summary>
     [MaxLength(4000)]
-    public string? AlternateNames { get; init; }
+    public string? AlternateNames { get; set; }
 
-    [Required] [MaxLength(2000)] public required string SortName { get; init; }
+    [Required] [MaxLength(2000)] public required string SortName { get; set; }
 
-    [MaxLength(255)] public string? ItunesId { get; init; }
+    [MaxLength(255)] public string? ItunesId { get; set; }
 
-    [MaxLength(255)] public string? AmgId { get; init; }
+    [MaxLength(255)] public string? AmgId { get; set; }
 
-    [MaxLength(255)] public string? DiscogsId { get; init; }
+    [MaxLength(255)] public string? DiscogsId { get; set; }
 
-    [MaxLength(255)] public string? WikiDataId { get; init; }
+    [MaxLength(255)] public string? WikiDataId { get; set; }
 
-    public Guid? MusicBrainzId { get; init; }
+    public Guid? MusicBrainzId { get; set; }
 
-    [MaxLength(255)] public string? LastFmId { get; init; }
+    [MaxLength(255)] public string? LastFmId { get; set; }
 
-    [MaxLength(255)] public string? SpotifyId { get; init; }
+    [MaxLength(255)] public string? SpotifyId { get; set; }
 
     public ICollection<Album> Albums { get; set; } = [];
 
@@ -50,7 +50,9 @@ public record Artist
 
     [NotMapped] public int AlbumCount { get; set; }
 
-    public bool? IsLocked { get; init; }
+    public bool? IsLocked { get; set; }
+    
+    [NotMapped] public bool IsLockedValue { get; set; }
 
     /// <summary>
     /// Last time the Artist albums where refreshed from search engine plugins.

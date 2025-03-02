@@ -102,6 +102,11 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Artist.Name)" Title="Name" Filterable="false">
                     <Template Context="data">
+                        <RadzenButton Style="float:right;margin-top: 7px;"
+                                      Visible="@(CurrentUser?.IsEditor() ?? false)"
+                                      Size="ButtonSize.ExtraSmall"
+                                      Click=@(_ => NavigationManager.NavigateTo($"/media/artist/{data.Id}/edit"))
+                                      Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
                         <RadzenText Text="@data.Name"/>
                     </Template>
                 </RadzenDataGridColumn>
@@ -210,7 +215,7 @@
 
     private void AddButtonClick()
     {
-        NavigationManager.NavigateTo($"/media/mediaartists/{Guid.Empty}");
+        NavigationManager.NavigateTo($"/media/artist/0/edit");
     }
 
     private async Task DeleteSelectedButtonClick()

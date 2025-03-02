@@ -41,6 +41,7 @@
 </RadzenBreadCrumb>
 <RadzenStack>
     <RadzenMenu>
+        <RadzenMenuItem Text="Add Artist" Click="AddNewArtistButtonClick" title="Add a new artist to metadata database using this artists details." Icon="add_circle_outline"></RadzenMenuItem>
         <RadzenMenuItem Text="Edit" Icon="edit">
             <RadzenMenuItem Text="Edit album" Icon="edit" Value="@MenuItems.EditAlbum" Click="OnMenuItemClicked"></RadzenMenuItem>
             <RadzenMenuItem Text="Manually validate album" Icon="data_check" Value="@MenuItems.ManuallyValidateAlbum" Click="OnMenuItemClicked"></RadzenMenuItem>
@@ -665,6 +666,12 @@
     private async Task ReprocessAlbumButtonClick()
     {
         await Bus.SendLocal(new MelodeeAlbumReprocessEvent(_album.Directory.FullName())).ConfigureAwait(false);
+    }
+
+    private Task AddNewArtistButtonClick()
+    {
+        // Call the ArtistEdit and pass in the albums artist name value to populate a new artist edit form.
+        throw new NotImplementedException();
     }
 
 }

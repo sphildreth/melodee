@@ -1,0 +1,276 @@
+@* This is using database Id versus ApiKey as this is only for the admin panel. And only admin users have access to this page. *@
+@page "/media/artist/{ArtistId:int}/edit"
+
+@inherits MelodeeComponentBase
+
+@using Melodee.Common.Services.SearchEngines
+@using Artist = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Artist
+
+@inject MainLayoutProxyService MainLayoutProxyService
+@inject ILogger Logger
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject ArtistService ArtistService
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject LibraryService LibraryService
+@inject ArtistSearchEngineService ArtistSearchEngineService
+
+<PageTitle>Media Artist Add/Edit</PageTitle>
+
+<RadzenBreadCrumb Class="rz-pb-5">
+    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+    <RadzenBreadCrumbItem Path="@($"/admin/mediaartists")" Icon="folder" Text="Media Artists"/>
+    <RadzenBreadCrumbItem Icon="artist" Text="@_artist.Name"/>
+</RadzenBreadCrumb>
+
+<RadzenStack>
+    <RadzenRow Gap="10px" RowGap="1rem" class="rz-m-0 rz-m-md-2">
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenTemplateForm TItem="Artist" Data="@_artist" Submit="@OnSubmit" InvalidSubmit="@OnInvalidSubmit">
+                <RadzenFieldset>
+                    <RadzenStack Gap="20px" class="rz-p-2 rz-p-md-1">
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Locked" Component="IsLocked"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenSwitch @bind-Value="@_artist.IsLockedValue" Name="@nameof(Artist.IsLockedValue)"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Name" Component="Name"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextBox style="display: block" Name="Name" @bind-Value="@_artist.Name"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="Name" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Sort Name" Component="SortName"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextBox style="display: block" Name="SortName" @bind-Value="@_artist.SortName"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="SortName" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+
+                        @* Below is all optional *@
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Amg Id" Component="AmgId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="AmgId" @bind-Value="@_artist.AmgId"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="AmgId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("AmgId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Alternate Names" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_alternateNames"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Discogs Id" Component="DiscogsId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="DiscogsId" @bind-Value="@_artist.DiscogsId"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="DiscogsId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("DiscogsId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="ITunes Id" Component="ItunesId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="ItunesId" @bind-Value="@_artist.ItunesId"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="ItunesId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("ItunesId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="LastFm Id" Component="LastFmId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="LastFmId" @bind-Value="@_artist.LastFmId"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="LastFmId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("LastFmId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Roles" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_roles"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Spotify Id" Component="SpotifyId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="SpotifyId" @bind-Value="@_artist.SpotifyId"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="SpotifyId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("SpotifyId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Tags" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_tags"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="WikiData Id" Component="WikiDataId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block" Name="WikiDataId"
+                                               @bind-Value="@_artist.WikiDataId" class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="WikiDataId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("WikiDataId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" class="rz-mt-4">
+                            <RadzenColumn Size="12" Offset="0" SizeMD="8" OffsetMD="2">
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenStack>
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+
+    bool _isLoading = true;
+
+    List<string> _alternateNames = [];
+    List<string> _roles = [];
+    List<string> _tags = [];
+
+    [Parameter] public int ArtistId { get; set; }
+
+    Artist _artist = new()
+    {
+        Name = string.Empty,
+        NameNormalized = string.Empty,
+        SortName = string.Empty
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ArtistId > 0)
+        {
+            var artistResult = await ArtistSearchEngineService.GetById(ArtistId);
+            if (artistResult is { IsSuccess: true, Data: not null })
+            {
+                _artist = artistResult.Data;
+                _alternateNames = artistResult.Data.AlternateNames?.ToTags()?.ToList() ?? [];
+            }
+            _isLoading = false;
+        }
+    }
+
+    async Task OnSubmit(Artist model)
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+
+        try
+        {
+            _artist.IsLocked = _artist.IsLockedValue;
+            _artist.AlternateNames = "".AddTags(_alternateNames, doNormalize: true);
+
+            if (ArtistId == 0)
+            {
+                var addResult = await ArtistSearchEngineService.AddArtistAsync(_artist);
+                if (addResult.IsSuccess)
+                {
+                    NavigationManager.NavigateTo("/admin/mediaartists");
+                    return;
+                }
+
+                NotificationService.Notify(NotificationMessageForResult(addResult, "Adding Artist", ToastTime));
+            }
+            else
+            {
+                var saveResult = await ArtistSearchEngineService.UpdateArtistAsync(_artist);
+                if (saveResult.IsSuccess)
+                {
+                    NavigationManager.NavigateTo("/admin/mediaartists");
+                    return;
+                }
+
+                NotificationService.Notify(NotificationMessageForResult(saveResult, "Editing Artist", ToastTime));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Attempting to edit [{ArtistId}]", ArtistId);
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
+        }
+    }
+
+    void OnInvalidSubmit(FormInvalidSubmitEventArgs args)
+    {
+    }
+
+    private Task SearchForExternalButtonClick(string amgid)
+    {
+        throw new NotImplementedException();
+    }
+
+
+}
+
+

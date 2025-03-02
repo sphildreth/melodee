@@ -6,6 +6,11 @@ public static class FileSystemInfoExtensions
 {
     public static FileSystemDirectoryInfo ToDirectorySystemInfo(this FileSystemInfo fileInfo)
     {
+        if (Path.HasExtension(fileInfo.FullName))
+        {
+            var fi = new FileInfo(fileInfo.FullName);
+            return fi.Directory?.ToDirectorySystemInfo() ?? FileSystemDirectoryInfo.Blank();
+        }
         var dir = new DirectoryInfo(fileInfo.FullName);
         return new FileSystemDirectoryInfo
         {

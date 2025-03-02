@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -19,6 +20,7 @@ using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -619,4 +621,101 @@ public class ArtistSearchEngineService(
             Data = result
         };
     }
+
+    public async Task<OperationResult<Artist?>> GetById(int artistId, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NegativeOrZero(artistId, nameof(artistId));
+        
+        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+
+            var artist = await scopedContext
+                .Artists
+                .Include(x => x.Albums)
+                .FirstOrDefaultAsync(x => x.Id == artistId, cancellationToken)
+                .ConfigureAwait(false);
+            
+            return new OperationResult<Artist?>
+            {
+                Data = artist
+            };
+        }
+    }
+
+    public async Task<OperationResult<Artist?>> AddArtistAsync(Artist artist, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(artist, nameof(artist));
+       
+        artist.NameNormalized = artist.NameNormalized.Nullify() ?? artist.Name.ToNormalizedString() ?? artist.Name;
+
+        var validationResult = ValidateModel(artist);
+        if (!validationResult.IsSuccess)
+        {
+            return new OperationResult<Artist?>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            {
+                Data = null,
+                Type = OperationResponseType.ValidationFailure
+            };
+        }
+
+        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            scopedContext.Artists.Add(artist);
+            var result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return await GetById(artist.Id, cancellationToken);
+    }
+    
+    public async Task<OperationResult<bool>> UpdateArtistAsync(Artist artist, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(artist, nameof(artist));
+        
+        var validationResult = ValidateModel(artist);
+        if (!validationResult.IsSuccess)
+        {
+            return new OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            {
+                Data = false,
+                Type = OperationResponseType.ValidationFailure
+            };
+        }
+
+        bool result;
+        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbDetail = await scopedContext
+                .Artists
+                .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (dbDetail == null)
+            {
+                return new OperationResult<bool>
+                {
+                    Data = false,
+                    Type = OperationResponseType.NotFound
+                };
+            }
+
+            dbDetail.AlternateNames = artist.AlternateNames;
+            dbDetail.AmgId = artist.AmgId;
+            dbDetail.DiscogsId = artist.DiscogsId;
+            dbDetail.IsLocked = artist.IsLocked ?? artist.IsLockedValue;
+            dbDetail.ItunesId = artist.ItunesId;
+            dbDetail.LastFmId = artist.LastFmId;
+            dbDetail.MusicBrainzId = artist.MusicBrainzId;
+            dbDetail.Name = artist.Name;
+            dbDetail.NameNormalized = artist.NameNormalized;
+            dbDetail.SortName = artist.SortName;
+            dbDetail.SpotifyId = artist.SpotifyId;
+            dbDetail.WikiDataId = artist.WikiDataId;
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+        }
+        return new OperationResult<bool>
+        {
+            Data = result
+        };      
+    }    
 }

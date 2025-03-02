@@ -741,22 +741,7 @@ public static partial class StringExtensions
 
     public static FileSystemDirectoryInfo ToDirectoryInfo(this string? input)
     {
-        if (!string.IsNullOrWhiteSpace(input))
-        {
-            if (Path.HasExtension(input))
-            {
-                var fileInfo = new FileInfo(input);
-                return fileInfo.Directory?.ToDirectorySystemInfo() ?? FileSystemDirectoryInfo.Blank();
-            }
-
-            return new DirectoryInfo(input).ToDirectorySystemInfo();
-        }
-
-        return new FileSystemDirectoryInfo
-        {
-            Path = string.Empty,
-            Name = string.Empty
-        };
+        return !string.IsNullOrWhiteSpace(input) ? new DirectoryInfo(input).ToDirectorySystemInfo() : FileSystemDirectoryInfo.Blank();
     }
 
     public static string? ToCleanedMultipleArtistsValue(this string? input)
