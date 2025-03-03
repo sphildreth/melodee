@@ -271,6 +271,29 @@ public sealed class DirectoryProcessorToStagingService(
 
         var dontDeleteExistingMelodeeFiles = _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
 
+        var modifiedDirectories = false;
+        foreach (var directoryInfoToProcess in directoriesToProcess)
+        {
+            // ensure directoryInfoToProcess doesn't have "extension" in name
+            if (Path.GetExtension(directoryInfoToProcess.Name).Nullify() != null)
+            {
+                   var dd = directoryInfoToProcess.ToDirectoryInfo();
+                   var oldDd = dd.FullName;
+                   var newDd = dd.FullName.Replace(".", "_");
+                   dd.MoveTo(newDd);
+                   Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
+                       nameof(DirectoryProcessorToStagingService),
+                       oldDd,
+                       newDd);
+                   modifiedDirectories = true;
+            }
+        }
+
+        if (modifiedDirectories)
+        {
+            directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
+        }
+
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
             Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
