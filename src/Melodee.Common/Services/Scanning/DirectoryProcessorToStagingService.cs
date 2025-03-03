@@ -260,6 +260,23 @@ public sealed class DirectoryProcessorToStagingService(
             }
         }
 
+        foreach (var dirName in Directory.EnumerateDirectories(fileSystemDirectoryInfo.Path))
+        {
+            if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+            {
+                break;
+            }
+            if (Path.GetExtension(dirName).Nullify() != null)
+            {
+                var newDirName = Path.Combine(dirName.Replace(".", "_"), Path.GetFileName(dirName));
+                Directory.Move(dirName, newDirName);
+                Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
+                    nameof(DirectoryProcessorToStagingService),
+                    dirName,
+                    newDirName);
+            }
+        }
+
         var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
         if (directoriesToProcess.Count > 0)
         {
@@ -271,28 +288,28 @@ public sealed class DirectoryProcessorToStagingService(
 
         var dontDeleteExistingMelodeeFiles = _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
 
-        var modifiedDirectories = false;
-        foreach (var directoryInfoToProcess in directoriesToProcess)
-        {
-            // ensure directoryInfoToProcess doesn't have "extension" in name
-            if (Path.GetExtension(directoryInfoToProcess.Name).Nullify() != null)
-            {
-                   var dd = directoryInfoToProcess.ToDirectoryInfo();
-                   var oldDd = dd.FullName;
-                   var newDd = dd.FullName.Replace(".", "_");
-                   dd.MoveTo(newDd);
-                   Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
-                       nameof(DirectoryProcessorToStagingService),
-                       oldDd,
-                       newDd);
-                   modifiedDirectories = true;
-            }
-        }
-
-        if (modifiedDirectories)
-        {
-            directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
-        }
+        // var modifiedDirectories = false;
+        // foreach (var directoryInfoToProcess in directoriesToProcess)
+        // {
+        //     // ensure directoryInfoToProcess doesn't have "extension" in name
+        //     if (Path.GetExtension(directoryInfoToProcess.Name).Nullify() != null)
+        //     {
+        //            var dd = directoryInfoToProcess.ToDirectoryInfo();
+        //            var oldDd = dd.FullName;
+        //            var newDd = dd.FullName.Replace(".", "_");
+        //            dd.MoveTo(newDd);
+        //            Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
+        //                nameof(DirectoryProcessorToStagingService),
+        //                oldDd,
+        //                newDd);
+        //            modifiedDirectories = true;
+        //     }
+        // }
+        //
+        // if (modifiedDirectories)
+        // {
+        //     directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
+        // }
 
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
