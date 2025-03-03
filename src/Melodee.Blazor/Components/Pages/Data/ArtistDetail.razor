@@ -6,6 +6,7 @@
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Extensions
+@using Melodee.Common.Serialization
 @using Artist = Melodee.Common.Data.Models.Artist
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 
@@ -17,6 +18,7 @@
 @inject NavigationManager NavigationManager
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject IJSRuntime JsRuntime
+@inject ISerializer Serializer
 
 <PageTitle>@_artist.Name</PageTitle>
 
@@ -82,6 +84,7 @@
             <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="LockButtonClick" title="Lock artist, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
         }
         <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="RescanButtonClick" title="Rebuild metadata and rescan artists albums." Icon="refresh"></RadzenMenuItem>
+        <RadzenMenuItem Text="Json" Click="GenerateJsonClick" title="Generate JSON for for artist." Icon="text_snippet"></RadzenMenuItem>
         <RadzenMenuItem Text="Web Search" Click="OnInternetSearchClick" title="Search the web for artist." Icon="public"></RadzenMenuItem>
     </RadzenMenu>
     <RadzenText Text="@_artist.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
@@ -553,9 +556,11 @@
         }
     }
 
-    private Task UserRatingChange(int arg)
+    private async Task UserRatingChange(int arg)
     {
-        throw new NotImplementedException();
+        _userArtist.Rating = arg;
+        var result = await UserService.SetArtistRatingAsync(CurrentUsersId, _artist.ApiKey, arg);
+        NotificationService.Notify(NotificationMessageForResult(result, "set artist rating", ToastTime));
     }
 
     private async Task IsHatedClicked()
@@ -627,6 +632,13 @@
     {
         _debounceAlbumFilterValue = arg;
         return LoadAlbums();
+    }
+
+    private async Task GenerateJsonClick()
+    {
+        var json = Serializer.Serialize(_artist.ToMelodeeArtistModel());
+        var result = await DialogService.OpenAsync("Artists Melodee Json", ds =>
+            @<RadzenTextArea Disabled="true" Style="width: 100%"  @bind-Value="@json" Rows="10" />);
     }
 
 }

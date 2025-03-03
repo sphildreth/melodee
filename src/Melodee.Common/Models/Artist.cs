@@ -10,6 +10,8 @@ public record Artist(
     IEnumerable<ImageInfo>? Images = null,
     int? ArtistDbId = null)
 {
+    public const string JsonFileName = "melodee.json";
+
     /// <summary>
     ///     All Music Guide Artist Id
     /// </summary>

@@ -36,7 +36,13 @@ public static class ArtistExtensions
             artist.Id
         )
         {
-            MusicBrainzId = artist.MusicBrainzId
+            AmgId = artist.AmgId,
+            DiscogsId = artist.DiscogsId,
+            ItunesId = artist.ItunesId,
+            LastFmId = artist.LastFmId,
+            MusicBrainzId = artist.MusicBrainzId,
+            SpotifyId = artist.SpotifyId,
+            WikiDataId = artist.WikiDataId
         };
     }
 

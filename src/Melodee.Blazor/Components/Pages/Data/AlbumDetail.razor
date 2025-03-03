@@ -245,36 +245,37 @@
                                 </RadzenText>
                             </HeaderTemplate>
                             <ChildContent>
-                                <table class="rz-mt-1">
+                                <table class="rz-mt-1 hovertable">
                                     <thead>
                                     <tr>
-                                        <th scope="col" style="min-width:50px;"></th>
                                         <th scope="col">#</th>
                                         <th scope="col" style="width:90%;">Title</th>
                                         <th scope="col">Duration</th>
+                                        <th scope="col" style="min-width:130px;">Actions</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     @foreach (var song in _album.Songs.OrderBy(x => x.SortOrder))
                                     {
-                                        <tr>
-                                            <th scope="row">
+                                        <tr class="highlight-on-hover">
+                                            <td>@($"{song.SongNumber.ToStringPadLeft(3)}")</td>
+                                            <td>@song.Title</td>
+                                            <td>@CurrentUser!.FormatDuration(song.Duration.ToDuration())</td>
+                                            <th scope="row" style="padding-top:2px;">
                                                 <RadzenIcon
                                                     Icon="thumb_down"
                                                     class="filled-icon"
                                                     IconColor="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.IsHated ?? false ? "#A2A415" : "#C9C9C7")"
                                                     @onclick="@(() => IsSongHatedClicked(song))"
-                                                    Style="cursor:pointer;"/>
+                                                    Style="cursor:pointer;font-size:14px;"/>
                                                 <RadzenIcon
                                                     Icon="favorite"
                                                     class="filled-icon"
                                                     IconColor="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.IsStarred ?? false ? "#FA0202" : "#C9C9C7")"
                                                     @onclick="@(() => IsSongStarredClicked(song))"
-                                                    Style="cursor:pointer;"/>
+                                                    Style="cursor:pointer;font-size:14px;"/>
+                                                <RadzenRating Style="font-size:14px;" Value="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.Rating ?? 0)" Change="@(args => UserSongRatingChange(song, args))"/>
                                             </th>
-                                            <td>@($"{song.SongNumber.ToStringPadLeft(3)}")</td>
-                                            <td>@song.Title</td>
-                                            <td>@CurrentUser!.FormatDuration(song.Duration.ToDuration())</td>
                                         </tr>
                                     }
                                     </tbody>
@@ -488,10 +489,7 @@
         }
     }
 
-    private Task UserRatingChange(int arg)
-    {
-        throw new NotImplementedException();
-    }
+
 
     private async Task IsHatedClicked()
     {
@@ -695,6 +693,37 @@
         _isPinned = !_isPinned;
         var result = await UserService.TogglePinnedAsync(CurrentUsersId, UserPinType.Album, _album.Id);
         NotificationService.Notify(NotificationMessageForResult(result, "Toggling Pin", ToastTime));
+    }
+
+    private async Task UserRatingChange(int arg)
+    {
+        _userAlbum.Rating = arg;
+        var result = await UserService.SetAlbumRatingAsync(CurrentUsersId, _album.Id, arg);
+        NotificationService.Notify(NotificationMessageForResult(result, "Set album rating", ToastTime));
+    }
+
+    private async Task UserSongRatingChange(Song song, int arg)
+    {
+        var userSong = _userSongs.FirstOrDefault(x => x.SongId == song.Id);
+        if (userSong == null)
+        {
+            userSong = new UserSong
+            {
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                UserId = CurrentUsersId,
+                SongId = song.Id,
+                Rating = arg
+            };
+            var allUserSongs = _userSongs.ToList();
+            allUserSongs.Add(userSong);
+            _userSongs = allUserSongs.ToArray();
+        }
+        else
+        {
+            userSong.Rating = arg;
+        }
+        var result = await UserService.SetSongRatingAsync(CurrentUsersId, song.Id, arg);
+        NotificationService.Notify(NotificationMessageForResult(result, "Set song rating", ToastTime));
     }
 
 }

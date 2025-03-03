@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Text.Json.Serialization;
+using ATL.Logging;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
@@ -322,6 +324,27 @@ public sealed record Album
         if (result != null)
         {
             result.MelodeeDataFileName = fullPathToMelodeeDataFile;
+
+            // See if Artist melodee.json exists in one folder up, if present use it for the albums artist overwriting any artist set on the albums melodee.json file
+            var dd = new DirectoryInfo(d.FullName());
+            var artistDirectory = dd.Parent?.FullName ?? string.Empty;
+            var artistMelodeeJsonFile = artistDirectory.ToDirectoryInfo().AllFileInfos(Models.Artist.JsonFileName).FirstOrDefault();
+            try
+            {
+                if (File.Exists(artistMelodeeJsonFile?.FullName))
+                {
+                    var artist = serializer.Deserialize<Artist>(await File.ReadAllBytesAsync(artistMelodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false));
+                    result.Artist = artist ?? result.Artist;
+                    if (artist != null)
+                    {
+                        Trace.WriteLine($"Using artist melodee.json file [{artistMelodeeJsonFile}] for album [{result.AlbumTitle()}] Artist [{artist.Name}]");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine($"Unable to read artist melodee.json file [{artistMelodeeJsonFile}] Exception [{e.Message}]");
+            }
         }
 
         return result;

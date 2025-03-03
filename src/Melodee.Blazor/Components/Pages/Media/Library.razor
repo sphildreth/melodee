@@ -38,10 +38,15 @@
             <RadzenMenuItem Text="Delete not Ok"  Click="DeleteNotOkSelectedButtonClick" title="Delete all not Ok status albums in library. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
             <RadzenMenuItem Text="Delete with less than 4 songs"  Click="DeleteLessThanFourSongsButtonClick" title="Delete all albums with less than 4 songs. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
             <RadzenMenuItem Text="Delete less than 10 minutes"  Click="DeleteLessThan10MinutesButtonClick" title="Delete all albums with duration less than 10 minutes. BEWARE!" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
+            @foreach (var librariesAlbumsGroupedByStatus in _librariesAlbumsGroupedByStatus)
+            {
+                <RadzenMenuItem Text="@($"Delete all albums with status [{ librariesAlbumsGroupedByStatus.Key }]")"  Click="@(args => DeleteAlbumsByStatus(@librariesAlbumsGroupedByStatus.Key))" title="@($"Delete all albums with status [{ @librariesAlbumsGroupedByStatus.Key}]. BEWARE!")" IconColor="@Colors.Warning" Icon="delete_sweep"></RadzenMenuItem>
+            }
         </RadzenMenuItem>
         <RadzenMenuItem Text="Process"  Disabled="_library.IsLocked" Click="ProcessButtonClick" title="Run process job on this library." Icon="memory"></RadzenMenuItem>
         <RadzenMenuItem Text="Move Ok"  Disabled="_library.IsLocked" Click="MoveOkButtonClick" title="Move Ok media albums to Library." Icon="move_group"></RadzenMenuItem>
     </RadzenMenu>
+
     <RadzenText
         Text="Media Albums"
         TextStyle="TextStyle.DisplayH6"
@@ -186,6 +191,8 @@
         CreatedAt = default
     };
 
+    Dictionary<string, int> _librariesAlbumsGroupedByStatus = new Dictionary<string, int>();
+
     string _debounceInputValue = "";
 
     [Parameter] public Guid ApiKey { get; set; }
@@ -255,6 +262,12 @@
 
             _albums = result.Data;
             _count = SafeParser.ToNumber<int>(result.TotalCount);
+
+            var allAlbums = await AlbumDiscoveryService.AllMelodeeAlbumDataFilesForDirectoryAsync(_library.ToFileSystemDirectoryInfo());
+            _librariesAlbumsGroupedByStatus = allAlbums.Data?
+                .Where(x => x.Status != AlbumStatus.Ok)
+                .GroupBy(x => x.StatusReasons)
+                .ToDictionary(x => x.Key.ToString(), x => x.Count()) ?? new Dictionary<string, int>();
 
         }
         catch (Exception e)
@@ -347,9 +360,27 @@
         }
     }
 
-    private Task DeleteNotOkSelectedButtonClick()
+    private async Task DeleteNotOkSelectedButtonClick()
     {
-        throw new NotImplementedException();
+        var confirm = await DialogService.Confirm("<p>Deleting all not Ok albums can potentially delete many albums</p><p>There is no undo</p>", "Deleting not Ok", new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+        if (confirm ?? false)
+        {
+            var didDelete = await AlbumDiscoveryService.DeleteAlbumsAsync(_library.ToFileSystemDirectoryInfo(), album => album.Status != AlbumStatus.Ok);
+
+            if (didDelete)
+            {
+                if (_grid != null)
+                {
+                    await _grid.RefreshDataAsync();
+                }
+
+                NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool>
+                {
+                    Data = true
+                }, "deleted albums", ToastTime));
+                _selectedAlbums.Clear();
+            }
+        }
     }
 
     private Task CleanButtonClick()
@@ -379,6 +410,24 @@
     {
         var lessThanDurationMs = TimeSpan.FromMinutes(10).TotalMilliseconds;
         var didDelete = await AlbumDiscoveryService.DeleteAlbumsAsync(_library.ToFileSystemDirectoryInfo(), album => album.TotalDuration() < lessThanDurationMs);
+
+        if (didDelete)
+        {
+            if (_grid != null)
+            {
+                await _grid.RefreshDataAsync();
+            }
+            NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool>
+            {
+                Data = true
+            }, "deleted albums", ToastTime));
+            _selectedAlbums.Clear();
+        }
+    }
+
+    private async Task DeleteAlbumsByStatus(string key)
+    {
+        var didDelete = await AlbumDiscoveryService.DeleteAlbumsAsync(_library.ToFileSystemDirectoryInfo(), album => album.StatusReasons.ToString() == key);
 
         if (didDelete)
         {

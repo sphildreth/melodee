@@ -15,7 +15,8 @@ public static class FileSystemInfoExtensions
         return new FileSystemDirectoryInfo
         {
             Path = dir.FullName,
-            Name = dir.Name
+            Name = dir.Name,
+            
         };        
     }
 
