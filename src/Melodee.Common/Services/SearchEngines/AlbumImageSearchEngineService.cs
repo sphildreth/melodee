@@ -77,7 +77,6 @@ public class AlbumImageSearchEngineService(
                 Logger.Error(e, "[{Plugin}] threw error with query [{Query}]", searchEngine.DisplayName, query);
             }
         }
-
         return new OperationResult<ImageSearchResult[]>
         {
             Data = result.OrderByDescending(x => x.Rank).ToArray()

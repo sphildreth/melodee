@@ -59,8 +59,14 @@
                                                                Style="position: absolute"/>
                             </RadzenColumn>
                         </RadzenRow>
-
-                        @* Below is all optional *@
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Alternate Names" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_alternateNames"/>
+                            </RadzenColumn>
+                        </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Amg Id" Component="AmgId"/>
@@ -74,14 +80,6 @@
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenButton Icon="search" Text="Search"
                                               Click="@(() => SearchForExternalButtonClick("AmgId"))"/>
-                            </RadzenColumn>
-                        </RadzenRow>
-                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Alternate Names" Component="AlternateNames"/>
-                            </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <TagsInput Value="@_alternateNames"/>
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -129,12 +127,23 @@
                                               Click="@(() => SearchForExternalButtonClick("LastFmId"))"/>
                             </RadzenColumn>
                         </RadzenRow>
+
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Roles" Component="AlternateNames"/>
+                                <RadzenLabel Text="Musicbrainz Id" Component="MusicBrainzId"/>
                             </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <TagsInput Value="@_roles"/>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenTextBox style="display: block"
+                                            Name="MusicBrainzId"
+                                            @bind-Value="@_artist.MusicBrainzIdValue"
+                                            class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="MusicBrainzId"
+                                                               Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("MusicBrainzId"))"/>
                             </RadzenColumn>
                         </RadzenRow>
 
@@ -155,14 +164,6 @@
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Tags" Component="AlternateNames"/>
-                            </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <TagsInput Value="@_tags"/>
-                            </RadzenColumn>
-                        </RadzenRow>
-                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="WikiData Id" Component="WikiDataId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
@@ -176,6 +177,7 @@
                                               Click="@(() => SearchForExternalButtonClick("WikiDataId"))"/>
                             </RadzenColumn>
                         </RadzenRow>
+
                         <RadzenRow AlignItems="AlignItems.Center" class="rz-mt-4">
                             <RadzenColumn Size="12" Offset="0" SizeMD="8" OffsetMD="2">
                                 <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
@@ -193,8 +195,6 @@
     bool _isLoading = true;
 
     List<string> _alternateNames = [];
-    List<string> _roles = [];
-    List<string> _tags = [];
 
     [Parameter] public int ArtistId { get; set; }
 
@@ -214,6 +214,7 @@
             {
                 _artist = artistResult.Data;
                 _alternateNames = artistResult.Data.AlternateNames?.ToTags()?.ToList() ?? [];
+                _artist.MusicBrainzIdValue = _artist.MusicBrainzId?.ToString();
             }
             _isLoading = false;
         }
@@ -227,6 +228,7 @@
         {
             _artist.IsLocked = _artist.IsLockedValue;
             _artist.AlternateNames = "".AddTags(_alternateNames, doNormalize: true);
+            _artist.MusicBrainzId = SafeParser.ToGuid(_artist.MusicBrainzIdValue);
 
             if (ArtistId == 0)
             {

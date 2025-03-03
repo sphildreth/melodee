@@ -12,8 +12,10 @@
 <RadzenStack>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12">
-            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center"
-                         JustifyContent="JustifyContent.End" Gap="0.5rem">
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Center"
+                         JustifyContent="JustifyContent.End"
+                         Gap="0.5rem">
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                     <RadzenLabel Text="@($"Delete other {SearchType.ToString()} images")" Component="False"/>
                     <RadzenSwitch @bind-Value="@_doDeleteExistingImages"
@@ -57,6 +59,7 @@
                             class="rounded cover-search-image"
                             src="@result.Url"
                             alt="@result.Title"/>
+                        <div class="cover-search-image-title">@result.Title</div>
                     </div>
                 }
             </div>

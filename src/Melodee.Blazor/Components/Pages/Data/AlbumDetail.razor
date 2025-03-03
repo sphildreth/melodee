@@ -638,6 +638,11 @@
                 var httpClient = HttpClientFactory.CreateClient();
                 var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
                 var albumPath = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
+                var doDeleteAllOtherAlbumImages = selectedImageSearchResult.DoDeleteAllOtherArtistImages;
+                if (doDeleteAllOtherAlbumImages)
+                {
+                    albumPath.DeleteAllFilesForExtension("*.jpg");
+                }
                 var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Common.Data.Models.Album.FrontImageType}.jpg");
                 if (File.Exists(newAlbumCoverFilename))
                 {

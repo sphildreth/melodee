@@ -39,6 +39,8 @@ public sealed class Artist
     [MaxLength(255)] public string? WikiDataId { get; set; }
 
     public Guid? MusicBrainzId { get; set; }
+    
+    [NotMapped] public string? MusicBrainzIdValue { get; set; }
 
     [MaxLength(255)] public string? LastFmId { get; set; }
 
