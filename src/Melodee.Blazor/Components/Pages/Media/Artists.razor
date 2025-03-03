@@ -223,15 +223,14 @@
         var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
-            // var deleteResult = await ArtistService.DeleteAsync(_selectedArtists.Select(x => x.Id).ToArray());
-            // if (deleteResult.IsSuccess)
-            // {
-            //     NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
-            //     await _grid.RefreshDataAsync();
-            //     return;
-            // }
-            //NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
-            throw new NotImplementedException();
+             var deleteResult = await ArtistSearchEngineService.DeleteArtistsAsync(_selectedArtists.Select(x => x.Id).ToArray());
+             if (deleteResult.IsSuccess)
+             {
+                 NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
+                 await _grid.RefreshDataAsync();
+                 return;
+             }
+            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
         }
     }
 

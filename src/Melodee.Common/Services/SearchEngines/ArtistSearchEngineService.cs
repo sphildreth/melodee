@@ -717,5 +717,43 @@ public class ArtistSearchEngineService(
         {
             Data = result
         };      
-    }    
+    }
+
+    public async Task<OperationResult<bool>> DeleteArtistsAsync(int[] artistIds, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.NullOrEmpty(artistIds, nameof(artistIds));
+
+        bool result;
+
+        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            foreach (var artistId in artistIds)
+            {
+                var artist = await GetById(artistId, cancellationToken).ConfigureAwait(false);
+                if (!artist.IsSuccess)
+                {
+                    return new OperationResult<bool>("Unknown artist.")
+                    {
+                        Data = false
+                    };
+                }
+            }
+
+            foreach (var artistId in artistIds)
+            {
+                var artist = await scopedContext
+                    .Artists
+                    .FirstAsync(x => x.Id == artistId, cancellationToken)
+                    .ConfigureAwait(false);
+                scopedContext.Artists.Remove(artist);
+            }
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+        }
+
+        return new OperationResult<bool>
+        {
+            Data = result
+        };
+    }
 }
