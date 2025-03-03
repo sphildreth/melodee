@@ -268,7 +268,7 @@ public sealed class DirectoryProcessorToStagingService(
             }
             if (Path.GetExtension(dirName).Nullify() != null)
             {
-                var newDirName = Path.Combine(dirName.Replace(".", "_"), Path.GetFileName(dirName));
+                var newDirName = dirName.Replace(".", "_");
                 Directory.Move(dirName, newDirName);
                 Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
                     nameof(DirectoryProcessorToStagingService),
