@@ -8,6 +8,7 @@ using Melodee.Common.Models.Validation;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
+using NodaTime;
 
 namespace Melodee.Common.Models;
 
@@ -105,6 +106,8 @@ public sealed record Album
         }
     }
 
+    public Duration Duration => Duration.FromMilliseconds(this.TotalDuration());
+    
     public string DisplaySummary => $"{this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
 

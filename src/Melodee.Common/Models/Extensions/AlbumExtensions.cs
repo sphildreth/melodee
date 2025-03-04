@@ -278,6 +278,8 @@ public static class AlbumExtensions
                albumYear <= SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumAlbumYear]);
     }
 
+    public static long TotalBytes(this Album album) => album.Songs?.Sum(x => x.File.Size) ?? 0;
+
     public static short SongTotalValue(this Album album)
     {
         var songTotalFromAlbum = album.MetaTagValue<short?>(MetaTagIdentifier.SongTotal);

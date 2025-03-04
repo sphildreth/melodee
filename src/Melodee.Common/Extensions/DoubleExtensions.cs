@@ -5,6 +5,11 @@ namespace Melodee.Common.Extensions;
 
 public static class DoubleExtensions
 {
+    public static string ToStringPadLeft(this double input, short padLeft, char padWith = '0')
+    {
+        return ToStringPadLeft(input as double?, padLeft, padWith) ?? string.Empty;
+    }    
+    
     public static string? ToStringPadLeft(this double? input, short padLeft, char padWith = '0')
     {
         return input == null ? null : input!.ToString()!.PadLeft(padLeft, padWith);

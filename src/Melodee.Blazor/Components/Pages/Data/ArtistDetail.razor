@@ -84,7 +84,7 @@
             <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="LockButtonClick" title="Lock artist, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
         }
         <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="RescanButtonClick" title="Rebuild metadata and rescan artists albums." Icon="refresh"></RadzenMenuItem>
-        <RadzenMenuItem Text="Json" Click="GenerateJsonClick" title="Generate JSON for for artist." Icon="text_snippet"></RadzenMenuItem>
+        <RadzenMenuItem Text="Json" Visible="CurrentUser?.IsEditor() ?? false" Click="GenerateJsonClick" title="Generate JSON for for artist." Icon="text_snippet"></RadzenMenuItem>
         <RadzenMenuItem Text="Web Search" Click="OnInternetSearchClick" title="Search the web for artist." Icon="public"></RadzenMenuItem>
     </RadzenMenu>
     <RadzenText Text="@_artist.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>

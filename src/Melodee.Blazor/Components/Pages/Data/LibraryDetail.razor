@@ -29,64 +29,123 @@
     <RadzenBreadCrumbItem Icon="@_library.LibraryTypeIconAndTitle().Item1" Text="@_library.Name"/>
 </RadzenBreadCrumb>
 
-<RadzenStack>
-    <RadzenMenu>
-        <RadzenMenuItem Text="Clean" Disabled="_library.IsLocked" Click="CleanButtonClick" title="Clean library, removing any empty folders." Icon="mop"></RadzenMenuItem>
-        <RadzenMenuItem Text="Edit" Disabled="_library.IsLocked" Click="EditButtonClick" title="Edit library." Icon="edit"></RadzenMenuItem>
-        @if (_library.IsLocked)
-        {
-            <RadzenMenuItem Text="Unlock" Click="UnlockButtonClick" title="Unlock library, will allow modifications." IconColor="@Colors.Warning"  Icon="lock_open"></RadzenMenuItem>
-        }
-        else
-        {
-            <RadzenMenuItem Text="Lock" Click="LockButtonClick" title="Lock library, will prevent modifications." IconColor="@Colors.Warning"  Icon="lock"></RadzenMenuItem>
-        }
-        <RadzenMenuItem Text="Purge" Disabled="_library.IsLocked" Click="PurgeButtonClick" title="Delete everything in the library" IconColor="@Colors.Danger"  Icon="delete_sweep"></RadzenMenuItem>
-        @if (_areJobsEnabled && _library.TypeValue != LibraryType.Storage)
-        {
-            <RadzenMenuItem Text="Process" Click="ProcessButtonClick" title="Process media files into Melodee media json file." IconColor="@Colors.Secondary" Icon="memory"></RadzenMenuItem>
-        }
-        else if(_areJobsEnabled)
-        {
-            <RadzenMenuItem Text="Scan" Disabled="_library.IsLocked" Click="ScanButtonClick" title="Scan for Melodee media json files and update database data." IconColor="@Colors.Secondary" Icon="database"></RadzenMenuItem>
-        }
-    </RadzenMenu>
-    <RadzenText TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0">
-        <RadzenIcon Icon="@_library.LibraryTypeIconAndTitle().Item1"
-                    title="@_library.LibraryTypeIconAndTitle().Item2"/>
-        @(_library.Name)
-    </RadzenText>
-</RadzenStack>
+@if (CurrentUser.IsAdmin())
+{
+    <RadzenStack>
+        <RadzenMenu>
+            <RadzenMenuItem Text="Clean" Disabled="_library.IsLocked" Click="CleanButtonClick"
+                            title="Clean library, removing any empty folders." Icon="mop"></RadzenMenuItem>
+            <RadzenMenuItem Text="Edit" Disabled="_library.IsLocked" Click="EditButtonClick" title="Edit library."
+                            Icon="edit"></RadzenMenuItem>
+            @if (_library.IsLocked)
+            {
+                <RadzenMenuItem Text="Unlock" Click="UnlockButtonClick"
+                                title="Unlock library, will allow modifications." IconColor="@Colors.Warning"
+                                Icon="lock_open"></RadzenMenuItem>
+            }
+            else
+            {
+                <RadzenMenuItem Text="Lock" Click="LockButtonClick" title="Lock library, will prevent modifications."
+                                IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
+            }
+            <RadzenMenuItem Text="Purge" Disabled="_library.IsLocked" Click="PurgeButtonClick"
+                            title="Delete everything in the library" IconColor="@Colors.Danger"
+                            Icon="delete_sweep"></RadzenMenuItem>
+            @if (_areJobsEnabled && _library.TypeValue != LibraryType.Storage)
+            {
+                <RadzenMenuItem Text="Process" Click="ProcessButtonClick"
+                                title="Process media files into Melodee media json file." IconColor="@Colors.Secondary"
+                                Icon="memory"></RadzenMenuItem>
+            }
+            else if (_areJobsEnabled)
+            {
+                <RadzenMenuItem Text="Scan" Disabled="_library.IsLocked" Click="ScanButtonClick"
+                                title="Scan for Melodee media json files and update database data."
+                                IconColor="@Colors.Secondary" Icon="database"></RadzenMenuItem>
+            }
+            <RadzenMenuItem Text="Update Aggregates" Disabled="_library.IsLocked" Click="UpdateAggregatesButtonClick"
+                            title="Update all aggregate counts for library, including; artists, contributors and albums in library."
+                            IconColor="@Colors.Secondary" Icon="sync"></RadzenMenuItem>
+        </RadzenMenu>
+        <RadzenText TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0">
+            <RadzenIcon Icon="@_library.LibraryTypeIconAndTitle().Item1"
+                        title="@_library.LibraryTypeIconAndTitle().Item2"/>
+            @(_library.Name)
+        </RadzenText>
+    </RadzenStack>
+}
 
 <RadzenStack class="rz-mt-3">
     <RadzenRow>
-        <RadzenColumn Size="4" SizeMD="2">
-            <RadzenCard>
-                <RadzenTree Change="@OnShowItemChange">
-                    <RadzenTreeItem Text="Overview" Selected="true">
-                        <Template>
-                            <RadzenIcon Icon="overview"/>
-                            @context.Text
-                        </Template>
-                    </RadzenTreeItem>
-                    <RadzenTreeItem
-                        Text="@($"{(_library.TypeValue == LibraryType.Storage ? "Scan" : "Process")} History")">
-                        <Template>
-                            <RadzenIcon Icon="history"/>
-                            @context.Text
-                        </Template>
-                    </RadzenTreeItem>
-                </RadzenTree>
-            </RadzenCard>
+        <RadzenColumn Size="3">
+            <RadzenStack>
+                <RadzenCard>
+                    <RadzenTree Change="@OnShowItemChange">
+                        <RadzenTreeItem Text="Overview" Selected="true">
+                            <Template>
+                                <RadzenIcon Icon="overview"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                        <RadzenTreeItem
+                            Text="@($"{(_library.TypeValue == LibraryType.Storage ? "Scan" : "Process")} History")">
+                            <Template>
+                                <RadzenIcon Icon="history"/>
+                                @context.Text
+                            </Template>
+                        </RadzenTreeItem>
+                    </RadzenTree>
+                </RadzenCard>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="info" class="rz-me-1"/>
+                            Details
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Path" Statistic="@_library.Path"/>
+                            <CondensedStatistic Label="Type" Statistic="@_library.TypeValue.ToString()"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                            Statistics
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Created"
+                                                Statistic="@(CurrentUser?.FormatInstant(_library.CreatedAt))"/>
+                            <CondensedStatistic Label="Last Updated"
+                                                Statistic="@(CurrentUser?.FormatInstant(_library.LastUpdatedAt))"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+            </RadzenStack>
         </RadzenColumn>
-        <RadzenColumn Size="8" SizeMD="9">
+        <RadzenColumn Size="7">
             @if (_showItem == ShowItem.Overview)
             {
                 <RadzenPanel AllowCollapse="true">
                     <HeaderTemplate>
                         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
                             <RadzenIcon Icon="monitoring" class="rz-me-1"/>
-                            Statistics
+                            Data Counts
                         </RadzenText>
                     </HeaderTemplate>
                     <ChildContent>
@@ -203,6 +262,21 @@
                 </RadzenDataGrid>
             }
         </RadzenColumn>
+        <RadzenColumn Size="2">
+            <RadzenPanel AllowCollapse="true">
+                <HeaderTemplate>
+                    <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                        <RadzenIcon Icon="description" class="rz-me-1"/>
+                        Description
+                    </RadzenText>
+                </HeaderTemplate>
+                <ChildContent>
+                    <RadzenText class="rz-p-6">
+                    @_library.Description
+                    </RadzenText>
+                </ChildContent>
+            </RadzenPanel>
+        </RadzenColumn>
     </RadzenRow>
 </RadzenStack>
 
@@ -295,7 +369,6 @@
         {
             _library = dataResult.Data;
         }
-
     }
 
     protected override async Task OnInitializedAsync()
@@ -375,7 +448,7 @@
 
     private void OnShowItemChange(TreeEventArgs arg)
     {
-        _showItem = arg.Text == null || arg.Text == "Overview" ? ShowItem.Overview : ShowItem.ScanHistory;
+        _showItem = arg.Text is null or "Overview" ? ShowItem.Overview : ShowItem.ScanHistory;
     }
 
     private async Task ScanButtonClick()
@@ -413,6 +486,20 @@
             {
                 MainLayoutProxyService.ToggleSpinnerVisible();
             }
+        }
+    }
+
+    private async Task UpdateAggregatesButtonClick()
+    {
+        MainLayoutProxyService.ToggleSpinnerVisible();
+        try
+        {
+            var result = await LibraryService.UpdateAsync(_library);
+            NotificationService.Notify(NotificationMessageForResult(result, "updated library aggregates", ToastTime));
+        }
+        finally
+        {
+            MainLayoutProxyService.ToggleSpinnerVisible();
         }
     }
 

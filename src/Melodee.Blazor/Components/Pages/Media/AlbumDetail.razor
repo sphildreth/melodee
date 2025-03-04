@@ -149,6 +149,10 @@
                             Gap="5px">
                             <CondensedStatistic Label="Song Count"
                                                 Statistic="@(_album.SongTotalValue().ToStringPadLeft(4))"/>
+                            <CondensedStatistic Label="Total Duration"
+                                                Statistic="@(CurrentUser?.FormatDuration(_album.Duration))"/>
+                            <CondensedStatistic Label="Total File Size"
+                                                Statistic="@(_album.TotalBytes().FormatFileSize())"/>
                             <CondensedStatistic Label="Created"
                                                 Statistic="@(CurrentUser?.FormatDateTimeOffset(_album.Created))"/>
                             <CondensedStatistic Label="Last Updated"
