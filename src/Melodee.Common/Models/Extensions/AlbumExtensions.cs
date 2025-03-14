@@ -497,10 +497,13 @@ public static class AlbumExtensions
 
     public static decimal TotalDurationInMinutes(this Album album)
     {
-        var songTotalDuration = album.Songs?.Sum(x => x.Duration()) ?? 0;
-        return songTotalDuration > 0 ? new TimeInfo(SafeParser.ToNumber<decimal>(songTotalDuration)).Minutes : 0;
+        var albumDuration = album.TotalDuration();
+        return albumDuration > 0 ? new TimeInfo(SafeParser.ToNumber<decimal>(albumDuration)).TotalMinutes : 0;
     }
     
+    /// <summary>
+    /// Total duration of album in Milliseconds.
+    /// </summary>
     public static double TotalDuration(this Album album)
     {
         return album.Songs?.Sum(x => x.Duration()) ?? 0;

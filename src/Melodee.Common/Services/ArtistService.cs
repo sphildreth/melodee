@@ -278,27 +278,21 @@ public class ArtistService(
     {
         Guard.Against.NullOrEmpty(artistIds, nameof(artistIds));
 
-        var result = false;
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        foreach (var artistId in artistIds)
         {
-            foreach (var artistId in artistIds)
+            var artistResult = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
+            if (!artistResult.IsSuccess || artistResult.Data == null)
             {
-                var artistResult = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
-                if (!artistResult.IsSuccess || artistResult.Data == null)
+                return new MelodeeModels.OperationResult<bool>("Unknown artist.")
                 {
-                    return new MelodeeModels.OperationResult<bool>("Unknown artist.")
-                    {
-                        Data = false
-                    };
-                }
-                await bus.SendLocal(new ArtistRescanEvent(artistResult.Data.Id, Path.Combine(artistResult.Data.Library.Path, artistResult.Data.Directory))).ConfigureAwait(false);
+                    Data = false
+                };
             }
+            await bus.SendLocal(new ArtistRescanEvent(artistResult.Data.Id, Path.Combine(artistResult.Data.Library.Path, artistResult.Data.Directory))).ConfigureAwait(false);
         }
-
         return new MelodeeModels.OperationResult<bool>
         {
-            Data = result
+            Data = true
         };
     }
 

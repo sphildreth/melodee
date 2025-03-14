@@ -23,7 +23,8 @@ public class ArtistRescanEventHandler(
     IDbContextFactory<MelodeeDbContext> contextFactory,
     ArtistService artistService,
     LibraryService libraryService,
-    AlbumRescanEventHandler albumRescanEventHandler
+    AlbumRescanEventHandler albumRescanEventHandler,
+    AlbumAddEventHandler albumAddEventHandler
 ) : IHandleMessages<ArtistRescanEvent>
 {
     public async Task Handle(ArtistRescanEvent message)
@@ -71,6 +72,17 @@ public class ArtistRescanEventHandler(
                         dbArtist.LastUpdatedAt = now;
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);                        
                     }
+
+                    var artistDirectoryInfos = artistDirectory.AllDirectoryInfos();
+                    await Parallel.ForEachAsync(artistDirectoryInfos, cancellationToken, async (artistDirectoryInfo, tt) =>
+                    {
+                        var dbArtistAlbum = dbArtist.Albums.FirstOrDefault(x => artistDirectoryInfo.IsSameDirectory(x.Directory));
+                        if (dbArtistAlbum == null)
+                        {
+                            await albumAddEventHandler.Handle(new AlbumAddEvent(dbArtist.Id, artistDirectoryInfo.FullName, true)).ConfigureAwait(false);
+                        }
+                    });
+                    
                     await libraryService.UpdateAggregatesAsync(dbArtist.Library.Id, cancellationToken).ConfigureAwait(false);
                     artistService.ClearCache(dbArtist);
                 }

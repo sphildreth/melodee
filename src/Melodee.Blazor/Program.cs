@@ -144,7 +144,8 @@ builder.Services
     .AddScoped<ShareService>()
     .AddScoped<PlaylistService>()
     .AddScoped<MelodeeMetadataMaker>()
-    .AddScoped<AlbumRescanEventHandler>();
+    .AddScoped<AlbumRescanEventHandler>()
+    .AddScoped<AlbumAddEventHandler>();
 
 #endregion
 
@@ -176,6 +177,7 @@ builder.Services.AddRebus((configurer, provider) =>
         .Sagas(s => s.StoreInMemory())
         .Timeouts(t => t.StoreInMemory());
 });
+builder.Services.AddRebusHandler<AlbumAddEventHandler>();
 builder.Services.AddRebusHandler<AlbumRescanEventHandler>();
 builder.Services.AddRebusHandler<AlbumUpdatedEventHandler>();
 builder.Services.AddRebusHandler<ArtistRescanEventHandler>();

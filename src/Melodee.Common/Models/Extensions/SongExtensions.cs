@@ -185,6 +185,9 @@ public static class SongExtensions
                song.MetaTagValue<string?>(MetaTagIdentifier.RecordingDateOrYear);
     }
 
+    /// <summary>
+    /// Returns song duration in Milliseconds
+    /// </summary>
     public static double? Duration(this Song song)
     {
         return song.MediaAudioValue<double?>(MediaAudioIdentifier.DurationMs);
