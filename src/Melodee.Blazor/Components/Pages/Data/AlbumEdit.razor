@@ -1,57 +1,41 @@
-@page "/data/artist/{ApiKey:guid}/edit"
+@page "/data/album/{ApiKey:guid}/edit"
 
 @inherits MelodeeComponentBase
 @attribute [Authorize(Roles = "Administrator,Editor")]
 
 @using Melodee.Blazor.ViewModels
+@using Melodee.Common.Data.Constants
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
-@using Melodee.Common.Filtering
-@using Melodee.Common.Models.Collection
-@using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data
+@using NodaTime
+@using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
-@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using ImageSearchResult = Melodee.Blazor.Components.Components.ImageSearchResult
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
-@inject ArtistService ArtistService
+@inject AlbumService AlbumService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject IMusicBrainzRepository MusicBrainzRepository
 @inject NavigationManager NavigationManager
-@inject LibraryService LibraryService
 
-<PageTitle>Artist Add/Edit</PageTitle>
+
+<PageTitle>Album Add/Edit</PageTitle>
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Path="/data/artists" Text="Artists"/>
+    <RadzenBreadCrumbItem Path="/data/albums" Text="Albums"/>
     @if (ApiKey != Guid.Empty)
     {
-        <RadzenBreadCrumbItem Path=@($"/data/artist/{_artist.ApiKey}") Text="@(_artist.Name)"/>
+        <RadzenBreadCrumbItem Path=@($"/data/album/{_album.ApiKey}") Text="@(_album.Name)"/>
     }
     <RadzenBreadCrumbItem Icon="@(ApiKey == Guid.Empty ? "add" : "edit")"
                           Text="@(ApiKey == Guid.Empty ? "Adding" : "Editing")"/>
 </RadzenBreadCrumb>
 
 <RadzenStack>
-    <RadzenRow AlignItems="AlignItems.Center">
-        <RadzenColumn Size="12">
-            <RadzenStack
-                Orientation="Orientation.Horizontal"
-                AlignItems="AlignItems.Center"
-                JustifyContent="JustifyContent.End"
-                Gap="0.5rem">
-                <RadzenButton Icon="image_search" Text="Image"
-                              Size="ButtonSize.Small"
-                              Class="rz-mr-2"
-                              Click="@SearchForImageButtonClicked"/>
-            </RadzenStack>
-        </RadzenColumn>
-    </RadzenRow>
     <RadzenRow Gap="10px" RowGap="1rem" class="rz-m-0 rz-m-md-2">
         <RadzenColumn Size="12" SizeMD="4">
             @if (_isLoading)
@@ -65,13 +49,13 @@
             else
             {
                 <RadzenImage
-                    Path=@($"/images/{_artist.ToApiKey()}/medium")
+                    Path=@($"/images/{_album.ToApiKey()}/medium")
                     Style="margin-right: 5px; width: 100%; height: auto;"
-                    AlternateText="@_artist.Name"/>
+                    AlternateText="@_album.Name"/>
             }
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="8">
-            <RadzenTemplateForm TItem="Artist" Data="@_artist" Submit="@OnSubmit" InvalidSubmit="@OnInvalidSubmit">
+            <RadzenTemplateForm TItem="Album" Data="@_album" Submit="@OnSubmit">
                 <RadzenFieldset>
                     <RadzenStack Gap="20px" class="rz-p-2 rz-p-md-1">
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -79,30 +63,31 @@
                                 <RadzenLabel Text="Locked" Component="IsLocked"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenSwitch @bind-Value="@_artist.IsLocked" Name="@nameof(Artist.IsLocked)"/>
+                                <RadzenSwitch @bind-Value="@_album.IsLocked" Name="@nameof(Album.IsLocked)"/>
                             </RadzenColumn>
                         </RadzenRow>
-                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Library" Component="LibraryId"/>
-                            </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenAutoComplete
-                                    @bind-Value="@_libraryName"
-                                    name="LibraryId"
-                                    Data="@_libraries"
-                                    TextProperty="@nameof(Library.Name)"
-                                    LoadData="@OnLoadLibraryData"
-                                    class="rz-w-100"
-                                    InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Library Name" } })"/>
-                            </RadzenColumn>
-                        </RadzenRow>
+                        @* <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem"> *@
+                        @*     <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end"> *@
+                        @*         <RadzenLabel Text="Artist" Component="Artist"/> *@
+                        @*     </RadzenColumn> *@
+                        @*     <RadzenColumn Size="12" SizeMD="10"> *@
+                        @*         <RadzenAutoComplete *@
+                        @*             @bind-Value="@_artistName" *@
+                        @*             @bind-SelectedItem="@_selectedArtist" *@
+                        @*             name="Artist" *@
+                        @*             Data="@_artistSearchResults" *@
+                        @*             TextProperty="@nameof(ArtistSearchResult.Name)" *@
+                        @*             LoadData="@OnLoadMusicBrainzArtistData" *@
+                        @*             class="rz-w-100" *@
+                        @*             InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Artist Name" } })"/> *@
+                        @*     </RadzenColumn> *@
+                        @* </RadzenRow> *@
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Name" Component="Name"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenTextBox style="display: block" Name="Name" @bind-Value="@_artist.Name"
+                                <RadzenTextBox style="display: block" Name="Name" @bind-Value="@_album.Name"
                                                class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="Name" Popup="false"
                                                                Style="position: absolute"/>
@@ -110,26 +95,26 @@
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="MusicBrainz Id" Component="MusicBrainzId"/>
+                                <RadzenLabel Text="Release Date" Component="ReleaseDate"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenAutoComplete
-                                    @bind-Value="@_musicBrainzId"
-                                    name="MusicBrainzId"
-                                    Data="@_musicBrainzArtists"
-                                    TextProperty="@nameof(KeyValue.Value)"
-                                    LoadData="@OnLoadMusicBrainzArtistData"
-                                    class="rz-w-100"
-                                    InputAttributes="@(new Dictionary<string, object> { { "aria-label", "Artist Name" } })"/>
+                                <RadzenDatePicker
+                                    style="display: block"
+                                    Name="ReleaseDate"
+                                    DateFormat="MM/dd/yyyy"
+                                    @bind-Value="@_releaseDate"
+                                    class="rz-w-100"/>
+                                <RadzenRequiredValidator Component="ReleaseDate" Text="Release Date is required" Popup="false" Style="position: absolute"/>
                             </RadzenColumn>
                         </RadzenRow>
+
                         @* Below is all optional *@
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Amg Id" Component="AmgId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
-                                <RadzenTextBox style="display: block" Name="AmgId" @bind-Value="@_artist.AmgId"
+                                <RadzenTextBox style="display: block" Name="AmgId" @bind-Value="@_album.AmgId"
                                                class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="AmgId" Popup="false"
                                                                Style="position: absolute"/>
@@ -141,38 +126,10 @@
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Alternate Names" Component="AlternateNames"/>
-                            </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <TagsInput Value="@_alternateNames"/>
-                            </RadzenColumn>
-                        </RadzenRow>
-                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Biography" Component="Biography"/>
-                            </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenTextArea
-                                    @bind-Value="@_artist.Biography"
-                                    @oninput="@(args => _artist.Biography = $"{args.Value}")"
-                                    MaxLength="@MaxTextLength"
-                                    class="rz-w-100"/>
-                                <span
-                                    style="font-style: italic;">@($"{_artist.Biography?.Length ?? 0}/{MaxTextLength}")</span>
-                            </RadzenColumn>
-                        </RadzenRow>
-                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Description" Component="Description"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenTextArea
-                                    @bind-Value="@_artist.Description"
-                                    @oninput="@(args => _artist.Description = $"{args.Value}")"
-                                    MaxLength="@MaxTextLength"
-                                    class="rz-w-100"/>
-                                <span
-                                    style="font-style: italic;">@($"{_artist.Description?.Length ?? 0}/{MaxTextLength}")</span>
+                                <MarkdownEditor UploadImage="false" Value="@_album.Description" />
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -180,7 +137,7 @@
                                 <RadzenLabel Text="Discogs Id" Component="DiscogsId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
-                                <RadzenTextBox style="display: block" Name="DiscogsId" @bind-Value="@_artist.DiscogsId"
+                                <RadzenTextBox style="display: block" Name="DiscogsId" @bind-Value="@_album.DiscogsId"
                                                class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="DiscogsId" Popup="false"
                                                                Style="position: absolute"/>
@@ -192,10 +149,18 @@
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Genres" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_genres"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="ITunes Id" Component="ItunesId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
-                                <RadzenTextBox style="display: block" Name="ItunesId" @bind-Value="@_artist.ItunesId"
+                                <RadzenTextBox style="display: block" Name="ItunesId" @bind-Value="@_album.ItunesId"
                                                class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="ItunesId" Popup="false"
                                                                Style="position: absolute"/>
@@ -210,7 +175,7 @@
                                 <RadzenLabel Text="LastFm Id" Component="LastFmId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
-                                <RadzenTextBox style="display: block" Name="LastFmId" @bind-Value="@_artist.LastFmId"
+                                <RadzenTextBox style="display: block" Name="LastFmId" @bind-Value="@_album.LastFmId"
                                                class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="LastFmId" Popup="false"
                                                                Style="position: absolute"/>
@@ -225,32 +190,7 @@
                                 <RadzenLabel Text="Notes" Component="Notes"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenTextArea
-                                    @bind-Value="@_artist.Notes"
-                                    @oninput="@(args => _artist.Notes = $"{args.Value}")"
-                                    MaxLength="@MaxTextLength"
-                                    class="rz-w-100"/>
-                                <span
-                                    style="font-style: italic;">@($"{_artist.Notes?.Length ?? 0}/{MaxTextLength}")</span>
-                            </RadzenColumn>
-                        </RadzenRow>
-                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Real Name" Component="RealName"/>
-                            </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenTextBox style="display: block" Name="RealName" @bind-Value="@_artist.RealName"
-                                               class="rz-w-100"/>
-                                <RadzenDataAnnotationValidator Component="RealName" Popup="false"
-                                                               Style="position: absolute"/>
-                            </RadzenColumn>
-                        </RadzenRow>
-                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
-                                <RadzenLabel Text="Roles" Component="AlternateNames"/>
-                            </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="10">
-                                <TagsInput Value="@_roles"/>
+                                <MarkdownEditor UploadImage="false" Value="@_album.Notes" />
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -258,7 +198,7 @@
                                 <RadzenLabel Text="Sort Name" Component="SortName"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenTextBox style="display: block" Name="SortName" @bind-Value="@_artist.SortName"
+                                <RadzenTextBox style="display: block" Name="SortName" @bind-Value="@_album.SortName"
                                                class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="SortName" Popup="false"
                                                                Style="position: absolute"/>
@@ -269,7 +209,7 @@
                                 <RadzenLabel Text="Sort Order" Component="SortOrder"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenNumeric style="display: block" Name="SortOrder" @bind-Value="@_artist.SortOrder"
+                                <RadzenNumeric style="display: block" Name="SortOrder" @bind-Value="@_album.SortOrder"
                                                class="rz-w-100"
                                                InputAttributes="@(new Dictionary<string, object> { { "aria-label", "enter value" } })"/>
                                 <RadzenDataAnnotationValidator Component="SortOrder" Popup="false"
@@ -281,7 +221,7 @@
                                 <RadzenLabel Text="Spotify Id" Component="SpotifyId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
-                                <RadzenTextBox style="display: block" Name="SpotifyId" @bind-Value="@_artist.SpotifyId"
+                                <RadzenTextBox style="display: block" Name="SpotifyId" @bind-Value="@_album.SpotifyId"
                                                class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="SpotifyId" Popup="false"
                                                                Style="position: absolute"/>
@@ -305,7 +245,7 @@
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
                                 <RadzenTextBox style="display: block" Name="WikiDataId"
-                                               @bind-Value="@_artist.WikiDataId" class="rz-w-100"/>
+                                               @bind-Value="@_album.WikiDataId" class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="WikiDataId" Popup="false"
                                                                Style="position: absolute"/>
                             </RadzenColumn>
@@ -330,24 +270,37 @@
 
     bool _isLoading = true;
 
-    List<KeyValue> _musicBrainzArtists = [];
-    List<Library> _libraries = [];
-
-    List<string> _alternateNames = [];
-    List<string> _roles = [];
+    List<KeyValue> _musicBrainzAlbums = [];
     List<string> _tags = [];
+    List<string> _genres = [];
 
     [Parameter] public Guid ApiKey { get; set; }
+
+    DateOnly _releaseDate = DateOnly.FromDateTime(DateTime.Now);
 
     string? _musicBrainzId;
     string _libraryName = string.Empty;
 
-    Artist _artist = new()
+    Album _album = new()
     {
+        Artist = new Artist
+        {
+            Library = new Library
+            {
+                Name = string.Empty,
+                Path = string.Empty,
+                Type = 0,
+                CreatedAt = default
+            },
+            Name = string.Empty,
+            NameNormalized = string.Empty,
+            Directory = string.Empty,
+            LibraryId = 0,
+            CreatedAt = default
+        },
         Name = string.Empty,
         NameNormalized = string.Empty,
         Directory = string.Empty,
-        LibraryId = 0,
         CreatedAt = default
     };
 
@@ -356,22 +309,13 @@
         MainLayoutProxyService.ToggleSpinnerVisible();
         try
         {
-            if (ApiKey != Guid.Empty)
+            var albumResult = await AlbumService.GetByApiKeyAsync(ApiKey);
+            if (albumResult.IsSuccess)
             {
-                var artistResult = await ArtistService.GetByApiKeyAsync(ApiKey);
-                if (artistResult is { IsSuccess: true, Data: not null })
-                {
-                    _artist = artistResult.Data;
-                    _musicBrainzId = artistResult.Data.MusicBrainzId?.ToString();
-                    _alternateNames = artistResult.Data.AlternateNames?.ToTags()?.ToList() ?? [];
-                    _roles = artistResult.Data.Roles?.ToTags()?.ToList() ?? [];
-                    _tags = artistResult.Data.Tags?.ToTags()?.ToList() ?? [];
-
-                    if (_musicBrainzId != null)
-                    {
-                        _musicBrainzArtists.Add(new KeyValue(_musicBrainzId, _artist.Name));
-                    }
-                }
+                _album = albumResult.Data!;
+                _tags = _album.Tags?.ToTags()?.ToList() ?? [];
+                _genres = _album.Genres?.ToList() ?? [];
+                _releaseDate = _album.ReleaseDate.ToDateOnly();
             }
         }
         finally
@@ -381,54 +325,43 @@
         }
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
 
-        var storageLibrariesResult = await LibraryService.GetStorageLibrariesAsync();
-        _libraries = storageLibrariesResult.Data.ToList();
-
-        // TODO handle differently when more than one storage library
-        _libraryName = _libraries.First().Name;
-    }
-
-    async Task OnSubmit(Artist model)
+    async Task OnSubmit(Album model)
     {
         MainLayoutProxyService.ToggleSpinnerVisible();
 
         try
         {
-            if (_musicBrainzId != null)
-            {
-                _artist.MusicBrainzId = SafeParser.ToGuid(_musicBrainzArtists.FirstOrDefault(x => x.Value == _musicBrainzId)?.Key);
-            }
+            // if (_musicBrainzId != null)
+            // {
+            //     _album.MusicBrainzId = SafeParser.ToGuid(_musicBrainzArtists.FirstOrDefault(x => x.Value == _musicBrainzId)?.Key);
+            // }
 
-            _artist.LibraryId = _libraries.First(x => x.Name == _libraryName).Id;
-            _artist.AlternateNames = "".AddTags(_alternateNames, doNormalize: true);
-            _artist.Roles = "".AddTags(_roles);
-            _artist.Tags = "".AddTags(_tags);
+            _album.Tags = "".AddTags(_tags);
+            _album.Genres = _genres.ToArray();
+            _album.ReleaseDate = LocalDate.FromDateOnly(_releaseDate);
 
             if (ApiKey == Guid.Empty)
             {
-                var addResult = await ArtistService.AddArtistAsync(_artist);
+                var addResult = await AlbumService.AddAlbumAsync(_album);
                 if (addResult.IsSuccess)
                 {
-                    NavigationManager.NavigateTo("/data/artists");
+                    NavigationManager.NavigateTo("/data/albums");
                     return;
                 }
 
-                NotificationService.Notify(NotificationMessageForResult(addResult, "Adding Artist", ToastTime));
+                NotificationService.Notify(NotificationMessageForResult(addResult, "Adding Album", ToastTime));
             }
             else
             {
-                var saveResult = await ArtistService.UpdateAsync(_artist);
+                var saveResult = await AlbumService.UpdateAsync(_album);
                 if (saveResult.IsSuccess)
                 {
-                    NavigationManager.NavigateTo("/data/artists");
+                    NavigationManager.NavigateTo($"/data/album/{ApiKey}");
                     return;
                 }
 
-                NotificationService.Notify(NotificationMessageForResult(saveResult, "Editing Artist", ToastTime));
+                NotificationService.Notify(NotificationMessageForResult(saveResult, "Editing Album", ToastTime));
             }
         }
         catch (Exception ex)
@@ -439,106 +372,6 @@
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
-    }
-
-    void OnInvalidSubmit(FormInvalidSubmitEventArgs args)
-    {
-    }
-
-    private async Task OnLoadMusicBrainzArtistData(LoadDataArgs arg)
-    {
-        MainLayoutProxyService.ToggleSpinnerVisible();
-        try
-        {
-            var searchResult = await MusicBrainzRepository.SearchArtist(new ArtistQuery
-            {
-                Name = arg.Filter
-            }, 10);
-            _musicBrainzArtists = searchResult.Data
-                .Where(x => x.MusicBrainzId != null)
-                .Select(x => new KeyValue(x.MusicBrainzId!.ToString()!, x.Name))
-                .ToList();
-        }
-        finally
-        {
-            MainLayoutProxyService.ToggleSpinnerVisible();
-        }
-    }
-
-    private async Task OnLoadLibraryData(LoadDataArgs arg)
-    {
-        MainLayoutProxyService.ToggleSpinnerVisible();
-        try
-        {
-            var listResult = await LibraryService.ListAsync(new PagedRequest
-            {
-                PageSize = 10,
-                FilterBy =
-                [
-                    new FilterOperatorInfo(nameof(Library.Name), FilterOperator.Contains, arg.Filter)
-                ]
-            });
-            _libraries = listResult.Data.ToList();
-        }
-        finally
-        {
-            MainLayoutProxyService.ToggleSpinnerVisible();
-        }
-    }
-
-    private SearchValue[] SearchValues =>
-    [
-        new()
-        {
-            Key = nameof(Artist.Name),
-            Value = _artist.Name,
-            SortOrder = 1
-        }
-    ];
-
-    private async Task ArtistSearchImageCallback(ImageSearchResult? selectedImageSearchResult)
-    {
-        MainLayoutProxyService.ToggleSpinnerVisible();
-
-        DialogService.Close();
-
-        try
-        {
-            if (selectedImageSearchResult != null)
-            {
-                OperationResult<bool>? saveResult = null;
-                if (selectedImageSearchResult.ImageBytes != null)
-                {
-                    saveResult = await ArtistService.SaveImageAsArtistImageAsync(_artist.Id, selectedImageSearchResult.DoDeleteAllOtherArtistImages, selectedImageSearchResult.ImageBytes);
-                }
-                else
-                {
-                    saveResult = await ArtistService.SaveImageUrlAsArtistImageAsync(_artist.Id, selectedImageSearchResult.Url, selectedImageSearchResult.DoDeleteAllOtherArtistImages);
-                }
-
-                if (saveResult.IsSuccess)
-                {
-                    NavigationManager.Refresh(true);
-                }
-                else
-                {
-                    NotificationService.Notify(NotificationMessageForResult(saveResult, "Saving Artist image", ToastTime));
-                }
-            }
-        }
-        finally
-        {
-            MainLayoutProxyService.ToggleSpinnerVisible();
-        }
-    }
-
-    private async Task SearchForImageButtonClicked()
-    {
-        await DialogService.OpenAsync("Artist Image Search", ds =>
-            @<ImageSearchUpload
-                SearchType="ImageSearchType.Artist"
-                OnUpdateCallback="ArtistSearchImageCallback"
-                SearchValues="SearchValues"/>);
     }
 
     private Task SearchForExternalButtonClick(string amgid)

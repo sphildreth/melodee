@@ -36,6 +36,6 @@ public abstract class DataModelBase
     /// <summary>
     ///     Stored in markdown, will be rendered to HTML or to text depending on consumer.
     /// </summary>
-    [MaxLength(MaxLengthDefinitions.MaxInputLength)]
+    [MaxLength(MaxLengthDefinitions.MaxTextLength)]
     public string? Description { get; set; }
 }

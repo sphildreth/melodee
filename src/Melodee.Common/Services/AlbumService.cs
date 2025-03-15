@@ -14,6 +14,9 @@ using NodaTime;
 using Rebus.Bus;
 using Serilog;
 using System.Linq.Dynamic.Core;
+using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
+using Melodee.Common.Enums;
 using Melodee.Common.Filtering;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
@@ -23,6 +26,7 @@ namespace Melodee.Common.Services;
 public class AlbumService(
     ILogger logger,
     ICacheManager cacheManager,
+    IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
@@ -327,6 +331,7 @@ public class AlbumService(
         {
             var dbDetail = await scopedContext
                 .Albums
+                .Include(x => x.Artist).ThenInclude(x => x.Library)
                 .FirstOrDefaultAsync(x => x.Id == album.Id, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -339,20 +344,47 @@ public class AlbumService(
                 };
             }
 
+            var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);            
+            
+            var albumDirectory = album.ToMelodeeAlbumModel().AlbumDirectoryName(configuration.Configuration);
+            if (!albumDirectory.ToDirectoryInfo().ToDirectoryInfo().IsSameDirectory(dbDetail.Directory))
+            {
+                // Details that are used to build the albums directory has changed, rename directory to new name
+                var existingAlbumDirectory = Path.Combine(dbDetail.Artist.Library.Path, dbDetail.Artist.Directory, dbDetail.Directory);
+                var newAlbumDirectory = Path.Combine(dbDetail.Artist.Library.Path, dbDetail.Artist.Directory, albumDirectory);
+                if (Directory.Exists(existingAlbumDirectory))
+                {
+                    Directory.Move(existingAlbumDirectory, newAlbumDirectory);
+                }
+                dbDetail.Directory = albumDirectory;
+            }
+            else
+            {
+                dbDetail.Directory = album.Directory;
+            }
+            
+            dbDetail.AlbumStatus = album.AlbumStatus;
+            dbDetail.AlbumType = album.AlbumType;
             dbDetail.AlternateNames = album.AlternateNames;
             dbDetail.AmgId = album.AmgId;
+            dbDetail.ArtistId = album.ArtistId;
+            dbDetail.Comment = album.Comment;
             dbDetail.Description = album.Description;
-            dbDetail.Directory = album.Directory;
             dbDetail.DiscogsId = album.DiscogsId;
+            dbDetail.Genres = album.Genres;
             dbDetail.ImageCount = album.ImageCount;
+            dbDetail.IsCompilation = album.IsCompilation;
             dbDetail.IsLocked = album.IsLocked;
             dbDetail.ItunesId = album.ItunesId;
             dbDetail.LastFmId = album.LastFmId;
             dbDetail.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            dbDetail.Moods = album.Moods;
             dbDetail.MusicBrainzId = album.MusicBrainzId;
             dbDetail.Name = album.Name;
             dbDetail.NameNormalized = album.NameNormalized;
             dbDetail.Notes = album.Notes;
+            dbDetail.OriginalReleaseDate = album.OriginalReleaseDate;
+            dbDetail.ReleaseDate = album.ReleaseDate;
             dbDetail.SortName = album.SortName;
             dbDetail.SortOrder = album.SortOrder;
             dbDetail.SpotifyId = album.SpotifyId;
@@ -477,7 +509,7 @@ public class AlbumService(
             var albumDirectory = Path.Combine(album.Artist.Library.Path, album.Artist.Directory, album.Directory);
             if (!Directory.Exists(albumDirectory))
             {
-                logger.Error("Album directory [{AlbumDirectory}] does not exist.", albumDirectory);
+                Logger.Error("Album directory [{AlbumDirectory}] does not exist.", albumDirectory);
                 return new MelodeeModels.OperationResult<bool>($"Album directory not found [{albumDirectory}].")
                 {
                     Data = false
@@ -511,5 +543,40 @@ public class AlbumService(
         {
             Data = result
         };
+    }
+
+    public async Task<MelodeeModels.OperationResult<Album?>> AddAlbumAsync(Album album, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(album, nameof(album));
+
+        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+        
+        album.ApiKey = Guid.NewGuid();
+        album.Directory = album.ToMelodeeAlbumModel().AlbumDirectoryName(configuration.Configuration);
+        album.CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        album.MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess;
+        album.NameNormalized = album.NameNormalized.Nullify() ?? album.Name.ToNormalizedString() ?? album.Name;
+
+        var validationResult = ValidateModel(album);
+        if (!validationResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<Album?>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            {
+                Data = null,
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
+            };
+        }
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            scopedContext.Albums.Add(album);
+            var result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            if (result > 0)
+            {
+                await UpdateLibraryAggregateStatsByIdAsync(album.Artist.LibraryId, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        return await GetAsync(album.Id, cancellationToken);
     }
 }

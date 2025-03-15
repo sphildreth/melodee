@@ -25,6 +25,34 @@ public static class AlbumExtensions
     {
         return $"album{OpenSubsonicServer.ApiIdSeparator}{album.ApiKey}";
     }
+    
+    /// <summary>
+    /// This is primarily to use the Album extensions when adding/editing Albums, not a fully populated model.
+    /// </summary>
+    public static Common.Models.Album ToMelodeeAlbumModel(this Album album)
+    {
+        var albumTags = new List<Common.Models.MetaTag<object?>>
+        {
+            new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.Album,
+                Value = album.Name
+            },
+            new MetaTag<object?>
+            {
+                Identifier = MetaTagIdentifier.RecordingYear,
+                Value = album.ReleaseDate.Year
+            }
+        };
+        return new Common.Models.Album
+        {
+            Artist = album.Artist.ToMelodeeArtistModel(),
+            Tags = albumTags,
+            ViaPlugins = [],
+            OriginalDirectory = new FileSystemDirectoryInfo { Path = album.Directory, Name = album.Name },
+            Directory = new FileSystemDirectoryInfo { Path = album.Directory, Name = album.Name }
+        };
+    }    
 
     public static AlbumDataInfo ToAlbumDataInfo(this Album album)
     {

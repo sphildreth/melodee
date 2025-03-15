@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="Markdig" />
+    <PackageReference Include="PSC.Blazor.Components.MarkdownEditor" />
     <PackageReference Include="Radzen.Blazor"/>
     <PackageReference Include="Asp.Versioning.Http"/>
     <PackageReference Include="Blazored.SessionStorage"/>

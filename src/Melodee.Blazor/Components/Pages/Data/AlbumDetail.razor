@@ -313,6 +313,7 @@
                                 </Items>
                             </RadzenCarousel>
                         }
+                        <Markdown Content="@(_album.Description)" />
                     </RadzenColumn>
                 </RadzenRow>
             }
@@ -455,9 +456,9 @@
         }
     }
 
-    private Task EditButtonClick()
+    private void EditButtonClick()
     {
-        throw new NotImplementedException();
+        NavigationManager.NavigateTo($"/data/album/{_album.ApiKey}/edit", true);
     }
 
     private async Task UnlockButtonClick()

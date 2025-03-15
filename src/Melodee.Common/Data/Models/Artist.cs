@@ -58,7 +58,7 @@ public sealed class Artist : MetaDataModelBase
     /// <summary>
     ///     Stored in markdown, will be rendered to HTML or to text depending on consumer.
     /// </summary>
-    [MaxLength(MaxLengthDefinitions.MaxInputLength)]
+    [MaxLength(MaxLengthDefinitions.MaxTextLength)]
     public string? Biography { get; set; }
 
     /// <summary>

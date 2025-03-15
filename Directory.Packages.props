@@ -61,12 +61,13 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" Version="9.0.4" />
     <PackageVersion Include="Polly.Core" Version="8.5.2" />
+    <PackageVersion Include="PSC.Blazor.Components.MarkdownEditor" Version="8.0.8" />
     <PackageVersion Include="Quartz.AspNetCore" Version="3.14.0" />
     <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.14.0" />
     <PackageVersion Include="Quartz.Jobs" Version="3.14.0" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />
-    <PackageVersion Include="Radzen.Blazor" Version="6.2.6" />
+    <PackageVersion Include="Radzen.Blazor" Version="6.2.7" />
     <PackageVersion Include="Rebus" Version="8.7.1" />
     <PackageVersion Include="Rebus.Serilog" Version="8.0.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />

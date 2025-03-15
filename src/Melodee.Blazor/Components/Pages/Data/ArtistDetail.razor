@@ -115,6 +115,21 @@
                         </RadzenTreeItem>
                     </RadzenTree>
                 </RadzenCard>
+                @if (_artist.Description.Nullify() != null)
+                {
+                    <RadzenPanel>
+                        <HeaderTemplate>
+                            <RadzenText TextStyle="TextStyle.H6"
+                                        class="rz-display-flex rz-align-items-center rz-m-0">
+                                <RadzenIcon Icon="description" class="rz-me-1"/>
+                                Description
+                            </RadzenText>
+                        </HeaderTemplate>
+                        <ChildContent>
+                            <Markdown Content="@(_artist.Description ?? string.Empty)" />
+                        </ChildContent>
+                    </RadzenPanel>
+                }
                 <RadzenPanel>
                     <HeaderTemplate>
                         <RadzenText TextStyle="TextStyle.H6"
