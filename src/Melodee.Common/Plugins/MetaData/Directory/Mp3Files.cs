@@ -56,6 +56,8 @@ public class Mp3Files(
         {
             using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] ProcessDirectoryAsync [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.Name))
             {
+                HandleMelodeeTagFiles(fileSystemDirectoryInfo);
+                
                 foreach (var fileSystemInfo in fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.TopDirectoryOnly))
                 {
                     var fsi = fileSystemInfo.ToFileSystemInfo();
@@ -76,7 +78,7 @@ public class Mp3Files(
                             }
                             else
                             {
-                                Trace.WriteLine($"Unable to process file: [{fsi}]");
+                                Trace.WriteLine($"Unable to process file: [{fsi}] result [{serializer.Serialize(pluginResult)}]");
                             }
 
                             errors.AddRange(pluginResult.Errors ?? []);
@@ -214,7 +216,47 @@ public class Mp3Files(
             song.SortOrder = song.SongNumber() + song.MediaNumber() * MediaEditService.SortOrderMediaMultiplier - MediaEditService.SortOrderMediaMultiplier;
         }
     }
-
+    
+    /// <summary>
+    /// If MelodeeTag files are present (*.mtg), if so then process them. 
+    /// </summary>
+    private void HandleMelodeeTagFiles(FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    {
+        var melodeeTagFiles = fileSystemDirectoryInfo.AllFileInfos($"*{FileHelper.MelodeeTagFileExtension}").ToArray();
+        if (melodeeTagFiles.Length == 0)
+        {
+            return;
+        }
+        var editorSongPlugin = songPlugins.FirstOrDefault(x => x is ISongFileUpdatePlugin) as ISongFileUpdatePlugin;
+        if (editorSongPlugin == null)
+        {
+            return;
+        }
+        foreach (var mediaFile in fileSystemDirectoryInfo.AllMediaTypeFileInfos())
+        {
+            foreach (var melodeeTagFile in melodeeTagFiles)
+            {
+                var mediaTagNameParts = melodeeTagFile.Name.Split("__");
+                if (mediaTagNameParts.Length != 2)
+                {
+                    continue;
+                }
+                var tagIdentifier = SafeParser.ToEnum<MetaTagIdentifier>(mediaTagNameParts[0]);
+                var tagValue = mediaTagNameParts[1].Replace(FileHelper.MelodeeTagFileExtension, string.Empty);
+                var updateResult = editorSongPlugin.UpdateFile(
+                        fileSystemDirectoryInfo,
+                        mediaFile.ToFileSystemInfo(),
+                        tagIdentifier,
+                        tagValue);
+                if (!updateResult.IsSuccess)
+                {
+                    return;
+                }
+                melodeeTagFile.Delete();
+            }
+        }
+    }
+    
     private async Task HandleDuplicates(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] seenSongs, CancellationToken cancellationToken = default)
     {
         Trace.WriteLine($"Checking for duplicate files in [{fileSystemDirectoryInfo.FullName()}]...");

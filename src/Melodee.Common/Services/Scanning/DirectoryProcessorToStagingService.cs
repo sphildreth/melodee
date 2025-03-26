@@ -79,8 +79,6 @@ public sealed class DirectoryProcessorToStagingService(
 
     private ISongPlugin[] _songPlugins = [];
 
-    private ISongFileUpdatePlugin _songFileUpdatePlugin = null!;
-
     private IAlbumNamesInDirectoryPlugin _albumNamesInDirectoryPlugin = null!;
 
     private bool _stopProcessingTriggered;
@@ -107,7 +105,6 @@ public sealed class DirectoryProcessorToStagingService(
         [
             new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration)
         ];
-        _songFileUpdatePlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
         _albumNamesInDirectoryPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
 
         _conversionPlugins =
@@ -765,6 +762,12 @@ public sealed class DirectoryProcessorToStagingService(
                             {
                                 LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\ude3f Found invalid album [{albumCouldBeMagicfied}]");
                             }
+                            
+                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal) && album.MelodeeDataFileName != null)
+                            {
+                                File.Delete(album.MelodeeDataFileName);
+                            }
+                            
                         }
                         else
                         {
@@ -822,6 +825,8 @@ public sealed class DirectoryProcessorToStagingService(
                 };
             }
         }
+
+        fileSystemDirectoryInfo.DeleteAllEmptyDirectories();
 
         LogAndRaiseEvent(LogEventLevel.Debug, "Processing Complete!");
 

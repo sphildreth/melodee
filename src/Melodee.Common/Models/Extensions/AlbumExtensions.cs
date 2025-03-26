@@ -402,9 +402,8 @@ public static class AlbumExtensions
             Trace.WriteLine($"Error trying to determine if file [{fileSystemInfo.FullName}] is for Album [{album}] Ex [{e.Message}]", "Error");
         }
 
-        // Even if multiple albums in same directory if the image name matches the cover name regex it
-
-        return false;
+        var fi = new FileInfo(fileSystemInfo.FullName);
+        return ImageHelper.IsAlbumImage(fi) || ImageHelper.IsAlbumSecondaryImage(fi);
     }
 
     /// <summary>
@@ -703,19 +702,21 @@ public static class AlbumExtensions
             var seenImageBytes = new List<byte[]>();
             foreach (var imageInfo in imageInfos.OrderBy(x => x.SortOrder))
             {
+                var imageFullname = imageInfo.FileInfo.FullName(imageInfo.DirectoryInfo ?? album.Directory);                
                 if (imageInfosByCrc.TryGetValue(imageInfo.CrcHash, out var existingImageInfo))
                 {
                     if (imageInfo != existingImageInfo && existingImageInfo.Width == imageInfo.Width && existingImageInfo.Height == imageInfo.Height)
                     {
                         Trace.WriteLine($"Album find images is skipping duplicate image [{imageInfo.FileInfo.Name}] with crc32 [{imageInfo.CrcHash}]");
+                        File.Delete(imageFullname);
                         continue;
                     }
                 }
-                var imageFullname = imageInfo.FileInfo.FullName(imageInfo.DirectoryInfo ?? album.Directory);
                 var imageBytes = await File.ReadAllBytesAsync(imageFullname, cancellationToken).ConfigureAwait(false);
                 if (seenImageBytes.Any(x => ImageHasher.Similarity(x, imageBytes) > duplicateThreshold))
                 {
                     Trace.WriteLine($"Album find images is skipping duplicate image [{imageInfo.FileInfo.Name}] with crc32 [{imageInfo.CrcHash}]");
+                    File.Delete(imageFullname);
                     continue;
                 }
                 seenImageBytes.Add(imageBytes);

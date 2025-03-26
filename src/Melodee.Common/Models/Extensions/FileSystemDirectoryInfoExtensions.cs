@@ -380,7 +380,10 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static void DeleteAllEmptyDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
-        DeleteEmptyDirs(fileSystemDirectoryInfo.FullName());
+        foreach (var directory in fileSystemDirectoryInfo.AllDirectoryInfos())
+        {
+            DeleteEmptyDirs(directory.FullName);
+        }
     }
 
     private static void DeleteEmptyDirs(string dir)

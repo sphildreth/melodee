@@ -2,6 +2,8 @@ namespace Melodee.Common.Utility;
 
 public static class FileHelper
 {
+    public static readonly string MelodeeTagFileExtension = ".mtg";
+    
     private static readonly IEnumerable<string> MediaMetaDataFileTypeExtensions =
     [
         "cue",
