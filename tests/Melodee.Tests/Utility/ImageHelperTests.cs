@@ -19,6 +19,7 @@ public sealed class ImageHelperTests
     [InlineData("Band.jpg", true)]
     [InlineData("Artist.jpg", true)]
     [InlineData("artist 01.jpg", true)]
+    [InlineData("artist 00.jpg", true)]
     [InlineData("artist_01.jpg", true)]
     [InlineData("artist_1.jpg", true)]
     [InlineData("Band_1.jpg", true)]

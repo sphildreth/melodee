@@ -604,7 +604,7 @@ public static class AlbumExtensions
         return true;
     }
 
-    public static async Task<IEnumerable<ImageInfo>> FindImages(this Album album, IAlbumNamesInDirectoryPlugin albumNamesInDirectoryPlugin, int duplicateThreshold, ImageConvertor imageConvertor, IImageValidator imageValidator, CancellationToken cancellationToken = default)
+    public static async Task<IEnumerable<ImageInfo>> FindImages(this Album album, IAlbumNamesInDirectoryPlugin albumNamesInDirectoryPlugin, int duplicateThreshold, ImageConvertor imageConvertor, IImageValidator imageValidator, bool doDeleteInvalid, CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
         var imageFiles = ImageHelper.ImageFilesInDirectory(album.Directory.Path, SearchOption.TopDirectoryOnly).ToList();
@@ -635,7 +635,15 @@ public static class AlbumExtensions
                     validationResult = await imageValidator.ValidateImage(fileInfo, ImageHelper.IsAlbumImage(fileInfo) ? PictureIdentifier.Front : PictureIdentifier.SecondaryFront, cancellationToken).ConfigureAwait(false);
                     if (!validationResult.Data.IsValid)
                     {
-                        Trace.WriteLine($"Album find images is skipping invalid image [{imageFile}] ValidationResult [{validationResult.Data}");
+                        if (doDeleteInvalid)
+                        {
+                            fileInfo.Delete();
+                            Trace.WriteLine($"Album find images is deleting invalid image [{imageFile}] ValidationResult [{validationResult.Data}");                            
+                        }
+                        else
+                        {
+                            Trace.WriteLine($"Album find images is skipping invalid image [{imageFile}] ValidationResult [{validationResult.Data}");
+                        }
                         continue;
                     }
                 }
@@ -736,6 +744,7 @@ public static class AlbumExtensions
         ImageConvertor imageConvertor,
         IImageValidator imageValidator,
         bool doDeleteOriginal,
+        bool doDeleteInvalid,
         CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
@@ -775,7 +784,6 @@ public static class AlbumExtensions
                     {
                         File.Delete(fileInfo.FullName);
                     }
-
                     fileInfo = new FileInfo(imageFileName);
                 }
 
@@ -783,9 +791,18 @@ public static class AlbumExtensions
                 {
                     // Try converting (resizing and padding if needed) image and then revalidate
                     await imageConvertor.ProcessFileAsync(fileInfo.ToDirectorySystemInfo(), fileInfo.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
-                    if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
+                    var validationResult = await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken).ConfigureAwait(false); 
+                    if (!validationResult.IsSuccess)
                     {
-                        continue;
+                        if (doDeleteInvalid)
+                        {
+                            fileInfo.Delete();
+                            Trace.WriteLine($"Album find artist images is deleting invalid image [{imageFile}] ValidationResult [{validationResult.Data}");                            
+                        }
+                        else
+                        {
+                            Trace.WriteLine($"Album find images is skipping invalid image [{imageFile}] ValidationResult [{validationResult.Data}");
+                        }
                     }
                 }
 

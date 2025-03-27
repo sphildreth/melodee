@@ -459,13 +459,14 @@ public sealed class DirectoryProcessorToStagingService(
 
                     try
                     {
-                        album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _duplicateThreshold, _imageConvertor, _imageValidator, cancellationToken).ConfigureAwait(false)).ToArray();
+                        album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _duplicateThreshold, _imageConvertor, _imageValidator,_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal), cancellationToken).ConfigureAwait(false)).ToArray();
 
                         album.Artist = new Artist(album.Artist.Name,
                             album.Artist.NameNormalized,
                             album.Artist.SortName,
                             (await album.FindArtistImages(_imageConvertor,
                                     _imageValidator,
+                                    _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
                                     _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
                                     cancellationToken)
                                 .ConfigureAwait(false)).ToArray());
