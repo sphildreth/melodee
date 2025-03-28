@@ -620,7 +620,7 @@ public sealed class DirectoryProcessorToStagingService(
                                     NameNormalized = album.Artist.NameNormalized.Nullify() ?? artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
                                     OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
                                     SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId is null or < 1 ? artistFromSearch.UniqueId : album.Artist.SearchEngineResultUniqueId,
-                                    SortName = album.Artist.SortName ?? artistFromSearch.SortName,
+                                    SortName = album.Artist.SortName.Nullify() ?? artistFromSearch.SortName,
                                     SpotifyId = album.Artist.SpotifyId ?? artistFromSearch.SpotifyId,
                                     WikiDataId = album.Artist.WikiDataId ?? artistFromSearch.WikiDataId
                                 };

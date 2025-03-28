@@ -206,7 +206,8 @@ public static class AlbumExtensions
 
     public static string ToDirectoryName(this Album album)
     {
-        var artist = album.Artist?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
+        var artistSortName = album.Artist?.SortName?.ToAlphanumericName(false, false).ToTitleCase().Nullify();
+        var artist = (artistSortName ?? album.Artist?.ToAlphanumericName(false, false).ToTitleCase().Nullify())?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
         var albumTitle = album.AlbumTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ?? SafeParser.Hash(album.Directory.Name).ToString();
         return $"{artist} - [{album.AlbumYear()}] {albumTitle}".ToFileNameFriendly() ?? throw new Exception($"[{album}] Unable to determine Album Directory name.");
     }

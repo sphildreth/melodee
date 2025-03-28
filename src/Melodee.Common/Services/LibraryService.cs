@@ -417,7 +417,6 @@ public class LibraryService(
                                 var fileToMoveFullName = Path.Combine(libraryAlbumDirectoryInfo.FullName(), image.FileInfo.Name);
                                 File.Move(fileToMoveFullName, image.FileInfo.FullName(libraryArtistDirectoryInfo));
                                 Logger.Information("[{ServiceName}] moved artist image [{ImageName}] into artist directory", nameof(LibraryService), fileToMoveFullName);
-                                movedCount++;
                             }
                         }
                     }
@@ -441,8 +440,6 @@ public class LibraryService(
                                     var moveToFileFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(), libraryArtistDirectoryInfo.GetNextFileNameForType(Artist.ImageType).Item1);
                                     File.Move(fileToMoveFullName, moveToFileFullName);
                                     Logger.Information("[{ServiceName}] moved artist image [{ImageName}] into artist directory", nameof(LibraryService), fileToMoveFullName);
-
-                                    movedCount++;
                                 }
                             }
                         }
