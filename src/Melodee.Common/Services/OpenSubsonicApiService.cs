@@ -8,6 +8,7 @@ using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Filtering;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Collection;
@@ -30,6 +31,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using NodaTime;
+using Npgsql.Replication.PgOutput.Messages;
 using Quartz;
 using Rebus.Bus;
 using Serilog;
@@ -66,6 +68,7 @@ public class OpenSubsonicApiService(
     LibraryService libraryService,
     ArtistSearchEngineService artistSearchEngineService,
     PlaylistService playlistService,
+    ShareService shareService,
     ISerializer serializer,
     IBus bus
 )
@@ -149,6 +152,271 @@ public class OpenSubsonicApiService(
         };
     }
 
+    /// <summary>
+    /// Returns information about shared media this user is allowed to manage.
+    /// </summary>
+    /// <param name="apiRequest">An API request containing the necessary details for authentication and filtering the request.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the asynchronous operation to complete.</param>
+    /// <returns>A ResponseModel containing user information and the corresponding list of shares.</returns>
+    public async Task<ResponseModel> GetSharesAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        var data = new List<Share>();
+
+        var dbSharesResult = await userService.UserSharesAsync(authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false);
+        foreach (var dbShare in dbSharesResult ?? [])
+        {
+            Child[] shareEntries = [];
+            switch (dbShare.ShareTypeValue)
+            {
+                case ShareType.Song:
+                    var song = await songService.GetAsync(dbShare.ShareId, cancellationToken).ConfigureAwait(false);
+                    var userSong = await userService.UserSongAsync(authResponse.UserInfo.Id, song.Data.ApiKey, cancellationToken);
+                    if (userSong != null)
+                    {
+                        shareEntries = [song.Data.ToApiChild(song.Data.Album, userSong)];
+                    }
+                    break;
+                case ShareType.Album:
+                    var album = await albumService.GetAsync(dbShare.ShareId, cancellationToken).ConfigureAwait(false);
+                    var userSongsForAlbum = await userService.UserSongsForAlbumAsync(authResponse.UserInfo.Id, album.Data.ApiKey, cancellationToken);
+                    if (userSongsForAlbum != null)
+                    {
+                        shareEntries = album.Data.Songs.Select(song => song.ToApiChild(song.Album, userSongsForAlbum?.FirstOrDefault(x => x.SongId == song.Id))).ToArray();
+                    }
+                    break;
+                case ShareType.Playlist:
+                    var playlist = await playlistService.GetAsync(dbShare.ShareId, cancellationToken).ConfigureAwait(false);
+                    var userSongsForPlaylist = await userService.UserSongsForPlaylistAsync(authResponse.UserInfo.Id, playlist.Data.ApiKey, cancellationToken);
+                    if (userSongsForPlaylist != null)
+                    {
+                        shareEntries = playlist.Data.Songs.Select(pls => pls.Song.ToApiChild(pls.Song.Album, userSongsForPlaylist?.FirstOrDefault(x => x.SongId == pls.Song.Id))).ToArray();
+                    }
+                    break;
+            }   
+            data.Add(dbShare.ToApiShare(dbShare.ToUrl(await Configuration.Value), shareEntries));
+        }
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data.ToArray(),
+                DataPropertyName = "shares",
+                DataDetailPropertyName = apiRequest.IsXmlRequest ? string.Empty : "share"
+            }
+        };
+    }
+
+    /// <summary>
+    ///     Creates a public URL that can be used by anyone to stream music.
+    /// </summary>
+    /// <param name="apiRequest">The API request containing authentication and other request-related details.</param>
+    /// <param name="id">The unique identifier of the item to be shared (e.g., song, album, or playlist).</param>
+    /// <param name="description">An optional description for the shared item.</param>
+    /// <param name="expires">The expiration timestamp (in milliseconds since UNIX epoch) for the share, or null if the share does not expire.</param>
+    /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+    /// <returns>A <see cref="ResponseModel"/> containing information about the created share, including success status and data.</returns>
+    public async Task<ResponseModel> CreateShareAsync(ApiRequest apiRequest, string id, string? description, long? expires, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        // The user must be authorized to share
+        var user = await userService.GetAsync(authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false);
+        if (!user.Data?.CanShare() ?? false)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                IsSuccess = false,
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
+            };
+        }
+
+        var shareApiKey = ApiKeyFromId(id)!.Value;
+        Child[] resultEntries;
+
+        var dbShare = new dbModels.Share
+        {
+            UserId = user.Data!.Id,
+            ShareId = 0,
+            CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+        };
+        if (IsApiIdForSong(id))
+        {
+            var song = await songService.GetByApiKeyAsync(shareApiKey, cancellationToken).ConfigureAwait(false);
+            if (!song.IsSuccess)
+            {
+                return new ResponseModel
+                {
+                    UserInfo = BlankUserInfo,
+                    IsSuccess = false,
+                    ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.InvalidApiKeyError)
+                };
+            }
+            dbShare.ShareType = SafeParser.ToNumber<int>(ShareType.Song);
+            dbShare.ShareId = song.Data!.Id;
+            var userSong = await userService.UserSongAsync(authResponse.UserInfo.Id, song.Data.ApiKey, cancellationToken);
+            resultEntries = [song.Data.ToApiChild(song.Data.Album, userSong)];
+        } 
+        else if (IsApiIdForAlbum(id))
+        {
+            var album = await albumService.GetByApiKeyAsync(shareApiKey, cancellationToken).ConfigureAwait(false);
+            if (!album.IsSuccess)
+            {
+                return new ResponseModel
+                {
+                    UserInfo = BlankUserInfo,
+                    IsSuccess = false,
+                    ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.InvalidApiKeyError)
+                };
+            }
+            dbShare.ShareType = SafeParser.ToNumber<int>(ShareType.Album);
+            dbShare.ShareId = album.Data!.Id;
+            var userSongsForAlbum = await userService.UserSongsForAlbumAsync(authResponse.UserInfo.Id, album.Data.ApiKey, cancellationToken);
+            resultEntries = album.Data.Songs.Select(song => song.ToApiChild(song.Album, userSongsForAlbum?.FirstOrDefault(x => x.SongId == song.Id))).ToArray();
+        } 
+        else if (IsApiIdForPlaylist(id))
+        {
+            var playlist = await playlistService.GetByApiKeyAsync(shareApiKey, cancellationToken).ConfigureAwait(false);
+            if (!playlist.IsSuccess)
+            {
+                return new ResponseModel
+                {
+                    UserInfo = BlankUserInfo,
+                    IsSuccess = false,
+                    ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.InvalidApiKeyError)
+                };
+            }
+            dbShare.ShareType = SafeParser.ToNumber<int>(ShareType.Playlist);
+            dbShare.ShareId = playlist.Data!.Id;
+            var userSongsForPlaylist = await userService.UserSongsForPlaylistAsync(authResponse.UserInfo.Id, playlist.Data.ApiKey, cancellationToken);
+            resultEntries = playlist.Data.Songs.Select(pls => pls.Song.ToApiChild(pls.Song.Album, userSongsForPlaylist?.FirstOrDefault(x => x.SongId == pls.Song.Id))).ToArray();
+        } 
+        else
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                IsSuccess = false,
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.RequiredParameterMissingError)
+            };
+        }
+        
+        dbShare.Description = description;
+        dbShare.ExpiresAt = expires != null ? Instant.FromUnixTimeMilliseconds(expires.Value) : null;
+        var addResult = await shareService.AddAsync(dbShare!, cancellationToken).ConfigureAwait(false);
+        var data = addResult.IsSuccess ? addResult.Data!.ToApiShare(addResult.Data!.ToUrl(await Configuration.Value), resultEntries) : null;
+        
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            ResponseData = await DefaultApiResponse() with
+            {
+                IsSuccess = data != null,
+                Data = data,
+                DataPropertyName = "shares",
+                DataDetailPropertyName = apiRequest.IsXmlRequest ? string.Empty : "share"
+            }
+        };      
+    }
+
+    /// <summary>
+    ///     Updates the description and/or expiration date for an existing share.
+    /// </summary>
+    /// <param name="apiRequest">The API request containing authentication and context information.</param>
+    /// <param name="id">The unique identifier of the share to be updated.</param>
+    /// <param name="description">An optional description to attach to the share.</param>
+    /// <param name="expires">An optional expiration time for the share in Unix timestamp format.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task representing the asynchronous operation, containing a response model with the result of the share update.</returns>
+    public async Task<ResponseModel> UpdateShareAsync(ApiRequest apiRequest, string id, string? description, long? expires, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        Error? notAuthorizedError = null;
+        var result = false;
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var apiKey = ApiKeyFromId(id);
+            var share = await scopedContext
+                .Shares
+                .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
+                .ConfigureAwait(false);
+            if (share != null)
+            {
+                share.Description = description;
+                share.ExpiresAt = expires != null ? Instant.FromUnixTimeMilliseconds(expires.Value) : share.ExpiresAt;
+                var updateResult = await shareService.UpdateAsync(share, cancellationToken).ConfigureAwait(false);
+                notAuthorizedError = updateResult is { IsSuccess: false, Type: OperationResponseType.Unauthorized or OperationResponseType.AccessDenied } ? Error.UserNotAuthorizedError : Error.InvalidApiKeyError;
+                result = updateResult.IsSuccess;                 
+            }
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
+        };         
+    }
+
+    /// <summary>
+    ///     Deletes an existing share.
+    /// </summary>
+    /// <param name="id">The unique identifier of the shared resource to be deleted.</param>
+    /// <param name="apiRequest">The API request containing authentication and other request details.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a <see cref="ResponseModel"/> indicating the success or failure of the operation.</returns>
+    public async Task<ResponseModel> DeleteShareAsync(string id, ApiRequest apiRequest, CancellationToken cancellationToken = default)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        Error? notAuthorizedError = null;
+        var result = false;
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var apiKey = ApiKeyFromId(id);
+             var share = await scopedContext
+                 .Shares
+                 .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
+                 .ConfigureAwait(false);
+             if (share != null)
+             {
+                 var deleteResult = await shareService.DeleteAsync(authResponse.UserInfo.Id, [share.Id], cancellationToken).ConfigureAwait(false);
+                 notAuthorizedError = deleteResult is { IsSuccess: false, Type: OperationResponseType.Unauthorized or OperationResponseType.AccessDenied } ? Error.UserNotAuthorizedError : Error.InvalidApiKeyError;
+                 result = deleteResult.IsSuccess;                 
+             }
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
+        };        
+    }
+    
+    
     /// <summary>
     ///     Returns all playlists a user is allowed to play.
     /// </summary>

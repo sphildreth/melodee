@@ -240,6 +240,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetLibraryService(),
             GetArtistSearchEngineService(),
             GetPlaylistService(),
+            GetShareService(),
             Serializer,
             MockBus());
     }
@@ -258,6 +259,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected AlbumService GetAlbumService()
     {
         return new AlbumService(Logger, CacheManager, MockConfigurationFactory(), MockFactory(), MockBus());
+    }
+
+    protected ShareService GetShareService()
+    {
+        return new ShareService(Logger, CacheManager, MockConfigurationFactory(), MockFactory(), MockBus());
     }
 
     protected SongService GetSongService()

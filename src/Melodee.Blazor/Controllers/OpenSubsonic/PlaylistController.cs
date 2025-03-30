@@ -7,7 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public class PlaylistController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
+public class PlaylistController(
+    ISerializer serializer,
+    EtagRepository etagRepository,
+    OpenSubsonicApiService openSubsonicApiService,
+    IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository,
+    serializer,
+    configurationFactory)
 {
     /// <summary>
     ///     Deletes a saved playlist.

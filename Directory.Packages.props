@@ -5,6 +5,7 @@
   <ItemGroup>
     <PackageVersion Include="Ardalis.GuardClauses" Version="5.0.0" />
     <PackageVersion Include="Asp.Versioning.Http" Version="8.1.0" />
+    <PackageVersion Include="AuralizeBlazor" Version="2.0.5" />
     <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageVersion Include="Blazor.Bootstrap" Version="3.2.0" />
     <PackageVersion Include="Blazored.SessionStorage" Version="2.4.0" />
@@ -87,6 +88,7 @@
     <PackageVersion Include="Spectre.Console.Cli" Version="0.49.1" />
     <PackageVersion Include="Spectre.Console.Json" Version="0.49.1" />
     <PackageVersion Include="SpotifyAPI.Web" Version="7.2.1" />
+    <PackageVersion Include="Sqids" Version="3.1.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
     <PackageVersion Include="System.IO.Hashing" Version="9.0.3" />
     <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.0.2" />

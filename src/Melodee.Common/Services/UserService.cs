@@ -1118,7 +1118,56 @@ public sealed class UserService(
                 .ToArray();
         }
     }
+    
+    public async Task<UserSong[]?> UserSongsForPlaylistAsync(int userId, Guid playlistApiKey, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var sql = """
+                      select us.*
+                      from "UserSongs" us 
+                      left join "Users" u on (us."UserId" = u."Id")
+                      left join "Songs" s on (us."SongId" = s."Id")
+                      left join "Playlists" pl on (s."Id" = pl."SongId")
+                      where u."Id" = @userId
+                      and pl."ApiKey" = @playlistApiKey;
+                      """;
+            var dbConn = scopedContext.Database.GetDbConnection();
+            return (await dbConn.QueryAsync<UserSong>(sql, new { userId, playlistApiKey })
+                    .ConfigureAwait(false))
+                .ToArray();
+        }
+    }    
 
+    /// <summary>
+    /// Return all shares that user created.
+    /// </summary>
+    public async Task<Share[]?> UserSharesAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var sql = """
+                      select s."Id"
+                      from "Shares" s 
+                      where s."UserId" = @userId
+                      """;
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var shareIds =  (await dbConn.QueryAsync<int>(sql, new { userId })
+                    .ConfigureAwait(false))
+                .ToArray();
+
+            if (shareIds.Length == 0)
+            {
+                return [];
+            }
+
+            return await scopedContext.Shares
+                .Include(x => x.User)
+                .Where(x => shareIds.Contains(x.Id))
+                .ToArrayAsync(cancellationToken);
+        }
+    }    
+    
     /// <summary>Generate a salt.</summary>
     /// <param name="saltLength">Length of the salt to generate</param>
     /// <param name="logRounds">

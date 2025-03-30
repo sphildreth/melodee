@@ -40,6 +40,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<SearchHistory> SearchHistories { get; set; }
 
     public DbSet<Share> Shares { get; set; }
+    
+    public DbSet<ShareActivity> ShareActivities { get; set; }
 
     public DbSet<Song> Songs { get; set; }
 

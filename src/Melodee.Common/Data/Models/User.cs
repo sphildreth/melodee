@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Constants;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -68,7 +69,7 @@ public class User : DataModelBase
     public bool HasStreamRole { get; set; } = true;
 
     public bool HasJukeboxRole { get; set; } = true;
-
+   
     public bool HasShareRole { get; set; } = true;
 
     public bool IsScrobblingEnabled { get; set; }

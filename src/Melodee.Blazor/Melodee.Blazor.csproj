@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AuralizeBlazor" />
     <PackageReference Include="Markdig" />
     <PackageReference Include="PSC.Blazor.Components.MarkdownEditor" />
     <PackageReference Include="Radzen.Blazor"/>
@@ -67,6 +68,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\images\backgrounds\" />
     <Folder Include="wwwroot\images\icons\"/>
   </ItemGroup>
 

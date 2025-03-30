@@ -89,6 +89,10 @@ public static class UserExtensions
         };
     }
 
+    public static bool CanShare(this User user) 
+        => user.IsAdmin || user.HasShareRole;
+
+
     public static string Encrypt(this User user, string plainText, IMelodeeConfiguration configuration)
     {
         return EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, plainText, user.PublicKey);

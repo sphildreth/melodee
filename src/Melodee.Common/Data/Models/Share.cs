@@ -1,26 +1,41 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Data.Validators;
+using Melodee.Common.Enums;
+using Melodee.Common.Utility;
 using NodaTime;
+using ServiceStack.Text.Pools;
 
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
 public class Share : DataModelBase
 {
+    /// <summary>
+    /// User who created share 
+    /// </summary>
     [RequiredGreaterThanZero] public required int UserId { get; set; }
-
+    
     public User User { get; set; } = null!;
 
     /// <summary>
-    ///     Pipe seperated list. These can be either Album and/or SongIds.
+    /// PkId of shared item (can be any of the ShareTypes)
     /// </summary>
-    [Required]
-    [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]
-    public required string ShareIds { get; set; }
+    [RequiredGreaterThanZero] public required int ShareId { get; set; }
+    
+    [RequiredGreaterThanZero]public int ShareType { get; set; }
+    
+    /// <summary>
+    /// A very short (shorter than a GUID) distinct string id used to build url.
+    /// </summary>
+    [MaxLength(MaxLengthDefinitions.HashOrGuidLength)]
+    [Required] public string ShareUniqueId { get; set; } = string.Empty;
 
-    [Required] public required Instant ExpiresAt { get; set; }
+    [NotMapped] public ShareType ShareTypeValue => SafeParser.ToEnum<ShareType>(ShareType);
 
+    public Instant? ExpiresAt { get; set; }
+    
     public bool IsDownloadable { get; set; }
 
     public Instant? LastVisitedAt { get; set; }

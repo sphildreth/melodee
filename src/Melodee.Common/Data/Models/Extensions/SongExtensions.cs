@@ -1,8 +1,11 @@
+using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Models.SearchEngines;
+using Melodee.Common.Services;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Data.Models.Extensions;
@@ -33,6 +36,16 @@ public static class SongExtensions
         return $"song{OpenSubsonicServer.ApiIdSeparator}{song.ApiKey}";
     }
 
+    public static string ToApiStreamUrl(this Song song, IMelodeeConfiguration configuration)
+    {
+        var baseUrl = configuration.GetValue<string>(SettingRegistry.SystemBaseUrl);
+        if (baseUrl.Nullify() == null || baseUrl == MelodeeConfiguration.RequiredNotSetValue)
+        {
+            throw new Exception($"Configuration setting [{SettingRegistry.SystemBaseUrl}] is invalid.");
+        }
+        return $"{baseUrl}/rest/stream?id={song.ToApiKey()}";
+    }
+    
     public static Child ToApiChild(this Song song, Album album, UserSong? userSong, NowPlayingInfo? nowPlayingInfo = null)
     {
         Contributor? albumArtist = null;

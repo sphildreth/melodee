@@ -1,0 +1,92 @@
+@page "/share/{ShareUniqueId}"
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
+@using AuralizeBlazor.Features
+@using AuralizeBlazor.Options
+@using AuralizeBlazor
+
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject ShareService ShareService
+@inject SongService SongService
+@inject AlbumService AlbumService
+@inject PlaylistService PlaylistService
+
+@attribute [AllowAnonymous]
+
+<div class="shared-container">
+
+    <Auralizer
+        InitialPreset="AuralizerPreset.ClassicLedBars"
+        TrackList="@_songInfos"
+        Height="400px"
+        Width="100%">
+        <div style="text-align: center;">
+            <audio class="audio-main" preload="metadata" loading="lazy" controls src="@_songInfos[0].Url"></audio>
+        </div>
+    </Auralizer>
+
+</div>
+
+@code {
+    [Parameter] public required string ShareUniqueId { get; set; }
+
+    private IAuralizerTrack[] _songInfos = [new AuralizerTrack(string.Empty, string.Empty, string.Empty)];
+
+    private Auralizer _vis = null!;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
+        var shareResult = await ShareService.GetByUniqueIdAsync(ShareUniqueId);
+        if (shareResult is { IsSuccess: true, Data: not null })
+        {
+            Melodee.Common.Data.Models.Share share = shareResult.Data;
+            switch (share.ShareTypeValue)
+            {
+                case ShareType.Song:
+                    var songResult = await SongService.GetAsync(share.ShareId);
+                    if (songResult is { IsSuccess: true, Data: not null })
+                    {
+                        _songInfos =
+                        [
+                            new AuralizerTrack(songResult.Data.ToApiStreamUrl(configuration),
+                                $"{songResult.Data.Album.Name} - {songResult.Data.Title}",
+                                $"/images/{songResult.Data.ToCoverArtId()}/1024")
+                        ];
+                    }
+                    break;
+                case ShareType.Album:
+                    var albumResult = await AlbumService.GetAsync(share.ShareId);
+                    if (albumResult is { IsSuccess: true, Data: not null })
+                    {
+                        _songInfos = albumResult.Data.Songs.Select(x =>
+                            new AuralizerTrack(x.ToApiStreamUrl(configuration),
+                                $"{albumResult.Data.Name} - {x.Title}",
+                                $"/images/{albumResult.Data.ToCoverArtId()}/1024")
+                        ).ToArray();
+                    }
+                    break;
+                case ShareType.Playlist:
+                    var playlistResult = await PlaylistService.GetAsync(share.ShareId);
+                    if (playlistResult is { IsSuccess: true, Data: not null })
+                    {
+                        _songInfos = playlistResult.Data.Songs.Select(x =>
+                                new AuralizerTrack(x.Song.ToApiStreamUrl(configuration),
+                                    $"{x.Song.Album.Name} - {x.Song.Title}",
+                                    $"/images/{x.Song.ToCoverArtId()}/1024")
+                            ).ToArray();
+
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
+
+
+
+}
+
+
+
