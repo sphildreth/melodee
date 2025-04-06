@@ -88,7 +88,6 @@ public sealed class AlbumRescanEventHandler(
                         logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}].", nameof(AlbumRescanEventHandler), message.AlbumDirectory);
                     }
 
-                    var dbUpdatesDone = false;
 
                     // Ensure all songs on dbAlbum exist
                     foreach (var dbSong in dbAlbum.Songs.ToArray())
@@ -102,7 +101,6 @@ public sealed class AlbumRescanEventHandler(
                                 dbAlbum.Name);
                             dbAlbum.Songs.Remove(dbSong);
                             dbAlbum.LastUpdatedAt = now;
-                            dbUpdatesDone = true;
                         }
                     }
 
@@ -133,20 +131,21 @@ public sealed class AlbumRescanEventHandler(
                     // Get all songs in directory for album, add any missing, remove any on album not in directory
                     foreach (var mediaFile in albumDirectory.AllMediaTypeFileInfos())
                     {
+                        var mediaFileHash = CRC32.Calculate(mediaFile);
+                        var melodeeSong = melodeeAlbum.Songs?.FirstOrDefault(x => x.File.Name == mediaFile.Name);
+                        if (melodeeSong == null)
+                        {
+                            logger.Warning("[{Name}] Unable to find melodee song with name [{Name}] in album metadata.",
+                                nameof(AlbumRescanEventHandler),
+                                mediaFile.Name);
+                            return;
+                        }
+
+                        var songTitle = melodeeSong.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
+                        
                         var albumDbSong = dbAlbum.Songs.FirstOrDefault(x => x.FileName == mediaFile.Name);
                         if (albumDbSong == null)
                         {
-                            var mediaFileHash = CRC32.Calculate(mediaFile);
-                            var melodeeSong = melodeeAlbum.Songs?.FirstOrDefault(x => x.File.Name == mediaFile.Name);
-                            if (melodeeSong == null)
-                            {
-                                logger.Warning("[{Name}] Unable to find melodee song with name [{Name}] in album metadata.",
-                                    nameof(AlbumRescanEventHandler),
-                                    mediaFile.Name);
-                                return;
-                            }
-
-                            var songTitle = melodeeSong.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
                             var dbSong = new Song
                             {
                                 AlbumId = dbAlbum.Id,
@@ -213,7 +212,23 @@ public sealed class AlbumRescanEventHandler(
                                 nameof(AlbumRescanEventHandler),
                                 mediaFile.Name,
                                 dbAlbum.Name);
-                            dbUpdatesDone = true;
+                        }
+                        else
+                        { 
+                            // Update song details with potentially updated media information
+                            albumDbSong.BPM = melodeeSong.MetaTagValue<int>(MetaTagIdentifier.Bpm);
+                            albumDbSong.BitDepth = melodeeSong.BitDepth();
+                            albumDbSong.BitRate = melodeeSong.BitRate();
+                            albumDbSong.ContentType = melodeeSong.ContentType();
+                            albumDbSong.Duration = melodeeSong.Duration() ?? throw new Exception("Song duration is required.");
+                            albumDbSong.FileHash = mediaFileHash;
+                            albumDbSong.FileName = mediaFile.Name;
+                            albumDbSong.FileSize = mediaFile.Length;
+                            albumDbSong.LastUpdatedAt = now;
+                            albumDbSong.SamplingRate = melodeeSong.SamplingRate();
+                            albumDbSong.SongNumber = melodeeSong.SongNumber();
+                            albumDbSong.Title = songTitle;
+                            albumDbSong.TitleNormalized = songTitle.ToNormalizedString() ?? songTitle;
                         }
                     }
 
@@ -221,25 +236,16 @@ public sealed class AlbumRescanEventHandler(
                     if (imageCount != dbAlbum.ImageCount)
                     {
                         dbAlbum.ImageCount = imageCount;
-                        if (!dbUpdatesDone)
-                        {
-                            dbAlbum.LastUpdatedAt = now;
-                        }
-
-                        dbUpdatesDone = true;
                     }
-
-                    if (dbUpdatesDone)
+                    dbAlbum.SongCount = SafeParser.ToNumber<short>(dbAlbum.Songs.Count);
+                    dbAlbum.LastUpdatedAt = now;                    
+                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    if (!message.IsFromArtistScan)
                     {
-                        dbAlbum.SongCount = SafeParser.ToNumber<short>(dbAlbum.Songs.Count);
-                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                        if (!message.IsFromArtistScan)
-                        {
-                            await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
-                            artistService.ClearCache(dbAlbum.Artist);
-                        }
-                        albumService.ClearCache(dbAlbum);
+                        await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
+                        artistService.ClearCache(dbAlbum.Artist);
                     }
+                    albumService.ClearCache(dbAlbum);
                 }
             }
         }

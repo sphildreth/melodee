@@ -275,6 +275,17 @@ public class StringExtensionsTests
         testNormalized = test.ToNormalizedString();
         Assert.NotNull(testNormalized);
         Assert.NotEqual(test, testNormalized);
+       
+    }
+
+    [Fact]
+    public void ValidateNormalizedNameWithThe()
+    {
+        var test = "Country Stuff the Album";
+        Assert.NotEqual(test, test.ToNormalizedString());
+        var testNormalized = test.ToNormalizedString();
+        Assert.NotNull(testNormalized);
+        Assert.Equal("COUNTRYSTUFFTHEALBUM", testNormalized);
     }
 
 

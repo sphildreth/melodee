@@ -26,7 +26,6 @@ using SmartFormat;
 using SearchOption = System.IO.SearchOption;
 using dbModels = Melodee.Common.Data.Models;
 
-
 namespace Melodee.Common.Jobs;
 
 /// <summary>
@@ -618,9 +617,10 @@ public class LibraryInsertJob(
                         
                         var newArtistDirectory = artist.ToDirectoryName(_configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
 
-                        Logger.Debug("[{JobName}] Creating new artist for NormalizedName [{Name}] with directory [{Directory}] for albums [{Album}]",
+                        Logger.Debug("[{JobName}] Creating new artist for NormalizedName [{Name}] MusicBrainzId [{MusicBrainzId}] with directory [{Directory}] for albums [{Album}]",
                             nameof(LibraryInsertJob),
                             artist.NameNormalized,
+                            artist.MusicBrainzId?.ToString(),
                             newArtistDirectory, 
                             string.Empty.AddTags(melodeeAlbumsForDirectory.Where(x => x.Artist.NameNormalized == artist.NameNormalized).Select(x => x.MelodeeDataFileName)));
 
@@ -635,7 +635,7 @@ public class LibraryInsertJob(
                             LastFmId = artist.LastFmId?.CleanStringAsIs(),
                             LibraryId = library.Id,
                             MetaDataStatus = (int)MetaDataModelStatus.ReadyToProcess,
-                            MusicBrainzId = SafeParser.ToGuid(artist.MusicBrainzId),
+                            MusicBrainzId = artist.MusicBrainzId,
                             Name = artist.Name.CleanStringAsIs() ?? artist.Name,
                             NameNormalized = artist.NameNormalized,
                             SortName = artist.SortName?.CleanStringAsIs() ?? artist.SortName,

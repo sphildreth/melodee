@@ -23,6 +23,11 @@ public static class Program
                 add.AddCommand<ShowMpegInfoCommand>("mpeg")
                     .WithDescription("Load given file and show MPEG info and if Melodee thinks this is a valid MPEG file.");
             });
+            config.AddBranch<ImportSetting>("import", add =>
+            {
+                add.AddCommand<ImportUserFavoriteCommand>("user-favorite-songs")
+                    .WithDescription("Import user favorite songs from a given CSV file.");
+            });            
             config.AddBranch<JobSettings>("job", add =>
             {
                 add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("artistsearchengine-refresh")

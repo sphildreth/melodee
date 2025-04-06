@@ -381,7 +381,7 @@ public class AlbumService(
             dbDetail.Moods = album.Moods;
             dbDetail.MusicBrainzId = album.MusicBrainzId;
             dbDetail.Name = album.Name;
-            dbDetail.NameNormalized = album.NameNormalized;
+            dbDetail.NameNormalized = album.Name.ToNormalizedString() ?? album.Name;
             dbDetail.Notes = album.Notes;
             dbDetail.OriginalReleaseDate = album.OriginalReleaseDate;
             dbDetail.ReleaseDate = album.ReleaseDate;

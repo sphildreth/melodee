@@ -15,6 +15,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
     <PackageVersion Include="Crc32.NET" Version="1.2.0" />
+    <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="EntityFrameworkCore.Sqlite.NodaTime" Version="9.1.0" />
     <PackageVersion Include="Fastenshtein" Version="1.0.10" />
@@ -68,7 +69,7 @@
     <PackageVersion Include="Quartz.Jobs" Version="3.14.0" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />
-    <PackageVersion Include="Radzen.Blazor" Version="6.3.3" />
+    <PackageVersion Include="Radzen.Blazor" Version="6.4.0" />
     <PackageVersion Include="Rebus" Version="8.7.1" />
     <PackageVersion Include="Rebus.Serilog" Version="8.0.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />
@@ -101,6 +102,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="z440.atl.core" Version="6.19.0" />
+    <PackageVersion Include="z440.atl.core" Version="6.20.0" />
   </ItemGroup>
 </Project>

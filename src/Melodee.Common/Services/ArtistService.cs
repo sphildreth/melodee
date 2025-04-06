@@ -654,8 +654,6 @@ public class ArtistService(
                                 }
                             }
                         }
-
-                        albumToMerge.Directory = albumToMergeNewDirectory;
                         albumToMerge.ArtistId = dbArtistToMergeInto.Id;
                         albumToMerge.LastUpdatedAt = now;
                     }

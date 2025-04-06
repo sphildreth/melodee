@@ -379,7 +379,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetAlbumService(),
             GetSongService(),
             GetPlaylistService(),
-            MockBus());
+            MockBus(),
+            Serializer);
     }
 
     protected IBus MockBus()

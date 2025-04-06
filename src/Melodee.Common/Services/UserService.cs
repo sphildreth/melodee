@@ -1,7 +1,10 @@
+using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Ardalis.GuardClauses;
+using CsvHelper;
 using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -11,6 +14,8 @@ using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
+using Melodee.Common.Models.Importing;
+using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Utility;
 using Microsoft.Data.Sqlite;
@@ -38,7 +43,8 @@ public sealed class UserService(
     AlbumService albumService,
     SongService songService,
     PlaylistService playlistService,
-    IBus bus)
+    IBus bus,
+    ISerializer serializer)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:user:apikey:{0}";
@@ -343,6 +349,7 @@ public sealed class UserService(
 
         if (!authenticated)
         {
+            Log.Warning("[{ServiceName}] LoginUserAsync [{EmailAddress}] failed", nameof(UserService), emailAddress);
             return new MelodeeModels.OperationResult<User?>
             {
                 Data = null,
@@ -358,6 +365,179 @@ public sealed class UserService(
         user.Data.LastActivityAt = now;
         user.Data.LastLoginAt = now;
         return user;
+    }
+
+    public async Task<MelodeeModels.OperationResult<int>> ImportUserFavoriteSongs(UserFavoriteSongConfiguration configuration, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(configuration, nameof(configuration));
+        
+        var user = await GetByApiKeyAsync(configuration.UserApiKey, cancellationToken).ConfigureAwait(false);
+        if (!user.IsSuccess || user.Data == null)
+        {
+            return new MelodeeModels.OperationResult<int>("Unknown user")
+            {
+                Data = 0,
+                Type = MelodeeModels.OperationResponseType.NotFound
+            };
+        }
+
+        if (user.Data.IsLocked)
+        {
+            return new MelodeeModels.OperationResult<int>("User is locked.")
+            {
+                Data = 0,
+                Type = MelodeeModels.OperationResponseType.Unauthorized
+            };
+        }
+        
+        var recordsCreated = 0;
+        var recordsUpdated = 0;
+        var songsFromCsv = 0;
+
+        var csvFilenfo = new FileInfo(configuration.CsvFileName);
+        if (!csvFilenfo.Exists)
+        {
+            return new MelodeeModels.OperationResult<int>("CSV file does not exist.")
+            {
+                Data = 0,
+                Type = MelodeeModels.OperationResponseType.NotFound
+            };
+        }
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var userSongs = await scopedContext.UserSongs.Where(x => x.UserId == user.Data.Id)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            
+            var newUserSongs = new List<UserSong>();
+            
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);            
+            
+            using (var reader = new StreamReader(csvFilenfo.OpenRead(), Encoding.UTF8))
+            {
+                using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+                {
+                    using (var dr = new CsvDataReader(csv))
+                    {
+                        var dt = new DataTable();
+                        dt.Columns.Add(configuration.ArtistColumn, typeof(string));
+                        dt.Columns.Add(configuration.AlbumColumn, typeof(string));
+                        dt.Columns.Add(configuration.SongColumn, typeof(string));
+
+                        dt.Load(dr);
+                        songsFromCsv = dt.Rows.Count;
+                        foreach (DataRow row in dt.Rows)
+                        {
+                            var artistName = row[configuration.ArtistColumn] as string;
+                            var albumName = row[configuration.AlbumColumn] as string;
+                            var songName = row[configuration.SongColumn] as string;
+
+                            if (artistName.Nullify() != null && albumName.Nullify() != null && songName.Nullify() != null)
+                            {
+                                var artist = artistName.ToNormalizedString() ?? artistName!;
+                                var album = albumName.ToNormalizedString() ?? albumName!;
+                                var song = songName.ToNormalizedString() ?? songName!;
+                                var artistResult = await artistService.GetByNameNormalized(artist, cancellationToken: cancellationToken).ConfigureAwait(false);
+                                if (!artistResult.IsSuccess)
+                                {
+                                    Log.Warning(
+                                        "[{ServiceName}] ImportUserFavoriteSongs failed [{ArtistName}] [{AlbumName}] [{SongName}]",
+                                        nameof(UserService),
+                                        artist,
+                                        album,
+                                        song);
+                                    continue;
+                                }
+
+                                var artistAlbumListResult = await albumService.ListForArtistApiKeyAsync(new MelodeeModels.PagedRequest { PageSize = 1000 }, artistResult.Data!.ApiKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+                                var artistAlbum = artistAlbumListResult.Data!.FirstOrDefault(x => x.NameNormalized == album);
+                                if (artistAlbum == null)
+                                {
+                                    Log.Warning(
+                                        "[{ServiceName}] ImportUserFavoriteSongs failed [{ArtistName}] [{AlbumName}] [{SongName}]",
+                                        nameof(UserService),
+                                        artist,
+                                        album,
+                                        song);
+                                    continue;
+                                }
+                                
+                                var dbSongInfo = await DatabaseSongInfosForAlbumApiKey(artistAlbum.ApiKey, user.Data.Id, cancellationToken).ConfigureAwait(false);
+                                var albumSong = dbSongInfo?.FirstOrDefault(x => x.Name.ToNormalizedString() == song);
+                                if (albumSong == null)
+                                {
+                                    Log.Warning(
+                                        "[{ServiceName}] ImportUserFavoriteSongs failed [{ArtistName}] [{AlbumName}] [{SongName}]",
+                                        nameof(UserService),
+                                        artist,
+                                        album,
+                                        song);
+                                    continue;
+                                }
+                                var userSong = userSongs.FirstOrDefault(x => x.SongId == albumSong.Id);
+                                if (userSong == null)
+                                {
+                                    userSong = new UserSong
+                                    {
+                                        UserId = user.Data.Id,
+                                        SongId = albumSong.Id,
+                                        CreatedAt = now
+                                    };
+                                    newUserSongs.Add(userSong);
+                                    recordsCreated++;
+                                }
+                                else
+                                {
+                                    if (userSong.IsStarred && userSong.Rating > 0)
+                                    {
+                                        Log.Debug(
+                                            "[{ServiceName}] ImportUserFavoriteSongs already favorite [{ArtistName}] [{AlbumName}] [{SongName}]",
+                                            nameof(UserService),
+                                            artist,
+                                            album,
+                                            song);
+                                        continue;
+                                    }
+                                    userSong.LastUpdatedAt = now;
+                                    recordsUpdated++;
+                                }
+                                userSong.IsStarred = true;
+                                userSong.Rating = userSong.Rating > 0 ? userSong.Rating : 1;
+                                userSongs.Add(userSong);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!configuration.IsPretend)
+            {
+                if (recordsCreated > 0 || recordsUpdated > 0)
+                {
+                    if (newUserSongs.Count > 0)
+                    {
+                        await scopedContext.UserSongs.AddRangeAsync(newUserSongs, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+        
+        Log.Information(
+            "[{ServiceName}] ImportUserFavoriteSongs {Pretend} [{UserApiKey}] Songs From Csv [{CsvSongCount}] created {RecordsCreated} records, updated {RecordsUpdated} records",
+            nameof(UserService),
+            configuration.IsPretend ? "[Pretend]" : string.Empty,
+            songsFromCsv,
+            user.Data.ApiKey,
+            recordsCreated,
+            recordsUpdated);
+
+        return new MelodeeModels.OperationResult<int>
+        {
+            Data = recordsCreated + recordsUpdated
+        };
     }
 
     public async Task<MelodeeModels.OperationResult<User?>> RegisterAsync(string username,
