@@ -1,14 +1,29 @@
 <div class="@Class">
     <RadzenText Style="@LabelStyle" TextStyle="TextStyle.Caption">@Label</RadzenText>
     <div>
-        <RadzenText Style="@StatisticStyle" TextStyle="TextStyle.Overline">@Statistic</RadzenText>
+        <RadzenText Style="@StatisticStyle" TextStyle="TextStyle.Overline">@(RatingText() ?? Statistic)</RadzenText>
     </div>
 </div>
 
 @code {
     [Parameter] public required string Label { get; set; }
     [Parameter] public required string Statistic { get; set; }
+    [Parameter] public decimal? Rating { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public string? LabelStyle { get; set; }
     [Parameter] public string? StatisticStyle { get; set; }
+
+    public string? RatingText()
+    {
+        return Rating switch
+        {
+            null => null,
+            0 => "░░░░░",
+            <= 1 => "▓░░░░",
+            <= 2 => "▓▓░░░",
+            <= 3 => "▓▓▓░░",
+            <= 4 => "▓▓▓▓░",
+            _ => "▓▓▓▓▓"
+        };
+    }
 }

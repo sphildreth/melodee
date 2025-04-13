@@ -211,6 +211,8 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
+                            <CondensedStatistic Label="Rating"
+                                                Rating="@(_artist.CalculatedRating)"/>
                             <CondensedStatistic Label="Album Count"
                                                 Statistic="@(_artist.AlbumCount.ToStringPadLeft(3))"/>
                             <CondensedStatistic Label="Song Count" Statistic="@(_artist.SongCount.ToStringPadLeft(4))"/>
@@ -576,6 +578,8 @@
         _userArtist.Rating = arg;
         var result = await UserService.SetArtistRatingAsync(CurrentUsersId, _artist.ApiKey, arg);
         NotificationService.Notify(NotificationMessageForResult(result, "set artist rating", ToastTime));
+        var artistResult = await ArtistService.GetByApiKeyAsync(ApiKey);
+        _artist.CalculatedRating = artistResult.Data!.CalculatedRating;
     }
 
     private async Task IsHatedClicked()

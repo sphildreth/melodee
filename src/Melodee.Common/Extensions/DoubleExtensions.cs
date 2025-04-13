@@ -25,10 +25,22 @@ public static class DoubleExtensions
         return milliseconds == null ? Duration.Zero : Duration.FromMilliseconds(milliseconds.Value);
     }
 
+    public static TimeSpan ToTimeSpan(this double? milliseconds)
+    {
+        return milliseconds == null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(milliseconds.Value);
+    }
+    
+    public static TimeSpan ToTimeSpan(this double milliseconds)
+    {
+        return milliseconds == 0 ? TimeSpan.Zero : TimeSpan.FromMilliseconds(milliseconds);
+    }    
+
     public static Duration ToDuration(this double milliseconds)
     {
         return Duration.FromMilliseconds(milliseconds);
     }
+    
+   
 
     public static string ToFormattedDateTimeOffset(this double seconds, string? format = null)
     {

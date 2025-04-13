@@ -850,6 +850,17 @@ public sealed class UserService(
                 userAlbum.Rating = rating;
                 userAlbum.LastUpdatedAt = now;
                 result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                
+                var sql = """
+                          update "Albums" a set 
+                            "LastUpdatedAt" = now(), 
+                            "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserAlbums" where "AlbumId" = a."Id")
+                          where a."Id" = @dbId;
+                          """;
+                var dbConn = scopedContext.Database.GetDbConnection();                
+                await dbConn.ExecuteAsync(sql, new { dbId = userAlbum.AlbumId }).ConfigureAwait(false);
+                await albumService.ClearCacheAsync(userAlbum.AlbumId, cancellationToken).ConfigureAwait(false);
+                
                 var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
                 ClearCache(user.Data!);
             }
@@ -884,6 +895,17 @@ public sealed class UserService(
                 userSong.Rating = rating;
                 userSong.LastUpdatedAt = now;
                 result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                
+                var sql = """
+                          update "Songs" s set 
+                            "LastUpdatedAt" = now(), 
+                            "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserSongs" where "SongId" = s."Id")
+                          where s."Id" = @dbId;
+                          """;
+                var dbConn = scopedContext.Database.GetDbConnection();
+                await dbConn.ExecuteAsync(sql, new { dbId = userSong.SongId }).ConfigureAwait(false);
+                await songService.ClearCacheAsync(userSong.SongId, cancellationToken).ConfigureAwait(false);                
+                
                 var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
                 ClearCache(user.Data!);
             }
@@ -1415,6 +1437,17 @@ public sealed class UserService(
                 userArtist.Rating = rating;
                 userArtist.LastUpdatedAt = now;
                 result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+                
+                var sql = """
+                          update "Artists" a set 
+                            "LastUpdatedAt" = now(), 
+                            "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserArtists" where "ArtistId" = a."Id")
+                          where a."Id" = @dbId;
+                          """;
+                var dbConn = scopedContext.Database.GetDbConnection();                
+                await dbConn.ExecuteAsync(sql, new { dbId = userArtist.ArtistId }).ConfigureAwait(false);
+                await artistService.ClearCacheAsync(userArtist.ArtistId, cancellationToken).ConfigureAwait(false);       
+
                 var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
                 ClearCache(user.Data!);
             }

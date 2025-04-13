@@ -91,12 +91,21 @@ public sealed class StatisticsService(
                 "playlist_play"));
 
             results.Add(new Statistic(StatisticType.Count,
+                "Radio Stations",
+                await scopedContext.RadioStations.CountAsync(cancellationToken)
+                    .ConfigureAwait(false),
+                null,
+                null,
+                7,
+                "radio"));            
+            
+            results.Add(new Statistic(StatisticType.Count,
                 "Shares",
                 await scopedContext.Shares.CountAsync(cancellationToken)
                     .ConfigureAwait(false),
                 null,
                 null,
-                7,
+                8,
                 "share"));
 
             results.Add(new Statistic(StatisticType.Count,
@@ -105,7 +114,7 @@ public sealed class StatisticsService(
                     .ConfigureAwait(false),
                 null,
                 null,
-                8,
+                9,
                 "music_note"));
 
             results.Add(new Statistic(StatisticType.Count,
@@ -114,7 +123,7 @@ public sealed class StatisticsService(
                     .ConfigureAwait(false),
                 null,
                 null,
-                9,
+                10,
                 "analytics"));
 
             results.Add(new Statistic(StatisticType.Count,
@@ -123,7 +132,7 @@ public sealed class StatisticsService(
                     .ConfigureAwait(false),
                 null,
                 null,
-                10,
+                11,
                 "group"));
 
             results.Add(new Statistic(StatisticType.Count,
@@ -132,7 +141,7 @@ public sealed class StatisticsService(
                     .ConfigureAwait(false),
                 null,
                 null,
-                11,
+                12,
                 "analytics"));
 
             results.Add(new Statistic(StatisticType.Count,
@@ -141,7 +150,7 @@ public sealed class StatisticsService(
                     .ConfigureAwait(false),
                 null,
                 null,
-                12,
+                13,
                 "analytics"));
 
             results.Add(new Statistic(StatisticType.Count,
@@ -150,23 +159,32 @@ public sealed class StatisticsService(
                     .ConfigureAwait(false),
                 null,
                 null,
-                13,
+                14,
                 "analytics"));
+            
+            results.Add(new Statistic(StatisticType.Count,
+                "Users: Rated songs",
+                await scopedContext.UserSongs.CountAsync(x => x.Rating > 0, cancellationToken)
+                    .ConfigureAwait(false),
+                null,
+                null,
+                15,
+                "analytics"));            
 
             results.Add(new Statistic(StatisticType.Information,
                 "Total: Song Mb",
                 (await scopedContext.Songs.SumAsync(x => x.FileSize, cancellationToken).ConfigureAwait(false)).FormatFileSize(),
                 null,
                 null,
-                14,
+                16,
                 "bar_chart"));
 
             results.Add(new Statistic(StatisticType.Information,
                 "Total: Song Duration",
-                (await scopedContext.Songs.SumAsync(x => x.Duration, cancellationToken).ConfigureAwait(false)).ToDuration().ToString("D:hh:mm:ss", CultureInfo.InvariantCulture),
+                (await scopedContext.Songs.SumAsync(x => x.Duration, cancellationToken).ConfigureAwait(false)).ToTimeSpan().ToYearDaysMinutesHours(),
                 null,
-                null,
-                15,
+                "Total song duration in Year:Day:Hour:Minute format.",
+                17,
                 "bar_chart"));
         }
 

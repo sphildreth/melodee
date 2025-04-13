@@ -142,6 +142,7 @@ builder.Services
     .AddScoped<StatisticsService>()
     .AddScoped<SearchService>()
     .AddScoped<ShareService>()
+    .AddScoped<RadioStationService>()
     .AddScoped<PlaylistService>()
     .AddScoped<MelodeeMetadataMaker>()
     .AddScoped<AlbumRescanEventHandler>()

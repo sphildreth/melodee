@@ -47,7 +47,7 @@ public class PlaylistController(
 
 
     /// <summary>
-    ///     Updates a playlist. Only the owner of a playlist is allowed to update it..
+    ///     Updates a playlist. Only the owner of a playlist is allowed to update it.
     /// </summary>
     /// <param name="updateRequest">Model for request.</param>
     /// <param name="cancellationToken">Cancellation token</param>

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Melodee.Common.Extensions;
 
 public static class DecimalExtensions

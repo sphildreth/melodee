@@ -63,7 +63,7 @@
                             <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
                                 @($"{statistic.Title}")
                             </div>
-                            <div style="width:65px;display:inline-block;text-align:right;">
+                            <div style="width:100px;display:inline-block;text-align:right;" title="@statistic.Message">
                                 @if (statistic.Type == StatisticType.Count)
                                 {
                                     @($"{((int)statistic.Data).ToStringPadLeft(PadLeftValue)}")

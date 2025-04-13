@@ -20,6 +20,7 @@ using Melodee.Common.Models.OpenSubsonic.Enums;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.OpenSubsonic.Searching;
+using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Extensions;
@@ -3305,4 +3306,187 @@ public class OpenSubsonicApiService(
     }
 
     private record ImageBytesAndEtag(byte[]? Bytes, string? Etag);
+
+    public async Task<ResponseModel> DeleteInternetRadioStationAsync(string id, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        Error? notAuthorizedError = null;
+        var result = false;
+
+        // Only users with admin privileges are allowed to call this method.
+        var isUserAdmin = await userService.IsUserAdminAsync(authResponse.UserInfo.UserName, cancellationToken).ConfigureAwait(false);
+        if (!isUserAdmin)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                IsSuccess = false,
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
+            };
+        }
+        
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var apiKey = ApiKeyFromId(id);
+            var radioStation = await scopedContext
+                .RadioStations
+                .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
+                .ConfigureAwait(false);
+            if (radioStation != null)
+            {
+                scopedContext.RadioStations.Remove(radioStation);
+                await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                result = true;
+            }
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
+        };
+    }
+
+    public async Task<ResponseModel> CreateInternetRadioStationAsync(string name, string streamUrl, string? homePageUrl, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        // Only users with admin privileges are allowed to call this method.
+        var isUserAdmin = await userService.IsUserAdminAsync(authResponse.UserInfo.UserName, cancellationToken).ConfigureAwait(false);
+        if (!isUserAdmin)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                IsSuccess = false,
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
+            };
+        }        
+        
+        Error? notAuthorizedError = null;
+        var result = false;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+               
+            var radioStation = new dbModels.RadioStation
+            {
+                Name = name,
+                StreamUrl = streamUrl,
+                CreatedAt = now
+            };
+            await scopedContext.RadioStations.AddAsync(radioStation, cancellationToken).ConfigureAwait(false);
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            result = true;   
+            Logger.Information("User [{UserInfo}] created radio station [{Name}].",
+                authResponse.UserInfo,
+                name);
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
+        };
+    }
+
+    public async Task<ResponseModel> UpdateInternetRadioStationAsync(string id, string name, string streamUrl, string? homePageUrl, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        Error? notAuthorizedError = null;
+        var result = false;
+
+        // Only users with admin privileges are allowed to call this method.
+        var isUserAdmin = await userService.IsUserAdminAsync(authResponse.UserInfo.UserName, cancellationToken).ConfigureAwait(false);
+        if (!isUserAdmin)
+        {
+            return new ResponseModel
+            {
+                UserInfo = BlankUserInfo,
+                IsSuccess = false,
+                ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
+            };
+        }
+        
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var apiKey = ApiKeyFromId(id);
+            var radioStation = await scopedContext
+                .RadioStations
+                .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
+                .ConfigureAwait(false);
+            if (radioStation != null)
+            {
+                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+                
+                radioStation.Name = name;
+                radioStation.StreamUrl = streamUrl;
+                radioStation.HomePageUrl = homePageUrl;
+                radioStation.LastUpdatedAt = now;
+                await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                result = true;
+            }
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = BlankUserInfo,
+            IsSuccess = result,
+            ResponseData = await NewApiResponse(result, string.Empty, string.Empty, notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
+        };
+    }
+
+    public async Task<ResponseModel> GetInternetRadioStationsAsync(ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = BlankUserInfo };
+        }
+
+        var data = new List<InternetRadioStation>();
+        try
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var radioStations = await scopedContext
+                    .RadioStations
+                    .AsNoTracking()
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                data = radioStations.Select(x => x.ToApiInternetRadioStation()).ToList();
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to get Radio Stations Request [{ApiResult}]", apiRequest);
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data.ToArray(),
+                DataPropertyName = "internetRadioStations",
+                DataDetailPropertyName = apiRequest.IsXmlRequest ? string.Empty : "internetRadioStation"
+            }
+        };
+    }
 }

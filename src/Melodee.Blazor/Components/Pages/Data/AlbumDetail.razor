@@ -217,6 +217,8 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
+                            <CondensedStatistic Label="Rating"
+                                                Rating="@(_album.CalculatedRating)"/>
                             <CondensedStatistic Label="Song Count" Statistic="@(_album.SongCount.ToStringPadLeft(4))"/>
                             <CondensedStatistic Label="Played Total"
                                                 Statistic="@(_album.PlayedCount.ToStringPadLeft(6))"/>
@@ -490,8 +492,6 @@
         }
     }
 
-
-
     private async Task IsHatedClicked()
     {
         _userAlbum.IsHated = !_userAlbum.IsHated;
@@ -701,6 +701,8 @@
         _userAlbum.Rating = arg;
         var result = await UserService.SetAlbumRatingAsync(CurrentUsersId, _album.Id, arg);
         NotificationService.Notify(NotificationMessageForResult(result, "Set album rating", ToastTime));
+        var albumResult = await AlbumService.GetByApiKeyAsync(ApiKey);
+        _album.CalculatedRating = albumResult.Data!.CalculatedRating;
     }
 
     private async Task UserSongRatingChange(Song song, int arg)
