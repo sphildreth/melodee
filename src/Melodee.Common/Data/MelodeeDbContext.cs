@@ -582,6 +582,14 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
+                    Id = 54,
+                    Key = SettingRegistry.ProcessingFileExtensionsToDelete,
+                    Comment = $"When processing folders immediately delete any files with these extensions. (JSON array).",
+                    Value = "['log', 'lnk', 'lrc', 'doc']",
+                    CreatedAt = now
+                },
+                new Setting
+                {
                     Id = 902,
                     Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineUserAgent,

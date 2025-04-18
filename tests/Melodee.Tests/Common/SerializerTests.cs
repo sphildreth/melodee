@@ -9,6 +9,84 @@ namespace Melodee.Tests.Common;
 public class SerializerTests : ServiceTestBase
 {
     [Fact]
+    public void ValidateDeserializerWithUnicode()
+    {
+        var artist = new Artist
+        (
+            "J\\u00E4de",
+            "JADE",
+            "J\\u00E4de"
+        );
+        var serialized = Serializer.Serialize(artist);
+        Assert.NotNull(serialized);
+        var deserialized = Serializer.Deserialize<Artist>(serialized);
+        Assert.NotNull(deserialized);
+        Assert.Equal(artist.Name, deserialized.Name);
+        Assert.Equal(artist.NameNormalized, deserialized.NameNormalized);
+        Assert.Equal(artist.SortName, deserialized.SortName);
+    }
+    
+    [Fact]
+    public async Task ValidateDeserializerWriteToFileReadBackTextWithUnicode()
+    {
+        var artist = new Artist
+        (
+            "Jäde",
+            "JADE",
+            "Jäde"
+        );
+        var fileName = Path.GetTempFileName();
+        await System.IO.File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
+        var fileInfo = new FileInfo(fileName);
+        Assert.True(fileInfo.Exists);
+        var deserialized = Serializer.Deserialize<Artist>(await System.IO.File.ReadAllTextAsync(fileName));
+        Assert.NotNull(deserialized);
+        Assert.Equal(artist.Name, deserialized.Name);
+        Assert.Equal(artist.NameNormalized, deserialized.NameNormalized);
+        Assert.Equal(artist.SortName, deserialized.SortName);
+    }    
+    
+    [Fact]
+    public async Task ValidateUnicodeDeserializerWriteToFileReadBackBytesWithUnicode()
+    {
+        var artist = new Artist
+        (
+            "Jäde",
+            "JADE",
+            "Jäde"
+        );
+        var fileName = Path.GetTempFileName();
+        await System.IO.File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
+        var fileInfo = new FileInfo(fileName);
+        Assert.True(fileInfo.Exists);
+        var deserialized = Serializer.Deserialize<Artist>(await System.IO.File.ReadAllBytesAsync(fileName));
+        Assert.NotNull(deserialized);
+        Assert.Equal(artist.Name, deserialized.Name);
+        Assert.Equal(artist.NameNormalized, deserialized.NameNormalized);
+        Assert.Equal(artist.SortName, deserialized.SortName);
+    }      
+    
+    [Fact]
+    public async Task ValidateTextDeserializerWriteToFileReadBackBytes()
+    {
+        var artist = new Artist
+        (
+            "Spongebob SquarePants",
+            "SPONGEBOBSQUAREPANTS",
+            "SquarePants, Spongebob"
+        );
+        var fileName = Path.GetTempFileName();
+        await System.IO.File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
+        var fileInfo = new FileInfo(fileName);
+        Assert.True(fileInfo.Exists);
+        var deserialized = Serializer.Deserialize<Artist>(await System.IO.File.ReadAllBytesAsync(fileName));
+        Assert.NotNull(deserialized);
+        Assert.Equal(artist.Name, deserialized.Name);
+        Assert.Equal(artist.NameNormalized, deserialized.NameNormalized);
+        Assert.Equal(artist.SortName, deserialized.SortName);
+    }     
+    
+    [Fact]
     public void CanSerializerAndDeserializerAlbum()
     {
         var album = AlbumValidatorTests.TestAlbum;

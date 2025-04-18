@@ -29,6 +29,7 @@ using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using NodaTime;
@@ -1356,6 +1357,7 @@ public class OpenSubsonicApiService(
         {
             using (Operation.At(LogEventLevel.Debug).Time("GetImageForApiKeyId: [{Username}] Size [{Size}]", apiId, sizeValue))
             {
+                bool doCheckResize = true;
                 byte[]? result = null;
                 var eTag = string.Empty;
                 try
@@ -1371,16 +1373,26 @@ public class OpenSubsonicApiService(
                         var artistInfo = await DatabaseArtistInfoForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id, cancellationToken).ConfigureAwait(false);
                         if (artistInfo?.Directory != null)
                         {
-                            var artistDirectoryInfo = new FileSystemDirectoryInfo
+                            var artistImageForRequestSize = Path.Combine(artistInfo.Directory, $"_i-01-Artist-{sizeValue}.jpg");
+                            if (File.Exists(artistImageForRequestSize))
                             {
-                                Path = artistInfo.Directory,
-                                Name = artistInfo.Directory
-                            };
-                            var firstArtistImage = artistDirectoryInfo.AllFileImageTypeFileInfos().OrderBy(x => x.Name).FirstOrDefault();
-                            if (firstArtistImage != null)
-                            {
-                                result = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken).ConfigureAwait(false);
+                                result = await File.ReadAllBytesAsync(artistImageForRequestSize, cancellationToken).ConfigureAwait(false);
                                 eTag = (artistInfo.LastUpdatedAt ?? artistInfo.CreatedAt).ToEtag();
+                                doCheckResize = false;
+                            }
+                            else
+                            {
+                                var artistDirectoryInfo = new FileSystemDirectoryInfo
+                                {
+                                    Path = artistInfo.Directory,
+                                    Name = artistInfo.Directory
+                                };
+                                var firstArtistImage = artistDirectoryInfo.AllFileImageTypeFileInfos().OrderBy(x => x.Name).FirstOrDefault();
+                                if (firstArtistImage != null)
+                                {
+                                    result = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken).ConfigureAwait(false);
+                                    eTag = (artistInfo.LastUpdatedAt ?? artistInfo.CreatedAt).ToEtag();
+                                }
                             }
                         }
 
@@ -1468,11 +1480,22 @@ public class OpenSubsonicApiService(
                                 var dbConn = scopedContext.Database.GetDbConnection();
                                 var pathToAlbum = dbConn.ExecuteScalar<string>(sql.FormatSmart(apiKey.Value.ToString())) ?? string.Empty;
                                 var albumDirInfo = pathToAlbum.ToDirectoryInfo();
-                                var firstFrontImage = albumDirInfo.AllFileImageTypeFileInfos().OrderBy(x => x.Name).FirstOrDefault();
-                                if (firstFrontImage != null)
+
+                                var albumImageForRequestSize = Path.Combine(pathToAlbum, $"_i-01-Front-{sizeValue}.jpg");
+                                if (File.Exists(albumImageForRequestSize))
                                 {
-                                    result = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
-                                    eTag = firstFrontImage.LastWriteTimeUtc.Ticks.ToString();
+                                    result = await File.ReadAllBytesAsync(albumImageForRequestSize, cancellationToken).ConfigureAwait(false);
+                                    eTag = (albumResponse.Data!.LastUpdatedAt ?? albumResponse.Data!.CreatedAt).ToEtag();
+                                    doCheckResize = false;
+                                }
+                                else
+                                {
+                                    var firstFrontImage = albumDirInfo.AllFileImageTypeFileInfos().OrderBy(x => x.Name).FirstOrDefault();
+                                    if (firstFrontImage != null)
+                                    {
+                                        result = await File.ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken).ConfigureAwait(false);
+                                        eTag = firstFrontImage.LastWriteTimeUtc.Ticks.ToString();
+                                    }
                                 }
                             }
                         }
@@ -1484,7 +1507,7 @@ public class OpenSubsonicApiService(
                         }
                     }
 
-                    if (result != null && !isForPlaylist)
+                    if (result != null && !isForPlaylist && doCheckResize)
                     {
                         if (!string.Equals(sizeValue, ImageSizeRegistry.Large, StringComparison.OrdinalIgnoreCase))
                         {

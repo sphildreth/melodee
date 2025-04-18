@@ -6,6 +6,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Serialization.Convertors;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Serilog;
 
 namespace Melodee.Common.Serialization;

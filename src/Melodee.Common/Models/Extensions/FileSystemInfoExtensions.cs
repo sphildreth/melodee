@@ -4,22 +4,22 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemInfoExtensions
 {
+    /// <summary>
+    /// Returns a Directory System Info for the given FileInfo
+    /// </summary>
     public static FileSystemDirectoryInfo ToDirectorySystemInfo(this FileSystemInfo fileInfo)
     {
-        if (Path.HasExtension(fileInfo.FullName))
-        {
-            var fi = new FileInfo(fileInfo.FullName);
-            return fi.Directory?.ToDirectorySystemInfo() ?? FileSystemDirectoryInfo.Blank();
-        }
-        var dir = new DirectoryInfo(fileInfo.FullName);
+        var fi = fileInfo as FileInfo;
         return new FileSystemDirectoryInfo
         {
-            Path = dir.FullName,
-            Name = dir.Name,
-            
-        };        
+            Path = fi?.Directory?.FullName ?? fileInfo.FullName,
+            Name = fi?.Directory?.Name ?? fileInfo.Name,
+        };
     }
 
+    /// <summary>
+    /// Returns a File System Info for the given FileInfo
+    /// </summary>
     public static FileSystemFileInfo ToFileSystemInfo(this FileSystemInfo fileInfo)
     {
         var fi = new FileInfo(fileInfo.FullName);

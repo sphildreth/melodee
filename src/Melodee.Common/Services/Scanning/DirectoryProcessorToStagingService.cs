@@ -284,30 +284,44 @@ public sealed class DirectoryProcessorToStagingService(
         var httpClient = httpClientFactory.CreateClient();
 
         var dontDeleteExistingMelodeeFiles = _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
-
-        // var modifiedDirectories = false;
-        // foreach (var directoryInfoToProcess in directoriesToProcess)
-        // {
-        //     // ensure directoryInfoToProcess doesn't have "extension" in name
-        //     if (Path.GetExtension(directoryInfoToProcess.Name).Nullify() != null)
-        //     {
-        //            var dd = directoryInfoToProcess.ToDirectoryInfo();
-        //            var oldDd = dd.FullName;
-        //            var newDd = dd.FullName.Replace(".", "_");
-        //            dd.MoveTo(newDd);
-        //            Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
-        //                nameof(DirectoryProcessorToStagingService),
-        //                oldDd,
-        //                newDd);
-        //            modifiedDirectories = true;
-        //     }
-        // }
-        //
-        // if (modifiedDirectories)
-        // {
-        //     directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
-        // }
-
+        
+        var modifiedDirectories = false;
+        foreach (var directoryInfoToProcess in directoriesToProcess)
+        {
+            // Ensure directoryInfoToProcess doesn't have "extension" in name. This is because when a directory
+            // includes the file systems extension, the System.IO.DirectoryInfo doesn't parse it correctly from string
+            // as it thinks its a file not a directory.
+            if (directoryInfoToProcess.Name.Contains('.'))
+            {
+                   var dd = directoryInfoToProcess.ToDirectoryInfo();
+                   var oldDd = dd.Name;
+                   var newDd = Path.Combine(dd.Parent!.FullName, dd.Name.Replace(".", "_"));
+                   dd.MoveTo(newDd);
+                   Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
+                       nameof(DirectoryProcessorToStagingService),
+                       oldDd,
+                       newDd);
+                   modifiedDirectories = true;
+            }
+        }
+        
+        if (modifiedDirectories)
+        {
+            directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
+        }
+        
+        var fileExtensionsToDelete = MelodeeConfiguration.FromSerializedJsonArray(_configuration.GetValue<string>(SettingRegistry.ProcessingFileExtensionsToDelete), serializer);
+        if (fileExtensionsToDelete.Length != 0)
+        {
+            foreach (var directoryInfoToProcess in directoriesToProcess)
+            {
+                foreach (var fileExtensionToDelete in fileExtensionsToDelete)
+                {
+                    directoryInfoToProcess.DeleteAllFilesForExtension(fileExtensionToDelete);
+                }
+            }
+        }
+        
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
             Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
@@ -541,7 +555,7 @@ public sealed class DirectoryProcessorToStagingService(
 
                                 if (song.File.OriginalName != null)
                                 {
-                                    var oldSongFilename = Path.Combine(album.Directory.FullName(), song.File.OriginalName!);
+                                    var oldSongFilename = Path.Combine(album.OriginalDirectory.FullName(), song.File.OriginalName!);
                                     if (!File.Exists(oldSongFilename))
                                     {
                                         continue;
@@ -568,8 +582,8 @@ public sealed class DirectoryProcessorToStagingService(
                                 }
                             }
 
-                            if ((album.Tags ?? Array.Empty<MetaTag<object?>>()).Any(x => x.WasModified) ||
-                                album.Songs!.Any(x => (x.Tags ?? Array.Empty<MetaTag<object?>>()).Any(y => y.WasModified)))
+                            if ((album.Tags ?? []).Any(x => x.WasModified) ||
+                                album.Songs!.Any(x => (x.Tags ?? []).Any(y => y.WasModified)))
                             {
                                 Trace.WriteLine("Running plugins on songs with modified tags...");
 
@@ -584,7 +598,14 @@ public sealed class DirectoryProcessorToStagingService(
 
                                         using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync :: Updating song [{Name}] with plugin [{DisplayName}]", song.File.Name, songPlugin.DisplayName))
                                         {
-                                            await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken).ConfigureAwait(false);
+                                            try
+                                            {
+                                                await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken).ConfigureAwait(false);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Logger.Error(e, "Error updating song [{Name}] with plugin [{DisplayName}]", song.File.Name, songPlugin.DisplayName);
+                                            }
                                         }
                                     }
                                 }

@@ -67,7 +67,7 @@ public record Playlist : IOpenSubsonicToXml
 
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<playlist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" comment=\"{Comment.ToSafeXmlString()}\" owner=\"{Owner}\" public=\"{Public.ToLowerCaseString()}\" songCount=\"{SongCount}\" duration=\"{Duration}\" created=\"{Created}\" coverArt=\"{CoverArt}\">");
+        var result = new StringBuilder($"<playlist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" comment=\"{Comment.ToSafeXmlString()}\" owner=\"{Owner.ToSafeXmlString()}\" public=\"{Public.ToLowerCaseString()}\" songCount=\"{SongCount}\" duration=\"{Duration}\" created=\"{Created}\" coverArt=\"{CoverArt}\">");
         if (AllowedUsers != null)
         {
             foreach (var allowedUser in AllowedUsers)

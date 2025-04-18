@@ -141,7 +141,7 @@ public class Mp3Files(
                             }
 
                             var genres = songsGroupedByAlbum
-                                .SelectMany(x => x.Tags ?? Array.Empty<MetaTag<object?>>())
+                                .SelectMany(x => x.Tags ?? [])
                                 .Where(x => x.Identifier == MetaTagIdentifier.Genre);
                             newAlbumTags.AddRange(genres
                                 .GroupBy(x => x.Value)

@@ -318,37 +318,33 @@ public sealed record Album
     public static async Task<Album?> DeserializeAndInitializeAlbumAsync(ISerializer serializer, string fullPathToMelodeeDataFile, CancellationToken cancellationToken = default)
     {
         var result = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(fullPathToMelodeeDataFile, cancellationToken).ConfigureAwait(false));
-        var d = fullPathToMelodeeDataFile.ToDirectoryInfo();
-        if (result != null && result.Directory != d)
+        if (result == null)
         {
-            result.Directory = d;
+            return null;
         }
 
-        if (result != null)
-        {
-            result.MelodeeDataFileName = fullPathToMelodeeDataFile;
+        result.MelodeeDataFileName = fullPathToMelodeeDataFile;
 
-            // See if Artist melodee.json exists in one folder up, if present use it for the albums artist overwriting any artist set on the albums melodee.json file
-            var dd = new DirectoryInfo(d.FullName());
-            var artistDirectory = dd.Parent?.FullName ?? string.Empty;
-            var artistMelodeeJsonFile = artistDirectory.ToDirectoryInfo().AllFileInfos(Models.Artist.JsonFileName).FirstOrDefault();
-            try
+        // See if Artist melodee.json exists in one folder up, if present use it for the albums artist overwriting any artist set on the albums melodee.json file
+        var fi = new FileInfo(fullPathToMelodeeDataFile);
+        var artistMelodeeJsonFile = fi.Directory?.Parent?.FindFirstFileInParentDirectories(Models.Artist.JsonFileName);
+        try
+        {
+            if (artistMelodeeJsonFile != null && File.Exists(artistMelodeeJsonFile?.FullName))
             {
-                if (File.Exists(artistMelodeeJsonFile?.FullName))
+                var artist = serializer.Deserialize<Artist>(await File.ReadAllBytesAsync(artistMelodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false));
+                result.Artist = artist ?? result.Artist;
+                if (artist != null)
                 {
-                    var artist = serializer.Deserialize<Artist>(await File.ReadAllBytesAsync(artistMelodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false));
-                    result.Artist = artist ?? result.Artist;
-                    if (artist != null)
-                    {
-                        Trace.WriteLine($"Using artist melodee.json file [{artistMelodeeJsonFile}] for album [{result.AlbumTitle()}] Artist [{artist.Name}]");
-                    }
+                    Trace.WriteLine($"Using artist { Models.Artist.JsonFileName} file [{artistMelodeeJsonFile}] for album [{result.AlbumTitle()}] Artist [{artist.Name}]");
                 }
             }
-            catch (Exception e)
-            {
-                Trace.WriteLine($"Unable to read artist melodee.json file [{artistMelodeeJsonFile}] Exception [{e.Message}]");
-            }
         }
+        catch (Exception e)
+        {
+            Trace.WriteLine($"Unable to read artist melodee.json file [{artistMelodeeJsonFile}] Exception [{e.Message}]");
+        }
+
 
         return result;
     }

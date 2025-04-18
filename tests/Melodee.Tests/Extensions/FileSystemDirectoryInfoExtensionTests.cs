@@ -30,7 +30,29 @@ public class FileSystemDirectoryInfoExtensionTests
         var fileSystemInfo = fileInfo.ToFileSystemInfo();
         Assert.Equal(fileInfo.FullName, fileSystemInfo.FullName(fileDirectory));
         Assert.Equal(coverName, fileSystemInfo.Name);
-    }    
+    }
+
+    [Fact]
+    public void ValidateDirectoryNameWithExtensionForFileInfo()
+    {
+        var coverName = "cover.jpg";
+        var testPath = @"/melodee_test/inbound/J_de - Discography/02. EPs/(2020) J.de - Premi.re fois";
+        var filename = Path.Combine(testPath, coverName);
+        var fileInfo = new FileInfo(filename);
+        var fileDirectory = fileInfo.ToDirectorySystemInfo();
+        Assert.Equal(testPath, fileDirectory.Path);
+        Assert.Equal("(2020) J.de - Premi.re fois", fileDirectory.Name);
+    }
+    
+    [Fact]
+    public void ValidateDirectoryNameForToDirectoryFromString()
+    {
+        var testPath = @"/melodee_test/inbound/J_de - Discography/02. EPs/(2020) J.de - Premi.re fois";
+        var fileDirectory = testPath.ToDirectoryInfo();
+        Assert.Equal(testPath, fileDirectory.Path);
+        Assert.Equal("(2020) J.de - Premi.re fois", fileDirectory.Name);
+    }       
+     
     
     [Theory]
     [InlineData("Bobs Discography", true)]

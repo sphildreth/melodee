@@ -24,8 +24,8 @@
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="FluentValidation" Version="11.11.0" />
     <PackageVersion Include="Hashids.net" Version="1.7.0" />
-    <PackageVersion Include="Hqub.Last.fm" Version="2.4.0" />
-    <PackageVersion Include="HtmlAgilityPack" Version="1.12.0" />
+    <PackageVersion Include="Hqub.Last.fm" Version="2.5.0" />
+    <PackageVersion Include="HtmlAgilityPack" Version="1.12.1" />
     <PackageVersion Include="IdGen" Version="3.0.7" />
     <PackageVersion Include="IdSharp.Common" Version="1.0.1" />
     <PackageVersion Include="IdSharp.Tagging" Version="1.0.0-rc3" />
@@ -34,7 +34,7 @@
     <PackageVersion Include="Lucene.Net" Version="4.8.0-beta00017" />
     <PackageVersion Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />
     <PackageVersion Include="Mapster" Version="7.4.0" />
-    <PackageVersion Include="Markdig" Version="0.40.0" />
+    <PackageVersion Include="Markdig" Version="0.41.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.4" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.4" />
@@ -69,7 +69,7 @@
     <PackageVersion Include="Quartz.Jobs" Version="3.14.0" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />
-    <PackageVersion Include="Radzen.Blazor" Version="6.5.2" />
+    <PackageVersion Include="Radzen.Blazor" Version="6.6.1" />
     <PackageVersion Include="Rebus" Version="8.7.1" />
     <PackageVersion Include="Rebus.Serilog" Version="8.0.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />
@@ -80,8 +80,8 @@
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageVersion Include="SerilogTimings" Version="3.1.0" />
-    <PackageVersion Include="ServiceStack" Version="8.6.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.6.0" />
+    <PackageVersion Include="ServiceStack" Version="8.7.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.7.0" />
     <PackageVersion Include="SharpZipLib" Version="1.4.2" />
     <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.7" />
     <PackageVersion Include="SmartFormat" Version="3.6.0" />
