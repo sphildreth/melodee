@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using IdSharp.Tagging.ID3v1;
 using IdSharp.Tagging.ID3v2;
 using Melodee.Common.Configuration;
@@ -51,63 +52,123 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                     if (ID3v1Tag.DoesTagExist(fullname))
                     {
                         var id3V1 = new ID3v1Tag(fullname);
-                        tags.Add(new MetaTag<object?>
+                        if (id3V1.Album.Nullify() != null)
                         {
-                            Identifier = MetaTagIdentifier.Album,
-                            Value = id3V1.Album
-                        });
-                        tags.Add(new MetaTag<object?>
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Album,
+                                Value = id3V1.Album
+                            });
+                        }
+
+                        if (id3V1.Artist.Nullify() != null)
                         {
-                            Identifier = MetaTagIdentifier.Artist,
-                            Value = id3V1.Artist
-                        });
-                        tags.Add(new MetaTag<object?>
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Artist,
+                                Value = id3V1.Artist
+                            });
+                        }
+
+                        if (id3V1.Title.Nullify() != null)
                         {
-                            Identifier = MetaTagIdentifier.Artist,
-                            Value = id3V1.Title.ToTitleCase(false)
-                        });
-                        tags.Add(new MetaTag<object?>
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Title,
+                                Value = id3V1.Title.ToTitleCase(false)
+                            });
+                        }
+
+                        if (id3V1.TrackNumber > 0)
                         {
-                            Identifier = MetaTagIdentifier.TrackNumber,
-                            Value = SafeParser.ToNumber<short?>(id3V1.TrackNumber)
-                        });
-                        var date = SafeParser.ToDateTime(id3V1.Year);
-                        tags.Add(new MetaTag<object?>
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.TrackNumber,
+                                Value = SafeParser.ToNumber<short?>(id3V1.TrackNumber)
+                            });
+                        }
+
+                        var date = SafeParser.ToDateTime(id3V1.Year);                        
+                        if (date != null)
                         {
-                            Identifier = MetaTagIdentifier.OrigAlbumYear,
-                            Value = date?.Year
-                        });
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.OrigAlbumYear,
+                                Value = date?.Year
+                            });
+                        }
                     }
 
                     if (ID3v2Tag.DoesTagExist(fullname))
                     {
                         IID3v2Tag id3V2 = new ID3v2Tag(fullname);
-                        tags.Add(new MetaTag<object?>
+                        if (tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Album) == null)
                         {
-                            Identifier = MetaTagIdentifier.Album,
-                            Value = id3V2.Album
-                        });
-                        tags.Add(new MetaTag<object?>
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Album,
+                                Value = id3V2.Album
+                            });
+                        }
+
+                        if (tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist) == null)
                         {
-                            Identifier = MetaTagIdentifier.Artist,
-                            Value = id3V2.Artist
-                        });
-                        tags.Add(new MetaTag<object?>
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Artist,
+                                Value = id3V2.AlbumArtist ?? id3V2.Artist
+                            });
+                        }
+
+                        if (tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title) == null)
                         {
-                            Identifier = MetaTagIdentifier.Artist,
-                            Value = id3V2.Title.ToTitleCase(false)
-                        });
-                        tags.Add(new MetaTag<object?>
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.Title,
+                                Value = id3V2.Title.ToTitleCase(false)
+                            });
+                        }
+
+                        if (tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber) == null)
                         {
-                            Identifier = MetaTagIdentifier.TrackNumber,
-                            Value = SafeParser.ToNumber<short?>(id3V2.TrackNumber)
-                        });
-                        var date = SafeParser.ToDateTime(id3V2.Year);
-                        tags.Add(new MetaTag<object?>
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.TrackNumber,
+                                Value = SafeParser.ToNumber<short?>(id3V2.TrackNumber)
+                            });
+                        }
+
+                        if (tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear) == null)
                         {
-                            Identifier = MetaTagIdentifier.OrigAlbumYear,
-                            Value = date?.Year
-                        });
+                            var date = SafeParser.ToDateTime(id3V2.Year);
+                            tags.Add(new MetaTag<object?>
+                            {
+                                Identifier = MetaTagIdentifier.OrigAlbumYear,
+                                Value = date?.Year
+                            });
+                        }
+                        
+                        if (mediaAudios.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.DurationMs) == null)
+                        {
+                            var duration = SafeParser.ToNumber<double?>(id3V2.LengthMilliseconds);
+                            if ((duration ?? 0) < 1)
+                            {
+                                try
+                                {
+                                    var atlTag = new ATL.Track(fullname);
+                                    duration = atlTag.DurationMs;
+                                }
+                                catch
+                                {
+                                    // Dont do anything at this point with exception.
+                                }
+                            }
+                            mediaAudios.Add(new MediaAudio<object?>
+                            {
+                                Identifier = MediaAudioIdentifier.DurationMs,
+                                Value = duration
+                            });
+                        }                        
                     }
                 }
             }
@@ -149,6 +210,10 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                 MediaAudios = mediaAudios,
                 SortOrder = tags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0
             };
+            if (!song.IsValid(Configuration))
+            {
+                Trace.WriteLine("Song is invalid");
+            }
             return new OperationResult<Models.Song>
             {
                 Data = song

@@ -67,23 +67,19 @@ public class Mp3Files(
                         {
                             break;
                         }
-
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
                             var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
+                            errors.AddRange(pluginResult.Errors ?? []);
+                            messages.AddRange(pluginResult.Messages ?? []);
                             if (pluginResult.IsSuccess)
                             {
                                 songs.Add(pluginResult.Data);
                                 viaPlugins.Add($"{nameof(Mp3Files)}:{plugin.DisplayName}");
+                                processedFileCount++;                                
+                                break;
                             }
-                            else
-                            {
-                                Trace.WriteLine($"Unable to process file: [{fsi}] result [{serializer.Serialize(pluginResult)}]");
-                            }
-
-                            errors.AddRange(pluginResult.Errors ?? []);
-                            messages.AddRange(pluginResult.Messages ?? []);
-                            processedFileCount++;
+                            Trace.WriteLine($"Plugin [{plugin.DisplayName}] failed to to process file: [{fsi}] result [{serializer.Serialize(pluginResult)}]");
                         }
                     }
                 }

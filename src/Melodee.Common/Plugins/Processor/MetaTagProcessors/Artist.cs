@@ -100,7 +100,7 @@ public sealed class Artist(Dictionary<string, object?> configuration, ISerialize
                 }
             }
 
-            if (artist != null && result.All(x => x.Identifier != MetaTagIdentifier.Artist))
+            if (result.All(x => x.Identifier != MetaTagIdentifier.Artist))
             {
                 result.Add(new MetaTag<object?>
                 {
@@ -127,6 +127,7 @@ public sealed class Artist(Dictionary<string, object?> configuration, ISerialize
         result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
+            Type = metaTag.Value?.ToString().Nullify() != null ? OperationResponseType.Ok : OperationResponseType.Error,              
             Data = result
         };
     }

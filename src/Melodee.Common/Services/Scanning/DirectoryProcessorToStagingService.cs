@@ -103,7 +103,8 @@ public sealed class DirectoryProcessorToStagingService(
         _imageConvertor = new ImageConvertor(_configuration);
         _songPlugins =
         [
-            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration)
+            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration),
+            new IdSharpMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
         ];
         _albumNamesInDirectoryPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
 

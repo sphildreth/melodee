@@ -141,6 +141,7 @@ public sealed class SongTitle(Dictionary<string, object?> configuration, ISerial
         result.ForEach(x => x.AddProcessedBy(nameof(SongTitle)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
+            Type = songTitle.Nullify() != null ? OperationResponseType.Ok : OperationResponseType.Error,              
             Data = result
         };
     }

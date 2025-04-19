@@ -57,6 +57,7 @@ public sealed class AlbumDate(Dictionary<string, object?> configuration, ISerial
         result.ForEach(x => x.AddProcessedBy(nameof(AlbumDate)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
+            Type = yearValue >= minimumValidAlbumYear && yearValue <= maximumValidAlbumYear ? OperationResponseType.Ok : OperationResponseType.Error,            
             Data = result
         };
     }

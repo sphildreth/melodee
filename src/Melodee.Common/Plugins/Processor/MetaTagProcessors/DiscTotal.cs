@@ -34,6 +34,7 @@ public sealed class DiscTotal(Dictionary<string, object?> configuration, ISerial
         result.ForEach(x => x.AddProcessedBy(nameof(DiscTotal)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
+            Type = OperationResponseType.Ok,                        
             Data = result
         };
     }

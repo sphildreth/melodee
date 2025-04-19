@@ -63,6 +63,7 @@ public sealed class AlbumArtist(Dictionary<string, object?> configuration, ISeri
         result.ForEach(x => x.AddProcessedBy(nameof(AlbumArtist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
+            Type = albumArtist.Nullify() != null ? OperationResponseType.Ok : OperationResponseType.Error,            
             Data = result
         };
     }

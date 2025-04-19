@@ -97,10 +97,6 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
                     newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false).ToTitleCase()?.CleanString();
                 }
             }
-            else
-            {
-                throw new Exception($"Unable to find Album Artist For [{DisplayName}]");
-            }
 
             var artistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist);
             if (artistTag?.Value != null)
@@ -139,6 +135,7 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
         result.ForEach(x => x.AddProcessedBy(nameof(Album)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
+            Type = newAlbumTitle.Nullify() != null ? OperationResponseType.Ok : OperationResponseType.Error,
             Data = result
         };
     }

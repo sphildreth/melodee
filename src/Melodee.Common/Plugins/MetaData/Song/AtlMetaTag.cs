@@ -327,7 +327,7 @@ public sealed class AtlMetaTag(
 
         if (albumTag?.Value?.ToString().Nullify() == null || artistTag?.Value?.ToString().Nullify() == null)
         {
-            return new OperationResult<Models.Song>($"Song [{fileSystemFileInfo.Name}] is invalid, missing Album and/or Artist tags.")
+            return new OperationResult<Models.Song>($"[{DisplayName}] Song [{fileSystemFileInfo.Name}] is invalid, missing Album and/or Artist tags.")
             {
                 Data = new Models.Song
                 {
