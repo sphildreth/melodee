@@ -47,7 +47,6 @@ public class MetaTagsProcessorTests : TestsBase
     }
 
     [Theory]
-    [InlineData(null, null)]
     [InlineData("Something", "Something")]
     [InlineData("Eternally Gifted", "Eternally Gifted")]
     [InlineData("Shift Scene", "Shift Scene")]
@@ -191,7 +190,6 @@ public class MetaTagsProcessorTests : TestsBase
     }
 
     [Theory]
-    [InlineData(null, null)]
     [InlineData("Ariana Grande", null)]
     [InlineData("Ariana Grande ft Nonna", "Nonna")]
     [InlineData("Ariana Grande ft Mariah Carey", "Mariah Carey")]

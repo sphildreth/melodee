@@ -193,4 +193,84 @@ public sealed class StatisticsService(
             Data = results.ToArray()
         };
     }
+
+    public async Task<OperationResult<Statistic[]>> GetUserSongStatisticsAsync(Guid userApiKey, CancellationToken cancellationToken = default)
+    {
+        var results = new List<Statistic>();
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            results.Add(new Statistic(StatisticType.Count,
+                "Your Favorite songs",
+                await scopedContext.UserSongs
+                    .Where(x => x.User.ApiKey == userApiKey)
+                    .CountAsync(x => x.StarredAt != null, cancellationToken)
+                    .ConfigureAwait(false),
+                null,
+                null,
+                1,
+                "analytics"));
+
+            results.Add(new Statistic(StatisticType.Count,
+                "Your Rated songs",
+                await scopedContext.UserSongs
+                    .Where(x => x.User.ApiKey == userApiKey)
+                    .CountAsync(x => x.Rating > 0, cancellationToken)
+                    .ConfigureAwait(false),
+                null,
+                null,
+                2,
+                "analytics"));
+        }
+
+        return new OperationResult<Statistic[]>
+        {
+            Data = results.ToArray()
+        };
+    }
+    
+    public async Task<OperationResult<Statistic[]>> GetUserAlbumStatisticsAsync(Guid userApiKey, CancellationToken cancellationToken = default)
+    {
+        var results = new List<Statistic>();
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            results.Add(new Statistic(StatisticType.Count,
+                "Your Favorite albums",
+                await scopedContext.UserAlbums
+                    .Where(x => x.User.ApiKey == userApiKey)
+                    .CountAsync(x => x.StarredAt != null, cancellationToken)
+                    .ConfigureAwait(false),
+                null,
+                null,
+                1,
+                "analytics"));
+        }
+
+        return new OperationResult<Statistic[]>
+        {
+            Data = results.ToArray()
+        };
+    }    
+    
+    public async Task<OperationResult<Statistic[]>> GetUserArtistStatisticsAsync(Guid userApiKey, CancellationToken cancellationToken = default)
+    {
+        var results = new List<Statistic>();
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            results.Add(new Statistic(StatisticType.Count,
+                "Your Favorite artists",
+                await scopedContext.UserArtists
+                    .Where(x => x.User.ApiKey == userApiKey)
+                    .CountAsync(x => x.StarredAt != null, cancellationToken)
+                    .ConfigureAwait(false),
+                null,
+                null,
+                1,
+                "analytics"));
+        }
+
+        return new OperationResult<Statistic[]>
+        {
+            Data = results.ToArray()
+        };
+    }    
 }

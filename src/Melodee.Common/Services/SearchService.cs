@@ -74,6 +74,19 @@ public sealed class SearchService(
                 ]
             }, null, cancellationToken);
             albums = albumResult.Data.ToList();
+            
+            if (include.HasFlag(SearchInclude.Contributors))
+            {
+                var contributorAlbumsResult = await albumService.ListForContributorsAsync(new PagedRequest
+                {
+                    Page = 1,
+                    PageSize = maxResults,
+                }, searchTerm ?? Guid.NewGuid().ToString(), cancellationToken);
+                if (contributorAlbumsResult.TotalCount > 0)
+                {
+                    albums = albums.Union(contributorAlbumsResult.Data).Distinct().ToList();
+                }
+            }            
         }
 
         if (include.HasFlag(SearchInclude.Songs))
@@ -88,6 +101,19 @@ public sealed class SearchService(
                 ]
             }, cancellationToken);
             songs = songResult.Data.ToList();
+            
+            if (include.HasFlag(SearchInclude.Contributors))
+            {
+                var contributorSongResult = await songService.ListForContributorsAsync(new PagedRequest
+                {
+                    Page = 1,
+                    PageSize = maxResults,
+                }, searchTerm ?? Guid.NewGuid().ToString(), cancellationToken);
+                if (contributorSongResult.TotalCount > 0)
+                {
+                    songs = songs.Union(contributorSongResult.Data).Distinct().ToList();
+                }
+            }              
         }
 
         if (include.HasFlag(SearchInclude.MusicBrainz))

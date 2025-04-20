@@ -1,6 +1,8 @@
 @page "/data/artists"
 @inherits MelodeeComponentBase
+@using System.Security.Claims
 @using System.Web
+@using Melodee.Common.Enums
 
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
@@ -13,6 +15,7 @@
 @inject ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject ArtistService ArtistService
+@inject StatisticsService StatisticsService
 @inject LibraryService LibraryService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -28,6 +31,44 @@
 </RadzenBreadCrumb>
 
 <RadzenStack>
+    <RadzenRow>
+        <RadzenPanel class="rz-w-100" AllowCollapse="true">
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                    <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                    Statistics
+                </RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack
+                    Orientation="Orientation.Horizontal"
+                    Wrap="FlexWrap.Wrap"
+                    JustifyContent="JustifyContent.Left"
+                    class="rz-p-2"
+                    Gap="8px">
+                    @foreach (var statistic in _statistics)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
+                            <RadzenIcon Icon="@statistic.Icon"/>
+                            <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                @($"{statistic.Title}")
+                            </div>
+                            <div style="width:100px;display:inline-block;text-align:right;" title="@statistic.Message">
+                                @if (statistic.Type == StatisticType.Count)
+                                {
+                                    @($"{((int)statistic.Data).ToStringPadLeft(ViewConstants.StatisticNumberPadLength)}")
+                                }
+                                else
+                                {
+                                    @statistic.Data
+                                }
+                            </div>
+                        </RadzenBadge>
+                    }
+                </RadzenStack>
+            </ChildContent>
+        </RadzenPanel>
+    </RadzenRow>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
             <RadzenText Text="Artists" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
@@ -161,7 +202,7 @@
 </RadzenStack>
 
 @code {
-
+    Statistic[] _statistics = [];
     RadzenDataGrid<ArtistDataInfo> _grid = null!;
     int _count;
     IEnumerable<ArtistDataInfo> _artists = null!;
@@ -201,6 +242,13 @@
     void OnPage(PagerEventArgs args)
     {
         _currentPage = args.PageIndex + 1;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var statResult = await StatisticsService.GetUserArtistStatisticsAsync(SafeParser.ToGuid(CurrentUser?.FindFirstValue(ClaimTypes.Sid) ?? string.Empty) ?? Guid.Empty);
+        _statistics = statResult?.Data ?? [];
     }
 
     async Task LoadData(LoadDataArgs args)

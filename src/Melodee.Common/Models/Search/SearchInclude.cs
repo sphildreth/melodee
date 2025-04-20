@@ -15,7 +15,7 @@ public enum SearchInclude
     Shares = 1 << 9,
     Contributors = 1 << 10,
 
-    Data = Albums | Artists | Songs,
+    Data = Albums | Artists | Songs | Contributors,
 
     MetaData = MusicBrainz,
 

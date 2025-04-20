@@ -6,6 +6,7 @@ using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
+using ServiceStack.Logging;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
@@ -24,6 +25,22 @@ public static class AlbumExtensions
     public static string ToApiKey(this Album album)
     {
         return $"album{OpenSubsonicServer.ApiIdSeparator}{album.ApiKey}";
+    }
+
+    public static int DistinctContributorCount(this Album album)
+    {
+        return album.Contributors.Any() ? album.Contributors.DistinctBy(x => x.ContributorName).Count() : 0;
+    }
+
+    public static bool DoShowExternalLinks(this Album album)
+    {
+        return album.AmgId.Nullify() != null ||
+               album.DiscogsId.Nullify() != null ||
+               album.ItunesId.Nullify() != null ||
+               album.LastFmId.Nullify() != null ||
+               album.MusicBrainzId != null ||
+               album.SpotifyId.Nullify() != null ||
+               album.WikiDataId.Nullify() != null;
     }
     
     /// <summary>

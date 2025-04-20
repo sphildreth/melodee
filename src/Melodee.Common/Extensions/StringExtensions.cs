@@ -744,6 +744,15 @@ public static partial class StringExtensions
         return !string.IsNullOrWhiteSpace(input) ? new DirectoryInfo(input).ToDirectorySystemInfo() : FileSystemDirectoryInfo.Blank();
     }
 
+    public static string?[]? PeopleFromValueWithSeparator(this string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+        return value.Replace(";", "/").Replace(";", "/").Split('/').Select(x => x.Nullify()).Where(x => x != null).ToArray();
+    }    
+    
     public static string? ToCleanedMultipleArtistsValue(this string? input)
     {
         if (input.Nullify() == null)

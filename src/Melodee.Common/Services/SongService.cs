@@ -66,6 +66,50 @@ public class SongService(
         };
     }
 
+    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListForContributorsAsync(MelodeeModels.PagedRequest pagedRequest, string contributorName, CancellationToken cancellationToken = default)
+    {
+        int songCount;
+        SongDataInfo[] songs = [];
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+
+            var dbConn = scopedContext.Database.GetDbConnection();
+            
+            var sql = """
+                      SELECT COUNT(s.*)
+                      from "Contributors" c
+                      join "Songs" s on (c."SongId" = s."Id")
+                      where (c."ContributorName" ILIKE '%{0}%');
+                      """.FormatSmart(contributorName);
+
+            songCount = await dbConn.ExecuteScalarAsync<int>(sql);
+            
+            if (!pagedRequest.IsTotalCountOnlyRequest)
+            {
+                sql = """
+                       SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
+                              a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
+                              s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                       FROM "Contributors" c
+                       join "Songs" s on (c."SongId" = s."Id")
+                       join "Albums" a on (s."AlbumId" = a."Id")
+                       join "Artists" ar on (a."ArtistId" = ar."Id")
+                       where (c."ContributorName" ILIKE '%{0}%')
+                       ORDER BY a.{1} OFFSET {2} ROWS FETCH NEXT {3} ROWS only;
+                       """.FormatSmart(contributorName, pagedRequest.OrderByValue(), pagedRequest.SkipValue, pagedRequest.TakeValue);
+                songs = (await dbConn
+                    .QueryAsync<SongDataInfo>(sql)
+                    .ConfigureAwait(false)).ToArray();
+            }
+        }
+
+        return new MelodeeModels.PagedResult<SongDataInfo>
+        {
+            TotalCount = songCount,
+            TotalPages = pagedRequest.TotalPages(songCount),
+            Data = songs
+        };
+    }    
 
     public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {

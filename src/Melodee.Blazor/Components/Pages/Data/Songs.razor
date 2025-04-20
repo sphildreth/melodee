@@ -1,4 +1,6 @@
 @page "/data/songs"
+@using System.Security.Claims
+@using Melodee.Common.Enums
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
@@ -8,6 +10,7 @@
 @inject ILogger Logger
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject SongService SongService
+@inject StatisticsService StatisticsService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
@@ -20,6 +23,44 @@
 </RadzenBreadCrumb>
 
 <RadzenStack>
+    <RadzenRow>
+        <RadzenPanel class="rz-w-100" AllowCollapse="true">
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-m-0">
+                    <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                    Statistics
+                </RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack
+                    Orientation="Orientation.Horizontal"
+                    Wrap="FlexWrap.Wrap"
+                    JustifyContent="JustifyContent.Left"
+                    class="rz-p-2"
+                    Gap="8px">
+                    @foreach (var statistic in _statistics)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
+                            <RadzenIcon Icon="@statistic.Icon"/>
+                            <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
+                                @($"{statistic.Title}")
+                            </div>
+                            <div style="width:100px;display:inline-block;text-align:right;" title="@statistic.Message">
+                                @if (statistic.Type == StatisticType.Count)
+                                {
+                                    @($"{((int)statistic.Data).ToStringPadLeft(ViewConstants.StatisticNumberPadLength)}")
+                                }
+                                else
+                                {
+                                    @statistic.Data
+                                }
+                            </div>
+                        </RadzenBadge>
+                    }
+                </RadzenStack>
+            </ChildContent>
+        </RadzenPanel>
+    </RadzenRow>
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
             <RadzenText Text="Songs" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
@@ -63,10 +104,13 @@
             PagerHorizontalAlign="HorizontalAlign.Center"
             ShowPagingSummary="true"
             PageSizeOptions="@PageSizeOptions"
-            PagingSummaryFormat="@ViewConstants.PagingSummaryFormat"
             ColumnWidth="200px"
             SelectionMode="DataGridSelectionMode.Multiple"
             @bind-Value="@_selectedSongs">
+            <PagingSummaryTemplate>
+                <RadzenIcon Icon="database" Style="color: var(--rz-primary); font-size: var(--rz-pager-summary-font-size);" />
+                Displaying page @context.CurrentPage of @context.NumberOfPages <b>(total @context.TotalCount records)</b>
+            </PagingSummaryTemplate>
             <Columns>
                 <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
                     <HeaderTemplate>
@@ -149,7 +193,7 @@
 </RadzenStack>
 
 @code {
-
+    Statistic[] _statistics = [];
     RadzenDataGrid<SongDataInfo> _grid = null!;
     int _count;
     IEnumerable<SongDataInfo> _songs = null!;
@@ -162,6 +206,13 @@
     void OnPage(PagerEventArgs args)
     {
         _currentPage = args.PageIndex + 1;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var statResult = await StatisticsService.GetUserSongStatisticsAsync(SafeParser.ToGuid(CurrentUser?.FindFirstValue(ClaimTypes.Sid) ?? string.Empty) ?? Guid.Empty);
+        _statistics = statResult?.Data ?? [];
     }
 
     async Task LoadData(LoadDataArgs args)

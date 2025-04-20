@@ -7,7 +7,6 @@
 @using Melodee.Common.Enums
 @using Melodee.Common.Models.Extensions
 @using Melodee.Common.Plugins.Validation
-@using Microsoft.VisualBasic.FileIO
 @using NodaTime
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
@@ -125,12 +124,6 @@
                                 @context.Text
                             </Template>
                         </RadzenTreeItem>
-                        <RadzenTreeItem Text="Contributors">
-                            <Template>
-                                <RadzenIcon Icon="groups"/>
-                                @($"{context.Text} {(_album.Contributors.Count > 0 ? $"({_album.Contributors.Count})" : string.Empty)}")
-                            </Template>
-                        </RadzenTreeItem>
                         <RadzenTreeItem Text="Files">
                             <Template>
                                 <RadzenIcon Icon="folder_data"/>
@@ -167,10 +160,14 @@
                             }
                             <CondensedStatistic Label="Album Type" Statistic="@_album.AlbumTypeValue.ToString()"/>
                             <CondensedStatistic Label="Genres" Statistic="@_album.Genres?.ToCsv()"/>
+                            @foreach (var albumContributor in _album.Contributors.Where(x => x.ContributorTypeValue.RestrictToOnePerAlbum()).OrderBy(x => x.ContributorTypeValue.ToString()))
+                            {
+                                <CondensedStatistic Label="@albumContributor.ContributorTypeValue.ToString()" Statistic="@albumContributor.ContributorName"/>
+                            }
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>
-                <RadzenPanel>
+                <RadzenPanel Visible="@(_album.DoShowExternalLinks())">
                     <HeaderTemplate>
                         <RadzenText TextStyle="TextStyle.H6"
                                     class="rz-display-flex rz-align-items-center rz-m-0">
@@ -279,6 +276,17 @@
                                                 <RadzenRating Style="font-size:14px;" Value="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.Rating ?? 0)" Change="@(args => UserSongRatingChange(song, args))"/>
                                             </th>
                                         </tr>
+                                        @foreach(var songContributor in song.Contributors.GroupBy(x => x.ContributorTypeValue).OrderBy(x => x.Key))
+                                        {
+                                            <tr class="song-contributor-row">
+                                                <td></td>
+                                                <td>
+                                                    <RadzenText style="color: var(--rz-text-color)" TextStyle="TextStyle.Overline">@songContributor.Key.ToString()</RadzenText> : <RadzenText style="color: var(--rz-text-secondary-color)" TextStyle="TextStyle.Subtitle2">@songContributor.Select(x => x.ContributorName).ToCsv(", ")</RadzenText>
+                                                </td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        }
                                     }
                                     </tbody>
                                 </table>

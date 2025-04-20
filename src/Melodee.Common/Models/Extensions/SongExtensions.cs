@@ -7,11 +7,9 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Services;
 using Melodee.Common.Utility;
 using NodaTime;
-using ServiceStack;
 
 namespace Melodee.Common.Models.Extensions;
 
@@ -411,23 +409,26 @@ public static class SongExtensions
         foreach (var contributorTag in ContributorMetaTagIdentifiers)
         {
             var tagValue = song.MetaTagValue<string?>(contributorTag)?.CleanStringAsIs();
-            if (!dbContributorsToAdd.Any(x => (x.ArtistId == artistId || x.ContributorName == tagValue) && x.MetaTagIdentifierValue == contributorTag))
+            foreach (var tv in (tagValue?.PeopleFromValueWithSeparator() ?? []).Where(x => x != null))
             {
-                var contributorForTag = await CreateContributorForSongAndTag(song,
-                    artistService,
-                    contributorTag,
-                    albumId,
-                    songId,
-                    now,
-                    null,
-                    null,
-                    ignorePerformers,
-                    ignoreProduction,
-                    ignorePublishers,
-                    token);
-                if (contributorForTag != null)
+                if (!dbContributorsToAdd.Any(x => (x.ArtistId == artistId || x.ContributorName == tv) && x.MetaTagIdentifierValue == contributorTag))
                 {
-                    dbContributorsToAdd.Add(contributorForTag);
+                    var contributorForTag = await CreateContributorForSongAndTag(song,
+                        artistService,
+                        contributorTag,
+                        albumId,
+                        songId,
+                        now,
+                        null,
+                        tv,
+                        ignorePerformers,
+                        ignoreProduction,
+                        ignorePublishers,
+                        token);
+                    if (contributorForTag != null)
+                    {
+                        dbContributorsToAdd.Add(contributorForTag);
+                    }
                 }
             }
         }
@@ -468,7 +469,7 @@ public static class SongExtensions
                     artistService,
                     MetaTagIdentifier.Publisher,
                     albumId,
-                    null,
+                    songId,
                     now,
                     null,
                     publisherName,

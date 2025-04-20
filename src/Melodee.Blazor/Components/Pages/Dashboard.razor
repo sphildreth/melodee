@@ -66,7 +66,7 @@
                             <div style="width:100px;display:inline-block;text-align:right;" title="@statistic.Message">
                                 @if (statistic.Type == StatisticType.Count)
                                 {
-                                    @($"{((int)statistic.Data).ToStringPadLeft(PadLeftValue)}")
+                                    @($"{((int)statistic.Data).ToStringPadLeft(ViewConstants.StatisticNumberPadLength)}")
                                 }
                                 else
                                 {
@@ -124,8 +124,6 @@
 </RadzenStack>
 
 @code {
-
-    const short PadLeftValue = 8;
 
     Statistic[] _statistics = [];
 

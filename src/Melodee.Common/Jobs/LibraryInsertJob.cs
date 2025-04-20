@@ -529,7 +529,7 @@ public class LibraryInsertJob(
                             var dbSong = dbAlbum.Songs.FirstOrDefault(x => x.ApiKey == song.Id);
                             if (dbSong != null)
                             {
-                                var contributorsForSong = await song.GetContributorsForSong(
+                                dbContributorsToAdd.AddRange(await song.GetContributorsForSong(
                                     _now,
                                     artistService,
                                     dbAlbum.ArtistId,
@@ -538,17 +538,49 @@ public class LibraryInsertJob(
                                     _ignorePerformers,
                                     _ignoreProduction,
                                     _ignorePublishers,
-                                    cancellationToken);
-                                foreach (var cfs in contributorsForSong)
+                                    cancellationToken));
+                            }
+                        }
+
+                        if (!dbAlbum.IsCompilation)
+                        {
+                            // Some Contributor types are one per song and some are one per album.
+                            // For the ones that are one per album, ensure there is only one.
+                            var uniqueContributors = new HashSet<(string Name, ContributorType Type)>();
+                            var contributorsToRemove = new List<dbModels.Contributor>();
+
+                            foreach (var contributor in dbContributorsToAdd.Where(x => x.AlbumId == dbAlbum.Id && x.ContributorTypeValue.RestrictToOnePerAlbum()))
+                            {
+                                var key = (contributor.ContributorName, contributor.ContributorTypeValue);
+    
+                                if (!uniqueContributors.Add(key))
                                 {
-                                    if (!dbContributorsToAdd.Any(x => x.AlbumId == cfs.AlbumId &&
-                                                                      (x.ArtistId == cfs.ArtistId || x.ContributorName == cfs.ContributorName) &&
-                                                                      x.MetaTagIdentifier == cfs.MetaTagIdentifier))
-                                    {
-                                        dbContributorsToAdd.Add(cfs);
-                                    }
+                                    // This is a duplicate, so mark it for removal
+                                    contributorsToRemove.Add(contributor);
                                 }
                             }
+                            foreach (var contributor in contributorsToRemove)
+                            {
+                                dbContributorsToAdd.Remove(contributor);
+                            }
+                        }
+                        
+                        // For all contributors that are type RestrictToOnePerAlbum, if every song has the same contributor, then remove all but first and set the first to the album.
+                        var songContributorsToRestrictToOnePerAlbum = dbContributorsToAdd.Where(x => x.AlbumId == dbAlbum.Id && x.ContributorTypeValue.RestrictToOnePerAlbum()).GroupBy(x => x.ContributorName);
+                        foreach (var songContributorToRestrictToOnePerAlbum in songContributorsToRestrictToOnePerAlbum.Where(x => x.Count() == dbAlbum.SongCount))
+                        {
+                            dbContributorsToAdd.RemoveAll(x => x.AlbumId == dbAlbum.Id && x.ContributorTypeValue.RestrictToOnePerAlbum() && x.ContributorName == songContributorToRestrictToOnePerAlbum.Key);
+                            var firstContributor = songContributorToRestrictToOnePerAlbum.First();
+                            dbContributorsToAdd.Add(new dbModels.Contributor
+                            {
+                                AlbumId = dbAlbum.Id,
+                                ArtistId = firstContributor.ArtistId,
+                                ContributorName = firstContributor.ContributorName,
+                                ContributorType = firstContributor.ContributorType,
+                                CreatedAt = _now,
+                                Role = firstContributor.Role,
+                                SongId = null
+                            });
                         }
                     }
 

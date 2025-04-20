@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Melodee.Common.Data.Models;
 
 [Serializable]
-[Index(nameof(ContributorName), nameof(MetaTagIdentifier), nameof(AlbumId), IsUnique = true)]
-[Index(nameof(ArtistId), nameof(MetaTagIdentifier), nameof(AlbumId), IsUnique = true)]
+[Index(nameof(ContributorName), nameof(MetaTagIdentifier), nameof(SongId), IsUnique = true)]
+[Index(nameof(ArtistId), nameof(MetaTagIdentifier), nameof(SongId), IsUnique = true)]
 public class Contributor : DataModelBase
 {
     /// <summary>

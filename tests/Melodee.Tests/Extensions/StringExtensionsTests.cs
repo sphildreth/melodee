@@ -200,6 +200,32 @@ public class StringExtensionsTests
         Assert.Equal(shouldBe, input.ToCleanedMultipleArtistsValue());
     }
 
+    [Fact]
+    public void ValidatePeopleFromValueWithSeparator()
+    {
+        var people = "Bob Jones;Nancy Jones;";
+        var p2 = people.PeopleFromValueWithSeparator();
+        Assert.NotNull(p2);
+        Assert.NotEmpty(p2);
+        Assert.Equal(2, p2.Length);
+        Assert.Contains("Bob Jones", p2);
+        Assert.Contains("Nancy Jones", p2);
+        
+        people = "Bob Jones";
+        p2 = people.PeopleFromValueWithSeparator();
+        Assert.NotNull(p2);
+        Assert.NotEmpty(p2);
+        Assert.Single(p2);
+        Assert.Contains("Bob Jones", p2);
+        
+        people = "Bob Jones/Nancy Jones";
+        p2 = people.PeopleFromValueWithSeparator();
+        Assert.NotNull(p2);
+        Assert.NotEmpty(p2);
+        Assert.Contains("Bob Jones", p2);
+        Assert.Contains("Nancy Jones", p2);        
+    }
+
 
     [Theory]
     [InlineData(null, null)]

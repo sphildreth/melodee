@@ -81,7 +81,7 @@
                     <RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="dashboard"/>
                     <RadzenPanelMenuItem Text="Artists" Path="/data/artists" Icon="artist"/>
                     <RadzenPanelMenuItem Text="Albums" Path="/data/albums" Icon="album"/>
-                    <RadzenPanelMenuItem Text="Libraries" Path="/data/libraries" Icon="library_music"/>
+                    <RadzenPanelMenuItem Text="Libraries" Path="/data/libraries" Icon="library_music" Visible="@AuthService.IsAdmin"/>
                     <RadzenPanelMenuItem Text="Now Playing" Path="/activity/nowplaying" Icon="sound_sampler"/>
                     <RadzenPanelMenuItem Text="Playlists" Path="/data/playlists" Icon="playlist_play"/>
                     <RadzenPanelMenuItem Text="Radio Stations" Path="/data/radiostations" Icon="radio"/>

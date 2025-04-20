@@ -39,7 +39,7 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
         var rgx = RemoveNonAlphaNumbericRegex();
         return rgx.Replace(result ?? string.Empty, string.Empty).Nullify();
     }
-
+    
     protected static string? SongArtistFromAlbumArtistViaFeaturing(string? artist)
     {
         if (string.IsNullOrWhiteSpace(artist))
