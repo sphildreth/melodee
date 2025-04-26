@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Ardalis.GuardClauses;
 using Dapper;
+using Lucene.Net.Util;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Dapper.SqliteHandlers;
@@ -609,11 +610,10 @@ public class ArtistSearchEngineService(
                 if (dbArtist != null)
                 {
                     dbArtist.LastRefreshed = now;
+                    result = dbArtist.AlbumCount > 0;
                 }
             }
-
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            result = true;
         }
 
         return new OperationResult<bool>

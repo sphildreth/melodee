@@ -111,6 +111,14 @@
                         @* Below is all optional *@
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Alternate Names" Component="AlternateNames"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <TagsInput Value="@_alternateNames"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Amg Id" Component="AmgId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
@@ -270,6 +278,7 @@
 
     bool _isLoading = true;
 
+    List<string> _alternateNames = [];
     List<KeyValue> _musicBrainzAlbums = [];
     List<string> _tags = [];
     List<string> _genres = [];
@@ -313,6 +322,7 @@
             if (albumResult.IsSuccess)
             {
                 _album = albumResult.Data!;
+                _alternateNames = _album.AlternateNames?.ToTags()?.ToList() ?? [];
                 _tags = _album.Tags?.ToTags()?.ToList() ?? [];
                 _genres = _album.Genres?.ToList() ?? [];
                 _releaseDate = _album.ReleaseDate.ToDateOnly();
@@ -337,6 +347,7 @@
             //     _album.MusicBrainzId = SafeParser.ToGuid(_musicBrainzArtists.FirstOrDefault(x => x.Value == _musicBrainzId)?.Key);
             // }
 
+            _album.AlternateNames = "".AddTags(_alternateNames, doNormalize: true);
             _album.Tags = "".AddTags(_tags);
             _album.Genres = _genres.ToArray();
             _album.ReleaseDate = LocalDate.FromDateOnly(_releaseDate);

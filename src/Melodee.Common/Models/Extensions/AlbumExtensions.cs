@@ -25,8 +25,9 @@ namespace Melodee.Common.Models.Extensions;
 public static class AlbumExtensions
 {
     private const int MinimumLengthForSoundtrackRecordingTitle = 2;
-
-    public static readonly Regex SoundtrackRecordingArtistParseRegex = new(@"(soundtrack|(\(*\s*ost\))*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    
+    //public static readonly Regex SoundtrackRecordingArtistParseRegex = new(@"(soundtrack|(\(*\s*ost\))*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex SoundtrackRecordingArtistParseRegex = new (@"(s\s*o\s*u\s*n\s*d\s*t\s*r\s*a\s*c\s*k|(\(?\s*o\s*s\s*t\s*\)?))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static string[] SoundtrackTypeAlbumGenres
         =>

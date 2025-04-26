@@ -164,6 +164,10 @@
                             {
                                 <CondensedStatistic Label="@albumContributor.ContributorTypeValue.ToString()" Statistic="@albumContributor.ContributorName"/>
                             }
+                            @if (_album.AlternateNames.Nullify() != null)
+                            {
+                                <CondensedStatistic Label="Alternate Names" Statistic="@_album.AlternateNames"/>
+                            }
                         </RadzenStack>
                     </ChildContent>
                 </RadzenPanel>

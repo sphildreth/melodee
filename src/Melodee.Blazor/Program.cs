@@ -167,7 +167,7 @@ builder.Services.AddQuartzServer(opts => { opts.WaitForJobsToComplete = true; })
 builder.Services.AddRebus((configurer, provider) =>
 {
     return configurer
-        .Logging(l => l.Serilog(provider.GetRequiredService<ILogger>()))
+        .Logging(l => l.Trace())
         .Options(o =>
         {
             o.EnableCompression(32768);

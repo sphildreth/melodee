@@ -11,17 +11,12 @@ public enum AlbumNeedsAttentionReasons
     AlbumCannotBeLoaded = 1 << 0,
 
     /// <summary>
-    ///     Artist value is not set.
-    /// </summary>
-    ArtistIsNotSet = 1 << 1,
-
-    /// <summary>
     ///     Artist is set, but has unwanted text.
     /// </summary>
     ArtistNameHasUnwantedText = 1 << 2,
 
     /// <summary>
-    ///     Artist value is set (not null), but value is invalid.
+    ///     Artist value is invalid.
     /// </summary>
     HasInvalidArtists = 1 << 3,
 

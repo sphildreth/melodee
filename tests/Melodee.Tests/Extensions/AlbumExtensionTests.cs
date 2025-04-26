@@ -103,8 +103,8 @@ public class AlbumExtensionTests : TestsBase
         {
             var config = await MockConfigurationFactory().GetConfigurationAsync();
             Assert.Equal(shouldBe, NewAlbum()
-                    .IsFileForAlbum(new AtlMetaTag(new MetaTagsProcessor(config, Serializer), GetImageConvertor(), GetImageValidator(), config),
-                        new FileInfo(fileName)));
+                .IsFileForAlbum(new AtlMetaTag(new MetaTagsProcessor(config, Serializer), GetImageConvertor(), GetImageValidator(), config),
+                    new FileInfo(fileName)));
         }
     }
 
@@ -112,5 +112,101 @@ public class AlbumExtensionTests : TestsBase
     public void ValidateSongTotalValueUsingSongTotal()
     {
         Assert.Equal(1, NewAlbum().SongTotalValue());
+    }
+
+    [Theory]
+    [InlineData("SOUNDTRACK", true)]
+    [InlineData("soundtrack", true)] // Testing case insensitivity
+    [InlineData("ORIGINALSOUNDTRACK", true)]
+    [InlineData("ORIGINALSOUNDTRACKRECORDING", true)]
+    [InlineData("OST", true)]
+    [InlineData("POP", false)]
+    [InlineData("ROCK", false)]
+    [InlineData(null, false)]
+    public void IsSoundTrackTypeAlbum_BasedOnGenre_ReturnsExpectedResult(string? genre, bool expected)
+    {
+        // Arrange
+        var album = NewAlbum();
+        SetupAlbumGenre(album, genre);
+
+        // Act
+        var result = album.IsSoundTrackTypeAlbum();
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("Star Wars Soundtrack", true)]
+    [InlineData("The Matrix (OST)", true)]
+    [InlineData("Harry Potter and the Philosopher's Stone OST", true)]
+    [InlineData("Lord of the Rings Soundtrack", true)]
+    [InlineData("The Dark Knight soundtrack", true)]
+    [InlineData("Regular Album Title", false)]
+    [InlineData("My Music Collection", false)]
+    [InlineData(null, false)]
+    public void IsSoundTrackTypeAlbum_BasedOnTitle_ReturnsExpectedResult(string? albumTitle, bool expected)
+    {
+        // Arrange
+        var album = NewAlbum();
+        SetupAlbumTitle(album, albumTitle);
+
+        // Act
+        var result = album.IsSoundTrackTypeAlbum();
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void IsSoundTrackTypeAlbum_GenreMatchAndTitleMatch_ReturnsTrue()
+    {
+        // Arrange
+        var album = NewAlbum();
+        SetupAlbumGenre(album, "SOUNDTRACK");
+        SetupAlbumTitle(album, "Star Wars Soundtrack");
+
+        // Act
+        var result = album.IsSoundTrackTypeAlbum();
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void IsSoundTrackTypeAlbum_ShortTitleWithOstKeyword_ReturnsFalse()
+    {
+        // Arrange - Title is shorter than MinimumLengthForSoundtrackRecordingTitle
+        var album = NewAlbum();
+        SetupAlbumTitle(album, "ST"); // Too short to match even with soundtrack keyword
+
+        // Act
+        var result = album.IsSoundTrackTypeAlbum();
+
+        // Assert
+        Assert.False(result);
+    }
+
+    // Helper methods for setting up test albums
+    private void SetupAlbumGenre(Album album, string? genre)
+    {
+        // Mock implementation:
+        album.Tags = genre != null
+            ? new[]
+            {
+                new MetaTag<object?> { Identifier = MetaTagIdentifier.Genre, Value = genre }
+            }
+            : null;
+    }
+
+    private void SetupAlbumTitle(Album album, string? title)
+    {
+        // Mock implementation:
+        album.Tags = title != null
+            ? new[]
+            {
+                new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = title }
+            }
+            : null;
     }
 }
