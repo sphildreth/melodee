@@ -18,7 +18,6 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
-@inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JsRuntime
 
@@ -186,15 +185,23 @@
                             class="rz-pt-1"
                             Gap="5px">
                             <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
-                                            ThirdPartyIdType="ThirdPartyIdType.Amg" Id="@_album.AmgId"/>
+                                            ThirdPartyIdType="ThirdPartyIdType.Amg"
+                                            Id="@_album.AmgId"/>
                             <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
-                                            ThirdPartyIdType="ThirdPartyIdType.Discogs" Id="@_album.DiscogsId"/>
+                                            ThirdPartyIdType="ThirdPartyIdType.Deezer"
+                                            Id="@_album.DeezerId"/>
                             <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
-                                            ThirdPartyIdType="ThirdPartyIdType.ITunes" Id="@_album.ItunesId"/>
+                                            ThirdPartyIdType="ThirdPartyIdType.Discogs"
+                                            Id="@_album.DiscogsId"/>
                             <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
-                                            ThirdPartyIdType="ThirdPartyIdType.LastFm" Id="@_album.LastFmId"/>
+                                            ThirdPartyIdType="ThirdPartyIdType.ITunes"
+                                            Id="@_album.ItunesId"/>
                             <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
-                                            ThirdPartyIdType="ThirdPartyIdType.Spotify" Id="@_album.SpotifyId"/>
+                                            ThirdPartyIdType="ThirdPartyIdType.LastFm"
+                                            Id="@_album.LastFmId"/>
+                            <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
+                                            ThirdPartyIdType="ThirdPartyIdType.Spotify"
+                                            Id="@_album.SpotifyId"/>
                             <ThirdPartyLink MelodeeDataType="MelodeeDataType.Album"
                                             ThirdPartyIdType="ThirdPartyIdType.MusicBrainz"
                                             Id="@_album.MusicBrainzId"/>
@@ -647,7 +654,6 @@
             if (selectedImageSearchResult != null)
             {
                 var httpClient = HttpClientFactory.CreateClient();
-                var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
                 var albumPath = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
                 var doDeleteAllOtherAlbumImages = selectedImageSearchResult.DoDeleteAllOtherArtistImages;
                 if (doDeleteAllOtherAlbumImages)

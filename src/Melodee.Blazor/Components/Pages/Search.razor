@@ -4,6 +4,7 @@
 @using Melodee.Common.Models.Search
 @inject SearchService SearchService
 @inject MainLayoutProxyService MainLayoutProxyService
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject IJSRuntime JsRuntime
 
 @inherits MelodeeComponentBase
@@ -149,6 +150,7 @@
     [Parameter] public required string Query { get; set; }
 
     SearchResult _searchResult = new([], [], [], []);
+    private short _defaultMaxResults;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -159,7 +161,7 @@
                 SafeParser.ToGuid(CurrentUser?.FindFirstValue(ClaimTypes.Sid) ?? string.Empty) ?? Guid.Empty,
                 _userAgent,
                 Query,
-                50,
+                _defaultMaxResults,
                 SearchInclude.Data);
             if (searchResult.IsSuccess)
             {
@@ -176,6 +178,9 @@
     {
         await base.OnInitializedAsync();
         _userAgent = await JsRuntime.InvokeAsync<string>("getUserAgent", []);
+
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _defaultMaxResults = configuration.GetValue<short?>(SettingRegistry.DefaultsPageSize) ?? 50;
     }
 
 }

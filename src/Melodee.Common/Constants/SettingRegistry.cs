@@ -76,6 +76,7 @@ public static class SettingRegistry
     public const string ScrobblingLastFmEnabled = "scrobbling.lastFm.Enabled";
     public const string SearchEngineDefaultPageSize = "searchEngine.defaultPageSize";
     public const string SearchEngineMaximumAllowedPageSize = "searchEngine.maximumAllowedPageSize";
+    public const string SearchEngineDeezerEnabled = "searchEngine.deezer.enabled";
     public const string SearchEngineITunesEnabled = "searchEngine.itunes.enabled";
     public const string SearchEngineLastFmEnabled = "searchEngine.lastFm.Enabled";
     public const string SearchEngineMusicBrainzEnabled = "searchEngine.musicbrainz.enabled";

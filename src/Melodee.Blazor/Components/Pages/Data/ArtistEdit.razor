@@ -177,6 +177,21 @@
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
                             <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenLabel Text="Deezer Id" Component="DeezerId"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="8">
+                                <RadzenNumeric style="display: block" Name="DeezerId" @bind-Value="@_artist.DeezerId"
+                                               class="rz-w-100"/>
+                                <RadzenDataAnnotationValidator Component="DeezerId" Popup="false"
+                                                               Style="position: absolute"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                <RadzenButton Icon="search" Text="Search"
+                                              Click="@(() => SearchForExternalButtonClick("DeezerId"))"/>
+                            </RadzenColumn>
+                        </RadzenRow>
+                        <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
+                            <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
                                 <RadzenLabel Text="Discogs Id" Component="DiscogsId"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">

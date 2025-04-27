@@ -17,6 +17,7 @@ public sealed class Serializer(ILogger logger) : ISerializer
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,        
         Converters = { new OpenSubsonicResponseModelConvertor() }
     };
 

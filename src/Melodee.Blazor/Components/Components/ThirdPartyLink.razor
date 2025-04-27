@@ -37,6 +37,9 @@
             case ThirdPartyIdType.Amg:
                 return $"https://www.allmusic.com/{dataType.ToString().ToLower()}/{id}";
 
+            case ThirdPartyIdType.Deezer:
+                return $"https://www.deezer.com/{dataType.ToString().ToLower()}/{id}";
+
             case ThirdPartyIdType.Discogs:
                 return $"https://www.discogs.com/{dataType.ToString().ToLower()}/{id}";
 
@@ -71,6 +74,10 @@
         {
             case ThirdPartyIdType.Amg:
                 _icon = "amg-80x80.png";
+                break;
+
+            case ThirdPartyIdType.Deezer:
+                _icon = "deezer-80x80.png";
                 break;
 
             case ThirdPartyIdType.Discogs:

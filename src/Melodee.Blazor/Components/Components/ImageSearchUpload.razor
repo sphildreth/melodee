@@ -57,7 +57,7 @@
                         <img
                             @onclick="() => _selectedResult = result"
                             class="rounded cover-search-image"
-                            src="@result.Url"
+                            src="@result.ThumbnailUrl"
                             alt="@result.Title"/>
                         <div class="cover-search-image-title">@result.Title</div>
                     </div>
@@ -81,7 +81,7 @@
 
 @code {
 
-    bool _isLoading = true;
+    bool _isLoading = false;
     int _maxResults = 10;
     bool _doDeleteExistingImages = true;
 
@@ -103,7 +103,7 @@
         {
             await e.File.OpenReadStream(MelodeeConfiguration.MaximumUploadFileSize).CopyToAsync(ms);
             _imageBytes = ms.ToArray();
-            _selectedResult = new ImageSearchResult(string.Empty, e.File.Name, _doDeleteExistingImages, _imageBytes);
+            _selectedResult = new ImageSearchResult(string.Empty, string.Empty, e.File.Name, _doDeleteExistingImages, _imageBytes);
             StateHasChanged();
         }
     }
@@ -129,6 +129,10 @@
 
     private async Task DoSearchAsync()
     {
+        if (_isLoading)
+        {
+            return;
+        }
         _isLoading = true;
         try
         {
@@ -139,8 +143,8 @@
                         Name = SearchValues.First().Value
                     }, _maxResults))
                     .Data
-                    .Where(x => x.UrlValue.Nullify() != null)
-                    .Select(x => new ImageSearchResult(x.UrlValue, x.Title ?? string.Empty, _doDeleteExistingImages))
+                    .Where(x => x.ThumbnailUrlValue.Nullify() != null)
+                    .Select(x => new ImageSearchResult(x.ThumbnailUrlValue, x.MediaUrl, x.Title ?? string.Empty, _doDeleteExistingImages))
                     .ToArray();
             }
             else
@@ -152,7 +156,7 @@
                         Name = SearchValues.OrderBy(x => x.SortOrder).Skip(2).First().Value
                     }, _maxResults))
                     .Data
-                    .Select(x => new ImageSearchResult(x.UrlValue, x.Title ?? string.Empty, _doDeleteExistingImages))
+                    .Select(x => new ImageSearchResult(x.ThumbnailUrlValue, x.MediaUrl, x.Title ?? string.Empty, _doDeleteExistingImages))
                     .ToArray();
             }
         }

@@ -31,7 +31,7 @@ public class ITunesSearchEngine(
 
     public bool IsEnabled { get; set; }
 
-    public int SortOrder { get; } = 2;
+    public int SortOrder { get; } = 3;
 
     public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
     {

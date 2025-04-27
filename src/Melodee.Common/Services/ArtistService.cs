@@ -394,6 +394,7 @@ public class ArtistService(
             dbDetail.Biography = artist.Biography.Nullify();
             dbDetail.Description = artist.Description;
             dbDetail.Directory = artist.Directory;
+            dbDetail.DeezerId = artist.DeezerId;
             dbDetail.DiscogsId = artist.DiscogsId;
             dbDetail.ImageCount = artist.ImageCount;
             dbDetail.IsLocked = artist.IsLocked;
@@ -503,7 +504,7 @@ public class ArtistService(
             artistImages = artistDirectory.FileInfosForExtension("jpg").ToArray();
         }
 
-        var artistImageFileName = Path.Combine(artistDirectory.FullName(), deleteAllImages ? "01-Band.image" : $"{artistImages.Length + 1}-Band.image");
+        var artistImageFileName = Path.Combine(artistDirectory.Path, deleteAllImages ? "01-Band.image" : $"{artistImages.Length + 1}-Band.image");
         var artistImageFileInfo = new FileInfo(artistImageFileName).ToFileSystemInfo();
         await File.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken);
         await imageConvertor.ProcessFileAsync(

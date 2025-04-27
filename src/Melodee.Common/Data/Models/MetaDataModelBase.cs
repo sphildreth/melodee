@@ -25,6 +25,8 @@ public abstract class MetaDataModelBase : DataModelBase
     public string? ItunesId { get; set; }
 
     public string? AmgId { get; set; }
+    
+    public int? DeezerId { get; set; }
 
     public string? DiscogsId { get; set; }
 

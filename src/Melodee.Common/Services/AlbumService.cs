@@ -414,6 +414,7 @@ public class AlbumService(
             dbDetail.ArtistId = album.ArtistId;
             dbDetail.Comment = album.Comment;
             dbDetail.Description = album.Description;
+            dbDetail.DeezerId = album.DeezerId;
             dbDetail.DiscogsId = album.DiscogsId;
             dbDetail.Genres = album.Genres;
             dbDetail.ImageCount = album.ImageCount;

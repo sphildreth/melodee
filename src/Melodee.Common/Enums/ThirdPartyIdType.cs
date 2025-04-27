@@ -4,6 +4,7 @@ public enum ThirdPartyIdType
 {
     NotSet = 1,
     Amg,
+    Deezer,
     Discogs,
     ITunes,
     LastFm,

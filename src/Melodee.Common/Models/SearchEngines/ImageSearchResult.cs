@@ -20,13 +20,15 @@ public sealed record ImageSearchResult
 
     public required string MediaUrl { get; init; }
 
-    public string UrlValue => ThumbnailUrl.Nullify() ?? MediaUrl;
+    public string ThumbnailUrlValue => ThumbnailUrl.Nullify() ?? MediaUrl;
 
     public string? Title { get; init; }
 
     public string? ItunesId { get; init; }
 
     public string? AmgId { get; init; }
+    
+    public int? DeezerId { get; init; }
 
     public string? DiscogsId { get; init; }
 

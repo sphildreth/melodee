@@ -4,6 +4,7 @@ using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Plugins.SearchEngine;
+using Melodee.Common.Plugins.SearchEngine.Deezer;
 using Melodee.Common.Plugins.SearchEngine.ITunes;
 using Melodee.Common.Plugins.SearchEngine.LastFm;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
@@ -43,6 +44,10 @@ public class AlbumImageSearchEngineService(
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled)
             },
+            new DeezerSearchEngine(Logger, serializer, httpClientFactory)
+            {
+                IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineDeezerEnabled)
+            },             
             new ITunesSearchEngine(Logger, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)

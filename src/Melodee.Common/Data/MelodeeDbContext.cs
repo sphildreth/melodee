@@ -725,6 +725,15 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 },
                 new Setting
                 {
+                    Id = 918,
+                    Category = (int)SettingCategory.SearchEngine,
+                    Key = SettingRegistry.SearchEngineDeezerEnabled,
+                    Comment = "Is Deezer search engine enabled.",
+                    Value = "true",
+                    CreatedAt = now
+                },                
+                new Setting
+                {
                     Id = 400,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingDoLoadEmbeddedImages,
