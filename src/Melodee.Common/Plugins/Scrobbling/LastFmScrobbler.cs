@@ -5,6 +5,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
+using Serilog;
 using Scrobble = Hqub.Lastfm.Entities.Scrobble;
 
 namespace Melodee.Common.Plugins.Scrobbling;
@@ -49,23 +50,31 @@ public class LastFmScrobbler(IMelodeeConfiguration configuration) : IScrobbler
         var apiKey = SettingRegistry.ScrobblingLastFmApiKey;
         if (apiKey.Nullify() != null)
         {
-            var client = new LastfmClient(configuration.GetValue<string>(apiKey));
 
-            var scrobbleResult = await client.Track.ScrobbleAsync([
-                new Scrobble
-                {
-                    Track = scrobble.SongTitle,
-                    Artist = scrobble.SongArtist,
-                    Date = DateTime.UtcNow,
-                    Album = scrobble.AlbumTitle,
-                    AlbumArtist = scrobble.ArtistName,
-                    MBID = scrobble.SongMusicBrainzId?.ToString(),
-                    Duration = SafeParser.ToNumber<int>(scrobble.SongDuration),
-                    TrackNumber = scrobble.SongNumber ?? 0,
-                    ChosenByUser = !scrobble.IsRandomizedScrobble
-                }
-            ]).ConfigureAwait(false);
-            result = scrobbleResult.Accepted > 0;
+            try
+            {
+                var client = new LastfmClient(configuration.GetValue<string>(apiKey));
+
+                var scrobbleResult = await client.Track.ScrobbleAsync([
+                    new Scrobble
+                    {
+                        Track = scrobble.SongTitle,
+                        Artist = scrobble.SongArtist,
+                        Date = DateTime.UtcNow,
+                        Album = scrobble.AlbumTitle,
+                        AlbumArtist = scrobble.ArtistName,
+                        MBID = scrobble.SongMusicBrainzId?.ToString(),
+                        Duration = SafeParser.ToNumber<int>(scrobble.SongDuration),
+                        TrackNumber = scrobble.SongNumber ?? 0,
+                        ChosenByUser = !scrobble.IsRandomizedScrobble
+                    }
+                ]).ConfigureAwait(false);
+                result = scrobbleResult.Accepted > 0;
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error(e, "Attempted scrobbling user [{User}]", user.ToString());
+            }
         }
 
         return new OperationResult<bool>
