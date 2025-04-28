@@ -392,6 +392,7 @@ public sealed class UserService(
         
         var recordsCreated = 0;
         var recordsUpdated = 0;
+        var recordsFound = 0;
         var songsFromCsv = 0;
 
         var csvFilenfo = new FileInfo(configuration.CsvFileName);
@@ -442,7 +443,7 @@ public sealed class UserService(
                                 if (!artistResult.IsSuccess)
                                 {
                                     Log.Warning(
-                                        "[{ServiceName}] ImportUserFavoriteSongs failed [{ArtistName}] [{AlbumName}] [{SongName}]",
+                                        "[{ServiceName}] ImportUserFavoriteSongs failed : UNKNOWN ARTIST : [{ArtistName}] [{AlbumName}] [{SongName}]",
                                         nameof(UserService),
                                         artist,
                                         album,
@@ -455,7 +456,7 @@ public sealed class UserService(
                                 if (artistAlbum == null)
                                 {
                                     Log.Warning(
-                                        "[{ServiceName}] ImportUserFavoriteSongs failed [{ArtistName}] [{AlbumName}] [{SongName}]",
+                                        "[{ServiceName}] ImportUserFavoriteSongs failed : UNKNOWN ALBUM : [{ArtistName}] [{AlbumName}] [{SongName}]",
                                         nameof(UserService),
                                         artist,
                                         album,
@@ -467,13 +468,24 @@ public sealed class UserService(
                                 var albumSong = dbSongInfo?.FirstOrDefault(x => x.Name.ToNormalizedString() == song);
                                 if (albumSong == null)
                                 {
-                                    Log.Warning(
-                                        "[{ServiceName}] ImportUserFavoriteSongs failed [{ArtistName}] [{AlbumName}] [{SongName}]",
-                                        nameof(UserService),
-                                        artist,
-                                        album,
-                                        song);
-                                    continue;
+                                    var dbSong = await scopedContext.Songs
+                                        .Include(x => x.Album)
+                                        .FirstOrDefaultAsync(x => x.TitleNormalized == song && x.Album.ArtistId == artistResult.Data.Id, cancellationToken)
+                                        .ConfigureAwait(false);
+                                    if (dbSong != null)
+                                    {
+                                        albumSong = (await DatabaseSongInfosForAlbumApiKey(dbSong.Album.ApiKey, user.Data.Id, cancellationToken).ConfigureAwait(false))?.FirstOrDefault(x => x.Name.ToNormalizedString() == song);
+                                    }
+                                    if (albumSong == null)
+                                    {
+                                        Log.Warning(
+                                            "[{ServiceName}] ImportUserFavoriteSongs failed : UNKNOWN SONG : [{ArtistName}] [{AlbumName}] [{SongName}]",
+                                            nameof(UserService),
+                                            artist,
+                                            album,
+                                            song);
+                                        continue;
+                                    }
                                 }
                                 var userSong = userSongs.FirstOrDefault(x => x.SongId == albumSong.Id);
                                 if (userSong == null)
@@ -497,6 +509,7 @@ public sealed class UserService(
                                             artist,
                                             album,
                                             song);
+                                        recordsFound++;
                                         continue;
                                     }
                                     userSong.LastUpdatedAt = now;
@@ -526,13 +539,15 @@ public sealed class UserService(
         }
         
         Log.Information(
-            "[{ServiceName}] ImportUserFavoriteSongs {Pretend} [{UserApiKey}] Songs From Csv [{CsvSongCount}] created {RecordsCreated} records, updated {RecordsUpdated} records",
+            "[{ServiceName}] ImportUserFavoriteSongs {Pretend} [{UserApiKey}] Songs From Csv [{CsvSongCount}] found {RecordsFound} created {RecordsCreated} records, updated {RecordsUpdated} records, missing [{MissingCount}]",
             nameof(UserService),
             configuration.IsPretend ? "[Pretend]" : string.Empty,
             songsFromCsv,
             user.Data.ApiKey,
+            recordsFound,
             recordsCreated,
-            recordsUpdated);
+            recordsUpdated,
+            songsFromCsv - (recordsFound + recordsCreated + recordsUpdated));
 
         return new MelodeeModels.OperationResult<int>
         {
@@ -667,6 +682,7 @@ public sealed class UserService(
             dbDetail.HasStreamRole = detailToUpdate.HasStreamRole;
             dbDetail.HasUploadRole = detailToUpdate.HasUploadRole;
             dbDetail.IsAdmin = detailToUpdate.IsAdmin;
+            dbDetail.IsEditor = detailToUpdate.IsEditor;
             dbDetail.IsLocked = detailToUpdate.IsLocked;
             dbDetail.IsScrobblingEnabled = detailToUpdate.IsScrobblingEnabled;
             // Take whatever is newer

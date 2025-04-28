@@ -72,7 +72,7 @@ public sealed class AlbumRescanEventHandler(
                     
                     var albumDirectory = message.AlbumDirectory.ToDirectoryInfo();
 
-                    // Ensure albums directory exists
+                    // Ensure directory for album exists
                     if (!albumDirectory.Exists())
                     {
                         scopedContext.Albums.Remove(dbAlbum);
@@ -128,7 +128,7 @@ public sealed class AlbumRescanEventHandler(
                     var ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);
                     var ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
 
-                    // Get all songs in directory for album, add any missing, remove any on album not in directory
+                    // Get all songs in directory for album, add any missing, remove any on album not in the directory
                     foreach (var mediaFile in albumDirectory.AllMediaTypeFileInfos())
                     {
                         var mediaFileHash = CRC32.Calculate(mediaFile);
@@ -172,32 +172,6 @@ public sealed class AlbumRescanEventHandler(
                                 SortOrder = melodeeSong.SortOrder,
                                 TitleSort = songTitle.CleanString(true)
                             };
-                            var contributorsForSong = await melodeeSong.GetContributorsForSong(
-                                now,
-                                artistService,
-                                dbAlbum.ArtistId,
-                                dbAlbum.Id,
-                                dbSong.Id,
-                                ignorePerformers,
-                                ignoreProduction,
-                                ignorePublishers,
-                                cancellationToken);
-                            if (contributorsForSong.Length != 0)
-                            {
-                                var dbContributorsToAdd = new List<Contributor>();
-                                foreach (var cfs in contributorsForSong)
-                                {
-                                    if (!dbContributorsToAdd.Any(x => x.AlbumId == cfs.AlbumId &&
-                                                                      (x.ArtistId == cfs.ArtistId || x.ContributorName == cfs.ContributorName) &&
-                                                                      x.MetaTagIdentifier == cfs.MetaTagIdentifier))
-                                    {
-                                        dbContributorsToAdd.Add(cfs);
-                                    }
-                                }
-
-                                scopedContext.Contributors.AddRange(dbContributorsToAdd);
-                            }
-
                             if (dbAlbum.Songs.Any(x => x.SongNumber == dbSong.SongNumber))
                             {
                                 logger.Warning("[{Name}] Duplicate song number [{SongNumber}] found in album [{AlbumName}].",
@@ -240,6 +214,47 @@ public sealed class AlbumRescanEventHandler(
                     dbAlbum.SongCount = SafeParser.ToNumber<short>(dbAlbum.Songs.Count);
                     dbAlbum.LastUpdatedAt = now;                    
                     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+                    var dbContributorsToAdd = new List<Contributor>();
+                    foreach (var dbSong in dbAlbum.Songs)
+                    {
+                        var melodeeSong = melodeeAlbum.Songs?.FirstOrDefault(x => x.File.Name == dbSong.FileName);
+                        if (melodeeSong != null)
+                        {
+                            var contributorsForSong = await melodeeSong.GetContributorsForSong(
+                                now,
+                                artistService,
+                                dbAlbum.ArtistId,
+                                dbAlbum.Id,
+                                dbSong.Id,
+                                ignorePerformers,
+                                ignoreProduction,
+                                ignorePublishers,
+                                cancellationToken);
+                            foreach (var cfs in contributorsForSong)
+                            {
+                                if (!dbContributorsToAdd.Any(x => x.AlbumId == cfs.AlbumId &&
+                                                                  (x.ArtistId == cfs.ArtistId || x.ContributorName == cfs.ContributorName) &&
+                                                                  x.MetaTagIdentifier == cfs.MetaTagIdentifier))
+                                {
+                                    dbContributorsToAdd.Add(cfs);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            logger.Warning("[{Name}] Unable to find Melodee Song for DbSong song number [{SongNumber}] filename [{FileName}].",
+                                nameof(AlbumRescanEventHandler),
+                                dbSong.SongNumber,
+                                dbSong.FileName);
+                        }
+                    }
+                    if (dbContributorsToAdd.Count != 0)
+                    {
+                        scopedContext.Contributors.AddRange(dbContributorsToAdd);
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);                        
+                    }
+
                     if (!message.IsFromArtistScan)
                     {
                         await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
