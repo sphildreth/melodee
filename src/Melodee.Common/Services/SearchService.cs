@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Web;
 using Melodee.Common.Data;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
@@ -44,7 +45,7 @@ public sealed class SearchService(
 
         var startTicks = Stopwatch.GetTimestamp();
 
-        var searchTermNormalized = searchTerm.ToNormalizedString() ?? searchTerm ?? string.Empty;
+        var searchTermNormalized = searchTerm?.ToNormalizedString() ?? searchTerm ?? string.Empty;
 
         if (include.HasFlag(SearchInclude.Artists))
         {
@@ -81,7 +82,7 @@ public sealed class SearchService(
                 {
                     Page = 1,
                     PageSize = maxResults,
-                }, searchTerm ?? Guid.NewGuid().ToString(), cancellationToken);
+                }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorAlbumsResult.TotalCount > 0)
                 {
                     albums = albums.Union(contributorAlbumsResult.Data).Distinct().ToList();
@@ -108,7 +109,7 @@ public sealed class SearchService(
                 {
                     Page = 1,
                     PageSize = maxResults,
-                }, searchTerm ?? Guid.NewGuid().ToString(), cancellationToken);
+                }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorSongResult.TotalCount > 0)
                 {
                     songs = songs.Union(contributorSongResult.Data).Distinct().ToList();

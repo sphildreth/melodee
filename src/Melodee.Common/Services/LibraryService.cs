@@ -27,6 +27,8 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Rebus.Bus;
 using Serilog;
+using Serilog.Events;
+using SerilogTimings;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 using SearchOption = System.IO.SearchOption;
@@ -580,74 +582,79 @@ public class LibraryService(
         }
 
         bool result;
-
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] updated library aggregates [{id}]", nameof(UpdateAggregatesAsync), libraryId.ToString()))
         {
-            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      UPDATE "Artists" a
-                      SET "AlbumCount" = (select COUNT(*) from "Albums" where "ArtistId" = a."Id"), "LastUpdatedAt" = NOW()
-                      where "AlbumCount" <> (select COUNT(*) from "Albums" where "ArtistId" = a."Id");
-                                                     
-                      UPDATE "Artists" a
-                      SET "SongCount" = (
-                      	select COUNT(s.*)
-                      	from "Songs" s 
-                        join "Albums" aa on (s."AlbumId" = aa."Id")	
-                      	where aa."ArtistId" = a."Id"
-                      ), "LastUpdatedAt" = NOW()
-                      where "SongCount" <> (
-                      	select COUNT(s.*)
-                      	from "Songs" s
-                        join "Albums" aa on (s."AlbumId" = aa."Id")	
-                      	where aa."ArtistId" = a."Id"
-                      );
-
-                      UPDATE "Libraries" l 
-                      set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
-                          "AlbumCount" = (select count(aa.*) 
-                          	from "Albums" aa 
-                          	join "Artists" a on (a."Id" = aa."ArtistId") 
-                          	where a."LibraryId" = l."Id"),
-                          "SongCount" = (select count(s.*) 
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+                var dbConn = scopedContext.Database.GetDbConnection();
+                var sql = """
+                          UPDATE "Artists" a
+                          SET "AlbumCount" = (select COUNT(*) from "Albums" where "ArtistId" = a."Id"), "LastUpdatedAt" = NOW()
+                          where "AlbumCount" <> (select COUNT(*) from "Albums" where "ArtistId" = a."Id")
+                          and a."LibraryId" = @libraryId;
+                                                         
+                          UPDATE "Artists" a
+                          SET "SongCount" = (
+                          	select COUNT(s.*)
+                          	from "Songs" s 
+                            join "Albums" aa on (s."AlbumId" = aa."Id")	
+                          	where aa."ArtistId" = a."Id"
+                          	and a."LibraryId" = @libraryId
+                          ), "LastUpdatedAt" = NOW()
+                          where "SongCount" <> (
+                          	select COUNT(s.*)
                           	from "Songs" s
-                          	join "Albums" aa on (s."AlbumId" = aa."Id") 
-                          	join "Artists" a on (a."Id" = aa."ArtistId") 
-                          	where a."LibraryId" = l."Id"),
-                      	"LastUpdatedAt" = now()
-                      where l."Id" = @libraryId;
+                            join "Albums" aa on (s."AlbumId" = aa."Id")	
+                          	where aa."ArtistId" = a."Id"
+                          	and a."LibraryId" = @libraryId
+                          );
+
+                          UPDATE "Libraries" l 
+                          set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
+                              "AlbumCount" = (select count(aa.*) 
+                              	from "Albums" aa 
+                              	join "Artists" a on (a."Id" = aa."ArtistId") 
+                              	where a."LibraryId" = l."Id"),
+                              "SongCount" = (select count(s.*) 
+                              	from "Songs" s
+                              	join "Albums" aa on (s."AlbumId" = aa."Id") 
+                              	join "Artists" a on (a."Id" = aa."ArtistId") 
+                              	where a."LibraryId" = l."Id"),
+                          	"LastUpdatedAt" = now()
+                          where l."Id" = @libraryId;
+                          """;
+                var updateResult= await dbConn
+                    .ExecuteAsync(sql, new { libraryId = library.Id })
+                    .ConfigureAwait(false);
+
+                sql = """
+                      with performerSongCounts as (
+                      	select c."ArtistId" as id, COUNT(*) as count
+                      	from "Contributors" c 
+                      	join "Songs" s on (c."SongId" = s."Id")
+                        join "Albums" aa on (s."AlbumId" = aa."Id")
+                        join "Artists" a on (a."Id" = aa."ArtistId") 
+                        WHERE a."LibraryId" = @libraryId
+                      	group by c."ArtistId"
+                      )
+                      UPDATE "Artists"
+                      set "SongCount" = c.count, "LastUpdatedAt" = NOW()
+                      from performerSongCounts c
+                      where c.id = "Artists"."Id";
                       """;
-            await dbConn
-                .ExecuteAsync(sql, new { libraryId = library.Id })
-                .ConfigureAwait(false);
+                await dbConn
+                    .ExecuteAsync(sql, new { libraryId = library.Id })
+                    .ConfigureAwait(false);
 
-            sql = """
-                  with performerSongCounts as (
-                  	select c."ArtistId" as id, COUNT(*) as count
-                  	from "Contributors" c 
-                  	join "Songs" s on (c."SongId" = s."Id")
-                    join "Albums" aa on (s."AlbumId" = aa."Id")
-                    join "Artists" a on (a."Id" = aa."ArtistId") 
-                    WHERE a."LibraryId" = @libraryId
-                  	group by c."ArtistId"
-                  )
-                  UPDATE "Artists"
-                  set "SongCount" = c.count, "LastUpdatedAt" = NOW()
-                  from performerSongCounts c
-                  where c.id = "Artists"."Id";
-                  """;
-            await dbConn
-                .ExecuteAsync(sql, new { libraryId = library.Id })
-                .ConfigureAwait(false);
+                var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken).ConfigureAwait(false);
+                dbLibrary.LastScanAt = now;
+                dbLibrary.LastUpdatedAt = now;
+                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
 
-            var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken).ConfigureAwait(false);
-            dbLibrary.LastScanAt = now;
-            dbLibrary.LastUpdatedAt = now;
-            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
-
-            // As we don't know how many artists, or contributors, where updated, safer to clear all cache.
-            CacheManager.Clear();
+                // As we don't know how many artists, or contributors, where updated, safer to clear all cache.
+                CacheManager.Clear();
+            }
         }
 
         return new MelodeeModels.OperationResult<bool>

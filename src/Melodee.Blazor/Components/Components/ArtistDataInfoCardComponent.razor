@@ -1,12 +1,12 @@
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
 <RadzenCard Variant="Variant.Filled"
-            class="@($"rz-mx-auto rz-my-1 rz-p-1 {CssClass}")"
-            Style="@(Style ?? "max-width: 300px")">
+            class="@($"{CssClass}")"
+            Style="@Style">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Gap="5px" class="rz-p-1">
         <RadzenImage Path="@Artist.ImageUrl()" Style="width: 60px; height: 60px; margin-right: 5px;"/>
         <RadzenStack Gap="0">
-            <RadzenText TextStyle="TextStyle.Body1">
+            <RadzenText TextStyle="TextStyle.Body1" style="max-width:160px;">
                 @if (ShowArtistLink)
                 {
                     <RadzenLink text="@Artist.Name" class="rz-text-wrap" Path="@Artist.DetailUrl()"/>

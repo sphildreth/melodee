@@ -494,7 +494,7 @@
         MainLayoutProxyService.ToggleSpinnerVisible();
         try
         {
-            var result = await LibraryService.UpdateAsync(_library);
+            var result = await LibraryService.UpdateAggregatesAsync(_library.Id);
             NotificationService.Notify(NotificationMessageForResult(result, "updated library aggregates", ToastTime));
         }
         finally

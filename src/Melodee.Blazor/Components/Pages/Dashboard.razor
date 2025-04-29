@@ -1,5 +1,4 @@
 ﻿@page "/"
-@using Melodee.Blazor.ViewModels
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Enums
 @using Melodee.Common.Models.Collection
@@ -11,6 +10,7 @@
 @inject UserService UserService
 @inject ArtistService ArtistService
 @inject AlbumService AlbumService
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -92,7 +92,7 @@
                 Wrap="FlexWrap.Wrap"
                 JustifyContent="JustifyContent.Left"
                 class="rz-p-1"
-                Gap="5px">
+                Gap="10px">
                 @foreach (var artist in _latestArtists)
                 {
                     <ArtistDataInfoCardComponent Artist="@artist"/>
@@ -113,7 +113,7 @@
                 Wrap="FlexWrap.Wrap"
                 JustifyContent="JustifyContent.Left"
                 class="rz-p-1"
-                Gap="5px">
+                Gap="10px">
                 @foreach (var album in _latestAlbums)
                 {
                     <AlbumDataInfoCardComponent Album="@album"/>
@@ -131,15 +131,21 @@
     ArtistDataInfo[] _latestArtists = [];
     UserPin[] _userPins = [];
 
+    private short _latestPageSize;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _latestPageSize = configuration.GetValue<short?>(SettingRegistry.DefaultsDashboardLatestPageSize) ?? configuration.GetValue<short?>(SettingRegistry.DefaultsPageSize) ?? 50;
+
         var statResult = await StatisticsService.GetStatisticsAsync();
-        _statistics = statResult?.Data ?? [];
+        _statistics = statResult.Data;
 
         var albumLatestResult = await AlbumService.ListAsync(new PagedRequest
         {
-            PageSize = 12,
+            PageSize = _latestPageSize,
             OrderBy = new Dictionary<string, string>
             {
                 { nameof(AlbumDataInfo.CreatedAt), PagedRequest.OrderDescDirection }
@@ -149,7 +155,7 @@
 
         var artistLatestResult = await ArtistService.ListAsync(new PagedRequest
         {
-            PageSize = 12,
+            PageSize = _latestPageSize,
             OrderBy = new Dictionary<string, string>
             {
                 { nameof(ArtistDataInfo.CreatedAt), PagedRequest.OrderDescDirection }
@@ -158,9 +164,9 @@
         _latestArtists = artistLatestResult.Data.ToArray();
 
         var userResult = await UserService.GetAsync(CurrentUser?.UserId() ?? 0);
-        if (userResult.IsSuccess && userResult.Data != null)
+        if (userResult is { IsSuccess: true, Data: not null })
         {
-            _userPins = userResult.Data.Pins?.ToArray() ?? [];
+            _userPins = userResult.Data.Pins.ToArray();
         }
     }
 }
