@@ -473,7 +473,7 @@ public class OpenSubsonicApiService(
                                     sql = $"""
                                            SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                                                   a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags", us."IsStarred" as "UserStarred", us."Rating" as "UserRating"
                                            FROM "Songs" s
                                            join "Albums" a on (s."AlbumId" = a."Id")
                                            join "Artists" ar on (a."ArtistId" = ar."Id")
@@ -744,7 +744,7 @@ public class OpenSubsonicApiService(
                 var sql = $"""
                            SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                                   a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags", us."IsStarred" as "UserStarred", us."Rating" as "UserRating"
                            FROM "Songs" s
                            join "Albums" a on (s."AlbumId" = a."Id")
                            join "Artists" ar on (a."ArtistId" = ar."Id")

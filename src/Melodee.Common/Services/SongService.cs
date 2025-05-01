@@ -1,10 +1,13 @@
 using Ardalis.GuardClauses;
 using Dapper;
+using Mapster;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Filtering;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SmartFormat;
@@ -43,10 +46,11 @@ public class SongService(
                     var sqlStartFragment = """
                                            SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                                                   a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags", us."IsStarred" as "UserStarred", us."Rating" as "UserRating"
                                            FROM "Songs" s
                                            join "Albums" a on (s."AlbumId" = a."Id")
                                            join "Artists" ar on (a."ArtistId" = ar."Id")
+                                           left join "UserSongs" us on (s."Id" = us."SongId")
                                            where s."Id" in ('{0}')
                                            """.FormatSmart(string.Join(@"','", nowPlayingSongIds));
 
@@ -89,11 +93,12 @@ public class SongService(
                 sql = """
                        SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                               a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                              s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                              s."FileSize", s."Duration", s."CreatedAt", s."Tags", us."IsStarred" as "UserStarred", us."Rating" as "UserRating"
                        FROM "Contributors" c
                        join "Songs" s on (c."SongId" = s."Id")
                        join "Albums" a on (s."AlbumId" = a."Id")
                        join "Artists" ar on (a."ArtistId" = ar."Id")
+                       left join "UserSongs" us on (s."Id" = us."SongId")
                        where (c."ContributorName" ILIKE '%{0}%')
                        ORDER BY a.{1} OFFSET {2} ROWS FETCH NEXT {3} ROWS only;
                        """.FormatSmart(contributorName, pagedRequest.OrderByValue(), pagedRequest.SkipValue, pagedRequest.TakeValue);
@@ -111,7 +116,7 @@ public class SongService(
         };
     }    
 
-    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, int userId, CancellationToken cancellationToken = default)
     {
         int songCount;
         SongDataInfo[] songs = [];
@@ -119,19 +124,53 @@ public class SongService(
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
-            var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Songs\"");
+
+            // var filterPartsDefinitions = new Dictionary<string, string>
+            // {
+            //     { "AlbumName", "a.\"Name\"" },
+            //     { "AlbumApiKey", "a.\"ApiKey\"" },
+            //     { "ArtistName", "ar.\"Name\"" },
+            //     { "ArtistApiKey", "ar.\"ApiKey\"" },
+            //     { "UserStarred", "us.\"IsStarred\"" },
+            //     { "UserRating", "us.\"Rating\"" },
+            // };
+            
+            var filterByUserStarred = pagedRequest.FilterBy?.FirstOrDefault(x => x.PropertyName == "UserStarred");
+            if (filterByUserStarred != null)
+            {
+                var nf = new FilterOperatorInfo("IsStarred", filterByUserStarred.Operator, filterByUserStarred.Value, ColumnName: "us");
+                var newFilterBy = pagedRequest.FilterBy!.ToList();
+                newFilterBy.Remove(filterByUserStarred);
+                newFilterBy.Add(nf);
+                pagedRequest.FilterBy = newFilterBy.ToArray();
+            }
+            var filterByUserRating = pagedRequest.FilterBy?.FirstOrDefault(x => x.PropertyName == "UserRating");
+            if (filterByUserRating != null)
+            {
+                var nf = new FilterOperatorInfo("Rating", filterByUserRating.Operator, filterByUserRating.Value, ColumnName: "us");
+                var newFilterBy = pagedRequest.FilterBy!.ToList();
+                newFilterBy.Remove(filterByUserRating);
+                newFilterBy.Add(nf);
+                pagedRequest.FilterBy = newFilterBy.ToArray();
+            }            
+
+            var countSqlParts = pagedRequest.FilterByParts($"""
+                                                            SELECT COUNT(*) FROM "Songs" s 
+                                                            left join "UserSongs" us on (s."Id" = us."SongId" and us."UserId" = {userId})
+                                                            """);
             songCount = await dbConn
                 .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
                 .ConfigureAwait(false);
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                var sqlStartFragment = """
+                var sqlStartFragment = $"""
                                        SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                                               a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                                              s."FileSize", s."Duration", s."CreatedAt", s."Tags"
+                                              s."FileSize", s."Duration", s."CreatedAt", s."Tags", us."IsStarred" as "UserStarred", us."Rating" as "UserRating"
                                        FROM "Songs" s
                                        join "Albums" a on (s."AlbumId" = a."Id")
                                        join "Artists" ar on (a."ArtistId" = ar."Id")
+                                       left join "UserSongs" us on (s."Id" = us."SongId" and us."UserId" = { userId })
                                        """;
                 var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment);
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";

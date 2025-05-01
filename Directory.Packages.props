@@ -70,7 +70,7 @@
     <PackageVersion Include="Quartz.Jobs" Version="3.14.0" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />
-    <PackageVersion Include="Radzen.Blazor" Version="6.6.3" />
+    <PackageVersion Include="Radzen.Blazor" Version="6.6.4" />
     <PackageVersion Include="Rebus" Version="8.8.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />
     <PackageVersion Include="Serilog" Version="4.2.0" />
@@ -80,8 +80,8 @@
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageVersion Include="SerilogTimings" Version="3.1.0" />
-    <PackageVersion Include="ServiceStack" Version="8.7.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.7.0" />
+    <PackageVersion Include="ServiceStack" Version="8.7.2" />
+    <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.7.2" />
     <PackageVersion Include="SharpZipLib" Version="1.4.2" />
     <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.8" />
     <PackageVersion Include="SmartFormat" Version="3.6.0" />

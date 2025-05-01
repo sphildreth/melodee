@@ -9,7 +9,8 @@ namespace Melodee.Common.Filtering;
 /// <param name="Operator">Operation of Filter.</param>
 /// <param name="Value">Value to filter on.</param>
 /// <param name="JoinOperator">The Join condition when more than one filter, e.g. 'OR' or 'AND'</param>
-public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, object Value, string? JoinOperator = "AND")
+/// <param name="ColumnName">Optional column name to use when building SQL</param>
+public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, object Value, string? JoinOperator = "AND", string? ColumnName = null, string? OperatorOverride = null)
 {
     public const string AndJoinOperator = "AND";
 
@@ -69,7 +70,7 @@ public record FilterOperatorInfo(string PropertyName, FilterOperator Operator, o
             FilterOperator.DoesNotContain => "NOT LIKE",
             FilterOperator.IsNull => "IS NULL",
             FilterOperator.IsNotNull => "IS NOT NULL",
-            _ => "=="
+            _ => "="
         };
     }
 }

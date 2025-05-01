@@ -501,14 +501,8 @@ public sealed class UserService(
                                 }
                                 else
                                 {
-                                    if (userSong.IsStarred && userSong.Rating > 0)
+                                    if (userSong is { IsStarred: true, Rating: > 0 })
                                     {
-                                        Log.Debug(
-                                            "[{ServiceName}] ImportUserFavoriteSongs already favorite [{ArtistName}] [{AlbumName}] [{SongName}]",
-                                            nameof(UserService),
-                                            artist,
-                                            album,
-                                            song);
                                         recordsFound++;
                                         continue;
                                     }

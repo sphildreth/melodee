@@ -1,4 +1,4 @@
-@page "/data/songs"
+@page "/data/songs/{Filter?}"
 @using System.Security.Claims
 @using Melodee.Common.Enums
 @using Melodee.Common.Filtering
@@ -15,7 +15,7 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Albums</PageTitle>
+<PageTitle>Songs</PageTitle>
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
@@ -40,8 +40,13 @@
                     Gap="8px">
                     @foreach (var statistic in _statistics)
                     {
-                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Shade="Shade.Dark" Style="min-width: 200px;">
+                        <RadzenBadge @onclick="@(() => StatClickAsync(statistic))"
+                                     BadgeStyle="DetermineBadgeStyle(statistic)"
+                                     Shade="Shade.Dark"
+                                     title="Click to filter songs."
+                                     Style="min-width: 200px;cursor:pointer;">
                             <RadzenIcon Icon="@statistic.Icon"/>
+                            <RadzenIcon Icon="filter_alt"/>
                             <div style="width:120px;display:inline-block;text-transform:none;text-align:left;">
                                 @($"{statistic.Title}")
                             </div>
@@ -172,9 +177,21 @@
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.CreatedAt)" Title="Created" Filterable="false"
-                                      Width="120px">
+                                      Width="100px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(SongDataInfo.UserStarred)" Title="Loved" Filterable="true"
+                                      Width="70px">
+                    <Template Context="data">
+                        <RadzenCheckBox Value="@data.UserStarred"/>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="@nameof(SongDataInfo.UserRating)" Title="Rating" Filterable="true"
+                                      Width="70px">
+                    <Template Context="data">
+                        <RadzenText Text="@(data.UserRating.ToString())"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(SongDataInfo.Tags)" Title="Tags" Width="100px">
@@ -194,6 +211,9 @@
 
 @code {
     Statistic[] _statistics = [];
+    bool _yourFavoriteSongsFilterSet = false;
+    bool _yourRatedSongsFilterSet = false;
+
     RadzenDataGrid<SongDataInfo> _grid = null!;
     int _count;
     IEnumerable<SongDataInfo> _songs = null!;
@@ -202,6 +222,9 @@
     IList<SongDataInfo> _selectedSongs = [];
 
     string _debounceInputValue = "";
+
+    [Parameter]
+    public string? Filter { get; set; }
 
     void OnPage(PagerEventArgs args)
     {
@@ -213,6 +236,22 @@
         await base.OnInitializedAsync();
         var statResult = await StatisticsService.GetUserSongStatisticsAsync(SafeParser.ToGuid(CurrentUser?.FindFirstValue(ClaimTypes.Sid) ?? string.Empty) ?? Guid.Empty);
         _statistics = statResult?.Data ?? [];
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Filter != null)
+        {
+            var filterParts = Filter.Split("_");
+            var column = _grid.ColumnsCollection.FirstOrDefault(x => x.Property == filterParts[0]);
+            if (column != null)
+            {
+                var val = SafeParser.ChangeType(column.FilterPropertyType, filterParts[1]);
+                await column.SetFilterValueAsync(val);
+                column.SetFilterOperator(Radzen.FilterOperator.Equals);
+                await _grid.RefreshDataAsync();
+            }
+        }
     }
 
     async Task LoadData(LoadDataArgs args)
@@ -246,7 +285,7 @@
                 Page = _currentPage,
                 PageSize = SafeParser.ToNumber<short>(args.Top),
                 OrderBy = sorting
-            });
+            }, CurrentUser!.UserId());
             _songs = result.Data;
             _count = SafeParser.ToNumber<int>(result.TotalCount);
         }
@@ -293,6 +332,60 @@
     private void MergeSelectedButtonClick()
     {
         throw new NotImplementedException();
+    }
+
+
+    private async Task StatClickAsync(Statistic statistic)
+    {
+        if (statistic.Title.ToNormalizedString() == "Your Favorite Songs".ToNormalizedString())
+        {
+            _yourFavoriteSongsFilterSet = !_yourFavoriteSongsFilterSet;
+            var column = _grid.ColumnsCollection.FirstOrDefault(x => x.Property == "UserStarred");
+            if (column != null)
+            {
+                if (_yourFavoriteSongsFilterSet)
+                {
+                    await column.SetFilterValueAsync(true);
+                    column.SetFilterOperator(Radzen.FilterOperator.Equals);
+                }
+                else
+                {
+                    column.ClearFilters();
+                }
+                await _grid.RefreshDataAsync();
+            }
+        }
+        if (statistic.Title.ToNormalizedString() == "Your Rated Songs".ToNormalizedString())
+        {
+            _yourRatedSongsFilterSet = !_yourRatedSongsFilterSet;
+            var column = _grid.ColumnsCollection.FirstOrDefault(x => x.Property == "UserRating");
+            if (column != null)
+            {
+                if (_yourRatedSongsFilterSet)
+                {
+                    await column.SetFilterValueAsync(0);
+                    column.SetFilterOperator(Radzen.FilterOperator.GreaterThan);
+                }
+                else
+                {
+                    column.ClearFilters();
+                }
+                await _grid.RefreshDataAsync();
+            }
+        }
+    }
+
+    private BadgeStyle DetermineBadgeStyle(Statistic statistic)
+    {
+        if (_yourFavoriteSongsFilterSet && statistic.Title.ToNormalizedString() == "Your Favorite Songs".ToNormalizedString())
+        {
+            return BadgeStyle.Warning;
+        }
+        if (_yourRatedSongsFilterSet && statistic.Title.ToNormalizedString() == "Your Rated Songs".ToNormalizedString())
+        {
+            return BadgeStyle.Warning;
+        }
+        return BadgeStyle.Info;
     }
 
 }

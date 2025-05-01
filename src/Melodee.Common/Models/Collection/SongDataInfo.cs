@@ -18,7 +18,9 @@ public sealed record SongDataInfo(
     long FileSize,
     double Duration,
     Instant CreatedAt,
-    string Tags)
+    string Tags,
+    bool UserStarred,
+    int UserRating)
 {
     public static string InfoLineTitle => "Song Number | Duration";
 

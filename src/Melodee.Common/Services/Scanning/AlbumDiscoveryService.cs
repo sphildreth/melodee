@@ -109,13 +109,6 @@ public sealed class AlbumDiscoveryService(
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(pagedRequest.Search))
-        {
-            albums = albums.Where(x =>
-                (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)) ||
-                x.Artist.Name.Contains(pagedRequest.Search, StringComparison.CurrentCultureIgnoreCase)).ToList();
-        }
-
         if (pagedRequest.AlbumResultFilter != AlbumResultFilter.All && albums.Count != 0)
         {
             switch (pagedRequest.AlbumResultFilter)

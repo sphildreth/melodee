@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Web;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.MessageBus.Events;
@@ -21,6 +22,7 @@ public sealed class SearchService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
+    UserService userService,
     ArtistService artistService,
     AlbumService albumService,
     SongService songService,
@@ -43,6 +45,8 @@ public sealed class SearchService(
             };
         }
 
+        var user = await userService.GetByApiKeyAsync(userApiKey, cancellationToken).ConfigureAwait(false);
+        
         var startTicks = Stopwatch.GetTimestamp();
 
         var searchTermNormalized = searchTerm?.ToNormalizedString() ?? searchTerm ?? string.Empty;
@@ -100,7 +104,7 @@ public sealed class SearchService(
                 [
                     new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains, searchTermNormalized)
                 ]
-            }, cancellationToken);
+            }, user.Data!.Id, cancellationToken);
             songs = songResult.Data.ToList();
             
             if (include.HasFlag(SearchInclude.Contributors))

@@ -114,8 +114,12 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
                 didModify = true;
             }
 
-            if (didModify)
+            if (didModify || !string.Equals(fileInfo.FullName, newName, StringComparison.OrdinalIgnoreCase))
             {
+                if (File.Exists(newName))
+                {
+                    File.Delete(newName);
+                }
                 await File.WriteAllBytesAsync(newName, imageBytes, cancellationToken);
                 if (newName != fileInfo.FullName)
                 {

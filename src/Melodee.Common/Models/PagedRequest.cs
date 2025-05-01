@@ -15,14 +15,13 @@ public sealed record PagedRequest
     private int? _skipValue;
 
     public short? PageSize { get; set; } = DefaultPageSize;
-    public string? Search { get; init; }
 
     public AlbumResultFilter? AlbumResultFilter { get; init; }
 
     /// <summary>
     ///     Filter by definitions.
     /// </summary>
-    public FilterOperatorInfo[]? FilterBy { get; init; }
+    public FilterOperatorInfo[]? FilterBy { get; set; }
 
     public Guid[] SelectedAlbumIds { get; init; } = [];
 
@@ -168,7 +167,13 @@ public sealed record PagedRequest
                 sqlResult.Append($" {fb.x.JoinOperator} ");
             }
 
-            sqlResult.Append($"{columnNamePrefix}{fb.x.PropertyName}\" {fb.x.OperatorValue} @p_{fb.x.PropertyName}");
+            var cn = columnNamePrefix;
+            if (fb.x.ColumnName != null)
+            {
+                cn = $"{fb.x.ColumnName}.\"";
+            }
+
+            sqlResult.Append($"{ cn }{fb.x.PropertyName}\" {fb.x.OperatorOverride ?? fb.x.OperatorValue} @p_{fb.x.PropertyName}");
         }
 
         return (sqlResult.ToString(), FilterBy.ToDictionary(x => $"@p_{x.PropertyName}", object (x) => x.ValuePattern()));

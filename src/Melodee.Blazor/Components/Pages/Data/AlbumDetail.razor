@@ -18,6 +18,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JsRuntime
 
@@ -261,7 +262,7 @@
                                         <th scope="col">#</th>
                                         <th scope="col" style="width:90%;">Title</th>
                                         <th scope="col">Duration</th>
-                                        <th scope="col" style="min-width:130px;">Actions</th>
+                                        <th scope="col" style="min-width:140px;">Actions</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -273,15 +274,24 @@
                                             <td>@CurrentUser!.FormatDuration(song.Duration.ToDuration())</td>
                                             <th scope="row" style="padding-top:2px;">
                                                 <RadzenIcon
+                                                    Icon="play_arrow"
+                                                    class="filled-icon"
+                                                    IconColor="@Colors.Info"
+                                                    title="Play song"
+                                                    @onclick="@(() => PlaySong(song))"
+                                                    Style="cursor:pointer;font-size:14px;"/>
+                                                <RadzenIcon
                                                     Icon="thumb_down"
                                                     class="filled-icon"
                                                     IconColor="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.IsHated ?? false ? "#A2A415" : "#C9C9C7")"
+                                                    title="I hate this"
                                                     @onclick="@(() => IsSongHatedClicked(song))"
                                                     Style="cursor:pointer;font-size:14px;"/>
                                                 <RadzenIcon
                                                     Icon="favorite"
                                                     class="filled-icon"
                                                     IconColor="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.IsStarred ?? false ? "#FA0202" : "#C9C9C7")"
+                                                    title="I like this"
                                                     @onclick="@(() => IsSongStarredClicked(song))"
                                                     Style="cursor:pointer;font-size:14px;"/>
                                                 <RadzenRating Style="font-size:14px;" Value="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.Rating ?? 0)" Change="@(args => UserSongRatingChange(song, args))"/>
@@ -745,6 +755,19 @@
         }
         var result = await UserService.SetSongRatingAsync(CurrentUsersId, song.Id, arg);
         NotificationService.Notify(NotificationMessageForResult(result, "Set song rating", ToastTime));
+    }
+
+    private async Task PlaySong(Song song)
+    {
+        var configuration = await ConfigurationFactory.GetConfigurationAsync();
+        var songUrl = song.ToApiStreamUrl(configuration);
+        await DialogService.OpenAsync(song.Title, ds =>
+            @<RadzenStack>
+                <audio controls autoplay>
+                    <source src="@songUrl" type="@song.ContentType">
+                </audio>
+            </RadzenStack>
+            );
     }
 
 }
