@@ -6,7 +6,6 @@
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
 @using Melodee.Common.Models.Extensions
-@using Melodee.Common.Plugins.Validation
 @using NodaTime
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
@@ -18,7 +17,6 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
-@inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JsRuntime
 
@@ -56,6 +54,13 @@
                 <RadzenIcon Icon="@(_isPinned ? "keep" : "keep_off")" class="filled-icon"
                             IconColor="@(_isPinned ? "#99CCFF" : "#C9C9C7")"
                             @onclick="@TogglePinned" Style="cursor:pointer;"/>
+                <RadzenIcon
+                    Icon="play_arrow"
+                    class="filled-icon"
+                    IconColor="@Colors.Info"
+                    title="Play"
+                    @onclick="@(PlayAlbum)"
+                    Style="cursor:pointer;font-size:14px;"/>
                 <RadzenRating Value="@_userAlbum.Rating" Change="@UserRatingChange"/>
                 <RadzenIcon Icon="thumb_down" class="filled-icon"
                             IconColor="@(_userAlbum.IsHated ? "#A2A415" : "#C9C9C7")"
@@ -411,10 +416,10 @@
 
     string[] _albumsImagesInByteBase64 = [];
 
-    private long _albumDirectoryFileCount = 0;
+    private long _albumDirectoryFileCount;
 
-    private List<string> _alertMessages = [];
-    private FileSystemDirectoryInfo _albumDirectory;
+    private readonly List<string> _alertMessages = [];
+    private FileSystemDirectoryInfo _albumDirectory = FileSystemDirectoryInfo.Blank();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -653,7 +658,7 @@
         }
     ];
 
-    private async Task AlbumSearchImageCallback(Components.ImageSearchResult? selectedImageSearchResult)
+    private async Task AlbumSearchImageCallback(ImageSearchResult? selectedImageSearchResult)
     {
         MainLayoutProxyService.ToggleSpinnerVisible();
 
@@ -670,7 +675,7 @@
                 {
                     albumPath.DeleteAllFilesForExtension("*.jpg");
                 }
-                var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Common.Data.Models.Album.FrontImageType}.jpg");
+                var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Album.FrontImageType}.jpg");
                 if (File.Exists(newAlbumCoverFilename))
                 {
                     File.Delete(newAlbumCoverFilename);
@@ -757,17 +762,10 @@
         NotificationService.Notify(NotificationMessageForResult(result, "Set song rating", ToastTime));
     }
 
-    private async Task PlaySong(Song song)
-    {
-        var configuration = await ConfigurationFactory.GetConfigurationAsync();
-        var songUrl = song.ToApiStreamUrl(configuration);
-        await DialogService.OpenAsync(song.Title, ds =>
-            @<RadzenStack>
-                <audio controls autoplay>
-                    <source src="@songUrl" type="@song.ContentType">
-                </audio>
-            </RadzenStack>
-            );
-    }
+    private Task PlaySong(Song song)
+        => PlayAction(song.Title, [song]);
+
+    private Task PlayAlbum()
+        => PlayAction(_album.Name, _album.Songs.ToList());
 
 }

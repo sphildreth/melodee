@@ -1,0 +1,296 @@
+@page "/musicplayer"
+
+@using Melodee.Common.Data.Models.Extensions
+@using Song = Melodee.Common.Data.Models.Song
+@inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject IJSRuntime JsRuntime
+@implements IAsyncDisposable
+
+<div class="music-player-container">
+    <div class="music-player">
+        <div class="song-info">
+            <div class="album-art @(IsPlaying ? "playing" : "")">
+                <img src="@($"/images/{CurrentSong.ToCoverArtId()}/1024)")" alt="Album Art">
+            </div>
+            <h2 class="song-title">@CurrentSong.Title</h2>
+            <p class="artist">@CurrentSong.Album.Artist.Name</p>
+            <p class="album">@CurrentSong.Album.Name</p>
+        </div>
+
+        <div class="progress-container" @ref="_progressContainer" @onclick="SetProgress">
+            <div class="progress-bar" style="width: @ProgressPercentage%"></div>
+        </div>
+        <div class="time-container">
+            <span>@FormatTime(CurrentTime)</span>
+            <span>@FormatTime(Duration)</span>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" @onclick="PreviousSong">
+                <span class="icon">⏮</span>
+            </button>
+            <button class="control-btn" @onclick="BackwardTenSec">
+                <span class="icon">⏪</span>
+            </button>
+            <button class="control-btn play-pause-btn" @onclick="TogglePlayPause">
+                <span class="icon">@(IsPlaying ? "⏸" : "▶")</span>
+            </button>
+            <button class="control-btn" @onclick="ForwardTenSec">
+                <span class="icon">⏩</span>
+            </button>
+            <button class="control-btn" @onclick="NextSong">
+                <span class="icon">⏭</span>
+            </button>
+        </div>
+
+        <div class="volume-container">
+            <div class="volume-icon" @onclick="ToggleMute">
+                @GetVolumeIcon()
+            </div>
+            <div class="volume-slider" @ref="_volumeSlider" @onclick="SetVolume">
+                <div class="volume-progress" style="width: @(IsMuted ? 0 : Volume * 100)%"></div>
+            </div>
+        </div>
+
+        <div class="playlist">
+            @foreach (var (song, index) in Songs.Select((value, i) => (value, i)))
+            {
+                <div class="playlist-item @(index == CurrentSongIndex ? "active" : "")" @onclick="() => PlaySelectedSong(index)">
+                    <span class="playlist-number">@(index + 1)</span>
+                    <div class="playlist-info">
+                        <div class="playlist-title">@song.Title</div>
+                        <div class="playlist-artist">@song.Album.Artist.Name</div>
+                    </div>
+                    <span class="playlist-duration">@FormatTime(song.DurationInSeconds())</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private ElementReference _audioElement;
+    private DotNetObjectReference<MusicPlayer> _objRef;
+    private IJSObjectReference _module;
+
+    [Parameter] public List<Song> Songs { get; set; } = [];
+    private ElementReference _progressContainer;
+    private ElementReference _volumeSlider;
+    private int CurrentSongIndex { get; set; }
+    private Song CurrentSong => Songs[CurrentSongIndex];
+    private bool IsPlaying { get; set; }
+    private double CurrentTime { get; set; }
+    private double Duration { get; set; }
+    private double Volume { get; set; } = 100;
+    private bool IsMuted { get; set; }
+    private double ProgressPercentage => Duration > 0 ? (CurrentTime / Duration) * 100 : 0;
+
+    private IMelodeeConfiguration Configuration { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        Configuration = await ConfigurationFactory.GetConfigurationAsync();
+        _objRef = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/musicPlayer.js");
+            await _module.InvokeVoidAsync("initializeAudio", _objRef);
+            await LoadSong();
+            await PlaySong();
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnTimeUpdate(double currentTime, double duration)
+    {
+        CurrentTime = currentTime;
+        Duration = duration;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnSongEnded()
+    {
+        await NextSong();
+    }
+
+    private async Task LoadSong()
+    {
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("loadSong", CurrentSong.ToApiStreamUrl(Configuration));
+            Duration = CurrentSong.DurationInSeconds();
+            CurrentTime = 0;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task PlaySelectedSong(int index)
+    {
+        CurrentSongIndex = index;
+        await LoadSong();
+        await PlaySong();
+    }
+
+    private async Task PlaySong()
+    {
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("playSong");
+            IsPlaying = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task PauseSong()
+    {
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("pauseSong");
+            IsPlaying = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task TogglePlayPause()
+    {
+        if (IsPlaying)
+        {
+            await PauseSong();
+        }
+        else
+        {
+            await PlaySong();
+        }
+    }
+
+    private async Task PreviousSong()
+    {
+        CurrentSongIndex--;
+        if (CurrentSongIndex < 0)
+        {
+            CurrentSongIndex = Songs.Count - 1;
+        }
+        await LoadSong();
+        if (IsPlaying)
+        {
+            await PlaySong();
+        }
+    }
+
+    private async Task NextSong()
+    {
+        CurrentSongIndex++;
+        if (CurrentSongIndex >= Songs.Count)
+        {
+            CurrentSongIndex = 0;
+        }
+        await LoadSong();
+        if (IsPlaying)
+        {
+            await PlaySong();
+        }
+    }
+
+    private async Task ForwardTenSec()
+    {
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("forwardTenSec");
+        }
+    }
+
+    private async Task BackwardTenSec()
+    {
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("backwardTenSec");
+        }
+    }
+
+    private async Task SetProgress(MouseEventArgs e)
+    {
+        if (_module != null)
+        {
+            var rect = await JsRuntime.InvokeAsync<DomRect>("getBoundingClientRect", _progressContainer);
+            var percent = (e.ClientX - rect.Left) / rect.Width;
+            await _module.InvokeVoidAsync("setProgress", percent);
+        }
+    }
+
+    private async Task SetVolume(MouseEventArgs e)
+    {
+        if (_module != null)
+        {
+            var rect = await JsRuntime.InvokeAsync<DomRect>("getBoundingClientRect", _progressContainer);
+            Volume = Math.Max(0, Math.Min(1, (e.ClientX - rect.Left) / rect.Width));
+            IsMuted = false;
+            await _module.InvokeVoidAsync("setVolume", Volume);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ToggleMute()
+    {
+        if (_module != null)
+        {
+            IsMuted = !IsMuted;
+            await _module.InvokeVoidAsync("setMute", IsMuted);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string GetVolumeIcon()
+    {
+        if (IsMuted || Volume == 0)
+        {
+            return "🔇";
+        }
+        else if (Volume < 0.5)
+        {
+            return "🔉";
+        }
+        else
+        {
+            return "🔊";
+        }
+    }
+
+    private string FormatTime(double seconds)
+    {
+        var minutes = Math.Floor(seconds / 60);
+        var remainingSeconds = Math.Floor(seconds % 60);
+        return $"{minutes}:{remainingSeconds:00}";
+    }
+
+    public class DomRect
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public double Top { get; set; }
+        public double Right { get; set; }
+        public double Bottom { get; set; }
+        public double Left { get; set; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await PauseSong();
+        if (_module != null)
+        {
+            await _module.DisposeAsync();
+        }
+        _objRef?.Dispose();
+    }
+}
+
+
+
+

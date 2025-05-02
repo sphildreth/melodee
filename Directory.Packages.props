@@ -102,6 +102,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="z440.atl.core" Version="6.22.0" />
+    <PackageVersion Include="z440.atl.core" Version="6.23.0" />
   </ItemGroup>
 </Project>

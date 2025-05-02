@@ -12,6 +12,8 @@ namespace Melodee.Common.Data.Models.Extensions;
 
 public static class SongExtensions
 {
+    public static double DurationInSeconds(this Song song) => song.Duration / 1000;
+
     public static SongSearchResult ToSearchEngineSongSearchResult(this Song song, int sortOrder)
     {
         return new SongSearchResult

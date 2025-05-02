@@ -1,7 +1,12 @@
 @page "/search/{Query}"
 @using System.Security.Claims
 @using Melodee.Blazor.Components.Pages.Data
+@using Melodee.Common.Models.Collection
+@using Melodee.Common.Models.Collection.Extensions
 @using Melodee.Common.Models.Search
+@using Album = Melodee.Common.Data.Models.Album
+@using Artist = Melodee.Common.Data.Models.Artist
+@using Song = Melodee.Common.Data.Models.Song
 @inject SearchService SearchService
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject IMelodeeConfigurationFactory ConfigurationFactory
@@ -132,6 +137,13 @@
                                 @song.ReleaseDate.Year
                             </RadzenTableCell>
                             <RadzenTableCell>
+                                <RadzenIcon
+                                    Icon="play_arrow"
+                                    class="filled-icon"
+                                    IconColor="@Colors.Info"
+                                    title="Play song"
+                                    @onclick="@(() => PlaySong(song))"
+                                    Style="cursor:pointer;font-size:14px;"/>
                                 @song.Title
                             </RadzenTableCell>
                         </RadzenTableRow>
@@ -183,4 +195,45 @@
         _defaultMaxResults = configuration.GetValue<short?>(SettingRegistry.DefaultsPageSize) ?? 50;
     }
 
+    private async Task PlaySong(SongDataInfo song)
+    {
+        var songs = new List<Common.Data.Models.Song>
+        {
+            new Song
+            {
+                ApiKey = song.ApiKey,
+                Album = new Album
+                {
+                    ApiKey = song.ApiKey,
+                    Artist = new Artist
+                    {
+                        ApiKey = song.ArtistApiKey,
+                        Name = song.ArtistName,
+                        NameNormalized = song.ArtistName.ToNormalizedString() ?? song.ArtistName,
+                        Directory = string.Empty,
+                        LibraryId = 0,
+                        CreatedAt = song.CreatedAt
+                    },
+                    Name = song.AlbumName,
+                    NameNormalized = song.AlbumName.ToNormalizedString() ?? song.AlbumName,
+                    Directory = string.Empty,
+                    CreatedAt = song.CreatedAt
+                },
+                Duration = song.Duration,
+                Title = song.Title,
+                TitleNormalized = song.TitleNormalized,
+                SongNumber = song.SongNumber,
+                FileName = string.Empty,
+                FileSize = 0,
+                FileHash = string.Empty,
+                SamplingRate = 0,
+                BitRate = 0,
+                BitDepth = 0,
+                BPM = 0,
+                ContentType = "audio/mp3",
+                CreatedAt = song.CreatedAt
+            }
+        };
+        await PlayAction(song.Title, songs);
+    }
 }

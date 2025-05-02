@@ -2,6 +2,9 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IMelodeeConfigurationFactory ConfigurationFactory
+@inject DialogService DialogService
+
+@using Song = Melodee.Common.Data.Models.Song
 
 @code {
 
@@ -28,6 +31,18 @@
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         CurrentUser = authState.User;
+    }
+
+    protected async Task PlayAction(string dialogTitle, List<Song> songs)
+    {
+        await DialogService.OpenAsync<MusicPlayer>(dialogTitle, new Dictionary<string, object>{ { "Songs", songs }},
+            new DialogOptions()
+            {
+                Resizable = false,
+                Draggable = false,
+                Width = "400px",
+                Height = "900px"
+            });
     }
 
     public NotificationMessage NotificationMessageForResult<T>(OperationResult<T> result, string action, int duration)
