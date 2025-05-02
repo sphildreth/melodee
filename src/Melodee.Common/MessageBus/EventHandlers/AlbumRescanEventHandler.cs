@@ -240,6 +240,8 @@ public sealed class AlbumRescanEventHandler(
                                     dbContributorsToAdd.Add(cfs);
                                 }
                             }
+
+                            dbSong.Contributors.Clear();
                         }
                         else
                         {
