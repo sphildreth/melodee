@@ -2611,7 +2611,7 @@ public class OpenSubsonicApiService(
     }
 
     /// <summary>
-    ///     Toggles a star to a song, album or artist.
+    ///     Toggles a star to a song, album, or artist.
     /// </summary>
     public async Task<ResponseModel> ToggleStarAsync(bool isStarred, string? id, string? albumId, string? artistId, ApiRequest apiRequest, CancellationToken cancellationToken)
     {

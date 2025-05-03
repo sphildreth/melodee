@@ -6,5 +6,7 @@ public enum ImageSearchType
 
     Artist,
 
-    Album
+    Album,
+    
+    Profile
 }

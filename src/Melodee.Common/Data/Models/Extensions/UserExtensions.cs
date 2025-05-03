@@ -98,6 +98,15 @@ public static class UserExtensions
         => user.IsAdmin || user.HasShareRole;
 
 
+    public static bool CanDeletePlaylist(this User user, Playlist playlist)
+    {
+        if (user.IsAdmin)
+        {
+            return true;
+        }
+        return playlist.User.Id == user.Id;
+    }
+
     public static string Encrypt(this User user, string plainText, IMelodeeConfiguration configuration)
     {
         return EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, plainText, user.PublicKey);

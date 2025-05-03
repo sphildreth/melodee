@@ -1,9 +1,175 @@
 @page "/account/profile"
+@inherits MelodeeComponentBase
 
-<h3>Profile</h3>
+@using System.ComponentModel.DataAnnotations
+@using Melodee.Common.Data.Models.Extensions
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject UserService UserService
 
-Use profile edit goes here
+<RadzenCard class="profile-card">
+    <div class="profile-container">
+        <h1 class="rz-text-title">Your Profile</h1>
+
+        <div class="profile-grid">
+            <div class="profile-image-section">
+                <div class="profile-image-container">
+                    @if (_newSelectedProfileImage != null)
+                    {
+                        <RadzenImage Path="@_newSelectedProfileImage.ImageBase64"
+                                     Style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;"/>
+                    }
+                    else if (!string.IsNullOrEmpty(UserProfile.ProfilePicturePath))
+                    {
+                        <RadzenImage Path="@(UserProfile.ProfilePicturePath + $"?v={DateTime.Now.Ticks}")"
+                                     Style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;"/>
+                    }
+                    else
+                    {
+                        <RadzenIcon Icon="account_circle" IconStyle="IconStyle.Primary" Style="font-size: 8rem;"/>
+                    }
+                </div>
+
+                <RadzenButton
+                    Text="Change Profile Picture"
+                    class="rz-my-2"
+                    Icon="photo_camera"
+                    ButtonStyle="ButtonStyle.Secondary"
+                    Click="@OpenFileUploadDialog" />
+            </div>
+
+            <div class="profile-info-section">
+                <RadzenTemplateForm TItem="UserProfileModel" Data="@UserProfile" Submit="@SaveProfileAsync">
+                    <RadzenStack Gap="1rem">
+                        <RadzenFieldset Text="Profile Information">
+                            <RadzenStack Gap="1rem">
+                                <RadzenFormField Text="Username" Variant="Variant.Outlined">
+                                    <RadzenTextBox @bind-Value="@UserProfile.Username" Name="Username" />
+                                    <RadzenRequiredValidator Text="Username is required" Component="Username" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Email" Variant="Variant.Outlined">
+                                    <RadzenTextBox @bind-Value="@UserProfile.Email" Name="Email" />
+                                    <RadzenRequiredValidator Text="Email is required" Component="Email" />
+                                    <RadzenEmailValidator Text="Please enter a valid email" Component="Email" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Bio" Variant="Variant.Outlined">
+                                    <RadzenTextArea @bind-Value="@UserProfile.Bio" Name="Bio" Rows="4" MaxLength="500" />
+                                </RadzenFormField>
+                            </RadzenStack>
+                        </RadzenFieldset>
+
+                        <RadzenButton Text="Save Changes"
+                                      Icon="save"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      ButtonType="ButtonType.Submit"
+                                      IsBusy="@isSaving"
+                                      BusyText="Saving..." />
+                    </RadzenStack>
+                </RadzenTemplateForm>
+            </div>
+        </div>
+    </div>
+</RadzenCard>
 
 @code {
+    private UserProfileModel UserProfile { get; set; } = new UserProfileModel();
+    private bool isSaving = false;
+    private string? errorMessage;
+    private ImageSearchResult? _newSelectedProfileImage = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var user = await UserService.GetAsync(CurrentUser.UserId());
+        UserProfile = new UserProfileModel
+        {
+            Username = user.Data!.UserName,
+            Email = user.Data!.Email,
+            Bio = user.Data!.Description ?? string.Empty,
+            ProfilePicturePath = $"/images/{user.Data.ToApiKey()}/32"
+        };
+    }
+
+    private async Task OpenFileUploadDialog()
+    {
+        await DialogService.OpenAsync("Profile Image", ds =>
+            @<ImageSearchUpload
+                 SearchType="ImageSearchType.Profile"
+                 OnUpdateCallback="ProfileImageSelected"
+                 SearchValues="[]"/>);
+    }
+
+    private void ProfileImageSelected(ImageSearchResult? selectedImageSearchResult)
+    {
+        DialogService.Close();
+        _newSelectedProfileImage = selectedImageSearchResult;
+    }
+
+    private async Task SaveProfileAsync(UserProfileModel model)
+    {
+        try
+        {
+            isSaving = true;
+
+            var user = await UserService.GetAsync(CurrentUser.UserId());
+
+            user.Data!.UserName = UserProfile.Username;
+            user.Data!.Email = UserProfile.Email;
+            user.Data!.Description = UserProfile.Bio;
+
+            var saveResult = await UserService.UpdateAsync(user.Data, user.Data);
+
+            if (saveResult.IsSuccess && _newSelectedProfileImage?.ImageBytes != null)
+            {
+                await UserService.SaveProfileImageAsync(user.Data.Id, _newSelectedProfileImage.ImageBytes);
+            }
+
+            isSaving = false;
+
+            // Show success notification
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Profile Updated",
+                Detail = "Your profile has been successfully updated.",
+                Duration = 5000
+            });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving profile: {ex.Message}";
+            isSaving = false;
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Update Failed",
+                Detail = errorMessage,
+                Duration = 5000
+            });
+        }
+    }
+
+    // User profile model
+    public class UserProfileModel
+    {
+        [Required(ErrorMessage = "Username is required")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 100 characters")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        public string Email { get; set; } = string.Empty;
+
+        [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
+        public string Bio { get; set; } = string.Empty;
+
+        public string? ProfilePicturePath { get; set; }
+    }
+
+
 
 }

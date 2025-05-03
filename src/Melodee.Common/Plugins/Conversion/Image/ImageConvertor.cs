@@ -13,7 +13,7 @@ using SixLabors.ImageSharp.Processing;
 namespace Melodee.Common.Plugins.Conversion.Image;
 
 /// <summary>
-///     This converts non JPG image into a JPG image.
+///     This converts non-JPG image into a JPG image.
 /// </summary>
 public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDataBase(configuration), IConversionPlugin
 {
@@ -41,10 +41,10 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         {
             return new OperationResult<FileSystemFileInfo>
             {
-                Errors = new[]
-                {
+                Errors =
+                [
                     new Exception("Invalid file type. This convertor only processes Image type files.")
-                },
+                ],
                 Data = fileSystemInfo
             };
         }
@@ -69,10 +69,10 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
                 fileInfo.Delete();
                 return new OperationResult<FileSystemFileInfo>
                 {
-                    Errors = new[]
-                    {
+                    Errors =
+                    [
                         new Exception($"Deleting invalid image file [{fileInfo.FullName}] due to error: {e.Message}")
-                    },
+                    ],
                     Data = fileSystemInfo
                 };
             }
@@ -134,8 +134,8 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
             Data = fileInfo.ToFileSystemInfo()
         };
     }
-    
-    public static byte[] ResizeAndPadToBeSquare(ReadOnlySpan<byte> imageBytes, int width)
+
+    private static byte[] ResizeAndPadToBeSquare(ReadOnlySpan<byte> imageBytes, int width)
     {
         if (imageBytes.Length == 0)
         {
@@ -195,4 +195,15 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
 
         return outStream.ToArray();
     }
+    
+    public static async Task<byte[]> ConvertToGifFormat(byte[] imageBytes, CancellationToken cancellationToken = default)
+    {
+        using var outStream = new MemoryStream();
+        using (var image = SixLabors.ImageSharp.Image.Load(imageBytes))
+        {
+            await image.SaveAsGifAsync(outStream, cancellationToken);
+        }
+
+        return outStream.ToArray();
+    }    
 }

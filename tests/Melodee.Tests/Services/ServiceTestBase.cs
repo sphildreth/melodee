@@ -273,7 +273,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected PlaylistService GetPlaylistService()
     {
-        return new PlaylistService(Logger, CacheManager, MockFactory());
+        return new PlaylistService(Logger, CacheManager, MockFactory() );
     }
     
     protected INowPlayingRepository GetNowPlayingRepository()
@@ -379,8 +379,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetAlbumService(),
             GetSongService(),
             GetPlaylistService(),
-            MockBus(),
-            Serializer);
+            MockBus());
     }
 
     protected IBus MockBus()

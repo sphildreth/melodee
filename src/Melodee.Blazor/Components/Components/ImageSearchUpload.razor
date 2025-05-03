@@ -1,3 +1,4 @@
+@using Melodee.Blazor.Components.Pages
 @using Melodee.Blazor.ViewModels
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Services.SearchEngines
@@ -16,7 +17,11 @@
                          AlignItems="AlignItems.Center"
                          JustifyContent="JustifyContent.End"
                          Gap="0.5rem">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenStack
+                    Visible="SearchType != ImageSearchType.Profile"
+                    Orientation="Orientation.Horizontal"
+                    AlignItems="AlignItems.Center"
+                    Gap="0.5rem">
                     <RadzenLabel Text="@($"Delete other {SearchType.ToString()} images")" Component="False"/>
                     <RadzenSwitch @bind-Value="@_doDeleteExistingImages"
                                   Name="DeleteExistingImages"/>
@@ -26,7 +31,7 @@
             </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
-    <RadzenRow>
+    <RadzenRow Visible="SearchType != ImageSearchType.Profile">
         @foreach (var kv in SearchValues)
         {
             <DebounceInput class="rz-textbox rz-w-100"
@@ -40,7 +45,7 @@
                            ForceNotifyOnBlur="true"/>
         }
     </RadzenRow>
-    <RadzenRow>
+    <RadzenRow Visible="SearchType != ImageSearchType.Profile">
         <RadzenColumn Size="12">
             <div class="cover-search-images-container">
                 @if (_isLoading)
@@ -147,7 +152,7 @@
                     .Select(x => new ImageSearchResult(x.ThumbnailUrlValue, x.MediaUrl, x.Title ?? string.Empty, _doDeleteExistingImages))
                     .ToArray();
             }
-            else
+            else if (SearchType != ImageSearchType.Profile)
             {
                 _results = (await AlbumImageSearchEngineService.DoSearchAsync(new AlbumQuery
                     {

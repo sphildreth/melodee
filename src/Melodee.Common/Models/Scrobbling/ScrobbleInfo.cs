@@ -31,9 +31,9 @@ public record ScrobbleInfo(
     string PlayerName
 )
 {
-    public Instant LastScrobbledAt { get; set; }
+    public Instant LastScrobbledAt { get; set; } = Instant.FromDateTimeOffset(DateTimeOffset.UtcNow);
 
-    public bool IsExpired => MinutesAgo * 1000 > SongDuration;
+    public bool IsExpired => MinutesAgo > SongDuration;
     
     public int MinutesAgo => (LastScrobbledAt - CreatedAt).Minutes;
 }

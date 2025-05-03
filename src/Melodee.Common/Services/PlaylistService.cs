@@ -1,8 +1,8 @@
 using Ardalis.GuardClauses;
 using Dapper;
-using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -20,7 +20,7 @@ public class PlaylistService(
     private const string CacheKeyDetailByApiKeyTemplate = "urn:playlist:apikey:{0}";
     private const string CacheKeyDetailTemplate = "urn:playlist:{0}";
 
-    public async Task ClearCacheAsync(int playlistId, CancellationToken cancellationToken = default)
+    private async Task ClearCacheAsync(int playlistId, CancellationToken cancellationToken = default)
     {
         var playlist = await GetAsync(playlistId, cancellationToken).ConfigureAwait(false);
         if (playlist.Data != null)
@@ -106,8 +106,49 @@ public class PlaylistService(
         };
     }
 
-    public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] playlistIds, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int currentUserId, int[] playlistIds, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        Guard.Against.NullOrEmpty(playlistIds, nameof(playlistIds));
+
+       
+        bool result;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken).ConfigureAwait(false);
+            if (user == null)
+            {
+                return new MelodeeModels.OperationResult<bool>("Unknown user.")
+                {
+                    Data = false
+                };
+            }            
+            foreach (var playlistId in playlistIds)
+            {
+                var playlist = await GetAsync(playlistId, cancellationToken).ConfigureAwait(false);
+                if (!playlist.IsSuccess)
+                {
+                    return new MelodeeModels.OperationResult<bool>("Unknown playlist.")
+                    {
+                        Data = false
+                    };
+                }
+                if (!user.CanDeletePlaylist(playlist.Data!))
+                {
+                    return new MelodeeModels.OperationResult<bool>("User does not have access to delete playlist.")
+                    {
+                        Data = false
+                    };
+                }
+                scopedContext.Playlists.Remove(playlist.Data!);
+                await ClearCacheAsync(playlistId, cancellationToken);
+            }
+            result = (await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false)) > 0;            
+        }
+        
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
     }
 }
