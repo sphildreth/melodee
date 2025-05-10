@@ -45,6 +45,12 @@ using ILogger = Serilog.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddEnvironmentVariables();
+
 Trace.Listeners.Clear();
 Trace.Listeners.Add(new ConsoleTraceListener());
 

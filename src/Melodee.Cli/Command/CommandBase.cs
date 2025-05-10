@@ -33,6 +33,7 @@ public abstract class CommandBase<T> : AsyncCommand<T> where T : Spectre.Console
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json")
             .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
+            .AddEnvironmentVariables()
             .Build();
     }
 
