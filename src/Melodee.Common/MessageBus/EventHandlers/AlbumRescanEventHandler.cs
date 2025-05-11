@@ -19,12 +19,13 @@ using Rebus.Pipeline;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
-
+using Album = Melodee.Common.Models.Album;
+using Song = Melodee.Common.Data.Models.Song;
 
 namespace Melodee.Common.MessageBus.EventHandlers;
 
 /// <summary>
-/// Rescan an existing album, syncing database records to album files.
+///     Rescan an existing album, syncing database records to album files.
 /// </summary>
 public sealed class AlbumRescanEventHandler(
     ILogger logger,
@@ -42,9 +43,11 @@ public sealed class AlbumRescanEventHandler(
     {
         var cancellationToken = messageContext.IncomingStepContext.Load<CancellationToken>();
 
-        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] Handle [{id}]", nameof(AlbumRescanEventHandler), message.ToString()))
+        using (Operation.At(LogEventLevel.Debug)
+                   .Time("[{Name}] Handle [{id}]", nameof(AlbumRescanEventHandler), message.ToString()))
         {
-            await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
@@ -58,7 +61,8 @@ public sealed class AlbumRescanEventHandler(
 
                 if (dbAlbum == null)
                 {
-                    logger.Warning("[{Name}] Unable to find album with id [{AlbumId}] in database.", nameof(AlbumRescanEventHandler), message.AlbumId);
+                    logger.Warning("[{Name}] Unable to find album with id [{AlbumId}] in database.",
+                        nameof(AlbumRescanEventHandler), message.AlbumId);
                 }
                 else
                 {
@@ -69,7 +73,7 @@ public sealed class AlbumRescanEventHandler(
                             message.AlbumDirectory);
                         return;
                     }
-                    
+
                     var albumDirectory = message.AlbumDirectory.ToDirectoryInfo();
 
                     // Ensure directory for album exists
@@ -77,15 +81,19 @@ public sealed class AlbumRescanEventHandler(
                     {
                         scopedContext.Albums.Remove(dbAlbum);
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                        await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
-                        logger.Warning("[{Name}] Album directory [{AlbumDir}] does not exist. Deleted album.", nameof(AlbumRescanEventHandler), message.AlbumDirectory);
+                        await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken)
+                            .ConfigureAwait(false);
+                        logger.Warning("[{Name}] Album directory [{AlbumDir}] does not exist. Deleted album.",
+                            nameof(AlbumRescanEventHandler), message.AlbumDirectory);
                         return;
                     }
 
-                    var processResult = await melodeeMetadataMaker.MakeMetadataFileAsync(message.AlbumDirectory, false, cancellationToken).ConfigureAwait(false);
+                    var processResult = await melodeeMetadataMaker
+                        .MakeMetadataFileAsync(message.AlbumDirectory, false, cancellationToken).ConfigureAwait(false);
                     if (!processResult.IsSuccess)
                     {
-                        logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}].", nameof(AlbumRescanEventHandler), message.AlbumDirectory);
+                        logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}].",
+                            nameof(AlbumRescanEventHandler), message.AlbumDirectory);
                     }
 
 
@@ -104,7 +112,7 @@ public sealed class AlbumRescanEventHandler(
                         }
                     }
 
-                    var melodeeFileInfo = albumDirectory.AllFileInfos(Models.Album.JsonFileName).FirstOrDefault();
+                    var melodeeFileInfo = albumDirectory.AllFileInfos(Album.JsonFileName).FirstOrDefault();
                     if (melodeeFileInfo == null)
                     {
                         logger.Warning("[{Name}] Unable to find album metadata file in directory [{AlbumDir}].",
@@ -113,7 +121,9 @@ public sealed class AlbumRescanEventHandler(
                         return;
                     }
 
-                    var melodeeAlbum = await Models.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileInfo.FullName, cancellationToken).ConfigureAwait(false);
+                    var melodeeAlbum = await Album
+                        .DeserializeAndInitializeAlbumAsync(serializer, melodeeFileInfo.FullName, cancellationToken)
+                        .ConfigureAwait(false);
                     if (melodeeAlbum == null)
                     {
                         logger.Warning("[{JobName}] Unable to load melodee file [{MelodeeFile}]",
@@ -122,11 +132,15 @@ public sealed class AlbumRescanEventHandler(
                         return;
                     }
 
-                    var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+                    var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken)
+                        .ConfigureAwait(false);
 
-                    var ignorePerformers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(configuration.Configuration[SettingRegistry.ProcessingIgnoredPerformers], serializer);
-                    var ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);
-                    var ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
+                    var ignorePerformers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(
+                        configuration.Configuration[SettingRegistry.ProcessingIgnoredPerformers], serializer);
+                    var ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(
+                        configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);
+                    var ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(
+                        configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
 
                     // Get all songs in directory for album, add any missing, remove any on album not in the directory
                     foreach (var mediaFile in albumDirectory.AllMediaTypeFileInfos())
@@ -141,8 +155,9 @@ public sealed class AlbumRescanEventHandler(
                             return;
                         }
 
-                        var songTitle = melodeeSong.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
-                        
+                        var songTitle = melodeeSong.Title()?.CleanStringAsIs() ??
+                                        throw new Exception("Song title is required.");
+
                         var albumDbSong = dbAlbum.Songs.FirstOrDefault(x => x.FileName == mediaFile.Name);
                         if (albumDbSong == null)
                         {
@@ -164,17 +179,23 @@ public sealed class AlbumRescanEventHandler(
                                 TitleNormalized = songTitle.ToNormalizedString() ?? songTitle,
                                 SongNumber = melodeeSong.SongNumber(),
                                 ChannelCount = melodeeSong.ChannelCount(),
-                                Genres = (melodeeSong.Genre()?.Nullify() ?? melodeeAlbum.Genre()?.Nullify())?.Split('/'),
+                                Genres =
+                                    (melodeeSong.Genre()?.Nullify() ?? melodeeAlbum.Genre()?.Nullify())?.Split('/'),
                                 IsVbr = melodeeSong.IsVbr(),
-                                Lyrics = melodeeSong.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? melodeeSong.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
+                                Lyrics =
+                                    melodeeSong.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)
+                                        ?.CleanStringAsIs() ?? melodeeSong
+                                        .MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
                                 MusicBrainzId = melodeeSong.MetaTagValue<Guid?>(MetaTagIdentifier.MusicBrainzId),
-                                PartTitles = melodeeSong.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
+                                PartTitles = melodeeSong.MetaTagValue<string>(MetaTagIdentifier.SubTitle)
+                                    ?.CleanStringAsIs(),
                                 SortOrder = melodeeSong.SortOrder,
                                 TitleSort = songTitle.CleanString(true)
                             };
                             if (dbAlbum.Songs.Any(x => x.SongNumber == dbSong.SongNumber))
                             {
-                                logger.Warning("[{Name}] Duplicate song number [{SongNumber}] found in album [{AlbumName}].",
+                                logger.Warning(
+                                    "[{Name}] Duplicate song number [{SongNumber}] found in album [{AlbumName}].",
                                     nameof(AlbumRescanEventHandler),
                                     dbSong.SongNumber,
                                     dbAlbum.Name);
@@ -188,13 +209,14 @@ public sealed class AlbumRescanEventHandler(
                                 dbAlbum.Name);
                         }
                         else
-                        { 
+                        {
                             // Update song details with potentially updated media information
                             albumDbSong.BPM = melodeeSong.MetaTagValue<int>(MetaTagIdentifier.Bpm);
                             albumDbSong.BitDepth = melodeeSong.BitDepth();
                             albumDbSong.BitRate = melodeeSong.BitRate();
                             albumDbSong.ContentType = melodeeSong.ContentType();
-                            albumDbSong.Duration = melodeeSong.Duration() ?? throw new Exception("Song duration is required.");
+                            albumDbSong.Duration = melodeeSong.Duration() ??
+                                                   throw new Exception("Song duration is required.");
                             albumDbSong.FileHash = mediaFileHash;
                             albumDbSong.FileName = mediaFile.Name;
                             albumDbSong.FileSize = mediaFile.Length;
@@ -211,8 +233,9 @@ public sealed class AlbumRescanEventHandler(
                     {
                         dbAlbum.ImageCount = imageCount;
                     }
+
                     dbAlbum.SongCount = SafeParser.ToNumber<short>(dbAlbum.Songs.Count);
-                    dbAlbum.LastUpdatedAt = now;                    
+                    dbAlbum.LastUpdatedAt = now;
                     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
                     var dbContributorsToAdd = new List<Contributor>();
@@ -234,7 +257,8 @@ public sealed class AlbumRescanEventHandler(
                             foreach (var cfs in contributorsForSong)
                             {
                                 if (!dbContributorsToAdd.Any(x => x.AlbumId == cfs.AlbumId &&
-                                                                  (x.ArtistId == cfs.ArtistId || x.ContributorName == cfs.ContributorName) &&
+                                                                  (x.ArtistId == cfs.ArtistId ||
+                                                                   x.ContributorName == cfs.ContributorName) &&
                                                                   x.MetaTagIdentifier == cfs.MetaTagIdentifier))
                                 {
                                     dbContributorsToAdd.Add(cfs);
@@ -245,23 +269,27 @@ public sealed class AlbumRescanEventHandler(
                         }
                         else
                         {
-                            logger.Warning("[{Name}] Unable to find Melodee Song for DbSong song number [{SongNumber}] filename [{FileName}].",
+                            logger.Warning(
+                                "[{Name}] Unable to find Melodee Song for DbSong song number [{SongNumber}] filename [{FileName}].",
                                 nameof(AlbumRescanEventHandler),
                                 dbSong.SongNumber,
                                 dbSong.FileName);
                         }
                     }
+
                     if (dbContributorsToAdd.Count != 0)
                     {
                         scopedContext.Contributors.AddRange(dbContributorsToAdd);
-                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);                        
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
                     if (!message.IsFromArtistScan)
                     {
-                        await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
+                        await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken)
+                            .ConfigureAwait(false);
                         artistService.ClearCache(dbAlbum.Artist);
                     }
+
                     albumService.ClearCache(dbAlbum);
                 }
             }

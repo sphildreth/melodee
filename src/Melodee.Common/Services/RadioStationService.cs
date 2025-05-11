@@ -19,12 +19,14 @@ public class RadioStationService(
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:radiostation:apikey:{0}";
     private const string CacheKeyDetailTemplate = "urn:radiostation:{0}";
-    
-    public async Task<MelodeeModels.PagedResult<RadioStation>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+
+    public async Task<MelodeeModels.PagedResult<RadioStation>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
     {
         int radioStationCount;
         RadioStation[] radioStations = [];
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -35,7 +37,8 @@ public class RadioStationService(
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"RadioStations\"");
-                var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                var listSql =
+                    $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 radioStations = (await dbConn
                     .QueryAsync<RadioStation>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
@@ -49,8 +52,9 @@ public class RadioStationService(
             Data = radioStations
         };
     }
-    
-    public async Task<MelodeeModels.OperationResult<RadioStation?>> AddAsync(RadioStation radioStation, CancellationToken cancellationToken = default)
+
+    public async Task<MelodeeModels.OperationResult<RadioStation?>> AddAsync(RadioStation radioStation,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Null(radioStation, nameof(radioStation));
 
@@ -61,27 +65,33 @@ public class RadioStationService(
         var validationResult = ValidateModel(radioStation);
         if (!validationResult.IsSuccess)
         {
-            return new MelodeeModels.OperationResult<RadioStation?>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<RadioStation?>(validationResult.Data.Item2
+                ?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = null,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             scopedContext.RadioStations.Add(radioStation);
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
+
         return await GetAsync(radioStation.Id, cancellationToken);
     }
 
-    public async Task<MelodeeModels.OperationResult<RadioStation?>> GetAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<RadioStation?>> GetAsync(int id,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
 
         var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 return await scopedContext
                     .RadioStations
@@ -94,18 +104,21 @@ public class RadioStationService(
         {
             Data = result
         };
-    }    
+    }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int currentUserId, int[] radioStationIds, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int currentUserId, int[] radioStationIds,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(radioStationIds, nameof(radioStationIds));
 
         bool result;
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var user = await scopedContext.Users.FirstAsync(x => x.Id == currentUserId, cancellationToken).ConfigureAwait(false);
-            
+            var user = await scopedContext.Users.FirstAsync(x => x.Id == currentUserId, cancellationToken)
+                .ConfigureAwait(false);
+
             if (!user.IsAdmin)
             {
                 return new MelodeeModels.OperationResult<bool>("Non admin users cannot delete RadioStations.")
@@ -114,8 +127,8 @@ public class RadioStationService(
                     Data = false
                 };
             }
-            
-            
+
+
             foreach (var radioStationId in radioStationIds)
             {
                 var radioStation = await GetAsync(radioStationId, cancellationToken).ConfigureAwait(false);
@@ -136,7 +149,8 @@ public class RadioStationService(
                     .ConfigureAwait(false);
                 scopedContext.RadioStations.Remove(radioStation);
             }
-            result = (await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false)) > 0;
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
         }
 
         return new MelodeeModels.OperationResult<bool>
@@ -144,8 +158,9 @@ public class RadioStationService(
             Data = result
         };
     }
-    
- public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(RadioStation detailToUpdate, CancellationToken cancellationToken = default)
+
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(RadioStation detailToUpdate,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
@@ -153,14 +168,16 @@ public class RadioStationService(
         var validationResult = ValidateModel(detailToUpdate);
         if (!validationResult.IsSuccess)
         {
-            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2
+                ?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = false,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             // Load the detail by detailToUpdate.Id
             var dbDetail = await scopedContext
@@ -202,5 +219,5 @@ public class RadioStationService(
         {
             Data = result
         };
-    }    
+    }
 }

@@ -7,8 +7,10 @@ using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.MetaData;
 using Melodee.Common.Utility;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using ImageInfo = SixLabors.ImageSharp.ImageInfo;
 
 namespace Melodee.Common.Plugins.Conversion.Image;
 
@@ -35,7 +37,8 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         return FileHelper.IsFileImageType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
         if (!FileHelper.IsFileImageType(fileSystemInfo.Extension(directoryInfo)))
         {
@@ -58,10 +61,11 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
 
             var newName = Path.ChangeExtension(fileInfo.FullName, "jpg");
 
-            SixLabors.ImageSharp.ImageInfo? imageInfo = null;
+            ImageInfo? imageInfo = null;
             try
             {
-                imageInfo = await SixLabors.ImageSharp.Image.IdentifyAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+                imageInfo = await SixLabors.ImageSharp.Image.IdentifyAsync(fileInfo.FullName, cancellationToken)
+                    .ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -102,7 +106,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
 
             var didModify = false;
             var imageBytes = await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken);
-            if(imageInfo.Metadata.DecodedImageFormat != SixLabors.ImageSharp.Formats.Jpeg.JpegFormat.Instance)
+            if (imageInfo.Metadata.DecodedImageFormat != JpegFormat.Instance)
             {
                 imageBytes = ConvertToJpegFormatViaSixLabors(imageBytes);
                 didModify = true;
@@ -120,6 +124,7 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
                 {
                     File.Delete(newName);
                 }
+
                 await File.WriteAllBytesAsync(newName, imageBytes, cancellationToken);
                 if (newName != fileInfo.FullName)
                 {
@@ -157,7 +162,8 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         return outStream.ToArray();
     }
 
-    public static byte[] ResizeImageIfNeeded(ReadOnlySpan<byte> imageBytes, int maxWidth, int maxHeight, bool isForUserAvatar)
+    public static byte[] ResizeImageIfNeeded(ReadOnlySpan<byte> imageBytes, int maxWidth, int maxHeight,
+        bool isForUserAvatar)
     {
         if (imageBytes.Length == 0)
         {
@@ -195,8 +201,9 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
 
         return outStream.ToArray();
     }
-    
-    public static async Task<byte[]> ConvertToGifFormat(byte[] imageBytes, CancellationToken cancellationToken = default)
+
+    public static async Task<byte[]> ConvertToGifFormat(byte[] imageBytes,
+        CancellationToken cancellationToken = default)
     {
         using var outStream = new MemoryStream();
         using (var image = SixLabors.ImageSharp.Image.Load(imageBytes))
@@ -205,5 +212,5 @@ public sealed class ImageConvertor(IMelodeeConfiguration configuration) : MetaDa
         }
 
         return outStream.ToArray();
-    }    
+    }
 }

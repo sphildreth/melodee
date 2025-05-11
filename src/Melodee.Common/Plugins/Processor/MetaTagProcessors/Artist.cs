@@ -10,7 +10,8 @@ namespace Melodee.Common.Plugins.Processor.MetaTagProcessors;
 /// <summary>
 ///     Handle the Song Artist and split away any featuring artists.
 /// </summary>
-public sealed class Artist(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
+public sealed class Artist(Dictionary<string, object?> configuration, ISerializer serializer)
+    : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "29D61BF9-D283-4DB6-B7EB-16F6BCA76998";
 
@@ -23,7 +24,8 @@ public sealed class Artist(Dictionary<string, object?> configuration, ISerialize
         return metaTagIdentifier is MetaTagIdentifier.Artist;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
         var artist = tagValue as string ?? string.Empty;
@@ -32,7 +34,9 @@ public sealed class Artist(Dictionary<string, object?> configuration, ISerialize
 
         if (artist.Nullify() != null)
         {
-            var artistNameReplacements = MelodeeConfiguration.FromSerializedJsonDictionary(Configuration[SettingRegistry.ProcessingArtistNameReplacements], Serializer);
+            var artistNameReplacements =
+                MelodeeConfiguration.FromSerializedJsonDictionary(
+                    Configuration[SettingRegistry.ProcessingArtistNameReplacements], Serializer);
             if (artistNameReplacements.Any())
             {
                 foreach (var kp in artistNameReplacements)
@@ -111,8 +115,12 @@ public sealed class Artist(Dictionary<string, object?> configuration, ISerialize
             }
 
             // If the value for the "Artist" (Song artist) matches the "AlbumArtist" (Album artist) then nullify the "Artist" value.
-            var albumArtist = (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist) ?? metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist))?.Value as string;
-            songArtist = (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist) ?? metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist))?.Value as string;
+            var albumArtist =
+                (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist) ??
+                 metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist))?.Value as string;
+            songArtist =
+                (result.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist) ??
+                 metaTagsValue?.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Artist))?.Value as string;
             if (songArtist.Nullify() != null && songArtist!.DoStringsMatch(albumArtist))
             {
                 result.Add(new MetaTag<object?>
@@ -127,7 +135,7 @@ public sealed class Artist(Dictionary<string, object?> configuration, ISerialize
         result.ForEach(x => x.AddProcessedBy(nameof(Artist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
-            Type = metaTag.Value?.ToString().Nullify() != null ? OperationResponseType.Ok : OperationResponseType.Error,              
+            Type = metaTag.Value?.ToString().Nullify() != null ? OperationResponseType.Ok : OperationResponseType.Error,
             Data = result
         };
     }

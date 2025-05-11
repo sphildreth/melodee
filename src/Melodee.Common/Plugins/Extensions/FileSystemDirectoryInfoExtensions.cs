@@ -11,10 +11,13 @@ namespace Melodee.Common.Plugins.Extensions;
 
 public static class FileSystemDirectoryInfoExtensions
 {
-    public static async Task<ImageInfo[]> ImagesForTypeAsync(this FileSystemDirectoryInfo directory, int maxNumberOfImagesAllowed, PictureIdentifier[] forPictureIdentifiers, IImageValidator imageValidator, CancellationToken cancellationToken = default)
+    public static async Task<ImageInfo[]> ImagesForTypeAsync(this FileSystemDirectoryInfo directory,
+        int maxNumberOfImagesAllowed, PictureIdentifier[] forPictureIdentifiers, IImageValidator imageValidator,
+        CancellationToken cancellationToken = default)
     {
         var imageInfos = new List<ImageInfo>();
-        var imageFiles = ImageHelper.ImageFilesInDirectory(directory.FullName(), SearchOption.TopDirectoryOnly).ToArray();
+        var imageFiles = ImageHelper.ImageFilesInDirectory(directory.FullName(), SearchOption.TopDirectoryOnly)
+            .ToArray();
         var index = 1;
         var maxNumberOfImagesLength = SafeParser.ToNumber<short>(maxNumberOfImagesAllowed.ToString().Length);
         foreach (var imageFile in imageFiles.Order())
@@ -28,7 +31,10 @@ public static class FileSystemDirectoryInfoExtensions
             var fileNameNormalized = fileInfo.Name.ToNormalizedString() ?? fileInfo.Name;
             if (ImageHelper.IsArtistImage(fileInfo) || ImageHelper.IsArtistSecondaryImage(fileInfo))
             {
-                if (!(await imageValidator.ValidateImage(fileInfo, ImageHelper.IsArtistImage(fileInfo) ? PictureIdentifier.Artist : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
+                if (!(await imageValidator.ValidateImage(fileInfo,
+                        ImageHelper.IsArtistImage(fileInfo)
+                            ? PictureIdentifier.Artist
+                            : PictureIdentifier.ArtistSecondary, cancellationToken)).Data.IsValid)
                 {
                     continue;
                 }
@@ -52,7 +58,8 @@ public static class FileSystemDirectoryInfoExtensions
                         CrcHash = Crc32.Calculate(fileInfo),
                         FileInfo = new FileSystemFileInfo
                         {
-                            Name = $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
+                            Name =
+                                $"{ImageInfo.ImageFilePrefix}{index.ToStringPadLeft(maxNumberOfImagesLength)}-{pictureIdentifier}.jpg",
                             Size = fileInfoFileSystemInfo.Size,
                             OriginalName = fileInfo.Name
                         },

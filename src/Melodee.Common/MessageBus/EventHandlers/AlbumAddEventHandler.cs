@@ -19,11 +19,10 @@ using Serilog;
 using Serilog.Events;
 using SerilogTimings;
 
-
 namespace Melodee.Common.MessageBus.EventHandlers;
 
 /// <summary>
-/// Add a new album from album files.
+///     Add a new album from album files.
 /// </summary>
 public sealed class AlbumAddEventHandler(
     ILogger logger,
@@ -40,16 +39,22 @@ public sealed class AlbumAddEventHandler(
     {
         var cancellationToken = messageContext.IncomingStepContext.Load<CancellationToken>();
 
-        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] Handle [{id}]", nameof(AlbumAddEventHandler), message.ToString()))
+        using (Operation.At(LogEventLevel.Debug)
+                   .Time("[{Name}] Handle [{id}]", nameof(AlbumAddEventHandler), message.ToString()))
         {
-            await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-                var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+                var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken)
+                    .ConfigureAwait(false);
 
-                var ignorePerformers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(configuration.Configuration[SettingRegistry.ProcessingIgnoredPerformers], serializer);
-                var ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);
-                var ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
+                var ignorePerformers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(
+                    configuration.Configuration[SettingRegistry.ProcessingIgnoredPerformers], serializer);
+                var ignorePublishers = MelodeeConfiguration.FromSerializedJsonArrayNormalized(
+                    configuration.Configuration[SettingRegistry.ProcessingIgnoredPublishers], serializer);
+                var ignoreProduction = MelodeeConfiguration.FromSerializedJsonArrayNormalized(
+                    configuration.Configuration[SettingRegistry.ProcessingIgnoredProduction], serializer);
 
                 var dbArtist = await scopedContext
                     .Artists
@@ -61,7 +66,8 @@ public sealed class AlbumAddEventHandler(
 
                 if (dbArtist == null)
                 {
-                    logger.Warning("[{Name}] Unable to find artist with id [{ArtistId}] in database.", nameof(AlbumAddEventHandler), message.ArtistId);
+                    logger.Warning("[{Name}] Unable to find artist with id [{ArtistId}] in database.",
+                        nameof(AlbumAddEventHandler), message.ArtistId);
                 }
                 else
                 {
@@ -73,21 +79,26 @@ public sealed class AlbumAddEventHandler(
                         return;
                     }
 
-                    var processResult = await melodeeMetadataMaker.MakeMetadataFileAsync(message.AlbumDirectory, false, cancellationToken).ConfigureAwait(false);
+                    var processResult = await melodeeMetadataMaker
+                        .MakeMetadataFileAsync(message.AlbumDirectory, false, cancellationToken).ConfigureAwait(false);
                     if (!processResult.IsSuccess || processResult.Data == null)
                     {
-                        logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}].", nameof(AlbumAddEventHandler), message.AlbumDirectory);
+                        logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}].",
+                            nameof(AlbumAddEventHandler), message.AlbumDirectory);
                     }
 
                     var melodeeAlbum = processResult.Data!;
 
-                    var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ?? throw new Exception("Album title is required.");
+                    var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ??
+                                     throw new Exception("Album title is required.");
                     var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
                     if (nameNormalized.Nullify() == null)
                     {
-                        logger.Warning("Album [{Album}] has invalid Album title, unable to generate NameNormalized.", melodeeAlbum);
+                        logger.Warning("Album [{Album}] has invalid Album title, unable to generate NameNormalized.",
+                            melodeeAlbum);
                         return;
                     }
+
                     var newAlbum = new Album
                     {
                         AlbumStatus = (short)melodeeAlbum.Status,
@@ -108,23 +119,30 @@ public sealed class AlbumAddEventHandler(
                         MusicBrainzId = SafeParser.ToGuid(melodeeAlbum.MusicBrainzId),
                         Name = albumTitle,
                         NameNormalized = nameNormalized,
-                        OriginalReleaseDate = melodeeAlbum.OriginalAlbumYear() == null ? null : SafeParser.ToLocalDate(melodeeAlbum.OriginalAlbumYear()!.Value),
-                        ReleaseDate = SafeParser.ToLocalDate(melodeeAlbum.AlbumYear() ?? throw new Exception("Album year is required.")),
+                        OriginalReleaseDate = melodeeAlbum.OriginalAlbumYear() == null
+                            ? null
+                            : SafeParser.ToLocalDate(melodeeAlbum.OriginalAlbumYear()!.Value),
+                        ReleaseDate = SafeParser.ToLocalDate(melodeeAlbum.AlbumYear() ??
+                                                             throw new Exception("Album year is required.")),
                         SongCount = SafeParser.ToNumber<short>(melodeeAlbum.Songs?.Count() ?? 0),
                         SortName = configuration.RemoveUnwantedArticles(albumTitle.CleanString(true)),
                         SpotifyId = melodeeAlbum.SpotifyId,
                         WikiDataId = melodeeAlbum.WikiDataId
                     };
-                    if (dbArtist.Albums.Any(x => x.NameNormalized == nameNormalized || 
-                                                 (x.MusicBrainzId != null && x.MusicBrainzId == newAlbum.MusicBrainzId) || 
+                    if (dbArtist.Albums.Any(x => x.NameNormalized == nameNormalized ||
+                                                 (x.MusicBrainzId != null &&
+                                                  x.MusicBrainzId == newAlbum.MusicBrainzId) ||
                                                  (x.SpotifyId != null && x.SpotifyId == newAlbum.SpotifyId)))
                     {
                         logger.Warning("For artist [{Artist}] found duplicate album [{Album}]", dbArtist, newAlbum);
-                        melodeeAlbum.Directory.AppendPrefix(configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix) ?? "__duplicate_ ");
+                        melodeeAlbum.Directory.AppendPrefix(
+                            configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix) ??
+                            "__duplicate_ ");
                         return;
                     }
 
-                    logger.Debug("[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] NormalizedName [{Name}] Directory [{Directory}]",
+                    logger.Debug(
+                        "[{JobName}] Creating new album for ArtistId [{ArtistId}] Id [{Id}] NormalizedName [{Name}] Directory [{Directory}]",
                         nameof(AlbumRescanEventHandler),
                         dbArtist.Id,
                         melodeeAlbum.Id,
@@ -150,7 +168,8 @@ public sealed class AlbumAddEventHandler(
                         }
 
                         var mediaFileHash = CRC32.Calculate(mediaFile);
-                        var songTitle = song.Title()?.CleanStringAsIs() ?? throw new Exception("Song title is required.");
+                        var songTitle = song.Title()?.CleanStringAsIs() ??
+                                        throw new Exception("Song title is required.");
                         var s = new Song
                         {
                             AlbumId = newAlbum.Id,
@@ -171,7 +190,9 @@ public sealed class AlbumAddEventHandler(
                             ChannelCount = song.ChannelCount(),
                             Genres = (song.Genre()?.Nullify() ?? melodeeAlbum.Genre()?.Nullify())?.Split('/'),
                             IsVbr = song.IsVbr(),
-                            Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)?.CleanStringAsIs(),
+                            Lyrics = song.MetaTagValue<string>(MetaTagIdentifier.UnsynchronisedLyrics)
+                                ?.CleanStringAsIs() ?? song.MetaTagValue<string>(MetaTagIdentifier.SynchronisedLyrics)
+                                ?.CleanStringAsIs(),
                             MusicBrainzId = song.MetaTagValue<Guid?>(MetaTagIdentifier.MusicBrainzId),
                             PartTitles = song.MetaTagValue<string>(MetaTagIdentifier.SubTitle)?.CleanStringAsIs(),
                             SortOrder = song.SortOrder,
@@ -209,7 +230,8 @@ public sealed class AlbumAddEventHandler(
                                     foreach (var cfs in contributorsForSong)
                                     {
                                         if (!dbContributorsToAdd.Any(x => x.AlbumId == cfs.AlbumId &&
-                                                                          (x.ArtistId == cfs.ArtistId || x.ContributorName == cfs.ContributorName) &&
+                                                                          (x.ArtistId == cfs.ArtistId ||
+                                                                           x.ContributorName == cfs.ContributorName) &&
                                                                           x.MetaTagIdentifier == cfs.MetaTagIdentifier))
                                         {
                                             dbContributorsToAdd.Add(cfs);
@@ -222,7 +244,8 @@ public sealed class AlbumAddEventHandler(
                             {
                                 try
                                 {
-                                    await scopedContext.Contributors.AddRangeAsync(dbContributorsToAdd, cancellationToken).ConfigureAwait(false);
+                                    await scopedContext.Contributors
+                                        .AddRangeAsync(dbContributorsToAdd, cancellationToken).ConfigureAwait(false);
                                     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                                 }
                                 catch (Exception e)
@@ -233,7 +256,9 @@ public sealed class AlbumAddEventHandler(
 
                             if (!message.IsFromArtistScan)
                             {
-                                await libraryService.UpdateAggregatesAsync(newAlbum.Artist.Library.Id, cancellationToken).ConfigureAwait(false);
+                                await libraryService
+                                    .UpdateAggregatesAsync(newAlbum.Artist.Library.Id, cancellationToken)
+                                    .ConfigureAwait(false);
                                 artistService.ClearCache(newAlbum.Artist);
                             }
                         }

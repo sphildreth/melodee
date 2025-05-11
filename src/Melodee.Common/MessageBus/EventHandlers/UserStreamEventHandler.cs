@@ -11,7 +11,8 @@ public sealed class UserStreamEventHandler(
     {
         if (message.Request.IsDownloadingRequest)
         {
-            logger.Information("User [{User}] downloaded song [{SongId}]", message.ApiRequest.Username, message.Request.Id);
+            logger.Information("User [{User}] downloaded song [{SongId}]", message.ApiRequest.Username,
+                message.Request.Id);
         }
 
         logger.Debug("User [{User}] stream song [{SongId}]", message.ApiRequest.Username, message.Request.Id);

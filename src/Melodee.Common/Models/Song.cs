@@ -15,7 +15,8 @@ public sealed record Song
 
     public required string CrcHash { get; init; }
 
-    public long DuplicateHashCheck => SafeParser.Hash(this.AlbumTitle(), this.SongNumber().ToString(), this.Title().ToNormalizedString());
+    public long DuplicateHashCheck =>
+        SafeParser.Hash(this.AlbumTitle(), this.SongNumber().ToString(), this.Title().ToNormalizedString());
 
     public required FileSystemFileInfo File { get; init; }
 
@@ -27,7 +28,8 @@ public sealed record Song
 
     public int SortOrder { get; set; }
 
-    public string DisplaySummary => $"{this.SongNumber().ToStringPadLeft(3)}/{this.SongTotalNumber().ToStringPadLeft(3)} : {this.Title()}";
+    public string DisplaySummary =>
+        $"{this.SongNumber().ToStringPadLeft(3)}/{this.SongTotalNumber().ToStringPadLeft(3)} : {this.Title()}";
 
     public override string ToString()
     {
@@ -44,7 +46,8 @@ public sealed record Song
         var best = songs[0];
         foreach (var song in songs.Skip(1))
         {
-            if (song.Duration() >= best.Duration() || song.BitRate() > best.BitRate() || song.BitDepth() > best.BitDepth())
+            if (song.Duration() >= best.Duration() || song.BitRate() > best.BitRate() ||
+                song.BitDepth() > best.BitDepth())
             {
                 var tags = (best.Tags ?? []).ToList();
                 foreach (var tagItem in song.Tags ?? [])

@@ -46,7 +46,9 @@ public sealed record Album
     [StringLength(MusicBrainzRepositoryBase.MaxIndexSize)]
     public required string ReleaseGroupMusicBrainzIdRaw { get; init; }
 
-    [Ignore] [NotMapped] public Guid ReleaseGroupMusicBrainzId => SafeParser.ToGuid(ReleaseGroupMusicBrainzIdRaw) ?? Guid.Empty;
+    [Ignore]
+    [NotMapped]
+    public Guid ReleaseGroupMusicBrainzId => SafeParser.ToGuid(ReleaseGroupMusicBrainzIdRaw) ?? Guid.Empty;
 
     public required DateTime ReleaseDate { get; init; }
 

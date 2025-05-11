@@ -22,7 +22,8 @@ public sealed class FakeCacheManager(ILogger logger, TimeSpan defaultTimeSpan, I
         // Do nothing
     }
 
-    public override Task<TOut> GetAsync<TOut>(string key, Func<Task<TOut>> getItem, CancellationToken token, TimeSpan? duration = null, string? region = null)
+    public override Task<TOut> GetAsync<TOut>(string key, Func<Task<TOut>> getItem, CancellationToken token,
+        TimeSpan? duration = null, string? region = null)
     {
         // Do nothing
         return getItem();

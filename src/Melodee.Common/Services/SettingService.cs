@@ -24,7 +24,7 @@ public class SettingService : ServiceBase
     private readonly IMelodeeConfigurationFactory _melodeeConfigurationFactory = null!;
 
     /// <summary>
-    /// This is required for Mocking in unit tests.
+    ///     This is required for Mocking in unit tests.
     /// </summary>
     public SettingService()
     {
@@ -42,9 +42,11 @@ public class SettingService : ServiceBase
         _melodeeConfigurationFactory = melodeeConfigurationFactory;
     }
 
-    public virtual async Task<Dictionary<string, object?>> GetAllSettingsAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<Dictionary<string, object?>> GetAllSettingsAsync(
+        CancellationToken cancellationToken = default)
     {
-        var listResult = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken);
+        var listResult =
+            await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken);
         if (!listResult.IsSuccess)
         {
             throw new Exception("Failed to get settings from database");
@@ -54,11 +56,13 @@ public class SettingService : ServiceBase
         return MelodeeConfiguration.AllSettings(listDictionary);
     }
 
-    public async Task<MelodeeModels.PagedResult<Setting>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<Setting>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
     {
         var settingsCount = 0;
         Setting[] settings = [];
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             try
             {
@@ -71,10 +75,12 @@ public class SettingService : ServiceBase
                 if (!pagedRequest.IsTotalCountOnlyRequest)
                 {
                     var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Settings\"");
-                    var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                    var listSql =
+                        $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                     if (dbConn is SqliteConnection)
                     {
-                        listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                        listSql =
+                            $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
                     }
 
                     settings = (await dbConn
@@ -96,7 +102,8 @@ public class SettingService : ServiceBase
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<T?>> GetValueAsync<T>(string key, T? defaultValue = default, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<T?>> GetValueAsync<T>(string key, T? defaultValue = default,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(key, nameof(key));
 
@@ -116,7 +123,8 @@ public class SettingService : ServiceBase
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> SetAsync(string key, string value, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> SetAsync(string key, string value,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(key, nameof(key));
 
@@ -133,13 +141,15 @@ public class SettingService : ServiceBase
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Setting?>> GetAsync(string key, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Setting?>> GetAsync(string key,
+        CancellationToken cancellationToken = default)
     {
         try
         {
             var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(key), async () =>
             {
-                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                await using (var scopedContext =
+                             await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
                 {
                     return await scopedContext
                         .Settings
@@ -165,7 +175,8 @@ public class SettingService : ServiceBase
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Setting detailToUpdate, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Setting detailToUpdate,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
@@ -173,14 +184,16 @@ public class SettingService : ServiceBase
         var validationResult = ValidateModel(detailToUpdate);
         if (!validationResult.IsSuccess)
         {
-            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2
+                ?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = false,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             // Load the detail by DetailToUpdate.Id
             var dbDetail = await scopedContext

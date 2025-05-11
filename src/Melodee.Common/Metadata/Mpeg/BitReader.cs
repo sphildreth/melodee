@@ -1,7 +1,7 @@
 namespace Melodee.Common.Metadata.Mpeg;
 
 /// <summary>
-/// Summary description for BitReader.
+///     Summary description for BitReader.
 /// </summary>
 public class BitReader
 {
@@ -129,13 +129,5 @@ public class BitReader
         }
 
         return Convert.ToByte(myInt);
-    }
-
-
-    public BitReader()
-    {
-        //
-        // TODO: Add constructor logic here
-        //
     }
 }

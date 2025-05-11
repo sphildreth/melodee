@@ -1,14 +1,14 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
-using Melodee.Common.Utility;
 
 namespace Melodee.Common.Plugins.Processor.MetaTagProcessors;
 
 /// <summary>
 ///     Ensures DiscTotal is set to 1, always.
 /// </summary>
-public sealed class DiscTotal(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
+public sealed class DiscTotal(Dictionary<string, object?> configuration, ISerializer serializer)
+    : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "4A3CB4E0-8D38-4DDE-AFC3-DC6B796D4CDD";
 
@@ -21,7 +21,8 @@ public sealed class DiscTotal(Dictionary<string, object?> configuration, ISerial
         return metaTagIdentifier is MetaTagIdentifier.DiscTotal or MetaTagIdentifier.DiscNumberTotal;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var result = new List<MetaTag<object?>>
         {
@@ -34,7 +35,7 @@ public sealed class DiscTotal(Dictionary<string, object?> configuration, ISerial
         result.ForEach(x => x.AddProcessedBy(nameof(DiscTotal)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
-            Type = OperationResponseType.Ok,                        
+            Type = OperationResponseType.Ok,
             Data = result
         };
     }

@@ -1,4 +1,3 @@
-using Melodee.Common.Enums;
 using Melodee.Common.Models;
 
 namespace Melodee.Common.Plugins.MetaData.Song;
@@ -20,7 +19,8 @@ public class NullSongPlugin : ISongPlugin
         return false;
     }
 
-    public Task<OperationResult<Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public Task<OperationResult<Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(new OperationResult<Models.Song>
         {
@@ -38,7 +38,8 @@ public class NullSongPlugin : ISongPlugin
         });
     }
 
-    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song, CancellationToken cancellationToken = default)
+    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song,
+        CancellationToken cancellationToken = default)
     {
         return Task.FromResult(new OperationResult<bool> { Data = true });
     }

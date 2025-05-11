@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Melodee.Common.Extensions;
 
 public static class DecimalExtensions
@@ -8,7 +6,7 @@ public static class DecimalExtensions
     {
         return ToStringPadLeft(input as decimal?, padLeft, padWith) ?? string.Empty;
     }
-    
+
     public static string? ToStringPadLeft(this decimal? input, short padLeft, char padWith = '0')
     {
         if (input == null)

@@ -19,7 +19,8 @@ namespace Melodee.Common.Plugins.Conversion.Media;
 /// <summary>
 ///     This converts all Media files into MP3 files.
 /// </summary>
-public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) : MetaDataBase(configuration), IConversionPlugin
+public sealed partial class MediaConvertor(IMelodeeConfiguration configuration)
+    : MetaDataBase(configuration), IConversionPlugin
 {
     public override string Id => "61995E53-D998-4BD4-BC83-2AB2F9D9B931";
 
@@ -31,7 +32,8 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
 
     public override bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
     {
-        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo) || !MelodeeConfiguration.GetValue<bool>(SettingRegistry.ConversionEnabled))
+        if (!IsEnabled || !fileSystemInfo.Exists(directoryInfo) ||
+            !MelodeeConfiguration.GetValue<bool>(SettingRegistry.ConversionEnabled))
         {
             return false;
         }
@@ -39,11 +41,13 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<FileSystemFileInfo>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
         if (!MelodeeConfiguration.GetValue<bool>(SettingRegistry.ConversionEnabled))
         {
-            return new OperationResult<FileSystemFileInfo>($"Configuration value '{SettingRegistry.ConversionEnabled}' has disabled media conversion.")
+            return new OperationResult<FileSystemFileInfo>(
+                $"Configuration value '{SettingRegistry.ConversionEnabled}' has disabled media conversion.")
             {
                 Data = fileSystemInfo,
                 Type = OperationResponseType.NotImplementedOrDisabled
@@ -72,17 +76,22 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                 using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
                     var songFileInfo = fileInfo;
-                    var songDirectory = songFileInfo.Directory?.FullName ?? throw new Exception("Invalid FileInfo For Song");
-                    var newFileName = Path.Combine(songDirectory, $"{Path.GetFileNameWithoutExtension(songFileInfo.Name)}.mp3");
+                    var songDirectory = songFileInfo.Directory?.FullName ??
+                                        throw new Exception("Invalid FileInfo For Song");
+                    var newFileName = Path.Combine(songDirectory,
+                        $"{Path.GetFileNameWithoutExtension(songFileInfo.Name)}.mp3");
 
                     try
                     {
                         FFMpegArguments.FromFileInput(songFileInfo)
                             .OutputToFile(newFileName, true, options =>
                             {
-                                options.WithAudioBitrate(SafeParser.ToEnum<AudioQuality>(Configuration[SettingRegistry.ConversionBitrate]));
-                                options.WithAudioSamplingRate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]));
-                                options.WithVariableBitrate(SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]));
+                                options.WithAudioBitrate(
+                                    SafeParser.ToEnum<AudioQuality>(Configuration[SettingRegistry.ConversionBitrate]));
+                                options.WithAudioSamplingRate(
+                                    SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionSamplingRate]));
+                                options.WithVariableBitrate(
+                                    SafeParser.ToNumber<int>(Configuration[SettingRegistry.ConversionVbrLevel]));
                                 options.WithAudioCodec(AudioCodec.LibMp3Lame).ForceFormat("mp3");
                             }).ProcessSynchronously();
                     }
@@ -107,7 +116,8 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                     var newAtl = new Track(newFileName);
                     if (string.Equals(newAtl.AudioFormat.ShortName, "mpeg", StringComparison.OrdinalIgnoreCase))
                     {
-                        var convertedRenamedExtension = SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
+                        var convertedRenamedExtension =
+                            SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
                         fileInfo = new FileInfo(newFileName);
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
@@ -115,7 +125,8 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration) 
                         }
                         else if (convertedRenamedExtension.Nullify() != null)
                         {
-                            var movedFileName = Path.Combine(songFileInfo.DirectoryName!, $"{songFileInfo.Name}.{convertedRenamedExtension}");
+                            var movedFileName = Path.Combine(songFileInfo.DirectoryName!,
+                                $"{songFileInfo.Name}.{convertedRenamedExtension}");
                             songFileInfo.MoveTo(movedFileName);
                         }
                     }

@@ -16,11 +16,16 @@ namespace Melodee.Common.Plugins.Validation;
 
 public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) : IAlbumValidator
 {
-    private static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex UnwantedAlbumTitleTextRegex = new(
+        @"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private static readonly Regex UnwantedSongTitleTextRegex = new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex UnwantedSongTitleTextRegex =
+        new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasFeatureFragmentsRegex =
+        new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*with\s+|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly Dictionary<string, object?> _configuration = configuration.Configuration;
     private readonly List<ValidationResultMessage> _validationMessages = [];
@@ -146,8 +151,9 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             });
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasLessThanMinimumSongs;
         }
-        
-        var minimumAlbumDuration = SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMinimumAlbumDuration]);
+
+        var minimumAlbumDuration =
+            SafeParser.ToNumber<int>(_configuration[SettingRegistry.ValidationMinimumAlbumDuration]);
         if (minimumAlbumDuration > 0 && album.TotalDurationInMinutes() < minimumAlbumDuration)
         {
             _validationMessages.Add(new ValidationResultMessage
@@ -158,7 +164,7 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasLessThanMinimumDuration;
         }
     }
-    
+
     private void DoAllSongHaveValidDurations(Album album)
     {
         if (album.Songs?.Count() < 1)
@@ -205,7 +211,8 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                 Message = "Album Artist is unknown, will need manual validation.",
                 Severity = ValidationResultMessageSeverity.Critical
             });
-            if (albumArtist.Name.Nullify() == null && _albumNeedsAttentionReasons.HasFlag(AlbumNeedsAttentionReasons.HasInvalidArtists) == false)
+            if (albumArtist.Name.Nullify() == null &&
+                _albumNeedsAttentionReasons.HasFlag(AlbumNeedsAttentionReasons.HasInvalidArtists) == false)
             {
                 _albumNeedsAttentionReasons |= AlbumNeedsAttentionReasons.HasUnknownArtist;
             }
@@ -301,11 +308,13 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
             if (songsGroupedByArtist.Length > 1)
             {
                 result = songsGroupedByArtist.First().Key.Nullify() == null ||
-                         (string.Equals(songsGroupedByArtist.First().Key, albumArtist) && songsGroupedByArtist.Length == 1);
+                         (string.Equals(songsGroupedByArtist.First().Key, albumArtist) &&
+                          songsGroupedByArtist.Length == 1);
             }
         }
 
-        if (!result && !_albumNeedsAttentionReasons.HasFlag(AlbumNeedsAttentionReasons.HasInvalidArtists) && !album.IsVariousArtistTypeAlbum())
+        if (!result && !_albumNeedsAttentionReasons.HasFlag(AlbumNeedsAttentionReasons.HasInvalidArtists) &&
+            !album.IsVariousArtistTypeAlbum())
         {
             _validationMessages.Add(new ValidationResultMessage
             {
@@ -495,12 +504,14 @@ public sealed partial class AlbumValidator(IMelodeeConfiguration configuration) 
                     return true;
                 }
 
-                return Regex.IsMatch(songTitle, $@"^({Regex.Escape(albumTitle ?? string.Empty)}\s*.*\s*)?([0-9]*{songNumber}\s)");
+                return Regex.IsMatch(songTitle,
+                    $@"^({Regex.Escape(albumTitle ?? string.Empty)}\s*.*\s*)?([0-9]*{songNumber}\s)");
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "SongHasUnwantedText For AlbumTitle [{AlbumTitle}] for SongTitle [{SongTitle}]", albumTitle, songTitle);
+            Log.Error(ex, "SongHasUnwantedText For AlbumTitle [{AlbumTitle}] for SongTitle [{SongTitle}]", albumTitle,
+                songTitle);
         }
 
         return false;

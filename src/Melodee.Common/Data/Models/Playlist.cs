@@ -34,7 +34,7 @@ public class Playlist : DataModelBase
     public double Duration { get; set; }
 
     /// <summary>
-    ///     Pipe seperated list. 
+    ///     Pipe seperated list.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxInputLength)]
     public string? AllowedUserIds { get; set; }

@@ -8,7 +8,7 @@ namespace Melodee.Common.Models.SearchEngines;
 public sealed record ArtistSearchResult
 {
     /// <summary>
-    /// If this is populated it is the PkId of the Artist record from the Melodee database.
+    ///     If this is populated it is the PkId of the Artist record from the Melodee database.
     /// </summary>
     public int? Id { get; init; }
 

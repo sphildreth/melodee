@@ -21,7 +21,9 @@ public static class UserExtensions
 
     public static Common.Models.OpenSubsonic.User ToApiUser(this User user)
     {
-        return new Common.Models.OpenSubsonic.User(user.UserName, user.IsAdmin, user.Email, user.HasStreamRole, user.IsScrobblingEnabled, user.HasDownloadRole, user.HasShareRole, user.HasJukeboxRole, user.LastUpdatedAt?.ToString() ?? user.CreatedAt.ToString());
+        return new Common.Models.OpenSubsonic.User(user.UserName, user.IsAdmin, user.Email, user.HasStreamRole,
+            user.IsScrobblingEnabled, user.HasDownloadRole, user.HasShareRole, user.HasJukeboxRole,
+            user.LastUpdatedAt?.ToString() ?? user.CreatedAt.ToString());
     }
 
     public static UserInfo ToUserInfo(this User user)
@@ -82,11 +84,11 @@ public static class UserExtensions
         {
             roles.Add(RoleNameRegistry.Administrator);
         }
-        
+
         if (user.IsEditor)
         {
             roles.Add(RoleNameRegistry.Editor);
-        }        
+        }
 
         return new UserInfo(user.Id, user.ApiKey, user.UserName, user.Email, user.PublicKey, user.PasswordEncrypted)
         {
@@ -94,8 +96,10 @@ public static class UserExtensions
         };
     }
 
-    public static bool CanShare(this User user) 
-        => user.IsAdmin || user.HasShareRole;
+    public static bool CanShare(this User user)
+    {
+        return user.IsAdmin || user.HasShareRole;
+    }
 
 
     public static bool CanDeletePlaylist(this User user, Playlist playlist)
@@ -104,16 +108,19 @@ public static class UserExtensions
         {
             return true;
         }
+
         return playlist.User.Id == user.Id;
     }
 
     public static string Encrypt(this User user, string plainText, IMelodeeConfiguration configuration)
     {
-        return EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, plainText, user.PublicKey);
+        return EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!,
+            plainText, user.PublicKey);
     }
 
     public static string Decrypt(this User user, string encryptedText, IMelodeeConfiguration configuration)
     {
-        return EncryptionHelper.Decrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, encryptedText, user.PublicKey);
+        return EncryptionHelper.Decrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!,
+            encryptedText, user.PublicKey);
     }
 }

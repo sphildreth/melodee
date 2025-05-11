@@ -2,7 +2,8 @@ namespace Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Exte
 
 public static class AlbumExtensions
 {
-    public static AlbumSearchResult ToAlbumSearchResult(this Album album, Artist artist, string fromPlugin, ArtistSearchResult? artistSearchResult = null)
+    public static AlbumSearchResult ToAlbumSearchResult(this Album album, Artist artist, string fromPlugin,
+        ArtistSearchResult? artistSearchResult = null)
     {
         return new AlbumSearchResult
         {

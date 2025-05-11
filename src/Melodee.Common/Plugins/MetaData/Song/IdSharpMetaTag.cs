@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ATL;
 using IdSharp.Tagging.ID3v1;
 using IdSharp.Tagging.ID3v2;
 using Melodee.Common.Configuration;
@@ -14,7 +15,9 @@ using SerilogTimings;
 
 namespace Melodee.Common.Plugins.MetaData.Song;
 
-public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlugin, IMelodeeConfiguration configuration) : MetaDataBase(configuration), ISongPlugin
+public sealed class IdSharpMetaTag(
+    IMetaTagsProcessorPlugin metaTagsProcessorPlugin,
+    IMelodeeConfiguration configuration) : MetaDataBase(configuration), ISongPlugin
 {
     private readonly IMetaTagsProcessorPlugin _metaTagsProcessorPlugin = metaTagsProcessorPlugin;
 
@@ -36,9 +39,11 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemInfo, CancellationToken cancellationToken = default)
     {
-        using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] Processing [{fileSystemInfo}]", DisplayName, fileSystemInfo.Name))
+        using (Operation.At(LogEventLevel.Debug)
+                   .Time("[{PluginName}] Processing [{fileSystemInfo}]", DisplayName, fileSystemInfo.Name))
         {
             var tags = new List<MetaTag<object?>>();
             var mediaAudios = new List<MediaAudio<object?>>();
@@ -88,7 +93,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                             });
                         }
 
-                        var date = SafeParser.ToDateTime(id3V1.Year);                        
+                        var date = SafeParser.ToDateTime(id3V1.Year);
                         if (date != null)
                         {
                             tags.Add(new MetaTag<object?>
@@ -147,7 +152,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                                 Value = date?.Year
                             });
                         }
-                        
+
                         if (mediaAudios.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.DurationMs) == null)
                         {
                             var duration = SafeParser.ToNumber<double?>(id3V2.LengthMilliseconds);
@@ -155,7 +160,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                             {
                                 try
                                 {
-                                    var atlTag = new ATL.Track(fullname);
+                                    var atlTag = new Track(fullname);
                                     duration = atlTag.DurationMs;
                                 }
                                 catch
@@ -163,12 +168,13 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                                     // Dont do anything at this point with exception.
                                 }
                             }
+
                             mediaAudios.Add(new MediaAudio<object?>
                             {
                                 Identifier = MediaAudioIdentifier.DurationMs,
                                 Value = duration
                             });
-                        }                        
+                        }
                     }
                 }
             }
@@ -187,7 +193,9 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
                 });
             }
 
-            var metaTagsProcessorResult = await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemInfo, tags, cancellationToken);
+            var metaTagsProcessorResult =
+                await _metaTagsProcessorPlugin.ProcessMetaTagAsync(directoryInfo, fileSystemInfo, tags,
+                    cancellationToken);
             if (!metaTagsProcessorResult.IsSuccess)
             {
                 return new OperationResult<Models.Song>(metaTagsProcessorResult.Messages)
@@ -214,6 +222,7 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
             {
                 Trace.WriteLine("Song is invalid");
             }
+
             return new OperationResult<Models.Song>
             {
                 Data = song
@@ -221,7 +230,8 @@ public sealed class IdSharpMetaTag(IMetaTagsProcessorPlugin metaTagsProcessorPlu
         }
     }
 
-    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song, CancellationToken cancellationToken = default)
+    public Task<OperationResult<bool>> UpdateSongAsync(FileSystemDirectoryInfo directoryInfo, Models.Song song,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

@@ -6,6 +6,7 @@ public record InternetRadioStation(string Id, string Name, string StreamUrl, str
 {
     public string ToXml(string? nodeName = null)
     {
-        return $"<internetRadioStation id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" streamUrl=\"{StreamUrl.ToSafeXmlString()}\" homePageUrl=\"{HomePageUrl.ToSafeXmlString()}\" />";
-    }    
+        return
+            $"<internetRadioStation id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" streamUrl=\"{StreamUrl.ToSafeXmlString()}\" homePageUrl=\"{HomePageUrl.ToSafeXmlString()}\" />";
+    }
 }

@@ -39,7 +39,8 @@ public record Artist(
             starredAttribute = $" starred=\"{Starred}\" starredAt=\"{Starred}\"";
         }
 
-        var result = new StringBuilder($"<artist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" {starredAttribute} artistImageUrl=\"{ArtistImageUrl}\" averageRating=\"{AverageRating}\" userRating=\"{UserRating}\" coverArt=\"{CoverArt}\" albumCount=\"{AlbumCount}\">");
+        var result = new StringBuilder(
+            $"<artist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" {starredAttribute} artistImageUrl=\"{ArtistImageUrl}\" averageRating=\"{AverageRating}\" userRating=\"{UserRating}\" coverArt=\"{CoverArt}\" albumCount=\"{AlbumCount}\">");
         if (Album != null)
         {
             foreach (var album in Album)

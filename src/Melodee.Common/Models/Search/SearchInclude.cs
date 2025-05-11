@@ -19,5 +19,6 @@ public enum SearchInclude
 
     MetaData = MusicBrainz,
 
-    Everything = Albums | Artists | Genres | Playlists | Songs | MusicBrainz | Users | RadioStations | Shares | Contributors
+    Everything = Albums | Artists | Genres | Playlists | Songs | MusicBrainz | Users | RadioStations | Shares |
+                 Contributors
 }

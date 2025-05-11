@@ -31,7 +31,8 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         return _cache.Get<TOut>(key);
     }
 
-    public override async Task<TOut> GetAsync<TOut>(string key, Func<Task<TOut>> getItem, CancellationToken token, TimeSpan? duration = null, string? region = null)
+    public override async Task<TOut> GetAsync<TOut>(string key, Func<Task<TOut>> getItem, CancellationToken token,
+        TimeSpan? duration = null, string? region = null)
     {
         var r = Get<TOut>(key);
         if (r == null)

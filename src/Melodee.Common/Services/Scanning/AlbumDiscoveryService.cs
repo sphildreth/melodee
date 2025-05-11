@@ -53,7 +53,9 @@ public sealed class AlbumDiscoveryService(
         CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        var result = (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data?.FirstOrDefault(x => x.Id == id);
+        var result =
+            (await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken)).Data
+            ?.FirstOrDefault(x => x.Id == id);
         if (result == null)
         {
             Log.Error("Unable to find Album by id [{Id}] in [{DirectoryName}]", id, fileSystemDirectoryInfo.FullName());
@@ -78,7 +80,8 @@ public sealed class AlbumDiscoveryService(
         var albums = new List<Album>();
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
 
-        var dataForDirectoryInfoResult = await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
+        var dataForDirectoryInfoResult =
+            await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
         if (dataForDirectoryInfoResult.IsSuccess)
         {
             albums.AddRange(dataForDirectoryInfoResult.Data!);
@@ -126,8 +129,11 @@ public sealed class AlbumDiscoveryService(
                     break;
 
                 case AlbumResultFilter.LessThanConfiguredSongs:
-                    var filterLessThanSongs = SafeParser.ToNumber<int>(_configuration.Configuration[SettingRegistry.FilteringLessThanSongCount]);
-                    albums = albums.Where(x => x.Songs?.Count() < filterLessThanSongs || x.SongTotalValue() < filterLessThanSongs).ToList();
+                    var filterLessThanSongs =
+                        SafeParser.ToNumber<int>(
+                            _configuration.Configuration[SettingRegistry.FilteringLessThanSongCount]);
+                    albums = albums.Where(x =>
+                        x.Songs?.Count() < filterLessThanSongs || x.SongTotalValue() < filterLessThanSongs).ToList();
                     break;
 
                 case AlbumResultFilter.NeedsAttention:
@@ -151,7 +157,9 @@ public sealed class AlbumDiscoveryService(
                     break;
 
                 case AlbumResultFilter.LessThanConfiguredDuration:
-                    var filterLessDuration = SafeParser.ToNumber<int>(_configuration.Configuration[SettingRegistry.FilteringLessThanDuration]);
+                    var filterLessDuration =
+                        SafeParser.ToNumber<int>(
+                            _configuration.Configuration[SettingRegistry.FilteringLessThanDuration]);
                     albums = albums.Where(x => x.TotalDuration() < filterLessDuration).ToList();
                     break;
             }
@@ -165,7 +173,9 @@ public sealed class AlbumDiscoveryService(
                 switch (filterBy.PropertyName)
                 {
                     case "ArtistName":
-                        albums = albums.Where(x => x.Artist.NameNormalized.Contains(filterBy.Value.ToString()?.ToNormalizedString() ?? string.Empty)).ToList();
+                        albums = albums.Where(x =>
+                            x.Artist.NameNormalized.Contains(filterBy.Value.ToString()?.ToNormalizedString() ??
+                                                             string.Empty)).ToList();
                         break;
 
                     case "AlbumStatus":
@@ -175,8 +185,11 @@ public sealed class AlbumDiscoveryService(
 
                     case "NameNormalized":
                         albums = albums.Where(x =>
-                            (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(filterBy.Value.ToString() ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)) ||
-                            x.Artist.Name.Contains(filterBy.Value.ToString() ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)).ToList();
+                            (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(
+                                filterBy.Value.ToString() ?? string.Empty,
+                                StringComparison.CurrentCultureIgnoreCase)) ||
+                            x.Artist.Name.Contains(filterBy.Value.ToString() ?? string.Empty,
+                                StringComparison.CurrentCultureIgnoreCase)).ToList();
                         break;
 
                     case "ReleaseDate":
@@ -266,12 +279,14 @@ public sealed class AlbumDiscoveryService(
         };
     }
 
-    public async Task<bool> DeleteAlbumsAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, Func<Album, bool> condition, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAlbumsAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        Func<Album, bool> condition, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
         var result = false;
-        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, new PagedRequest() { PageSize = short.MaxValue }, cancellationToken);
+        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo,
+            new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
         if (albumsForDirectoryInfo.Data.Any())
         {
             foreach (var album in albumsForDirectoryInfo.Data)
@@ -295,10 +310,12 @@ public sealed class AlbumDiscoveryService(
         return result;
     }
 
-    public async Task<OperationResult<Dictionary<AlbumNeedsAttentionReasons, int>>> AlbumsCountByStatusAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Dictionary<AlbumNeedsAttentionReasons, int>>> AlbumsCountByStatusAsync(
+        FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
+        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo,
+            new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
 
         return new OperationResult<Dictionary<AlbumNeedsAttentionReasons, int>>
         {
@@ -312,7 +329,8 @@ public sealed class AlbumDiscoveryService(
         CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
+        var albumsForDirectoryInfo =
+            await AlbumsForDirectoryAsync(fileSystemDirectoryInfo, pagedRequest, cancellationToken);
         var data = albumsForDirectoryInfo.Data.ToArray().Select(async x => new AlbumDataInfo(
             0,
             x.Id,
@@ -345,7 +363,8 @@ public sealed class AlbumDiscoveryService(
         };
     }
 
-    public async Task<OperationResult<IEnumerable<Album>?>> AllMelodeeAlbumDataFilesForDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<IEnumerable<Album>?>> AllMelodeeAlbumDataFilesForDirectoryAsync(
+        FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
@@ -359,25 +378,28 @@ public sealed class AlbumDiscoveryService(
             if (dirInfo.Exists)
             {
                 //   foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
-                await Parallel.ForEachAsync(dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories), cancellationToken, async (jsonFile, token) =>
-                {
-                    try
+                await Parallel.ForEachAsync(
+                    dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories), cancellationToken,
+                    async (jsonFile, token) =>
                     {
-                        var r = await Album.DeserializeAndInitializeAlbumAsync(serializer, jsonFile.FullName, token).ConfigureAwait(false);
-                        if (r != null)
+                        try
                         {
-                            r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
-                            r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
-                            albums.Add(r);
+                            var r = await Album.DeserializeAndInitializeAlbumAsync(serializer, jsonFile.FullName, token)
+                                .ConfigureAwait(false);
+                            if (r != null)
+                            {
+                                r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
+                                r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
+                                albums.Add(r);
+                            }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
-                        messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
-                        jsonFile.Delete();
-                    }
-                });
+                        catch (Exception e)
+                        {
+                            Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
+                            messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
+                            jsonFile.Delete();
+                        }
+                    });
             }
         }
         catch (Exception e)

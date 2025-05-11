@@ -37,7 +37,8 @@ public class Mp3Files(
 
     public override int SortOrder { get; } = 0;
 
-    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        CancellationToken cancellationToken = default)
     {
         var processedFileCount = 0;
 
@@ -50,15 +51,19 @@ public class Mp3Files(
         };
         var songs = new List<Common.Models.Song>();
 
-        var maxAlbumProcessingCount = MelodeeConfiguration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
+        var maxAlbumProcessingCount =
+            MelodeeConfiguration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
+                value => value < 1 ? int.MaxValue : value);
 
         if (fileSystemDirectoryInfo.Exists())
         {
-            using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] ProcessDirectoryAsync [{directoryInfo}]", DisplayName, fileSystemDirectoryInfo.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("[{PluginName}] ProcessDirectoryAsync [{directoryInfo}]",
+                       DisplayName, fileSystemDirectoryInfo.Name))
             {
                 HandleMelodeeTagFiles(fileSystemDirectoryInfo);
-                
-                foreach (var fileSystemInfo in fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption.TopDirectoryOnly))
+
+                foreach (var fileSystemInfo in fileSystemDirectoryInfo.AllMediaTypeFileInfos(SearchOption
+                             .TopDirectoryOnly))
                 {
                     var fsi = fileSystemInfo.ToFileSystemInfo();
                     foreach (var plugin in songPlugins.OrderBy(x => x.SortOrder))
@@ -67,19 +72,23 @@ public class Mp3Files(
                         {
                             break;
                         }
+
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
-                            var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
+                            var pluginResult =
+                                await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                             errors.AddRange(pluginResult.Errors ?? []);
                             messages.AddRange(pluginResult.Messages ?? []);
                             if (pluginResult.IsSuccess)
                             {
                                 songs.Add(pluginResult.Data);
                                 viaPlugins.Add($"{nameof(Mp3Files)}:{plugin.DisplayName}");
-                                processedFileCount++;                                
+                                processedFileCount++;
                                 break;
                             }
-                            Trace.WriteLine($"Plugin [{plugin.DisplayName}] failed to to process file: [{fsi}] result [{serializer.Serialize(pluginResult)}]");
+
+                            Trace.WriteLine(
+                                $"Plugin [{plugin.DisplayName}] failed to to process file: [{fsi}] result [{serializer.Serialize(pluginResult)}]");
                         }
                     }
                 }
@@ -96,7 +105,10 @@ public class Mp3Files(
                             break;
                         }
 
-                        var foundAlbum = albums.FirstOrDefault(x => x.Artist.NameNormalized == (song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist()) && x.AlbumTitle() == song.AlbumTitle());
+                        var foundAlbum = albums.FirstOrDefault(x =>
+                            x.Artist.NameNormalized ==
+                            (song.AlbumArtist().ToNormalizedString() ?? song.AlbumArtist()) &&
+                            x.AlbumTitle() == song.AlbumTitle());
                         if (foundAlbum != null)
                         {
                             albums.Remove(foundAlbum);
@@ -113,7 +125,8 @@ public class Mp3Files(
                                 },
                                 new()
                                 {
-                                    Identifier = MetaTagIdentifier.AlbumArtist, Value = song.AlbumArtist(), SortOrder = 2
+                                    Identifier = MetaTagIdentifier.AlbumArtist, Value = song.AlbumArtist(),
+                                    SortOrder = 2
                                 },
                                 new()
                                 {
@@ -147,10 +160,13 @@ public class Mp3Files(
                                     Value = genre.Key?.ToString()?.CleanStringAsIs(),
                                     SortOrder = 5 + i
                                 }));
-                            var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
+                            var artistName = newAlbumTags.FirstOrDefault(x =>
+                                    x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value
+                                ?.ToString();
                             var newAlbum = new Album
                             {
-                                Artist = Artist.NewArtistFromName(artistName ?? throw new Exception("Invalid artist name")),
+                                Artist = Artist.NewArtistFromName(artistName ??
+                                                                  throw new Exception("Invalid artist name")),
                                 AlbumType = song.AlbumTitle().TryToDetectAlbumType(),
                                 Images = songsGroupedByAlbum.Where(x => x.Images != null)
                                     .SelectMany(x => x.Images!)
@@ -194,7 +210,9 @@ public class Mp3Files(
                 logger.Error(e, "Error serializing album [{Album}]", album.ToString());
             }
 
-            await File.WriteAllTextAsync(Path.Combine(fileSystemDirectoryInfo.FullName(), album.ToMelodeeJsonName(MelodeeConfiguration, true)), serialized, cancellationToken);
+            await File.WriteAllTextAsync(
+                Path.Combine(fileSystemDirectoryInfo.FullName(), album.ToMelodeeJsonName(MelodeeConfiguration, true)),
+                serialized, cancellationToken);
         }
 
         return new OperationResult<int>(messages)
@@ -206,15 +224,16 @@ public class Mp3Files(
 
     private void EnsureSortOrderSet(Common.Models.Song[] songs)
     {
-        Trace.WriteLine($"Ensuring sort order is set on songs...");
+        Trace.WriteLine("Ensuring sort order is set on songs...");
         foreach (var song in songs)
         {
-            song.SortOrder = song.SongNumber() + song.MediaNumber() * MediaEditService.SortOrderMediaMultiplier - MediaEditService.SortOrderMediaMultiplier;
+            song.SortOrder = song.SongNumber() + song.MediaNumber() * MediaEditService.SortOrderMediaMultiplier -
+                             MediaEditService.SortOrderMediaMultiplier;
         }
     }
-    
+
     /// <summary>
-    /// If MelodeeTag files are present (*.mtg), if so then process them. 
+    ///     If MelodeeTag files are present (*.mtg), if so then process them.
     /// </summary>
     private void HandleMelodeeTagFiles(FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
@@ -223,11 +242,13 @@ public class Mp3Files(
         {
             return;
         }
+
         var editorSongPlugin = songPlugins.FirstOrDefault(x => x is ISongFileUpdatePlugin) as ISongFileUpdatePlugin;
         if (editorSongPlugin == null)
         {
             return;
         }
+
         foreach (var mediaFile in fileSystemDirectoryInfo.AllMediaTypeFileInfos())
         {
             foreach (var melodeeTagFile in melodeeTagFiles)
@@ -237,23 +258,26 @@ public class Mp3Files(
                 {
                     continue;
                 }
+
                 var tagIdentifier = SafeParser.ToEnum<MetaTagIdentifier>(mediaTagNameParts[0]);
                 var tagValue = mediaTagNameParts[1].Replace(FileHelper.MelodeeTagFileExtension, string.Empty);
                 var updateResult = editorSongPlugin.UpdateFile(
-                        fileSystemDirectoryInfo,
-                        mediaFile.ToFileSystemInfo(),
-                        tagIdentifier,
-                        tagValue);
+                    fileSystemDirectoryInfo,
+                    mediaFile.ToFileSystemInfo(),
+                    tagIdentifier,
+                    tagValue);
                 if (!updateResult.IsSuccess)
                 {
                     return;
                 }
+
                 melodeeTagFile.Delete();
             }
         }
     }
-    
-    private async Task HandleDuplicates(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] seenSongs, CancellationToken cancellationToken = default)
+
+    private async Task HandleDuplicates(FileSystemDirectoryInfo fileSystemDirectoryInfo, Common.Models.Song[] seenSongs,
+        CancellationToken cancellationToken = default)
     {
         Trace.WriteLine($"Checking for duplicate files in [{fileSystemDirectoryInfo.FullName()}]...");
 
@@ -263,7 +287,8 @@ public class Mp3Files(
         }
 
         var ss = seenSongs.ToList();
-        var foundDuplicates = await fileSystemDirectoryInfo.FindDuplicatesAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        var foundDuplicates = await fileSystemDirectoryInfo.FindDuplicatesAsync(cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
         foreach (var dup in foundDuplicates.SelectMany(x => x.Value))
         {
             dup.Delete();

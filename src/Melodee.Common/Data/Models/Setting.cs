@@ -21,7 +21,9 @@ public class Setting : DataModelBase
 
     public int? Category { get; set; }
 
-    [NotMapped] public SettingCategory CategoryValue => Category == null ? SettingCategory.General : SafeParser.ToEnum<SettingCategory>(Category);
+    [NotMapped]
+    public SettingCategory CategoryValue =>
+        Category == null ? SettingCategory.General : SafeParser.ToEnum<SettingCategory>(Category);
 
     [Required]
     [MaxLength(MaxLengthDefinitions.MaxIndexableLength)]

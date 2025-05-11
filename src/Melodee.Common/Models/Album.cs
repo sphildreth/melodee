@@ -1,11 +1,9 @@
 using System.Diagnostics;
 using System.Text.Json.Serialization;
-using ATL.Logging;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.Validation;
-using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Serialization;
 using Melodee.Common.Utility;
 using NodaTime;
@@ -107,7 +105,7 @@ public sealed record Album
     }
 
     public Duration Duration => Duration.FromMilliseconds(this.TotalDuration());
-    
+
     public string DisplaySummary => $"{this.SongTotalValue().ToStringPadLeft(3)} : {this.AlbumTitle()}";
 
 
@@ -147,7 +145,8 @@ public sealed record Album
             statusSummary = $"{StatusReasons.ToString()}";
         }
 
-        return $"\u251c {statusSummary} \u2524 AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
+        return
+            $"\u251c {statusSummary} \u2524 AlbumDbId [{AlbumDbId}] MusicBrainzId [{MusicBrainzId}] Status [{Status}] SongCount [{Songs?.Count() ?? 0}] ImageCount [{Images?.Count() ?? 0}] Directory [{Directory}]";
     }
 
     public IEnumerable<MetaTag<object?>> ModifiedTags()
@@ -181,7 +180,8 @@ public sealed record Album
         {
             foreach (var tag in otherAlbum.Tags)
             {
-                if (tags.FirstOrDefault(x => x.Identifier == tag.Identifier)?.Value?.ToString() != tag.Value?.ToString())
+                if (tags.FirstOrDefault(x => x.Identifier == tag.Identifier)?.Value?.ToString() !=
+                    tag.Value?.ToString())
                 {
                     tags.Add(tag);
                 }
@@ -231,7 +231,8 @@ public sealed record Album
 
         return new Album
         {
-            AlbumType = isAlbumTypeAlbum && !isAlbumTypeEP ? AlbumType.Album : isAlbumTypeEP ? AlbumType.EP : AlbumType.NotSet,
+            AlbumType = isAlbumTypeAlbum && !isAlbumTypeEP ? AlbumType.Album :
+                isAlbumTypeEP ? AlbumType.EP : AlbumType.NotSet,
             Artist = Artist.Merge(otherAlbum.Artist),
             Directory = Directory,
             Files = files.ToArray(),
@@ -315,9 +316,12 @@ public sealed record Album
         }
     }
 
-    public static async Task<Album?> DeserializeAndInitializeAlbumAsync(ISerializer serializer, string fullPathToMelodeeDataFile, CancellationToken cancellationToken = default)
+    public static async Task<Album?> DeserializeAndInitializeAlbumAsync(ISerializer serializer,
+        string fullPathToMelodeeDataFile, CancellationToken cancellationToken = default)
     {
-        var result = serializer.Deserialize<Album>(await File.ReadAllBytesAsync(fullPathToMelodeeDataFile, cancellationToken).ConfigureAwait(false));
+        var result =
+            serializer.Deserialize<Album>(await File.ReadAllBytesAsync(fullPathToMelodeeDataFile, cancellationToken)
+                .ConfigureAwait(false));
         if (result == null)
         {
             return null;
@@ -327,22 +331,25 @@ public sealed record Album
 
         // See if Artist melodee.json exists in one folder up, if present use it for the albums artist overwriting any artist set on the albums melodee.json file
         var fi = new FileInfo(fullPathToMelodeeDataFile);
-        var artistMelodeeJsonFile = fi.Directory?.Parent?.FindFirstFileInParentDirectories(Models.Artist.JsonFileName);
+        var artistMelodeeJsonFile = fi.Directory?.Parent?.FindFirstFileInParentDirectories(Artist.JsonFileName);
         try
         {
             if (artistMelodeeJsonFile != null && File.Exists(artistMelodeeJsonFile?.FullName))
             {
-                var artist = serializer.Deserialize<Artist>(await File.ReadAllBytesAsync(artistMelodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false));
+                var artist = serializer.Deserialize<Artist>(await File
+                    .ReadAllBytesAsync(artistMelodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false));
                 result.Artist = artist ?? result.Artist;
                 if (artist != null)
                 {
-                    Trace.WriteLine($"Using artist { Models.Artist.JsonFileName} file [{artistMelodeeJsonFile}] for album [{result.AlbumTitle()}] Artist [{artist.Name}]");
+                    Trace.WriteLine(
+                        $"Using artist {Artist.JsonFileName} file [{artistMelodeeJsonFile}] for album [{result.AlbumTitle()}] Artist [{artist.Name}]");
                 }
             }
         }
         catch (Exception e)
         {
-            Trace.WriteLine($"Unable to read artist melodee.json file [{artistMelodeeJsonFile}] Exception [{e.Message}]");
+            Trace.WriteLine(
+                $"Unable to read artist melodee.json file [{artistMelodeeJsonFile}] Exception [{e.Message}]");
         }
 
 

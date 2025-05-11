@@ -1,25 +1,20 @@
 namespace Melodee.Common.Metadata.Mpeg;
 
 /// <summary>
-/// Summary description for mp3info.
+///     Summary description for mp3info.
 /// </summary>
 public class Mp3Info
 {
     public string Filename;
     public long FileSize;
-    public long Length; // in seconds
-
-    public Id3V1 Id3V1;
-    public Id3V2 Id3V2;
-    public Mpeg Mpeg;
 
     public bool HasId3V1;
     public bool HasId3V2;
 
-    private void Initialize_Components()
-    {
-        Filename = "";
-    }
+    public Id3V1 Id3V1;
+    public Id3V2 Id3V2;
+    public long Length; // in seconds
+    public Mpeg Mpeg;
 
 
     public Mp3Info()
@@ -31,6 +26,11 @@ public class Mp3Info
     {
         Initialize_Components();
         Filename = fileName;
+    }
+
+    private void Initialize_Components()
+    {
+        Filename = "";
     }
 
     private void CalculateLength()
@@ -64,7 +64,6 @@ public class Mp3Info
         if (Filename.Equals(""))
         {
             // we are fucked, we need a filename
-            return;
         }
         else
         {

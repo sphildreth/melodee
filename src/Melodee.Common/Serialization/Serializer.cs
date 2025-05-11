@@ -6,7 +6,6 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Serialization.Convertors;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Serilog;
 
 namespace Melodee.Common.Serialization;
@@ -17,7 +16,7 @@ public sealed class Serializer(ILogger logger) : ISerializer
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,        
+        PropertyNameCaseInsensitive = true,
         Converters = { new OpenSubsonicResponseModelConvertor() }
     };
 
@@ -30,11 +29,13 @@ public sealed class Serializer(ILogger logger) : ISerializer
             return null;
         }
 
-        var result = new StringBuilder($"<subsonic-response xmlns=\"https://subsonic.org/restapi\" status=\"{(model.IsSuccess ? "ok" : "error")}\" type=\"melodee\" version=\"{model.ResponseData.Version}\" serverVersion=\"{model.ResponseData.ServerVersion}\" openSubsonic=\"true\">");
+        var result = new StringBuilder(
+            $"<subsonic-response xmlns=\"https://subsonic.org/restapi\" status=\"{(model.IsSuccess ? "ok" : "error")}\" type=\"melodee\" version=\"{model.ResponseData.Version}\" serverVersion=\"{model.ResponseData.ServerVersion}\" openSubsonic=\"true\">");
 
         if (model.ResponseData.Error != null)
         {
-            result.Append($"<error code=\"{model.ResponseData.Error.Code}\" message=\"{model.ResponseData.Error.Message}\"/>");
+            result.Append(
+                $"<error code=\"{model.ResponseData.Error.Code}\" message=\"{model.ResponseData.Error.Message}\"/>");
         }
         else
         {
@@ -54,7 +55,8 @@ public sealed class Serializer(ILogger logger) : ISerializer
                 }
                 else
                 {
-                    result.Append(((IOpenSubsonicToXml)model.ResponseData.Data).ToXml(model.ResponseData.DataPropertyName));
+                    result.Append(
+                        ((IOpenSubsonicToXml)model.ResponseData.Data).ToXml(model.ResponseData.DataPropertyName));
                 }
 
                 if (model.ResponseData.DataPropertyName.Nullify() != null)

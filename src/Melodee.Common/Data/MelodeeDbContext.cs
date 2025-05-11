@@ -40,7 +40,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
     public DbSet<SearchHistory> SearchHistories { get; set; }
 
     public DbSet<Share> Shares { get; set; }
-    
+
     public DbSet<ShareActivity> ShareActivities { get; set; }
 
     public DbSet<Song> Songs { get; set; }
@@ -65,7 +65,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 1,
                     Name = "Inbound",
-                    Description = "Files in this directory are scanned and Album information is gathered via processing.",
+                    Description =
+                        "Files in this directory are scanned and Album information is gathered via processing.",
                     Path = "/storage/inbound/",
                     Type = (int)LibraryType.Inbound,
                     CreatedAt = now
@@ -74,7 +75,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 2,
                     Name = "Staging",
-                    Description = "The staging directory to place processed files into (Inbound -> Staging -> Library).",
+                    Description =
+                        "The staging directory to place processed files into (Inbound -> Staging -> Library).",
                     Path = "/storage/staging/",
                     Type = (int)LibraryType.Staging,
                     CreatedAt = now
@@ -83,7 +85,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 3,
                     Name = "Storage",
-                    Description = "The library directory to place processed, reviewed and ready to use music files into.",
+                    Description =
+                        "The library directory to place processed, reviewed and ready to use music files into.",
                     Path = "/storage/library/",
                     Type = (int)LibraryType.Storage,
                     CreatedAt = now
@@ -327,7 +330,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 26,
                     Key = SettingRegistry.ProcessingArtistNameReplacements,
                     Comment = "Fragments of artist names to replace (JSON Dictionary).",
-                    Value = "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }",
+                    Value =
+                        "{'AC/DC': ['AC; DC', 'AC;DC', 'AC/ DC', 'AC DC'] , 'Love/Hate': ['Love; Hate', 'Love;Hate', 'Love/ Hate', 'Love Hate'] }",
                     CreatedAt = now
                 },
                 new Setting
@@ -342,7 +346,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 28,
                     Key = SettingRegistry.ProcessingDoDeleteOriginal,
-                    Comment = "Delete original files when processing. When false a copy if made, else original is deleted after processed.",
+                    Comment =
+                        "Delete original files when processing. When false a copy if made, else original is deleted after processed.",
                     Value = "false",
                     CreatedAt = now
                 },
@@ -366,7 +371,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 32,
                     Key = SettingRegistry.ProcessingDoOverrideExistingMelodeeDataFiles,
-                    Comment = "When processing over write any existing Melodee data files, otherwise skip and leave in place.",
+                    Comment =
+                        "When processing over write any existing Melodee data files, otherwise skip and leave in place.",
                     Value = "true",
                     CreatedAt = now
                 },
@@ -470,7 +476,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 49,
                     Key = SettingRegistry.EncryptionPrivateKey,
-                    Comment = "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.",
+                    Comment =
+                        "Private key used to encrypt/decrypt passwords for Subsonic authentication. Use https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password= to generate a new key.",
                     Value = "H+Kiik6VMKfTD2MesF1GoMjczTrD5RhuKckJ5+/UQWOdWajGcsEC3yEnlJ5eoy8Y",
                     CreatedAt = now
                 },
@@ -478,7 +485,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 50,
                     Key = SettingRegistry.ProcessingDuplicateAlbumPrefix,
-                    Comment = "Prefix to apply to indicate an album directory is a duplicate album for an artist. If left blank the default of '__duplicate_' will be used.",
+                    Comment =
+                        "Prefix to apply to indicate an album directory is a duplicate album for an artist. If left blank the default of '__duplicate_' will be used.",
                     Value = "_duplicate_ ",
                     CreatedAt = now
                 },
@@ -514,7 +522,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1303,
                     Category = (int)SettingCategory.Validation,
                     Key = SettingRegistry.ValidationMinimumSongCount,
-                    Comment = "Minimum number of songs an album has to have to be considered valid, set to 0 to disable check.",
+                    Comment =
+                        "Minimum number of songs an album has to have to be considered valid, set to 0 to disable check.",
                     Value = "3",
                     CreatedAt = now
                 },
@@ -523,10 +532,11 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1304,
                     Category = (int)SettingCategory.Validation,
                     Key = SettingRegistry.ValidationMinimumAlbumDuration,
-                    Comment = "Minimum duration of an album to be considered valid (in minutes), set to 0 to disable check.",
+                    Comment =
+                        "Minimum duration of an album to be considered valid (in minutes), set to 0 to disable check.",
                     Value = "10",
                     CreatedAt = now
-                },               
+                },
                 new Setting
                 {
                     Id = 100,
@@ -568,7 +578,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 104,
                     Category = (int)SettingCategory.Api,
                     Key = SettingRegistry.OpenSubsonicIndexesArtistLimit,
-                    Comment = "Limit the number of artists to include in an indexes request, set to zero for 32k per index (really not recommended with tens of thousands of artists and mobile clients timeout downloading indexes, a user can find an artist by search)",
+                    Comment =
+                        "Limit the number of artists to include in an indexes request, set to zero for 32k per index (really not recommended with tens of thousands of artists and mobile clients timeout downloading indexes, a user can find an artist by search)",
                     Value = "1000",
                     CreatedAt = now
                 },
@@ -576,7 +587,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 53,
                     Key = SettingRegistry.DefaultsBatchSize,
-                    Comment = $"Processing batching size. Allowed range is between [{MelodeeConfiguration.BatchSizeDefault}] and [{MelodeeConfiguration.BatchSizeMaximum}]. ",
+                    Comment =
+                        $"Processing batching size. Allowed range is between [{MelodeeConfiguration.BatchSizeDefault}] and [{MelodeeConfiguration.BatchSizeMaximum}]. ",
                     Value = "250",
                     CreatedAt = now
                 },
@@ -584,7 +596,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                 {
                     Id = 54,
                     Key = SettingRegistry.ProcessingFileExtensionsToDelete,
-                    Comment = $"When processing folders immediately delete any files with these extensions. (JSON array).",
+                    Comment =
+                        "When processing folders immediately delete any files with these extensions. (JSON array).",
                     Value = "['log', 'lnk', 'lrc', 'doc']",
                     CreatedAt = now
                 },
@@ -629,7 +642,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 906,
                     Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineMusicBrainzImportMaximumToProcess,
-                    Comment = "Maximum number of batches import from MusicBrainz downloaded db dump (this setting is usually used during debugging), set to zero for unlimited.",
+                    Comment =
+                        "Maximum number of batches import from MusicBrainz downloaded db dump (this setting is usually used during debugging), set to zero for unlimited.",
                     Value = "0",
                     CreatedAt = now
                 },
@@ -638,7 +652,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 907,
                     Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineMusicBrainzImportBatchSize,
-                    Comment = "Number of records to import from MusicBrainz downloaded db dump before commiting to local SQLite database.",
+                    Comment =
+                        "Number of records to import from MusicBrainz downloaded db dump before commiting to local SQLite database.",
                     Value = "50000",
                     CreatedAt = now
                 },
@@ -683,7 +698,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 913,
                     Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineSpotifyAccessToken,
-                    Comment = "Token obtained from Spotify using the ApiKey and the Secret, this json contains expiry information.",
+                    Comment =
+                        "Token obtained from Spotify using the ApiKey and the Secret, this json contains expiry information.",
                     Value = "",
                     CreatedAt = now
                 },
@@ -719,7 +735,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 917,
                     Category = (int)SettingCategory.SearchEngine,
                     Key = SettingRegistry.SearchEngineArtistSearchDatabaseRefreshInDays,
-                    Comment = "Refresh albums for artists from search engine database every x days, set to zero to not refresh.",
+                    Comment =
+                        "Refresh albums for artists from search engine database every x days, set to zero to not refresh.",
                     Value = "14",
                     CreatedAt = now
                 },
@@ -731,7 +748,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Comment = "Is Deezer search engine enabled.",
                     Value = "true",
                     CreatedAt = now
-                },                
+                },
                 new Setting
                 {
                     Id = 400,
@@ -764,7 +781,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 403,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingLargeSize,
-                    Comment = "Large image size (square image, this is both width and height), if larger than will be resized to this image, leave blank to disable.",
+                    Comment =
+                        "Large image size (square image, this is both width and height), if larger than will be resized to this image, leave blank to disable.",
                     Value = "1600",
                     CreatedAt = now
                 },
@@ -773,7 +791,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 404,
                     Category = (int)SettingCategory.Imaging,
                     Key = SettingRegistry.ImagingMaximumNumberOfAlbumImages,
-                    Comment = "Maximum allowed number of images for an album, this includes all image types (Front, Rear, etc.), set to zero for unlimited.",
+                    Comment =
+                        "Maximum allowed number of images for an album, this includes all image types (Front, Rear, etc.), set to zero for unlimited.",
                     Value = "25",
                     CreatedAt = now
                 },
@@ -810,7 +829,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Transcoding,
                     Key = SettingRegistry.TranscodingCommandMp3,
                     Comment = "Default command to transcode MP3 for streaming.",
-                    Value = $"{{ 'format': '{TranscodingFormat.Mp3.ToString()}', 'bitrate: 192, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -f mp3 -' }}",
+                    Value =
+                        $"{{ 'format': '{TranscodingFormat.Mp3.ToString()}', 'bitrate: 192, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -f mp3 -' }}",
                     CreatedAt = now
                 },
                 new Setting
@@ -819,7 +839,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Transcoding,
                     Key = SettingRegistry.TranscodingCommandOpus,
                     Comment = "Default command to transcode using libopus for streaming.",
-                    Value = $"{{ 'format': '{TranscodingFormat.Opus.ToString()}', 'bitrate: 128, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a libopus -f opus -' }}",
+                    Value =
+                        $"{{ 'format': '{TranscodingFormat.Opus.ToString()}', 'bitrate: 128, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a libopus -f opus -' }}",
                     CreatedAt = now
                 },
                 new Setting
@@ -828,7 +849,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Transcoding,
                     Key = SettingRegistry.TranscodingCommandAac,
                     Comment = "Default command to transcode to aac for streaming.",
-                    Value = $"{{ 'format': '{TranscodingFormat.Aac.ToString()}', 'bitrate: 256, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a aac -f adts -' }}",
+                    Value =
+                        $"{{ 'format': '{TranscodingFormat.Aac.ToString()}', 'bitrate: 256, 'command': 'ffmpeg -i %s -ss %t -map 0:a:0 -b:a %bk -v 0 -c:a aac -f adts -' }}",
                     CreatedAt = now
                 },
                 new Setting
@@ -854,7 +876,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1002,
                     Category = (int)SettingCategory.Scrobbling,
                     Key = SettingRegistry.ScrobblingLastFmApiKey,
-                    Comment = "ApiKey used used with last FM. See https://www.last.fm/api/authentication for more details.",
+                    Comment =
+                        "ApiKey used used with last FM. See https://www.last.fm/api/authentication for more details.",
                     Value = "",
                     CreatedAt = now
                 },
@@ -863,7 +886,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1003,
                     Category = (int)SettingCategory.Scrobbling,
                     Key = SettingRegistry.ScrobblingLastFmSharedSecret,
-                    Comment = "Shared secret used with last FM. See https://www.last.fm/api/authentication for more details.",
+                    Comment =
+                        "Shared secret used with last FM. See https://www.last.fm/api/authentication for more details.",
                     Value = "",
                     CreatedAt = now
                 },
@@ -872,7 +896,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1100,
                     Category = (int)SettingCategory.System,
                     Key = SettingRegistry.SystemBaseUrl,
-                    Comment = "Base URL for Melodee to use when building shareable links and image urls (e.g., 'https://server.domain.com:8080', 'http://server.domain.com').",
+                    Comment =
+                        "Base URL for Melodee to use when building shareable links and image urls (e.g., 'https://server.domain.com:8080', 'http://server.domain.com').",
                     Value = MelodeeConfiguration.RequiredNotSetValue,
                     CreatedAt = now
                 },
@@ -890,7 +915,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1400,
                     Category = (int)SettingCategory.Jobs,
                     Key = SettingRegistry.JobsArtistHousekeepingCronExpression,
-                    Comment = "Cron expression to run the artist housekeeping job, set empty to disable. Default of '0 0 0/1 1/1 * ? *' will run every hour. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Comment =
+                        "Cron expression to run the artist housekeeping job, set empty to disable. Default of '0 0 0/1 1/1 * ? *' will run every hour. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
                     Value = "0 0 0/1 1/1 * ? *",
                     CreatedAt = now
                 },
@@ -899,7 +925,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1401,
                     Category = (int)SettingCategory.Jobs,
                     Key = SettingRegistry.JobsLibraryProcessCronExpression,
-                    Comment = "Cron expression to run the library process job, set empty to disable. Default of '0 */10 * ? * *' Every 10 minutes. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Comment =
+                        "Cron expression to run the library process job, set empty to disable. Default of '0 */10 * ? * *' Every 10 minutes. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
                     Value = "0 */10 * ? * *",
                     CreatedAt = now
                 },
@@ -908,7 +935,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1402,
                     Category = (int)SettingCategory.Jobs,
                     Key = SettingRegistry.JobsLibraryInsertCronExpression,
-                    Comment = "Cron expression to run the library scan job, set empty to disable. Default of '0 0 0 * * ?' will run every day at 00:00. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Comment =
+                        "Cron expression to run the library scan job, set empty to disable. Default of '0 0 0 * * ?' will run every day at 00:00. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
                     Value = "0 0 0 * * ?",
                     CreatedAt = now
                 },
@@ -917,7 +945,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1403,
                     Category = (int)SettingCategory.Jobs,
                     Key = SettingRegistry.JobsMusicBrainzUpdateDatabaseCronExpression,
-                    Comment = "Cron expression to run the musicbrainz database house keeping job, set empty to disable. Default of '0 0 12 1 * ?' will run first day of the month. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Comment =
+                        "Cron expression to run the musicbrainz database house keeping job, set empty to disable. Default of '0 0 12 1 * ?' will run first day of the month. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
                     Value = "0 0 12 1 * ?",
                     CreatedAt = now
                 },
@@ -926,7 +955,8 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Id = 1404,
                     Category = (int)SettingCategory.Jobs,
                     Key = SettingRegistry.JobsArtistSearchEngineHousekeepingCronExpression,
-                    Comment = "Cron expression to run the artist search engine house keeping job, set empty to disable. Default of '0 0 0 * * ?' will run every day at 00:00. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    Comment =
+                        "Cron expression to run the artist search engine house keeping job, set empty to disable. Default of '0 0 0 * * ?' will run every day at 00:00. See https://www.freeformatter.com/cron-expression-generator-quartz.html",
                     Value = "0 0 0 * * ?",
                     CreatedAt = now
                 }

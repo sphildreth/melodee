@@ -27,7 +27,7 @@ public sealed record ImageSearchResult
     public string? ItunesId { get; init; }
 
     public string? AmgId { get; init; }
-    
+
     public int? DeezerId { get; init; }
 
     public string? DiscogsId { get; init; }

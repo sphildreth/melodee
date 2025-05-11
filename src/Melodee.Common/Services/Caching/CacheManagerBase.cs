@@ -12,7 +12,10 @@ public abstract class CacheManagerBase(ILogger logger, TimeSpan defaultTimeSpan,
     public ISerializer Serializer { get; } = serializer;
     public abstract void Clear();
     public abstract void ClearRegion(string region);
-    public abstract Task<TOut> GetAsync<TOut>(string key, Func<Task<TOut>> getItem, CancellationToken token, TimeSpan? duration = null, string? region = null);
+
+    public abstract Task<TOut> GetAsync<TOut>(string key, Func<Task<TOut>> getItem, CancellationToken token,
+        TimeSpan? duration = null, string? region = null);
+
     public abstract bool Remove(string key);
     public abstract bool Remove(string key, string? region);
 }

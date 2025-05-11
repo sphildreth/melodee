@@ -24,12 +24,14 @@ public class ShareService(
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:share:apikey:{0}";
     private const string CacheKeyDetailTemplate = "urn:share:{0}";
-    
-    public async Task<MelodeeModels.PagedResult<Share>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+
+    public async Task<MelodeeModels.PagedResult<Share>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
     {
         int shareCount;
         Share[] shares = [];
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -40,7 +42,8 @@ public class ShareService(
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Shares\"");
-                var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                var listSql =
+                    $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 shares = (await dbConn
                     .QueryAsync<Share>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
@@ -54,8 +57,9 @@ public class ShareService(
             Data = shares
         };
     }
-    
-    public async Task<MelodeeModels.OperationResult<Share?>> AddAsync(Share share, CancellationToken cancellationToken = default)
+
+    public async Task<MelodeeModels.OperationResult<Share?>> AddAsync(Share share,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Null(share, nameof(share));
 
@@ -63,31 +67,37 @@ public class ShareService(
 
         var sqids = new SqidsEncoder<long>();
         share.ShareUniqueId = sqids.Encode(DateTime.UtcNow.Ticks);
-        
+
         share.CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
         var validationResult = ValidateModel(share);
         if (!validationResult.IsSuccess)
         {
-            return new MelodeeModels.OperationResult<Share?>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<Share?>(validationResult.Data.Item2
+                ?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = null,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             scopedContext.Shares.Add(share);
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
+
         return await GetAsync(share.Id, cancellationToken);
     }
 
-    public async Task<MelodeeModels.OperationResult<Share?>> GetByUniqueIdAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Share?>> GetByUniqueIdAsync(string id,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(id, nameof(id));
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var shareId = await dbConn
@@ -103,13 +113,15 @@ public class ShareService(
         }
     }
 
-    public async Task<MelodeeModels.OperationResult<Share?>> GetAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Share?>> GetAsync(int id,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
 
         var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 return await scopedContext
                     .Shares
@@ -123,17 +135,20 @@ public class ShareService(
         {
             Data = result
         };
-    }    
+    }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int currentUserId, int[] shareIds, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int currentUserId, int[] shareIds,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(shareIds, nameof(shareIds));
 
         bool result;
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var user = await scopedContext.Users.FirstAsync(x => x.Id == currentUserId, cancellationToken).ConfigureAwait(false);
+            var user = await scopedContext.Users.FirstAsync(x => x.Id == currentUserId, cancellationToken)
+                .ConfigureAwait(false);
             foreach (var shareId in shareIds)
             {
                 var share = await GetAsync(shareId, cancellationToken).ConfigureAwait(false);
@@ -161,9 +176,11 @@ public class ShareService(
                         Data = false
                     };
                 }
+
                 scopedContext.Shares.Remove(share);
             }
-            result = (await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false)) > 0;
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
         }
 
         return new MelodeeModels.OperationResult<bool>
@@ -171,8 +188,9 @@ public class ShareService(
             Data = result
         };
     }
-    
- public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Share detailToUpdate, CancellationToken cancellationToken = default)
+
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Share detailToUpdate,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
@@ -180,14 +198,16 @@ public class ShareService(
         var validationResult = ValidateModel(detailToUpdate);
         if (!validationResult.IsSuccess)
         {
-            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2
+                ?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = false,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             // Load the detail by DetailToUpdate.Id
             var dbDetail = await scopedContext
@@ -230,5 +250,5 @@ public class ShareService(
         {
             Data = result
         };
-    }    
+    }
 }

@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Drawing;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Data.Validators;
 using Melodee.Common.Enums;
@@ -68,7 +67,8 @@ public sealed class Artist : MetaDataModelBase
 
     public int MetaDataStatus { get; set; } = SafeParser.ToNumber<int>(MetaDataModelStatus.ReadyToProcess);
 
-    [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);
+    [NotMapped]
+    public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);
 
     public ICollection<Album> Albums { get; set; } = new List<Album>();
 

@@ -1,13 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Numerics;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using NodaTime;
 using Serilog;
 using SearchOption = System.IO.SearchOption;
@@ -16,13 +14,20 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class FileSystemDirectoryInfoExtensions
 {
-    public static readonly Regex IsDirectoryNotStudioAlbumsRegex = new(@"(single(s)*|\s?best\s?of|greatest(s*)\s?hit(s*)|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex IsDirectoryNotStudioAlbumsRegex =
+        new(
+            @"(single(s)*|\s?best\s?of|greatest(s*)\s?hit(s*)|compilation(s*)|live|boxset(s*)|bootleg(s*)|promo(s*)|demo(s*))",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex IsDirectoryDiscographyRegex = new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex IsDirectoryDiscographyRegex =
+        new("(discography)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex = new(@"^(cd|disc|disk|side|media|a|b|c|d|e|f){1,}\s*([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex IsDirectoryAlbumMediaDirectoryRegex =
+        new(@"^(cd|disc|disk|side|media|a|b|c|d|e|f){1,}\s*([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static async Task<KeyValuePair<string, List<FileInfo>>[]> FindDuplicatesAsync(this FileSystemDirectoryInfo directory, string searchPattern = "*.*", CancellationToken cancellationToken = default)
+    public static async Task<KeyValuePair<string, List<FileInfo>>[]> FindDuplicatesAsync(
+        this FileSystemDirectoryInfo directory, string searchPattern = "*.*",
+        CancellationToken cancellationToken = default)
     {
         var fileGroups = new ConcurrentDictionary<long, ConcurrentDictionary<string, List<FileInfo>>>();
         var files = Directory.GetFiles(directory.FullName(), searchPattern, SearchOption.AllDirectories);
@@ -108,18 +113,21 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static bool DoesDirectoryHaveImageFiles(this FileSystemDirectoryInfo directory)
     {
-        return directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileImageType(x.Extension));
+        return directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories)
+            .Any(x => FileHelper.IsFileImageType(x.Extension));
     }
 
     public static bool DoesDirectoryHaveMediaFiles(this FileSystemDirectoryInfo directory)
     {
-        return directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories).Any(x => FileHelper.IsFileMediaType(x.Extension));
+        return directory.Exists() && directory.AllFileInfos("*.*", SearchOption.AllDirectories)
+            .Any(x => FileHelper.IsFileMediaType(x.Extension));
     }
 
     /// <summary>
     ///     Rename the Directory and prepend the given prefix.
     /// </summary>
-    public static FileSystemDirectoryInfo AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string prefix)
+    public static FileSystemDirectoryInfo AppendPrefix(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        string prefix)
     {
         var d = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (d.Name.StartsWith(prefix))
@@ -133,6 +141,7 @@ public static class FileSystemDirectoryInfoExtensions
         {
             moveTo.ToDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
         }
+
         d.ToDirectorySystemInfo().MoveToDirectory(moveTo);
         return new FileSystemDirectoryInfo
         {
@@ -195,7 +204,8 @@ public static class FileSystemDirectoryInfoExtensions
         }).OrderBy(x => x.Name).ToArray();
     }
 
-    public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
+    public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        string extension)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
         if (!dirInfo.Exists)
@@ -216,7 +226,8 @@ public static class FileSystemDirectoryInfoExtensions
         }).OrderBy(x => x.Name).ToArray();
     }
 
-    public static FileSystemFileInfo? GetFileForCrcHash(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension, string crcHash)
+    public static FileSystemFileInfo? GetFileForCrcHash(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        string extension, string crcHash)
     {
         foreach (var fileInfoForExtension in fileSystemDirectoryInfo.FileInfosForExtension(extension))
         {
@@ -250,7 +261,8 @@ public static class FileSystemDirectoryInfoExtensions
         return string.IsNullOrWhiteSpace(dir) ? null : dir.ExtractNumber();
     }
 
-    public static IEnumerable<FileSystemDirectoryInfo> AllAlbumMediaDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    public static IEnumerable<FileSystemDirectoryInfo> AllAlbumMediaDirectories(
+        this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
         var result = new List<FileSystemDirectoryInfo>();
         foreach (var dirInfo in fileSystemDirectoryInfo.AllDirectoryInfos())
@@ -304,7 +316,8 @@ public static class FileSystemDirectoryInfoExtensions
         result.AddRange(from dir in dirInfo.EnumerateDirectories("*.*", searchOption)
                 .OrderBy(x => x.LastWriteTimeUtc)
             where dir.LastWriteTimeUtc >= modifiedSinceValue &&
-                  dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Any(x => FileHelper.IsFileMediaType(x.Extension))
+                  dir.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
+                      .Any(x => FileHelper.IsFileMediaType(x.Extension))
             select dir.ToFileSystemDirectoryInfo());
         if (dirInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
             .Any(x => x.LastWriteTimeUtc >= modifiedSinceValue && FileHelper.IsFileMediaType(x.Extension)))
@@ -315,7 +328,8 @@ public static class FileSystemDirectoryInfoExtensions
         return result.ToArray();
     }
 
-    public static (string, int) GetNextFileNameForType(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string imageType)
+    public static (string, int) GetNextFileNameForType(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        string imageType)
     {
         var highestNumberFound = 0;
         var allImagesInDirectory = fileSystemDirectoryInfo.AllFileImageTypeFileInfos().ToArray();
@@ -345,12 +359,15 @@ public static class FileSystemDirectoryInfoExtensions
         return fileSystemDirectoryInfo.AllFileInfos().Where(fileInfo => FileHelper.IsFileImageType(fileInfo.Extension));
     }
 
-    public static IEnumerable<FileInfo> AllMediaTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, SearchOption? searchOption = null)
+    public static IEnumerable<FileInfo> AllMediaTypeFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        SearchOption? searchOption = null)
     {
-        return fileSystemDirectoryInfo.AllFileInfos(searchOption: searchOption).Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
+        return fileSystemDirectoryInfo.AllFileInfos(searchOption: searchOption)
+            .Where(fileInfo => FileHelper.IsFileMediaType(fileInfo.Extension));
     }
 
-    public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null, SearchOption? searchOption = null)
+    public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        string? searchPattern = null, SearchOption? searchOption = null)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
@@ -367,7 +384,8 @@ public static class FileSystemDirectoryInfoExtensions
         return dirInfo.Parent?.ToDirectorySystemInfo();
     }
 
-    public static IEnumerable<DirectoryInfo> AllDirectoryInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string? searchPattern = null, SearchOption? searchOption = null)
+    public static IEnumerable<DirectoryInfo> AllDirectoryInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        string? searchPattern = null, SearchOption? searchOption = null)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (!dirInfo.Exists)
@@ -395,7 +413,8 @@ public static class FileSystemDirectoryInfoExtensions
 
         if (!Directory.Exists(dir))
         {
-            Trace.WriteLine($"Delete Empty Dirs called with a directory that does not exist [{dir}]", TraceLevel.Warning.ToString());
+            Trace.WriteLine($"Delete Empty Dirs called with a directory that does not exist [{dir}]",
+                TraceLevel.Warning.ToString());
             return;
         }
 
@@ -428,7 +447,8 @@ public static class FileSystemDirectoryInfoExtensions
         }
     }
 
-    public static void DeleteAllFilesForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string extension)
+    public static void DeleteAllFilesForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        string extension)
     {
         var filesToDelete = fileSystemDirectoryInfo.FileInfosForExtension(extension);
         foreach (var fileToDelete in filesToDelete)
@@ -437,12 +457,15 @@ public static class FileSystemDirectoryInfoExtensions
         }
     }
 
-    public static void MarkAllFilesForExtensionsProcessed(this FileSystemDirectoryInfo fileSystemDirectoryInfo, Dictionary<string, object?> configuration, params string[] extensions)
+    public static void MarkAllFilesForExtensionsProcessed(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        Dictionary<string, object?> configuration, params string[] extensions)
     {
-        ChangeFileExtensions(fileSystemDirectoryInfo, SafeParser.ToString(configuration[SettingRegistry.ProcessingProcessedExtension]), extensions);
+        ChangeFileExtensions(fileSystemDirectoryInfo,
+            SafeParser.ToString(configuration[SettingRegistry.ProcessingProcessedExtension]), extensions);
     }
 
-    private static void ChangeFileExtensions(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string newExtension, params string[] extensions)
+    private static void ChangeFileExtensions(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string newExtension,
+        params string[] extensions)
     {
         if (newExtension.Nullify() == null)
         {
@@ -476,7 +499,8 @@ public static class FileSystemDirectoryInfoExtensions
     ///     This exists because in some systems where data is on one mapped drive it cannot be "Moved" to another mapped drive
     ///     ("Cross link" error), it must be copied and then deleted.
     /// </summary>
-    public static void MoveToDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string destination, string? dontMoveFileName = null, bool? isNestedDirectory = false)
+    public static void MoveToDirectory(this FileSystemDirectoryInfo fileSystemDirectoryInfo, string destination,
+        string? dontMoveFileName = null, bool? isNestedDirectory = false)
     {
         if (!Directory.Exists(destination))
         {

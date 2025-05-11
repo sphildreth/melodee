@@ -24,7 +24,8 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
 
     public int SortOrder { get; } = 0;
 
-    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults,
+        CancellationToken cancellationToken = default)
     {
         StopProcessing = false;
 
@@ -32,7 +33,8 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
 
         if (!configuration.GetValue<bool>(SettingRegistry.SearchEngineMusicBrainzEnabled))
         {
-            return new OperationResult<ImageSearchResult[]?>("MusicBrainz Cover Art Archive image search plugin is disabled.")
+            return new OperationResult<ImageSearchResult[]?>(
+                "MusicBrainz Cover Art Archive image search plugin is disabled.")
             {
                 Data = null
             };
@@ -52,7 +54,8 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
             }, 1, cancellationToken).ConfigureAwait(false);
             if (artistSearchResult.IsSuccess)
             {
-                var rg = artistSearchResult.Data.FirstOrDefault()?.Releases?.FirstOrDefault()?.MusicBrainzResourceGroupId;
+                var rg = artistSearchResult.Data.FirstOrDefault()?.Releases?.FirstOrDefault()
+                    ?.MusicBrainzResourceGroupId;
                 if (rg != null)
                 {
                     result.Add(new ImageSearchResult
@@ -67,12 +70,15 @@ public sealed class MusicBrainzCoverArtArchiveSearchEngine(
         }
         catch (Exception e)
         {
-            Log.Error(e, "[{PluginName}] attempting to query cover art archive image search plugin failed Query [{Query}]", nameof(MusicBrainzArtistSearchEnginePlugin), query);
+            Log.Error(e,
+                "[{PluginName}] attempting to query cover art archive image search plugin failed Query [{Query}]",
+                nameof(MusicBrainzArtistSearchEnginePlugin), query);
         }
 
         if (result.Count == 0)
         {
-            Log.Debug("[{PluginName}] no MusicBrainz Cover Art response for query[{Query}]", nameof(MusicBrainzArtistSearchEnginePlugin), query);
+            Log.Debug("[{PluginName}] no MusicBrainz Cover Art response for query[{Query}]",
+                nameof(MusicBrainzArtistSearchEnginePlugin), query);
         }
 
         return new OperationResult<ImageSearchResult[]?>

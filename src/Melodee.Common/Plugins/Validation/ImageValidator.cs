@@ -12,11 +12,13 @@ namespace Melodee.Common.Plugins.Validation;
 
 public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImageValidator
 {
-    private static readonly Regex ImageNameIsProofRegex = new(@"(proof|foto)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private static readonly Regex ImageNameIsProofRegex = new(@"(proof|foto)+",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
     private readonly List<ValidationResultMessage> _validationMessages = [];
 
-    public async Task<OperationResult<ValidationResult>> ValidateImage(FileInfo? fileInfo, PictureIdentifier pictureIdentifier, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<ValidationResult>> ValidateImage(FileInfo? fileInfo,
+        PictureIdentifier pictureIdentifier, CancellationToken cancellationToken = default)
     {
         _validationMessages.Clear();
         if (fileInfo == null)
@@ -70,7 +72,8 @@ public sealed class ImageValidator(IMelodeeConfiguration configuration) : IImage
                     _validationMessages.Add(new ValidationResultMessage
                     {
                         Severity = ValidationResultMessageSeverity.Critical,
-                        Message = $"Image size [{imageInfo.Width}] is less than configured minimum image size [{minSize}]."
+                        Message =
+                            $"Image size [{imageInfo.Width}] is less than configured minimum image size [{minSize}]."
                     });
                 }
             }

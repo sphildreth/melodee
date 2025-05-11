@@ -24,7 +24,7 @@ public sealed record AlbumSearchResult
 
     public string? ReleaseDate { get; set; }
 
-    public int? Year => DateTime.TryParse(ReleaseDate, out var date) ? date.Year : (int?)null;
+    public int? Year => DateTime.TryParse(ReleaseDate, out var date) ? date.Year : null;
 
     public string[]? Genres { get; init; }
 

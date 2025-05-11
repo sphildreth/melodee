@@ -14,7 +14,8 @@ public static class ArtistDataInfoExtensions
         return $"data:image/jpeg;base64,{Convert.ToBase64String(artist.ImageBytes ?? defaultImages ?? [])}";
     }
 
-    public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this ArtistDataInfo artist, string? libraryPath = null)
+    public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this ArtistDataInfo artist,
+        string? libraryPath = null)
     {
         return new FileSystemDirectoryInfo
         {

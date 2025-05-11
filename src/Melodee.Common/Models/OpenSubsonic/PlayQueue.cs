@@ -22,7 +22,9 @@ public sealed record PlayQueue : IOpenSubsonicToXml
 
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<playQueue current=\"{Current}\" position=\"{Position}\" username=\"{Username.ToSafeXmlString()}\" changed=\"{Changed}\" changedBy=\"{ChangedBy.ToSafeXmlString()}\">");
+        var result =
+            new StringBuilder(
+                $"<playQueue current=\"{Current}\" position=\"{Position}\" username=\"{Username.ToSafeXmlString()}\" changed=\"{Changed}\" changedBy=\"{ChangedBy.ToSafeXmlString()}\">");
         if (Entry != null)
         {
             foreach (var child in Entry)

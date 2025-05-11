@@ -52,10 +52,11 @@ public record SongSearchResult : IOpenSubsonicToXml
 
     public string ToXml(string? nodeName = null)
     {
-        return $"<song id=\"{Id}\" parent=\"{Parent}\" title=\"{Title.ToSafeXmlString()}\" album=\"{Album.ToSafeXmlString()}\" " +
-               $"artist=\"{Artist.ToSafeXmlString()}\" isDir=\"{IsDir.ToLowerCaseString()}\" coverArt=\"{CoverArt}\" created=\"{Created}\" " +
-               $"duration=\"{Duration}\" bitRate=\"{Bitrate}\" track=\"{Track}\" genre=\"({Genre.ToSafeXmlString()}\" size=\"{Size}\" suffix=\"{Suffix}\" " +
-               $"contentType=\"{ContentType}\" isVideo=\"false\" path=\"{Path}\" " +
-               $"albumId=\"{AlbumId}\" artistId=\"{ArtistId}\" type=\"{Type}\"/>";
+        return
+            $"<song id=\"{Id}\" parent=\"{Parent}\" title=\"{Title.ToSafeXmlString()}\" album=\"{Album.ToSafeXmlString()}\" " +
+            $"artist=\"{Artist.ToSafeXmlString()}\" isDir=\"{IsDir.ToLowerCaseString()}\" coverArt=\"{CoverArt}\" created=\"{Created}\" " +
+            $"duration=\"{Duration}\" bitRate=\"{Bitrate}\" track=\"{Track}\" genre=\"({Genre.ToSafeXmlString()}\" size=\"{Size}\" suffix=\"{Suffix}\" " +
+            $"contentType=\"{ContentType}\" isVideo=\"false\" path=\"{Path}\" " +
+            $"albumId=\"{AlbumId}\" artistId=\"{ArtistId}\" type=\"{Type}\"/>";
     }
 }

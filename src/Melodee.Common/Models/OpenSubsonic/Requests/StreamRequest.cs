@@ -24,5 +24,6 @@ public record StreamRequest(string Id, int? MaxBitRate, string? Format, int? Tim
 
     public bool IsRawFormat => Format.Nullify() != null && Format.ToNormalizedString() == "RAW";
 
-    public bool IsTranscodingRequest => !IsDownloadingRequest && !IsRawFormat && MaxBitRate != null && Format.Nullify() != null;
+    public bool IsTranscodingRequest =>
+        !IsDownloadingRequest && !IsRawFormat && MaxBitRate != null && Format.Nullify() != null;
 }

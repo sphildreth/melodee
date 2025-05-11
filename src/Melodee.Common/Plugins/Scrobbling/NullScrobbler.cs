@@ -14,7 +14,8 @@ public class NullScrobbler : IScrobbler
 
     public int SortOrder { get; } = 0;
 
-    public Task<OperationResult<bool>> NowPlaying(UserInfo user, ScrobbleInfo scrobble, CancellationToken token = default)
+    public Task<OperationResult<bool>> NowPlaying(UserInfo user, ScrobbleInfo scrobble,
+        CancellationToken token = default)
     {
         return Task.FromResult(new OperationResult<bool>
         {

@@ -116,7 +116,8 @@ public record AlbumId3WithSongs : IOpenSubsonicToXml
             starredAttribute = $" starred=\"{Starred}\" starredAt=\"{Starred}\"";
         }
 
-        var result = new StringBuilder($"<album id=\"{Id}\" {starredAttribute} year=\"{Year}\" name=\"{Name.ToSafeXmlString()}\" genre=\"{Genre.ToSafeXmlString()}\" coverArt=\"{CoverArt}\" songCount=\"{SongCount}\" created=\"{Created}\" duration=\"{Duration}\" artist=\"{Artist.ToSafeXmlString()}\" artistId=\"{ArtistId}\">");
+        var result = new StringBuilder(
+            $"<album id=\"{Id}\" {starredAttribute} year=\"{Year}\" name=\"{Name.ToSafeXmlString()}\" genre=\"{Genre.ToSafeXmlString()}\" coverArt=\"{CoverArt}\" songCount=\"{SongCount}\" created=\"{Created}\" duration=\"{Duration}\" artist=\"{Artist.ToSafeXmlString()}\" artistId=\"{ArtistId}\">");
         foreach (var child in Song ?? [])
         {
             result.Append(child.ToXml());

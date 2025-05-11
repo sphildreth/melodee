@@ -43,7 +43,8 @@ public class SQLiteMusicBrainzRepository(
 {
     private const LuceneVersion AppLuceneVersion = LuceneVersion.LUCENE_48;
 
-    public override async Task<Album?> GetAlbumByMusicBrainzId(Guid musicBrainzId, CancellationToken cancellationToken = default)
+    public override async Task<Album?> GetAlbumByMusicBrainzId(Guid musicBrainzId,
+        CancellationToken cancellationToken = default)
     {
         using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
         {
@@ -51,7 +52,8 @@ public class SQLiteMusicBrainzRepository(
         }
     }
 
-    public override async Task<PagedResult<ArtistSearchResult>> SearchArtist(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public override async Task<PagedResult<ArtistSearchResult>> SearchArtist(ArtistQuery query, int maxResults,
+        CancellationToken cancellationToken = default)
     {
         var startTicks = Stopwatch.GetTimestamp();
         var data = new List<ArtistSearchResult>();
@@ -60,7 +62,9 @@ public class SQLiteMusicBrainzRepository(
         var totalCount = 0;
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
-        var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath) ?? throw new InvalidOperationException($"Invalid setting for [{SettingRegistry.SearchEngineMusicBrainzStoragePath}]");
+        var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath) ??
+                          throw new InvalidOperationException(
+                              $"Invalid setting for [{SettingRegistry.SearchEngineMusicBrainzStoragePath}]");
 
         var musicBrainzIdsFromLucene = new List<string>();
 
@@ -81,13 +85,15 @@ public class SQLiteMusicBrainzRepository(
                         var searcher = new IndexSearcher(reader);
                         BooleanQuery categoryQuery = [];
                         var catQuery1 = new TermQuery(new Term(nameof(Artist.NameNormalized), query.NameNormalized));
-                        var catQuery2 = new TermQuery(new Term(nameof(Artist.NameNormalized), query.NameNormalizedReversed));
+                        var catQuery2 =
+                            new TermQuery(new Term(nameof(Artist.NameNormalized), query.NameNormalizedReversed));
                         var catQuery3 = new TermQuery(new Term(nameof(Artist.AlternateNames), query.NameNormalized));
                         categoryQuery.Add(new BooleanClause(catQuery1, Occur.SHOULD));
                         categoryQuery.Add(new BooleanClause(catQuery2, Occur.SHOULD));
                         categoryQuery.Add(new BooleanClause(catQuery3, Occur.SHOULD));
                         ScoreDoc[] hits = searcher.Search(categoryQuery, maxLuceneResults).ScoreDocs;
-                        musicBrainzIdsFromLucene.AddRange(hits.Select(t => searcher.Doc(t.Doc)).Select(hitDoc => hitDoc.Get(nameof(Artist.MusicBrainzIdRaw))));
+                        musicBrainzIdsFromLucene.AddRange(hits.Select(t => searcher.Doc(t.Doc))
+                            .Select(hitDoc => hitDoc.Get(nameof(Artist.MusicBrainzIdRaw))));
                     }
                 }
             }
@@ -95,7 +101,8 @@ public class SQLiteMusicBrainzRepository(
 
         try
         {
-            using (Operation.At(LogEventLevel.Debug).Time("[{Name}] SearchArtist [{ArtistQuery}]", nameof(SQLiteMusicBrainzRepository), query))
+            using (Operation.At(LogEventLevel.Debug).Time("[{Name}] SearchArtist [{ArtistQuery}]",
+                       nameof(SQLiteMusicBrainzRepository), query))
             {
                 using (var db = await dbConnectionFactory.OpenAsync(cancellationToken))
                 {
@@ -156,14 +163,17 @@ public class SQLiteMusicBrainzRepository(
                             rank += artistAlbums.Length;
                             foreach (var albumKeyValues in query.AlbumKeyValues)
                             {
-                                rank += artistAlbums.Count(x => x.ReleaseDate.Year.ToString() == albumKeyValues.Key && x.NameNormalized == albumKeyValues.Value.ToNormalizedString());
+                                rank += artistAlbums.Count(x =>
+                                    x.ReleaseDate.Year.ToString() == albumKeyValues.Key &&
+                                    x.NameNormalized == albumKeyValues.Value.ToNormalizedString());
                             }
                         }
 
                         data.Add(new ArtistSearchResult
                         {
                             AlternateNames = artist.AlternateNames?.ToTags()?.ToArray() ?? [],
-                            FromPlugin = $"{nameof(MusicBrainzArtistSearchEnginePlugin)}:{nameof(SQLiteMusicBrainzRepository)}",
+                            FromPlugin =
+                                $"{nameof(MusicBrainzArtistSearchEnginePlugin)}:{nameof(SQLiteMusicBrainzRepository)}",
                             UniqueId = SafeParser.Hash(artist.MusicBrainzId.ToString()),
                             Rank = rank,
                             Name = artist.Name,
@@ -209,10 +219,12 @@ public class SQLiteMusicBrainzRepository(
     {
         using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: ImportData"))
         {
-            var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+            var configuration =
+                await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
 
             var batchSize = configuration.GetValue<int>(SettingRegistry.SearchEngineMusicBrainzImportBatchSize);
-            var maxToProcess = configuration.GetValue<int>(SettingRegistry.SearchEngineMusicBrainzImportMaximumToProcess);
+            var maxToProcess =
+                configuration.GetValue<int>(SettingRegistry.SearchEngineMusicBrainzImportMaximumToProcess);
             if (maxToProcess == 0)
             {
                 maxToProcess = int.MaxValue;
@@ -221,7 +233,8 @@ public class SQLiteMusicBrainzRepository(
             var storagePath = configuration.GetValue<string>(SettingRegistry.SearchEngineMusicBrainzStoragePath);
             if (storagePath == null || !Directory.Exists(storagePath))
             {
-                Logger.Warning("MusicBrainz storage path is invalid [{KeyNam}]", SettingRegistry.SearchEngineMusicBrainzStoragePath);
+                Logger.Warning("MusicBrainz storage path is invalid [{KeyNam}]",
+                    SettingRegistry.SearchEngineMusicBrainzStoragePath);
                 return new OperationResult<bool>
                 {
                     Data = false
@@ -281,10 +294,13 @@ public class SQLiteMusicBrainzRepository(
                         }
                     }
 
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artists of [{Loaded}] in [{BatchCount}] batches.", db.Count<Artist>(), LoadedMaterializedArtists.Count, batches);
+                    Log.Debug(
+                        "MusicBrainzRepository: Imported [{Count}] artists of [{Loaded}] in [{BatchCount}] batches.",
+                        db.Count<Artist>(), LoadedMaterializedArtists.Count, batches);
                 }
 
-                using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded artist relations"))
+                using (Operation.At(LogEventLevel.Debug)
+                           .Time("MusicBrainzRepository: Inserted loaded artist relations"))
                 {
                     db.CreateTable<ArtistRelation>();
 
@@ -299,7 +315,9 @@ public class SQLiteMusicBrainzRepository(
                         }
                     }
 
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] artist relations of [{Loaded}] in [{BatchCount}] batches.", db.Count<ArtistRelation>(), LoadedMaterializedArtistRelations.Count, batches);
+                    Log.Debug(
+                        "MusicBrainzRepository: Imported [{Count}] artist relations of [{Loaded}] in [{BatchCount}] batches.",
+                        db.Count<ArtistRelation>(), LoadedMaterializedArtistRelations.Count, batches);
                 }
 
                 using (Operation.At(LogEventLevel.Debug).Time("MusicBrainzRepository: Inserted loaded albums"))
@@ -316,7 +334,9 @@ public class SQLiteMusicBrainzRepository(
                         }
                     }
 
-                    Log.Debug("MusicBrainzRepository: Imported [{Count}] albums of [{Loaded}] in [{BatchCount}] batches.", db.Count<Album>(), LoadedMaterializedAlbums.Count, batches);
+                    Log.Debug(
+                        "MusicBrainzRepository: Imported [{Count}] albums of [{Loaded}] in [{BatchCount}] batches.",
+                        db.Count<Album>(), LoadedMaterializedAlbums.Count, batches);
                 }
             }
 

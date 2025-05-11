@@ -25,7 +25,8 @@ public record SearchRequest(
 {
     public string QueryValue => Query.Nullify() == null ? string.Empty : $"%{Query}%";
 
-    public string QueryNormalizedValue => Query.Nullify() == null ? string.Empty : $"%{QueryValue.ToNormalizedString()}%";
+    public string QueryNormalizedValue =>
+        Query.Nullify() == null ? string.Empty : $"%{QueryValue.ToNormalizedString()}%";
 
     public bool IsValid => QueryValue.Nullify() != null;
 }

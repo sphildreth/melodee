@@ -38,7 +38,8 @@ public sealed record AlbumDataInfo(
     public AlbumSearchResult? AlbumSearchResult { get; init; }
 
     /// <summary>
-    ///     This is populated when the record is created from a Search Engine result, not a Melodee database record. This is likely an external public url.
+    ///     This is populated when the record is created from a Search Engine result, not a Melodee database record. This is
+    ///     likely an external public url.
     /// </summary>
     public string? CoverUrl { get; set; }
 
@@ -48,11 +49,14 @@ public sealed record AlbumDataInfo(
 
     public AlbumStatus AlbumStatusValue => SafeParser.ToEnum<AlbumStatus>(AlbumStatus);
 
-    public AlbumNeedsAttentionReasons NeedsAttentionReasonsValue => SafeParser.ToEnum<AlbumNeedsAttentionReasons>(NeedsAttentionReasons);
+    public AlbumNeedsAttentionReasons NeedsAttentionReasonsValue =>
+        SafeParser.ToEnum<AlbumNeedsAttentionReasons>(NeedsAttentionReasons);
 
-    public bool IsValid => NeedsAttentionReasonsValue == AlbumNeedsAttentionReasons.NotSet && AlbumStatusValue != Enums.AlbumStatus.Ok;
+    public bool IsValid => NeedsAttentionReasonsValue == AlbumNeedsAttentionReasons.NotSet &&
+                           AlbumStatusValue != Enums.AlbumStatus.Ok;
 
     public static string InfoLineTitle => "Year | Song Count | Duration";
 
-    public string InfoLineData => $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()} {(IsLocked ? " | \ud83d\udd12" : string.Empty)}";
+    public string InfoLineData =>
+        $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()} {(IsLocked ? " | \ud83d\udd12" : string.Empty)}";
 }

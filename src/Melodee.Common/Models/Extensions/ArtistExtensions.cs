@@ -3,21 +3,22 @@ using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.SearchEngines;
-using Melodee.Common.Plugins.Conversion.Image;
-using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Utility;
 using NodaTime;
-using SixLabors.ImageSharp;
 
 namespace Melodee.Common.Models.Extensions;
 
 public static class ArtistExtensions
 {
-    public static readonly Regex VariousArtistParseRegex = new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex VariousArtistParseRegex =
+        new(@"([\[\(]*various\s*artists[\]\)]*)|([\[\(]*va[\]\)]*(\W))",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex CastRecordingArtistOrAlbumTitleParseRegex = new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex CastRecordingArtistOrAlbumTitleParseRegex =
+        new(@"(original broadway cast|original cast*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static ArtistDataInfo ToArtistDataInfo(this Artist artist, DateTimeOffset? createdAt, int? albumCount = null, int? songCount = null)
+    public static ArtistDataInfo ToArtistDataInfo(this Artist artist, DateTimeOffset? createdAt, int? albumCount = null,
+        int? songCount = null)
     {
         return new ArtistDataInfo(0,
             artist.Id,
@@ -37,7 +38,10 @@ public static class ArtistExtensions
 
     public static KeyValue ToKeyValue(this Artist artist)
     {
-        return new KeyValue(artist.ArtistDbId?.ToString() ?? artist.MusicBrainzId?.ToString() ?? artist.Name.ToNormalizedString() ?? artist.Name, artist.Name.ToNormalizedString() ?? artist.Name);
+        return new KeyValue(
+            artist.ArtistDbId?.ToString() ??
+            artist.MusicBrainzId?.ToString() ?? artist.Name.ToNormalizedString() ?? artist.Name,
+            artist.Name.ToNormalizedString() ?? artist.Name);
     }
 
     public static ArtistQuery ToArtistQuery(this Artist artist, KeyValue[] albumKeyValues)
@@ -71,7 +75,8 @@ public static class ArtistExtensions
     {
         // If the artist is known already to Melodee (via Dbid) or is a known MusicBrainz or Spotify artist then is ok.
         // Musicbrainz and Spotify reliably return images for artists, other providers (looking at you LastFm) are spotty.
-        return (artist.ArtistDbId != null || artist.MusicBrainzId != null || artist.SpotifyId != null) && artist.Name.Nullify() != null;
+        return (artist.ArtistDbId != null || artist.MusicBrainzId != null || artist.SpotifyId != null) &&
+               artist.Name.Nullify() != null;
     }
 
     public static string ToAlphanumericName(this Artist artist, bool stripSpaces = true, bool stripCommas = true)
@@ -87,7 +92,7 @@ public static class ArtistExtensions
 
     public static long? ArtistUniqueId(this Artist artist)
     {
-        return SafeParser.Hash(artist.Name?.ToString());
+        return SafeParser.Hash(artist.Name);
     }
 
     public static bool IsVariousArtist(this Artist artist)
@@ -120,10 +125,13 @@ public static class ArtistExtensions
         if (artistDirectoryId == null)
         {
             artistDirectoryId = SafeParser.Hash(artist.MusicBrainzId?.ToString() ??
-                                                artist.SpotifyId ?? throw new Exception("Neither ArtistDbId, SearchEngineResultUniqueId, MusicBrainzId or SpotifyId is set.")).ToString();
+                                                artist.SpotifyId ?? throw new Exception(
+                                                    "Neither ArtistDbId, SearchEngineResultUniqueId, MusicBrainzId or SpotifyId is set."))
+                .ToString();
         }
 
-        var artistDirectory = artistNameToUse.ToAlphanumericName(false, false).ToDirectoryNameFriendly()?.ToTitleCase(false);
+        var artistDirectory = artistNameToUse.ToAlphanumericName(false, false).ToDirectoryNameFriendly()
+            ?.ToTitleCase(false);
         if (string.IsNullOrEmpty(artistDirectory))
         {
             throw new Exception($"Unable to determine artist directory for Album ArtistNameToUse [{artistNameToUse}].");

@@ -28,7 +28,8 @@ public class ArtistImageSearchEngineService(
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(ArtistQuery query, int? maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(ArtistQuery query, int? maxResults,
+        CancellationToken token = default)
     {
         var configuration = await configurationFactory.GetConfigurationAsync(token);
 
@@ -43,7 +44,7 @@ public class ArtistImageSearchEngineService(
             new DeezerSearchEngine(Logger, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineDeezerEnabled)
-            },            
+            },
             new ITunesSearchEngine(Logger, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)

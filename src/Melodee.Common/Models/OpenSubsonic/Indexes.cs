@@ -23,7 +23,8 @@ public sealed record Indexes(
 {
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<indexes lastModified=\"{LastModified}\" ignoredArticles=\"{IgnoredArticles}\">");
+        var result =
+            new StringBuilder($"<indexes lastModified=\"{LastModified}\" ignoredArticles=\"{IgnoredArticles}\">");
         if (ShortCut.Length > 0)
         {
             foreach (var shortCut in ShortCut)

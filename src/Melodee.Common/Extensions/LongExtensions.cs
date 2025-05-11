@@ -5,8 +5,8 @@ public static class LongExtensions
     public static string ToStringPadLeft(this long input, short padLeft, char padWith = '0')
     {
         return ToStringPadLeft(input as long?, padLeft, padWith) ?? string.Empty;
-    } 
-    
+    }
+
     public static string? ToStringPadLeft(this long? input, short padLeft, char padWith = '0')
     {
         return input == null ? null : input!.ToString()!.PadLeft(padLeft, padWith);

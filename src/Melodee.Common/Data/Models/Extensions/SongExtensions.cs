@@ -5,14 +5,16 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Models.SearchEngines;
-using Melodee.Common.Services;
 using Melodee.Common.Utility;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
 public static class SongExtensions
 {
-    public static double DurationInSeconds(this Song song) => song.Duration / 1000;
+    public static double DurationInSeconds(this Song song)
+    {
+        return song.Duration / 1000;
+    }
 
     public static SongSearchResult ToSearchEngineSongSearchResult(this Song song, int sortOrder)
     {
@@ -45,10 +47,12 @@ public static class SongExtensions
         {
             throw new Exception($"Configuration setting [{SettingRegistry.SystemBaseUrl}] is invalid.");
         }
+
         return $"{baseUrl}/rest/stream?id={song.ToApiKey()}";
     }
-    
-    public static Child ToApiChild(this Song song, Album album, UserSong? userSong, NowPlayingInfo? nowPlayingInfo = null)
+
+    public static Child ToApiChild(this Song song, Album album, UserSong? userSong,
+        NowPlayingInfo? nowPlayingInfo = null)
     {
         Contributor? albumArtist = null;
 

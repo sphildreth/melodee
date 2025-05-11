@@ -36,6 +36,7 @@ public record AlbumSearchResult : IOpenSubsonicToXml
 
     public string ToXml(string? nodeName = null)
     {
-        return $"<album id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" coverArt=\"{CoverArt}\" songCount=\"{SongCount}\" created=\"{Created}\" duration=\"{Duration}\" artist=\"{Artist.ToSafeXmlString()}\" artistId=\"{ArtistId}\"/>";
+        return
+            $"<album id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" coverArt=\"{CoverArt}\" songCount=\"{SongCount}\" created=\"{Created}\" duration=\"{Duration}\" artist=\"{Artist.ToSafeXmlString()}\" artistId=\"{ArtistId}\"/>";
     }
 }

@@ -3,22 +3,34 @@ using System.Text;
 namespace Melodee.Common.Metadata.Mpeg;
 
 /// <summary>
-/// Reads/writes Id3v1 tags.  lots of help from Paul Lockwood's code
-/// http://www.csharphelp.com/archives/archive226.html
+///     Reads/writes Id3v1 tags.  lots of help from Paul Lockwood's code
+///     http://www.csharphelp.com/archives/archive226.html
 /// </summary>
 public class Id3V1
 {
-    public string Filename;
-
-    public string Title;
-    public string Artist;
     public string Album;
-    public string Year;
+    public string Artist;
     public string Comment;
+    public string Filename;
     public int GenreId;
-    public int Track;
 
     public bool HasTag;
+
+    public string Title;
+    public int Track;
+    public string Year;
+
+
+    public Id3V1()
+    {
+        Initialize_Components();
+    }
+
+    public Id3V1(string filename)
+    {
+        Initialize_Components();
+        Filename = filename;
+    }
 
     private void Initialize_Components()
     {
@@ -32,18 +44,6 @@ public class Id3V1
 
         GenreId = 0;
         Track = 0;
-    }
-
-
-    public Id3V1()
-    {
-        Initialize_Components();
-    }
-
-    public Id3V1(string filename)
-    {
-        Initialize_Components();
-        Filename = filename;
     }
 
 
@@ -134,7 +134,9 @@ public class Id3V1
         }
 
         // Convert the Byte Array to a String
-        Encoding instEncoding = new ASCIIEncoding(); // NB: Encoding is an Abstract class // ************ To DO: Make a shared instance of ASCIIEncoding so we don't keep creating/destroying it
+        Encoding
+            instEncoding =
+                new ASCIIEncoding(); // NB: Encoding is an Abstract class // ************ To DO: Make a shared instance of ASCIIEncoding so we don't keep creating/destroying it
         // Copy "TAG" to Array
         var workingByteArray = instEncoding.GetBytes("TAG");
         Array.Copy(workingByteArray, 0, tagByteArray, 0, workingByteArray.Length);

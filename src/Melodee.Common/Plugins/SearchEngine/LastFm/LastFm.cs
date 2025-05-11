@@ -16,7 +16,8 @@ public class LastFm(
     IHttpClientFactory httpClientFactory)
     : IArtistSearchEnginePlugin, IArtistTopSongsSearchEnginePlugin, IAlbumImageSearchEnginePlugin
 {
-    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults,
+        CancellationToken cancellationToken = default)
     {
         //http://ws.audioscrobbler.com/2.0/?method=album.Search&api_key=<key>&format=json&album=Rising
 
@@ -40,7 +41,8 @@ public class LastFm(
         }
 
         var httpClient = httpClientFactory.CreateClient();
-        var requestUri = $"https://ws.audioscrobbler.com/2.0/?method=album.Search&api_key={apiKey}&format=json&album={Uri.EscapeDataString(query.Name.Trim())}";
+        var requestUri =
+            $"https://ws.audioscrobbler.com/2.0/?method=album.Search&api_key={apiKey}&format=json&album={Uri.EscapeDataString(query.Name.Trim())}";
 
         try
         {
@@ -64,7 +66,8 @@ public class LastFm(
                     if (sr.artist.ToNormalizedString() == na)
                     {
                         var tnUrl = sr.image?.FirstOrDefault(x => x.size == "large")?._text;
-                        var mediaUrl = sr.image?.FirstOrDefault(x => x.size == "extralarge")?._text?.Replace("300x300", "600x600");
+                        var mediaUrl = sr.image?.FirstOrDefault(x => x.size == "extralarge")?._text
+                            ?.Replace("300x300", "600x600");
                         if (tnUrl != null && mediaUrl != null)
                         {
                             results.Add(new ImageSearchResult
@@ -113,13 +116,15 @@ public class LastFm(
 
     public int SortOrder { get; } = 1;
 
-    public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
 
-    public Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(int forArtist, int maxResults, CancellationToken cancellationToken = default)
+    public Task<PagedResult<SongSearchResult>> DoArtistTopSongsSearchAsync(int forArtist, int maxResults,
+        CancellationToken cancellationToken = default)
     {
         return Task.FromResult(new PagedResult<SongSearchResult>(["LastFm Not implemented"]) { Data = [] });
     }

@@ -9,5 +9,6 @@ public interface IDirectoryPlugin : IPlugin
     /// <summary>
     ///     Process the given directory and return the number of processed files by the plugin.
     /// </summary>
-    Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default);
+    Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        CancellationToken cancellationToken = default);
 }

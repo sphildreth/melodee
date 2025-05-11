@@ -20,7 +20,11 @@ namespace Melodee.Common.Plugins.MetaData.Directory;
 /// <summary>
 ///     Processes Simple Verification Files (SFV) and gets files (Songs) and files CRC for Album.
 /// </summary>
-public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<ISongPlugin> songPlugins, IAlbumValidator albumValidator, IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
+public sealed class SimpleFileVerification(
+    ISerializer serializer,
+    IEnumerable<ISongPlugin> songPlugins,
+    IAlbumValidator albumValidator,
+    IMelodeeConfiguration configuration) : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "SFV";
 
@@ -33,7 +37,8 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
 
     public override int SortOrder { get; } = 1;
 
-    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        CancellationToken cancellationToken = default)
     {
         StopProcessing = false;
 
@@ -67,7 +72,8 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
             var songPlugin = _songPlugins.First();
             foreach (var sfvFile in sfvFiles)
             {
-                using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, sfvFile.Name))
+                using (Operation.At(LogEventLevel.Debug)
+                           .Time("[{Plugin}] Processing [{FileName}]", DisplayName, sfvFile.Name))
                 {
                     var models = await GetModelsFromSfvFile(sfvFile.FullName);
 
@@ -76,29 +82,35 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                     var songs = new ConcurrentBag<Common.Models.Song>();
                     await Parallel.ForEachAsync(models.Where(x => x.IsValid), cancellationToken, async (model, tt) =>
                     {
-                        var songResult = await songPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
+                        var songResult =
+                            await songPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
                         if (songResult.IsSuccess)
                         {
                             songs.Add(songResult.Data);
                         }
                         else
                         {
-                            songResult.Messages?.ForEach((x, _) => Log.Warning("[{PluginName}] Processing [{SfvModel}] Message: [{Message}]", DisplayName, model, x));
-                            songResult.Errors?.ForEach((x, _) => Log.Error(x, "[{PluginName}] Processing [{SfvModel}]", DisplayName, model));
+                            songResult.Messages?.ForEach((x, _) =>
+                                Log.Warning("[{PluginName}] Processing [{SfvModel}] Message: [{Message}]", DisplayName,
+                                    model, x));
+                            songResult.Errors?.ForEach((x, _) =>
+                                Log.Error(x, "[{PluginName}] Processing [{SfvModel}]", DisplayName, model));
                             Log.Warning("Unable to get Song details for Sfv Model [{SfvModel}]", model);
                         }
                     });
 
                     if (songs.Count == 0)
                     {
-                        return new OperationResult<int>($"Unable to find Songs for directory [{fileSystemDirectoryInfo}]")
+                        return new OperationResult<int>(
+                            $"Unable to find Songs for directory [{fileSystemDirectoryInfo}]")
                         {
                             Type = OperationResponseType.ValidationFailure,
                             Data = -1
                         };
                     }
 
-                    var songTotal = songs.OrderByDescending(x => x.SongTotalNumber()).FirstOrDefault()?.SongTotalNumber() ?? 0;
+                    var songTotal = songs.OrderByDescending(x => x.SongTotalNumber()).FirstOrDefault()
+                        ?.SongTotalNumber() ?? 0;
                     if (songTotal < 1)
                     {
                         if (models.Length == songs.Count)
@@ -109,9 +121,23 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
 
                     var newAlbumTags = new List<MetaTag<object?>>
                     {
-                        new() { Identifier = MetaTagIdentifier.Album, Value = songs.FirstOrDefault(x => x.AlbumTitle().Nullify() != null)?.AlbumTitle(), SortOrder = 1 },
-                        new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = songs.FirstOrDefault(x => x.AlbumArtist().Nullify() != null)?.AlbumArtist(), SortOrder = 2 },
-                        new() { Identifier = MetaTagIdentifier.OrigAlbumYear, Value = songs.FirstOrDefault(x => x.AlbumYear() > -1)?.AlbumYear(), SortOrder = 100 },
+                        new()
+                        {
+                            Identifier = MetaTagIdentifier.Album,
+                            Value = songs.FirstOrDefault(x => x.AlbumTitle().Nullify() != null)?.AlbumTitle(),
+                            SortOrder = 1
+                        },
+                        new()
+                        {
+                            Identifier = MetaTagIdentifier.AlbumArtist,
+                            Value = songs.FirstOrDefault(x => x.AlbumArtist().Nullify() != null)?.AlbumArtist(),
+                            SortOrder = 2
+                        },
+                        new()
+                        {
+                            Identifier = MetaTagIdentifier.OrigAlbumYear,
+                            Value = songs.FirstOrDefault(x => x.AlbumYear() > -1)?.AlbumYear(), SortOrder = 100
+                        },
                         new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
                     };
                     var genres = songs
@@ -130,8 +156,11 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                             }));
                     }
 
-                    var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
-                    var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
+                    var artistName = newAlbumTags
+                        .FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)
+                        ?.Value?.ToString();
+                    var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value
+                        ?.ToString();
                     var sfvAlbum = new Album
                     {
                         AlbumType = albumName.TryToDetectAlbumType(),
@@ -158,18 +187,22 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                             MusicFilesFound = songs.Count,
                             MusicMetaDataFilesFound = 1
                         },
-                        Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
+                        Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!)
+                            .DistinctBy(x => x.CrcHash).ToArray(),
                         Tags = newAlbumTags,
                         Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                         ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                     };
 
-                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration));
+                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path,
+                        sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                     if (File.Exists(stagingAlbumDataName))
                     {
                         try
                         {
-                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);
+                            var existingAlbum = await Album
+                                .DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken)
+                                .ConfigureAwait(false);
                             ;
                             if (existingAlbum != null)
                             {
@@ -178,7 +211,8 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         }
                         catch (Exception e)
                         {
-                            Log.Error(e, "Unable to merge existing album [{StagingAlbumDataName}]", stagingAlbumDataName);
+                            Log.Error(e, "Unable to merge existing album [{StagingAlbumDataName}]",
+                                stagingAlbumDataName);
                         }
                     }
 
@@ -195,7 +229,8 @@ public sealed class SimpleFileVerification(ISerializer serializer, IEnumerable<I
                         Log.Information("Deleted SFV File [{FileName}]", sfvFile.Name);
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
+                    Log.Debug(
+                        "[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
                         DisplayName,
                         sfvAlbum.ToMelodeeJsonName(MelodeeConfiguration),
                         sfvAlbum.Status.ToString(),

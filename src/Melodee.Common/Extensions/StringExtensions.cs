@@ -4,12 +4,12 @@ using System.Net;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
+using Fastenshtein;
 using Markdig;
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Utility;
-using Markdown = MarkdownDeep.Markdown;
 
 namespace Melodee.Common.Extensions;
 
@@ -21,17 +21,23 @@ public static partial class StringExtensions
 
     private static readonly string SongNumberParseRegex = @"\s*\d{2,}\s*-*\s*";
 
-    public static readonly Regex HasEpFragmentsRegex = new(@"(?<![a-zA-Z])(ep)(?![a-zA-Z])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasEpFragmentsRegex =
+        new(@"(?<![a-zA-Z])(ep)(?![a-zA-Z])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex HasOtherTypeFragmentsRegex = new(@"(?<![a-zA-Z])(live|tribute)(?![a-zA-Z])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasOtherTypeFragmentsRegex = new(@"(?<![a-zA-Z])(live|tribute)(?![a-zA-Z])",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex HasSingleFragmentsRegex = new(@"(((\(|\[)|(\s-\s))+(single)+(\)|\])?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasSingleFragmentsRegex = new(@"(((\(|\[)|(\s-\s))+(single)+(\)|\])?)$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static readonly Regex HasWithFragmentsRegex = new(@"(\s*[\(\[]*with\s+)+", RegexOptions.Compiled);
 
-    public static readonly Regex HasFeatureFragmentsRegex = new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex HasFeatureFragmentsRegex =
+        new(@"(\s[\(\[]*ft[\s\.]|\s*[\(\[]*feat[\s\.]|[\(\[]*(featuring))+",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private static readonly string RomanRegex = @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
+    private static readonly string RomanRegex =
+        @"\b((?:[Xx]{1,3}|[Xx][Ll]|[Ll][Xx]{0,3})?(?:[Ii]{1,3}|[Ii][VvXx]|[Vv][Ii]{0,3})?)\b";
 
     private static readonly string[] Conjunctions = ["Y", "E", "I"];
 
@@ -165,7 +171,8 @@ public static partial class StringExtensions
         nameString = Regex.Replace(nameString, @"('[A-Z])", m => m.ToString().ToLower(), RegexOptions.IgnoreCase);
         foreach (var replacement in NameCaseReplacements.Keys)
         {
-            nameString = nameString.Replace(replacement, NameCaseReplacements[replacement], StringComparison.OrdinalIgnoreCase);
+            nameString = nameString.Replace(replacement, NameCaseReplacements[replacement],
+                StringComparison.OrdinalIgnoreCase);
         }
 
         return nameString;
@@ -318,7 +325,8 @@ public static partial class StringExtensions
             return input;
         }
 
-        return ReplaceMultipleSpacesRegex().Replace(CleanStringReplacementRegex().Replace(result, string.Empty), " ").Trim();
+        return ReplaceMultipleSpacesRegex().Replace(CleanStringReplacementRegex().Replace(result, string.Empty), " ")
+            .Trim();
     }
 
     public static bool ContainsUnicodeCharacter(this string input)
@@ -408,7 +416,8 @@ public static partial class StringExtensions
     /// <param name="tagSplit">Tag split value</param>
     /// <param name="dontLowerCase">Don't return lowercase value, leave value case as is</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
-    public static string? AddTags(this string? str, string? value, char? tagSplit = TagsSeparator, bool? dontLowerCase = false)
+    public static string? AddTags(this string? str, string? value, char? tagSplit = TagsSeparator,
+        bool? dontLowerCase = false)
     {
         return AddTags(str, value?.Split(tagSplit ?? TagsSeparator), tagSplit, dontLowerCase);
     }
@@ -423,7 +432,8 @@ public static partial class StringExtensions
     /// <param name="doReorder">Reorder values</param>
     /// <param name="doNormalize">Apply normalization to values</param>
     /// <returns>Unique and sorted Tags joined by split value</returns>
-    public static string? AddTags(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator, bool? dontLowerCase = false, bool? doReorder = true, bool? doNormalize = false)
+    public static string? AddTags(this string? str, IEnumerable<string?>? values, char? tagSplit = TagsSeparator,
+        bool? dontLowerCase = false, bool? doReorder = true, bool? doNormalize = false)
     {
         var vv = values as string[] ?? values?.ToArray() ?? [];
         if (SafeParser.IsNull(str) && vv.Length == 0)
@@ -432,13 +442,16 @@ public static partial class StringExtensions
         }
 
         var ts = tagSplit ?? TagsSeparator;
-        var value = string.Join(ts, vv.Where(x => !string.IsNullOrEmpty(x)).Select(x => doNormalize ?? false ? x.ToNormalizedString() ?? x : x));
+        var value = string.Join(ts,
+            vv.Where(x => !string.IsNullOrEmpty(x))
+                .Select(x => doNormalize ?? false ? x.ToNormalizedString() ?? x : x));
         var tags = (str ?? value).Nullify()?.Split(ts).Select(x => x.Nullify()).ToList() ?? [];
         if (value.Contains(ts))
         {
             tags.AddRange(value.Split(ts));
         }
-        else if (!SafeParser.IsTruthy(tags.Any(x => string.Equals(x, value.Nullify(), StringComparison.OrdinalIgnoreCase))))
+        else if (!SafeParser.IsTruthy(tags.Any(x =>
+                     string.Equals(x, value.Nullify(), StringComparison.OrdinalIgnoreCase))))
         {
             tags.Add(value.Nullify());
         }
@@ -505,9 +518,13 @@ public static partial class StringExtensions
         input = input.ScrubHtml().ToLower()
             .Replace("&", "and");
         var arr = input.ToCharArray();
-        arr = Array.FindAll(arr, c => (c == ',' && !stripCommas) || (char.IsWhiteSpace(c) && !stripSpaces) || c == separator || char.IsLetterOrDigit(c));
+        arr = Array.FindAll(arr,
+            c => (c == ',' && !stripCommas) || (char.IsWhiteSpace(c) && !stripSpaces) || c == separator ||
+                 char.IsLetterOrDigit(c));
         input = new string(arr).RemoveDiacritics().RemoveUnicodeAccents().Transliteration();
-        input = Regex.Replace(input, $"[^A-Za-z0-9_{(!stripSpaces ? @"\s" : string.Empty)}{(!stripCommas ? "," : string.Empty)}]+", string.Empty);
+        input = Regex.Replace(input,
+            $"[^A-Za-z0-9_{(!stripSpaces ? @"\s" : string.Empty)}{(!stripCommas ? "," : string.Empty)}]+",
+            string.Empty);
         return input;
     }
 
@@ -519,7 +536,8 @@ public static partial class StringExtensions
         }
 
         input = input.Replace("$", "s");
-        return Regex.Replace(PathSanitizer.SanitizeFilename(input, ' ') ?? string.Empty, @"\s+", " ").Trim().TrimEnd('.');
+        return Regex.Replace(PathSanitizer.SanitizeFilename(input, ' ') ?? string.Empty, @"\s+", " ").Trim()
+            .TrimEnd('.');
     }
 
     private static string ScrubHtml(this string value)
@@ -685,7 +703,9 @@ public static partial class StringExtensions
             return null;
         }
 
-        return Regex.IsMatch(input, SongNumberParseRegex) ? Regex.Replace(input, SongNumberParseRegex, string.Empty) : input;
+        return Regex.IsMatch(input, SongNumberParseRegex)
+            ? Regex.Replace(input, SongNumberParseRegex, string.Empty)
+            : input;
     }
 
 
@@ -741,7 +761,9 @@ public static partial class StringExtensions
 
     public static FileSystemDirectoryInfo ToDirectoryInfo(this string? input)
     {
-        return !string.IsNullOrWhiteSpace(input) ? new DirectoryInfo(input).ToDirectorySystemInfo() : FileSystemDirectoryInfo.Blank();
+        return !string.IsNullOrWhiteSpace(input)
+            ? new DirectoryInfo(input).ToDirectorySystemInfo()
+            : FileSystemDirectoryInfo.Blank();
     }
 
     public static string?[]? PeopleFromValueWithSeparator(this string? value)
@@ -750,9 +772,11 @@ public static partial class StringExtensions
         {
             return null;
         }
-        return value.Replace(";", "/").Replace(";", "/").Split('/').Select(x => x.Nullify()).Where(x => x != null).ToArray();
-    }    
-    
+
+        return value.Replace(";", "/").Replace(";", "/").Split('/').Select(x => x.Nullify()).Where(x => x != null)
+            .ToArray();
+    }
+
     public static string? ToCleanedMultipleArtistsValue(this string? input)
     {
         if (input.Nullify() == null)
@@ -760,7 +784,10 @@ public static partial class StringExtensions
             return null;
         }
 
-        var result = ReplaceMultipleSpacesRegex().Replace(input!.Replace("«multiple values»", string.Empty).Trim().Replace(";;", ";").Replace("; ", "/").Replace(";", "/"), string.Empty);
+        var result = ReplaceMultipleSpacesRegex()
+            .Replace(
+                input!.Replace("«multiple values»", string.Empty).Trim().Replace(";;", ";").Replace("; ", "/")
+                    .Replace(";", "/"), string.Empty);
         if (result.StartsWith('/'))
         {
             return result[1..];
@@ -852,7 +879,7 @@ public static partial class StringExtensions
 
 
     /// <summary>
-    /// Removes diacritics (accents) from a string.
+    ///     Removes diacritics (accents) from a string.
     /// </summary>
     /// <param name="text">The string to remove diacritics from.</param>
     /// <returns>The string without diacritics.</returns>
@@ -897,7 +924,8 @@ public static partial class StringExtensions
         }
         catch (Exception e)
         {
-            var invalidCharactersRegex = new Regex("([\ud800-\udbff](?![\udc00-\udfff]))|((?<![\ud800-\udbff])[\udc00-\udfff])");
+            var invalidCharactersRegex =
+                new Regex("([\ud800-\udbff](?![\udc00-\udfff]))|((?<![\ud800-\udbff])[\udc00-\udfff])");
             text = invalidCharactersRegex.Replace(text, "");
             Trace.WriteLine($"Error: [{e.Message}] input text [{originalText}] processed to [{text}]");
         }
@@ -912,7 +940,7 @@ public static partial class StringExtensions
             return true;
         }
 
-        return Fastenshtein.Levenshtein.Distance(input.Nullify() ?? string.Empty, compareTo.Nullify() ?? string.Empty) <= threshold;
+        return Levenshtein.Distance(input.Nullify() ?? string.Empty, compareTo.Nullify() ?? string.Empty) <= threshold;
     }
 
     public static string? ToSafeXmlString(this string? input)
@@ -922,7 +950,7 @@ public static partial class StringExtensions
 
     public static string? ToHtmlString(this string? input)
     {
-        return input.Nullify() == null ? null : Markdig.Markdown.ToHtml(input!);
+        return input.Nullify() == null ? null : Markdown.ToHtml(input!);
     }
 
     [GeneratedRegex("[^a-zA-Z0-9 -.:]")]

@@ -10,7 +10,8 @@ namespace Melodee.Common.Plugins.Processor.MetaTagProcessors;
 /// <summary>
 ///     Handle the Album Artist and split away any featuring artists.
 /// </summary>
-public sealed class AlbumArtist(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
+public sealed class AlbumArtist(Dictionary<string, object?> configuration, ISerializer serializer)
+    : MetaTagProcessorBase(configuration, serializer)
 {
     public override string Id => "29D61BF9-D283-4DB6-B7EB-16F6BCA76998";
 
@@ -23,7 +24,8 @@ public sealed class AlbumArtist(Dictionary<string, object?> configuration, ISeri
         return metaTagIdentifier is MetaTagIdentifier.AlbumArtist;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
         var albumArtist = tagValue as string ?? string.Empty;
@@ -31,7 +33,9 @@ public sealed class AlbumArtist(Dictionary<string, object?> configuration, ISeri
 
         if (albumArtist.Nullify() != null)
         {
-            var artistNameReplacements = MelodeeConfiguration.FromSerializedJsonDictionary(Configuration[SettingRegistry.ProcessingArtistNameReplacements], Serializer);
+            var artistNameReplacements =
+                MelodeeConfiguration.FromSerializedJsonDictionary(
+                    Configuration[SettingRegistry.ProcessingArtistNameReplacements], Serializer);
             if (artistNameReplacements.Any())
             {
                 foreach (var kp in artistNameReplacements)
@@ -63,7 +67,7 @@ public sealed class AlbumArtist(Dictionary<string, object?> configuration, ISeri
         result.ForEach(x => x.AddProcessedBy(nameof(AlbumArtist)));
         return new OperationResult<IEnumerable<MetaTag<object?>>>
         {
-            Type = albumArtist.Nullify() != null ? OperationResponseType.Ok : OperationResponseType.Error,            
+            Type = albumArtist.Nullify() != null ? OperationResponseType.Ok : OperationResponseType.Error,
             Data = result
         };
     }

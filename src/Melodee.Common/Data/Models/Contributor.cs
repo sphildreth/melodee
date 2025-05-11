@@ -41,7 +41,8 @@ public class Contributor : DataModelBase
 
     [RequiredGreaterThanZero] public int MetaTagIdentifier { get; set; }
 
-    [NotMapped] public MetaTagIdentifier MetaTagIdentifierValue => SafeParser.ToEnum<MetaTagIdentifier>(MetaTagIdentifier);
+    [NotMapped]
+    public MetaTagIdentifier MetaTagIdentifierValue => SafeParser.ToEnum<MetaTagIdentifier>(MetaTagIdentifier);
 
     /// <summary>
     ///     This is not set when it's an Album level contribution.

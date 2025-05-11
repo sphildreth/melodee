@@ -19,4 +19,3 @@ public enum ContributorType
     /// </summary>
     Publisher
 }
-

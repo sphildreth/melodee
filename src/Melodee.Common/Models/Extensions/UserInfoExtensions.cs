@@ -9,7 +9,8 @@ public static class UserInfoExtensions
 {
     public static string Decrypt(this UserInfo user, string encryptedText, IMelodeeConfiguration configuration)
     {
-        return EncryptionHelper.Decrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, encryptedText, user.PublicKey);
+        return EncryptionHelper.Decrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!,
+            encryptedText, user.PublicKey);
     }
 
     public static string ToAvatarFileName(this UserInfo user, string libraryPath)

@@ -107,7 +107,8 @@ public static class SafeParser
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"Error determining if object is truthy [{value}] [{ex}]", TraceWriteLineCategoryRegistry.Error);
+            Trace.WriteLine($"Error determining if object is truthy [{value}] [{ex}]",
+                TraceWriteLineCategoryRegistry.Error);
         }
 
         return false;

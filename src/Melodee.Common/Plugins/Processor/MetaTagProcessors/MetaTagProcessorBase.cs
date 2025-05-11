@@ -6,7 +6,8 @@ using Melodee.Common.Serialization;
 
 namespace Melodee.Common.Plugins.Processor.MetaTagProcessors;
 
-public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> configuration, ISerializer serializer) : IMetaTagProcessor
+public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> configuration, ISerializer serializer)
+    : IMetaTagProcessor
 {
     protected Dictionary<string, object?> Configuration { get; } = configuration;
 
@@ -22,7 +23,8 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
 
     public abstract bool DoesHandleMetaTagIdentifier(MetaTagIdentifier metaTagIdentifier);
 
-    public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags);
+    public abstract OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags);
 
     protected static string? AlbumArtistFromAlbumArtistViaFeaturing(string artist)
     {
@@ -39,7 +41,7 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
         var rgx = RemoveNonAlphaNumbericRegex();
         return rgx.Replace(result ?? string.Empty, string.Empty).Nullify();
     }
-    
+
     protected static string? SongArtistFromAlbumArtistViaFeaturing(string? artist)
     {
         if (string.IsNullOrWhiteSpace(artist))
@@ -51,13 +53,15 @@ public abstract partial class MetaTagProcessorBase(Dictionary<string, object?> c
         if (result.HasFeaturingFragments())
         {
             var matches = StringExtensions.HasFeatureFragmentsRegex.Match(result!);
-            result = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasFeatureFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
+            result = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasFeatureFragmentsRegex
+                .Replace(result!.Substring(matches.Index), string.Empty).CleanString());
         }
 
         if (result.HasWithFragments())
         {
             var matches = StringExtensions.HasWithFragmentsRegex.Match(result!);
-            result = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasWithFragmentsRegex.Replace(result!.Substring(matches.Index), string.Empty).CleanString());
+            result = MetaTagsProcessor.ReplaceSongArtistSeparators(StringExtensions.HasWithFragmentsRegex
+                .Replace(result!.Substring(matches.Index), string.Empty).CleanString());
         }
 
         return result?.TrimEnd(']', ')').Replace("\"", "'").Replace("; ", "/").Replace(";", "/");

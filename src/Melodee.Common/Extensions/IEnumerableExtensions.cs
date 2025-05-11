@@ -17,7 +17,8 @@ public static class EnumerableExtensions
         return string.Join(delimiter, source.Select(s => s?.ToString()).ToArray());
     }
 
-    public static IEnumerable<string>? FromDelimitedList(this string? csvList, bool nullOrWhitespaceInputReturnsNull = false, char delimiter = '|')
+    public static IEnumerable<string>? FromDelimitedList(this string? csvList,
+        bool nullOrWhitespaceInputReturnsNull = false, char delimiter = '|')
     {
         if (string.IsNullOrWhiteSpace(csvList))
         {

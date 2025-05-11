@@ -8,9 +8,15 @@ public sealed record Link
 
     public long LinkTypeId { get; init; }
 
-    public DateTime? BeginDate => BeginDateYear == null ? null : MusicBrainzRepositoryBase.ParseJackedUpMusicBrainzDate($"{BeginDateYear.ToStringPadLeft(4)}-{BeginDateMonthValue.ToStringPadLeft(2)}-{BeginDateDayValue.ToStringPadLeft(2)}T00:00:00");
+    public DateTime? BeginDate => BeginDateYear == null
+        ? null
+        : MusicBrainzRepositoryBase.ParseJackedUpMusicBrainzDate(
+            $"{BeginDateYear.ToStringPadLeft(4)}-{BeginDateMonthValue.ToStringPadLeft(2)}-{BeginDateDayValue.ToStringPadLeft(2)}T00:00:00");
 
-    public DateTime? EndDate => EndDateYear == null ? null : MusicBrainzRepositoryBase.ParseJackedUpMusicBrainzDate($"{EndDateYear.ToStringPadLeft(4)}-{EndDateMonthValue.ToStringPadLeft(2)}-{EndDateDayValue.ToStringPadLeft(2)}T00:00:00");
+    public DateTime? EndDate => EndDateYear == null
+        ? null
+        : MusicBrainzRepositoryBase.ParseJackedUpMusicBrainzDate(
+            $"{EndDateYear.ToStringPadLeft(4)}-{EndDateMonthValue.ToStringPadLeft(2)}-{EndDateDayValue.ToStringPadLeft(2)}T00:00:00");
 
     public int? BeginDateYear { get; init; }
 

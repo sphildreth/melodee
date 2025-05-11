@@ -48,6 +48,7 @@ public sealed class DirectoryProcessorToStagingService(
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
+    private IAlbumNamesInDirectoryPlugin _albumNamesInDirectoryPlugin = null!;
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
 
@@ -62,11 +63,11 @@ public sealed class DirectoryProcessorToStagingService(
     private IEnumerable<IDirectoryPlugin> _directoryPlugins = [];
 
     private string _directoryStaging = null!;
+    private int _duplicateThreshold;
     private ImageConvertor _imageConvertor = new(new MelodeeConfiguration([]));
     private IImageValidator _imageValidator = new ImageValidator(new MelodeeConfiguration([]));
     private bool _initialized;
     private int _maxAlbumProcessingCount;
-    private int _duplicateThreshold;
 
     /// <summary>
     ///     These plugins create albums from media files.
@@ -79,8 +80,6 @@ public sealed class DirectoryProcessorToStagingService(
 
     private ISongPlugin[] _songPlugins = [];
 
-    private IAlbumNamesInDirectoryPlugin _albumNamesInDirectoryPlugin = null!;
-
     private bool _stopProcessingTriggered;
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
@@ -92,10 +91,12 @@ public sealed class DirectoryProcessorToStagingService(
 
         _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(token).ConfigureAwait(false);
 
-        _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
+        _maxAlbumProcessingCount = _configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
+            value => value < 1 ? int.MaxValue : value);
 
-        _duplicateThreshold = _configuration.GetValue<int?>(SettingRegistry.ImagingDuplicateThreshold) ?? MelodeeConfiguration.DefaultImagingDuplicateThreshold;
-        
+        _duplicateThreshold = _configuration.GetValue<int?>(SettingRegistry.ImagingDuplicateThreshold) ??
+                              MelodeeConfiguration.DefaultImagingDuplicateThreshold;
+
         _directoryStaging = (await libraryService.GetStagingLibraryAsync(token).ConfigureAwait(false)).Data.Path;
 
         _albumValidator = new AlbumValidator(_configuration);
@@ -103,10 +104,12 @@ public sealed class DirectoryProcessorToStagingService(
         _imageConvertor = new ImageConvertor(_configuration);
         _songPlugins =
         [
-            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration),
+            new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator,
+                _configuration),
             new IdSharpMetaTag(new MetaTagsProcessor(_configuration, serializer), _configuration)
         ];
-        _albumNamesInDirectoryPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer), _imageConvertor, _imageValidator, _configuration);
+        _albumNamesInDirectoryPlugin = new AtlMetaTag(new MetaTagsProcessor(_configuration, serializer),
+            _imageConvertor, _imageValidator, _configuration);
 
         _conversionPlugins =
         [
@@ -145,7 +148,8 @@ public sealed class DirectoryProcessorToStagingService(
             _preDiscoveryScript = new PreDiscoveryScript(_configuration);
         }
 
-        var postDiscoveryScript = _configuration.GetValue<string>(SettingRegistry.ScriptingPostDiscoveryScript).Nullify();
+        var postDiscoveryScript =
+            _configuration.GetValue<string>(SettingRegistry.ScriptingPostDiscoveryScript).Nullify();
         if (postDiscoveryScript != null)
         {
             _postDiscoveryScript = new PostDiscoveryScript(_configuration);
@@ -165,7 +169,9 @@ public sealed class DirectoryProcessorToStagingService(
         }
     }
 
-    public async Task<OperationResult<DirectoryProcessorResult>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, Instant? lastProcessDate, int? maxAlbumsToProcess, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<DirectoryProcessorResult>> ProcessDirectoryAsync(
+        FileSystemDirectoryInfo fileSystemDirectoryInfo, Instant? lastProcessDate, int? maxAlbumsToProcess,
+        CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
@@ -233,14 +239,16 @@ public sealed class DirectoryProcessorToStagingService(
         // Run PreDiscovery script
         if (!_configuration.GetValue<bool>(SettingRegistry.ScriptingEnabled) && _preDiscoveryScript.IsEnabled)
         {
-            LogAndRaiseEvent(LogEventLevel.Debug, "Executing _preDiscoveryScript [{0}]", null, _preDiscoveryScript.DisplayName);
+            LogAndRaiseEvent(LogEventLevel.Debug, "Executing _preDiscoveryScript [{0}]", null,
+                _preDiscoveryScript.DisplayName);
             var preDiscoveryScriptResult = new OperationResult<bool>
             {
                 Data = false
             };
             try
             {
-                preDiscoveryScriptResult = await _preDiscoveryScript.ProcessAsync(fileSystemDirectoryInfo, cancellationToken).ConfigureAwait(false);
+                preDiscoveryScriptResult = await _preDiscoveryScript
+                    .ProcessAsync(fileSystemDirectoryInfo, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -264,6 +272,7 @@ public sealed class DirectoryProcessorToStagingService(
             {
                 break;
             }
+
             if (Path.GetExtension(dirName).Nullify() != null)
             {
                 var newDirName = dirName.Replace(".", "_");
@@ -275,17 +284,20 @@ public sealed class DirectoryProcessorToStagingService(
             }
         }
 
-        var directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
+        var directoriesToProcess = fileSystemDirectoryInfo
+            .GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
         if (directoriesToProcess.Count > 0)
         {
             OnProcessingStart?.Invoke(this, directoriesToProcess.Count);
-            LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Found [{0}] directories to process", null, directoriesToProcess.Count);
+            LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Found [{0}] directories to process", null,
+                directoriesToProcess.Count);
         }
 
         var httpClient = httpClientFactory.CreateClient();
 
-        var dontDeleteExistingMelodeeFiles = _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
-        
+        var dontDeleteExistingMelodeeFiles =
+            _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
+
         var modifiedDirectories = false;
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
@@ -294,24 +306,26 @@ public sealed class DirectoryProcessorToStagingService(
             // as it thinks its a file not a directory.
             if (directoryInfoToProcess.Name.Contains('.'))
             {
-                   var dd = directoryInfoToProcess.ToDirectoryInfo();
-                   var oldDd = dd.Name;
-                   var newDd = Path.Combine(dd.Parent!.FullName, dd.Name.Replace(".", "_"));
-                   dd.MoveTo(newDd);
-                   Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
-                       nameof(DirectoryProcessorToStagingService),
-                       oldDd,
-                       newDd);
-                   modifiedDirectories = true;
+                var dd = directoryInfoToProcess.ToDirectoryInfo();
+                var oldDd = dd.Name;
+                var newDd = Path.Combine(dd.Parent!.FullName, dd.Name.Replace(".", "_"));
+                dd.MoveTo(newDd);
+                Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
+                    nameof(DirectoryProcessorToStagingService),
+                    oldDd,
+                    newDd);
+                modifiedDirectories = true;
             }
         }
-        
+
         if (modifiedDirectories)
         {
-            directoriesToProcess = fileSystemDirectoryInfo.GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
+            directoriesToProcess = fileSystemDirectoryInfo
+                .GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
         }
-        
-        var fileExtensionsToDelete = MelodeeConfiguration.FromSerializedJsonArray(_configuration.GetValue<string>(SettingRegistry.ProcessingFileExtensionsToDelete), serializer);
+
+        var fileExtensionsToDelete = MelodeeConfiguration.FromSerializedJsonArray(
+            _configuration.GetValue<string>(SettingRegistry.ProcessingFileExtensionsToDelete), serializer);
         if (fileExtensionsToDelete.Length != 0)
         {
             foreach (var directoryInfoToProcess in directoriesToProcess)
@@ -322,7 +336,7 @@ public sealed class DirectoryProcessorToStagingService(
                 }
             }
         }
-        
+
         foreach (var directoryInfoToProcess in directoriesToProcess)
         {
             Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
@@ -348,7 +362,8 @@ public sealed class DirectoryProcessorToStagingService(
 
                 var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
 
-                LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Processing [{0}] Number of files to process [{1}]", null, directoryInfoToProcess.Name, allFilesInDirectory.Length);
+                LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Processing [{0}] Number of files to process [{1}]", null,
+                    directoryInfoToProcess.Name, allFilesInDirectory.Length);
 
                 // Run all enabled IDirectoryPlugins to convert MetaData files into Album json files.
                 // e.g. Build Album json file for M3U or NFO or SFV, etc.
@@ -359,13 +374,15 @@ public sealed class DirectoryProcessorToStagingService(
                         break;
                     }
 
-                    var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken).ConfigureAwait(false);
+                    var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken)
+                        .ConfigureAwait(false);
                     if (!pluginResult.IsSuccess && pluginResult.Type != OperationResponseType.NotFound)
                     {
                         processingErrors.AddRange(pluginResult.Errors ?? []);
                         if (plugin.StopProcessing)
                         {
-                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
+                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
+                                plugin.DisplayName, directoryInfoToProcess);
                             break;
                         }
 
@@ -379,7 +396,8 @@ public sealed class DirectoryProcessorToStagingService(
 
                     if (plugin.StopProcessing)
                     {
-                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
+                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
+                            plugin.DisplayName, directoryInfoToProcess);
                         break;
                     }
                 }
@@ -403,7 +421,8 @@ public sealed class DirectoryProcessorToStagingService(
 
                         if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
                         {
-                            var pluginResult = await plugin.ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken).ConfigureAwait(false);
+                            var pluginResult = await plugin
+                                .ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken).ConfigureAwait(false);
                             if (!pluginResult.IsSuccess)
                             {
                                 processingErrors.AddRange(pluginResult.Errors ?? []);
@@ -432,10 +451,12 @@ public sealed class DirectoryProcessorToStagingService(
                             break;
                         }
 
-                        await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken).ConfigureAwait(false);
+                        await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken)
+                            .ConfigureAwait(false);
                         if (plugin.StopProcessing)
                         {
-                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]", plugin.DisplayName, directoryInfoToProcess);
+                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
+                                plugin.DisplayName, directoryInfoToProcess);
                             break;
                         }
                     }
@@ -451,7 +472,9 @@ public sealed class DirectoryProcessorToStagingService(
 
                     try
                     {
-                        var album = await Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeJsonFile.FullName, cancellationToken).ConfigureAwait(false);
+                        var album = await Album
+                            .DeserializeAndInitializeAlbumAsync(serializer, melodeeJsonFile.FullName, cancellationToken)
+                            .ConfigureAwait(false);
                         if (album != null)
                         {
                             album.MelodeeDataFileName = melodeeJsonFile.FullName;
@@ -463,6 +486,7 @@ public sealed class DirectoryProcessorToStagingService(
                         Logger.Error(ex, "Error loading Album json file [{0}]", melodeeJsonFile.FullName);
                     }
                 }
+
                 // For each Album json find all image files and add to Album to be moved below to staging directory.
                 Trace.WriteLine("Loading images for album...");
                 foreach (var album in albumsForDirectory.Take(_maxAlbumProcessingCount))
@@ -474,7 +498,10 @@ public sealed class DirectoryProcessorToStagingService(
 
                     try
                     {
-                        album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _duplicateThreshold, _imageConvertor, _imageValidator,_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal), cancellationToken).ConfigureAwait(false)).ToArray();
+                        album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _duplicateThreshold,
+                            _imageConvertor, _imageValidator,
+                            _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
+                            cancellationToken).ConfigureAwait(false)).ToArray();
 
                         album.Artist = new Artist(album.Artist.Name,
                             album.Artist.NameNormalized,
@@ -525,14 +552,17 @@ public sealed class DirectoryProcessorToStagingService(
                         var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
                         foreach (var image in albumImagesToMove.Concat(artistImageToMove).OrderBy(x => x.SortOrder))
                         {
-                            var oldImageFileName = Path.Combine((image.DirectoryInfo ?? album.Directory).FullName(), image.FileInfo!.OriginalName!);
+                            var oldImageFileName = Path.Combine((image.DirectoryInfo ?? album.Directory).FullName(),
+                                image.FileInfo!.OriginalName!);
                             if (!File.Exists(oldImageFileName))
                             {
-                                Logger.Warning("Unable to find image by original name [{OriginalName}]", oldImageFileName);
+                                Logger.Warning("Unable to find image by original name [{OriginalName}]",
+                                    oldImageFileName);
                                 continue;
                             }
 
-                            var newImageFileName = Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
+                            var newImageFileName =
+                                Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
                             if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                             {
                                 File.Copy(oldImageFileName, newImageFileName, true);
@@ -556,14 +586,17 @@ public sealed class DirectoryProcessorToStagingService(
 
                                 if (song.File.OriginalName != null)
                                 {
-                                    var oldSongFilename = Path.Combine(album.OriginalDirectory.FullName(), song.File.OriginalName!);
+                                    var oldSongFilename = Path.Combine(album.OriginalDirectory.FullName(),
+                                        song.File.OriginalName!);
                                     if (!File.Exists(oldSongFilename))
                                     {
                                         continue;
                                     }
 
-                                    var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(), song.ToSongFileName(albumDirectorySystemInfo));
-                                    if (!string.Equals(oldSongFilename, newSongFileName, StringComparison.OrdinalIgnoreCase))
+                                    var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(),
+                                        song.ToSongFileName(albumDirectorySystemInfo));
+                                    if (!string.Equals(oldSongFilename, newSongFileName,
+                                            StringComparison.OrdinalIgnoreCase))
                                     {
                                         File.Copy(oldSongFilename, newSongFileName, true);
                                         if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
@@ -574,7 +607,8 @@ public sealed class DirectoryProcessorToStagingService(
                                             }
                                             catch (Exception e)
                                             {
-                                                Logger.Warning(e, "Error deleting original file [{0}]", oldSongFilename);
+                                                Logger.Warning(e, "Error deleting original file [{0}]",
+                                                    oldSongFilename);
                                             }
                                         }
 
@@ -590,22 +624,30 @@ public sealed class DirectoryProcessorToStagingService(
 
                                 foreach (var songPlugin in _songPlugins)
                                 {
-                                    foreach (var song in album.Songs.Where(x => x.Tags?.Any(t => t.WasModified) ?? false))
+                                    foreach (var song in album.Songs.Where(x =>
+                                                 x.Tags?.Any(t => t.WasModified) ?? false))
                                     {
                                         if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                                         {
                                             break;
                                         }
 
-                                        using (Operation.At(LogEventLevel.Debug).Time("ProcessDirectoryAsync :: Updating song [{Name}] with plugin [{DisplayName}]", song.File.Name, songPlugin.DisplayName))
+                                        using (Operation.At(LogEventLevel.Debug)
+                                                   .Time(
+                                                       "ProcessDirectoryAsync :: Updating song [{Name}] with plugin [{DisplayName}]",
+                                                       song.File.Name, songPlugin.DisplayName))
                                         {
                                             try
                                             {
-                                                await songPlugin.UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken).ConfigureAwait(false);
+                                                await songPlugin
+                                                    .UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken)
+                                                    .ConfigureAwait(false);
                                             }
                                             catch (Exception e)
                                             {
-                                                Logger.Error(e, "Error updating song [{Name}] with plugin [{DisplayName}]", song.File.Name, songPlugin.DisplayName);
+                                                Logger.Error(e,
+                                                    "Error updating song [{Name}] with plugin [{DisplayName}]",
+                                                    song.File.Name, songPlugin.DisplayName);
                                             }
                                         }
                                     }
@@ -627,7 +669,8 @@ public sealed class DirectoryProcessorToStagingService(
                             .ConfigureAwait(false);
                         if (artistSearchResult.IsSuccess)
                         {
-                            var artistFromSearch = artistSearchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
+                            var artistFromSearch =
+                                artistSearchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
                             if (artistFromSearch != null)
                             {
                                 album.Artist = album.Artist with
@@ -639,9 +682,14 @@ public sealed class DirectoryProcessorToStagingService(
                                     LastFmId = album.Artist.LastFmId ?? artistFromSearch.LastFmId,
                                     MusicBrainzId = album.Artist.MusicBrainzId ?? artistFromSearch.MusicBrainzId,
                                     Name = album.Artist.Name.Nullify() ?? artistFromSearch.Name,
-                                    NameNormalized = album.Artist.NameNormalized.Nullify() ?? artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
-                                    OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
-                                    SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId is null or < 1 ? artistFromSearch.UniqueId : album.Artist.SearchEngineResultUniqueId,
+                                    NameNormalized = album.Artist.NameNormalized.Nullify() ??
+                                                     artistFromSearch.Name.ToNormalizedString() ??
+                                                     artistFromSearch.Name,
+                                    OriginalName =
+                                    artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
+                                    SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId is null or < 1
+                                        ? artistFromSearch.UniqueId
+                                        : album.Artist.SearchEngineResultUniqueId,
                                     SortName = album.Artist.SortName.Nullify() ?? artistFromSearch.SortName,
                                     SpotifyId = album.Artist.SpotifyId ?? artistFromSearch.SpotifyId,
                                     WikiDataId = album.Artist.WikiDataId ?? artistFromSearch.WikiDataId
@@ -649,11 +697,15 @@ public sealed class DirectoryProcessorToStagingService(
 
                                 if (artistFromSearch.Releases?.FirstOrDefault() != null)
                                 {
-                                    var searchResultRelease = artistFromSearch.Releases.FirstOrDefault(x => x.Year == album.AlbumYear() && x.NameNormalized == album.AlbumTitle().ToNormalizedString());
+                                    var searchResultRelease = artistFromSearch.Releases.FirstOrDefault(x =>
+                                        x.Year == album.AlbumYear() &&
+                                        x.NameNormalized == album.AlbumTitle().ToNormalizedString());
                                     if (searchResultRelease != null)
                                     {
                                         album.AlbumDbId = album.AlbumDbId ?? searchResultRelease.Id;
-                                        album.AlbumType = album.AlbumType == AlbumType.NotSet ? searchResultRelease.AlbumType : album.AlbumType;
+                                        album.AlbumType = album.AlbumType == AlbumType.NotSet
+                                            ? searchResultRelease.AlbumType
+                                            : album.AlbumType;
 
                                         // Artist result should override any in place for Album as its more specific and likely more accurate
                                         album.MusicBrainzId = searchResultRelease.MusicBrainzId;
@@ -661,18 +713,21 @@ public sealed class DirectoryProcessorToStagingService(
 
                                         if (!album.HasValidAlbumYear(_configuration.Configuration))
                                         {
-                                            album.SetTagValue(MetaTagIdentifier.RecordingYear, searchResultRelease.Year.ToString());
+                                            album.SetTagValue(MetaTagIdentifier.RecordingYear,
+                                                searchResultRelease.Year.ToString());
                                         }
                                     }
                                 }
 
                                 album.Status = AlbumStatus.Ok;
 
-                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
+                                LogAndRaiseEvent(LogEventLevel.Debug,
+                                    $"[{nameof(DirectoryProcessorToStagingService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
                             }
                             else
                             {
-                                LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorToStagingService)}] No result from search engine for artist [{searchRequest}]");
+                                LogAndRaiseEvent(LogEventLevel.Warning,
+                                    $"[{nameof(DirectoryProcessorToStagingService)}] No result from search engine for artist [{searchRequest}]");
                             }
                         }
 
@@ -682,13 +737,15 @@ public sealed class DirectoryProcessorToStagingService(
                         {
                             Trace.WriteLine("Querying for album image...");
                             var albumImageSearchRequest = album.ToAlbumQuery();
-                            var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(albumImageSearchRequest,
+                            var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(
+                                    albumImageSearchRequest,
                                     1,
                                     cancellationToken)
                                 .ConfigureAwait(false);
                             if (albumImageSearchResult.IsSuccess)
                             {
-                                var imageSearchResult = albumImageSearchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
+                                var imageSearchResult = albumImageSearchResult.Data.OrderByDescending(x => x.Rank)
+                                    .FirstOrDefault();
                                 if (imageSearchResult != null)
                                 {
                                     album.AmgId ??= imageSearchResult.AmgId;
@@ -705,20 +762,28 @@ public sealed class DirectoryProcessorToStagingService(
                                     album.Artist.SpotifyId ??= imageSearchResult.ArtistSpotifyId;
                                     album.Artist.WikiDataId ??= imageSearchResult.ArtistWikiDataId;
 
-                                    if (!album.HasValidAlbumYear(_configuration.Configuration) && imageSearchResult.ReleaseDate != null)
+                                    if (!album.HasValidAlbumYear(_configuration.Configuration) &&
+                                        imageSearchResult.ReleaseDate != null)
                                     {
-                                        album.SetTagValue(MetaTagIdentifier.RecordingYear, imageSearchResult.ReleaseDate.ToString());
+                                        album.SetTagValue(MetaTagIdentifier.RecordingYear,
+                                            imageSearchResult.ReleaseDate.ToString());
                                     }
 
-                                    var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(), albumDirectorySystemInfo.GetNextFileNameForType(Data.Models.Album.FrontImageType).Item1);
+                                    var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(),
+                                        albumDirectorySystemInfo
+                                            .GetNextFileNameForType(Data.Models.Album.FrontImageType).Item1);
                                     if (await httpClient.DownloadFileAsync(
                                             imageSearchResult.MediaUrl,
                                             albumImageFromSearchFileName,
-                                            async (_, newFileInfo, _) => (await _imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front, cancellationToken)).Data.IsValid,
+                                            async (_, newFileInfo, _) =>
+                                                (await _imageValidator.ValidateImage(newFileInfo,
+                                                    PictureIdentifier.Front, cancellationToken)).Data.IsValid,
                                             cancellationToken).ConfigureAwait(false))
                                     {
                                         var newImageInfo = new FileInfo(albumImageFromSearchFileName);
-                                        var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName, cancellationToken).ConfigureAwait(false);
+                                        var imageInfo = await Image
+                                            .IdentifyAsync(albumImageFromSearchFileName, cancellationToken)
+                                            .ConfigureAwait(false);
                                         album.Images = new List<ImageInfo>
                                         {
                                             new()
@@ -732,12 +797,14 @@ public sealed class DirectoryProcessorToStagingService(
                                                 WasEmbeddedInSong = false
                                             }
                                         };
-                                        LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
+                                        LogAndRaiseEvent(LogEventLevel.Debug,
+                                            $"[{nameof(DirectoryProcessorToStagingService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
                                     }
                                 }
                                 else
                                 {
-                                    LogAndRaiseEvent(LogEventLevel.Warning, $"[{nameof(DirectoryProcessorToStagingService)}] No result from album search engine for album [{albumImageSearchRequest}]");
+                                    LogAndRaiseEvent(LogEventLevel.Warning,
+                                        $"[{nameof(DirectoryProcessorToStagingService)}] No result from album search engine for album [{albumImageSearchRequest}]");
                                 }
                             }
                         }
@@ -756,10 +823,12 @@ public sealed class DirectoryProcessorToStagingService(
                         var jsonName = album.ToMelodeeJsonName(_configuration, true);
                         if (jsonName.Nullify() != null)
                         {
-                            await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), serialized, cancellationToken).ConfigureAwait(false);
+                            await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName),
+                                serialized, cancellationToken).ConfigureAwait(false);
 
                             artistsIdsSeen.Add(album.Artist.ArtistUniqueId());
-                            artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId()) ?? []);
+                            artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null)
+                                .Select(x => x.SongArtistUniqueId()) ?? []);
                             albumsIdsSeen.Add(album.ArtistAlbumUniqueId());
                             songsIdsSeen.AddRange(album.Songs?.Select(x => x.Id) ?? []);
 
@@ -767,30 +836,35 @@ public sealed class DirectoryProcessorToStagingService(
                             if (isMagicEnabled)
                             {
                                 await mediaEditService.DoMagic(album, cancellationToken).ConfigureAwait(false);
-                                albumCouldBeMagicfied = await Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), cancellationToken).ConfigureAwait(false) ?? album;
+                                albumCouldBeMagicfied = await Album.DeserializeAndInitializeAlbumAsync(serializer,
+                                        Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), cancellationToken)
+                                    .ConfigureAwait(false) ?? album;
                             }
 
                             if (albumCouldBeMagicfied.IsValid)
                             {
                                 numberOfValidAlbumsProcessed++;
-                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\udc4d Found valid album [{albumCouldBeMagicfied}]");
+                                LogAndRaiseEvent(LogEventLevel.Debug,
+                                    $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\udc4d Found valid album [{albumCouldBeMagicfied}]");
                                 if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
                                 {
-                                    LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
+                                    LogAndRaiseEvent(LogEventLevel.Debug,
+                                        $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
                                     _stopProcessingTriggered = true;
                                     break;
                                 }
                             }
                             else
                             {
-                                LogAndRaiseEvent(LogEventLevel.Debug, $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\ude3f Found invalid album [{albumCouldBeMagicfied}]");
+                                LogAndRaiseEvent(LogEventLevel.Debug,
+                                    $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\ude3f Found invalid album [{albumCouldBeMagicfied}]");
                             }
-                            
-                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal) && album.MelodeeDataFileName != null)
+
+                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal) &&
+                                album.MelodeeDataFileName != null)
                             {
                                 File.Delete(album.MelodeeDataFileName);
                             }
-                            
                         }
                         else
                         {
@@ -801,13 +875,16 @@ public sealed class DirectoryProcessorToStagingService(
                     }
                     catch (Exception e)
                     {
-                        LogAndRaiseEvent(LogEventLevel.Error, $"[{nameof(DirectoryProcessorToStagingService)}] Error processing directory [{fileSystemDirectoryInfo}]", e);
+                        LogAndRaiseEvent(LogEventLevel.Error,
+                            $"[{nameof(DirectoryProcessorToStagingService)}] Error processing directory [{fileSystemDirectoryInfo}]",
+                            e);
                     }
                 }
             }
             catch (Exception e)
             {
-                LogAndRaiseEvent(LogEventLevel.Error, "Processing Directory [{0}]", e, directoryInfoToProcess.ToString());
+                LogAndRaiseEvent(LogEventLevel.Error, "Processing Directory [{0}]", e,
+                    directoryInfoToProcess.ToString());
                 processingErrors.Add(e);
                 if (!_configuration.GetValue<bool>(SettingRegistry.ProcessingDoContinueOnDirectoryProcessingErrors))
                 {
@@ -831,7 +908,8 @@ public sealed class DirectoryProcessorToStagingService(
             };
             try
             {
-                postDiscoveryScriptResult = await _postDiscoveryScript.ProcessAsync(fileSystemDirectoryInfo, cancellationToken).ConfigureAwait(false);
+                postDiscoveryScriptResult = await _postDiscoveryScript
+                    .ProcessAsync(fileSystemDirectoryInfo, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -887,7 +965,8 @@ public sealed class DirectoryProcessorToStagingService(
     /// </summary>
     public event EventHandler<FileSystemDirectoryInfo>? OnDirectoryProcessed;
 
-    private void LogAndRaiseEvent(LogEventLevel logLevel, string messageTemplate, Exception? exception = null, params object[] args)
+    private void LogAndRaiseEvent(LogEventLevel logLevel, string messageTemplate, Exception? exception = null,
+        params object[] args)
     {
         if (exception != null)
         {

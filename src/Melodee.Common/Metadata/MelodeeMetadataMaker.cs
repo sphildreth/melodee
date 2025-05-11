@@ -1,22 +1,21 @@
+using Ardalis.GuardClauses;
 using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
+using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Extensions;
+using Melodee.Common.Models.SpecialArtists;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.MetaData.Directory;
 using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
-using Serilog;
-using Ardalis.GuardClauses;
-using Melodee.Common.Constants;
-using Melodee.Common.Enums;
-using Melodee.Common.Extensions;
-using Melodee.Common.Models.Extensions;
-using Melodee.Common.Models.SpecialArtists;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
-using ServiceStack;
+using Serilog;
 using SixLabors.ImageSharp;
 using ImageInfo = Melodee.Common.Models.ImageInfo;
 
@@ -32,9 +31,10 @@ public class MelodeeMetadataMaker(
     MediaEditService mediaEditService)
 {
     /// <summary>
-    /// For a given directory generate a Melodee Metadata file (melodee.json). Does not modify files in place. 
+    ///     For a given directory generate a Melodee Metadata file (melodee.json). Does not modify files in place.
     /// </summary>
-    public async Task<OperationResult<Album?>> MakeMetadataFileAsync(string directory, bool doCreateOnlyIfMissing, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Album?>> MakeMetadataFileAsync(string directory, bool doCreateOnlyIfMissing,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(directory, nameof(directory));
 
@@ -64,10 +64,12 @@ public class MelodeeMetadataMaker(
         var albumValidator = new AlbumValidator(configuration);
         var imageValidator = new ImageValidator(configuration);
         var imageConvertor = new ImageConvertor(configuration);
-        var songPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor, imageValidator, configuration);
+        var songPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor,
+            imageValidator, configuration);
         var mp3Files = new Mp3Files([songPlugin], albumValidator, serializer, logger, configuration);
 
-        var processResult = await mp3Files.ProcessDirectoryAsync(directoryInfo, cancellationToken).ConfigureAwait(false);
+        var processResult =
+            await mp3Files.ProcessDirectoryAsync(directoryInfo, cancellationToken).ConfigureAwait(false);
         if (!processResult.IsSuccess)
         {
             return new OperationResult<Album?>($"Could not generate metadata album from directory [{directory}]")
@@ -77,7 +79,8 @@ public class MelodeeMetadataMaker(
         }
 
         var albumFilename = Path.Combine(directoryInfo.FullName(), Album.JsonFileName);
-        var album = await Album.DeserializeAndInitializeAlbumAsync(serializer, albumFilename, cancellationToken).ConfigureAwait(false);
+        var album = await Album.DeserializeAndInitializeAlbumAsync(serializer, albumFilename, cancellationToken)
+            .ConfigureAwait(false);
         if (album == null)
         {
             return new OperationResult<Album?>($"Could not load metadata album from [{albumFilename}]")
@@ -88,8 +91,12 @@ public class MelodeeMetadataMaker(
 
 
         var albumImages = new List<ImageInfo>();
-        var duplicateThreshold = configuration.GetValue<int?>(SettingRegistry.ImagingDuplicateThreshold) ?? MelodeeConfiguration.DefaultImagingDuplicateThreshold;
-        var foundAlbumImages = (await album.FindImages(songPlugin, duplicateThreshold, imageConvertor, imageValidator, configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal), cancellationToken).ConfigureAwait(false)).ToArray();
+        var duplicateThreshold = configuration.GetValue<int?>(SettingRegistry.ImagingDuplicateThreshold) ??
+                                 MelodeeConfiguration.DefaultImagingDuplicateThreshold;
+        var foundAlbumImages =
+            (await album.FindImages(songPlugin, duplicateThreshold, imageConvertor, imageValidator,
+                    configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal), cancellationToken)
+                .ConfigureAwait(false)).ToArray();
         if (foundAlbumImages.Length != 0)
         {
             foreach (var foundAlbumImage in foundAlbumImages)
@@ -163,9 +170,12 @@ public class MelodeeMetadataMaker(
                     LastFmId = album.Artist.LastFmId ?? artistFromSearch.LastFmId,
                     MusicBrainzId = album.Artist.MusicBrainzId ?? artistFromSearch.MusicBrainzId,
                     Name = album.Artist.Name.Nullify() ?? artistFromSearch.Name,
-                    NameNormalized = album.Artist.NameNormalized.Nullify() ?? artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
+                    NameNormalized = album.Artist.NameNormalized.Nullify() ??
+                                     artistFromSearch.Name.ToNormalizedString() ?? artistFromSearch.Name,
                     OriginalName = artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
-                    SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId is null or < 1 ? artistFromSearch.UniqueId : album.Artist.SearchEngineResultUniqueId,
+                    SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId is null or < 1
+                        ? artistFromSearch.UniqueId
+                        : album.Artist.SearchEngineResultUniqueId,
                     SortName = album.Artist.SortName ?? artistFromSearch.SortName,
                     SpotifyId = album.Artist.SpotifyId ?? artistFromSearch.SpotifyId,
                     WikiDataId = album.Artist.WikiDataId ?? artistFromSearch.WikiDataId
@@ -173,11 +183,14 @@ public class MelodeeMetadataMaker(
 
                 if (artistFromSearch.Releases?.FirstOrDefault() != null)
                 {
-                    var searchResultRelease = artistFromSearch.Releases.FirstOrDefault(x => x.Year == album.AlbumYear() && x.NameNormalized == album.AlbumTitle().ToNormalizedString());
+                    var searchResultRelease = artistFromSearch.Releases.FirstOrDefault(x =>
+                        x.Year == album.AlbumYear() && x.NameNormalized == album.AlbumTitle().ToNormalizedString());
                     if (searchResultRelease != null)
                     {
                         album.AlbumDbId = album.AlbumDbId ?? searchResultRelease.Id;
-                        album.AlbumType = album.AlbumType == AlbumType.NotSet ? searchResultRelease.AlbumType : album.AlbumType;
+                        album.AlbumType = album.AlbumType == AlbumType.NotSet
+                            ? searchResultRelease.AlbumType
+                            : album.AlbumType;
 
                         // Artist result should override any in place for Album as its more specific and likely more accurate
                         album.MusicBrainzId = searchResultRelease.MusicBrainzId;
@@ -192,7 +205,8 @@ public class MelodeeMetadataMaker(
 
                 album.Status = AlbumStatus.Ok;
 
-                logger.Debug("[{Name}] Using artist from search engine query [{SearchRequest}] result [{ArtistFromSearch}]",
+                logger.Debug(
+                    "[{Name}] Using artist from search engine query [{SearchRequest}] result [{ArtistFromSearch}]",
                     nameof(MelodeeMetadataMaker),
                     searchRequest,
                     artistFromSearch);
@@ -237,17 +251,21 @@ public class MelodeeMetadataMaker(
                         album.SetTagValue(MetaTagIdentifier.RecordingYear, imageSearchResult.ReleaseDate.ToString());
                     }
 
-                    var albumImageFromSearchFileName = Path.Combine(directoryInfo.FullName(), directoryInfo.GetNextFileNameForType(Data.Models.Album.FrontImageType).Item1);
+                    var albumImageFromSearchFileName = Path.Combine(directoryInfo.FullName(),
+                        directoryInfo.GetNextFileNameForType(Data.Models.Album.FrontImageType).Item1);
 
                     var httpClient = httpClientFactory.CreateClient();
                     if (await httpClient.DownloadFileAsync(
                             imageSearchResult.MediaUrl,
                             albumImageFromSearchFileName,
-                            async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front, cancellationToken)).Data.IsValid,
+                            async (_, newFileInfo, _) =>
+                                (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front,
+                                    cancellationToken)).Data.IsValid,
                             cancellationToken).ConfigureAwait(false))
                     {
                         var newImageInfo = new FileInfo(albumImageFromSearchFileName);
-                        var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName, cancellationToken).ConfigureAwait(false);
+                        var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName, cancellationToken)
+                            .ConfigureAwait(false);
                         album.Images = new List<ImageInfo>
                         {
                             new()
@@ -261,12 +279,14 @@ public class MelodeeMetadataMaker(
                                 WasEmbeddedInSong = false
                             }
                         };
-                        Log.Debug("[{Name}] Downloaded album image [{MediaUrl}]", nameof(MelodeeMetadataMaker), imageSearchResult.MediaUrl);
+                        Log.Debug("[{Name}] Downloaded album image [{MediaUrl}]", nameof(MelodeeMetadataMaker),
+                            imageSearchResult.MediaUrl);
                     }
                 }
                 else
                 {
-                    Log.Warning("[{Name}] No result from album search engine for album [{albumImageSearchRequest}]", nameof(MelodeeMetadataMaker), albumImageSearchRequest);
+                    Log.Warning("[{Name}] No result from album search engine for album [{albumImageSearchRequest}]",
+                        nameof(MelodeeMetadataMaker), albumImageSearchRequest);
                 }
             }
         }
@@ -280,7 +300,8 @@ public class MelodeeMetadataMaker(
         var jsonName = album.ToMelodeeJsonName(configuration, true);
         if (jsonName.Nullify() != null)
         {
-            await File.WriteAllTextAsync(Path.Combine(directoryInfo.FullName(), jsonName), serialized, cancellationToken).ConfigureAwait(false);
+            await File.WriteAllTextAsync(Path.Combine(directoryInfo.FullName(), jsonName), serialized,
+                cancellationToken).ConfigureAwait(false);
             if (configuration.GetValue<bool>(SettingRegistry.MagicEnabled) && !album.IsValid)
             {
                 var magicResult = await mediaEditService.DoMagic(album, cancellationToken).ConfigureAwait(false);

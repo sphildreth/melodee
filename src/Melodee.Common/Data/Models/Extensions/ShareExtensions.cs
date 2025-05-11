@@ -17,7 +17,7 @@ public static class ShareExtensions
         var baseUrl = configuration.GetValue<string>(SettingRegistry.SystemBaseUrl);
         return $"{baseUrl}/share/{share.ShareUniqueId}";
     }
-    
+
     public static Common.Models.OpenSubsonic.Share ToApiShare(this Share share, string url, Child[] entry)
     {
         return new Common.Models.OpenSubsonic.Share

@@ -31,7 +31,9 @@ public sealed partial class MetaTagsProcessor(IMelodeeConfiguration configuratio
 
     public int SortOrder { get; } = 0;
 
-    public Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, in IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
+    public Task<OperationResult<IEnumerable<MetaTag<object?>>>> ProcessMetaTagAsync(
+        FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo,
+        in IEnumerable<MetaTag<object?>> metaTags, CancellationToken cancellationToken = default)
     {
         var processedTags = new List<MetaTag<object?>>(metaTags.ToList());
         foreach (var metaTagProcessor in _metaTagProcessors.OrderBy(x => x.SortOrder))
@@ -42,7 +44,8 @@ public sealed partial class MetaTagsProcessor(IMelodeeConfiguration configuratio
                 {
                     if (metaTagProcessor.DoesHandleMetaTagIdentifier(tag.Identifier))
                     {
-                        var metaTagProcessorResult = metaTagProcessor.ProcessMetaTag(directoryInfo, fileSystemFileInfo, tag, processedTags);
+                        var metaTagProcessorResult =
+                            metaTagProcessor.ProcessMetaTag(directoryInfo, fileSystemFileInfo, tag, processedTags);
                         if (metaTagProcessorResult.IsSuccess)
                         {
                             foreach (var processorResultTag in metaTagProcessorResult.Data)
@@ -68,7 +71,8 @@ public sealed partial class MetaTagsProcessor(IMelodeeConfiguration configuratio
         if (processedTags.All(x => x.Identifier != MetaTagIdentifier.AlbumArtist))
         {
             var groupedTags = processedTags.GroupBy(x => x.Identifier);
-            var artistTag = groupedTags.Where(x => x.Key == MetaTagIdentifier.Artist).OrderByDescending(x => x.Count()).FirstOrDefault();
+            var artistTag = groupedTags.Where(x => x.Key == MetaTagIdentifier.Artist).OrderByDescending(x => x.Count())
+                .FirstOrDefault();
             if (artistTag != null)
             {
                 processedTags.Add(new MetaTag<object?>
@@ -89,7 +93,9 @@ public sealed partial class MetaTagsProcessor(IMelodeeConfiguration configuratio
 
     public static string? ReplaceSongArtistSeparators(string? songArtist)
     {
-        return songArtist.Nullify() == null ? null : ReplaceSongArtistSeparatorsRegex().Replace(songArtist!, "/").Trim();
+        return songArtist.Nullify() == null
+            ? null
+            : ReplaceSongArtistSeparatorsRegex().Replace(songArtist!, "/").Trim();
     }
 
     [GeneratedRegex(@"\s+with\s+|\s*;\s*|\s*(&|ft(\.)*|feat)\s*|\s+x\s+|\s*\,\s*", RegexOptions.IgnoreCase, "en-US")]

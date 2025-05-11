@@ -18,6 +18,7 @@ public record License(bool Valid, string Email, string LicenseExpires, string Tr
             trailExpiresAttribute = $" trialExpires=\"{LicenseExpires}\"";
         }
 
-        return $"<license valid=\"{Valid.ToLowerCaseString()}\" email=\"{Email.ToSafeXmlString()}\"{licenseExpiresAttribute} {trailExpiresAttribute} />";
+        return
+            $"<license valid=\"{Valid.ToLowerCaseString()}\" email=\"{Email.ToSafeXmlString()}\"{licenseExpiresAttribute} {trailExpiresAttribute} />";
     }
 }

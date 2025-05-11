@@ -54,7 +54,8 @@ public record Artist(
             }
         }
 
-        return new Artist(Name ?? other.Name, NameNormalized ?? other.NameNormalized, SortName ?? other.SortName, images, ArtistDbId ?? other.ArtistDbId)
+        return new Artist(Name ?? other.Name, NameNormalized ?? other.NameNormalized, SortName ?? other.SortName,
+            images, ArtistDbId ?? other.ArtistDbId)
         {
             AmgId = AmgId ?? other.AmgId,
             DiscogsId = DiscogsId ?? other.DiscogsId,

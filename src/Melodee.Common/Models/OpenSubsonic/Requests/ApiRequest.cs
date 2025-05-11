@@ -21,11 +21,24 @@ namespace Melodee.Common.Models.OpenSubsonic.Requests;
 /// <param name="Callback">(callback) Callback name to use with jsonp requests.</param>
 /// <param name="Jwt">(jwt) JsonWebToken used in auth, seen in the Navidrome source code.</param>
 /// <param name="ApiRequestPlayer">Details on the request subsonic client application (aka player.)</param>
-public record ApiRequest(KeyValue[] RequestHeaders, bool RequiresAuthentication, string? Username, string? Version, string? Format, string? ApiKey, string? Password, string? Token, string? Salt, string? Callback, string? Jwt, UserPlayer ApiRequestPlayer)
+public record ApiRequest(
+    KeyValue[] RequestHeaders,
+    bool RequiresAuthentication,
+    string? Username,
+    string? Version,
+    string? Format,
+    string? ApiKey,
+    string? Password,
+    string? Token,
+    string? Salt,
+    string? Callback,
+    string? Jwt,
+    UserPlayer ApiRequestPlayer)
 {
     public bool IsJsonRequest => string.Equals(Format, "json", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsJsonPRequest => string.Equals(Format, "jsonp", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(Callback);
+    public bool IsJsonPRequest => string.Equals(Format, "jsonp", StringComparison.OrdinalIgnoreCase) &&
+                                  !string.IsNullOrWhiteSpace(Callback);
 
     /// <summary>
     ///     Defaults to XML

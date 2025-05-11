@@ -23,7 +23,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
     public const string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
 
     public const string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
-    
+
     public const int MaximumUploadFileSize = 10 * 1024 * 1024;
 
     public const int BatchSizeDefault = 250;
@@ -130,7 +130,8 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         return result;
     }
 
-    public static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName, T? defaultValue = default)
+    public static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName,
+        T? defaultValue = default)
     {
         if (settings.TryGetValue(settingName, out var setting))
         {
@@ -194,7 +195,8 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
             return [];
         }
 
-        return serializer.Deserialize<Dictionary<string, string[]>>(ss.Replace("'", "\"")) ?? new Dictionary<string, string[]>();
+        return serializer.Deserialize<Dictionary<string, string[]>>(ss.Replace("'", "\"")) ??
+               new Dictionary<string, string[]>();
     }
 
     public static string[] FromSerializedJsonArrayNormalized(object? o, ISerializer serializer)

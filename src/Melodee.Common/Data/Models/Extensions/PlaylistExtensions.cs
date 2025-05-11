@@ -30,7 +30,8 @@ public static class PlaylistExtensions
         return $"playlist{OpenSubsonicServer.ApiIdSeparator}{playlist.ApiKey}";
     }
 
-    public static Common.Models.OpenSubsonic.Playlist ToApiPlaylist(this Playlist playlist, bool includeSongs = true, bool? isDynamicPlaylist = false)
+    public static Common.Models.OpenSubsonic.Playlist ToApiPlaylist(this Playlist playlist, bool includeSongs = true,
+        bool? isDynamicPlaylist = false)
     {
         return new Common.Models.OpenSubsonic.Playlist
         {

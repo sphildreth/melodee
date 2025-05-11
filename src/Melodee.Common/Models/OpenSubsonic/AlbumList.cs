@@ -8,6 +8,7 @@ public record AlbumList : AlbumList2
 
     public override string ToXml(string? nodeName = null)
     {
-        return $"<album id=\"{Id}\" parent=\"{ArtistId}\" title=\"{Title.ToSafeXmlString()}\" artist=\"{Artist.ToSafeXmlString()}\" isDir=\"true\" coverArt=\"{CoverArt}\" userRating=\"{UserRating ?? 0}\" averageRating=\"{AverageRating}\"/>";
+        return
+            $"<album id=\"{Id}\" parent=\"{ArtistId}\" title=\"{Title.ToSafeXmlString()}\" artist=\"{Artist.ToSafeXmlString()}\" isDir=\"true\" coverArt=\"{CoverArt}\" userRating=\"{UserRating ?? 0}\" averageRating=\"{AverageRating}\"/>";
     }
 }

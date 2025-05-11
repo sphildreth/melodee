@@ -30,7 +30,8 @@ public class ArtistHousekeepingJob(
 {
     public override async Task Execute(IJobExecutionContext context)
     {
-        var configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken).ConfigureAwait(false);
+        var configuration = await ConfigurationFactory.GetConfigurationAsync(context.CancellationToken)
+            .ConfigureAwait(false);
         var batchSize = configuration.GetValue<int>(SettingRegistry.DefaultsBatchSize);
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
         var httpClient = httpClientFactory.CreateClient();
@@ -41,7 +42,8 @@ public class ArtistHousekeepingJob(
             var artists = await scopedContext.Artists
                 .Include(x => x.Library)
                 .Include(x => x.Albums)
-                .Where(x => !x.Library.IsLocked && !x.IsLocked && (x.ImageCount == null || x.ImageCount == 0) && x.MetaDataStatus == readyToProcessStatus)
+                .Where(x => !x.Library.IsLocked && !x.IsLocked && (x.ImageCount == null || x.ImageCount == 0) &&
+                            x.MetaDataStatus == readyToProcessStatus)
                 .Take(batchSize)
                 .ToArrayAsync(context.CancellationToken)
                 .ConfigureAwait(false);
@@ -51,13 +53,15 @@ public class ArtistHousekeepingJob(
                 return;
             }
 
-            var maxNumberOfImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
+            var maxNumberOfImagesAllowed =
+                configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
             if (maxNumberOfImagesAllowed == 0)
             {
                 maxNumberOfImagesAllowed = short.MaxValue;
             }
 
-            Logger.Debug("[{JobName}] found [{Count}] artists without images.", nameof(ArtistHousekeepingJob), artists.Length);
+            Logger.Debug("[{JobName}] found [{Count}] artists without images.", nameof(ArtistHousekeepingJob),
+                artists.Length);
 
             var updatedArtists = new List<Artist>();
 
@@ -83,7 +87,10 @@ public class ArtistHousekeepingJob(
                 if (await httpClient.DownloadFileAsync(
                         albumImageSearchResult.Data.First().MediaUrl,
                         imageFileName,
-                        async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Artist, context.CancellationToken).ConfigureAwait(false)).Data.IsValid,
+                        async (_, newFileInfo, _) =>
+                            (await imageValidator
+                                .ValidateImage(newFileInfo, PictureIdentifier.Artist, context.CancellationToken)
+                                .ConfigureAwait(false)).Data.IsValid,
                         context.CancellationToken).ConfigureAwait(false))
                 {
                     artist.LastUpdatedAt = now;
@@ -91,7 +98,8 @@ public class ArtistHousekeepingJob(
                     artist.MetaDataStatus = SafeParser.ToNumber<int>(MetaDataModelStatus.UpdatedImages);
                     artistService.ClearCache(artist);
                     updatedArtists.Add(artist);
-                    Logger.Information("[{JobName}] Updated artist image for artist [{ArtistName}]", nameof(ArtistHousekeepingJob), artist.Name);
+                    Logger.Information("[{JobName}] Updated artist image for artist [{ArtistName}]",
+                        nameof(ArtistHousekeepingJob), artist.Name);
                 }
             }
 

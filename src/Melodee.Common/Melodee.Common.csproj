@@ -10,7 +10,7 @@
     <PackageReference Include="Ardalis.GuardClauses"/>
     <PackageReference Include="BCrypt.Net-Next"/>
     <PackageReference Include="Crc32.NET"/>
-    <PackageReference Include="CsvHelper" />
+    <PackageReference Include="CsvHelper"/>
     <PackageReference Include="Dapper"/>
     <PackageReference Include="Fastenshtein"/>
     <PackageReference Include="FFMpegCore"/>
@@ -26,7 +26,7 @@
     <PackageReference Include="Lucene.Net"/>
     <PackageReference Include="Lucene.Net.Analysis.Common"/>
     <PackageReference Include="Mapster"/>
-    <PackageReference Include="Markdig" />
+    <PackageReference Include="Markdig"/>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore"/>
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore"/>
@@ -55,7 +55,7 @@
     <PackageReference Include="SixLabors.ImageSharp"/>
     <PackageReference Include="SmartFormat"/>
     <PackageReference Include="SpotifyAPI.Web"/>
-    <PackageReference Include="Sqids" />
+    <PackageReference Include="Sqids"/>
     <PackageReference Include="System.IO.Hashing"/>
     <PackageReference Include="System.Linq.Dynamic.Core"/>
     <PackageReference Include="z440.atl.core"/>

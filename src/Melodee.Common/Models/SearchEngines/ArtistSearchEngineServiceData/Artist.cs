@@ -23,7 +23,7 @@ public sealed class Artist
     [Required] [MaxLength(2000)] public required string NameNormalized { get; set; }
 
     /// <summary>
-    /// Alternate names in tag form
+    ///     Alternate names in tag form
     /// </summary>
     [MaxLength(4000)]
     public string? AlternateNames { get; set; }
@@ -39,7 +39,7 @@ public sealed class Artist
     [MaxLength(255)] public string? WikiDataId { get; set; }
 
     public Guid? MusicBrainzId { get; set; }
-    
+
     [NotMapped] public string? MusicBrainzIdValue { get; set; }
 
     [MaxLength(255)] public string? LastFmId { get; set; }
@@ -53,11 +53,11 @@ public sealed class Artist
     [NotMapped] public int AlbumCount { get; set; }
 
     public bool? IsLocked { get; set; }
-    
+
     [NotMapped] public bool IsLockedValue { get; set; }
 
     /// <summary>
-    /// Last time the Artist albums where refreshed from search engine plugins.
+    ///     Last time the Artist albums where refreshed from search engine plugins.
     /// </summary>
     public DateTimeOffset? LastRefreshed { get; set; }
 

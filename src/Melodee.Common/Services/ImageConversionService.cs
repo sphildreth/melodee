@@ -17,11 +17,13 @@ public class ImageConversionService(
 )
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public async Task<MelodeeModels.OperationResult<bool>> ConvertImageAsync(FileInfo imageFileInfo, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ConvertImageAsync(FileInfo imageFileInfo,
+        CancellationToken cancellationToken = default)
     {
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
         var imageConvertor = new ImageConvertor(configuration);
-        var convertResult = await imageConvertor.ProcessFileAsync(imageFileInfo.ToDirectorySystemInfo(), imageFileInfo.ToFileSystemInfo(), cancellationToken);
+        var convertResult = await imageConvertor.ProcessFileAsync(imageFileInfo.ToDirectorySystemInfo(),
+            imageFileInfo.ToFileSystemInfo(), cancellationToken);
         return new MelodeeModels.OperationResult<bool>
         {
             Data = convertResult.IsSuccess

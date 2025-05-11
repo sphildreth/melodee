@@ -34,6 +34,6 @@ public record ScrobbleInfo(
     public Instant LastScrobbledAt { get; set; } = Instant.FromDateTimeOffset(DateTimeOffset.UtcNow);
 
     public bool IsExpired => MinutesAgo > SongDuration;
-    
+
     public int MinutesAgo => (LastScrobbledAt - CreatedAt).Minutes;
 }

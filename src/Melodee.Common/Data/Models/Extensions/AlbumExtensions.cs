@@ -6,7 +6,6 @@ using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Utility;
-using ServiceStack.Logging;
 
 namespace Melodee.Common.Data.Models.Extensions;
 
@@ -42,13 +41,13 @@ public static class AlbumExtensions
                album.SpotifyId.Nullify() != null ||
                album.WikiDataId.Nullify() != null;
     }
-    
+
     /// <summary>
-    /// This is primarily to use the Album extensions when adding/editing Albums, not a fully populated model.
+    ///     This is primarily to use the Album extensions when adding/editing Albums, not a fully populated model.
     /// </summary>
     public static Common.Models.Album ToMelodeeAlbumModel(this Album album)
     {
-        var albumTags = new List<Common.Models.MetaTag<object?>>
+        var albumTags = new List<MetaTag<object?>>
         {
             new MetaTag<object?>
             {
@@ -69,7 +68,7 @@ public static class AlbumExtensions
             OriginalDirectory = new FileSystemDirectoryInfo { Path = album.Directory, Name = album.Name },
             Directory = new FileSystemDirectoryInfo { Path = album.Directory, Name = album.Name }
         };
-    }    
+    }
 
     public static AlbumDataInfo ToAlbumDataInfo(this Album album)
     {
@@ -94,10 +93,15 @@ public static class AlbumExtensions
     {
         if (album.Contributors.Any())
         {
-            var publisher = album.Contributors.Where(x => x.ContributorTypeValue == ContributorType.Publisher).ToArray();
+            var publisher = album.Contributors.Where(x => x.ContributorTypeValue == ContributorType.Publisher)
+                .ToArray();
             if (publisher.Length > 0)
             {
-                return publisher.Select(x => new RecordLabel(x.ContributorName ?? throw new Exception("Album contributor of Publisher cannot have a null ContributorName"))).ToArray();
+                return publisher.Select(x =>
+                        new RecordLabel(x.ContributorName ??
+                                        throw new Exception(
+                                            "Album contributor of Publisher cannot have a null ContributorName")))
+                    .ToArray();
             }
         }
 
@@ -112,7 +116,8 @@ public static class AlbumExtensions
         {
             foreach (var song in songsWithContributors)
             {
-                foreach (var artistContributor in song.Contributors.Where(x => x.ContributorTypeValue == ContributorType.Performer))
+                foreach (var artistContributor in song.Contributors.Where(x =>
+                             x.ContributorTypeValue == ContributorType.Performer))
                 {
                     if (artistContributor.Artist != null)
                     {
@@ -120,7 +125,8 @@ public static class AlbumExtensions
                     }
                     else
                     {
-                        var id = $"contributor{OpenSubsonicServer.ApiIdSeparator}{artistContributor.ContributorName.ToNormalizedString()}";
+                        var id =
+                            $"contributor{OpenSubsonicServer.ApiIdSeparator}{artistContributor.ContributorName.ToNormalizedString()}";
                         if (artistContributor.ContributorName != null)
                         {
                             result.Add(new ArtistID3(

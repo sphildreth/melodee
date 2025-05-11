@@ -6,6 +6,7 @@ public record ArtistSearchResult(string Id, string Name, string CoverArt, int Al
 {
     public string ToXml(string? nodeName = null)
     {
-        return $"<artist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" coverArt=\"{CoverArt}\" albumCount=\"{AlbumCount}\"/>";
+        return
+            $"<artist id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" coverArt=\"{CoverArt}\" albumCount=\"{AlbumCount}\"/>";
     }
 }

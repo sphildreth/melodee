@@ -33,7 +33,8 @@ public class ITunesSearchEngine(
 
     public int SortOrder { get; } = 3;
 
-    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults,
+        CancellationToken cancellationToken = default)
     {
         //https://itunes.apple.com/search?term=Cargo&entity=album&country=US&media=music
 
@@ -48,7 +49,8 @@ public class ITunesSearchEngine(
         }
 
         var httpClient = httpClientFactory.CreateClient();
-        var requestUri = $"https://itunes.apple.com/search?term={Uri.EscapeDataString(query.Name.Trim())}&entity=album&country={query.Country}&media=music&limit={maxResults}";
+        var requestUri =
+            $"https://itunes.apple.com/search?term={Uri.EscapeDataString(query.Name.Trim())}&entity=album&country={query.Country}&media=music&limit={maxResults}";
 
         try
         {
@@ -67,7 +69,8 @@ public class ITunesSearchEngine(
             if (searchResult?.Results?.Any() ?? false)
             {
                 var na = query.Artist.ToNormalizedString();
-                foreach (var sr in searchResult.Results.Where(x => x is { ArtworkUrl100: not null, ArtworkUrl60: not null }))
+                foreach (var sr in searchResult.Results.Where(x => x is
+                             { ArtworkUrl100: not null, ArtworkUrl60: not null }))
                 {
                     if (sr.ArtistName.ToNormalizedString() == na)
                     {
@@ -107,7 +110,8 @@ public class ITunesSearchEngine(
         }
         catch (Exception ex)
         {
-            logger.Error(ex, "Error searching for album image url [{Url}] query [{Query}]", requestUri, query.ToString());
+            logger.Error(ex, "Error searching for album image url [{Url}] query [{Query}]", requestUri,
+                query.ToString());
         }
 
         return new OperationResult<ImageSearchResult[]?>
@@ -116,7 +120,8 @@ public class ITunesSearchEngine(
         };
     }
 
-    public async Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<ImageSearchResult[]?>> DoArtistImageSearch(ArtistQuery query, int maxResults,
+        CancellationToken cancellationToken = default)
     {
         //https://itunes.apple.com/search?term=Colin%2BHay&entity=allArtist&country=US&media=all
 
@@ -131,7 +136,8 @@ public class ITunesSearchEngine(
         }
 
         var httpClient = httpClientFactory.CreateClient();
-        var requestUri = $"https://itunes.apple.com/search?term={Uri.EscapeDataString(query.Name.Trim())}&entity=allArtist&country={query.Country}&media=all&limit={{maxResults}}";
+        var requestUri =
+            $"https://itunes.apple.com/search?term={Uri.EscapeDataString(query.Name.Trim())}&entity=allArtist&country={query.Country}&media=all&limit={{maxResults}}";
 
         try
         {
@@ -150,7 +156,8 @@ public class ITunesSearchEngine(
             if (searchResult?.Results?.FirstOrDefault()?.ArtistId != null)
             {
                 var sr = searchResult.Results.First();
-                var mediaUrl = await GetArtistArtworkUrlAsync(httpClient, searchResult.Results.First().ArtistId.ToString()!, cancellationToken);
+                var mediaUrl = await GetArtistArtworkUrlAsync(httpClient,
+                    searchResult.Results.First().ArtistId.ToString()!, cancellationToken);
                 if (mediaUrl.Nullify() != null)
                 {
                     results.Add(new ImageSearchResult
@@ -180,7 +187,8 @@ public class ITunesSearchEngine(
         }
         catch (Exception ex)
         {
-            logger.Error(ex, "Error searching for artist image url [{Url}] query [{Query}]", requestUri, query.ToString());
+            logger.Error(ex, "Error searching for artist image url [{Url}] query [{Query}]", requestUri,
+                query.ToString());
         }
 
         return new OperationResult<ImageSearchResult[]?>
@@ -189,7 +197,8 @@ public class ITunesSearchEngine(
         };
     }
 
-    public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults, CancellationToken cancellationToken = default)
+    public Task<PagedResult<ArtistSearchResult>> DoArtistSearchAsync(ArtistQuery query, int maxResults,
+        CancellationToken cancellationToken = default)
     {
         //https://itunes.apple.com/search?term=Colin%2BHay&entity=musicArtist&country=US&media=music
 
@@ -234,7 +243,8 @@ public class ITunesSearchEngine(
         throw new NotImplementedException();
     }
 
-    private async Task<string?> GetArtistArtworkUrlAsync(HttpClient client, string artistId, CancellationToken cancellationToken = default)
+    private async Task<string?> GetArtistArtworkUrlAsync(HttpClient client, string artistId,
+        CancellationToken cancellationToken = default)
     {
         var pipeline = new ResiliencePipelineBuilder()
             .AddRetry(new RetryStrategyOptions

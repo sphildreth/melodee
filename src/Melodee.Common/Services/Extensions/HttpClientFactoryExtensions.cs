@@ -6,7 +6,8 @@ namespace Melodee.Common.Services.Extensions;
 
 public static class HttpClientFactoryExtensions
 {
-    public static async Task<byte[]?> BytesForImageUrlAsync(this IHttpClientFactory httpclientFactory, string userAgent, string? url, CancellationToken cancellationToken = default)
+    public static async Task<byte[]?> BytesForImageUrlAsync(this IHttpClientFactory httpclientFactory, string userAgent,
+        string? url, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(url))
         {

@@ -173,10 +173,12 @@ public sealed record PagedRequest
                 cn = $"{fb.x.ColumnName}.\"";
             }
 
-            sqlResult.Append($"{ cn }{fb.x.PropertyName}\" {fb.x.OperatorOverride ?? fb.x.OperatorValue} @p_{fb.x.PropertyName}");
+            sqlResult.Append(
+                $"{cn}{fb.x.PropertyName}\" {fb.x.OperatorOverride ?? fb.x.OperatorValue} @p_{fb.x.PropertyName}");
         }
 
-        return (sqlResult.ToString(), FilterBy.ToDictionary(x => $"@p_{x.PropertyName}", object (x) => x.ValuePattern()));
+        return (sqlResult.ToString(),
+            FilterBy.ToDictionary(x => $"@p_{x.PropertyName}", object (x) => x.ValuePattern()));
     }
 
 

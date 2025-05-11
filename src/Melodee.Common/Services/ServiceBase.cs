@@ -35,7 +35,7 @@ public abstract class ServiceBase
     protected static TimeSpan DefaultCacheDuration = TimeSpan.FromDays(1);
 
     /// <summary>
-    /// This is required for Mocking in unit tests.
+    ///     This is required for Mocking in unit tests.
     /// </summary>
     protected ServiceBase()
     {
@@ -55,21 +55,29 @@ public abstract class ServiceBase
     protected ICacheManager CacheManager { get; } = null!;
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = null!;
 
-    protected async Task<AlbumUpdatedEvent?> ProcessExistingDirectoryMoveMergeAsync(IMelodeeConfiguration configuration, ISerializer serializer, Album albumToMove, string existingAlbumPath, CancellationToken cancellationToken = default)
+    protected async Task<AlbumUpdatedEvent?> ProcessExistingDirectoryMoveMergeAsync(IMelodeeConfiguration configuration,
+        ISerializer serializer, Album albumToMove, string existingAlbumPath,
+        CancellationToken cancellationToken = default)
     {
         var modifiedExistingDirectory = false;
 
         var albumToMoveDir = albumToMove.Directory;
         var existingDir = new DirectoryInfo(existingAlbumPath);
 
-        Logger.Debug("[{ServiceName}] :\u2552: processing existing directory merge from [{ExistingDirectoryPath}] to [{NewDirectoryPath}]", nameof(LibraryService),
+        Logger.Debug(
+            "[{ServiceName}] :\u2552: processing existing directory merge from [{ExistingDirectoryPath}] to [{NewDirectoryPath}]",
+            nameof(LibraryService),
             albumToMove.Directory.Name, existingDir.Name);
 
         if (albumToMove.Images?.Any() == true)
         {
-            var existingImages = ImageHelper.ImageFilesInDirectory(existingDir.FullName, SearchOption.TopDirectoryOnly).ToList();
-            var existingImagesCrc = existingImages.Select(async x => new { Crc = CRC32.Calculate(await File.ReadAllBytesAsync(x, cancellationToken)), ImageFileName = x }).ToArray();
-            var imagesToMoveCrc = albumToMove.Images.Select(x => new { Crc = x.CrcHash, ImageFileName = x.FileInfo!.FullName(albumToMoveDir) }).ToList();
+            var existingImages = ImageHelper.ImageFilesInDirectory(existingDir.FullName, SearchOption.TopDirectoryOnly)
+                .ToList();
+            var existingImagesCrc = existingImages.Select(async x => new
+                    { Crc = CRC32.Calculate(await File.ReadAllBytesAsync(x, cancellationToken)), ImageFileName = x })
+                .ToArray();
+            var imagesToMoveCrc = albumToMove.Images
+                .Select(x => new { Crc = x.CrcHash, ImageFileName = x.FileInfo!.FullName(albumToMoveDir) }).ToList();
 
             // if none exist take all images from albumToMove
             if (existingImages.Count == 0)
@@ -83,7 +91,8 @@ public abstract class ServiceBase
                         if (File.Exists(imagePath))
                         {
                             File.Move(imagePath, Path.Combine(existingDir.FullName, image.FileInfo.Name));
-                            Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]", nameof(LibraryService), image.FileInfo.Name);
+                            Logger.Debug("[{ServiceName}] :\u2502: moving new image [{FileName}]",
+                                nameof(LibraryService), image.FileInfo.Name);
                         }
                     }
 
@@ -102,24 +111,32 @@ public abstract class ServiceBase
                         continue;
                     }
 
-                    var existingWithSameFileNames = existingImageInfos.Where(x => string.Equals(x.ImageFileName, imageToMove.ImageFileName, StringComparison.OrdinalIgnoreCase)).ToArray();
+                    var existingWithSameFileNames = existingImageInfos.Where(x =>
+                            string.Equals(x.ImageFileName, imageToMove.ImageFileName,
+                                StringComparison.OrdinalIgnoreCase))
+                        .ToArray();
                     foreach (var existingWithSameFileName in existingWithSameFileNames)
                     {
                         imagesToMoveCrc.Remove(imageToMove);
 
                         // If some exist, not duplicate CRC, same name, keep the higher resolution
-                        var existingInfoSizeInfo = await Image.IdentifyAsync(existingWithSameFileName.ImageFileName, cancellationToken).ConfigureAwait(false);
-                        var toMoveInfoSizeInfo = await Image.IdentifyAsync(imageToMove.ImageFileName, cancellationToken).ConfigureAwait(false);
+                        var existingInfoSizeInfo = await Image
+                            .IdentifyAsync(existingWithSameFileName.ImageFileName, cancellationToken)
+                            .ConfigureAwait(false);
+                        var toMoveInfoSizeInfo = await Image.IdentifyAsync(imageToMove.ImageFileName, cancellationToken)
+                            .ConfigureAwait(false);
                         if (existingInfoSizeInfo.Width > toMoveInfoSizeInfo.Width)
                         {
                             continue;
                         }
 
                         var toFile = Path.Combine(existingDir.FullName, Path.GetFileName(imageToMove.ImageFileName));
-                        Trace.WriteLine($"Existing image [{existingWithSameFileName.ImageFileName}] to be overwritten by image [{toFile}]...");
+                        Trace.WriteLine(
+                            $"Existing image [{existingWithSameFileName.ImageFileName}] to be overwritten by image [{toFile}]...");
                         File.Delete(existingWithSameFileName.ImageFileName);
                         File.Move(imageToMove.ImageFileName, toFile);
-                        Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
+                        Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]",
+                            nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
                         modifiedExistingDirectory = true;
                     }
                 }
@@ -131,7 +148,8 @@ public abstract class ServiceBase
                     {
                         Trace.WriteLine($"Moving image [{imageToMove.ImageFileName}] to [{toFile}]...");
                         File.Move(imageToMove.ImageFileName, toFile);
-                        Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
+                        Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService),
+                            Path.GetFileName(imageToMove.ImageFileName));
                         modifiedExistingDirectory = true;
                     }
                 }
@@ -143,12 +161,15 @@ public abstract class ServiceBase
         {
             var imageValidator = new ImageValidator(configuration);
             var imageConvertor = new ImageConvertor(configuration);
-            var atlMetTag = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor, imageValidator, configuration);
+            var atlMetTag = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor,
+                imageValidator, configuration);
             var existingSongsFileInfos = albumToMoveDir.AllMediaTypeFileInfos().ToArray();
             var existingSongs = new List<Song>();
             foreach (var song in existingSongsFileInfos)
             {
-                var songLoadResult = await atlMetTag.ProcessFileAsync(existingDir.ToDirectorySystemInfo(), song.ToFileSystemInfo(), cancellationToken).ConfigureAwait(false);
+                var songLoadResult = await atlMetTag
+                    .ProcessFileAsync(existingDir.ToDirectorySystemInfo(), song.ToFileSystemInfo(), cancellationToken)
+                    .ConfigureAwait(false);
                 if (songLoadResult.IsSuccess)
                 {
                     existingSongs.Add(songLoadResult.Data);
@@ -157,7 +178,8 @@ public abstract class ServiceBase
 
             foreach (var songToMove in songsToMove.ToArray())
             {
-                var existingForSongToMove = existingSongs.FirstOrDefault(x => x.SongNumber() == songToMove.SongNumber());
+                var existingForSongToMove =
+                    existingSongs.FirstOrDefault(x => x.SongNumber() == songToMove.SongNumber());
                 if (existingForSongToMove != null)
                 {
                     // TODO for some reason the song.CrcHash is wrong? 
@@ -170,7 +192,8 @@ public abstract class ServiceBase
                     }
 
                     if (existingForSongToMove.File.Size > songToMove.File.Size ||
-                        (existingForSongToMove.BitRate() > songToMove.BitRate() && existingForSongToMove.BitDepth() > songToMove.BitDepth()))
+                        (existingForSongToMove.BitRate() > songToMove.BitRate() &&
+                         existingForSongToMove.BitDepth() > songToMove.BitDepth()))
                     {
                         // existing song is better don't do anything
                         songsToMove.Remove(songToMove);
@@ -184,7 +207,8 @@ public abstract class ServiceBase
                 var toFile = Path.Combine(existingDir.FullName, songToMove.File.Name);
                 if (File.Exists(songToMove.File.FullName(albumToMoveDir)) && !File.Exists(toFile))
                 {
-                    Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService), songToMove.File.Name);
+                    Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService),
+                        songToMove.File.Name);
                     File.Move(songToMove.File.FullName(albumToMoveDir), toFile);
                     modifiedExistingDirectory = true;
                 }
@@ -193,7 +217,8 @@ public abstract class ServiceBase
 
         // Delete directory to merge as what is wanted has been moved 
         Directory.Delete(albumToMove.Directory.FullName(), true);
-        Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService), albumToMove.Directory);
+        Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService),
+            albumToMove.Directory);
         if (modifiedExistingDirectory)
         {
             return new AlbumUpdatedEvent(null, existingAlbumPath);
@@ -203,9 +228,11 @@ public abstract class ServiceBase
     }
 
 
-    protected async Task<OperationResult<bool>> UpdateArtistAggregateValuesByIdAsync(int artistId, CancellationToken cancellationToken = default)
+    protected async Task<OperationResult<bool>> UpdateArtistAggregateValuesByIdAsync(int artistId,
+        CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
@@ -241,9 +268,11 @@ public abstract class ServiceBase
     }
 
 
-    protected async Task<OperationResult<bool>> UpdateLibraryAggregateStatsByIdAsync(int libraryId, CancellationToken cancellationToken = default)
+    protected async Task<OperationResult<bool>> UpdateLibraryAggregateStatsByIdAsync(int libraryId,
+        CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
@@ -274,9 +303,11 @@ public abstract class ServiceBase
     }
 
 
-    protected async Task<AlbumList2[]> AlbumListForArtistApiKey(Guid artistApiKey, int userId, CancellationToken cancellationToken)
+    protected async Task<AlbumList2[]> AlbumListForArtistApiKey(Guid artistApiKey, int userId,
+        CancellationToken cancellationToken)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
@@ -302,13 +333,16 @@ public abstract class ServiceBase
                       LEFT JOIN "UserAlbums" ua on (a."Id" = ua."AlbumId" and ua."UserId" = @userId)
                       WHERE aa."ApiKey" = @artistApiKey;
                       """;
-            return (await dbConn.QueryAsync<AlbumList2>(sql, new { userId, artistApiKey }).ConfigureAwait(false)).ToArray();
+            return (await dbConn.QueryAsync<AlbumList2>(sql, new { userId, artistApiKey }).ConfigureAwait(false))
+                .ToArray();
         }
     }
 
-    protected async Task<DatabaseDirectoryInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
+    protected async Task<DatabaseDirectoryInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId,
+        CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
@@ -319,13 +353,16 @@ public abstract class ServiceBase
                       left join "UserArtists" ua on (a."Id" = ua."ArtistId" and ua."UserId" = @userId)
                       where a."ApiKey" = @apiKeyId;
                       """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false);
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId })
+                .ConfigureAwait(false);
         }
     }
 
-    protected async Task<DatabaseDirectoryInfo?> DatabaseAlbumInfoForAlbumApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
+    protected async Task<DatabaseDirectoryInfo?> DatabaseAlbumInfoForAlbumApiKey(Guid apiKeyId, int userId,
+        CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
@@ -337,13 +374,16 @@ public abstract class ServiceBase
                       left join "UserAlbums" ua on (a."Id" = ua."AlbumId" and ua."UserId" = @userId)
                       where a."ApiKey" = @apiKeyId;
                       """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false);
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId })
+                .ConfigureAwait(false);
         }
     }
 
-    protected async Task<DatabaseDirectoryInfo[]?> DatabaseSongInfosForAlbumApiKey(Guid apiKeyId, int userId, CancellationToken cancellationToken = default)
+    protected async Task<DatabaseDirectoryInfo[]?> DatabaseSongInfosForAlbumApiKey(Guid apiKeyId, int userId,
+        CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
@@ -356,13 +396,16 @@ public abstract class ServiceBase
                       left join "UserSongs" us on (s."Id" = us."SongId" and us."UserId" = @userId)
                       where a."ApiKey" = @apiKeyId;
                       """;
-            return (await dbConn.QueryAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false)).ToArray();
+            return (await dbConn.QueryAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false))
+                .ToArray();
         }
     }
 
-    protected async Task<DatabaseSongIdsInfo?> DatabaseSongIdsInfoForSongApiKey(Guid apiKeyId, CancellationToken cancellationToken = default)
+    protected async Task<DatabaseSongIdsInfo?> DatabaseSongIdsInfoForSongApiKey(Guid apiKeyId,
+        CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
@@ -373,13 +416,16 @@ public abstract class ServiceBase
                       left join "Artists" aa on (a."ArtistId" = aa."Id")
                       where s."ApiKey" = @apiKeyId;
                       """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongIdsInfo>(sql, new { apiKeyId }).ConfigureAwait(false);
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongIdsInfo>(sql, new { apiKeyId })
+                .ConfigureAwait(false);
         }
     }
 
-    protected async Task<DatabaseSongScrobbleInfo?> DatabaseSongScrobbleInfoForSongApiKey(Guid apiKey, CancellationToken cancellationToken = default)
+    protected async Task<DatabaseSongScrobbleInfo?> DatabaseSongScrobbleInfoForSongApiKey(Guid apiKey,
+        CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """
@@ -391,7 +437,8 @@ public abstract class ServiceBase
                       left join "Artists" aa on (a."ArtistId" = aa."Id")
                       where s."ApiKey" = @apiKeyId;
                       """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongScrobbleInfo>(sql, new { apiKeyId = apiKey }).ConfigureAwait(false);
+            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongScrobbleInfo>(sql, new { apiKeyId = apiKey })
+                .ConfigureAwait(false);
         }
     }
 
@@ -410,12 +457,14 @@ public abstract class ServiceBase
         var viaPlugins = new List<string>();
         var songs = new List<Song>();
 
-        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
+        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
+            value => value < 1 ? int.MaxValue : value);
 
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
         if (dirInfo.Exists)
         {
-            using (Operation.At(LogEventLevel.Debug).Time("AllAlbumsForDirectoryAsync [{directoryInfo}]", fileSystemDirectoryInfo.Name))
+            using (Operation.At(LogEventLevel.Debug).Time("AllAlbumsForDirectoryAsync [{directoryInfo}]",
+                       fileSystemDirectoryInfo.Name))
             {
                 foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos("*.*", SearchOption.TopDirectoryOnly))
                 {
@@ -434,7 +483,8 @@ public abstract class ServiceBase
 
                         if (plugin.DoesHandleFile(fileSystemDirectoryInfo, fsi))
                         {
-                            var pluginResult = await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
+                            var pluginResult =
+                                await plugin.ProcessFileAsync(fileSystemDirectoryInfo, fsi, cancellationToken);
                             if (pluginResult.IsSuccess)
                             {
                                 songs.Add(pluginResult.Data);
@@ -483,7 +533,8 @@ public abstract class ServiceBase
                                 },
                                 new()
                                 {
-                                    Identifier = MetaTagIdentifier.AlbumArtist, Value = song.AlbumArtist(), SortOrder = 2
+                                    Identifier = MetaTagIdentifier.AlbumArtist, Value = song.AlbumArtist(),
+                                    SortOrder = 2
                                 },
                                 new()
                                 {
@@ -511,10 +562,13 @@ public abstract class ServiceBase
                                     Value = genre.Key,
                                     SortOrder = 5 + i
                                 }));
-                            var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
+                            var artistName = newAlbumTags.FirstOrDefault(x =>
+                                    x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value
+                                ?.ToString();
                             var newAlbum = new Album
                             {
-                                Artist = Artist.NewArtistFromName(artistName ?? throw new Exception("Invalid artist name")),
+                                Artist = Artist.NewArtistFromName(artistName ??
+                                                                  throw new Exception("Invalid artist name")),
                                 Images = songsGroupedByAlbum.Where(x => x.Images != null)
                                     .SelectMany(x => x.Images!)
                                     .DistinctBy(x => x.CrcHash).ToArray(),

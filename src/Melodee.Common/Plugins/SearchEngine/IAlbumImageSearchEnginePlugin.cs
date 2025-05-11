@@ -7,5 +7,6 @@ public interface IAlbumImageSearchEnginePlugin : IPlugin
 {
     bool StopProcessing { get; }
 
-    Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults, CancellationToken cancellationToken = default);
+    Task<OperationResult<ImageSearchResult[]?>> DoAlbumImageSearch(AlbumQuery query, int maxResults,
+        CancellationToken cancellationToken = default);
 }

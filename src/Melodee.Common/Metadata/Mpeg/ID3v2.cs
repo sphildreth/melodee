@@ -4,24 +4,19 @@ using System.Text;
 namespace Melodee.Common.Metadata.Mpeg;
 
 /// <summary>
-/// Summary description for ID3v2.
+///     Summary description for ID3v2.
 /// </summary>
 public class Id3V2
 {
-    public string Filename;
+    private byte[] _ba;
 
-    // id3v2 header
-    public int MajorVersion;
-    public int MinorVersion;
 
-    public bool FaUnsynchronisation;
-    public bool FbExtendedHeader;
-    public bool FcExperimentalIndicator;
-    public bool FdFooter;
+    private BinaryReader _br;
 
-    // ext header 
-    public ulong ExtHeaderSize;
-    public int ExtNumFlagBytes;
+    private bool _fileOpen;
+    public string Album;
+    public string Artist;
+    public string Comment;
 
     public bool EbUpdate;
     public bool EcCrc;
@@ -30,29 +25,46 @@ public class Id3V2
     public ulong ExtCCrc;
     public byte ExtDRestrictions;
 
+    // ext header 
+    public ulong ExtHeaderSize;
+    public int ExtNumFlagBytes;
 
-    private BinaryReader _br;
-    private byte[] _ba;
+    public bool FaUnsynchronisation;
+    public bool FbExtendedHeader;
+    public bool FcExperimentalIndicator;
+    public bool FdFooter;
+    public string Filename;
+    public ArrayList Frames;
+
+    public Hashtable FramesHash;
+    public string Genre;
     public bool HasTag;
 
     public ulong HeaderSize;
 
-    public Hashtable FramesHash;
-    public ArrayList Frames;
-
-    private bool _fileOpen;
+    // id3v2 header
+    public int MajorVersion;
+    public int MinorVersion;
 
     //public bool header;
 
     // song info
     public string Title;
-    public string Artist;
-    public string Album;
-    public string Year;
-    public string Comment;
-    public string Genre;
-    public string Track;
     public string TotalTracks;
+    public string Track;
+    public string Year;
+
+
+    public Id3V2()
+    {
+        Initialize_Components();
+    }
+
+    public Id3V2(string fileName)
+    {
+        Initialize_Components();
+        Filename = fileName;
+    }
 
 
     private void Initialize_Components()
@@ -92,18 +104,6 @@ public class Id3V2
     }
 
 
-    public Id3V2()
-    {
-        Initialize_Components();
-    }
-
-    public Id3V2(string fileName)
-    {
-        Initialize_Components();
-        Filename = fileName;
-    }
-
-
     private void CloseFile()
     {
         _br.Close();
@@ -123,7 +123,6 @@ public class Id3V2
             // TODO we are fucked.
             //throw id3v2ReaderException;
             HasTag = false;
-            return;
         }
         else
         {
@@ -162,7 +161,7 @@ public class Id3V2
             bytes[1] = ((tagSize[1] >> 2) & 31) | ((tagSize[0] & 7) << 5);
             bytes[0] = (tagSize[0] >> 3) & 15;
 
-            newSize = ((ulong)10 + (ulong)bytes[3]) |
+            newSize = (10 + (ulong)bytes[3]) |
                       ((ulong)bytes[2] << 8) |
                       ((ulong)bytes[1] << 16) |
                       ((ulong)bytes[0] << 24);
@@ -180,7 +179,7 @@ public class Id3V2
             f = f.ReadFrame(_br, MajorVersion);
 
             // check if we have hit the padding.
-            if (f.Padding == true)
+            if (f.Padding)
             {
                 //we hit padding.  lets advance to end and stop reading.
                 _br.BaseStream.Position = Convert.ToInt64(HeaderSize);
@@ -710,7 +709,7 @@ public class Id3V2
             }
         }
 
-        string[] trackHolder = Track.Split('/');
+        var trackHolder = Track.Split('/');
         Track = trackHolder[0];
         if (trackHolder.Length > 1)
         {
@@ -795,7 +794,7 @@ public class Id3V2
             bytes[1] = ((tagSize[1] >> 2) & 31) | ((tagSize[0] & 7) << 5);
             bytes[0] = (tagSize[0] >> 3) & 15;
 
-            newSize = ((ulong)10 + (ulong)bytes[3]) |
+            newSize = (10 + (ulong)bytes[3]) |
                       ((ulong)bytes[2] << 8) |
                       ((ulong)bytes[1] << 16) |
                       ((ulong)bytes[0] << 24);
@@ -831,7 +830,7 @@ public class Id3V2
         bytes[1] = ((extHeaderSize[1] >> 2) & 31) | ((extHeaderSize[0] & 7) << 5);
         bytes[0] = (extHeaderSize[0] >> 3) & 15;
 
-        newSize = ((ulong)10 + (ulong)bytes[3]) |
+        newSize = (10 + (ulong)bytes[3]) |
                   ((ulong)bytes[2] << 8) |
                   ((ulong)bytes[1] << 16) |
                   ((ulong)bytes[0] << 24);
@@ -886,7 +885,7 @@ public class Id3V2
                 bytes[1] = ((extHeaderSize[1] >> 3) & 15) | ((extHeaderSize[0] & 15) << 4);
                 bytes[0] = (extHeaderSize[0] >> 4) & 7;
 
-                newSize = ((ulong)10 + (ulong)bytes[4]) |
+                newSize = (10 + (ulong)bytes[4]) |
                           ((ulong)bytes[3] << 8) |
                           ((ulong)bytes[2] << 16) |
                           ((ulong)bytes[1] << 24) |
@@ -894,10 +893,7 @@ public class Id3V2
 
                 ExtHeaderSize = newSize;
             }
-            else
-            {
-                // we are fucked.  do something
-            }
+            // we are fucked.  do something
         }
 
         if (EdRestrictions)

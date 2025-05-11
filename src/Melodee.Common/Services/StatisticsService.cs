@@ -1,4 +1,3 @@
-using System.Globalization;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
@@ -20,7 +19,8 @@ public sealed class StatisticsService(
     {
         var results = new List<Statistic>();
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
 
@@ -97,8 +97,8 @@ public sealed class StatisticsService(
                 null,
                 null,
                 7,
-                "radio"));            
-            
+                "radio"));
+
             results.Add(new Statistic(StatisticType.Count,
                 "Shares",
                 await scopedContext.Shares.CountAsync(cancellationToken)
@@ -161,7 +161,7 @@ public sealed class StatisticsService(
                 null,
                 14,
                 "analytics"));
-            
+
             results.Add(new Statistic(StatisticType.Count,
                 "Users: Rated songs",
                 await scopedContext.UserSongs.CountAsync(x => x.Rating > 0, cancellationToken)
@@ -169,11 +169,12 @@ public sealed class StatisticsService(
                 null,
                 null,
                 15,
-                "analytics"));            
+                "analytics"));
 
             results.Add(new Statistic(StatisticType.Information,
                 "Total: Song Mb",
-                (await scopedContext.Songs.SumAsync(x => x.FileSize, cancellationToken).ConfigureAwait(false)).FormatFileSize(),
+                (await scopedContext.Songs.SumAsync(x => x.FileSize, cancellationToken).ConfigureAwait(false))
+                .FormatFileSize(),
                 null,
                 null,
                 16,
@@ -181,7 +182,8 @@ public sealed class StatisticsService(
 
             results.Add(new Statistic(StatisticType.Information,
                 "Total: Song Duration",
-                (await scopedContext.Songs.SumAsync(x => x.Duration, cancellationToken).ConfigureAwait(false)).ToTimeSpan().ToYearDaysMinutesHours(),
+                (await scopedContext.Songs.SumAsync(x => x.Duration, cancellationToken).ConfigureAwait(false))
+                .ToTimeSpan().ToYearDaysMinutesHours(),
                 null,
                 "Total song duration in Year:Day:Hour:Minute format.",
                 17,
@@ -194,10 +196,12 @@ public sealed class StatisticsService(
         };
     }
 
-    public async Task<OperationResult<Statistic[]>> GetUserSongStatisticsAsync(Guid userApiKey, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Statistic[]>> GetUserSongStatisticsAsync(Guid userApiKey,
+        CancellationToken cancellationToken = default)
     {
         var results = new List<Statistic>();
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             results.Add(new Statistic(StatisticType.Count,
                 "Your Favorite songs",
@@ -227,11 +231,13 @@ public sealed class StatisticsService(
             Data = results.ToArray()
         };
     }
-    
-    public async Task<OperationResult<Statistic[]>> GetUserAlbumStatisticsAsync(Guid userApiKey, CancellationToken cancellationToken = default)
+
+    public async Task<OperationResult<Statistic[]>> GetUserAlbumStatisticsAsync(Guid userApiKey,
+        CancellationToken cancellationToken = default)
     {
         var results = new List<Statistic>();
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             results.Add(new Statistic(StatisticType.Count,
                 "Your Favorite albums",
@@ -249,12 +255,14 @@ public sealed class StatisticsService(
         {
             Data = results.ToArray()
         };
-    }    
-    
-    public async Task<OperationResult<Statistic[]>> GetUserArtistStatisticsAsync(Guid userApiKey, CancellationToken cancellationToken = default)
+    }
+
+    public async Task<OperationResult<Statistic[]>> GetUserArtistStatisticsAsync(Guid userApiKey,
+        CancellationToken cancellationToken = default)
     {
         var results = new List<Statistic>();
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             results.Add(new Statistic(StatisticType.Count,
                 "Your Favorite artists",
@@ -272,5 +280,5 @@ public sealed class StatisticsService(
         {
             Data = results.ToArray()
         };
-    }    
+    }
 }

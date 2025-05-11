@@ -20,7 +20,8 @@ public sealed class PreDiscoveryScript(IMelodeeConfiguration configuration) : IS
 
     public bool StopProcessing { get; } = false;
 
-    public async Task<OperationResult<bool>> ProcessAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> ProcessAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        CancellationToken cancellationToken = default)
     {
         var result = false;
         string? scriptOutput = null;

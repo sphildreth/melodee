@@ -14,9 +14,9 @@ public sealed record ImageInfo
     ///     May not exist if album image and the image was extracted from tag.
     /// </summary>
     public FileSystemFileInfo? FileInfo { get; init; }
-    
+
     /// <summary>
-    /// This is populated when the image is in a subdirectory of the album otherwise is null.
+    ///     This is populated when the image is in a subdirectory of the album otherwise is null.
     /// </summary>
     public FileSystemDirectoryInfo? DirectoryInfo { get; init; }
 

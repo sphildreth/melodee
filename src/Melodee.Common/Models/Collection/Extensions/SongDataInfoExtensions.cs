@@ -20,7 +20,7 @@ public static class SongDataInfoExtensions
         return $"song{OpenSubsonicServer.ApiIdSeparator}{songDataInfo.ApiKey}";
     }
 
-    public static PlaylistSong ToPlaylistSong(this SongDataInfo songDataInfo, int playlistOrder, Common.Data.Models.Song song)
+    public static PlaylistSong ToPlaylistSong(this SongDataInfo songDataInfo, int playlistOrder, Data.Models.Song song)
     {
         return new PlaylistSong
         {

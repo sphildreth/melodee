@@ -1,14 +1,10 @@
-using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
-using Melodee.Common.Metadata;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using Rebus.Bus;
 using Rebus.Handlers;
 using Rebus.Pipeline;
 using Serilog;
@@ -31,9 +27,11 @@ public class ArtistRescanEventHandler(
     {
         var cancellationToken = messageContext.IncomingStepContext.Load<CancellationToken>();
 
-        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] Handle [{id}]", nameof(AlbumRescanEventHandler), message.ToString()))
+        using (Operation.At(LogEventLevel.Debug)
+                   .Time("[{Name}] Handle [{id}]", nameof(AlbumRescanEventHandler), message.ToString()))
         {
-            await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
 
@@ -47,7 +45,8 @@ public class ArtistRescanEventHandler(
 
                 if (dbArtist == null)
                 {
-                    logger.Warning("[{Name}] Unable to find artist with id [{ArtistId}] in database.", nameof(ArtistRescanEventHandler), message.ArtistId);
+                    logger.Warning("[{Name}] Unable to find artist with id [{ArtistId}] in database.",
+                        nameof(ArtistRescanEventHandler), message.ArtistId);
                 }
                 else
                 {
@@ -57,12 +56,15 @@ public class ArtistRescanEventHandler(
                             nameof(AlbumRescanEventHandler),
                             message.ArtistDirectory);
                         return;
-                    }                    
-                    
-                    await Parallel.ForEachAsync(dbArtist.Albums.Where(x => !x.IsLocked), cancellationToken, async (album, tt) =>
-                    {
-                        await albumRescanEventHandler.Handle(new AlbumRescanEvent(album.Id, Path.Combine(dbArtist.Library.Path, dbArtist.Directory, album.Directory), true)).ConfigureAwait(false);
-                    });
+                    }
+
+                    await Parallel.ForEachAsync(dbArtist.Albums.Where(x => !x.IsLocked), cancellationToken,
+                        async (album, tt) =>
+                        {
+                            await albumRescanEventHandler.Handle(new AlbumRescanEvent(album.Id,
+                                    Path.Combine(dbArtist.Library.Path, dbArtist.Directory, album.Directory), true))
+                                .ConfigureAwait(false);
+                        });
 
                     var artistDirectory = message.ArtistDirectory.ToDirectoryInfo();
                     var imageCount = artistDirectory.AllFileImageTypeFileInfos().Count();
@@ -70,24 +72,28 @@ public class ArtistRescanEventHandler(
                     {
                         dbArtist.ImageCount = imageCount;
                         dbArtist.LastUpdatedAt = now;
-                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);                        
+                        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
                     var artistDirectoryInfos = artistDirectory.AllDirectoryInfos();
-                    await Parallel.ForEachAsync(artistDirectoryInfos, cancellationToken, async (artistDirectoryInfo, tt) =>
-                    {
-                        var dbArtistAlbum = dbArtist.Albums.FirstOrDefault(x => artistDirectoryInfo.IsSameDirectory(x.Directory));
-                        if (dbArtistAlbum == null)
+                    await Parallel.ForEachAsync(artistDirectoryInfos, cancellationToken,
+                        async (artistDirectoryInfo, tt) =>
                         {
-                            await albumAddEventHandler.Handle(new AlbumAddEvent(dbArtist.Id, artistDirectoryInfo.FullName, true)).ConfigureAwait(false);
-                        }
-                    });
-                    
-                    await libraryService.UpdateAggregatesAsync(dbArtist.Library.Id, cancellationToken).ConfigureAwait(false);
+                            var dbArtistAlbum =
+                                dbArtist.Albums.FirstOrDefault(x => artistDirectoryInfo.IsSameDirectory(x.Directory));
+                            if (dbArtistAlbum == null)
+                            {
+                                await albumAddEventHandler
+                                    .Handle(new AlbumAddEvent(dbArtist.Id, artistDirectoryInfo.FullName, true))
+                                    .ConfigureAwait(false);
+                            }
+                        });
+
+                    await libraryService.UpdateAggregatesAsync(dbArtist.Library.Id, cancellationToken)
+                        .ConfigureAwait(false);
                     artistService.ClearCache(dbArtist);
                 }
             }
         }
-
     }
 }

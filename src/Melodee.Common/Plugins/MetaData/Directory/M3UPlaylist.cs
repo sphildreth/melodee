@@ -32,7 +32,8 @@ public sealed class M3UPlaylist(
 
     public override int SortOrder { get; } = 2;
 
-    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        CancellationToken cancellationToken = default)
     {
         StopProcessing = false;
 
@@ -64,14 +65,16 @@ public sealed class M3UPlaylist(
             var songPlugin = songPlugins.First();
             foreach (var m3UFile in m3UFiles)
             {
-                using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, m3UFile.Name))
+                using (Operation.At(LogEventLevel.Debug)
+                           .Time("[{Plugin}] Processing [{FileName}]", DisplayName, m3UFile.Name))
                 {
                     var models = await GetModelsFromM3UFile(m3UFile.FullName);
 
                     var songs = new List<Common.Models.Song>();
                     await Parallel.ForEachAsync(models, cancellationToken, async (model, tt) =>
                     {
-                        var songResult = await songPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
+                        var songResult =
+                            await songPlugin.ProcessFileAsync(fileSystemDirectoryInfo, model.FileSystemFileInfo, tt);
                         if (songResult.IsSuccess)
                         {
                             songs.Add(songResult.Data);
@@ -91,9 +94,20 @@ public sealed class M3UPlaylist(
 
                         var newAlbumTags = new List<MetaTag<object?>>
                         {
-                            new() { Identifier = MetaTagIdentifier.Album, Value = firstSong.AlbumTitle(), SortOrder = 1 },
-                            new() { Identifier = MetaTagIdentifier.AlbumArtist, Value = firstSong.AlbumArtist(), SortOrder = 2 },
-                            new() { Identifier = MetaTagIdentifier.OrigAlbumYear, Value = firstSong.AlbumYear(), SortOrder = 100 },
+                            new()
+                            {
+                                Identifier = MetaTagIdentifier.Album, Value = firstSong.AlbumTitle(), SortOrder = 1
+                            },
+                            new()
+                            {
+                                Identifier = MetaTagIdentifier.AlbumArtist, Value = firstSong.AlbumArtist(),
+                                SortOrder = 2
+                            },
+                            new()
+                            {
+                                Identifier = MetaTagIdentifier.OrigAlbumYear, Value = firstSong.AlbumYear(),
+                                SortOrder = 100
+                            },
                             new() { Identifier = MetaTagIdentifier.SongTotal, Value = songTotal, SortOrder = 101 }
                         };
                         var genres = songs
@@ -112,18 +126,22 @@ public sealed class M3UPlaylist(
                                 }));
                         }
 
-                        var artistName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
-                        var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
+                        var artistName = newAlbumTags.FirstOrDefault(x =>
+                                x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value
+                            ?.ToString();
+                        var albumName = newAlbumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value
+                            ?.ToString();
 
                         if (songs.Count == 0)
                         {
                             // If no songs are found, regardless of everything else, the M3U is garbage.
-                            return new OperationResult<int>($"Unable to find Songs for directory [{fileSystemDirectoryInfo}]")
+                            return new OperationResult<int>(
+                                $"Unable to find Songs for directory [{fileSystemDirectoryInfo}]")
                             {
                                 Data = 0
                             };
                         }
-                        
+
                         var m3UAlbum = new Album
                         {
                             AlbumType = albumName.TryToDetectAlbumType(),
@@ -150,16 +168,20 @@ public sealed class M3UPlaylist(
                                 MusicFilesFound = songs.Count,
                                 MusicMetaDataFilesFound = 1
                             },
-                            Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
+                            Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!)
+                                .DistinctBy(x => x.CrcHash).ToArray(),
                             Tags = newAlbumTags,
                             Songs = songs.OrderBy(x => x.SortOrder).ToArray(),
                             ViaPlugins = new[] { songPlugin.DisplayName, DisplayName }
                         };
 
-                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration));
+                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path,
+                            m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);
+                            var existingAlbum = await Album
+                                .DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken)
+                                .ConfigureAwait(false);
                             if (existingAlbum != null)
                             {
                                 m3UAlbum = m3UAlbum.Merge(existingAlbum);
@@ -179,7 +201,8 @@ public sealed class M3UPlaylist(
                             Log.Information("Deleted M3U File [{FileName}]", m3UFile.Name);
                         }
 
-                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
+                        Log.Debug(
+                            "[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
                             DisplayName,
                             m3UAlbum.ToMelodeeJsonName(MelodeeConfiguration),
                             m3UAlbum.Status.ToString(),
@@ -266,7 +289,8 @@ public sealed class M3UPlaylist(
                         dirName = fi.DirectoryName!;
                     }
 
-                    fileSystemInfoFile = new FileInfo(Path.Combine(dirName ?? string.Empty, lineFromFile)).ToFileSystemInfo();
+                    fileSystemInfoFile = new FileInfo(Path.Combine(dirName ?? string.Empty, lineFromFile))
+                        .ToFileSystemInfo();
                 }
 
                 return new M3ULine

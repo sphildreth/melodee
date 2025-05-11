@@ -11,7 +11,14 @@ namespace Melodee.Common.Models.OpenSubsonic.Requests;
 /// <param name="ToYear">The last year in the range.</param>
 /// <param name="Genre">The name of the genre, e.g., “Rock”.</param>
 /// <param name="MusicFolderId">Only return albums in the music folder with the given ID. </param>
-public record GetAlbumListRequest(ListType Type, int? Size, int? Offset, int? FromYear, int? ToYear, string? Genre, string? MusicFolderId)
+public record GetAlbumListRequest(
+    ListType Type,
+    int? Size,
+    int? Offset,
+    int? FromYear,
+    int? ToYear,
+    string? Genre,
+    string? MusicFolderId)
 {
     public int SizeValue => Size ?? 10;
     public int OffsetValue => Offset ?? 0;

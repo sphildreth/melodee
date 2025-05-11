@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Services;
@@ -15,7 +16,24 @@ namespace Melodee.Common.Models.Extensions;
 
 public static class SongExtensions
 {
-    private static readonly Regex UnwantedSongTitleTextRegex = new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex UnwantedSongTitleTextRegex =
+        new(@"(\s{2,}|(\s\(prod\s))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
+    [
+        MetaTagIdentifier.Artist,
+        MetaTagIdentifier.Composer,
+        MetaTagIdentifier.Conductor,
+        MetaTagIdentifier.Engineer,
+        MetaTagIdentifier.InterpretedRemixedOrOtherwiseModifiedBy,
+        MetaTagIdentifier.Lyricist,
+        MetaTagIdentifier.MixDj,
+        MetaTagIdentifier.MixEngineer,
+        MetaTagIdentifier.MusicianCredit,
+        MetaTagIdentifier.OriginalArtist,
+        MetaTagIdentifier.OriginalLyricist,
+        MetaTagIdentifier.Producer
+    ];
 
     public static T? MetaTagValue<T>(this Song song, MetaTagIdentifier metaTagIdentifier)
     {
@@ -83,7 +101,8 @@ public static class SongExtensions
         }
         catch (Exception e)
         {
-            Trace.WriteLine($"Song [{song}] MetaTagIdentifier [{metaTagIdentifier.ToString()}] Value [{vv}] to type [{tType}] [{e}]");
+            Trace.WriteLine(
+                $"Song [{song}] MetaTagIdentifier [{metaTagIdentifier.ToString()}] Value [{vv}] to type [{tType}] [{e}]");
         }
 
         return d;
@@ -172,7 +191,8 @@ public static class SongExtensions
     {
         return (song.MetaTagValue<int?>(MetaTagIdentifier.RecordingYear) ??
                 song.MetaTagValue<int?>(MetaTagIdentifier.OrigAlbumDate) ??
-                song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear)) ?? SafeParser.ToDateTime(song.AlbumDate())?.Year;
+                song.MetaTagValue<int?>(MetaTagIdentifier.RecordingDateOrYear)) ??
+               SafeParser.ToDateTime(song.AlbumDate())?.Year;
     }
 
     public static string? AlbumDate(this Song song)
@@ -184,7 +204,7 @@ public static class SongExtensions
     }
 
     /// <summary>
-    /// Returns song duration in Milliseconds
+    ///     Returns song duration in Milliseconds
     /// </summary>
     public static double? Duration(this Song song)
     {
@@ -193,12 +213,16 @@ public static class SongExtensions
 
     public static string? DurationTime(this Song song)
     {
-        return song.Duration().HasValue ? new TimeInfo(SafeParser.ToNumber<decimal>(song.Duration()!.Value)).ToFullFormattedString() : "--:--";
+        return song.Duration().HasValue
+            ? new TimeInfo(SafeParser.ToNumber<decimal>(song.Duration()!.Value)).ToFullFormattedString()
+            : "--:--";
     }
 
     public static string? DurationTimeShort(this Song song)
     {
-        return song.Duration().HasValue ? new TimeInfo(SafeParser.ToNumber<decimal>(song.Duration()!.Value)).ToShortFormattedString() : "--:--";
+        return song.Duration().HasValue
+            ? new TimeInfo(SafeParser.ToNumber<decimal>(song.Duration()!.Value)).ToShortFormattedString()
+            : "--:--";
     }
 
     public static string? Title(this Song song)
@@ -251,27 +275,32 @@ public static class SongExtensions
 
     public static int BitRate(this Song song)
     {
-        return SafeParser.ToNumber<int>(song?.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value);
+        return SafeParser.ToNumber<int>(song?.MediaAudios
+            ?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitRate)?.Value);
     }
 
     public static int BitDepth(this Song song)
     {
-        return SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value);
+        return SafeParser.ToNumber<int>(song.MediaAudios
+            ?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.BitDepth)?.Value);
     }
 
     public static int? ChannelCount(this Song song)
     {
-        return SafeParser.ToNumber<int?>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.Channels)?.Value);
+        return SafeParser.ToNumber<int?>(song.MediaAudios
+            ?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.Channels)?.Value);
     }
 
     public static bool IsVbr(this Song song)
     {
-        return SafeParser.ToNumber<bool>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.IsVbr)?.Value);
+        return SafeParser.ToNumber<bool>(song.MediaAudios
+            ?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.IsVbr)?.Value);
     }
 
     public static int SamplingRate(this Song song)
     {
-        return SafeParser.ToNumber<int>(song.MediaAudios?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value);
+        return SafeParser.ToNumber<int>(song.MediaAudios
+            ?.FirstOrDefault(x => x.Identifier == MediaAudioIdentifier.SampleRate)?.Value);
     }
 
     public static bool IsValid(this Song song, Dictionary<string, object?> configuration)
@@ -321,7 +350,9 @@ public static class SongExtensions
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"TitleHasUnwantedText For AlbumTitle [{albumTitle}] for SongTitle [{songTitle}] Error [{ex.Message}] ", "Error");
+            Trace.WriteLine(
+                $"TitleHasUnwantedText For AlbumTitle [{albumTitle}] for SongTitle [{songTitle}] Error [{ex.Message}] ",
+                "Error");
         }
 
         return false;
@@ -378,23 +409,7 @@ public static class SongExtensions
             song.Title());
     }
 
-    private static MetaTagIdentifier[] ContributorMetaTagIdentifiers =>
-    [
-        MetaTagIdentifier.Artist,
-        MetaTagIdentifier.Composer,
-        MetaTagIdentifier.Conductor,
-        MetaTagIdentifier.Engineer,
-        MetaTagIdentifier.InterpretedRemixedOrOtherwiseModifiedBy,
-        MetaTagIdentifier.Lyricist,
-        MetaTagIdentifier.MixDj,
-        MetaTagIdentifier.MixEngineer,
-        MetaTagIdentifier.MusicianCredit,
-        MetaTagIdentifier.OriginalArtist,
-        MetaTagIdentifier.OriginalLyricist,
-        MetaTagIdentifier.Producer
-    ];
-
-    public static async Task<Melodee.Common.Data.Models.Contributor[]> GetContributorsForSong(this Song song,
+    public static async Task<Contributor[]> GetContributorsForSong(this Song song,
         Instant now,
         ArtistService artistService,
         int artistId,
@@ -405,13 +420,15 @@ public static class SongExtensions
         string[] ignorePublishers,
         CancellationToken token)
     {
-        var dbContributorsToAdd = new List<Melodee.Common.Data.Models.Contributor>();
+        var dbContributorsToAdd = new List<Contributor>();
         foreach (var contributorTag in ContributorMetaTagIdentifiers)
         {
             var tagValue = song.MetaTagValue<string?>(contributorTag)?.CleanStringAsIs();
             foreach (var tv in (tagValue?.PeopleFromValueWithSeparator() ?? []).Where(x => x != null))
             {
-                if (!dbContributorsToAdd.Any(x => (x.ArtistId == artistId || x.ContributorName == tv) && x.MetaTagIdentifierValue == contributorTag))
+                if (!dbContributorsToAdd.Any(x =>
+                        (x.ArtistId == artistId || x.ContributorName == tv) &&
+                        x.MetaTagIdentifierValue == contributorTag))
                 {
                     var contributorForTag = await CreateContributorForSongAndTag(song,
                         artistService,
@@ -433,7 +450,10 @@ public static class SongExtensions
             }
         }
 
-        foreach (var tmclTag in song.Tags?.Where(x => x.Value != null && x.Value.ToString()!.StartsWith("TMCL:", StringComparison.OrdinalIgnoreCase)) ?? [])
+        foreach (var tmclTag in song.Tags?.Where(x =>
+                                    x.Value != null &&
+                                    x.Value.ToString()!.StartsWith("TMCL:", StringComparison.OrdinalIgnoreCase)) ??
+                                [])
         {
             var subRole = tmclTag.Value!.ToString()!.Substring(6).Trim();
             var tagValue = song.MetaTagValue<string?>(tmclTag.Identifier)?.CleanStringAsIs();
@@ -463,7 +483,8 @@ public static class SongExtensions
         if (songPublisherTag != null)
         {
             var publisherName = songPublisherTag.CleanStringAsIs();
-            if (!dbContributorsToAdd.Any(x => x.ContributorName == publisherName && x.MetaTagIdentifierValue == MetaTagIdentifier.Publisher))
+            if (!dbContributorsToAdd.Any(x =>
+                    x.ContributorName == publisherName && x.MetaTagIdentifierValue == MetaTagIdentifier.Publisher))
             {
                 var publisherTag = await CreateContributorForSongAndTag(song,
                     artistService,
@@ -477,7 +498,8 @@ public static class SongExtensions
                     ignoreProduction,
                     ignorePublishers,
                     token);
-                if (publisherTag != null && dbContributorsToAdd.All(x => x.ContributorTypeValue != ContributorType.Publisher))
+                if (publisherTag != null &&
+                    dbContributorsToAdd.All(x => x.ContributorTypeValue != ContributorType.Publisher))
                 {
                     dbContributorsToAdd.Add(publisherTag);
                 }
@@ -487,7 +509,7 @@ public static class SongExtensions
         return dbContributorsToAdd.ToArray();
     }
 
-    private static async Task<Melodee.Common.Data.Models.Contributor?> CreateContributorForSongAndTag(this Song song,
+    private static async Task<Contributor?> CreateContributorForSongAndTag(this Song song,
         ArtistService artistService,
         MetaTagIdentifier tag,
         int dbAlbumId,
@@ -500,14 +522,20 @@ public static class SongExtensions
         string[] ignorePublishers,
         CancellationToken cancellationToken = default)
     {
-        var contributorNameValue = contributorName.Nullify()?.CleanStringAsIs() ?? song.MetaTagValue<string?>(tag)?.CleanStringAsIs();
+        var contributorNameValue = contributorName.Nullify()?.CleanStringAsIs() ??
+                                   song.MetaTagValue<string?>(tag)?.CleanStringAsIs();
         if (contributorNameValue.Nullify() != null)
         {
-            var artist = contributorNameValue == null ? null : await artistService.GetByNameNormalized(contributorNameValue.ToNormalizedString() ?? contributorName!, cancellationToken).ConfigureAwait(false);
+            var artist = contributorNameValue == null
+                ? null
+                : await artistService
+                    .GetByNameNormalized(contributorNameValue.ToNormalizedString() ?? contributorName!,
+                        cancellationToken).ConfigureAwait(false);
             var contributorType = DetermineContributorType(tag);
-            if (DoMakeContributorForTageTypeAndValue(ignorePerformers, ignoreProduction, ignorePublishers, contributorType, contributorNameValue))
+            if (DoMakeContributorForTageTypeAndValue(ignorePerformers, ignoreProduction, ignorePublishers,
+                    contributorType, contributorNameValue))
             {
-                return new Melodee.Common.Data.Models.Contributor
+                return new Contributor
                 {
                     AlbumId = dbAlbumId,
                     ArtistId = artist?.Data?.Id,
@@ -525,7 +553,8 @@ public static class SongExtensions
         return null;
     }
 
-    private static bool DoMakeContributorForTageTypeAndValue(string[] ignorePerformers, string[] ignoreProduction, string[] ignorePublishers, ContributorType type, string? contributorName)
+    private static bool DoMakeContributorForTageTypeAndValue(string[] ignorePerformers, string[] ignoreProduction,
+        string[] ignorePublishers, ContributorType type, string? contributorName)
     {
         switch (type)
         {

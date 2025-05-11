@@ -351,8 +351,6 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected LibraryService MockLibraryService()
     {
         var mock = new Mock<LibraryService>();
-        // mock.Setup(f
-        //     => f.ListAsync(It.IsAny<PagedRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(TestsBase.TestLibraries());
         mock.Setup(f => f.ListAsync(
                 It.Is<PagedRequest>(_ => true),
                 It.Is<CancellationToken>(_ => true)))

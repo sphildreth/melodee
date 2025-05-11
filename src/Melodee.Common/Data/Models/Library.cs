@@ -40,7 +40,9 @@ public class Library : DataModelBase
 
     public Instant LastWriteTime()
     {
-        return !Directory.Exists(Path) ? Instant.MinValue : Instant.FromDateTimeUtc(Directory.GetLastWriteTimeUtc(Path));
+        return !Directory.Exists(Path)
+            ? Instant.MinValue
+            : Instant.FromDateTimeUtc(Directory.GetLastWriteTimeUtc(Path));
     }
 
     public bool NeedsScanning()

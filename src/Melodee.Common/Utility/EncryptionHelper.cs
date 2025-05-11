@@ -95,6 +95,8 @@ public static class EncryptionHelper
 
     private static byte[] CreateAesKey(string inputString)
     {
-        return Encoding.UTF8.GetByteCount(inputString) == 32 ? Encoding.UTF8.GetBytes(inputString) : SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(inputString));
+        return Encoding.UTF8.GetByteCount(inputString) == 32
+            ? Encoding.UTF8.GetBytes(inputString)
+            : SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(inputString));
     }
 }

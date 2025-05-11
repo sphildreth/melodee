@@ -32,7 +32,8 @@ public class AlbumImageSearchEngineService(
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(AlbumQuery query, int? maxResults, CancellationToken token = default)
+    public async Task<OperationResult<ImageSearchResult[]>> DoSearchAsync(AlbumQuery query, int? maxResults,
+        CancellationToken token = default)
     {
         var configuration = await configurationFactory.GetConfigurationAsync(token);
 
@@ -47,7 +48,7 @@ public class AlbumImageSearchEngineService(
             new DeezerSearchEngine(Logger, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineDeezerEnabled)
-            },             
+            },
             new ITunesSearchEngine(Logger, serializer, httpClientFactory)
             {
                 IsEnabled = configuration.GetValue<bool>(SettingRegistry.SearchEngineITunesEnabled)
@@ -82,6 +83,7 @@ public class AlbumImageSearchEngineService(
                 Logger.Error(e, "[{Plugin}] threw error with query [{Query}]", searchEngine.DisplayName, query);
             }
         }
+
         return new OperationResult<ImageSearchResult[]>
         {
             Data = result.OrderByDescending(x => x.Rank).ToArray()

@@ -24,7 +24,8 @@ public sealed class LibraryInboundProcessJob(
 {
     public override async Task Execute(IJobExecutionContext context)
     {
-        var inboundLibrary = (await libraryService.GetInboundLibraryAsync(context.CancellationToken).ConfigureAwait(false)).Data;
+        var inboundLibrary =
+            (await libraryService.GetInboundLibraryAsync(context.CancellationToken).ConfigureAwait(false)).Data;
         var directoryInbound = inboundLibrary.Path;
         if (directoryInbound.Nullify() == null)
         {
@@ -34,7 +35,8 @@ public sealed class LibraryInboundProcessJob(
 
         if (inboundLibrary.IsLocked)
         {
-            Logger.Warning("[{JobName}] Skipped processing locked library [{LibraryName}]", nameof(LibraryInboundProcessJob), inboundLibrary.Name);
+            Logger.Warning("[{JobName}] Skipped processing locked library [{LibraryName}]",
+                nameof(LibraryInboundProcessJob), inboundLibrary.Name);
             return;
         }
 
@@ -52,7 +54,8 @@ public sealed class LibraryInboundProcessJob(
         try
         {
             dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.InProcess.ToString());
-            await directoryProcessorToStagingService.InitializeAsync(null, context.CancellationToken).ConfigureAwait(false);
+            await directoryProcessorToStagingService.InitializeAsync(null, context.CancellationToken)
+                .ConfigureAwait(false);
             var result = await directoryProcessorToStagingService.ProcessDirectoryAsync(new FileSystemDirectoryInfo
             {
                 Path = directoryInbound,
@@ -65,7 +68,8 @@ public sealed class LibraryInboundProcessJob(
             }
 
             dataMap.Put(JobMapNameRegistry.ScanStatus, ScanStatus.Idle.ToString());
-            dataMap.Put(JobMapNameRegistry.Count, result.Data.NewAlbumsCount + result.Data.NewArtistsCount + result.Data.NewSongsCount);
+            dataMap.Put(JobMapNameRegistry.Count,
+                result.Data.NewAlbumsCount + result.Data.NewArtistsCount + result.Data.NewSongsCount);
             await libraryService.CreateLibraryScanHistory(inboundLibrary, new LibraryScanHistory
             {
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),

@@ -1,17 +1,24 @@
 using System.Globalization;
 using ATL;
-using J2N.Text;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Melodee.Common.Metadata.Mpeg;
 
 /// <summary>
-/// Summary description for MPEG.
+///     Summary description for MPEG.
 /// </summary>
 public class Mpeg
 {
+    private BinaryReader _br;
+
+    public long HeaderPosition;
+
+    public Mpeg(string fileName)
+    {
+        Filename = fileName;
+    }
+
     public double LengthMs { get; set; }
 
     public TimeSpan Length => TimeSpan.FromMilliseconds(LengthMs);
@@ -36,10 +43,6 @@ public class Mpeg
     public bool Original { get; set; }
     public string Emphasis { get; set; }
 
-    public long HeaderPosition;
-
-    private BinaryReader _br;
-
     public bool IsAudioNeedsConversion => IsValid && !IsMp3MimeType && !IsVideoType && IsLengthOk;
 
     public bool IsValid => IsBitrateOk &&
@@ -49,11 +52,15 @@ public class Mpeg
 
     public bool IsBitrateOk => SafeParser.ToNumber<int>(Bitrate) > 0;
 
-    public bool IsLayerOk => Layer.Nullify() != null && (Layer.Equals("Layer I") || Layer.Equals("Layer II") || Layer.Equals("Layer III") || string.Equals(Layer, "reserved", StringComparison.OrdinalIgnoreCase));
+    public bool IsLayerOk => Layer.Nullify() != null && (Layer.Equals("Layer I") || Layer.Equals("Layer II") ||
+                                                         Layer.Equals("Layer III") || string.Equals(Layer, "reserved",
+                                                             StringComparison.OrdinalIgnoreCase));
 
-    public bool IsFrequencyOk => SafeParser.ToNumber<int>(Frequency) > 95 || string.Equals(Frequency, "reserved", StringComparison.OrdinalIgnoreCase);
+    public bool IsFrequencyOk => SafeParser.ToNumber<int>(Frequency) > 95 ||
+                                 string.Equals(Frequency, "reserved", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsVideoType => MimeType.Nullify() != null && MimeType!.StartsWith("VIDEO/", StringComparison.OrdinalIgnoreCase);
+    public bool IsVideoType =>
+        MimeType.Nullify() != null && MimeType!.StartsWith("VIDEO/", StringComparison.OrdinalIgnoreCase);
 
     public bool IsMp3MimeType => MimeType is "audio/mpeg" or "audio/mp3";
 
@@ -61,17 +68,14 @@ public class Mpeg
 
     public string? MimeType => MimeTypes.GetMimeType(Filename);
 
-    public bool IsVersionOk => Version.Nullify() != null && (Version.Equals("MPEG Version 1") || Version.Equals("MPEG Version 2") || Version.Equals("MPEG Version 2.5"));
+    public bool IsVersionOk => Version.Nullify() != null && (Version.Equals("MPEG Version 1") ||
+                                                             Version.Equals("MPEG Version 2") ||
+                                                             Version.Equals("MPEG Version 2.5"));
 
     public void Read(string fileName)
     {
         Filename = fileName;
         Task.Run(async () => await ReadAsync()).Wait();
-    }
-
-    public Mpeg(string fileName)
-    {
-        Filename = fileName;
     }
 
     public async Task ReadAsync(CancellationToken cancellationToken = default)
@@ -1019,10 +1023,8 @@ public class Mpeg
                     retByte[3] = _br.ReadByte();
                     return retByte;
                 }
-                else
-                {
-                    thisByte = _br.ReadByte();
-                }
+
+                thisByte = _br.ReadByte();
             }
             else
             {

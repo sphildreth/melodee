@@ -19,7 +19,8 @@ public sealed class PMediaHandler : INfoHandler
         return false;
     }
 
-    public async Task<Album?> HandleNfoAsync(FileInfo fileInfo, bool doDeleteOriginal, CancellationToken cancellationToken = default)
+    public async Task<Album?> HandleNfoAsync(FileInfo fileInfo, bool doDeleteOriginal,
+        CancellationToken cancellationToken = default)
     {
         var isPMediaNfo = await IsHandlerForNfoAsync(fileInfo, cancellationToken);
         if (isPMediaNfo && fileInfo.DirectoryName != null && doDeleteOriginal)

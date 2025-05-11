@@ -46,8 +46,8 @@ public sealed class TimeInfo
             return "--";
         }
     }
-    
-    public int TotalMinutes => (int) (Hours * 60 + Minutes);
+
+    public int TotalMinutes => (int)(Hours * 60 + Minutes);
 
     public decimal Minutes { get; set; }
 

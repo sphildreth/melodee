@@ -22,18 +22,22 @@ public class MelodeeScrobbler(
 
     public int SortOrder { get; } = 0;
 
-    public async Task<OperationResult<bool>> NowPlaying(UserInfo user, ScrobbleInfo scrobble, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> NowPlaying(UserInfo user, ScrobbleInfo scrobble,
+        CancellationToken cancellationToken = default)
     {
-        await nowPlayingRepository.AddOrUpdateNowPlayingAsync(new NowPlayingInfo(user, scrobble), cancellationToken).ConfigureAwait(false);
+        await nowPlayingRepository.AddOrUpdateNowPlayingAsync(new NowPlayingInfo(user, scrobble), cancellationToken)
+            .ConfigureAwait(false);
         return new OperationResult<bool>
         {
             Data = true
         };
     }
 
-    public async Task<OperationResult<bool>> Scrobble(UserInfo user, ScrobbleInfo scrobble, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> Scrobble(UserInfo user, ScrobbleInfo scrobble,
+        CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
 
@@ -45,7 +49,9 @@ public class MelodeeScrobbler(
                       update "Songs" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
                       where "Id" = @songId;
                       """;
-            await dbConn.ExecuteAsync(sql, new { artistId = scrobble.ArtistId, albumId = scrobble.AlbumId, songId = scrobble.SongId }).ConfigureAwait(false);
+            await dbConn.ExecuteAsync(sql,
+                    new { artistId = scrobble.ArtistId, albumId = scrobble.AlbumId, songId = scrobble.SongId })
+                .ConfigureAwait(false);
 
             sql = """
                   insert INTO "UserSongs" ("UserId", "SongId", "PlayedCount", "LastPlayedAt", "IsStarred", "IsHated", "Rating", "IsLocked", "SortOrder", "ApiKey", "CreatedAt") 
@@ -56,7 +62,8 @@ public class MelodeeScrobbler(
                   """;
             await dbConn.ExecuteAsync(sql, new { userId = user.Id, songId = scrobble.SongId }).ConfigureAwait(false);
             await nowPlayingRepository
-                .RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), scrobble.SongApiKey.ToString()), cancellationToken)
+                .RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), scrobble.SongApiKey.ToString()),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             var album = await albumService.GetAsync(scrobble.AlbumId, cancellationToken).ConfigureAwait(false);

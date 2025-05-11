@@ -4,13 +4,15 @@ public record Error(short Code, string Message, string? HelpUrl = null)
 {
     public static Error RequiredParameterMissingError => new(10, "Required parameter is missing.");
 
-    public static Error IncompatibleSubsonicVersion => new(20, "Incompatible Subsonic REST protocol version. Client must upgrade.");
+    public static Error IncompatibleSubsonicVersion =>
+        new(20, "Incompatible Subsonic REST protocol version. Client must upgrade.");
 
     public static Error AuthError => new(40, "Wrong username or password.");
 
     public static Error AuthMechanismNotSupportedError => new(42, "Provided authentication mechanism not supported.");
 
-    public static Error AuthMultipleConflictingProvidedError => new(43, "Multiple conflicting authentication mechanisms provided.");
+    public static Error AuthMultipleConflictingProvidedError =>
+        new(43, "Multiple conflicting authentication mechanisms provided.");
 
     public static Error InvalidApiKeyError => new(44, "Invalid API key.");
 

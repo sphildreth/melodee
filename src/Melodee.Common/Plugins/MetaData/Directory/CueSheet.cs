@@ -42,7 +42,8 @@ public sealed class CueSheet(
 
     public override int SortOrder { get; } = 0;
 
-    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        CancellationToken cancellationToken = default)
     {
         StopProcessing = false;
         var resultType = OperationResponseType.Error;
@@ -65,7 +66,8 @@ public sealed class CueSheet(
 
             foreach (var cueFile in cueFiles)
             {
-                using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, cueFile.Name))
+                using (Operation.At(LogEventLevel.Debug)
+                           .Time("[{Plugin}] Processing [{FileName}]", DisplayName, cueFile.Name))
                 {
                     var foundMediaForCueFile = await FindCueFileIfNeeded(cueFile, cancellationToken);
                     if (!foundMediaForCueFile)
@@ -103,11 +105,13 @@ public sealed class CueSheet(
 
                             try
                             {
-                                theReader = CatalogDataReaderFactory.GetInstance().GetCatalogDataReader(cueFile.FullName);
+                                theReader = CatalogDataReaderFactory.GetInstance()
+                                    .GetCatalogDataReader(cueFile.FullName);
                             }
                             catch (Exception ex2)
                             {
-                                Log.Error("Error reading CUE [{CUEFileForAlbumDirectory}] [{@Error}", cueFile.FullName, ex2);
+                                Log.Error("Error reading CUE [{CUEFileForAlbumDirectory}] [{@Error}", cueFile.FullName,
+                                    ex2);
                                 return new OperationResult<int>
                                 {
                                     Errors = [ex2],
@@ -143,8 +147,10 @@ public sealed class CueSheet(
                         Parallel.ForEach(cueModel.Songs.OrderBy(x => x.SortOrder), song =>
                         {
                             var index = cueModel.SongIndexes.First(x => x.SongNumber == song.SongNumber());
-                            var untilIndex = cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
-                            FFMpegArguments.FromFileInput(cueModel.MediaFileSystemFileInfo.FullName(fileSystemDirectoryInfo))
+                            var untilIndex =
+                                cueModel.SongIndexes.FirstOrDefault(x => x.SongNumber == index.SongNumber + 1);
+                            FFMpegArguments
+                                .FromFileInput(cueModel.MediaFileSystemFileInfo.FullName(fileSystemDirectoryInfo))
                                 .OutputToFile(song.File.FullName(fileSystemDirectoryInfo), true, options =>
                                 {
                                     var seekTs = new TimeSpan(0, index.Minutes, index.Seconds);
@@ -173,15 +179,17 @@ public sealed class CueSheet(
                                 Data = 0
                             };
                         }
-                        
-                        var convertedExtension = SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
+
+                        var convertedExtension =
+                            SafeParser.ToString(Configuration[SettingRegistry.ProcessingConvertedExtension]);
                         if (SafeParser.ToBoolean(Configuration[SettingRegistry.ProcessingDoDeleteOriginal]))
                         {
                             fileSystemDirectoryInfo.DeleteAllFilesForExtension(SimpleFileVerification.HandlesExtension);
                             fileSystemDirectoryInfo.DeleteAllFilesForExtension(M3UPlaylist.HandlesExtension);
                             fileSystemDirectoryInfo.DeleteAllFilesForExtension(Nfo.Nfo.HandlesExtension);
                             File.Delete(cueFile.FullName);
-                            var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
+                            var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty,
+                                cueModel.MediaFileSystemFileInfo.Name));
                             if (cueFileMediaFile.Exists)
                             {
                                 cueFileMediaFile.Delete();
@@ -189,24 +197,31 @@ public sealed class CueSheet(
                         }
                         else if (convertedExtension.Nullify() != null)
                         {
-                            var movedFileName = Path.Combine(cueFile.DirectoryName!, $"{cueFile.Name}.{convertedExtension}");
+                            var movedFileName = Path.Combine(cueFile.DirectoryName!,
+                                $"{cueFile.Name}.{convertedExtension}");
                             cueFile.MoveTo(movedFileName);
-                            var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueModel.MediaFileSystemFileInfo.Name));
-                            var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!, $"{cueFileMediaFile.Name}.{convertedExtension}");
+                            var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty,
+                                cueModel.MediaFileSystemFileInfo.Name));
+                            var movedCueFileMediaFileFileName = Path.Combine(cueFileMediaFile.DirectoryName!,
+                                $"{cueFileMediaFile.Name}.{convertedExtension}");
                             cueFileMediaFile.MoveTo(movedCueFileMediaFileFileName);
                         }
 
-                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, cueAlbum.ToMelodeeJsonName(MelodeeConfiguration));
+                        var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path,
+                            cueAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                         if (File.Exists(stagingAlbumDataName))
                         {
-                            var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);
+                            var existingAlbum = await Album
+                                .DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken)
+                                .ConfigureAwait(false);
                             if (existingAlbum != null)
                             {
                                 cueAlbum = cueAlbum.Merge(existingAlbum);
                             }
                         }
 
-                        var mp3Plugin = _songPlugins.First(x => x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
+                        var mp3Plugin = _songPlugins.First(x =>
+                            x.DoesHandleFile(cueModel.FileSystemDirectoryInfo, cueModel.Songs.First().File));
                         foreach (var song in cueModel.Songs)
                         {
                             var mp3SongTags = new List<MetaTag<object?>>
@@ -218,7 +233,9 @@ public sealed class CueSheet(
                             };
                             mp3SongTags.AddRange(song.Tags ?? []);
                             var mp3Song = song with { Tags = mp3SongTags };
-                            await mp3Plugin.UpdateSongAsync(cueModel.FileSystemDirectoryInfo, mp3Song, cancellationToken).ConfigureAwait(false);
+                            await mp3Plugin
+                                .UpdateSongAsync(cueModel.FileSystemDirectoryInfo, mp3Song, cancellationToken)
+                                .ConfigureAwait(false);
                         }
 
                         var validationResult = albumValidator.ValidateAlbum(cueAlbum);
@@ -229,7 +246,8 @@ public sealed class CueSheet(
                         var serialized = serializer.Serialize(cueAlbum);
                         await File.WriteAllTextAsync(stagingAlbumDataName, serialized, cancellationToken);
 
-                        Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
+                        Log.Debug(
+                            "[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
                             DisplayName,
                             cueAlbum.ToMelodeeJsonName(MelodeeConfiguration),
                             cueAlbum.Status.ToString(),
@@ -263,7 +281,7 @@ public sealed class CueSheet(
     }
 
     /// <summary>
-    /// Sometimes CUE files have WAV when the actual file is MP3. This tries to fix that.
+    ///     Sometimes CUE files have WAV when the actual file is MP3. This tries to fix that.
     /// </summary>
     /// <param name="cueFile"></param>
     /// <param name="cancellationToken"></param>
@@ -277,16 +295,20 @@ public sealed class CueSheet(
             var cueSheetLines = new List<string>();
             foreach (var line in await File.ReadAllLinesAsync(cueFile.FullName, cancellationToken))
             {
-                if (line.Nullify() != null && line.StartsWith(CueSheetKeyRegistry.File, StringComparison.InvariantCultureIgnoreCase))
+                if (line.Nullify() != null &&
+                    line.StartsWith(CueSheetKeyRegistry.File, StringComparison.InvariantCultureIgnoreCase))
                 {
                     var cueFileName = FileNameForFileLine(line);
-                    var cueFileMediaFile = new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueFileName));
+                    var cueFileMediaFile =
+                        new FileInfo(Path.Combine(cueFile.DirectoryName ?? string.Empty, cueFileName));
                     if (!cueFileMediaFile.Exists)
                     {
-                        var firstMediaFile = cueFile.Directory?.ToDirectorySystemInfo().AllMediaTypeFileInfos().FirstOrDefault();
+                        var firstMediaFile = cueFile.Directory?.ToDirectorySystemInfo().AllMediaTypeFileInfos()
+                            .FirstOrDefault();
                         if (firstMediaFile != null)
                         {
-                            cueSheetLines.Add($"{CueSheetKeyRegistry.File} \"{firstMediaFile.Name}\" {firstMediaFile.Extension.Replace(".", string.Empty).ToUpper()}");
+                            cueSheetLines.Add(
+                                $"{CueSheetKeyRegistry.File} \"{firstMediaFile.Name}\" {firstMediaFile.Extension.Replace(".", string.Empty).ToUpper()}");
                             didModify = true;
                             result = true;
                         }
@@ -302,10 +324,12 @@ public sealed class CueSheet(
                 }
             }
 
-            var fileLineCount = cueSheetLines.Count(x => x.StartsWith(CueSheetKeyRegistry.File, StringComparison.InvariantCultureIgnoreCase));
+            var fileLineCount = cueSheetLines.Count(x =>
+                x.StartsWith(CueSheetKeyRegistry.File, StringComparison.InvariantCultureIgnoreCase));
             if (fileLineCount > 1)
             {
-                Log.Warning("CUE file [{CueFile}] has more than one file line. This is not supported by this plugin.", cueFile.FullName);
+                Log.Warning("CUE file [{CueFile}] has more than one file line. This is not supported by this plugin.",
+                    cueFile.FullName);
                 return false;
             }
 
@@ -323,7 +347,8 @@ public sealed class CueSheet(
         return fileSystemInfo.Extension(directoryInfo).DoStringsMatch(HandlesExtension);
     }
 
-    public static async Task<Models.CueSheet?> ParseFileAsync(string? filePath, Dictionary<string, object?> configuration)
+    public static async Task<Models.CueSheet?> ParseFileAsync(string? filePath,
+        Dictionary<string, object?> configuration)
     {
         if (string.IsNullOrWhiteSpace(filePath))
         {
@@ -371,7 +396,9 @@ public sealed class CueSheet(
                     break;
 
                 case CueSheetKeyRegistry.File:
-                    cueSheetDataFile = new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty, FileNameForFileLine(lineFromFile))).ToFileSystemInfo();
+                    cueSheetDataFile =
+                        new FileInfo(Path.Combine(fileInfo.DirectoryName ?? string.Empty,
+                            FileNameForFileLine(lineFromFile))).ToFileSystemInfo();
                     break;
 
                 case CueSheetKeyRegistry.Flags:
@@ -390,7 +417,8 @@ public sealed class CueSheet(
                     break;
 
                 case CueSheetKeyRegistry.Index:
-                    songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    songNumber =
+                        songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     if (songNumber > 0)
                     {
                         songIndexes.Add(ParseIndex(songNumber, lineFromFile));
@@ -427,7 +455,8 @@ public sealed class CueSheet(
                     break;
 
                 case CueSheetKeyRegistry.PostGap:
-                    songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    songNumber =
+                        songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     if (songNumber > 0)
                     {
                         songGaps.Add(ParseIndex(songNumber, lineFromFile));
@@ -436,7 +465,8 @@ public sealed class CueSheet(
                     break;
 
                 case CueSheetKeyRegistry.PreGap:
-                    songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    songNumber =
+                        songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     if (songNumber > 0)
                     {
                         songGaps.Add(ParseIndex(songNumber, lineFromFile));
@@ -516,7 +546,8 @@ public sealed class CueSheet(
 
                 case CueSheetKeyRegistry.Song:
                 case CueSheetKeyRegistry.Track:
-                    songNumber = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
+                    songNumber =
+                        songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.TrackNumber)?.Value as int? ?? 0;
                     songTitle = songTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.Title)?.Value as string;
                     if (songNumber > 0 && !string.IsNullOrWhiteSpace(songTitle))
                     {
@@ -571,7 +602,9 @@ public sealed class CueSheet(
             songTags.Clear();
         }
 
-        var albumDate = SafeParser.ToNumber<int?>(albumTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)?.Value);
+        var albumDate =
+            SafeParser.ToNumber<int?>(albumTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.OrigAlbumYear)
+                ?.Value);
         if (albumDate == null)
         {
             // Try to get the Album date from the CUE filename
@@ -597,7 +630,8 @@ public sealed class CueSheet(
 
                 if (albumDate == null)
                 {
-                    var sfvFiles = cueSheetDataFileDirectoryInfo.FileInfosForExtension(SimpleFileVerification.HandlesExtension);
+                    var sfvFiles =
+                        cueSheetDataFileDirectoryInfo.FileInfosForExtension(SimpleFileVerification.HandlesExtension);
                     foreach (var sfvFile in sfvFiles)
                     {
                         albumDate = sfvFile.Name.TryToGetYearFromString();

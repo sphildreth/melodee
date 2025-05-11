@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 
-public class ArtistSearchEngineServiceDbContext(DbContextOptions<ArtistSearchEngineServiceDbContext> options) : DbContext(options)
+public class ArtistSearchEngineServiceDbContext(DbContextOptions<ArtistSearchEngineServiceDbContext> options)
+    : DbContext(options)
 {
     public DbSet<Artist> Artists { get; set; }
 
@@ -14,7 +15,8 @@ public class ArtistSearchEngineServiceDbContext(DbContextOptions<ArtistSearchEng
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             var properties = entityType.ClrType.GetProperties().Where(p => p.PropertyType == typeof(DateTimeOffset)
-                                                                           || p.PropertyType == typeof(DateTimeOffset?));
+                                                                           || p.PropertyType ==
+                                                                           typeof(DateTimeOffset?));
             foreach (var property in properties)
             {
                 modelBuilder

@@ -64,8 +64,9 @@ public record AlbumID3 : IOpenSubsonicToXml
             genreAttribute = $" genre=\"{Genre.ToSafeXmlString()}\"";
         }
 
-        return $"<album id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" coverArt=\"{CoverArt}\" songCount=\"{SongCount}\" " +
-               $"playCount=\"{PlayCount}\" year=\"{Year}\"{genreAttribute}{starredAttribute} " +
-               $"created=\"{Created}\" duration=\"{Duration}\" artist=\"{Artist.ToSafeXmlString()}\" artistId=\"{ArtistId}\"></album>";
+        return
+            $"<album id=\"{Id}\" name=\"{Name.ToSafeXmlString()}\" coverArt=\"{CoverArt}\" songCount=\"{SongCount}\" " +
+            $"playCount=\"{PlayCount}\" year=\"{Year}\"{genreAttribute}{starredAttribute} " +
+            $"created=\"{Created}\" duration=\"{Duration}\" artist=\"{Artist.ToSafeXmlString()}\" artistId=\"{ArtistId}\"></album>";
     }
 }

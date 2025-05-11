@@ -52,7 +52,8 @@ public class LibraryService(
 
     private const int DisplayNumberPadLength = 8;
 
-    public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(
+        CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Inbound;
         var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
@@ -60,7 +61,8 @@ public class LibraryService(
             var library = await LibraryByType(libraryType, cancellationToken);
             if (library == null)
             {
-                throw new Exception("Inbound library not found. A Library record must be setup with a type of '1' (Inbound).");
+                throw new Exception(
+                    "Inbound library not found. A Library record must be setup with a type of '1' (Inbound).");
             }
 
             return library;
@@ -71,12 +73,14 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Library[]>> GetStorageLibrariesAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<MelodeeModels.OperationResult<Library[]>> GetStorageLibrariesAsync(
+        CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Storage;
         var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var storageLibraryType = (int)LibraryType.Storage;
                 var library = await scopedContext
@@ -86,7 +90,8 @@ public class LibraryService(
                     .ConfigureAwait(false);
                 if (library == null)
                 {
-                    throw new Exception("No storage library found. At least one Library record must be setup with a type of '3' (Storage).");
+                    throw new Exception(
+                        "No storage library found. At least one Library record must be setup with a type of '3' (Storage).");
                 }
 
                 return library;
@@ -98,7 +103,8 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Library>> GetUserImagesLibraryAsync(CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Library>> GetUserImagesLibraryAsync(
+        CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.UserImages;
         var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
@@ -106,7 +112,8 @@ public class LibraryService(
             var library = await LibraryByType(libraryType, cancellationToken);
             if (library == null)
             {
-                throw new Exception("User Images library not found. A Library record must be setup with a type of '4' (UserImages).");
+                throw new Exception(
+                    "User Images library not found. A Library record must be setup with a type of '4' (UserImages).");
             }
 
             return library;
@@ -117,7 +124,8 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Library>> GetPlaylistLibraryAsync(CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Library>> GetPlaylistLibraryAsync(
+        CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Playlist;
         var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
@@ -125,7 +133,8 @@ public class LibraryService(
             var library = await LibraryByType(libraryType, cancellationToken);
             if (library == null)
             {
-                throw new Exception("Playlist library not found. A Library record must be setup with a type of '5' (Playlist).");
+                throw new Exception(
+                    "Playlist library not found. A Library record must be setup with a type of '5' (Playlist).");
             }
 
             return library;
@@ -136,17 +145,20 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Library?>> GetByApiKeyAsync(Guid apiKey,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbConn = scopedContext.Database.GetDbConnection();
                 return await dbConn
-                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Libraries\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Libraries\" WHERE \"ApiKey\" = @apiKey",
+                        new { apiKey })
                     .ConfigureAwait(false);
             }
         }, cancellationToken);
@@ -161,13 +173,15 @@ public class LibraryService(
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MelodeeModels.OperationResult<Library?>> GetAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Library?>> GetAsync(int id,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
 
         var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 return await scopedContext
                     .Libraries
@@ -201,11 +215,13 @@ public class LibraryService(
     //     };
     // }
 
-    public async Task<MelodeeModels.OperationResult<Library?>> PurgeLibraryAsync(int libraryId, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Library?>> PurgeLibraryAsync(int libraryId,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, libraryId, nameof(libraryId));
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbLibrary = await scopedContext
                 .Libraries
@@ -252,7 +268,8 @@ public class LibraryService(
         return await GetAsync(libraryId, cancellationToken);
     }
 
-    public async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<MelodeeModels.OperationResult<Library>> GetStagingLibraryAsync(
+        CancellationToken cancellationToken = default)
     {
         const int libraryType = (int)LibraryType.Staging;
         var result = await CacheManager.GetAsync(CacheKeyDetailLibraryByType.FormatSmart(libraryType), async () =>
@@ -260,7 +277,8 @@ public class LibraryService(
             var library = await LibraryByType(libraryType, cancellationToken).ConfigureAwait(false);
             if (library == null)
             {
-                throw new Exception("Staging library not found. A Library record must be setup with a type of '2' (Staging).");
+                throw new Exception(
+                    "Staging library not found. A Library record must be setup with a type of '2' (Staging).");
             }
 
             return library;
@@ -271,17 +289,20 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>> ListLibraryHistoriesAsync(int libraryId, MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>> ListLibraryHistoriesAsync(int libraryId,
+        MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         var librariesCount = 0;
         LibraryScanHistoryDataInfo[] histories = [];
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             try
             {
                 var orderBy = pagedRequest.OrderByValue();
                 var dbConn = scopedContext.Database.GetDbConnection();
-                var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"LibraryScanHistories\" where \"LibraryId\" = {0} ".FormatSmart(libraryId));
+                var countSqlParts = pagedRequest.FilterByParts(
+                    "SELECT COUNT(*) FROM \"LibraryScanHistories\" where \"LibraryId\" = {0} ".FormatSmart(libraryId));
                 librariesCount = await dbConn
                     .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
                     .ConfigureAwait(false);
@@ -296,7 +317,8 @@ public class LibraryService(
                                            where l."LibraryId" = {0} 
                                            """;
                     var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment.FormatSmart(libraryId));
-                    var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                    var listSql =
+                        $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                     histories = (await dbConn
                         .QueryAsync<LibraryScanHistoryDataInfo>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();
@@ -316,11 +338,13 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.PagedResult<Library>> ListMediaLibrariesAsync(CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<Library>> ListMediaLibrariesAsync(
+        CancellationToken cancellationToken = default)
     {
         return await CacheManager.GetAsync(CacheKeyMediaLibraries, async () =>
         {
-            var data = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
+            var data = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
+                .ConfigureAwait(false);
             return new MelodeeModels.PagedResult<Library>
             {
                 Data = data
@@ -333,11 +357,13 @@ public class LibraryService(
     }
 
 
-    public async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public virtual async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
     {
         var librariesCount = 0;
         Library[] libraries = [];
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             try
             {
@@ -350,7 +376,8 @@ public class LibraryService(
                 if (!pagedRequest.IsTotalCountOnlyRequest)
                 {
                     var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Libraries\"");
-                    var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                    var listSql =
+                        $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                     libraries = (await dbConn
                         .QueryAsync<Library>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();
@@ -370,7 +397,8 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library,
+        MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
         configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
@@ -382,7 +410,8 @@ public class LibraryService(
             try
             {
                 currentAlbum = album;
-                var artistDirectory = album.Artist.ToDirectoryName(configuration.GetValue<short>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
+                var artistDirectory = album.Artist.ToDirectoryName(
+                    configuration.GetValue<short>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
                 var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);
                 var libraryAlbumPath = Path.Combine(library.Path, artistDirectory, albumDirectory);
                 if (!Directory.Exists(libraryAlbumPath))
@@ -391,24 +420,31 @@ public class LibraryService(
                 }
                 else
                 {
-                    var processExistingDirectoryResult = await ProcessExistingDirectoryMoveMergeAsync(configuration, serializer, album, libraryAlbumPath, cancellationToken).ConfigureAwait(false);
+                    var processExistingDirectoryResult =
+                        await ProcessExistingDirectoryMoveMergeAsync(configuration, serializer, album, libraryAlbumPath,
+                            cancellationToken).ConfigureAwait(false);
                     if (processExistingDirectoryResult != null)
                     {
-                        await bus.SendLocal(new AlbumUpdatedEvent(processExistingDirectoryResult.AlbumId, processExistingDirectoryResult.AlbumPath)).ConfigureAwait(false);
+                        await bus.SendLocal(new AlbumUpdatedEvent(processExistingDirectoryResult.AlbumId,
+                            processExistingDirectoryResult.AlbumPath)).ConfigureAwait(false);
                     }
 
                     continue;
                 }
 
-                var libraryArtistDirectoryInfo = new DirectoryInfo(Path.Combine(library.Path, artistDirectory)).ToDirectorySystemInfo();
+                var libraryArtistDirectoryInfo =
+                    new DirectoryInfo(Path.Combine(library.Path, artistDirectory)).ToDirectorySystemInfo();
                 var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
                 album.Directory.MoveToDirectory(libraryAlbumPath);
                 var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
-                var melodeeFile = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileName, cancellationToken).ConfigureAwait(false);
+                var melodeeFile = await MelodeeModels.Album
+                    .DeserializeAndInitializeAlbumAsync(serializer, melodeeFileName, cancellationToken)
+                    .ConfigureAwait(false);
                 melodeeFile!.Directory.Path = libraryAlbumPath;
                 if (album.Artist.Images?.Any() ?? false)
                 {
-                    var existingArtistImages = libraryArtistDirectoryInfo.AllFileImageTypeFileInfos().Where(x => ImageHelper.IsArtistImage(x) || ImageHelper.IsArtistSecondaryImage(x)).ToArray();
+                    var existingArtistImages = libraryArtistDirectoryInfo.AllFileImageTypeFileInfos()
+                        .Where(x => ImageHelper.IsArtistImage(x) || ImageHelper.IsArtistSecondaryImage(x)).ToArray();
                     if (existingArtistImages.Length == 0)
                     {
                         // If there are no artist images in artists library directory, move artist images from album directory
@@ -416,9 +452,12 @@ public class LibraryService(
                         {
                             if (image.FileInfo != null)
                             {
-                                var fileToMoveFullName = Path.Combine(libraryAlbumDirectoryInfo.FullName(), image.FileInfo.Name);
+                                var fileToMoveFullName = Path.Combine(libraryAlbumDirectoryInfo.FullName(),
+                                    image.FileInfo.Name);
                                 File.Move(fileToMoveFullName, image.FileInfo.FullName(libraryArtistDirectoryInfo));
-                                Logger.Information("[{ServiceName}] moved artist image [{ImageName}] into artist directory", nameof(LibraryService), fileToMoveFullName);
+                                Logger.Information(
+                                    "[{ServiceName}] moved artist image [{ImageName}] into artist directory",
+                                    nameof(LibraryService), fileToMoveFullName);
                             }
                         }
                     }
@@ -430,18 +469,25 @@ public class LibraryService(
                             if (image.FileInfo != null)
                             {
                                 // If there are artist images, check CRC and see if duplicate, delete any duplicate found in album directory
-                                if (existingArtistImagesCrc32S.Contains(CRC32.Calculate(image.FileInfo.ToFileInfo(libraryArtistDirectoryInfo))))
+                                if (existingArtistImagesCrc32S.Contains(
+                                        CRC32.Calculate(image.FileInfo.ToFileInfo(libraryArtistDirectoryInfo))))
                                 {
-                                    var fileToDeleteFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(), image.FileInfo.Name);
+                                    var fileToDeleteFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(),
+                                        image.FileInfo.Name);
                                     File.Delete(fileToDeleteFullName);
-                                    Logger.Information("[{ServiceName}] deleted duplicate artist image [{ImageName}]", nameof(LibraryService), fileToDeleteFullName);
+                                    Logger.Information("[{ServiceName}] deleted duplicate artist image [{ImageName}]",
+                                        nameof(LibraryService), fileToDeleteFullName);
                                 }
                                 else
                                 {
-                                    var fileToMoveFullName = Path.Combine(libraryAlbumDirectoryInfo.FullName(), image.FileInfo.Name);
-                                    var moveToFileFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(), libraryArtistDirectoryInfo.GetNextFileNameForType(Artist.ImageType).Item1);
+                                    var fileToMoveFullName = Path.Combine(libraryAlbumDirectoryInfo.FullName(),
+                                        image.FileInfo.Name);
+                                    var moveToFileFullName = Path.Combine(libraryArtistDirectoryInfo.FullName(),
+                                        libraryArtistDirectoryInfo.GetNextFileNameForType(Artist.ImageType).Item1);
                                     File.Move(fileToMoveFullName, moveToFileFullName);
-                                    Logger.Information("[{ServiceName}] moved artist image [{ImageName}] into artist directory", nameof(LibraryService), fileToMoveFullName);
+                                    Logger.Information(
+                                        "[{ServiceName}] moved artist image [{ImageName}] into artist directory",
+                                        nameof(LibraryService), fileToMoveFullName);
                                 }
                             }
                         }
@@ -475,11 +521,13 @@ public class LibraryService(
     }
 
 
-    public async Task<MelodeeModels.OperationResult<LibraryScanHistory?>> CreateLibraryScanHistory(Library library, LibraryScanHistory libraryScanHistory, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<LibraryScanHistory?>> CreateLibraryScanHistory(Library library,
+        LibraryScanHistory libraryScanHistory, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, library.Id, nameof(library));
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbLibrary = await scopedContext
                 .Libraries
@@ -542,7 +590,8 @@ public class LibraryService(
 
     private async Task<Library?> LibraryByType(int type, CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = $"SELECT * FROM \"Libraries\" WHERE \"Type\" = {type} ORDER BY \"SortOrder\" LIMIT 1;";
@@ -560,7 +609,8 @@ public class LibraryService(
         CacheManager.Remove(CacheKeyMediaLibraries);
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> UpdateAggregatesAsync(int libraryId, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAggregatesAsync(int libraryId,
+        CancellationToken cancellationToken = default)
     {
         var libraryResult = await GetAsync(libraryId, cancellationToken).ConfigureAwait(false);
         var library = libraryResult.Data;
@@ -582,9 +632,11 @@ public class LibraryService(
         }
 
         bool result;
-        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] updated library aggregates [{id}]", nameof(UpdateAggregatesAsync), libraryId.ToString()))
+        using (Operation.At(LogEventLevel.Debug).Time("[{Name}] updated library aggregates [{id}]",
+                   nameof(UpdateAggregatesAsync), libraryId.ToString()))
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
                 var dbConn = scopedContext.Database.GetDbConnection();
@@ -624,7 +676,7 @@ public class LibraryService(
                           	"LastUpdatedAt" = now()
                           where l."Id" = @libraryId;
                           """;
-                var updateResult= await dbConn
+                var updateResult = await dbConn
                     .ExecuteAsync(sql, new { libraryId = library.Id })
                     .ConfigureAwait(false);
 
@@ -647,7 +699,8 @@ public class LibraryService(
                     .ExecuteAsync(sql, new { libraryId = library.Id })
                     .ConfigureAwait(false);
 
-                var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken).ConfigureAwait(false);
+                var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 dbLibrary.LastScanAt = now;
                 dbLibrary.LastUpdatedAt = now;
                 result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
@@ -663,12 +716,15 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> Rebuild(string libraryName, bool doCreateOnlyMissing, bool settingsVerbose, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> Rebuild(string libraryName, bool doCreateOnlyMissing,
+        bool settingsVerbose, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(libraryName, nameof(libraryName));
 
-        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
-        var library = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == libraryName.ToNormalizedString());
+        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
+            .ConfigureAwait(false);
+        var library =
+            libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == libraryName.ToNormalizedString());
         if (library == null)
         {
             return new MelodeeModels.OperationResult<bool>("Invalid From library Name")
@@ -687,24 +743,29 @@ public class LibraryService(
 
         if (library.TypeValue == LibraryType.Inbound)
         {
-            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this rebuild process requires media already be processed.")
+            return new MelodeeModels.OperationResult<bool>(
+                "Invalid library type, this rebuild process requires media already be processed.")
             {
                 Data = false
             };
         }
 
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
-        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
+        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
+            value => value < 1 ? int.MaxValue : value);
 
         var albumValidator = new AlbumValidator(configuration);
         var imageValidator = new ImageValidator(configuration);
         var imageConvertor = new ImageConvertor(configuration);
-        var songPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor, imageValidator, configuration);
+        var songPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor,
+            imageValidator, configuration);
         var mp3Files = new Mp3Files([songPlugin], albumValidator, serializer, Logger, configuration);
 
         var libraryDirectoryInfo = library.ToFileSystemDirectoryInfo();
-        var directoriesToProcess = libraryDirectoryInfo.GetFileSystemDirectoryInfosToProcess(null, SearchOption.AllDirectories).ToList();
-        Logger.Debug("[{Name}] Found [{Count}] directories to rebuild in library.", nameof(Rebuild), directoriesToProcess.Count);
+        var directoriesToProcess = libraryDirectoryInfo
+            .GetFileSystemDirectoryInfosToProcess(null, SearchOption.AllDirectories).ToList();
+        Logger.Debug("[{Name}] Found [{Count}] directories to rebuild in library.", nameof(Rebuild),
+            directoriesToProcess.Count);
 
         var directoriesProcessed = 0;
         var totalFilesFound = 0;
@@ -728,20 +789,24 @@ public class LibraryService(
                 continue;
             }
 
-            var processResult = await melodeeMetadataMaker.MakeMetadataFileAsync(directoryInfo.FullName(), doCreateOnlyMissing, cancellationToken).ConfigureAwait(false);
+            var processResult = await melodeeMetadataMaker
+                .MakeMetadataFileAsync(directoryInfo.FullName(), doCreateOnlyMissing, cancellationToken)
+                .ConfigureAwait(false);
             if (processResult.IsSuccess)
             {
                 totalFilesFound += processResult.Data?.SongTotalValue() ?? 0;
             }
             else
             {
-                Logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}]. [{Result}]", nameof(Rebuild), directoryInfo.FullName(), serializer.Serialize(processResult));
+                Logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}]. [{Result}]", nameof(Rebuild),
+                    directoryInfo.FullName(), serializer.Serialize(processResult));
             }
 
             directoriesProcessed++;
         }
 
-        var numberOfMelodeeFilesCreated = libraryDirectoryInfo.AllFileInfos(Common.Models.Album.JsonFileName, SearchOption.AllDirectories).Count();
+        var numberOfMelodeeFilesCreated = libraryDirectoryInfo
+            .AllFileInfos(MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories).Count();
 
         Logger.Information(
             "[{Name}] Rebuild completed. Create only missing flag is [{FlagSet}] using [{TotalFiles}] files created [{MelodeeFilesCount}] melodee album files.",
@@ -756,7 +821,9 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(string fromLibraryName, string toLibraryName, Func<MelodeeModels.Album, bool> condition, bool verboseSet, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(string fromLibraryName,
+        string toLibraryName, Func<MelodeeModels.Album, bool> condition, bool verboseSet,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(fromLibraryName, nameof(fromLibraryName));
         Guard.Against.NullOrEmpty(fromLibraryName, nameof(toLibraryName));
@@ -769,8 +836,10 @@ public class LibraryService(
             };
         }
 
-        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
-        var fromLibrary = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == fromLibraryName.ToNormalizedString());
+        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
+            .ConfigureAwait(false);
+        var fromLibrary =
+            libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == fromLibraryName.ToNormalizedString());
         if (fromLibrary == null)
         {
             return new MelodeeModels.OperationResult<bool>("Invalid From library Name")
@@ -787,7 +856,8 @@ public class LibraryService(
             };
         }
 
-        var toLibrary = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == toLibraryName.ToNormalizedString());
+        var toLibrary =
+            libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == toLibraryName.ToNormalizedString());
         if (toLibrary == null)
         {
             return new MelodeeModels.OperationResult<bool>("Invalid To library Name")
@@ -798,7 +868,8 @@ public class LibraryService(
 
         if (toLibrary.TypeValue != LibraryType.Storage)
         {
-            return new MelodeeModels.OperationResult<bool>($"Invalid library type, this move process requires a library type of 'Library' ({(int)LibraryType.Storage}).")
+            return new MelodeeModels.OperationResult<bool>(
+                $"Invalid library type, this move process requires a library type of 'Library' ({(int)LibraryType.Storage}).")
             {
                 Data = false
             };
@@ -815,8 +886,10 @@ public class LibraryService(
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
 
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
-        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
-        var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
+        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
+            value => value < 1 ? int.MaxValue : value);
+        var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName,
+            SearchOption.AllDirectories);
         var albumsToMove = new List<MelodeeModels.Album>();
         foreach (var albumFile in albumsForFromLibrary)
         {
@@ -836,7 +909,8 @@ public class LibraryService(
 
             try
             {
-                var album = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, albumFile, cancellationToken).ConfigureAwait(false);
+                var album = await MelodeeModels.Album
+                    .DeserializeAndInitializeAlbumAsync(serializer, albumFile, cancellationToken).ConfigureAwait(false);
                 if (album != null)
                 {
                     if (condition(album))
@@ -847,7 +921,8 @@ public class LibraryService(
             }
             catch (Exception e)
             {
-                Logger.Error(e, "[{ServiceName}] Failed to deserialize album from file [{AlbumFile}]", nameof(LibraryService), albumFile);
+                Logger.Error(e, "[{ServiceName}] Failed to deserialize album from file [{AlbumFile}]",
+                    nameof(LibraryService), albumFile);
             }
 
             if (albumsToMove.Count >= maxAlbumProcessingCount)
@@ -866,7 +941,8 @@ public class LibraryService(
                 "Starting processing"
             ));
 
-        var result = await MoveAlbumsToLibrary(toLibrary, albumsToMove.ToArray(), cancellationToken).ConfigureAwait(false);
+        var result = await MoveAlbumsToLibrary(toLibrary, albumsToMove.ToArray(), cancellationToken)
+            .ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -890,12 +966,15 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>> AlbumStatusReport(string libraryName, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>> AlbumStatusReport(string libraryName,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(libraryName, nameof(libraryName));
 
-        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
-        var library = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == libraryName.ToNormalizedString());
+        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
+            .ConfigureAwait(false);
+        var library =
+            libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == libraryName.ToNormalizedString());
         if (library == null)
         {
             return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>("Invalid library Name")
@@ -908,7 +987,8 @@ public class LibraryService(
 
         // Get all metadata albums in library path
         var libraryDirectory = new DirectoryInfo(library.Path);
-        var melodeeFileSystemInfosForLibrary = libraryDirectory.GetFileSystemInfos(MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories).ToArray();
+        var melodeeFileSystemInfosForLibrary =
+            libraryDirectory.GetFileSystemInfos(MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
         if (melodeeFileSystemInfosForLibrary.Length == 0)
         {
             return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>("Library has no albums.")
@@ -920,7 +1000,9 @@ public class LibraryService(
         var melodeeFilesForLibrary = new List<MelodeeModels.Album>();
         foreach (var melodeeFileSystemInfo in melodeeFileSystemInfosForLibrary)
         {
-            var melodeeFile = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeFileSystemInfo.FullName, cancellationToken).ConfigureAwait(false);
+            var melodeeFile = await MelodeeModels.Album
+                .DeserializeAndInitializeAlbumAsync(serializer, melodeeFileSystemInfo.FullName, cancellationToken)
+                .ConfigureAwait(false);
             if (melodeeFile != null)
             {
                 melodeeFilesForLibrary.Add(melodeeFile);
@@ -933,7 +1015,8 @@ public class LibraryService(
         var melodeeFilesGroupedOk = melodeeFilesGrouped.FirstOrDefault(x => x.Key == AlbumStatus.Ok);
         if (melodeeFilesGroupedOk != null)
         {
-            result.Add(new MelodeeModels.Statistic(StatisticType.Information, melodeeFilesGroupedOk.Key.ToString(), melodeeFilesGroupedOk.Count(), StatisticColorRegistry.Ok, "Album with `Ok` status."));
+            result.Add(new MelodeeModels.Statistic(StatisticType.Information, melodeeFilesGroupedOk.Key.ToString(),
+                melodeeFilesGroupedOk.Count(), StatisticColorRegistry.Ok, "Album with `Ok` status."));
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
             var albumValidator = new AlbumValidator(configuration);
             foreach (var album in melodeeFilesGroupedOk)
@@ -941,14 +1024,17 @@ public class LibraryService(
                 var validateResults = albumValidator.ValidateAlbum(album);
                 if (!validateResults.Data.IsValid)
                 {
-                    result.Add(new MelodeeModels.Statistic(StatisticType.Warning, $"Album with `Ok` status [{album}], is invalid", serializer.Serialize(validateResults.Data) ?? string.Empty, StatisticColorRegistry.Warning));
+                    result.Add(new MelodeeModels.Statistic(StatisticType.Warning,
+                        $"Album with `Ok` status [{album}], is invalid",
+                        serializer.Serialize(validateResults.Data) ?? string.Empty, StatisticColorRegistry.Warning));
                 }
             }
         }
 
         foreach (var album in melodeeFilesForLibrary.Where(x => x.Status != AlbumStatus.Ok))
         {
-            result.Add(new MelodeeModels.Statistic(StatisticType.Warning, album.Directory.Name, album.StatusReasons.ToString(), StatisticColorRegistry.Warning));
+            result.Add(new MelodeeModels.Statistic(StatisticType.Warning, album.Directory.Name,
+                album.StatusReasons.ToString(), StatisticColorRegistry.Warning));
         }
 
         return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>
@@ -957,12 +1043,15 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>> Statistics(string settingsLibraryName, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>> Statistics(string settingsLibraryName,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(settingsLibraryName, nameof(settingsLibraryName));
 
-        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
-        var library = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == settingsLibraryName.ToNormalizedString());
+        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
+            .ConfigureAwait(false);
+        var library =
+            libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == settingsLibraryName.ToNormalizedString());
         if (library == null)
         {
             return new MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>("Invalid From library Name")
@@ -976,20 +1065,28 @@ public class LibraryService(
 
         var result = new List<MelodeeModels.Statistic>
         {
-            new(StatisticType.Information, "Artist Count", library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok, "Number of artists on Library db record."),
-            new(StatisticType.Information, "Album Count", library.AlbumCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok, "Number of albums on Library db record."),
-            new(StatisticType.Information, "Song Count", library.SongCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok, "Number of songs on Library db record.")
+            new(StatisticType.Information, "Artist Count",
+                library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok,
+                "Number of artists on Library db record."),
+            new(StatisticType.Information, "Album Count",
+                library.AlbumCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok,
+                "Number of albums on Library db record."),
+            new(StatisticType.Information, "Song Count",
+                library.SongCount.ToStringPadLeft(DisplayNumberPadLength) ?? "0", StatisticColorRegistry.Ok,
+                "Number of songs on Library db record.")
         };
 
         if (library.TypeValue == LibraryType.Storage)
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var artistDirectoriesFound = 0;
                 var artistsWithoutAlbumsInDirectories = 0;
                 var albumDirectoriesFound = 0;
                 var songsFound = 0;
-                var allDirectoriesInLibrary = Directory.GetDirectories(library.Path, "*", SearchOption.TopDirectoryOnly).ToArray();
+                var allDirectoriesInLibrary =
+                    Directory.GetDirectories(library.Path, "*", SearchOption.TopDirectoryOnly);
                 foreach (var directory in allDirectoriesInLibrary)
                 {
                     var d = new DirectoryInfo(directory);
@@ -1004,22 +1101,30 @@ public class LibraryService(
 
                     if (d.Name.Length == 1)
                     {
-                        foreach (var letterDirectory in Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly))
+                        foreach (var letterDirectory in Directory.GetDirectories(directory, "*",
+                                     SearchOption.TopDirectoryOnly))
                         {
                             d = new DirectoryInfo(letterDirectory);
                             if (d.Name.Length == 2)
                             {
-                                foreach (var artistDirectory in Directory.GetDirectories(letterDirectory, "*", SearchOption.TopDirectoryOnly))
+                                foreach (var artistDirectory in Directory.GetDirectories(letterDirectory, "*",
+                                             SearchOption.TopDirectoryOnly))
                                 {
                                     d = new DirectoryInfo(artistDirectory);
                                     var dPath = $"{d.FullName.Replace(library.Path, string.Empty)}/";
-                                    var dbArtist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.Directory == dPath, cancellationToken).ConfigureAwait(false);
+                                    var dbArtist = await scopedContext.Artists
+                                        .FirstOrDefaultAsync(x => x.Directory == dPath, cancellationToken)
+                                        .ConfigureAwait(false);
                                     if (dbArtist == null)
                                     {
-                                        var artistMelodeeAlbumsCount = d.ToDirectorySystemInfo().AllMediaTypeFileInfos().Count();
+                                        var artistMelodeeAlbumsCount =
+                                            d.ToDirectorySystemInfo().AllMediaTypeFileInfos().Count();
                                         if (artistMelodeeAlbumsCount > 0)
                                         {
-                                            result.Add(new MelodeeModels.Statistic(StatisticType.Warning, "! Unknown artist directory", artistDirectory, StatisticColorRegistry.Error, $"Unable to find artist for directory [{d.Name}]"));
+                                            result.Add(new MelodeeModels.Statistic(StatisticType.Warning,
+                                                "! Unknown artist directory", artistDirectory,
+                                                StatisticColorRegistry.Error,
+                                                $"Unable to find artist for directory [{d.Name}]"));
                                         }
                                         else
                                         {
@@ -1032,7 +1137,8 @@ public class LibraryService(
                                     }
 
                                     artistDirectoriesFound++;
-                                    foreach (var albumDirectory in Directory.GetDirectories(artistDirectory, "*", SearchOption.TopDirectoryOnly))
+                                    foreach (var albumDirectory in Directory.GetDirectories(artistDirectory, "*",
+                                                 SearchOption.TopDirectoryOnly))
                                     {
                                         d = new DirectoryInfo(albumDirectory);
 
@@ -1051,18 +1157,27 @@ public class LibraryService(
                                             .ConfigureAwait(false);
                                         if (dbAlbum == null)
                                         {
-                                            result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Unknown album directory", albumDirectory, StatisticColorRegistry.Error, $"Unable to find album for directory [{aPath}]"));
+                                            result.Add(new MelodeeModels.Statistic(StatisticType.Error,
+                                                "! Unknown album directory", albumDirectory,
+                                                StatisticColorRegistry.Error,
+                                                $"Unable to find album for directory [{aPath}]"));
                                         }
                                         // If the album isn't in the database, clearly none of the albums songs will be in the database.
                                         else
                                         {
                                             var albumSongsFound = 0;
-                                            foreach (var songFound in d.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).Where(x => FileHelper.IsFileMediaType(x.Extension)).OrderBy(x => x.Name))
+                                            foreach (var songFound in d
+                                                         .EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
+                                                         .Where(x => FileHelper.IsFileMediaType(x.Extension))
+                                                         .OrderBy(x => x.Name))
                                             {
-                                                var dbSong = dbAlbum?.Songs.FirstOrDefault(x => x.FileName == songFound.Name);
+                                                var dbSong =
+                                                    dbAlbum?.Songs.FirstOrDefault(x => x.FileName == songFound.Name);
                                                 if (dbSong == null)
                                                 {
-                                                    result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Unknown song", songFound.Name, StatisticColorRegistry.Error, $"Album Id [{dbAlbum?.Id}]: Unable to find song for album"));
+                                                    result.Add(new MelodeeModels.Statistic(StatisticType.Error,
+                                                        "! Unknown song", songFound.Name, StatisticColorRegistry.Error,
+                                                        $"Album Id [{dbAlbum?.Id}]: Unable to find song for album"));
                                                 }
 
                                                 albumSongsFound++;
@@ -1070,7 +1185,10 @@ public class LibraryService(
 
                                             if (albumSongsFound != dbAlbum?.SongCount)
                                             {
-                                                result.Add(new MelodeeModels.Statistic(StatisticType.Error, "! Album song count mismatch ", $"{dbArtist?.Directory}{d.Name}", StatisticColorRegistry.Error, $"Album Id [{dbAlbum?.Id}]: Found [{albumSongsFound.ToStringPadLeft(4)}] album has [{dbAlbum?.SongCount.ToStringPadLeft(4)}]"));
+                                                result.Add(new MelodeeModels.Statistic(StatisticType.Error,
+                                                    "! Album song count mismatch ", $"{dbArtist?.Directory}{d.Name}",
+                                                    StatisticColorRegistry.Error,
+                                                    $"Album Id [{dbAlbum?.Id}]: Found [{albumSongsFound.ToStringPadLeft(4)}] album has [{dbAlbum?.SongCount.ToStringPadLeft(4)}]"));
                                             }
 
                                             songsFound += albumSongsFound;
@@ -1085,14 +1203,34 @@ public class LibraryService(
                 }
 
                 var adjustArtistDirectoriesFound = artistDirectoriesFound - artistsWithoutAlbumsInDirectories;
-                var message = adjustArtistDirectoriesFound == (library.ArtistCount ?? 0) ? null : $"Artist directory count [{adjustArtistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library artist count [{library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength)}].";
-                result.Add(new MelodeeModels.Statistic(artistDirectoriesFound == library.ArtistCount ? StatisticType.Information : StatisticType.Warning, "Artist Directories Found", adjustArtistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), adjustArtistDirectoriesFound == library.ArtistCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
+                var message = adjustArtistDirectoriesFound == (library.ArtistCount ?? 0)
+                    ? null
+                    : $"Artist directory count [{adjustArtistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library artist count [{library.ArtistCount.ToStringPadLeft(DisplayNumberPadLength)}].";
+                result.Add(new MelodeeModels.Statistic(
+                    artistDirectoriesFound == library.ArtistCount ? StatisticType.Information : StatisticType.Warning,
+                    "Artist Directories Found", adjustArtistDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength),
+                    adjustArtistDirectoriesFound == library.ArtistCount
+                        ? StatisticColorRegistry.Ok
+                        : StatisticColorRegistry.Warning, message));
 
-                message = albumDirectoriesFound == (library.AlbumCount ?? 0) ? null : $"Album directory count [{albumDirectoriesFound}] does not match Library album count [{library.AlbumCount}].";
-                result.Add(new MelodeeModels.Statistic(albumDirectoriesFound == library.AlbumCount ? StatisticType.Information : StatisticType.Warning, "Album Directories Found", albumDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength), albumDirectoriesFound == library.AlbumCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
+                message = albumDirectoriesFound == (library.AlbumCount ?? 0)
+                    ? null
+                    : $"Album directory count [{albumDirectoriesFound}] does not match Library album count [{library.AlbumCount}].";
+                result.Add(new MelodeeModels.Statistic(
+                    albumDirectoriesFound == library.AlbumCount ? StatisticType.Information : StatisticType.Warning,
+                    "Album Directories Found", albumDirectoriesFound.ToStringPadLeft(DisplayNumberPadLength),
+                    albumDirectoriesFound == library.AlbumCount
+                        ? StatisticColorRegistry.Ok
+                        : StatisticColorRegistry.Warning, message));
 
-                message = songsFound == (library.SongCount ?? 0) ? null : $"Song directory count [{songsFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(DisplayNumberPadLength)}].";
-                result.Add(new MelodeeModels.Statistic(songsFound == library.SongCount ? StatisticType.Information : StatisticType.Error, "Songs Found", songsFound.ToStringPadLeft(DisplayNumberPadLength), songsFound == library.SongCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning, message));
+                message = songsFound == (library.SongCount ?? 0)
+                    ? null
+                    : $"Song directory count [{songsFound.ToStringPadLeft(DisplayNumberPadLength)}] does not match Library song count [{library.SongCount.ToStringPadLeft(DisplayNumberPadLength)}].";
+                result.Add(new MelodeeModels.Statistic(
+                    songsFound == library.SongCount ? StatisticType.Information : StatisticType.Error, "Songs Found",
+                    songsFound.ToStringPadLeft(DisplayNumberPadLength),
+                    songsFound == library.SongCount ? StatisticColorRegistry.Ok : StatisticColorRegistry.Warning,
+                    message));
             }
         }
 
@@ -1102,12 +1240,15 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<string[]>> CleanLibraryAsync(string libraryName, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<string[]>> CleanLibraryAsync(string libraryName,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(libraryName, nameof(libraryName));
 
-        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken).ConfigureAwait(false);
-        var library = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == libraryName.ToNormalizedString());
+        var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
+            .ConfigureAwait(false);
+        var library =
+            libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == libraryName.ToNormalizedString());
         if (library == null)
         {
             return new MelodeeModels.OperationResult<string[]>("Invalid from library Name")
@@ -1128,13 +1269,15 @@ public class LibraryService(
 
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
 
-        var maxNumberOfArtistImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
+        var maxNumberOfArtistImagesAllowed =
+            configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
         if (maxNumberOfArtistImagesAllowed == 0)
         {
             maxNumberOfArtistImagesAllowed = short.MaxValue;
         }
 
-        var maxNumberOfAlbumImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages);
+        var maxNumberOfAlbumImagesAllowed =
+            configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages);
         if (maxNumberOfAlbumImagesAllowed == 0)
         {
             maxNumberOfAlbumImagesAllowed = short.MaxValue;
@@ -1172,17 +1315,25 @@ public class LibraryService(
                                 string? newImageFileName = null;
                                 if (ImageHelper.IsAlbumImage(imageFile) || ImageHelper.IsAlbumSecondaryImage(imageFile))
                                 {
-                                    newImageFileName = parentDir.GetNextFileNameForType(ImageHelper.IsAlbumImage(imageFile) ? PictureIdentifier.Front.ToString() : PictureIdentifier.SecondaryFront.ToString()).Item1;
+                                    newImageFileName = parentDir
+                                        .GetNextFileNameForType(ImageHelper.IsAlbumImage(imageFile)
+                                            ? PictureIdentifier.Front.ToString()
+                                            : PictureIdentifier.SecondaryFront.ToString()).Item1;
                                 }
-                                else if (ImageHelper.IsArtistImage(imageFile) || ImageHelper.IsArtistSecondaryImage(imageFile))
+                                else if (ImageHelper.IsArtistImage(imageFile) ||
+                                         ImageHelper.IsArtistSecondaryImage(imageFile))
                                 {
-                                    newImageFileName = parentDir.GetNextFileNameForType(ImageHelper.IsArtistImage(imageFile) ? PictureIdentifier.Artist.ToString() : PictureIdentifier.ArtistSecondary.ToString()).Item1;
+                                    newImageFileName = parentDir
+                                        .GetNextFileNameForType(ImageHelper.IsArtistImage(imageFile)
+                                            ? PictureIdentifier.Artist.ToString()
+                                            : PictureIdentifier.ArtistSecondary.ToString()).Item1;
                                 }
 
                                 if (newImageFileName != null)
                                 {
                                     File.Move(imageFile.FullName, newImageFileName);
-                                    messages.Add($"Moved image file from [{imageFile.FullName}] to [{newImageFileName}]");
+                                    messages.Add(
+                                        $"Moved image file from [{imageFile.FullName}] to [{newImageFileName}]");
                                 }
                             }
                         }
@@ -1202,7 +1353,8 @@ public class LibraryService(
         var numberDeleted = libraryDirectoryCountBeforeCleaning - libraryDirectoryCountAfterCleaning;
         if (numberDeleted > 0)
         {
-            messages.Add($"Deleted [{numberDeleted.ToStringPadLeft(DisplayNumberPadLength)}] directories from library. Library now has [{libraryDirectoryCountAfterCleaning.ToStringPadLeft(DisplayNumberPadLength)}] directories.");
+            messages.Add(
+                $"Deleted [{numberDeleted.ToStringPadLeft(DisplayNumberPadLength)}] directories from library. Library now has [{libraryDirectoryCountAfterCleaning.ToStringPadLeft(DisplayNumberPadLength)}] directories.");
         }
 
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
@@ -1210,7 +1362,8 @@ public class LibraryService(
         var melodeeFilesDeleted = 0;
         if (library.TypeValue == LibraryType.Storage)
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 foreach (var directory in allDirectoriesInLibrary)
                 {
@@ -1239,7 +1392,8 @@ public class LibraryService(
             }
         }
 
-        foreach (var melodeeJsonFile in Directory.GetFiles(library.Path, $"*{MelodeeModels.Album.JsonFileName}", SearchOption.AllDirectories))
+        foreach (var melodeeJsonFile in Directory.GetFiles(library.Path, $"*{MelodeeModels.Album.JsonFileName}",
+                     SearchOption.AllDirectories))
         {
             File.Delete(melodeeJsonFile);
             melodeeFilesDeleted++;
@@ -1279,19 +1433,22 @@ public class LibraryService(
     //     return result.Distinct().ToArray();
     // }
 
-    public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] ids, CancellationToken cancellationToken = default)
+    public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] ids,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Library library, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Library library,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Null(library, nameof(library));
 
         var validationResult = ValidateModel(library);
         if (!validationResult.IsSuccess)
         {
-            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2
+                ?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = false,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
@@ -1299,7 +1456,8 @@ public class LibraryService(
         }
 
         bool result;
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbDetail = await scopedContext
                 .Libraries
@@ -1343,20 +1501,23 @@ public class LibraryService(
 
 
     /// <summary>
-    /// Look in the dynamic playlist directory and find the json file with the matching Id.
+    ///     Look in the dynamic playlist directory and find the json file with the matching Id.
     /// </summary>
-    public async Task<MelodeeModels.OperationResult<MelodeeModels.DynamicPlaylist?>> GetDynamicPlaylistAsync(Guid apiKey, CancellationToken cancellationToken)
+    public async Task<MelodeeModels.OperationResult<MelodeeModels.DynamicPlaylist?>> GetDynamicPlaylistAsync(
+        Guid apiKey, CancellationToken cancellationToken)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         MelodeeModels.DynamicPlaylist? result = null;
 
         var playlistLibrary = await GetPlaylistLibraryAsync(cancellationToken).ConfigureAwait(false);
-        var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToDirectoryInfo().AllFileInfos("*.json").ToArray();
+        var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToDirectoryInfo()
+            .AllFileInfos("*.json").ToArray();
 
         foreach (var dynamicPlaylistsJsonFile in dynamicPlaylistsJsonFiles)
         {
-            var dp = serializer.Deserialize<MelodeeModels.DynamicPlaylist>(await File.ReadAllBytesAsync(dynamicPlaylistsJsonFile.FullName, cancellationToken).ConfigureAwait(false));
+            var dp = serializer.Deserialize<MelodeeModels.DynamicPlaylist>(await File
+                .ReadAllBytesAsync(dynamicPlaylistsJsonFile.FullName, cancellationToken).ConfigureAwait(false));
             if (dp?.Id == apiKey)
             {
                 result = dp;

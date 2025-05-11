@@ -10,7 +10,8 @@ public record Artists(
 {
     public string ToXml(string? nodeName = null)
     {
-        var result = new StringBuilder($"<artists lastModified=\"{LastModified}\" ignoredArticles=\"{IgnoredArticles}\">");
+        var result =
+            new StringBuilder($"<artists lastModified=\"{LastModified}\" ignoredArticles=\"{IgnoredArticles}\">");
         if (Index.Length > 0)
         {
             foreach (var index in Index)

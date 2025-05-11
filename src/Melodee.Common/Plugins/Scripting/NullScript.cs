@@ -17,7 +17,8 @@ public sealed class NullScript : IScriptPlugin
 
     public bool StopProcessing { get; } = false;
 
-    public Task<OperationResult<bool>> ProcessAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public Task<OperationResult<bool>> ProcessAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        CancellationToken cancellationToken = default)
     {
         return Task.FromResult(new OperationResult<bool> { Data = true });
     }

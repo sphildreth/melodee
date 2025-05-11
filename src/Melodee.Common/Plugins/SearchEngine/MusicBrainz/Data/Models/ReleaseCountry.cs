@@ -7,9 +7,14 @@ public sealed record ReleaseCountry
 {
     public long Id { get; init; }
 
-    public DateTime ReleaseDate => DateTime.Parse($"{DateYearValue.ToStringPadLeft(4)}-{DateMonthValue.ToStringPadLeft(2)}-{DateDayValue.ToStringPadLeft(2)}T00:00:00", CultureInfo.InvariantCulture);
+    public DateTime ReleaseDate =>
+        DateTime.Parse(
+            $"{DateYearValue.ToStringPadLeft(4)}-{DateMonthValue.ToStringPadLeft(2)}-{DateDayValue.ToStringPadLeft(2)}T00:00:00",
+            CultureInfo.InvariantCulture);
 
-    public int DateYearValue => DateYear > DateTime.MinValue.Year && DateYear < DateTime.MaxValue.Year ? DateYear : DateTime.MinValue.Year;
+    public int DateYearValue => DateYear > DateTime.MinValue.Year && DateYear < DateTime.MaxValue.Year
+        ? DateYear
+        : DateTime.MinValue.Year;
 
     public int DateMonthValue => DateMonth is > 0 and < 12 ? DateMonth : 1;
 

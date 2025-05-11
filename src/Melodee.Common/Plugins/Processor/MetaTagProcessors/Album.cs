@@ -12,13 +12,18 @@ namespace Melodee.Common.Plugins.Processor.MetaTagProcessors;
 /// <summary>
 ///     Handle the Album title (Album) and clean any unwanted text (e.g. Featuring, Year, Deluxe, etc.)
 /// </summary>
-public sealed class Album(Dictionary<string, object?> configuration, ISerializer serializer) : MetaTagProcessorBase(configuration, serializer)
+public sealed class Album(Dictionary<string, object?> configuration, ISerializer serializer)
+    : MetaTagProcessorBase(configuration, serializer)
 {
     private static readonly Regex YearInAlbumTitleRegex = new(@"(\[|\()+[0-9]+(\]|\))+", RegexOptions.Compiled);
 
-    public static readonly Regex UnwantedAlbumTitleTextRegex = new(@"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|disk|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex UnwantedAlbumTitleTextRegex = new(
+        @"(\s*(-\s)*((CD[_\-#\s]*[0-9]*)))|(\s[\[\(]*(lp|ep|bonus|Album|re(\-*)issue|re(\-*)master|re(\-*)mastered|anniversary|single|cd|disc|disk|deluxe|digipak|digipack|vinyl|japan(ese)*|asian|remastered|limited|ltd|expanded|(re)*\-*edition|web|\(320\)|\(*compilation\)*)+(]|\)*))",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static readonly Regex UnwantedRemasterWithYearRegex = new(@"\s[\[\(]*(re(\-*)issue(ed*)|re(\-*)master(ed*)(\s*[0-9]*)+(]|\)*))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    public static readonly Regex UnwantedRemasterWithYearRegex =
+        new(@"\s[\[\(]*(re(\-*)issue(ed*)|re(\-*)master(ed*)(\s*[0-9]*)+(]|\)*))",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public override string Id => "B7288065-E229-41A6-9A2C-E14F5F6B0FE7";
 
@@ -31,7 +36,8 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
         return metaTagIdentifier == MetaTagIdentifier.Album;
     }
 
-    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
+    public override OperationResult<IEnumerable<MetaTag<object?>>> ProcessMetaTag(FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemFileInfo, MetaTag<object?> metaTag, in IEnumerable<MetaTag<object?>> metaTags)
     {
         var tagValue = metaTag.Value;
         if (tagValue == null)
@@ -82,7 +88,8 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
             var yearInTextMatches = YearInAlbumTitleRegex.Match(albumTitle);
             if (yearInTextMatches.Length > 0)
             {
-                newAlbumTitle = YearInAlbumTitleRegex.Replace(newAlbumTitle ?? string.Empty, string.Empty).CleanString();
+                newAlbumTitle = YearInAlbumTitleRegex.Replace(newAlbumTitle ?? string.Empty, string.Empty)
+                    .CleanString();
             }
 
             var albumArtistTag = metaTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist);
@@ -94,7 +101,8 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
                     !string.Equals(newAlbumTitle, artistValue, StringComparison.OrdinalIgnoreCase) &&
                     (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
-                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false).ToTitleCase()?.CleanString();
+                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)
+                        .ToTitleCase()?.CleanString();
                 }
             }
 
@@ -102,18 +110,24 @@ public sealed class Album(Dictionary<string, object?> configuration, ISerializer
             if (artistTag?.Value != null)
             {
                 var artistValue = artistTag.Value as string ?? string.Empty;
-                if (!string.IsNullOrWhiteSpace(artistValue) && (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
+                if (!string.IsNullOrWhiteSpace(artistValue) &&
+                    (newAlbumTitle?.Contains(artistValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
-                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false).ToTitleCase()?.CleanString();
+                    newAlbumTitle = newAlbumTitle.Replace(artistValue, string.Empty).ToAlphanumericName(false, false)
+                        .ToTitleCase()?.CleanString();
                 }
             }
 
             if (newAlbumTitle != null)
             {
-                var albumTitleReplacements = MelodeeConfiguration.FromSerializedJsonArray(Configuration[SettingRegistry.ProcessingAlbumTitleRemovals], Serializer);
+                var albumTitleReplacements =
+                    MelodeeConfiguration.FromSerializedJsonArray(
+                        Configuration[SettingRegistry.ProcessingAlbumTitleRemovals], Serializer);
                 if (albumTitleReplacements.Any())
                 {
-                    newAlbumTitle = albumTitleReplacements.Aggregate(newAlbumTitle, (current, replacement) => current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
+                    newAlbumTitle = albumTitleReplacements.Aggregate(newAlbumTitle,
+                        (current, replacement) =>
+                            current.Replace(replacement, string.Empty, StringComparison.OrdinalIgnoreCase)).Trim();
                 }
             }
         }

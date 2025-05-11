@@ -27,9 +27,11 @@ public class ScrobbleService(
 
     private IScrobbler[] _scrobblers = [];
 
-    public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(IMelodeeConfiguration? configuration = null,
+        CancellationToken cancellationToken = default)
     {
-        _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        _configuration = configuration ??
+                         await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
 
         _scrobblers =
         [
@@ -62,10 +64,12 @@ public class ScrobbleService(
         return nowPlayingRepository.GetNowPlayingAsync(cancellationToken);
     }
 
-    public async Task<OperationResult<bool>> NowPlaying(UserInfo user, Guid id, double? time, string playerName, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> NowPlaying(UserInfo user, Guid id, double? time, string playerName,
+        CancellationToken cancellationToken = default)
     {
         var result = true;
-        var databaseSongScrobbleInfo = await DatabaseSongScrobbleInfoForSongApiKey(id, cancellationToken).ConfigureAwait(false);
+        var databaseSongScrobbleInfo =
+            await DatabaseSongScrobbleInfoForSongApiKey(id, cancellationToken).ConfigureAwait(false);
         if (databaseSongScrobbleInfo != null)
         {
             var scrobble = new ScrobbleInfo
@@ -90,7 +94,8 @@ public class ScrobbleService(
             };
             foreach (var scrobbler in _scrobblers.OrderBy(x => x.SortOrder).Where(x => x.IsEnabled))
             {
-                var nowPlayingResult = await scrobbler.NowPlaying(user, scrobble, cancellationToken).ConfigureAwait(false);
+                var nowPlayingResult =
+                    await scrobbler.NowPlaying(user, scrobble, cancellationToken).ConfigureAwait(false);
                 result &= nowPlayingResult.IsSuccess;
             }
         }
@@ -101,7 +106,8 @@ public class ScrobbleService(
         };
     }
 
-    public async Task<OperationResult<bool>> Scrobble(UserInfo user, Guid songId, double? time, bool isRandomizedScrobble, string playerName, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<bool>> Scrobble(UserInfo user, Guid songId, double? time,
+        bool isRandomizedScrobble, string playerName, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
 
@@ -110,7 +116,8 @@ public class ScrobbleService(
         var songIds = await DatabaseSongIdsInfoForSongApiKey(songId, cancellationToken).ConfigureAwait(false);
         if (songIds != null)
         {
-            var databaseSongScrobbleInfo = await DatabaseSongScrobbleInfoForSongApiKey(songId, cancellationToken).ConfigureAwait(false);
+            var databaseSongScrobbleInfo =
+                await DatabaseSongScrobbleInfoForSongApiKey(songId, cancellationToken).ConfigureAwait(false);
             if (databaseSongScrobbleInfo != null)
             {
                 var scrobble = new ScrobbleInfo
@@ -135,7 +142,8 @@ public class ScrobbleService(
                 };
                 foreach (var scrobbler in _scrobblers.OrderBy(x => x.SortOrder).Where(x => x.IsEnabled))
                 {
-                    var scrobbleResult = await scrobbler.Scrobble(user, scrobble, cancellationToken).ConfigureAwait(false);
+                    var scrobbleResult =
+                        await scrobbler.Scrobble(user, scrobble, cancellationToken).ConfigureAwait(false);
                     result &= scrobbleResult.IsSuccess;
                 }
 

@@ -186,11 +186,14 @@ public static partial class ImageHelper
             var numberInName = SafeParser.ToNumber<int>(nameDigits);
 
             var isNormalizedNameOnlyDigits = normalizedName == nameDigits;
-            if (!isNormalizedNameOnlyDigits && AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
+            if (!isNormalizedNameOnlyDigits &&
+                AlbumSecondaryImageFileNames.Any(artistImage => normalizedName.Contains(artistImage)))
             {
                 return false;
             }
-            var nt = NormalizedImageTypesFromFilename(fileInfo.Name.RemoveNumbers()?.RemoveStartsWith(".") ?? fileInfo.Name);
+
+            var nt = NormalizedImageTypesFromFilename(fileInfo.Name.RemoveNumbers()?.RemoveStartsWith(".") ??
+                                                      fileInfo.Name);
             var ntMatches = AlbumImageFileNames.Count(x => nt?.Contains(x) ?? false);
 
             if (isNormalizedNameOnlyDigits || ntMatches > 0)

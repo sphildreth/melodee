@@ -51,11 +51,13 @@ public sealed class UserService(
     private const string CacheKeyDetailByUsernameTemplate = "urn:user:username:{0}";
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
 
-    public async Task<MelodeeModels.PagedResult<User>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<User>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
     {
         int usersCount;
         User[] users = [];
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -66,10 +68,12 @@ public sealed class UserService(
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Users\"");
-                var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                var listSql =
+                    $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 if (dbConn is SqliteConnection)
                 {
-                    listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                    listSql =
+                        $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
                 }
 
                 users = (await dbConn
@@ -87,7 +91,8 @@ public sealed class UserService(
     }
 
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] userIds, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] userIds,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(userIds, nameof(userIds));
 
@@ -108,7 +113,8 @@ public sealed class UserService(
 
         var userImageLibrary = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             foreach (var userId in userIds)
             {
@@ -135,24 +141,30 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(string emailAddress, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(string emailAddress,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
 
         var emailAddressNormalized = emailAddress.ToNormalizedString() ?? emailAddress;
-        var id = await CacheManager.GetAsync(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddressNormalized), async () =>
-        {
-            using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] GetByEmailAddressAsync [{EmailAddress}]", nameof(UserService), emailAddress))
+        var id = await CacheManager.GetAsync(
+            CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddressNormalized), async () =>
             {
-                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] GetByEmailAddressAsync [{EmailAddress}]",
+                           nameof(UserService), emailAddress))
                 {
-                    var dbConn = scopedContext.Database.GetDbConnection();
-                    return await dbConn
-                        .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"EmailNormalized\" = @Email;", new { Email = emailAddressNormalized })
-                        .ConfigureAwait(false);
+                    await using (var scopedContext =
+                                 await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        var dbConn = scopedContext.Database.GetDbConnection();
+                        return await dbConn
+                            .ExecuteScalarAsync<int?>(
+                                "SELECT \"Id\" FROM \"Users\" WHERE \"EmailNormalized\" = @Email;",
+                                new { Email = emailAddressNormalized })
+                            .ConfigureAwait(false);
+                    }
                 }
-            }
-        }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
         return id == null
             ? new MelodeeModels.OperationResult<User?>
             {
@@ -161,23 +173,29 @@ public sealed class UserService(
             : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetByUsernameAsync(string username,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(username, nameof(username));
         var usernameNormalized = username.ToNormalizedString() ?? username;
-        var id = await CacheManager.GetAsync(CacheKeyDetailByUsernameTemplate.FormatSmart(usernameNormalized), async () =>
-        {
-            using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] GetByUsernameAsync [{Username}]", nameof(UserService), username))
+        var id = await CacheManager.GetAsync(CacheKeyDetailByUsernameTemplate.FormatSmart(usernameNormalized),
+            async () =>
             {
-                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] GetByUsernameAsync [{Username}]",
+                           nameof(UserService), username))
                 {
-                    var dbConn = scopedContext.Database.GetDbConnection();
-                    return await dbConn
-                        .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"UserNameNormalized\" = @Username;", new { Username = usernameNormalized })
-                        .ConfigureAwait(false);
+                    await using (var scopedContext =
+                                 await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        var dbConn = scopedContext.Database.GetDbConnection();
+                        return await dbConn
+                            .ExecuteScalarAsync<int?>(
+                                "SELECT \"Id\" FROM \"Users\" WHERE \"UserNameNormalized\" = @Username;",
+                                new { Username = usernameNormalized })
+                            .ConfigureAwait(false);
+                    }
                 }
-            }
-        }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
         return id == null
             ? new MelodeeModels.OperationResult<User?>
             {
@@ -192,17 +210,20 @@ public sealed class UserService(
         return user.Data?.IsAdmin ?? false;
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbConn = scopedContext.Database.GetDbConnection();
                 return await dbConn
-                    .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"ApiKey\" = @ApiKey;", new { ApiKey = apiKey })
+                    .ExecuteScalarAsync<int?>("SELECT \"Id\" FROM \"Users\" WHERE \"ApiKey\" = @ApiKey;",
+                        new { ApiKey = apiKey })
                     .ConfigureAwait(false);
             }
         }, cancellationToken).ConfigureAwait(false);
@@ -214,7 +235,8 @@ public sealed class UserService(
             : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetAsync(int id,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
 
@@ -222,7 +244,8 @@ public sealed class UserService(
         {
             using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] GetAsync [{id}]", nameof(UserService), id))
             {
-                await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+                await using (var scopedContext =
+                             await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
                 {
                     var user = await scopedContext
                         .Users
@@ -238,7 +261,8 @@ public sealed class UserService(
                             switch (pin.PinTypeValue)
                             {
                                 case UserPinType.Artist:
-                                    var artistResult = await artistService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
+                                    var artistResult = await artistService.GetAsync(pin.PinId, cancellationToken)
+                                        .ConfigureAwait(false);
                                     if (artistResult is { IsSuccess: true, Data: not null })
                                     {
                                         pin.Icon = "artist";
@@ -249,7 +273,8 @@ public sealed class UserService(
 
                                     break;
                                 case UserPinType.Album:
-                                    var albumResult = await albumService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
+                                    var albumResult = await albumService.GetAsync(pin.PinId, cancellationToken)
+                                        .ConfigureAwait(false);
                                     if (albumResult is { IsSuccess: true, Data: not null })
                                     {
                                         pin.Icon = "album";
@@ -260,7 +285,8 @@ public sealed class UserService(
 
                                     break;
                                 case UserPinType.Song:
-                                    var songResult = await songService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
+                                    var songResult = await songService.GetAsync(pin.PinId, cancellationToken)
+                                        .ConfigureAwait(false);
                                     if (songResult is { IsSuccess: true, Data: not null })
                                     {
                                         pin.Icon = "music_note";
@@ -271,7 +297,8 @@ public sealed class UserService(
 
                                     break;
                                 case UserPinType.Playlist:
-                                    var playlistResult = await playlistService.GetAsync(pin.PinId, cancellationToken).ConfigureAwait(false);
+                                    var playlistResult = await playlistService.GetAsync(pin.PinId, cancellationToken)
+                                        .ConfigureAwait(false);
                                     if (playlistResult is { IsSuccess: true, Data: not null })
                                     {
                                         pin.Icon = "playlist_play";
@@ -297,7 +324,8 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> LoginUserByUsernameAsync(string userName, string? password, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> LoginUserByUsernameAsync(string userName, string? password,
+        CancellationToken cancellationToken = default)
     {
         var user = await GetByUsernameAsync(userName, cancellationToken).ConfigureAwait(false);
         if (!user.IsSuccess || user.Data == null)
@@ -312,7 +340,8 @@ public sealed class UserService(
         return await LoginUserAsync(user.Data.Email, password, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> LoginUserAsync(string emailAddress, string? password, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> LoginUserAsync(string emailAddress, string? password,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
 
@@ -366,10 +395,11 @@ public sealed class UserService(
         return user;
     }
 
-    public async Task<MelodeeModels.OperationResult<int>> ImportUserFavoriteSongs(UserFavoriteSongConfiguration configuration, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<int>> ImportUserFavoriteSongs(
+        UserFavoriteSongConfiguration configuration, CancellationToken cancellationToken = default)
     {
         Guard.Against.Null(configuration, nameof(configuration));
-        
+
         var user = await GetByApiKeyAsync(configuration.UserApiKey, cancellationToken).ConfigureAwait(false);
         if (!user.IsSuccess || user.Data == null)
         {
@@ -388,7 +418,7 @@ public sealed class UserService(
                 Type = MelodeeModels.OperationResponseType.Unauthorized
             };
         }
-        
+
         var recordsCreated = 0;
         var recordsUpdated = 0;
         var recordsFound = 0;
@@ -404,16 +434,17 @@ public sealed class UserService(
             };
         }
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var userSongs = await scopedContext.UserSongs.Where(x => x.UserId == user.Data.Id)
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
-            
+
             var newUserSongs = new List<UserSong>();
-            
-            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);            
-            
+
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+
             using (var reader = new StreamReader(csvFilenfo.OpenRead(), Encoding.UTF8))
             {
                 using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
@@ -433,12 +464,14 @@ public sealed class UserService(
                             var albumName = row[configuration.AlbumColumn] as string;
                             var songName = row[configuration.SongColumn] as string;
 
-                            if (artistName.Nullify() != null && albumName.Nullify() != null && songName.Nullify() != null)
+                            if (artistName.Nullify() != null && albumName.Nullify() != null &&
+                                songName.Nullify() != null)
                             {
                                 var artist = artistName.ToNormalizedString() ?? artistName!;
                                 var album = albumName.ToNormalizedString() ?? albumName!;
                                 var song = songName.ToNormalizedString() ?? songName!;
-                                var artistResult = await artistService.GetByNameNormalized(artist, cancellationToken: cancellationToken).ConfigureAwait(false);
+                                var artistResult = await artistService.GetByNameNormalized(artist, cancellationToken)
+                                    .ConfigureAwait(false);
                                 if (!artistResult.IsSuccess)
                                 {
                                     Log.Warning(
@@ -450,8 +483,11 @@ public sealed class UserService(
                                     continue;
                                 }
 
-                                var artistAlbumListResult = await albumService.ListForArtistApiKeyAsync(new MelodeeModels.PagedRequest { PageSize = 1000 }, artistResult.Data!.ApiKey, cancellationToken: cancellationToken).ConfigureAwait(false);
-                                var artistAlbum = artistAlbumListResult.Data.FirstOrDefault(x => x.NameNormalized == album);
+                                var artistAlbumListResult = await albumService
+                                    .ListForArtistApiKeyAsync(new MelodeeModels.PagedRequest { PageSize = 1000 },
+                                        artistResult.Data!.ApiKey, cancellationToken).ConfigureAwait(false);
+                                var artistAlbum =
+                                    artistAlbumListResult.Data.FirstOrDefault(x => x.NameNormalized == album);
                                 if (artistAlbum == null)
                                 {
                                     Log.Warning(
@@ -462,19 +498,27 @@ public sealed class UserService(
                                         song);
                                     continue;
                                 }
-                                
-                                var dbSongInfo = await DatabaseSongInfosForAlbumApiKey(artistAlbum.ApiKey, user.Data.Id, cancellationToken).ConfigureAwait(false);
+
+                                var dbSongInfo =
+                                    await DatabaseSongInfosForAlbumApiKey(artistAlbum.ApiKey, user.Data.Id,
+                                        cancellationToken).ConfigureAwait(false);
                                 var albumSong = dbSongInfo?.FirstOrDefault(x => x.Name.ToNormalizedString() == song);
                                 if (albumSong == null)
                                 {
                                     var dbSong = await scopedContext.Songs
                                         .Include(x => x.Album)
-                                        .FirstOrDefaultAsync(x => x.TitleNormalized == song && x.Album.ArtistId == artistResult.Data.Id, cancellationToken)
+                                        .FirstOrDefaultAsync(
+                                            x => x.TitleNormalized == song && x.Album.ArtistId == artistResult.Data.Id,
+                                            cancellationToken)
                                         .ConfigureAwait(false);
                                     if (dbSong != null)
                                     {
-                                        albumSong = (await DatabaseSongInfosForAlbumApiKey(dbSong.Album.ApiKey, user.Data.Id, cancellationToken).ConfigureAwait(false))?.FirstOrDefault(x => x.Name.ToNormalizedString() == song);
+                                        albumSong =
+                                            (await DatabaseSongInfosForAlbumApiKey(dbSong.Album.ApiKey, user.Data.Id,
+                                                cancellationToken).ConfigureAwait(false))
+                                            ?.FirstOrDefault(x => x.Name.ToNormalizedString() == song);
                                     }
+
                                     if (albumSong == null)
                                     {
                                         Log.Warning(
@@ -486,6 +530,7 @@ public sealed class UserService(
                                         continue;
                                     }
                                 }
+
                                 var userSong = userSongs.FirstOrDefault(x => x.SongId == albumSong.Id);
                                 if (userSong == null)
                                 {
@@ -505,9 +550,11 @@ public sealed class UserService(
                                         recordsFound++;
                                         continue;
                                     }
+
                                     userSong.LastUpdatedAt = now;
                                     recordsUpdated++;
                                 }
+
                                 userSong.IsStarred = true;
                                 userSong.Rating = userSong.Rating > 0 ? userSong.Rating : 1;
                                 userSongs.Add(userSong);
@@ -523,14 +570,15 @@ public sealed class UserService(
                 {
                     if (newUserSongs.Count > 0)
                     {
-                        await scopedContext.UserSongs.AddRangeAsync(newUserSongs, cancellationToken).ConfigureAwait(false);
+                        await scopedContext.UserSongs.AddRangeAsync(newUserSongs, cancellationToken)
+                            .ConfigureAwait(false);
                     }
 
                     await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 }
             }
         }
-        
+
         Log.Information(
             "[{ServiceName}] ImportUserFavoriteSongs {Pretend} [{UserApiKey}] Songs From Csv [{CsvSongCount}] found {RecordsFound} created {RecordsCreated} records, updated {RecordsUpdated} records, missing [{MissingCount}]",
             nameof(UserService),
@@ -567,7 +615,7 @@ public sealed class UserService(
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
-        
+
         // Ensure no user exists with given username
         var dbUserByUserName = await GetByUsernameAsync(username, cancellationToken).ConfigureAwait(false);
         if (dbUserByUserName.IsSuccess)
@@ -577,9 +625,10 @@ public sealed class UserService(
                 Data = dbUserByUserName.Data,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
-        }        
+        }
 
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
 
@@ -602,7 +651,9 @@ public sealed class UserService(
                 Email = emailAddress,
                 EmailNormalized = emailNormalized,
                 PublicKey = usersPublicKey,
-                PasswordEncrypted = EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!, plainTextPassword, usersPublicKey),
+                PasswordEncrypted =
+                    EncryptionHelper.Encrypt(configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)!,
+                        plainTextPassword, usersPublicKey),
                 CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
             };
             scopedContext.Users.Add(newUser);
@@ -639,7 +690,8 @@ public sealed class UserService(
         }
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(User currentUser, User detailToUpdate, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(User currentUser, User detailToUpdate,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, detailToUpdate.Id, nameof(detailToUpdate));
 
@@ -647,15 +699,17 @@ public sealed class UserService(
         var validationResult = ValidateModel(detailToUpdate);
         if (!validationResult.IsSuccess)
         {
-            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            return new MelodeeModels.OperationResult<bool>(validationResult.Data.Item2
+                ?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
             {
                 Data = false,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
-        
+
         // Ensure no user exists with given email address
-        var dbUserByEmailAddress = await GetByEmailAddressAsync(currentUser.Email, cancellationToken).ConfigureAwait(false);
+        var dbUserByEmailAddress =
+            await GetByEmailAddressAsync(currentUser.Email, cancellationToken).ConfigureAwait(false);
         if (dbUserByEmailAddress.IsSuccess && dbUserByEmailAddress.Data!.Id != detailToUpdate.Id)
         {
             return new MelodeeModels.OperationResult<bool>(["User exists with Email address."])
@@ -663,7 +717,7 @@ public sealed class UserService(
                 Data = false,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
-        }        
+        }
 
         // Ensure no user exists with given username
         var dbUserByUserName = await GetByUsernameAsync(currentUser.UserName, cancellationToken).ConfigureAwait(false);
@@ -674,9 +728,10 @@ public sealed class UserService(
                 Data = false,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
-        }         
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        }
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             // Load the detail by DetailToUpdate.Id
             var dbDetail = await scopedContext
@@ -692,11 +747,12 @@ public sealed class UserService(
                     Type = MelodeeModels.OperationResponseType.NotFound
                 };
             }
-            
+
             // Update values and save to db
             dbDetail.Description = detailToUpdate.Description;
             dbDetail.Email = detailToUpdate.Email;
-            dbDetail.EmailNormalized = detailToUpdate.Email.ToNormalizedString() ?? detailToUpdate.Email.ToUpperInvariant();
+            dbDetail.EmailNormalized =
+                detailToUpdate.Email.ToNormalizedString() ?? detailToUpdate.Email.ToUpperInvariant();
             dbDetail.HasCommentRole = detailToUpdate.HasCommentRole;
             dbDetail.HasCoverArtRole = detailToUpdate.HasCoverArtRole;
             dbDetail.HasDownloadRole = detailToUpdate.HasDownloadRole;
@@ -712,9 +768,13 @@ public sealed class UserService(
             dbDetail.IsLocked = detailToUpdate.IsLocked;
             dbDetail.IsScrobblingEnabled = detailToUpdate.IsScrobblingEnabled;
             // Take whatever is newer
-            dbDetail.LastActivityAt = dbDetail.LastActivityAt > detailToUpdate.LastActivityAt ? dbDetail.LastActivityAt : detailToUpdate.LastActivityAt;
+            dbDetail.LastActivityAt = dbDetail.LastActivityAt > detailToUpdate.LastActivityAt
+                ? dbDetail.LastActivityAt
+                : detailToUpdate.LastActivityAt;
             // Take whatever is newer
-            dbDetail.LastLoginAt = dbDetail.LastLoginAt > detailToUpdate.LastLoginAt ? dbDetail.LastLoginAt : detailToUpdate.LastLoginAt;
+            dbDetail.LastLoginAt = dbDetail.LastLoginAt > detailToUpdate.LastLoginAt
+                ? dbDetail.LastLoginAt
+                : detailToUpdate.LastLoginAt;
             dbDetail.Notes = detailToUpdate.Notes;
             dbDetail.SortOrder = detailToUpdate.SortOrder;
             dbDetail.Tags = detailToUpdate.Tags;
@@ -738,9 +798,11 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> UpdateLastLogin(UserLoginEvent eventData, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateLastLogin(UserLoginEvent eventData,
+        CancellationToken cancellationToken = default)
     {
-        using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}]: Data [{EventData}]", nameof(UserService), eventData.ToString()))
+        using (Operation.At(LogEventLevel.Debug)
+                   .Time("[{ServiceName}]: Data [{EventData}]", nameof(UserService), eventData.ToString()))
         {
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken))
@@ -776,7 +838,8 @@ public sealed class UserService(
     {
         if (emailAddress != null)
         {
-            CacheManager.Remove(CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddress.ToNormalizedString() ?? emailAddress));
+            CacheManager.Remove(
+                CacheKeyDetailByEmailAddressKeyTemplate.FormatSmart(emailAddress.ToNormalizedString() ?? emailAddress));
         }
 
         if (apiKey != null)
@@ -795,15 +858,18 @@ public sealed class UserService(
         }
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleGenreHatedAsync(int userId, string genre, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleGenreHatedAsync(int userId, string genre,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken).ConfigureAwait(false);
+            var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
+                .ConfigureAwait(false);
             if (user != null)
             {
                 var normalizedGenre = genre.ToNormalizedString() ?? genre;
@@ -830,18 +896,22 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleAristHatedAsync(int userId, Guid artistApiKey, bool isHated, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleAristHatedAsync(int userId, Guid artistApiKey,
+        bool isHated, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var artist = await artistService.GetByApiKeyAsync(artistApiKey, cancellationToken).ConfigureAwait(false);
             if (artist.Data != null)
             {
-                var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userArtist = await scopedContext.UserArtists
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userArtist == null)
                 {
                     userArtist = new UserArtist
@@ -872,19 +942,23 @@ public sealed class UserService(
             Data = result
         };
     }
-    
-    public async Task<MelodeeModels.OperationResult<bool>> SetAlbumRatingAsync(int userId, int albumId, int rating, CancellationToken cancellationToken = default)
+
+    public async Task<MelodeeModels.OperationResult<bool>> SetAlbumRatingAsync(int userId, int albumId, int rating,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var album = await albumService.GetAsync(albumId, cancellationToken).ConfigureAwait(false);
             if (album.Data != null)
             {
-                var userAlbum = await scopedContext.UserAlbums.FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == albumId, cancellationToken).ConfigureAwait(false);
+                var userAlbum = await scopedContext.UserAlbums
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == albumId, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userAlbum == null)
                 {
                     userAlbum = new UserAlbum
@@ -895,67 +969,21 @@ public sealed class UserService(
                     };
                     scopedContext.UserAlbums.Add(userAlbum);
                 }
+
                 userAlbum.Rating = rating;
                 userAlbum.LastUpdatedAt = now;
                 result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
-                
+
                 var sql = """
                           update "Albums" a set 
                             "LastUpdatedAt" = now(), 
                             "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserAlbums" where "AlbumId" = a."Id")
                           where a."Id" = @dbId;
                           """;
-                var dbConn = scopedContext.Database.GetDbConnection();                
+                var dbConn = scopedContext.Database.GetDbConnection();
                 await dbConn.ExecuteAsync(sql, new { dbId = userAlbum.AlbumId }).ConfigureAwait(false);
                 await albumService.ClearCacheAsync(userAlbum.AlbumId, cancellationToken).ConfigureAwait(false);
-                
-                var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
-                ClearCache(user.Data!);
-            }
-        }
 
-        return new MelodeeModels.OperationResult<bool>
-        {
-            Data = result
-        };
-    }    
-
-    public async Task<MelodeeModels.OperationResult<bool>> SetSongRatingAsync(int userId, int songId, int rating, CancellationToken cancellationToken = default)
-    {
-        Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
-        var result = false;
-        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            var song = await songService.GetAsync(songId, cancellationToken).ConfigureAwait(false);
-            if (song.Data != null)
-            {
-                var userSong = await scopedContext.UserSongs.FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == songId, cancellationToken).ConfigureAwait(false);
-                if (userSong == null)
-                {
-                    userSong = new UserSong
-                    {
-                        UserId = userId,
-                        SongId = songId,
-                        CreatedAt = now
-                    };
-                    scopedContext.UserSongs.Add(userSong);
-                }
-                userSong.Rating = rating;
-                userSong.LastUpdatedAt = now;
-                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
-                
-                var sql = """
-                          update "Songs" s set 
-                            "LastUpdatedAt" = now(), 
-                            "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserSongs" where "SongId" = s."Id")
-                          where s."Id" = @dbId;
-                          """;
-                var dbConn = scopedContext.Database.GetDbConnection();
-                await dbConn.ExecuteAsync(sql, new { dbId = userSong.SongId }).ConfigureAwait(false);
-                await songService.ClearCacheAsync(userSong.SongId, cancellationToken).ConfigureAwait(false);                
-                
                 var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
                 ClearCache(user.Data!);
             }
@@ -966,20 +994,76 @@ public sealed class UserService(
             Data = result
         };
     }
-    
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleAristStarAsync(int userId, Guid artistApiKey, bool isStarred, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> SetSongRatingAsync(int userId, int songId, int rating,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var song = await songService.GetAsync(songId, cancellationToken).ConfigureAwait(false);
+            if (song.Data != null)
+            {
+                var userSong = await scopedContext.UserSongs
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == songId, cancellationToken)
+                    .ConfigureAwait(false);
+                if (userSong == null)
+                {
+                    userSong = new UserSong
+                    {
+                        UserId = userId,
+                        SongId = songId,
+                        CreatedAt = now
+                    };
+                    scopedContext.UserSongs.Add(userSong);
+                }
+
+                userSong.Rating = rating;
+                userSong.LastUpdatedAt = now;
+                result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+
+                var sql = """
+                          update "Songs" s set 
+                            "LastUpdatedAt" = now(), 
+                            "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserSongs" where "SongId" = s."Id")
+                          where s."Id" = @dbId;
+                          """;
+                var dbConn = scopedContext.Database.GetDbConnection();
+                await dbConn.ExecuteAsync(sql, new { dbId = userSong.SongId }).ConfigureAwait(false);
+                await songService.ClearCacheAsync(userSong.SongId, cancellationToken).ConfigureAwait(false);
+
+                var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
+                ClearCache(user.Data!);
+            }
+        }
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = result
+        };
+    }
+
+
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleAristStarAsync(int userId, Guid artistApiKey,
+        bool isStarred, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, userId, nameof(userId));
+
+        var result = false;
+        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var artist = await artistService.GetByApiKeyAsync(artistApiKey, cancellationToken).ConfigureAwait(false);
             if (artist.Data != null)
             {
-                var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userArtist = await scopedContext.UserArtists
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userArtist == null)
                 {
                     userArtist = new UserArtist
@@ -1011,18 +1095,22 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleArtistHatedAsync(int userId, Guid artistApiKey, bool isHated, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleArtistHatedAsync(int userId, Guid artistApiKey,
+        bool isHated, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var artist = await artistService.GetByApiKeyAsync(artistApiKey, cancellationToken).ConfigureAwait(false);
             if (artist.Data != null)
             {
-                var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userArtist = await scopedContext.UserArtists
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userArtist == null)
                 {
                     userArtist = new UserArtist
@@ -1054,18 +1142,22 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleAlbumHatedAsync(int userId, Guid albumApiKey, bool isHated, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleAlbumHatedAsync(int userId, Guid albumApiKey,
+        bool isHated, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var album = await albumService.GetByApiKeyAsync(albumApiKey, cancellationToken).ConfigureAwait(false);
             if (album.Data != null)
             {
-                var userAlbum = await scopedContext.UserAlbums.FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == album.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userAlbum = await scopedContext.UserAlbums
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == album.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userAlbum == null)
                 {
                     userAlbum = new UserAlbum
@@ -1098,18 +1190,22 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleArtistStarAsync(int userId, Guid albumApiKey, bool isStarred, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleArtistStarAsync(int userId, Guid albumApiKey,
+        bool isStarred, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var artist = await artistService.GetByApiKeyAsync(albumApiKey, cancellationToken).ConfigureAwait(false);
             if (artist.Data != null)
             {
-                var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userArtist = await scopedContext.UserArtists
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userArtist == null)
                 {
                     userArtist = new UserArtist
@@ -1142,18 +1238,22 @@ public sealed class UserService(
     }
 
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleAlbumStarAsync(int userId, Guid albumApiKey, bool isStarred, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleAlbumStarAsync(int userId, Guid albumApiKey,
+        bool isStarred, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var album = await albumService.GetByApiKeyAsync(albumApiKey, cancellationToken).ConfigureAwait(false);
             if (album.Data != null)
             {
-                var userAlbum = await scopedContext.UserAlbums.FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == album.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userAlbum = await scopedContext.UserAlbums
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.AlbumId == album.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userAlbum == null)
                 {
                     userAlbum = new UserAlbum
@@ -1186,18 +1286,22 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleSongHatedAsync(int userId, Guid songApiKey, bool isHated, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleSongHatedAsync(int userId, Guid songApiKey,
+        bool isHated, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var song = await songService.GetByApiKeyAsync(songApiKey, cancellationToken).ConfigureAwait(false);
             if (song.Data != null)
             {
-                var userSong = await scopedContext.UserSongs.FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == song.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userSong = await scopedContext.UserSongs
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == song.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userSong == null)
                 {
                     userSong = new UserSong
@@ -1230,13 +1334,15 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> TogglePinnedAsync(int userId, UserPinType pinType, int pinId, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> TogglePinnedAsync(int userId, UserPinType pinType, int pinId,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         bool result;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var userPinTypeValue = (int)pinType;
             var userPin = await scopedContext
@@ -1272,18 +1378,22 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleSongStarAsync(int userId, Guid songApiKey, bool isStarred, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleSongStarAsync(int userId, Guid songApiKey,
+        bool isStarred, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var song = await songService.GetByApiKeyAsync(songApiKey, cancellationToken).ConfigureAwait(false);
             if (song.Data != null)
             {
-                var userSong = await scopedContext.UserSongs.FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == song.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userSong = await scopedContext.UserSongs
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.SongId == song.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userSong == null)
                 {
                     userSong = new UserSong
@@ -1316,11 +1426,13 @@ public sealed class UserService(
         };
     }
 
-    public async Task<UserArtist?> UserArtistAsync(int userId, Guid artistApiKey, CancellationToken cancellationToken = default)
+    public async Task<UserArtist?> UserArtistAsync(int userId, Guid artistApiKey,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select ua.*
@@ -1335,11 +1447,13 @@ public sealed class UserService(
         }
     }
 
-    public async Task<UserAlbum?> UserAlbumAsync(int userId, Guid albumApiKey, CancellationToken cancellationToken = default)
+    public async Task<UserAlbum?> UserAlbumAsync(int userId, Guid albumApiKey,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select ua.*
@@ -1354,11 +1468,13 @@ public sealed class UserService(
         }
     }
 
-    public async Task<UserSong?> UserSongAsync(int userId, Guid songApiKey, CancellationToken cancellationToken = default)
+    public async Task<UserSong?> UserSongAsync(int userId, Guid songApiKey,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select us.*
@@ -1373,11 +1489,13 @@ public sealed class UserService(
         }
     }
 
-    public async Task<UserSong[]?> UserSongsForAlbumAsync(int userId, Guid albumApiKey, CancellationToken cancellationToken = default)
+    public async Task<UserSong[]?> UserSongsForAlbumAsync(int userId, Guid albumApiKey,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select us.*
@@ -1394,12 +1512,14 @@ public sealed class UserService(
                 .ToArray();
         }
     }
-    
-    public async Task<UserSong[]?> UserSongsForPlaylistAsync(int userId, Guid playlistApiKey, CancellationToken cancellationToken = default)
+
+    public async Task<UserSong[]?> UserSongsForPlaylistAsync(int userId, Guid playlistApiKey,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select us.*
@@ -1415,16 +1535,17 @@ public sealed class UserService(
                     .ConfigureAwait(false))
                 .ToArray();
         }
-    }    
+    }
 
     /// <summary>
-    /// Return all shares that user created.
+    ///     Return all shares that user created.
     /// </summary>
     public async Task<Share[]?> UserSharesAsync(int userId, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select s."Id"
@@ -1432,7 +1553,7 @@ public sealed class UserService(
                       where s."UserId" = @userId
                       """;
             var dbConn = scopedContext.Database.GetDbConnection();
-            var shareIds =  (await dbConn.QueryAsync<int>(sql, new { userId })
+            var shareIds = (await dbConn.QueryAsync<int>(sql, new { userId })
                     .ConfigureAwait(false))
                 .ToArray();
 
@@ -1446,8 +1567,8 @@ public sealed class UserService(
                 .Where(x => shareIds.Contains(x.Id))
                 .ToArrayAsync(cancellationToken);
         }
-    }    
-    
+    }
+
     /// <summary>Generate a salt.</summary>
     /// <param name="saltLength">Length of the salt to generate</param>
     /// <param name="logRounds">
@@ -1475,11 +1596,13 @@ public sealed class UserService(
         return rs.ToString();
     }
 
-    public async Task<bool> IsPinned(int userId, UserPinType pinType, int pinId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsPinned(int userId, UserPinType pinType, int pinId,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var sql = """
                       select COUNT(up.*)
@@ -1489,23 +1612,28 @@ public sealed class UserService(
                         and up."PinType" = @pinType;
                       """;
             var dbConn = scopedContext.Database.GetDbConnection();
-            return await dbConn.ExecuteScalarAsync<int>(sql, new { userId, pinType = (int)pinType, pinId }).ConfigureAwait(false) > 0;
+            return await dbConn.ExecuteScalarAsync<int>(sql, new { userId, pinType = (int)pinType, pinId })
+                .ConfigureAwait(false) > 0;
         }
     }
 
 
-    public async Task<MelodeeModels.OperationResult<bool>> SetArtistRatingAsync(int userId, Guid artistApiKey, int rating, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> SetArtistRatingAsync(int userId, Guid artistApiKey,
+        int rating, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var result = false;
         var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var artist = await artistService.GetByApiKeyAsync(artistApiKey, cancellationToken).ConfigureAwait(false);
             if (artist.Data != null)
             {
-                var userArtist = await scopedContext.UserArtists.FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken).ConfigureAwait(false);
+                var userArtist = await scopedContext.UserArtists
+                    .FirstOrDefaultAsync(x => x.UserId == userId && x.ArtistId == artist.Data.Id, cancellationToken)
+                    .ConfigureAwait(false);
                 if (userArtist == null)
                 {
                     userArtist = new UserArtist
@@ -1516,19 +1644,20 @@ public sealed class UserService(
                     };
                     scopedContext.UserArtists.Add(userArtist);
                 }
+
                 userArtist.Rating = rating;
                 userArtist.LastUpdatedAt = now;
                 result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
-                
+
                 var sql = """
                           update "Artists" a set 
                             "LastUpdatedAt" = now(), 
                             "CalculatedRating" = (select coalesce(avg("Rating"),0) from "UserArtists" where "ArtistId" = a."Id")
                           where a."Id" = @dbId;
                           """;
-                var dbConn = scopedContext.Database.GetDbConnection();                
+                var dbConn = scopedContext.Database.GetDbConnection();
                 await dbConn.ExecuteAsync(sql, new { dbId = userArtist.ArtistId }).ConfigureAwait(false);
-                await artistService.ClearCacheAsync(userArtist.ArtistId, cancellationToken).ConfigureAwait(false);       
+                await artistService.ClearCacheAsync(userArtist.ArtistId, cancellationToken).ConfigureAwait(false);
 
                 var user = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
                 ClearCache(user.Data!);
@@ -1541,11 +1670,12 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> SaveProfileImageAsync(int userId, byte[] imageBytes, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> SaveProfileImageAsync(int userId, byte[] imageBytes,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(imageBytes, nameof(imageBytes));
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
-        
+
         var userResult = await GetAsync(userId, cancellationToken).ConfigureAwait(false);
         if (!userResult.IsSuccess)
         {
@@ -1554,6 +1684,7 @@ public sealed class UserService(
                 Data = false
             };
         }
+
         var user = userResult.Data!;
         var userImageLibrary = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
         var userAvatarFullname = user.ToAvatarFileName(userImageLibrary.Data.Path);
@@ -1561,10 +1692,11 @@ public sealed class UserService(
         {
             File.Delete(userAvatarFullname);
         }
+
         imageBytes = await ImageConvertor.ConvertToGifFormat(imageBytes, cancellationToken).ConfigureAwait(false);
-        
+
         await File.WriteAllBytesAsync(userAvatarFullname, imageBytes, cancellationToken).ConfigureAwait(false);
-        
+
         return new MelodeeModels.OperationResult<bool>
         {
             Data = true

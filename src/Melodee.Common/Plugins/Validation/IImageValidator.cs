@@ -6,5 +6,6 @@ namespace Melodee.Common.Plugins.Validation;
 
 public interface IImageValidator
 {
-    Task<OperationResult<ValidationResult>> ValidateImage(FileInfo? fileInfo, PictureIdentifier identifier, CancellationToken cancellationToken = default);
+    Task<OperationResult<ValidationResult>> ValidateImage(FileInfo? fileInfo, PictureIdentifier identifier,
+        CancellationToken cancellationToken = default);
 }

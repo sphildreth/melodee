@@ -1,14 +1,8 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
-using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
-using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
-using Melodee.Common.Plugins.SearchEngine;
-using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
-using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
-using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -28,9 +22,11 @@ public class AlbumSearchEngineService(
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private bool _initialized;
 
-    public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(IMelodeeConfiguration? configuration = null,
+        CancellationToken cancellationToken = default)
     {
-        _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        _configuration = configuration ??
+                         await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
         await artistSearchEngineService.InitializeAsync(_configuration, cancellationToken);
         _initialized = true;
     }
@@ -43,13 +39,16 @@ public class AlbumSearchEngineService(
         }
     }
 
-    public async Task<PagedResult<AlbumSearchResult>> DoSearchAsync(AlbumQuery query, int? maxResults, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<AlbumSearchResult>> DoSearchAsync(AlbumQuery query, int? maxResults,
+        CancellationToken cancellationToken = default)
     {
         CheckInitialized();
-        using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] [{Method}] Query [{Query}]", nameof(AlbumSearchEngineService), nameof(DoSearchAsync), query))
+        using (Operation.At(LogEventLevel.Debug).Time("[{ServiceName}] [{Method}] Query [{Query}]",
+                   nameof(AlbumSearchEngineService), nameof(DoSearchAsync), query))
         {
             var result = new List<AlbumSearchResult>();
-            var maxResultsValue = maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
+            var maxResultsValue =
+                maxResults ?? _configuration.GetValue<int>(SettingRegistry.SearchEngineDefaultPageSize);
             var totalCount = 0;
             long operationTime = 0;
 

@@ -34,7 +34,8 @@ public sealed class JellyfinHandler : INfoHandler
         return false;
     }
 
-    public async Task<Album?> HandleNfoAsync(FileInfo fileInfo, bool doDeleteOriginal, CancellationToken cancellationToken = default)
+    public async Task<Album?> HandleNfoAsync(FileInfo fileInfo, bool doDeleteOriginal,
+        CancellationToken cancellationToken = default)
     {
         var isForJellyfin = await IsHandlerForNfoAsync(fileInfo, cancellationToken);
         if (isForJellyfin && fileInfo.DirectoryName != null)
@@ -82,8 +83,10 @@ public sealed class JellyfinHandler : INfoHandler
             var mediaTypeFilesInDirectory = albumDirectory.AllMediaTypeFileInfos().ToArray();
             foreach (var track in jfAlbum.Track ?? [])
             {
-                var trackFileNameWithoutExtension = $"{track.Position.ToStringPadLeft(2)} {track.Title}".ToNormalizedString() ?? string.Empty;
-                var mediaTrackForTrack = mediaTypeFilesInDirectory.FirstOrDefault(x => x.Name.ToNormalizedString()!.StartsWith(trackFileNameWithoutExtension));
+                var trackFileNameWithoutExtension =
+                    $"{track.Position.ToStringPadLeft(2)} {track.Title}".ToNormalizedString() ?? string.Empty;
+                var mediaTrackForTrack = mediaTypeFilesInDirectory.FirstOrDefault(x =>
+                    x.Name.ToNormalizedString()!.StartsWith(trackFileNameWithoutExtension));
                 if (mediaTrackForTrack != null)
                 {
                     var songTags = new List<MetaTag<object?>>
@@ -147,7 +150,9 @@ public sealed class JellyfinHandler : INfoHandler
                     artistName.ToNormalizedString() ?? artistName,
                     artistName.ToTitleCase() ?? artistName)
                 {
-                    MusicBrainzId = jfAlbum.MusicBrainzAlbumArtistId == null ? null : Guid.Parse(jfAlbum.MusicBrainzAlbumArtistId)
+                    MusicBrainzId = jfAlbum.MusicBrainzAlbumArtistId == null
+                        ? null
+                        : Guid.Parse(jfAlbum.MusicBrainzAlbumArtistId)
                 },
                 Files =
                 [

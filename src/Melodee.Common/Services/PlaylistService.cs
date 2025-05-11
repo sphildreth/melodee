@@ -30,11 +30,13 @@ public class PlaylistService(
         }
     }
 
-    public async Task<MelodeeModels.PagedResult<Playlist>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<Playlist>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
     {
         int playlistCount;
         Playlist[] playlists = [];
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -45,7 +47,8 @@ public class PlaylistService(
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Playlists\"");
-                var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                var listSql =
+                    $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 playlists = (await dbConn
                     .QueryAsync<Playlist>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
@@ -60,17 +63,20 @@ public class PlaylistService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Playlist?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Playlist?>> GetByApiKeyAsync(Guid apiKey,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbConn = scopedContext.Database.GetDbConnection();
                 return await dbConn
-                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Playlists\" WHERE \"ApiKey\" = @apiKey", new { apiKey })
+                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Playlists\" WHERE \"ApiKey\" = @apiKey",
+                        new { apiKey })
                     .ConfigureAwait(false);
             }
         }, cancellationToken);
@@ -85,13 +91,15 @@ public class PlaylistService(
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MelodeeModels.OperationResult<Playlist?>> GetAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<Playlist?>> GetAsync(int id,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
 
         var result = await CacheManager.GetAsync(CacheKeyDetailTemplate.FormatSmart(id), async () =>
         {
-            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext =
+                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 return await scopedContext
                     .Playlists
@@ -106,22 +114,26 @@ public class PlaylistService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int currentUserId, int[] playlistIds, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int currentUserId, int[] playlistIds,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(playlistIds, nameof(playlistIds));
 
-       
+
         bool result;
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext =
+                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken).ConfigureAwait(false);
+            var user = await scopedContext.Users.FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken)
+                .ConfigureAwait(false);
             if (user == null)
             {
                 return new MelodeeModels.OperationResult<bool>("Unknown user.")
                 {
                     Data = false
                 };
-            }            
+            }
+
             foreach (var playlistId in playlistIds)
             {
                 var playlist = await GetAsync(playlistId, cancellationToken).ConfigureAwait(false);
@@ -132,6 +144,7 @@ public class PlaylistService(
                         Data = false
                     };
                 }
+
                 if (!user.CanDeletePlaylist(playlist.Data!))
                 {
                     return new MelodeeModels.OperationResult<bool>("User does not have access to delete playlist.")
@@ -139,12 +152,14 @@ public class PlaylistService(
                         Data = false
                     };
                 }
+
                 scopedContext.Playlists.Remove(playlist.Data!);
                 await ClearCacheAsync(playlistId, cancellationToken);
             }
-            result = (await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false)) > 0;            
+
+            result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
         }
-        
+
 
         return new MelodeeModels.OperationResult<bool>
         {

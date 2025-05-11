@@ -19,7 +19,10 @@ namespace Melodee.Common.Plugins.MetaData.Directory.Nfo;
 /// <summary>
 ///     Processes NFO and gets tags and Songs for Album.
 /// </summary>
-public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumValidator, IMelodeeConfiguration configuration)
+public sealed partial class Nfo(
+    ISerializer serializer,
+    IAlbumValidator albumValidator,
+    IMelodeeConfiguration configuration)
     : AlbumMetaDataBase(configuration), IDirectoryPlugin
 {
     public const string HandlesExtension = "NFO";
@@ -38,7 +41,8 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
 
     public override int SortOrder { get; } = 3;
 
-    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<int>> ProcessDirectoryAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo,
+        CancellationToken cancellationToken = default)
     {
         var nfoFiles = fileSystemDirectoryInfo.FileInfosForExtension(HandlesExtension).ToArray();
 
@@ -67,7 +71,8 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
 
             foreach (var nfoFile in nfoFiles)
             {
-                using (Operation.At(LogEventLevel.Debug).Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
+                using (Operation.At(LogEventLevel.Debug)
+                           .Time("[{Plugin}] Processing [{FileName}]", DisplayName, nfoFile.Name))
                 {
                     var nfoAlbum = await AlbumForNfoFileAsync(nfoFile, fileSystemDirectoryInfo, cancellationToken);
                     if (nfoAlbum == null)
@@ -75,10 +80,13 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                         continue;
                     }
 
-                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path, nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration));
+                    var stagingAlbumDataName = Path.Combine(fileSystemDirectoryInfo.Path,
+                        nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration));
                     if (File.Exists(stagingAlbumDataName))
                     {
-                        var existingAlbum = await Album.DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken).ConfigureAwait(false);
+                        var existingAlbum = await Album
+                            .DeserializeAndInitializeAlbumAsync(serializer, stagingAlbumDataName, cancellationToken)
+                            .ConfigureAwait(false);
                         if (existingAlbum != null)
                         {
                             nfoAlbum = nfoAlbum.Merge(existingAlbum);
@@ -98,7 +106,8 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                         Log.Information("[{Plugin}] Deleted NFO File [{FileName}]", DisplayName, nfoFile.Name);
                     }
 
-                    Log.Debug("[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
+                    Log.Debug(
+                        "[{Plugin}] created [{StagingAlbumDataName}] Status [{Status}] validation reason [{ValidationReason}]",
                         DisplayName,
                         nfoAlbum.ToMelodeeJsonName(MelodeeConfiguration),
                         nfoAlbum.Status.ToString(),
@@ -139,7 +148,10 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                 if (parts.Length > 1)
                 {
                     key = parts[0].ToAlphanumericName(false, false).ToTitleCase(false).Nullify() ?? string.Empty;
-                    result = ReplaceMultiplePeriodsRegex().Replace(parts[1].ToAlphanumericName(false, false).ToTitleCase(false)?.Nullify() ?? string.Empty, string.Empty);
+                    result = ReplaceMultiplePeriodsRegex()
+                        .Replace(
+                            parts[1].ToAlphanumericName(false, false).ToTitleCase(false)?.Nullify() ?? string.Empty,
+                            string.Empty);
                     rawValue = parts[1].Nullify();
                 }
             }
@@ -205,13 +217,15 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
         var l = line.Nullify();
         if (!string.IsNullOrWhiteSpace(l))
         {
-            return IsLineForSongRegex().IsMatch(l) && _lineIgnores.All(x => !l.Contains(x, StringComparison.OrdinalIgnoreCase));
+            return IsLineForSongRegex().IsMatch(l) &&
+                   _lineIgnores.All(x => !l.Contains(x, StringComparison.OrdinalIgnoreCase));
         }
 
         return false;
     }
 
-    public async Task<Album?> AlbumForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo, CancellationToken cancellationToken = default)
+    public async Task<Album?> AlbumForNfoFileAsync(FileInfo fileInfo, FileSystemDirectoryInfo? parentDirectoryInfo,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -219,7 +233,9 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
             {
                 if (await nfoHandler.IsHandlerForNfoAsync(fileInfo, cancellationToken))
                 {
-                    return await nfoHandler.HandleNfoAsync(fileInfo, MelodeeConfiguration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal), cancellationToken);
+                    return await nfoHandler.HandleNfoAsync(fileInfo,
+                        MelodeeConfiguration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
+                        cancellationToken);
                 }
             }
 
@@ -307,7 +323,8 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     {
                         foreach (var metaTagToParse in metaTagsToParseFromFile)
                         {
-                            if (kp.Key.Equals(metaTagToParse.ToString(), StringComparison.OrdinalIgnoreCase) && kp.Value != null)
+                            if (kp.Key.Equals(metaTagToParse.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                                kp.Value != null)
                             {
                                 albumTags.Add(new MetaTag<object?>
                                 {
@@ -325,12 +342,17 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     var l = line.OnlyAlphaNumeric();
                     var songNumber = SafeParser.ToNumber<int>(l?.Substring(0, 2) ?? string.Empty);
                     var songDuration = l?.Substring(l.Length - 7).Trim() ?? string.Empty;
-                    var songTitle = ReplaceMultiplePeriodsRegex().Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty).Trim();
+                    var songTitle = ReplaceMultiplePeriodsRegex()
+                        .Replace(l?.Substring(3, l.Length - songDuration.Length - 4) ?? string.Empty, string.Empty)
+                        .Trim();
 
-                    var fileForSong = mediaFilesForDirectory?.FirstOrDefault(x => x.Name.ToNormalizedString()!.Contains(songTitle.ToNormalizedString()!, StringComparison.OrdinalIgnoreCase));
+                    var fileForSong = mediaFilesForDirectory?.FirstOrDefault(x =>
+                        x.Name.ToNormalizedString()!.Contains(songTitle.ToNormalizedString()!,
+                            StringComparison.OrdinalIgnoreCase));
                     if (fileForSong == null)
                     {
-                        Log.Warning("[{Plugin}] Could not find file for song [{SongTitle}] in [{DirName}]", DisplayName, songTitle, fileInfo.Directory?.FullName);
+                        Log.Warning("[{Plugin}] Could not find file for song [{SongTitle}] in [{DirName}]", DisplayName,
+                            songTitle, fileInfo.Directory?.FullName);
                         continue;
                     }
 
@@ -368,7 +390,9 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     .SelectMany(x => x.Tags!)
                     .Where(x => x.Identifier == MetaTagIdentifier.DiscTotal)
                     .ToArray();
-                var maxSongDiscTotal = discTotalTags.Length != 0 ? discTotalTags.Max(x => SafeParser.ToNumber<short>(x.Value)) : 0;
+                var maxSongDiscTotal = discTotalTags.Length != 0
+                    ? discTotalTags.Max(x => SafeParser.ToNumber<short>(x.Value))
+                    : 0;
                 albumTags.Add(new MetaTag<object?>
                 {
                     Identifier = MetaTagIdentifier.DiscTotal,
@@ -388,7 +412,8 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                             Tags = song.Tags?.Append(new MetaTag<object?>
                             {
                                 Identifier = MetaTagIdentifier.AlbumArtist,
-                                Value = albumTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)?.Value
+                                Value = albumTags.FirstOrDefault(x => x.Identifier == MetaTagIdentifier.AlbumArtist)
+                                    ?.Value
                             }).ToArray()
                         });
                     }
@@ -402,7 +427,10 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                 // If no songs are found, regardless of everything else, the NFO is garbage.
                 return null;
             }
-            var artistName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value?.ToString();
+
+            var artistName = albumTags
+                .FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Artist or MetaTagIdentifier.AlbumArtist)?.Value
+                ?.ToString();
             var albumName = albumTags.FirstOrDefault(x => x.Identifier is MetaTagIdentifier.Album)?.Value?.ToString();
             var result = new Album
             {
@@ -411,11 +439,12 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     artistName ?? throw new Exception($"Invalid artist on {nameof(Nfo)}"),
                     artistName.ToNormalizedString() ?? artistName,
                     null),
-                Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ?? new FileSystemDirectoryInfo
-                {
-                    Path = fileInfo.Directory?.FullName ?? string.Empty,
-                    Name = fileInfo.Directory?.Name ?? string.Empty
-                },
+                Directory = parentDirectoryInfo ?? fileInfo.Directory?.ToDirectorySystemInfo() ??
+                    new FileSystemDirectoryInfo
+                    {
+                        Path = fileInfo.Directory?.FullName ?? string.Empty,
+                        Name = fileInfo.Directory?.Name ?? string.Empty
+                    },
                 Files =
                 [
                     new AlbumFile
@@ -432,7 +461,8 @@ public sealed partial class Nfo(ISerializer serializer, IAlbumValidator albumVal
                     Path = fileInfo.Directory?.FullName ?? string.Empty,
                     Name = fileInfo.Directory?.Name ?? string.Empty
                 },
-                Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash).ToArray(),
+                Images = songs.Where(x => x.Images != null).SelectMany(x => x.Images!).DistinctBy(x => x.CrcHash)
+                    .ToArray(),
                 Tags = albumTags.ToArray(),
                 Songs = songs,
                 SortOrder = 0

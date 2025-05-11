@@ -3,24 +3,24 @@ using System.Text;
 namespace Melodee.Common.Metadata.Mpeg;
 
 /// <summary>
-/// Piece of ID3v2 reader.  reads frmes one at a time given the proper position in a binary stream
+///     Piece of ID3v2 reader.  reads frmes one at a time given the proper position in a binary stream
 /// </summary>
 public class Id3V2Frame
 {
-    public string FrameName;
+    public bool FCompression;
+    public bool FDataLengthIndicator;
+    public bool FEncryption;
+    public bool FFileAlterPreservation;
+    public bool FGroupingIdentity;
     public byte[] FrameContents;
+    public string FrameName;
     public ulong FrameSize;
-    public int MajorVersion;
+    public bool FReadOnly;
 
 
     public bool FTagAlterPreservation;
-    public bool FFileAlterPreservation;
-    public bool FReadOnly;
-    public bool FCompression;
-    public bool FEncryption;
-    public bool FGroupingIdentity;
     public bool FUnsynchronisation;
-    public bool FDataLengthIndicator;
+    public int MajorVersion;
     public bool Padding;
 
 

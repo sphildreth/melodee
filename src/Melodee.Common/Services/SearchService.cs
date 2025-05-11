@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Web;
 using Melodee.Common.Data;
-using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.MessageBus.Events;
@@ -30,7 +29,8 @@ public sealed class SearchService(
     IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public async Task<OperationResult<SearchResult>> DoSearchAsync(Guid userApiKey, string? userAgent, string? searchTerm, short maxResults, SearchInclude include, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<SearchResult>> DoSearchAsync(Guid userApiKey, string? userAgent,
+        string? searchTerm, short maxResults, SearchInclude include, CancellationToken cancellationToken = default)
     {
         List<ArtistDataInfo> artists = new();
         List<AlbumDataInfo> albums = new();
@@ -46,7 +46,7 @@ public sealed class SearchService(
         }
 
         var user = await userService.GetByApiKeyAsync(userApiKey, cancellationToken).ConfigureAwait(false);
-        
+
         var startTicks = Stopwatch.GetTimestamp();
 
         var searchTermNormalized = searchTerm?.ToNormalizedString() ?? searchTerm ?? string.Empty;
@@ -59,8 +59,10 @@ public sealed class SearchService(
                 PageSize = maxResults,
                 FilterBy =
                 [
-                    new FilterOperatorInfo(nameof(ArtistDataInfo.NameNormalized), FilterOperator.Contains, searchTermNormalized),
-                    new FilterOperatorInfo(nameof(ArtistDataInfo.AlternateNames), FilterOperator.Contains, searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
+                    new FilterOperatorInfo(nameof(ArtistDataInfo.NameNormalized), FilterOperator.Contains,
+                        searchTermNormalized),
+                    new FilterOperatorInfo(nameof(ArtistDataInfo.AlternateNames), FilterOperator.Contains,
+                        searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
             }, cancellationToken);
             artists = artistResult.Data.ToList();
@@ -74,24 +76,26 @@ public sealed class SearchService(
                 PageSize = maxResults,
                 FilterBy =
                 [
-                    new FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), FilterOperator.Contains, searchTermNormalized),
-                    new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains, searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
+                    new FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), FilterOperator.Contains,
+                        searchTermNormalized),
+                    new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains,
+                        searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
             }, null, cancellationToken);
             albums = albumResult.Data.ToList();
-            
+
             if (include.HasFlag(SearchInclude.Contributors))
             {
                 var contributorAlbumsResult = await albumService.ListForContributorsAsync(new PagedRequest
                 {
                     Page = 1,
-                    PageSize = maxResults,
+                    PageSize = maxResults
                 }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorAlbumsResult.TotalCount > 0)
                 {
                     albums = albums.Union(contributorAlbumsResult.Data).Distinct().ToList();
                 }
-            }            
+            }
         }
 
         if (include.HasFlag(SearchInclude.Songs))
@@ -102,23 +106,24 @@ public sealed class SearchService(
                 PageSize = maxResults,
                 FilterBy =
                 [
-                    new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains, searchTermNormalized)
+                    new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains,
+                        searchTermNormalized)
                 ]
             }, user.Data!.Id, cancellationToken);
             songs = songResult.Data.ToList();
-            
+
             if (include.HasFlag(SearchInclude.Contributors))
             {
                 var contributorSongResult = await songService.ListForContributorsAsync(new PagedRequest
                 {
                     Page = 1,
-                    PageSize = maxResults,
+                    PageSize = maxResults
                 }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorSongResult.TotalCount > 0)
                 {
                     songs = songs.Union(contributorSongResult.Data).Distinct().ToList();
                 }
-            }              
+            }
         }
 
         if (include.HasFlag(SearchInclude.MusicBrainz))
