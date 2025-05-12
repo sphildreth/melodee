@@ -35,7 +35,7 @@ public class LibraryRebuildCommand : CommandBase<LibraryRebuildSettings>
                 }
             }
 
-            var result = await libraryService.Rebuild(settings.LibraryName, settings.CreateOnlyMissing, settings.Verbose).ConfigureAwait(false);
+            var result = await libraryService.Rebuild(settings.LibraryName, settings.CreateOnlyMissing, settings.Verbose, settings.OnlyPath).ConfigureAwait(false);
             if (!result.IsSuccess)
             {
                 AnsiConsole.Write(

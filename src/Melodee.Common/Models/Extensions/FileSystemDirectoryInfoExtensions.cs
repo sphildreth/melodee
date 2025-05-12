@@ -189,7 +189,7 @@ public static class FileSystemDirectoryInfoExtensions
         Directory.Delete(fileSystemDirectoryInfo.FullName(), recursive ?? true);
     }
 
-    public static IEnumerable<FileInfo> MelodeeJsonFiles(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
+    public static IEnumerable<FileInfo> MelodeeJsonFiles(this FileSystemDirectoryInfo fileSystemDirectoryInfo, bool? recursive = null)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
         if (!dirInfo.Exists)
@@ -199,7 +199,7 @@ public static class FileSystemDirectoryInfoExtensions
 
         return dirInfo.GetFiles($"*{Album.JsonFileName}", new EnumerationOptions
         {
-            RecurseSubdirectories = true,
+            RecurseSubdirectories = recursive ?? true,
             MatchCasing = MatchCasing.CaseInsensitive
         }).OrderBy(x => x.Name).ToArray();
     }

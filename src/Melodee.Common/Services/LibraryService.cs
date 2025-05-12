@@ -14,10 +14,6 @@ using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Metadata;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
-using Melodee.Common.Plugins.Conversion.Image;
-using Melodee.Common.Plugins.MetaData.Directory;
-using Melodee.Common.Plugins.MetaData.Song;
-using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Interfaces;
@@ -676,7 +672,7 @@ public class LibraryService(
                           	"LastUpdatedAt" = now()
                           where l."Id" = @libraryId;
                           """;
-                var updateResult = await dbConn
+                await dbConn
                     .ExecuteAsync(sql, new { libraryId = library.Id })
                     .ConfigureAwait(false);
 
@@ -716,8 +712,11 @@ public class LibraryService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> Rebuild(string libraryName, bool doCreateOnlyMissing,
-        bool settingsVerbose, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> Rebuild(string libraryName,
+        bool doCreateOnlyMissing,
+        bool settingsVerbose,
+        string? onlyPath,
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(libraryName, nameof(libraryName));
 
@@ -754,23 +753,29 @@ public class LibraryService(
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
             value => value < 1 ? int.MaxValue : value);
 
-        var albumValidator = new AlbumValidator(configuration);
-        var imageValidator = new ImageValidator(configuration);
-        var imageConvertor = new ImageConvertor(configuration);
-        var songPlugin = new AtlMetaTag(new MetaTagsProcessor(configuration, serializer), imageConvertor,
-            imageValidator, configuration);
-        var mp3Files = new Mp3Files([songPlugin], albumValidator, serializer, Logger, configuration);
-
         var libraryDirectoryInfo = library.ToFileSystemDirectoryInfo();
         var directoriesToProcess = libraryDirectoryInfo
             .GetFileSystemDirectoryInfosToProcess(null, SearchOption.AllDirectories).ToList();
-        Logger.Debug("[{Name}] Found [{Count}] directories to rebuild in library.", nameof(Rebuild),
-            directoriesToProcess.Count);
-
         var directoriesProcessed = 0;
         var totalFilesFound = 0;
 
-
+        if (onlyPath.Nullify() != null)
+        {
+            directoriesToProcess = directoriesToProcess.Where(x => x.Name.ToNormalizedString() == onlyPath.ToNormalizedString()).ToList();
+            if (directoriesToProcess.Count == 0)
+            {
+                return new MelodeeModels.OperationResult<bool>(
+                    $"Path unknown or not found [{onlyPath}] in library, please check path and try again.")
+                {
+                    Data = false
+                };
+            }
+        }
+        
+        Logger.Debug("[{Name}] Found [{Count}] directories to rebuild in library.", 
+            nameof(Rebuild),
+            directoriesToProcess.Count);        
+        
         foreach (var directoryInfo in directoriesToProcess)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -783,8 +788,8 @@ public class LibraryService(
                 break;
             }
 
-            var isFound = directoryInfo.AllMediaTypeFileInfos().Any();
-            if (isFound && doCreateOnlyMissing)
+            var isMetaDataFileFound = directoryInfo.MelodeeJsonFiles(false).Any();
+            if (isMetaDataFileFound && doCreateOnlyMissing)
             {
                 continue;
             }
