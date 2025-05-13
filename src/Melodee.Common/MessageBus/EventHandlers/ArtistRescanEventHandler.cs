@@ -28,7 +28,7 @@ public class ArtistRescanEventHandler(
         var cancellationToken = messageContext.IncomingStepContext.Load<CancellationToken>();
 
         using (Operation.At(LogEventLevel.Debug)
-                   .Time("[{Name}] Handle [{id}]", nameof(AlbumRescanEventHandler), message.ToString()))
+                   .Time("[{Name}] Handle [{id}]", nameof(ArtistRescanEventHandler), message.ToString()))
         {
             await using (var scopedContext =
                          await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
@@ -53,7 +53,7 @@ public class ArtistRescanEventHandler(
                     if (dbArtist.IsLocked || dbArtist.Library.IsLocked)
                     {
                         logger.Warning("[{Name}] Library or artist is locked. Skipping rescan request [{AlbumDir}].",
-                            nameof(AlbumRescanEventHandler),
+                            nameof(ArtistRescanEventHandler),
                             message.ArtistDirectory);
                         return;
                     }
@@ -75,12 +75,20 @@ public class ArtistRescanEventHandler(
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    var artistDirectoryInfos = artistDirectory.AllDirectoryInfos();
+                    var artistDirectoryInfos = artistDirectory.AllDirectoryInfos().ToArray();
+                    logger.Debug("[{JobName}] Processing artist directories found [{ArtistDirectoryInfosCount}].",
+                        nameof(ArtistRescanEventHandler),
+                        artistDirectoryInfos.Length
+                    );                    
                     await Parallel.ForEachAsync(artistDirectoryInfos, cancellationToken,
                         async (artistDirectoryInfo, tt) =>
                         {
-                            var dbArtistAlbum =
-                                dbArtist.Albums.FirstOrDefault(x => artistDirectoryInfo.IsSameDirectory(x.Directory));
+                            var dbArtistAlbum = dbArtist.Albums.FirstOrDefault(x => artistDirectoryInfo.IsSameDirectory(x.Directory));
+                            logger.Debug("[{JobName}] Processing artistDirectoryInfo [{ArtistDirectoryInfo}] dbArtistAlbum found [{IsbArtistAlbum}].",
+                                nameof(ArtistRescanEventHandler),
+                                artistDirectoryInfo,
+                                dbArtistAlbum != null
+                            );
                             if (dbArtistAlbum == null)
                             {
                                 await albumAddEventHandler

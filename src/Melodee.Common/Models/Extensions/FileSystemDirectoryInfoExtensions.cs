@@ -388,12 +388,7 @@ public static class FileSystemDirectoryInfoExtensions
         string? searchPattern = null, SearchOption? searchOption = null)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-        if (!dirInfo.Exists)
-        {
-            return [];
-        }
-
-        return dirInfo.EnumerateDirectories(searchPattern ?? "*.*", searchOption ?? SearchOption.TopDirectoryOnly);
+        return !dirInfo.Exists ? [] : dirInfo.EnumerateDirectories(searchPattern ?? "*.*", searchOption ?? SearchOption.TopDirectoryOnly);
     }
 
     public static void DeleteAllEmptyDirectories(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
