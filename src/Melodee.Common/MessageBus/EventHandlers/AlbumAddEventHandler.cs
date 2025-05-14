@@ -259,7 +259,7 @@ public sealed class AlbumAddEventHandler(
                                 await libraryService
                                     .UpdateAggregatesAsync(newAlbum.Artist.Library.Id, cancellationToken)
                                     .ConfigureAwait(false);
-                                artistService.ClearCache(newAlbum.Artist);
+                                await artistService.ClearCacheAsync(newAlbum.Artist, cancellationToken);
                             }
                         }
                         catch (Exception e)

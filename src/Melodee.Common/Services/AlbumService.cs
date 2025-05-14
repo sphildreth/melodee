@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Rebus.Bus;
 using Serilog;
+using ServiceStack;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -32,6 +33,24 @@ public class AlbumService(
     private const string CacheKeyDetailByMusicBrainzIdTemplate = "urn:album:musicbrainzid:{0}";
     private const string CacheKeyDetailTemplate = "urn:album:{0}";
 
+    public async Task ClearCacheForArtist(int artistId, CancellationToken cancellationToken = default)
+    {
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            // Get the artist from db context
+            var dbArtist = await scopedContext
+                .Artists
+                .Include(x => x.Albums)
+                .FirstOrDefaultAsync(x => x.Id == artistId, cancellationToken).ConfigureAwait(false);
+            
+            // For each album for artist clear the cache for the artist
+            foreach (var album in dbArtist?.Albums ?? [])
+            {
+                await ClearCacheAsync(album.Id, cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
+    
     public async Task ClearCacheAsync(int albumId, CancellationToken cancellationToken = default)
     {
         var album = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);
@@ -419,7 +438,7 @@ public class AlbumService(
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
 
             var albumDirectory = album.ToMelodeeAlbumModel().AlbumDirectoryName(configuration.Configuration);
-            if (!albumDirectory.ToDirectoryInfo().ToDirectoryInfo().IsSameDirectory(dbDetail.Directory))
+            if (!albumDirectory.ToFileSystemDirectoryInfo().ToDirectoryInfo().IsSameDirectory(dbDetail.Directory))
             {
                 // Details that are used to build the albums directory has changed, rename directory to new name
                 var existingAlbumDirectory = Path.Combine(dbDetail.Artist.Library.Path, dbDetail.Artist.Directory,

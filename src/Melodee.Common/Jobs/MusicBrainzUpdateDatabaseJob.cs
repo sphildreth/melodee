@@ -52,7 +52,7 @@ public class MusicBrainzUpdateDatabaseJob(
                 return;
             }
 
-            storagePath.ToDirectoryInfo().EnsureExists();
+            storagePath.ToFileSystemDirectoryInfo().EnsureExists();
 
             lockfile = Path.Combine(storagePath, $"{nameof(MusicBrainzUpdateDatabaseJob)}.lock");
             if (File.Exists(lockfile))

@@ -1516,7 +1516,7 @@ public class LibraryService(
         MelodeeModels.DynamicPlaylist? result = null;
 
         var playlistLibrary = await GetPlaylistLibraryAsync(cancellationToken).ConfigureAwait(false);
-        var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToDirectoryInfo()
+        var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToFileSystemDirectoryInfo()
             .AllFileInfos("*.json").ToArray();
 
         foreach (var dynamicPlaylistsJsonFile in dynamicPlaylistsJsonFiles)

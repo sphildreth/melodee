@@ -66,7 +66,7 @@ public class ArtistRescanEventHandler(
                                 .ConfigureAwait(false);
                         });
 
-                    var artistDirectory = message.ArtistDirectory.ToDirectoryInfo();
+                    var artistDirectory = message.ArtistDirectory.ToFileSystemDirectoryInfo();
                     var imageCount = artistDirectory.AllFileImageTypeFileInfos().Count();
                     if (imageCount != dbArtist.ImageCount)
                     {
@@ -99,7 +99,7 @@ public class ArtistRescanEventHandler(
 
                     await libraryService.UpdateAggregatesAsync(dbArtist.Library.Id, cancellationToken)
                         .ConfigureAwait(false);
-                    artistService.ClearCache(dbArtist);
+                    await artistService.ClearCacheAsync(dbArtist, cancellationToken);
                 }
             }
         }

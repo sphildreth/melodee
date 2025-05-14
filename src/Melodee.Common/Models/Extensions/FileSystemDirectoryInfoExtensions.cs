@@ -139,7 +139,7 @@ public static class FileSystemDirectoryInfoExtensions
         var moveTo = Path.Combine(d.Parent!.FullName, newName);
         if (Directory.Exists(moveTo))
         {
-            moveTo.ToDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
+            moveTo.ToFileSystemDirectoryInfo().MoveToDirectory($"{moveTo}-{DateTime.UtcNow.Ticks.ToString()}");
         }
 
         d.ToDirectorySystemInfo().MoveToDirectory(moveTo);
@@ -523,7 +523,7 @@ public static class FileSystemDirectoryInfoExtensions
 
         foreach (var d in directories)
         {
-            var dd = Path.Combine(toMove, Path.GetFileName(d)).ToDirectoryInfo();
+            var dd = Path.Combine(toMove, Path.GetFileName(d)).ToFileSystemDirectoryInfo();
             dd.MoveToDirectory(Path.Combine(destination, Path.GetFileName(d)), dontMoveFileName, true);
         }
 

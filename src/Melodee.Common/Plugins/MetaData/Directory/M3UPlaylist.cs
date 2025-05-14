@@ -267,7 +267,7 @@ public sealed class M3UPlaylist(
 
         try
         {
-            var directoryInfo = filePath.ToDirectoryInfo();
+            var directoryInfo = filePath.ToFileSystemDirectoryInfo();
             var parts = lineFromFile.Split('-');
             if (parts.Length >= 3)
             {

@@ -48,7 +48,7 @@ public class FileSystemDirectoryInfoExtensionTests
     public void ValidateDirectoryNameForToDirectoryFromString()
     {
         var testPath = @"/melodee_test/inbound/J_de - Discography/02. EPs/(2020) J.de - Premi.re fois";
-        var fileDirectory = testPath.ToDirectoryInfo();
+        var fileDirectory = testPath.ToFileSystemDirectoryInfo();
         Assert.Equal(testPath, fileDirectory.Path);
         Assert.Equal("(2020) J.de - Premi.re fois", fileDirectory.Name);
     }       
@@ -191,7 +191,7 @@ public class FileSystemDirectoryInfoExtensionTests
                 Directory.CreateDirectory(testPath);
             }
 
-            var dirInfo = testPath.ToDirectoryInfo();
+            var dirInfo = testPath.ToFileSystemDirectoryInfo();
             var nd = dirInfo.AppendPrefix("__batman_");
             Assert.NotEqual(nd.FullName(), dirInfo.FullName());
             Assert.True(Directory.Exists(nd.FullName()));

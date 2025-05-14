@@ -312,7 +312,7 @@
                             @if (_artistImagesInByteBase64.Length < 2)
                             {
                                 <RadzenImage
-                                    Path=@($"/images/{_artist.ToApiKey()}/400")
+                                    Path=@($"/images/{_artist.ToApiKey()}/600")
                                     Style="margin:auto;display: block;"
                                     AlternateText="@_artist.Name"/>
                             }
@@ -320,7 +320,7 @@
                             {
                                 <RadzenCarousel
                                     Auto="false"
-                                    Style="height: 400px; width: 400px;"
+                                    Style="height: 600px; width: 600px;"
                                     class="rz-mx-auto"
                                     ButtonStyle="ButtonStyle.Base"
                                     ButtonSize="ButtonSize.Small"
@@ -505,7 +505,7 @@
                     CreatedAt = default
                 };
 
-                var artistDirectory = Path.Combine(_artist.Library.Path, _artist.Directory).ToDirectoryInfo();
+                var artistDirectory = Path.Combine(_artist.Library.Path, _artist.Directory).ToFileSystemDirectoryInfo();
                 if (!artistDirectory.Exists())
                 {
                     _alertMessages.Add($"Artist directory [{ artistDirectory.FullName()}] is not found.");

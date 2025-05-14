@@ -299,7 +299,7 @@ public sealed class SimpleFileVerification(
             return null;
         }
 
-        var directoryInfo = filePath.ToDirectoryInfo();
+        var directoryInfo = filePath.ToFileSystemDirectoryInfo();
 
         try
         {

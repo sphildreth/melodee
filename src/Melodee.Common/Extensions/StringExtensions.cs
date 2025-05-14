@@ -759,7 +759,7 @@ public static partial class StringExtensions
         return input.Nullify() == null ? null : Path.GetFileNameWithoutExtension(input!);
     }
 
-    public static FileSystemDirectoryInfo ToDirectoryInfo(this string? input)
+    public static FileSystemDirectoryInfo ToFileSystemDirectoryInfo(this string? input)
     {
         return !string.IsNullOrWhiteSpace(input)
             ? new DirectoryInfo(input).ToDirectorySystemInfo()

@@ -321,12 +321,12 @@
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="4">
                         <ArtistDataInfoCardComponent
-                            Style="width: 400px;"
+                            Style="width: 600px;margin-bottom: 10px;"
                             Artist="@_album.Artist.ToArtistDataInfo()"/>
                         @if (_albumsImagesInByteBase64.Length < 2)
                         {
                             <RadzenImage
-                                Path=@($"/images/{_album.ToApiKey()}/400")
+                                Path=@($"/images/{_album.ToApiKey()}/600")
                                 Style="margin:auto;display: block;"
                                 AlternateText="@_album.Name"/>
                         }
@@ -430,7 +430,7 @@
             if (albumResult is { IsSuccess: true, Data: not null })
             {
                 _album = albumResult.Data;
-                _albumDirectory = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
+                _albumDirectory = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToFileSystemDirectoryInfo();
                 _albumDirectoryFileCount = _albumDirectory.FileCount();
                 switch (_album.AlbumStatusValue)
                 {
@@ -669,7 +669,7 @@
             if (selectedImageSearchResult != null)
             {
                 var httpClient = HttpClientFactory.CreateClient();
-                var albumPath = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToDirectoryInfo();
+                var albumPath = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToFileSystemDirectoryInfo();
                 var doDeleteAllOtherAlbumImages = selectedImageSearchResult.DoDeleteAllOtherArtistImages;
                 if (doDeleteAllOtherAlbumImages)
                 {

@@ -96,7 +96,7 @@ public class ArtistHousekeepingJob(
                     artist.LastUpdatedAt = now;
                     artist.ImageCount = 1;
                     artist.MetaDataStatus = SafeParser.ToNumber<int>(MetaDataModelStatus.UpdatedImages);
-                    artistService.ClearCache(artist);
+                    await artistService.ClearCacheAsync(artist, context.CancellationToken);
                     updatedArtists.Add(artist);
                     Logger.Information("[{JobName}] Updated artist image for artist [{ArtistName}]",
                         nameof(ArtistHousekeepingJob), artist.Name);

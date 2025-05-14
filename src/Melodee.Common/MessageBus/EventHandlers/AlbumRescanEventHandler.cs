@@ -74,7 +74,7 @@ public sealed class AlbumRescanEventHandler(
                         return;
                     }
 
-                    var albumDirectory = message.AlbumDirectory.ToDirectoryInfo();
+                    var albumDirectory = message.AlbumDirectory.ToFileSystemDirectoryInfo();
 
                     // Ensure directory for album exists
                     if (!albumDirectory.Exists())
@@ -287,7 +287,7 @@ public sealed class AlbumRescanEventHandler(
                     {
                         await libraryService.UpdateAggregatesAsync(dbAlbum.Artist.Library.Id, cancellationToken)
                             .ConfigureAwait(false);
-                        artistService.ClearCache(dbAlbum.Artist);
+                        await artistService.ClearCacheAsync(dbAlbum.Artist, cancellationToken);
                     }
 
                     albumService.ClearCache(dbAlbum);

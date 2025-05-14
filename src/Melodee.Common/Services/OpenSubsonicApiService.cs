@@ -516,7 +516,7 @@ public class OpenSubsonicApiService(
                     var dbConn = scopedContext.Database.GetDbConnection();
                     var playlistLibrary = await libraryService.GetPlaylistLibraryAsync(cancellationToken)
                         .ConfigureAwait(false);
-                    var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToDirectoryInfo()
+                    var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToFileSystemDirectoryInfo()
                         .AllFileInfos("*.json").ToArray();
                     if (dynamicPlaylistsJsonFiles.Any())
                     {
@@ -1609,7 +1609,7 @@ public class OpenSubsonicApiService(
                                 var pathToAlbum =
                                     dbConn.ExecuteScalar<string>(sql.FormatSmart(apiKey.Value.ToString())) ??
                                     string.Empty;
-                                var albumDirInfo = pathToAlbum.ToDirectoryInfo();
+                                var albumDirInfo = pathToAlbum.ToFileSystemDirectoryInfo();
 
                                 var albumImageForRequestSize =
                                     Path.Combine(pathToAlbum, $"_i-01-Front-{sizeValue}.jpg");

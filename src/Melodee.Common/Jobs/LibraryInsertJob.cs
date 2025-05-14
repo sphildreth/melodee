@@ -167,7 +167,7 @@ public class LibraryInsertJob(
                     string[] allMelodeeFilesInLibrary = [];
                     if (scanJustDirectory.Nullify() != null)
                     {
-                        var scanJustDir = scanJustDirectory!.ToDirectoryInfo();
+                        var scanJustDir = scanJustDirectory!.ToFileSystemDirectoryInfo();
                         if (scanJustDir.Exists())
                         {
                             allMelodeeFilesInLibrary = Directory.GetFiles(scanJustDir.FullName(), Album.JsonFileName,

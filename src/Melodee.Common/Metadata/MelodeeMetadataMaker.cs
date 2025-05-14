@@ -39,7 +39,7 @@ public class MelodeeMetadataMaker(
     {
         Guard.Against.NullOrEmpty(directory, nameof(directory));
 
-        var directoryInfo = directory.ToDirectoryInfo();
+        var directoryInfo = directory.ToFileSystemDirectoryInfo();
         if (!directoryInfo.Exists())
         {
             return new OperationResult<Album?>($"Directory does not exist [{directory}] does not exist")

@@ -175,7 +175,7 @@ public class ArtistService(
             var dbConn = scopedContext.Database.GetDbConnection();
             try
             {
-                var sql = string.Empty;
+                string sql;
 
                 if (byId.HasValue)
                 {
@@ -254,7 +254,7 @@ public class ArtistService(
     public async Task<MelodeeModels.OperationResult<Artist?>> GetByApiKeyAsync(Guid apiKey,
         CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+        Guard.Against.Expression(x => x == Guid.Empty, apiKey, nameof(apiKey));
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
@@ -279,7 +279,7 @@ public class ArtistService(
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public void ClearCache(Artist artist)
+    public async Task ClearCacheAsync(Artist artist, CancellationToken cancellationToken)
     {
         CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.ApiKey));
         CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.NameNormalized));
@@ -289,12 +289,13 @@ public class ArtistService(
             CacheManager.Remove(
                 CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
         }
+        await albumService.ClearCacheForArtist(artist.Id, cancellationToken);
     }
 
     public async Task ClearCacheAsync(int artistId, CancellationToken cancellationToken)
     {
         var artist = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
-        ClearCache(artist.Data!);
+        await ClearCacheAsync(artist.Data!, cancellationToken);
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> RescanAsync(int[] artistIds,
@@ -411,6 +412,7 @@ public class ArtistService(
         {
             var dbDetail = await scopedContext
                 .Artists
+                .Include(x => x.Library)
                 .FirstOrDefaultAsync(x => x.Id == artist.Id, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -423,11 +425,24 @@ public class ArtistService(
                 };
             }
 
+            dbDetail.Directory = artist.Directory;
+            
+            var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+            
+            var newArtistDirectory = artist.ToMelodeeArtistModel().ToDirectoryName(configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
+            var newDirectory = Path.Combine(dbDetail.Library.Path, newArtistDirectory);
+            var originalDirectory = new DirectoryInfo(Path.Combine(dbDetail.Library.Path,dbDetail.Directory));
+            if (!originalDirectory.IsSameDirectory(newDirectory))
+            {
+                originalDirectory.MoveTo(newDirectory);
+                dbDetail.Directory = newArtistDirectory;
+            }
+            
             dbDetail.AlternateNames = artist.AlternateNames;
             dbDetail.AmgId = artist.AmgId;
             dbDetail.Biography = artist.Biography.Nullify();
             dbDetail.Description = artist.Description;
-            dbDetail.Directory = artist.Directory;
+            
             dbDetail.DeezerId = artist.DeezerId;
             dbDetail.DiscogsId = artist.DiscogsId;
             dbDetail.ImageCount = artist.ImageCount;
@@ -452,7 +467,7 @@ public class ArtistService(
 
             if (result)
             {
-                ClearCache(dbDetail);
+                await ClearCacheAsync(dbDetail, cancellationToken);
             }
         }
 
@@ -535,9 +550,9 @@ public class ArtistService(
         {
             foreach (var fileInAlbumDirectory in artistImages)
             {
-                if (fileInAlbumDirectory.Name.Contains(PictureIdentifier.Artist.ToString(),
+                if (fileInAlbumDirectory.Name.Contains(nameof(PictureIdentifier.Artist),
                         StringComparison.OrdinalIgnoreCase) ||
-                    fileInAlbumDirectory.Name.Contains(PictureIdentifier.ArtistSecondary.ToString(),
+                    fileInAlbumDirectory.Name.Contains(nameof(PictureIdentifier.ArtistSecondary),
                         StringComparison.OrdinalIgnoreCase))
                 {
                     fileInAlbumDirectory.Delete();
@@ -567,7 +582,7 @@ public class ArtistService(
                 .ConfigureAwait(false);
         }
 
-        ClearCache(artist);
+        await ClearCacheAsync(artist, cancellationToken);
         OpenSubsonicApiService.ClearImageCacheForApiId(artist.ToApiKey(), CacheManager);
         return true;
     }
@@ -694,7 +709,7 @@ public class ArtistService(
                             dbArtistToMergeInto.Directory, albumToMerge.Directory);
                         if (Directory.Exists(albumToMergeDirectory) && !Directory.Exists(albumToMergeNewDirectory))
                         {
-                            albumToMergeDirectory.ToDirectoryInfo().MoveToDirectory(albumToMergeNewDirectory);
+                            albumToMergeDirectory.ToFileSystemDirectoryInfo().MoveToDirectory(albumToMergeNewDirectory);
                         }
                         else if (Directory.Exists(albumToMergeNewDirectory))
                         {
@@ -777,7 +792,7 @@ public class ArtistService(
                 await UpdateLibraryAggregateStatsByIdAsync(libraryId, cancellationToken).ConfigureAwait(false);
             }
 
-            // To clear the entire cache is unusual, but here we have deleted (likely) many artists, safer to clear all cache and let repopulate as needed.
+            // To clear the entire cache is unusual, but here we have (likely) deleted many artists, safer to clear all cache and let repopulate as needed.
             CacheManager.Clear();
             return new MelodeeModels.OperationResult<bool>
             {
@@ -801,7 +816,7 @@ public class ArtistService(
         }
 
         artistResult.Data!.IsLocked = doLock;
-        var result = (await UpdateAsync(artistResult.Data, cancellationToken).ConfigureAwait(false))?.Data ?? false;
+        var result = (await UpdateAsync(artistResult.Data, cancellationToken).ConfigureAwait(false)).Data;
         return new MelodeeModels.OperationResult<bool>
         {
             Data = result
@@ -826,7 +841,7 @@ public class ArtistService(
         var result = deleteResult.IsSuccess;
         if (deleteResult.IsSuccess)
         {
-            ClearCache(artistResult.Data!);
+            await ClearCacheAsync(artistResult.Data!, cancellationToken);
         }
 
         return new MelodeeModels.OperationResult<bool>
