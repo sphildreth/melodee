@@ -1,6 +1,7 @@
 using System.Net;
 using Melodee.Blazor.Filters;
 using Melodee.Common.Configuration;
+using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
@@ -86,7 +87,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
         Response.StatusCode = (int)HttpStatusCode.NotFound;
         return new JsonStringResult(Serializer.Serialize(new ResponseModel
         {
-            UserInfo = OpenSubsonicApiService.BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = false,
             ResponseData = await openSubsonicApiService.NewApiResponse(
                 false,
@@ -124,7 +125,7 @@ public class MediaRetrievalController(ISerializer serializer, EtagRepository eta
         Response.StatusCode = (int)HttpStatusCode.NotFound;
         return new JsonStringResult(Serializer.Serialize(new ResponseModel
         {
-            UserInfo = OpenSubsonicApiService.BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = false,
             ResponseData = await openSubsonicApiService.NewApiResponse(
                 false,

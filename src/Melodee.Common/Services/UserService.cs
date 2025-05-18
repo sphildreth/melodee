@@ -173,8 +173,7 @@ public sealed class UserService(
             : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetByUsernameAsync(string username,
-        CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(username, nameof(username));
         var usernameNormalized = username.ToNormalizedString() ?? username;
@@ -210,8 +209,7 @@ public sealed class UserService(
         return user.Data?.IsAdmin ?? false;
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey,
-        CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<User?>> GetByApiKeyAsync(Guid apiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 

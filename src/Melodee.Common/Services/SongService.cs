@@ -24,8 +24,7 @@ public class SongService(
     private const string CacheKeyDetailByTitleNormalizedTemplate = "urn:song:titlenormalized:{0}";
     private const string CacheKeyDetailTemplate = "urn:song:{0}";
 
-    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListNowPlayingAsync(
-        MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListNowPlayingAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         var songCount = 0;
         SongDataInfo[] songs = [];
@@ -71,8 +70,7 @@ public class SongService(
         };
     }
 
-    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListForContributorsAsync(
-        MelodeeModels.PagedRequest pagedRequest, string contributorName, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListForContributorsAsync(MelodeeModels.PagedRequest pagedRequest, string contributorName, CancellationToken cancellationToken = default)
     {
         int songCount;
         SongDataInfo[] songs = [];
@@ -129,16 +127,6 @@ public class SongService(
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
-
-            // var filterPartsDefinitions = new Dictionary<string, string>
-            // {
-            //     { "AlbumName", "a.\"Name\"" },
-            //     { "AlbumApiKey", "a.\"ApiKey\"" },
-            //     { "ArtistName", "ar.\"Name\"" },
-            //     { "ArtistApiKey", "ar.\"ApiKey\"" },
-            //     { "UserStarred", "us.\"IsStarred\"" },
-            //     { "UserRating", "us.\"Rating\"" },
-            // };
 
             var filterByUserStarred = pagedRequest.FilterBy?.FirstOrDefault(x => x.PropertyName == "UserStarred");
             if (filterByUserStarred != null)

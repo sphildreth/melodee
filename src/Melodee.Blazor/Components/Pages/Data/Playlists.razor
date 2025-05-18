@@ -94,12 +94,16 @@
                             TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Playlist.Name)"
-                                      Title="Name">
+                <RadzenDataGridColumn Property="@nameof(Playlist.Name)" Title="Name">
                     <Template Context="data">
-                        <RadzenText Text="@data.Name"/>
+                        <RadzenButton Style="float:right;margin-top: 7px;" Visible="@(CurrentUser?.IsEditor() ?? false)"
+                                      Size="ButtonSize.ExtraSmall"
+                                      Click=@(_ => NavigationManager.NavigateTo($"/data/playlistedit/{data.ApiKey}"))
+                                      Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
+                        <RadzenLink text="@data.Name" class="rz-text-wrap" Path="@($"/data/playlist/{data.ApiKey}")"/>
                     </Template>
                 </RadzenDataGridColumn>
+
                 <RadzenDataGridColumn Property="@nameof(Playlist.CreatedAt)" Title="Created" Filterable="false"
                                       Width="120px">
                     <Template Context="data">
@@ -163,7 +167,7 @@
                 filters = args.Filters.Select(x => x.ToFilterOperatorInfo()).ToArray();
             }
 
-            var result = await PlaylistService.ListAsync(new PagedRequest
+            var result = await PlaylistService.ListAsync(UserInfo.FromClaimsPrincipal(CurrentUser!), new PagedRequest
             {
                 FilterBy = filters,
                 Page = _currentPage,

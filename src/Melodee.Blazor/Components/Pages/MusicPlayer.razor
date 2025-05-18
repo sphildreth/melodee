@@ -1,8 +1,9 @@
 @page "/musicplayer"
+@inherits MelodeeComponentBase
 
-@using Melodee.Common.Data.Models.Extensions
-@using Song = Melodee.Common.Data.Models.Song
-@inject IMelodeeConfigurationFactory ConfigurationFactory
+@using Melodee.Common.Models.Collection.Extensions
+@using SongDataInfo = Melodee.Common.Models.Collection.SongDataInfo
+@inject ScrobbleService ScrobbleService
 @inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
 
@@ -10,19 +11,20 @@
     <div class="music-player">
         <div class="song-info">
             <div class="album-art @(IsPlaying ? "playing" : "")">
-                <img src="@($"/images/{CurrentSong.ToCoverArtId()}/1024)")" alt="Album Art">
+                <img src="@CurrentSong.ImageUrl(600)" alt="Album Art">
             </div>
             <h2 class="song-title">@CurrentSong.Title</h2>
-            <p class="artist">@CurrentSong.Album.Artist.Name</p>
-            <p class="album">@CurrentSong.Album.Name</p>
+            <p class="artist">@CurrentSong.ArtistName</p>
+            <p class="album">@CurrentSong.AlbumName</p>
         </div>
 
         <div class="progress-container" @ref="_progressContainer" @onclick="SetProgress">
-            <div class="progress-bar" style="width: @ProgressPercentage%"></div>
+            <div class="progress-bar" style="width: @ProgressPercentage%;"></div>
         </div>
+
         <div class="time-container">
-            <span>@FormatTime(CurrentTime)</span>
-            <span>@FormatTime(Duration)</span>
+            <span>@CurrentTimeFormatted</span>
+            <span>@DurationFormatted</span>
         </div>
 
         <div class="controls">
@@ -59,7 +61,7 @@
                     <span class="playlist-number">@(index + 1)</span>
                     <div class="playlist-info">
                         <div class="playlist-title">@song.Title</div>
-                        <div class="playlist-artist">@song.Album.Artist.Name</div>
+                        <div class="playlist-artist">@song.AlbumName</div>
                     </div>
                     <span class="playlist-duration">@FormatTime(song.DurationInSeconds())</span>
                 </div>
@@ -69,29 +71,39 @@
 </div>
 
 @code {
+
+    private const double MinimumForNowPlaying = 10.0;
+
     private ElementReference _audioElement;
     private DotNetObjectReference<MusicPlayer> _objRef;
     private IJSObjectReference _module;
 
-    [Parameter] public List<Song> Songs { get; set; } = [];
+    [Parameter] public List<SongDataInfo> Songs { get; set; } = [];
+
     private ElementReference _progressContainer;
     private ElementReference _volumeSlider;
     private int CurrentSongIndex { get; set; }
-    private Song CurrentSong => Songs[CurrentSongIndex];
+    private SongDataInfo CurrentSong => Songs[CurrentSongIndex];
     private bool IsPlaying { get; set; }
     private double CurrentTime { get; set; }
+
+    private string CurrentTimeFormatted => FormatTime(CurrentTime);
+    private string DurationFormatted => FormatTime(Duration);
+    private double ProgressPercentage => Duration > 0 ? (CurrentTime / Duration) * 100 : 0;
+
     private double Duration { get; set; }
     private double Volume { get; set; } = 100;
     private bool IsMuted { get; set; }
-    private double ProgressPercentage => Duration > 0 ? (CurrentTime / Duration) * 100 : 0;
 
-    private IMelodeeConfiguration Configuration { get; set; } = null!;
+
+    private bool _nowPlayingRecordedForCurrentSong = false;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        Configuration = await ConfigurationFactory.GetConfigurationAsync();
         _objRef = DotNetObjectReference.Create(this);
+
+        await ScrobbleService.InitializeAsync(Configuration);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -111,11 +123,17 @@
         CurrentTime = currentTime;
         Duration = duration;
         await InvokeAsync(StateHasChanged);
+        if (!_nowPlayingRecordedForCurrentSong && currentTime > MinimumForNowPlaying && CurrentUser != null)
+        {
+            await ScrobbleService.NowPlaying(UserInfo.FromClaimsPrincipal(CurrentUser), CurrentSong.ApiKey, currentTime, Configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? "Melodee");
+            _nowPlayingRecordedForCurrentSong = true;
+        }
     }
 
     [JSInvokable]
     public async Task OnSongEnded()
     {
+        await ScrobbleService.Scrobble(UserInfo.FromClaimsPrincipal(CurrentUser!), CurrentSong.ApiKey, false, Configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? "Melodee");
         await NextSong();
     }
 
@@ -126,6 +144,7 @@
             await _module.InvokeVoidAsync("loadSong", CurrentSong.ToApiStreamUrl(Configuration));
             Duration = CurrentSong.DurationInSeconds();
             CurrentTime = 0;
+            _nowPlayingRecordedForCurrentSong = false;
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -261,7 +280,7 @@
         }
     }
 
-    private string FormatTime(double seconds)
+    private static string FormatTime(double seconds)
     {
         var minutes = Math.Floor(seconds / 60);
         var remainingSeconds = Math.Floor(seconds % 60);

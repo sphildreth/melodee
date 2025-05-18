@@ -75,8 +75,6 @@ public class OpenSubsonicApiService(
 
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => configurationFactory.GetConfigurationAsync());
 
-    public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
-
     private static bool IsApiIdForArtist(string? id)
     {
         return id.Nullify() != null && (id?.StartsWith($"artist{OpenSubsonicServer.ApiIdSeparator}") ?? false);
@@ -136,7 +134,7 @@ public class OpenSubsonicApiService(
     {
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
 
             ResponseData = await DefaultApiResponse() with
             {
@@ -163,7 +161,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var data = new List<Share>();
@@ -248,7 +246,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         // The user must be authorized to share
@@ -257,7 +255,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 IsSuccess = false,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
             };
@@ -279,7 +277,7 @@ public class OpenSubsonicApiService(
             {
                 return new ResponseModel
                 {
-                    UserInfo = BlankUserInfo,
+                    UserInfo = UserInfo.BlankUserInfo,
                     IsSuccess = false,
                     ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.InvalidApiKeyError)
                 };
@@ -298,7 +296,7 @@ public class OpenSubsonicApiService(
             {
                 return new ResponseModel
                 {
-                    UserInfo = BlankUserInfo,
+                    UserInfo = UserInfo.BlankUserInfo,
                     IsSuccess = false,
                     ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.InvalidApiKeyError)
                 };
@@ -314,12 +312,12 @@ public class OpenSubsonicApiService(
         }
         else if (IsApiIdForPlaylist(id))
         {
-            var playlist = await playlistService.GetByApiKeyAsync(shareApiKey, cancellationToken).ConfigureAwait(false);
+            var playlist = await playlistService.GetByApiKeyAsync(authResponse.UserInfo, shareApiKey, cancellationToken).ConfigureAwait(false);
             if (!playlist.IsSuccess)
             {
                 return new ResponseModel
                 {
-                    UserInfo = BlankUserInfo,
+                    UserInfo = UserInfo.BlankUserInfo,
                     IsSuccess = false,
                     ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.InvalidApiKeyError)
                 };
@@ -338,7 +336,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 IsSuccess = false,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty,
                     Error.RequiredParameterMissingError)
@@ -383,7 +381,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Error? notAuthorizedError = null;
@@ -415,7 +413,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
@@ -438,7 +436,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Error? notAuthorizedError = null;
@@ -469,7 +467,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
@@ -480,13 +478,12 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Returns all playlists a user is allowed to play.
     /// </summary>
-    public async Task<ResponseModel> GetPlaylistsAsync(ApiRequest apiRequest,
-        CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> GetPlaylistsAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var data = new List<Playlist>();
@@ -509,75 +506,9 @@ public class OpenSubsonicApiService(
                     .ConfigureAwait(false);
                 data = playLists.Select(x => x.ToApiPlaylist(false)).ToList();
 
-                var isDynamicPlaylistsDisabled =
-                    (await Configuration.Value).GetValue<bool>(SettingRegistry.PlaylistDynamicPlaylistsDisabled);
-                if (!isDynamicPlaylistsDisabled)
-                {
-                    var dbConn = scopedContext.Database.GetDbConnection();
-                    var playlistLibrary = await libraryService.GetPlaylistLibraryAsync(cancellationToken)
-                        .ConfigureAwait(false);
-                    var dynamicPlaylistsJsonFiles = Path.Combine(playlistLibrary.Data.Path, "dynamic").ToFileSystemDirectoryInfo()
-                        .AllFileInfos("*.json").ToArray();
-                    if (dynamicPlaylistsJsonFiles.Any())
-                    {
-                        var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-                        var dynamicPlaylists = new List<DynamicPlaylist>();
-                        foreach (var dynamicPlaylistJsonFile in dynamicPlaylistsJsonFiles)
-                        {
-                            dynamicPlaylists.Add(serializer.Deserialize<DynamicPlaylist>(
-                                await File.ReadAllTextAsync(dynamicPlaylistJsonFile.FullName, cancellationToken)
-                                    .ConfigureAwait(false))!);
-                        }
+                var dynamicPlaylists = await playlistService.DynamicListAsync(authResponse.UserInfo, new PagedRequest { PageSize = short.MaxValue}, cancellationToken);
+                data.AddRange(dynamicPlaylists.Data.Select(x => x.ToApiPlaylist(false, true)));
 
-                        foreach (var dp in dynamicPlaylists.Where(x => x.IsEnabled))
-                        {
-                            try
-                            {
-                                if (dp.IsPublic ||
-                                    (dp.ForUserId != null && dp.ForUserId == authResponse.UserInfo.ApiKey))
-                                {
-                                    var dpWhere = dp.PrepareSongSelectionWhere(authResponse.UserInfo);
-                                    sql = $"""
-                                           SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
-                                                  a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags", us."IsStarred" as "UserStarred", us."Rating" as "UserRating"
-                                           FROM "Songs" s
-                                           join "Albums" a on (s."AlbumId" = a."Id")
-                                           join "Artists" ar on (a."ArtistId" = ar."Id")
-                                           left join "UserSongs" us on (s."Id" = us."SongId")
-                                           where {dpWhere}
-                                           """;
-                                    var songDataInfosForDp = (await dbConn
-                                        .QueryAsync<SongDataInfo>(sql)
-                                        .ConfigureAwait(false) ?? []).ToArray();
-                                    data.Add(new dbModels.Playlist
-                                    {
-                                        Id = 1,
-                                        IsLocked = false,
-                                        SortOrder = 0,
-                                        ApiKey = dp.Id,
-                                        CreatedAt = now,
-                                        Description = dp.Comment,
-                                        Name = dp.Name,
-                                        Comment = dp.Comment,
-                                        User = ServiceUser.Instance.Value,
-                                        IsPublic = true,
-                                        SongCount = SafeParser.ToNumber<short>(songDataInfosForDp.Count()),
-                                        Duration = songDataInfosForDp.Sum(x => x.Duration),
-                                        AllowedUserIds = authResponse.UserInfo.UserName,
-                                        Songs = []
-                                    }.ToApiPlaylist(false, true));
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.Warning(e, "[{Name}] error loading dynamic playlist [{Playlist}]",
-                                    nameof(OpenSubsonicApiService), dp.Name);
-                                throw;
-                            }
-                        }
-                    }
-                }
             }
         }
         catch (Exception e)
@@ -603,7 +534,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Error? notAuthorizedError = null;
@@ -677,7 +608,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
@@ -693,7 +624,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Error? notAuthorizedError = null;
@@ -725,7 +656,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
@@ -738,7 +669,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var playListId = string.Empty;
@@ -789,7 +720,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Playlist? data;
@@ -811,7 +742,7 @@ public class OpenSubsonicApiService(
                     Logger.Warning("Invalid dynamic playlist id [{Id}] for Request [{Request}]", apiKey, apiRequest);
                     return new ResponseModel
                     {
-                        UserInfo = BlankUserInfo,
+                        UserInfo = UserInfo.BlankUserInfo,
                         ResponseData = authResponse.ResponseData with
                         {
                             Error = Error.InvalidApiKeyError
@@ -912,7 +843,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         long totalCount = 0;
@@ -1040,7 +971,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         long totalCount = 0;
@@ -1186,7 +1117,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var songId = ApiKeyFromId(apiKey) ?? Guid.Empty;
@@ -1195,7 +1126,7 @@ public class OpenSubsonicApiService(
             Logger.Warning("Invalid song id [{SongId}] for Request [{Request}]", apiKey, apiRequest);
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 ResponseData = authResponse.ResponseData with
                 {
                     Error = Error.InvalidApiKeyError
@@ -1208,7 +1139,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 ResponseData = authResponse.ResponseData with
                 {
                     Error = Error.InvalidApiKeyError
@@ -1235,7 +1166,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         AlbumId3WithSongs? data = null;
@@ -1248,7 +1179,7 @@ public class OpenSubsonicApiService(
             {
                 return new ResponseModel
                 {
-                    UserInfo = BlankUserInfo,
+                    UserInfo = UserInfo.BlankUserInfo,
                     ResponseData = authResponse.ResponseData with
                     {
                         Error = Error.InvalidApiKeyError
@@ -1318,7 +1249,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var data = new List<Genre>();
@@ -1391,7 +1322,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         byte[]? avatarBytes = null;
@@ -1457,7 +1388,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess && !isUserImageRequest)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var isForPlaylist = IsApiIdForDynamicPlaylist(apiId) || IsApiIdForPlaylist(apiId);
@@ -1540,7 +1471,7 @@ public class OpenSubsonicApiService(
                     }
                     else if (IsApiIdForPlaylist(apiId))
                     {
-                        var playlist = await playlistService.GetByApiKeyAsync(apiKey.Value, cancellationToken)
+                        var playlist = await playlistService.GetByApiKeyAsync(authResponse.UserInfo, apiKey.Value, cancellationToken)
                             .ConfigureAwait(false);
                         var playlistLibrary = await libraryService.GetPlaylistLibraryAsync(cancellationToken)
                             .ConfigureAwait(false);
@@ -1723,7 +1654,7 @@ public class OpenSubsonicApiService(
     {
         var authResponse = new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
         };
         var data = new List<OpenSubsonicExtension>
@@ -1741,7 +1672,7 @@ public class OpenSubsonicApiService(
         };
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             ResponseData = authResponse.ResponseData with
             {
                 Data = data,
@@ -1756,14 +1687,14 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         await schedule.TriggerJob(JobKeyRegistry.LibraryProcessJobJobKey, cancellationToken);
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             ResponseData = authResponse.ResponseData with
             {
                 Data = new ScanStatus(true, 0),
@@ -1777,7 +1708,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var executingJobs = await schedule.GetCurrentlyExecutingJobs(cancellationToken);
@@ -1805,7 +1736,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             ResponseData = authResponse.ResponseData with
             {
                 Data = data,
@@ -1825,7 +1756,7 @@ public class OpenSubsonicApiService(
     {
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
         };
     }
@@ -1840,7 +1771,7 @@ public class OpenSubsonicApiService(
                 : await userService.GetByUsernameAsync(apiRequest.Username, cancellationToken).ConfigureAwait(false);
             return new ResponseModel
             {
-                UserInfo = user?.Data?.ToUserInfo() ?? BlankUserInfo,
+                UserInfo = user?.Data?.ToUserInfo() ?? UserInfo.BlankUserInfo,
                 ResponseData = await NewApiResponse(true, string.Empty, string.Empty)
             };
         }
@@ -1928,7 +1859,7 @@ public class OpenSubsonicApiService(
 
             return new ResponseModel
             {
-                UserInfo = user.Data?.ToUserInfo() ?? BlankUserInfo,
+                UserInfo = user.Data?.ToUserInfo() ?? UserInfo.BlankUserInfo,
                 IsSuccess = result,
                 ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
             };
@@ -1966,7 +1897,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         await using (var scopedContext =
@@ -1993,7 +1924,7 @@ public class OpenSubsonicApiService(
 
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 ResponseData = authResponse.ResponseData with
                 {
                     Data = current == null ? null : data,
@@ -2009,7 +1940,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         bool result;
@@ -2102,7 +2033,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
         };
@@ -2116,7 +2047,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 IsSuccess = false,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty,
                     new Error(10, "Private code is configured. User registration must be done via the server."))
@@ -2131,7 +2062,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 IsSuccess = result,
                 ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                     new Error(10, "User creation failed."))
@@ -2140,7 +2071,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
         };
@@ -2152,14 +2083,14 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         if (times?.Length > 0 && times.Length != ids.Length)
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty,
                     Error.GenericError("Wrong number of timestamps."))
             };
@@ -2191,8 +2122,12 @@ public class OpenSubsonicApiService(
                     .FirstOrDefault(x => x.UniqueId == uniqueId);
                 if (nowPlayingInfo != null)
                 {
-                    await scrobbleService.Scrobble(authResponse.UserInfo, id, time, false,
-                        apiRequest.ApiRequestPlayer.Client ?? string.Empty, cancellationToken).ConfigureAwait(false);
+                    await scrobbleService.Scrobble(authResponse.UserInfo,
+                            id,
+                            false,
+                            apiRequest.ApiRequestPlayer.Client ?? string.Empty,
+                            cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 else
                 {
@@ -2204,7 +2139,7 @@ public class OpenSubsonicApiService(
         var result = true;
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty, result ? null : Error.AuthError)
         };
@@ -2350,7 +2285,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var nowPlaying = await scrobbleService.GetNowPlaying(cancellationToken).ConfigureAwait(false);
@@ -2412,7 +2347,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         long totalCount = 0;
@@ -2570,7 +2505,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Directory? data = null;
@@ -2658,7 +2593,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var indexLimit = (await Configuration.Value).GetValue<short>(SettingRegistry.OpenSubsonicIndexesArtistLimit);
@@ -2755,7 +2690,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         NamedInfo[] data = [];
@@ -2786,7 +2721,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Artist? data = null;
@@ -2840,7 +2775,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var result = false;
@@ -2872,7 +2807,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 result ? null : Error.InvalidApiKeyError)
@@ -2888,7 +2823,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var result = false;
@@ -3012,7 +2947,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 result ? null : Error.InvalidApiKeyError)
@@ -3025,7 +2960,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Child[]? data;
@@ -3071,7 +3006,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         ArtistID3[] artists;
@@ -3132,7 +3067,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Artist[] artists;
@@ -3193,7 +3128,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var indexLimit = (await Configuration.Value).GetValue<short>(SettingRegistry.OpenSubsonicIndexesArtistLimit);
@@ -3259,7 +3194,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Bookmark[] data = [];
@@ -3297,7 +3232,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var result = false;
@@ -3345,7 +3280,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 result ? null : Error.InvalidApiKeyError)
@@ -3358,7 +3293,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var result = false;
@@ -3390,7 +3325,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 result ? null : Error.InvalidApiKeyError)
@@ -3403,7 +3338,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         ArtistInfo? data = null;
@@ -3454,7 +3389,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         AlbumInfo? data = null;
@@ -3511,7 +3446,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         // Only users with admin privileges are allowed to call this method.
@@ -3521,7 +3456,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 IsSuccess = false,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
             };
@@ -3552,7 +3487,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Child[]? songs;
@@ -3615,7 +3550,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Error? notAuthorizedError = null;
@@ -3628,7 +3563,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 IsSuccess = false,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
             };
@@ -3652,7 +3587,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
@@ -3665,7 +3600,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         // Only users with admin privileges are allowed to call this method.
@@ -3675,7 +3610,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 IsSuccess = false,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
             };
@@ -3704,7 +3639,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
@@ -3717,7 +3652,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         Error? notAuthorizedError = null;
@@ -3730,7 +3665,7 @@ public class OpenSubsonicApiService(
         {
             return new ResponseModel
             {
-                UserInfo = BlankUserInfo,
+                UserInfo = UserInfo.BlankUserInfo,
                 IsSuccess = false,
                 ResponseData = await NewApiResponse(false, string.Empty, string.Empty, Error.UserNotAuthorizedError)
             };
@@ -3759,7 +3694,7 @@ public class OpenSubsonicApiService(
 
         return new ResponseModel
         {
-            UserInfo = BlankUserInfo,
+            UserInfo = UserInfo.BlankUserInfo,
             IsSuccess = result,
             ResponseData = await NewApiResponse(result, string.Empty, string.Empty,
                 notAuthorizedError ?? (result ? null : Error.InvalidApiKeyError))
@@ -3772,7 +3707,7 @@ public class OpenSubsonicApiService(
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
         {
-            return authResponse with { UserInfo = BlankUserInfo };
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
         }
 
         var data = new List<InternetRadioStation>();

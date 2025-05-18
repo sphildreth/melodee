@@ -1508,8 +1508,7 @@ public class LibraryService(
     /// <summary>
     ///     Look in the dynamic playlist directory and find the json file with the matching Id.
     /// </summary>
-    public async Task<MelodeeModels.OperationResult<MelodeeModels.DynamicPlaylist?>> GetDynamicPlaylistAsync(
-        Guid apiKey, CancellationToken cancellationToken)
+    public async Task<MelodeeModels.OperationResult<MelodeeModels.DynamicPlaylist?>> GetDynamicPlaylistAsync(Guid apiKey, CancellationToken cancellationToken)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
@@ -1521,8 +1520,7 @@ public class LibraryService(
 
         foreach (var dynamicPlaylistsJsonFile in dynamicPlaylistsJsonFiles)
         {
-            var dp = serializer.Deserialize<MelodeeModels.DynamicPlaylist>(await File
-                .ReadAllBytesAsync(dynamicPlaylistsJsonFile.FullName, cancellationToken).ConfigureAwait(false));
+            var dp = serializer.Deserialize<MelodeeModels.DynamicPlaylist>(await File.ReadAllBytesAsync(dynamicPlaylistsJsonFile.FullName, cancellationToken).ConfigureAwait(false));
             if (dp?.Id == apiKey)
             {
                 result = dp;

@@ -99,4 +99,17 @@ public class User : DataModelBase
     public ICollection<UserSong> UserSongs { get; set; } = new List<UserSong>();
 
     public ICollection<UserPin> Pins { get; set; } = new List<UserPin>();
+
+    public static User BlankUser => new()
+    {
+        UserName = string.Empty,
+        UserNameNormalized = string.Empty,
+        Email = string.Empty,
+        EmailNormalized = string.Empty,
+        PublicKey = string.Empty,
+        PasswordEncrypted = string.Empty,
+        CreatedAt = default
+    };
+
+
 }

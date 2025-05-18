@@ -193,6 +193,8 @@ builder.Services.AddRebusHandler<SearchHistoryEventHandler>();
 builder.Services.AddRebusHandler<UserLoginEventHandler>();
 builder.Services.AddRebusHandler<UserStreamEventHandler>();
 
+builder.WebHost.UseSetting("DetailedErrors", "true");
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

@@ -231,8 +231,8 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <CondensedStatistic Label="Rating"
-                                                Rating="@(_album.CalculatedRating)"/>
+                            <CondensedStatistic Label="Duration" Statistic="@(CurrentUser!.FormatDuration(_album.Duration.ToDuration()))"/>
+                            <CondensedStatistic Label="Rating" Rating="@(_album.CalculatedRating)"/>
                             <CondensedStatistic Label="Song Count" Statistic="@(_album.SongCount.ToStringPadLeft(4))"/>
                             <CondensedStatistic Label="Played Total"
                                                 Statistic="@(_album.PlayedCount.ToStringPadLeft(6))"/>
@@ -763,9 +763,9 @@
     }
 
     private Task PlaySong(Song song)
-        => PlayAction(song.Title, [song]);
+        => PlayAction(song.Title, [song.ToSongDataInfo()]);
 
     private Task PlayAlbum()
-        => PlayAction(_album.Name, _album.Songs.ToList());
+        => PlayAction(_album.Name, _album.Songs.Select(x => x.ToSongDataInfo()).ToList());
 
 }

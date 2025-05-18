@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Data.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -40,4 +41,7 @@ public class Playlist : DataModelBase
     public string? AllowedUserIds { get; set; }
 
     public ICollection<PlaylistSong> Songs { get; set; } = new List<PlaylistSong>();
+    
+    [NotMapped]
+    public bool IsDynamic { get; set; }
 }

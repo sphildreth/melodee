@@ -2,6 +2,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.OpenSubsonic;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Models.SearchEngines;
@@ -104,5 +105,27 @@ public static class SongExtensions
             0,
             nowPlayingInfo?.Scrobble.PlayerName
         );
+    }
+
+    public static SongDataInfo ToSongDataInfo(this Song song, UserSong? userSong = null)
+    {
+        return new SongDataInfo(song.Id,
+            song.ApiKey,
+            song.IsLocked,
+            song.Title,
+            song.TitleNormalized,
+            song.SongNumber,
+            song.Album.ReleaseDate,
+            song.Album.Name,
+            song.Album.ApiKey,
+            song.Album.Artist.Name,
+            song.Album.Artist.ApiKey,
+            song.FileSize,
+            song.Duration,
+            song.CreatedAt,
+            song.Tags ?? string.Empty,
+            userSong?.IsStarred ?? false,
+            userSong?.Rating ?? 0
+            );
     }
 }

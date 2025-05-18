@@ -7,6 +7,7 @@
 
 .music-player-container {
   width:100%;
+  height: 800px;
   display: inline-block;
   justify-content: center;
   align-items: center;
@@ -15,6 +16,7 @@
 
 .music-player {
   width: 100%;
+  height: 100%;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 24px;
@@ -173,7 +175,7 @@
 
 .playlist {
   margin-top: 24px;
-  max-height: 150px;
+  max-height: 208px;
   overflow-y: auto;
   border-radius: 8px;
   background-color: rgba(0, 0, 0, 0.2);

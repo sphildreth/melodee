@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using ATL.Logging;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
 
@@ -22,20 +24,26 @@ public sealed class NowPlayingInMemoryRepository : INowPlayingRepository
 
     public Task AddOrUpdateNowPlayingAsync(NowPlayingInfo nowPlaying, CancellationToken token = default)
     {
+        bool result = false; 
         if (Storage.ContainsKey(nowPlaying.UniqueId))
         {
             Storage.TryRemove(nowPlaying.UniqueId, out var existing);
             if (existing != null)
             {
                 existing.Scrobble.LastScrobbledAt = nowPlaying.Scrobble.LastScrobbledAt;
-                Storage.TryAdd(existing.UniqueId, existing);
+                result = Storage.TryAdd(existing.UniqueId, existing);
             }
         }
         else
         {
-            Storage.TryAdd(nowPlaying.UniqueId, nowPlaying);
+            result = Storage.TryAdd(nowPlaying.UniqueId, nowPlaying);
         }
 
+        if (result)
+        {
+            Trace.WriteLine($"[NowPlayingInMemoryRepository] Added or updated now playing: {nowPlaying}");
+        }
+        
         return Task.CompletedTask;
     }
 

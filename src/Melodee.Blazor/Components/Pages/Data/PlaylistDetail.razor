@@ -1,0 +1,290 @@
+@page "/data/playlist/{ApiKey:guid}"
+@inherits MelodeeComponentBase
+
+@using Melodee.Common.Data.Models
+@using Melodee.Common.Data.Models.Extensions
+@using Melodee.Common.Enums
+@using Melodee.Common.Filtering
+@using Melodee.Common.Models.Collection
+
+@using Playlist = Melodee.Common.Data.Models.Playlist
+@inject PlaylistService PlaylistService
+@inject UserService UserService
+@inject NotificationService NotificationService
+
+<PageTitle>@_playlist.Name</PageTitle>
+
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center" Class="rz-pb-5">
+        <RadzenColumn Size="7" SizeMD="9">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenBreadCrumb>
+
+                    <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
+                    <RadzenBreadCrumbItem Path="/data/playlists" Icon="playlist_play" Text="Playlists"/>
+                    <RadzenBreadCrumbItem Icon="featured_play_list" Text="@_playlist.Name"/>
+                </RadzenBreadCrumb>
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="5" SizeMD="3">
+            <RadzenStack
+                Orientation="Orientation.Horizontal"
+                AlignItems="AlignItems.Center"
+                JustifyContent="JustifyContent.End"
+                Gap="0.5rem">
+                <RadzenIcon Icon="@(_isPinned ? "keep" : "keep_off")" class="filled-icon"
+                            IconColor="@(_isPinned ? "#99CCFF" : "#C9C9C7")"
+                            @onclick="@TogglePinned" Style="cursor:pointer;"/>
+                <RadzenIcon
+                    Icon="play_arrow"
+                    class="filled-icon"
+                    IconColor="@Colors.Info"
+                    title="Play"
+                    @onclick="@(PlayPlaylist)"
+                    Style="cursor:pointer;font-size:14px;"/>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+<RadzenStack>
+    <RadzenMenu>
+        @if (_playlist.IsLocked)
+        {
+            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Click="UnlockButtonClick"
+                            title="Unlock playlist, will allow modifications." IconColor="@Colors.Warning"
+                            Icon="lock_open"></RadzenMenuItem>
+        }
+        else
+        {
+            <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_playlist.IsLocked"
+                            Click="LockButtonClick" title="Lock playlist, will prevent modifications."
+                            IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
+        }
+        <RadzenMenuItem Text="Set Cover Image" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_playlist.IsLocked"
+                        Click="SetPlaylistImageButtonClick" title="Set the playlist image."
+                        Icon="image"></RadzenMenuItem>
+    </RadzenMenu>
+    <RadzenText Text="@($" {_playlist.Name}")" TextStyle="TextStyle.DisplayH6"
+                TagName="TagName.H1" style="margin: 0"/>
+</RadzenStack>
+<RadzenStack class="rz-mt-3">
+    <RadzenRow>
+        <RadzenColumn Size="4" SizeMD="2">
+            <RadzenStack>
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="info" class="rz-me-1"/>
+                            Details
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Owner" Statistic="@(_playlist.User.UserName)"/>
+                            <CondensedStatistic Label="Public" Statistic="@(_playlist.IsPublic ? "Yes" : "No")"/>
+                            <CondensedStatistic Label="Type" Statistic="@(_playlist.IsDynamic ? "Dynamic" : "User")"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+
+                <RadzenPanel>
+                    <HeaderTemplate>
+                        <RadzenText TextStyle="TextStyle.H6"
+                                    class="rz-display-flex rz-align-items-center rz-m-0">
+                            <RadzenIcon Icon="monitoring" class="rz-me-1"/>
+                            Statistics
+                        </RadzenText>
+                    </HeaderTemplate>
+                    <ChildContent>
+                        <RadzenStack
+                            Orientation="Orientation.Vertical"
+                            JustifyContent="JustifyContent.Left"
+                            class="rz-pt-1"
+                            Gap="5px">
+                            <CondensedStatistic Label="Duration" Statistic="@(CurrentUser!.FormatDuration(_playlist.Duration.ToDuration()))"/>
+                            <CondensedStatistic Label="Song Count" Statistic="@(_playlist.SongCount.ToStringPadLeft(4))"/>
+                            <CondensedStatistic Label="Created"
+                                                Statistic="@(CurrentUser?.FormatInstant(_playlist.CreatedAt))"/>
+                            <CondensedStatistic Label="Last Updated"
+                                                Statistic="@(CurrentUser?.FormatInstant(_playlist.LastUpdatedAt))"/>
+                        </RadzenStack>
+                    </ChildContent>
+                </RadzenPanel>
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="8" SizeMD="9">
+            @if (_showItem == ShowItem.Overview)
+            {
+                <RadzenRow class="rz-pb-3">
+                    <RadzenColumn Size="12" SizeMD="8">
+                        <RadzenPanel>
+                            <HeaderTemplate>
+                                <RadzenText TextStyle="TextStyle.H6"
+                                            class="rz-display-flex rz-align-items-center rz-m-0">
+                                    <RadzenIcon Icon="music_note" class="rz-me-1"/>
+                                    Songs
+                                </RadzenText>
+                            </HeaderTemplate>
+                            <ChildContent>
+                                @if (_isLoading)
+                                {
+                                    <RadzenProgressBarCircular
+                                        ProgressBarStyle="ProgressBarStyle.Primary"
+                                        Value="100"
+                                        ShowValue="false"
+                                        Mode="ProgressBarMode.Indeterminate"/>
+                                }
+                                @foreach (var song in _songs)
+                                {
+                                    <SongDataInfoCardComponent Style="width:100%;" Song="@song"/>
+                                }
+                                <RadzenPager
+                                    ShowPagingSummary="true"
+                                    PagingSummaryFormat="@PagingSummaryFormat"
+                                    HorizontalAlign="HorizontalAlign.Right"
+                                    Count="_totalSongCount"
+                                    PageSize="@((int)_pageSize)"
+                                    PageNumbersCount="5"
+                                    PageChanged="@PageChanged"/>
+                            </ChildContent>
+                        </RadzenPanel>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4">
+                            <RadzenImage
+                                Path=@($"/images/{_playlist.ToApiKey(_playlist.IsDynamic)}/600")
+                                Style="margin:auto;display: block;"
+                                AlternateText="@_playlist.Name"/>
+                        <Markdown Content="@(_playlist.Description)" />
+                    </RadzenColumn>
+                </RadzenRow>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+
+@code {
+
+    private const string PagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
+
+    int _totalSongCount;
+
+    [Parameter] public Guid ApiKey { get; set; }
+
+    Playlist _playlist = new()
+    {
+        CreatedAt = default,
+        User = User.BlankUser,
+        Name = string.Empty
+    };
+
+    IEnumerable<SongDataInfo> _songs = [];
+
+    ShowItem _showItem = ShowItem.Overview;
+
+    bool _isPinned;
+
+    private enum ShowItem
+    {
+        Overview = 1
+    }
+
+    bool _isLoading = true;
+    int? _currentPage = 1;
+    readonly short _pageSize = 50;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var playlistResult = await PlaylistService.GetByApiKeyAsync(UserInfo.FromClaimsPrincipal(CurrentUser), ApiKey);
+        if (playlistResult.IsSuccess)
+        {
+            _playlist = playlistResult.Data;
+
+            await LoadSongs();
+
+            _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Playlist, _playlist.Id);
+        }
+    }
+
+    async Task PageChanged(PagerEventArgs args)
+    {
+        _currentPage = args.PageIndex + 1;
+        await LoadSongs();
+    }
+
+    private async Task LoadSongs()
+    {
+        _isLoading = true;
+
+        FilterOperatorInfo[]? filters = null;
+        var songListResult = await PlaylistService.SongsForPlaylistAsync(_playlist.ApiKey, UserInfo.FromClaimsPrincipal(CurrentUser!),  new PagedRequest
+        {
+            FilterBy = filters,
+            Page = _currentPage,
+            PageSize = _pageSize
+        });
+
+        _songs = songListResult.Data;
+        _totalSongCount = songListResult.TotalCount;
+        _isLoading = false;
+    }
+
+    private async Task TogglePinned()
+    {
+        _isPinned = !_isPinned;
+        var result = await UserService.TogglePinnedAsync(CurrentUsersId, UserPinType.Playlist, _playlist.Id);
+        NotificationService.Notify(NotificationMessageForResult(result, "Toggling Pin", ToastTime));
+    }
+
+    private async Task PlayPlaylist()
+    {
+        var songListResult = await PlaylistService.SongsForPlaylistAsync(_playlist.ApiKey, UserInfo.FromClaimsPrincipal(CurrentUser!),  new PagedRequest
+        {
+            Page = _currentPage,
+            PageSize = _pageSize
+        });
+        await PlayAction(_playlist.Name, songListResult.Data.ToList());
+    }
+
+    private void OnShowItemChange(TreeEventArgs arg)
+    {
+        switch (arg.Text)
+        {
+            default:
+                _showItem = ShowItem.Overview;
+                break;
+        }
+    }
+
+    private async Task SetPlaylistImageButtonClick()
+    {
+        @* await DialogService.OpenAsync("Image Search", ds => *@
+        @*     @<ImageSearchUpload *@
+        @*          SearchType="ImageSearchType.playlist" *@
+        @*          OnUpdateCallback="playlistSearchImageCallback" *@
+        @*          SearchValues="SearchValues"/>); *@
+        throw new NotImplementedException();
+    }
+
+    private async Task UnlockButtonClick()
+    {
+        // var result = await playlistService.LockUnlockplaylistAsync(_playlist.Id, false);
+        // NotificationService.Notify(NotificationMessageForResult(result, "unlocking playlist", ToastTime));
+        // _playlist.IsLocked = false;
+        throw new NotImplementedException();
+    }
+
+    private async Task LockButtonClick()
+    {
+        // var result = await playlistService.LockUnlockplaylistAsync(_playlist.Id, true);
+        // NotificationService.Notify(NotificationMessageForResult(result, "locking playlist", ToastTime));
+        // _playlist.IsLocked = true;
+        throw new NotImplementedException();
+    }
+}

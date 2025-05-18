@@ -47,4 +47,6 @@ public record UserInfo(int Id, Guid ApiKey, string UserName, string Email, strin
             Roles = principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList()
         };
     }
+    
+    public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty);    
 }
