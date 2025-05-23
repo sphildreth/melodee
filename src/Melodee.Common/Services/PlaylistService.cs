@@ -71,6 +71,7 @@ public class PlaylistService(
         }
         var dynamicPlaylists = await DynamicListAsync(userInfo, pagedRequest, cancellationToken);
         playlists.AddRange(dynamicPlaylists.Data);
+        playlistCount += dynamicPlaylists.TotalCount;
         
         return new MelodeeModels.PagedResult<Playlist>
         {
@@ -111,6 +112,8 @@ public class PlaylistService(
                                 .ConfigureAwait(false))!);
                     }
 
+                    playlistCount = dynamicPlaylists.Count;
+                    
                     foreach (var dp in dynamicPlaylists.Where(x => x.IsEnabled))
                     {
                         try
@@ -209,8 +212,19 @@ public class PlaylistService(
 
                 var dpWhere = dp.PrepareSongSelectionWhere(userInfo);
                 var dpOrderBy = dp.SongSelectionOrder ?? "RANDOM()";
-
                 var sql = $"""
+                           SELECT COUNT(s."Id")
+                           FROM "Songs" s
+                           join "Albums" a on (s."AlbumId" = a."Id")
+                           join "Artists" ar on (a."ArtistId" = ar."Id")
+                           left join "UserSongs" us on (s."Id" = us."SongId")
+                           where {dpWhere}
+                           """;
+                songCount = await dbConn
+                    .QuerySingleAsync<int>(sql)
+                    .ConfigureAwait(false);
+                
+                sql = $"""
                            SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                                   a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
                                   s."FileSize", s."Duration", s."CreatedAt", s."Tags", us."IsStarred" as "UserStarred", us."Rating" as "UserRating"
@@ -221,7 +235,7 @@ public class PlaylistService(
                            where {dpWhere}
                            order by {dpOrderBy}
                            offset {pagedRequest.SkipValue} rows fetch next {pagedRequest.TakeValue} rows only;
-                           """;
+                           """;                
                 songs = (await dbConn
                     .QueryAsync<SongDataInfo>(sql)
                     .ConfigureAwait(false)).ToArray();
@@ -235,6 +249,7 @@ public class PlaylistService(
                     .Include(x => x.Songs).ThenInclude(x => x.Song).ThenInclude(x => x.UserSongs.Where(ua => ua.UserId == userInfo.Id))
                     .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
                     .ConfigureAwait(false);
+                songCount = playlist?.Songs.Count ?? 0;
                 songs = playlist?
                     .Songs
                     .OrderBy(x => x.PlaylistOrder)

@@ -7,7 +7,7 @@ namespace Melodee.Blazor.Controllers.Melodee.Extensions;
 
 public static class PlaylistExtensions
 {
-    public static Playlist ToPlaylistModel(this MelodeeDataModels.Playlist playlist, string baseUrl, Models.User currentUser)
+    public static Playlist ToPlaylistModel(this MelodeeDataModels.Playlist playlist, string baseUrl, User currentUser)
     {
         return new Playlist(playlist.ApiKey,
             $"{baseUrl}/images/{playlist.ToApiKey()}/32",

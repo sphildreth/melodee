@@ -21,7 +21,6 @@ public class SearchController(
     configuration,
     configurationFactory)
 {
-    
     [HttpGet]
     [Route("search")]
     public Task<IActionResult> SearchAsync(string query, string? includes, CancellationToken cancellationToken = default)

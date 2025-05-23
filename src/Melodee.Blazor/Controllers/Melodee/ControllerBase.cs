@@ -46,7 +46,7 @@ public abstract class ControllerBase(
             var tokenHandler = new JwtSecurityTokenHandler();
 
             // Use either MelodeeAuthSettings:Token or Jwt:Key based on configuration
-            string? secretKey = Configuration.GetSection("MelodeeAuthSettings:Token").Value;
+            var secretKey = Configuration.GetSection("MelodeeAuthSettings:Token").Value;
             if (string.IsNullOrEmpty(secretKey))
             {
                 secretKey = Configuration.GetSection("Jwt:Key").Value;
@@ -75,7 +75,7 @@ public abstract class ControllerBase(
             };
 
             // Validate the token and get the principal (contains claims)
-            ClaimsPrincipal principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
 
             // Additional check to ensure the token is not expired
             if (validatedToken.ValidTo < DateTime.UtcNow)
@@ -198,6 +198,7 @@ public abstract class ControllerBase(
             );
             Trace.WriteLine($"-*-> User [{ApiRequest.Username}] : {Serializer.Serialize(ApiRequest)}");
         }
+
         await next().ConfigureAwait(false);
     }
 }

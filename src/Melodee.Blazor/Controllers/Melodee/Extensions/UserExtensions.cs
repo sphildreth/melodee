@@ -6,7 +6,7 @@ namespace Melodee.Blazor.Controllers.Melodee.Extensions;
 
 public static class UserExtensions
 {
-    public static Models.User ToUserModel(this MelodeeDataModels.User user, string baseUrl)
+    public static User ToUserModel(this MelodeeDataModels.User user, string baseUrl)
     {
         return new User(user.ApiKey,
             $"{baseUrl}/images/{user.ToApiKey()}/32",

@@ -59,4 +59,20 @@ public sealed record AlbumDataInfo(
 
     public string InfoLineData =>
         $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()} {(IsLocked ? " | \ud83d\udd12" : string.Empty)}";
+    
+    public static AlbumDataInfo BlankAlbumDataInfo =>
+        new(0,
+            Guid.Empty,
+            false,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            Guid.Empty,
+            string.Empty,
+            0,
+            0,
+            Instant.MinValue,
+            string.Empty,
+            LocalDate.MinIsoValue, 
+            (short)Enums.AlbumStatus.Invalid);    
 }

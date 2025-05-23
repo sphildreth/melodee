@@ -45,7 +45,8 @@ public class UserController(
         var key = Encoding.UTF8.GetBytes(Configuration.GetSection("MelodeeAuthSettings:Token").Value!);
         var tokenHoursString = Configuration.GetSection("MelodeeAuthSettings:TokenHours").Value;
         var tokenHours = SafeParser.ToNumber<int>(tokenHoursString);
-        var tokenDescriptor = new SecurityTokenDescriptor {
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
             Subject = new ClaimsIdentity([
                 new Claim(ClaimTypes.Email, authResult.Data.Email),
                 new Claim(ClaimTypes.Name, authResult.Data.UserName),
@@ -55,9 +56,9 @@ public class UserController(
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
-        return Ok(new {token = tokenHandler.WriteToken(token) });
+        return Ok(new { token = tokenHandler.WriteToken(token) });
     }
-    
+
     /// <summary>
     /// Return information about the current user making the request.
     /// </summary>
@@ -69,14 +70,16 @@ public class UserController(
         {
             return Unauthorized(new { error = "Authorization token is missing" });
         }
+
         var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
         }
-        return Ok(new {data= userResult.Data.ToUserModel(GetBaseUrl(Configuration))});
+
+        return Ok(new { data = userResult.Data.ToUserModel(GetBaseUrl(Configuration)) });
     }
-    
+
     /// <summary>
     /// Return the last three songs played by the user
     /// </summary>
@@ -88,30 +91,45 @@ public class UserController(
         {
             return Unauthorized(new { error = "Authorization token is missing" });
         }
+
         var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
+        }
+
         var userLastPlayedResult = await userService.UserLastPlayedSongsAsync(userResult.Data.Id, 3, cancellationToken);
-        return Ok(new {data= userLastPlayedResult.Data.Where(x => x?.Song != null).Select(x => x!.Song.ToSongDataInfo()).ToArray()});
-    }  
-    
+        return Ok(new { data = userLastPlayedResult.Data.Where(x => x?.Song != null).Select(x => x!.Song.ToSongDataInfo()).ToArray() });
+    }
+
     [HttpGet]
     [Route("playlists")]
-    public async Task<IActionResult> UsersPlaylistsAsync(short? limit, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UsersPlaylistsAsync(int? page, short? pageSize, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
         {
             return Unauthorized(new { error = "Authorization token is missing" });
         }
+
         var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
         }
-        var playlists = await playlistService.ListAsync(userResult.Data.ToUserInfo(), new PagedRequest { PageSize = limit }, cancellationToken);
+
+        var pageValue = page ?? 1;
+        var pageSizeValue = pageSize ?? 50;
+        var playlists = await playlistService.ListAsync(userResult.Data.ToUserInfo(), new PagedRequest { Page = pageValue, PageSize = pageSizeValue }, cancellationToken);
         var baseUrl = GetBaseUrl(Configuration);
-        return Ok(new {data= playlists.Data.Select(x => x.ToPlaylistModel(baseUrl, userResult.Data.ToUserModel(baseUrl))).ToArray()});
-    } 
+        return Ok(new
+        {
+            meta = new PaginationMetadata(
+                playlists.TotalCount,
+                pageSizeValue,
+                pageValue,
+                playlists.TotalPages
+            ),
+            data = playlists.Data.Select(x => x.ToPlaylistModel(baseUrl, userResult.Data.ToUserModel(baseUrl))).ToArray()
+        });
+    }
 }
