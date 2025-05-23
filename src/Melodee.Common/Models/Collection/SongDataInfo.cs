@@ -1,10 +1,11 @@
+using System.Text.Json.Serialization;
 using Melodee.Common.Extensions;
 using NodaTime;
 
 namespace Melodee.Common.Models.Collection;
 
 public sealed record SongDataInfo(
-    int Id,
+    [property:JsonIgnore] int Id,
     Guid ApiKey,
     bool IsLocked,
     string Title,

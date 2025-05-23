@@ -1466,8 +1466,7 @@ public sealed class UserService(
         }
     }
 
-    public async Task<UserSong?> UserSongAsync(int userId, Guid songApiKey,
-        CancellationToken cancellationToken = default)
+    public async Task<UserSong?> UserSongAsync(int userId, Guid songApiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
 
@@ -1487,8 +1486,30 @@ public sealed class UserService(
         }
     }
 
-    public async Task<UserSong[]?> UserSongsForAlbumAsync(int userId, Guid albumApiKey,
-        CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<UserSong?[]>> UserLastPlayedSongsAsync(int userId, int count, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, userId, nameof(userId));
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var sql = """
+                      select us.*
+                      from "UserSongs" us 
+                      left join "Songs" s on (us."SongId" = s."Id")
+                      where us."UserId" = @userId
+                      order by us."LastPlayedAt" desc
+                      limit @count;
+                      """;
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var data = await dbConn.QueryAsync<UserSong?>(sql, new { userId, count })
+                .ConfigureAwait(false);
+            return new MelodeeModels.OperationResult<UserSong?[]>
+            {
+                Data = data.ToArray()
+            };
+        }
+    }
+
+    public async Task<UserSong[]?> UserSongsForAlbumAsync(int userId, Guid albumApiKey, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
 
