@@ -276,11 +276,14 @@ public sealed class DirectoryProcessorToStagingService(
             if (Path.GetExtension(dirName).Nullify() != null)
             {
                 var newDirName = dirName.Replace(".", "_");
-                Directory.Move(dirName, newDirName);
-                Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
-                    nameof(DirectoryProcessorToStagingService),
-                    dirName,
-                    newDirName);
+                if (newDirName != dirName)
+                {
+                    Directory.Move(dirName, newDirName);
+                    Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
+                        nameof(DirectoryProcessorToStagingService),
+                        dirName,
+                        newDirName);
+                }
             }
         }
 
@@ -309,12 +312,15 @@ public sealed class DirectoryProcessorToStagingService(
                 var dd = directoryInfoToProcess.ToDirectoryInfo();
                 var oldDd = dd.Name;
                 var newDd = Path.Combine(dd.Parent!.FullName, dd.Name.Replace(".", "_"));
-                dd.MoveTo(newDd);
-                Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
-                    nameof(DirectoryProcessorToStagingService),
-                    oldDd,
-                    newDd);
-                modifiedDirectories = true;
+                if (newDd != oldDd)
+                {
+                    dd.MoveTo(newDd);
+                    Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
+                        nameof(DirectoryProcessorToStagingService),
+                        oldDd,
+                        newDd);
+                    modifiedDirectories = true;
+                }
             }
         }
 
