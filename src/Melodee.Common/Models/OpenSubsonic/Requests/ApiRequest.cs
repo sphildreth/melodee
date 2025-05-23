@@ -44,4 +44,6 @@ public record ApiRequest(
     ///     Defaults to XML
     /// </summary>
     public bool IsXmlRequest => !IsJsonRequest && !IsJsonPRequest;
+    
+    public bool IsAuthorized => Username != null && ApiKey != null;
 }

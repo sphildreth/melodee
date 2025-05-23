@@ -22,6 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
     <PackageReference Include="AuralizeBlazor" />
     <PackageReference Include="Markdig" />
     <PackageReference Include="PSC.Blazor.Components.MarkdownEditor" />

@@ -26,7 +26,7 @@ public static class UserExtensions
             user.LastUpdatedAt?.ToString() ?? user.CreatedAt.ToString());
     }
 
-    public static UserInfo ToUserInfo(this User user)
+    public static string[] Roles(this User user)
     {
         var roles = new List<string>();
 
@@ -89,10 +89,14 @@ public static class UserExtensions
         {
             roles.Add(RoleNameRegistry.Editor);
         }
-
+        return roles.ToArray();
+    }
+    
+    public static UserInfo ToUserInfo(this User user)
+    {
         return new UserInfo(user.Id, user.ApiKey, user.UserName, user.Email, user.PublicKey, user.PasswordEncrypted)
         {
-            Roles = roles
+            Roles = user.Roles().ToList()
         };
     }
 

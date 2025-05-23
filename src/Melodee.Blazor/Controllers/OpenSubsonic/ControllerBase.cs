@@ -18,51 +18,9 @@ using Serilog;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
-public abstract class ControllerBase(EtagRepository etagRepository, ISerializer serializer, IMelodeeConfigurationFactory configurationFactory) : Controller
+public abstract class ControllerBase(EtagRepository etagRepository, ISerializer serializer, IMelodeeConfigurationFactory configurationFactory) : CommonBase
 {
     protected readonly ISerializer Serializer = serializer;
-
-    protected ApiRequest ApiRequest { get; private set; } = null!;
-
-    private static T? GetHeaderValueAs<T>(HttpContext? context, string headerName)
-    {
-        if (context?.Request.Headers.TryGetValue(headerName, out var values) ?? false)
-        {
-            var rawValues = values.ToString();
-            if (!string.IsNullOrWhiteSpace(rawValues))
-            {
-                return (T)Convert.ChangeType(values.ToString(), typeof(T));
-            }
-        }
-
-        return default;
-    }
-
-    private static string GetRequestIp(HttpContext? context, bool tryUseXForwardHeader = true)
-    {
-        string? ip = null;
-        if (tryUseXForwardHeader)
-        {
-            ip = GetHeaderValueAs<string>(context, "X-Forwarded-For").FromDelimitedList(delimiter: ',')?.FirstOrDefault();
-        }
-
-        if (string.IsNullOrWhiteSpace(ip) && context?.Connection.RemoteIpAddress != null)
-        {
-            ip = context.Connection.RemoteIpAddress.ToString();
-        }
-
-        if (string.IsNullOrWhiteSpace(ip))
-        {
-            ip = GetHeaderValueAs<string>(context, "REMOTE_ADDR");
-        }
-
-        if (string.IsNullOrWhiteSpace(ip))
-        {
-            throw new Exception("Unable to determine caller's IP.");
-        }
-
-        return ip;
-    }
 
     protected async Task<IActionResult> ImageResult(string apiKey, Task<ResponseModel> action)
     {
@@ -181,7 +139,6 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             )
         );
         Trace.WriteLine($"-*-> User [{ApiRequest.Username}] : {Serializer.Serialize(ApiRequest)}");
-        //return base.OnActionExecutionAsync(context, next);
         await next().ConfigureAwait(false);
     }
 }
