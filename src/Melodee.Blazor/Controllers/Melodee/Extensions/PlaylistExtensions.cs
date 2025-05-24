@@ -13,6 +13,7 @@ public static class PlaylistExtensions
             $"{baseUrl}/images/{playlist.ToApiKey()}/32",
             $"{baseUrl}/images/{playlist.ToApiKey()}/512",
             playlist.Name,
+            playlist.Description,
             playlist.Duration.ToDuration(),
             playlist.Duration,
             currentUser.FormatDuration(playlist.Duration.ToDuration()),

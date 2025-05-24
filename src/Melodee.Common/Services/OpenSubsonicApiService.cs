@@ -2148,8 +2148,7 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Get bytes for song with support for chunking from request header values.
     /// </summary>
-    public async Task<StreamResponse> StreamAsync(StreamRequest request, ApiRequest apiRequest,
-        CancellationToken cancellationToken)
+    public async Task<StreamResponse> StreamAsync(StreamRequest request, ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         long rangeBegin = 0;
         long rangeEnd = 0;

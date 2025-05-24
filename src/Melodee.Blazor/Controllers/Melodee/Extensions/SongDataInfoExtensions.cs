@@ -19,6 +19,7 @@ public static class SongDataInfoExtensions
         };
         return new Song(
             songDataInfo.ApiKey,
+            $"{baseUrl}/song/stream/{songDataInfo.ApiKey}",
             $"{baseUrl}/images/{songDataInfo.ToApiKey()}/32",
             $"{baseUrl}/images/{songDataInfo.ToApiKey()}/512",
             songDataInfo.Title,

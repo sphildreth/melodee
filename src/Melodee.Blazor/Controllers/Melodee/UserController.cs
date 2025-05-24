@@ -77,7 +77,7 @@ public class UserController(
             return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
-        return Ok(new { data = userResult.Data.ToUserModel(GetBaseUrl(Configuration)) });
+        return Ok(userResult.Data.ToUserModel(GetBaseUrl(Configuration)));
     }
 
     /// <summary>
@@ -99,7 +99,16 @@ public class UserController(
         }
 
         var userLastPlayedResult = await userService.UserLastPlayedSongsAsync(userResult.Data.Id, 3, cancellationToken);
-        return Ok(new { data = userLastPlayedResult.Data.Where(x => x?.Song != null).Select(x => x!.Song.ToSongDataInfo()).ToArray() });
+        return Ok(new
+        {
+            meta = new PaginationMetadata(
+                3,
+                10,
+                1,
+                1
+            ),
+            data = userLastPlayedResult.Data.Where(x => x?.Song != null).Select(x => x!.Song.ToSongDataInfo()).ToArray()
+        });        
     }
 
     [HttpGet]

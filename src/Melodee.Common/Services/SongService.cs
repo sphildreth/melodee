@@ -1,12 +1,17 @@
+using System.Globalization;
 using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Filtering;
+using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
+using Melodee.Common.Models.OpenSubsonic.DTO;
+using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using Serilog;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
@@ -117,8 +122,7 @@ public class SongService(
         };
     }
 
-    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
-        int userId, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, int userId, CancellationToken cancellationToken = default)
     {
         int songCount;
         SongDataInfo[] songs = [];
@@ -249,9 +253,94 @@ public class SongService(
         }
     }
 
-    public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] toArray,
-        CancellationToken cancellationToken = default)
+    public Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] toArray, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
+
+    public async Task<MelodeeModels.OperationResult<StreamResponse>> GetStreamForSongAsync(MelodeeModels.UserInfo user, Guid apiKey, CancellationToken cancellationToken = default)
+    {
+        var song = await GetByApiKeyAsync(apiKey, cancellationToken).ConfigureAwait(false);
+        if (song.Data == null)
+        {
+            return new MelodeeModels.OperationResult<StreamResponse>("Unknown song.")
+            {
+                Data = new StreamResponse
+                (
+                    new Dictionary<string, StringValues>([]),
+                    false,
+                    []
+                )
+            };
+        }
+        var sql = """
+                  select l."Path" || aa."Directory" || a."Directory" || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration",s."BitRate", s."ContentType"
+                  from "Songs" s 
+                  join "Albums" a on (a."Id" = s."AlbumId")
+                  join "Artists" aa on (a."ArtistId" = aa."Id")    
+                  join "Libraries" l on (l."Id" = aa."LibraryId")
+                  where s."ApiKey" = @apiKey;
+                  """;
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var dbConn = scopedContext.Database.GetDbConnection();
+            var songStreamInfo =
+                dbConn.QuerySingleOrDefault<SongStreamInfo>(sql, new { apiKey = song.Data.ApiKey });
+            if (!(songStreamInfo?.TrackFileInfo.Exists ?? false))
+            {
+                Logger.Warning("[{ServiceName}] Stream request for song that was not found. User [{ApiRequest}] Song ApiKey [{ApiKey}]",
+                    nameof(SongService), user.ToString(), song.Data.ApiKey);
+                return new MelodeeModels.OperationResult<StreamResponse>
+                {
+                    Data = new StreamResponse
+                    (
+                        new Dictionary<string, StringValues>([]),
+                        false,
+                        []
+                    )
+                };
+            }
+            
+            var bytesToRead = (int)songStreamInfo.FileSize;
+            var trackBytes = new byte[bytesToRead];
+            var numberOfBytesRead = 0;
+            await using (var fs = songStreamInfo.TrackFileInfo.OpenRead())
+            {
+                try
+                {
+                    fs.Seek(0, SeekOrigin.Begin);
+                    numberOfBytesRead = await fs.ReadAsync(trackBytes.AsMemory(0, bytesToRead), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Reading song [{SongInfo}]", songStreamInfo);
+                }
+            }
+
+           // await bus.SendLocal(new UserStreamEvent(apiRequest, request)).ConfigureAwait(false);
+
+            return new MelodeeModels.OperationResult<StreamResponse>
+            {
+                Data = new StreamResponse
+                (
+                    new Dictionary<string, StringValues>
+                    {
+                        { "Accept-Ranges", "bytes" },
+                        { "Cache-Control", "no-store, must-revalidate, no-cache, max-age=0" },
+                        { "Content-Duration", songStreamInfo.Duration.ToString(CultureInfo.InvariantCulture) },
+                        { "Content-Length", numberOfBytesRead.ToString() },
+                        { "Content-Range", $"bytes 0-{songStreamInfo.FileSize}/{numberOfBytesRead}" },
+                        { "Content-Type", songStreamInfo.ContentType },
+                        { "Expires", "Mon, 01 Jan 1990 00:00:00 GMT" }
+                    },
+                    numberOfBytesRead > 0,
+                    trackBytes,
+                    null,
+                    null
+                )
+            };
+        }        
+    }
+    
 }

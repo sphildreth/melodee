@@ -28,8 +28,8 @@ public class PlaylistController(
     configurationFactory)
 {
     [HttpGet]
-    [Route("songs")]
-    public async Task<IActionResult> SongsForPlaylist(Guid apiKey, int page, short pageSize, CancellationToken cancellationToken = default)
+    [Route("{apiKey:guid}/songs")]
+    public async Task<IActionResult> SongsForPlaylist(Guid apiKey, int? page, short? pageSize, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
         {
@@ -48,15 +48,23 @@ public class PlaylistController(
         {
             return BadRequest(new { error = "Playlist not found" });
         }
-
-        var songsForPlaylistResult = await playlistService.SongsForPlaylistAsync(apiKey, userInfo, new PagedRequest { PageSize = pageSize, Page = page }, cancellationToken);
+        var pageValue = page ?? 1;
+        var pageSizeValue = pageSize ?? 50;
+        var songsForPlaylistResult = await playlistService.SongsForPlaylistAsync(apiKey,
+            userInfo,
+            new PagedRequest
+            {
+                PageSize = pageSizeValue,
+                Page = pageValue
+            },
+            cancellationToken);
         var baseUrl = GetBaseUrl(Configuration);
         return Ok(new
         {
             meta = new PaginationMetadata(
                 songsForPlaylistResult.TotalCount,
-                pageSize,
-                page,
+                pageSizeValue,
+                pageValue,
                 songsForPlaylistResult.TotalPages
             ),
             data = songsForPlaylistResult.Data.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl)))
