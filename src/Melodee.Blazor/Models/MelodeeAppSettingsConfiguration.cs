@@ -1,3 +1,4 @@
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 namespace Melodee.Blazor.Models;
 
 public class MelodeeAppSettingsConfiguration
@@ -14,21 +15,4 @@ public class MelodeeAppSettingsConfiguration
 
     public string BaseUrl { get; init; }
     public Blacklist Blacklist { get; init; }
-}
-
-public class Blacklist
-{
-    public Blacklist()
-    {
-    }
-    
-    public Blacklist(string[]? blacklistedEmails, string[]? blacklistedIPs)
-    {
-        BlacklistedEmails = blacklistedEmails;
-        BlacklistedIPs = blacklistedIPs;
-    }
-
-    public string[]? BlacklistedEmails { get; init; }
-    public string[]? BlacklistedIPs { get; init; }
-
 }
