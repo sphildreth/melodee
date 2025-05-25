@@ -24,5 +24,4 @@ public static class UserModelExtensions
         var hmacService = new HmacTokenService(secret);
         return HttpUtility.UrlEncode(hmacService.GenerateTimedToken($"{user.Id}:{seed}").ToBase64());
     }
-
 }

@@ -36,18 +36,24 @@ public class PlaylistController(
             return Unauthorized(new { error = "Authorization token is missing" });
         }
 
-        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken);
+        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
+        if (userResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
+
         var userInfo = userResult.Data.ToUserInfo();
-        var playlistResult = await playlistService.GetByApiKeyAsync(userInfo, apiKey, cancellationToken);
+        var playlistResult = await playlistService.GetByApiKeyAsync(userInfo, apiKey, cancellationToken).ConfigureAwait(false);
         if (!playlistResult.IsSuccess || playlistResult.Data == null)
         {
             return BadRequest(new { error = "Playlist not found" });
         }
+
         var pageValue = page ?? 1;
         var pageSizeValue = pageSize ?? 50;
         var songsForPlaylistResult = await playlistService.SongsForPlaylistAsync(apiKey,
@@ -57,7 +63,7 @@ public class PlaylistController(
                 PageSize = pageSizeValue,
                 Page = pageValue
             },
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         var baseUrl = GetBaseUrl(Configuration);
         return Ok(new
         {

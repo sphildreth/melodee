@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Melodee.Blazor.Controllers.Melodee.Extensions;
 using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
+using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
@@ -25,6 +26,7 @@ public class UserController(
     UserService userService,
     PlaylistService playlistService,
     IConfiguration configuration,
+    IBlacklistService blacklistService,
     IMelodeeConfigurationFactory configurationFactory) : ControllerBase(
     etagRepository,
     serializer,
@@ -35,12 +37,22 @@ public class UserController(
     [Route("authenticate")]
     public async Task<IActionResult> AuthenticateUserAsync([FromBody] LoginModel model, CancellationToken cancellationToken = default)
     {
-        var authResult = await userService.LoginUserAsync(model.Email, model.Password, cancellationToken);
+        var authResult = await userService.LoginUserAsync(model.Email, model.Password, cancellationToken).ConfigureAwait(false);
         if (!authResult.IsSuccess || authResult.Data == null)
         {
             return Unauthorized();
         }
 
+        if (authResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
+
+        if (await blacklistService.IsEmailBlacklistedAsync(authResult.Data.Email).ConfigureAwait(false) || 
+            await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
+        }
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(Configuration.GetSection("MelodeeAuthSettings:Token").Value!);
         var tokenHoursString = Configuration.GetSection("MelodeeAuthSettings:TokenHours").Value;
@@ -71,7 +83,7 @@ public class UserController(
             return Unauthorized(new { error = "Authorization token is missing" });
         }
 
-        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken);
+        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
@@ -92,13 +104,24 @@ public class UserController(
             return Unauthorized(new { error = "Authorization token is missing" });
         }
 
-        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken);
+        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
-        var userLastPlayedResult = await userService.UserLastPlayedSongsAsync(userResult.Data.Id, 3, cancellationToken);
+        if (userResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
+        
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+            await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
+        }
+
+        var userLastPlayedResult = await userService.UserLastPlayedSongsAsync(userResult.Data.Id, 3, cancellationToken).ConfigureAwait(false);
         return Ok(new
         {
             meta = new PaginationMetadata(
@@ -108,7 +131,7 @@ public class UserController(
                 1
             ),
             data = userLastPlayedResult.Data.Where(x => x?.Song != null).Select(x => x!.Song.ToSongDataInfo()).ToArray()
-        });        
+        });
     }
 
     [HttpGet]
@@ -120,15 +143,26 @@ public class UserController(
             return Unauthorized(new { error = "Authorization token is missing" });
         }
 
-        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken);
+        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
+        if (userResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
+
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+            await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
+        }
+        
         var pageValue = page ?? 1;
         var pageSizeValue = pageSize ?? 50;
-        var playlists = await playlistService.ListAsync(userResult.Data.ToUserInfo(), new PagedRequest { Page = pageValue, PageSize = pageSizeValue }, cancellationToken);
+        var playlists = await playlistService.ListAsync(userResult.Data.ToUserInfo(), new PagedRequest { Page = pageValue, PageSize = pageSizeValue }, cancellationToken).ConfigureAwait(false);
         var baseUrl = GetBaseUrl(Configuration);
         return Ok(new
         {

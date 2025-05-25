@@ -5,6 +5,7 @@ using Melodee.Blazor.Components;
 using Melodee.Blazor.Constants;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Middleware;
+using Melodee.Blazor.Models;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -121,6 +122,10 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+
+// In Program.cs or Startup.cs
+builder.Services.Configure<MelodeeAppSettingsConfiguration>(builder.Configuration.GetSection("Melodee"));
+builder.Services.AddSingleton<IBlacklistService, BlacklistService>();
 
 #region Melodee Services
 

@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Melodee.Blazor.Filters;
+using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
@@ -20,23 +21,33 @@ public class SongController(
     UserService userService,
     SongService songService,
     IConfiguration configuration,
+    IBlacklistService blacklistService,
     IMelodeeConfigurationFactory configurationFactory) : ControllerBase(
     etagRepository,
     serializer,
     configuration,
     configurationFactory)
 {
-
-    
     [HttpGet]
     [Route("/song/stream/{apiKey:guid}/{userApiKey:guid}/{authToken}")]
     public async Task<IActionResult> StreamSong(Guid apiKey, Guid userApiKey, string authToken, CancellationToken cancellationToken = default)
     {
-        var userResult = await userService.GetByApiKeyAsync(userApiKey, cancellationToken);
+        var userResult = await userService.GetByApiKeyAsync(userApiKey, cancellationToken).ConfigureAwait(false);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }         
+        }
+
+        if (userResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
+
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+            await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
+        }        
         
         var hmacService = new HmacTokenService(userResult.Data.PublicKey);
         var authTokenValidation = hmacService.ValidateTimedToken(authToken.FromBase64());
@@ -45,17 +56,18 @@ public class SongController(
         {
             return Unauthorized(new { error = "Invalid Auth Token" });
         }
-        
-        var streamResult = await songService.GetStreamForSongAsync(userResult.Data.ToUserInfo(), apiKey, cancellationToken);
+
+        var streamResult = await songService.GetStreamForSongAsync(userResult.Data.ToUserInfo(), apiKey, cancellationToken).ConfigureAwait(false);
         if (!streamResult.IsSuccess)
         {
             return BadRequest(new { error = "Unable to load song" });
         }
+
         foreach (var responseHeader in streamResult.Data.ResponseHeaders)
         {
             Response.Headers[responseHeader.Key] = responseHeader.Value;
         }
-        
+
         await Response.Body
             .WriteAsync(streamResult.Data.Bytes.AsMemory(0, streamResult.Data.Bytes.Length), cancellationToken)
             .ConfigureAwait(false);
