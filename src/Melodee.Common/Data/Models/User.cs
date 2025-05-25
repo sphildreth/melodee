@@ -28,7 +28,7 @@ public class User : DataModelBase
     public required string EmailNormalized { get; set; }
 
     /// <summary>
-    ///     This is the PublicKey used to encrypt and decrypt the users password for Subsonic clients authentication. When this
+    ///     This is the PublicKey (really its a private key) used to encrypt and decrypt the users password for Subsonic clients authentication. When this
     ///     changes the users password will need reset.
     /// </summary>
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]

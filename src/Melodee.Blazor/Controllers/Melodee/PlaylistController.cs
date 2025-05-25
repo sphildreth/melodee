@@ -67,7 +67,7 @@ public class PlaylistController(
                 pageValue,
                 songsForPlaylistResult.TotalPages
             ),
-            data = songsForPlaylistResult.Data.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl)))
+            data = songsForPlaylistResult.Data.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey))
         });
     }
 }

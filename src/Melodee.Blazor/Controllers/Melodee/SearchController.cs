@@ -41,6 +41,6 @@ public class SearchController(
         }
         var searchResult = await searchService.DoSearchAsync(userResult.Data.ApiKey, ApiRequest.ApiRequestPlayer.UserAgent, q, maxResults ?? 50, SearchInclude.Songs, cancellationToken);
         var baseUrl = GetBaseUrl(Configuration);        
-        return Ok(searchResult.Data.Songs.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl))));
+        return Ok(searchResult.Data.Songs.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)));
     }
 }

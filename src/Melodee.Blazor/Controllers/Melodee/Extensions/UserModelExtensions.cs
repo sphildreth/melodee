@@ -1,5 +1,8 @@
 using System.Globalization;
+using System.Web;
 using Melodee.Common.Configuration;
+using Melodee.Common.Extensions;
+using Melodee.Common.Security;
 using NodaTime;
 
 namespace Melodee.Blazor.Controllers.Melodee.Extensions;
@@ -15,4 +18,11 @@ public static class UserModelExtensions
     {
         return duration.ToString("-H:mm:ss", user.GetCulture());
     }
+
+    public static string CreateAuthUrlFragment(this Models.User user, string secret, string seed)
+    {
+        var hmacService = new HmacTokenService(secret);
+        return HttpUtility.UrlEncode(hmacService.GenerateTimedToken($"{user.Id}:{seed}").ToBase64());
+    }
+
 }

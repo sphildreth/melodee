@@ -68,6 +68,7 @@
   <ItemGroup>
     <Folder Include="MessageBus\"/>
     <Folder Include="Migrations\"/>
+    <Folder Include="Security\" />
   </ItemGroup>
 
   <ItemGroup>

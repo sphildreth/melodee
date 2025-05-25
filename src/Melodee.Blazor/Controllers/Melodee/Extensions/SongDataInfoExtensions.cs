@@ -7,7 +7,7 @@ namespace Melodee.Blazor.Controllers.Melodee.Extensions;
 
 public static class SongDataInfoExtensions
 {
-    public static Song ToSongModel(this MelodeeModelsCollection.SongDataInfo songDataInfo, string baseUrl, User currentUser)
+    public static Song ToSongModel(this MelodeeModelsCollection.SongDataInfo songDataInfo, string baseUrl, User currentUser, string userSecret)
     {
         var artistInfoData = MelodeeModelsCollection.ArtistDataInfo.BlankArtistDataInfo with
         {
@@ -19,7 +19,7 @@ public static class SongDataInfoExtensions
         };
         return new Song(
             songDataInfo.ApiKey,
-            $"{baseUrl}/song/stream/{songDataInfo.ApiKey}",
+            $"{baseUrl}/song/stream/{songDataInfo.ApiKey}/{currentUser.Id}/{currentUser.CreateAuthUrlFragment(userSecret, songDataInfo.ApiKey.ToString())}",
             $"{baseUrl}/images/{songDataInfo.ToApiKey()}/32",
             $"{baseUrl}/images/{songDataInfo.ToApiKey()}/512",
             songDataInfo.Title,

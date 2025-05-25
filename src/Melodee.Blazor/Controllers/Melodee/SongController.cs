@@ -2,6 +2,8 @@ using Asp.Versioning;
 using Melodee.Blazor.Filters;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data.Models.Extensions;
+using Melodee.Common.Extensions;
+using Melodee.Common.Security;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Utility;
@@ -27,19 +29,22 @@ public class SongController(
 
     
     [HttpGet]
-    [Route("/song/stream/{apiKey:guid}")]
-    public async Task<IActionResult> StreamSong(Guid apiKey, CancellationToken cancellationToken = default)
+    [Route("/song/stream/{apiKey:guid}/{userApiKey:guid}/{authToken}")]
+    public async Task<IActionResult> StreamSong(Guid apiKey, Guid userApiKey, string authToken, CancellationToken cancellationToken = default)
     {
-        if (!ApiRequest.IsAuthorized)
-        {
-            return Unauthorized(new { error = "Authorization token is missing" });
-        }
-
-        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken);
+        var userResult = await userService.GetByApiKeyAsync(userApiKey, cancellationToken);
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
+        }         
+        
+        var hmacService = new HmacTokenService(userResult.Data.PublicKey);
+        var authTokenValidation = hmacService.ValidateTimedToken(authToken.FromBase64());
+
+        if (!authTokenValidation)
+        {
+            return Unauthorized(new { error = "Invalid Auth Token" });
+        }
         
         var streamResult = await songService.GetStreamForSongAsync(userResult.Data.ToUserInfo(), apiKey, cancellationToken);
         if (!streamResult.IsSuccess)
