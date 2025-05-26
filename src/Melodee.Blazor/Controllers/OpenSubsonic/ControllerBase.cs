@@ -33,9 +33,11 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
                 return new EmptyResult();
             }
 
+            var bytes = (byte[])model.ResponseData.Data!;
             HttpContext.Response.Headers.Append("ETag", model.ResponseData.Etag);
+            HttpContext.Response.Headers.Append("Content-Length", bytes.Length.ToString());;
             etagRepository.AddEtag(model.ApiKeyId, model.ResponseData.Etag);
-            return new FileContentResult((byte[])model.ResponseData.Data!, model.ResponseData.ContentType ?? "image/jpeg");
+            return new FileContentResult(bytes, model.ResponseData.ContentType ?? "image/jpeg");
         }
         catch (OperationCanceledException)
         {
@@ -108,13 +110,27 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
         }
 
         var requiresAuth = true;
-        context.HttpContext.Request.Cookies.TryGetValue("melodee_blazor_token", out var melodeeBlazorTokenCookie);
-        if (!string.IsNullOrWhiteSpace(melodeeBlazorTokenCookie))
+        var configuration = await configurationFactory.GetConfigurationAsync();
+        
+        // If the request is from localhost, from baseUrl, or an image request, then do not require authentication
+        if (context.HttpContext.IsLocalRequest() ||
+            context.HttpContext.IsImageRequest() ||
+            $"{Request.Scheme}://{Request.Host}".ToNormalizedString() == configuration.GetValue<string>(SettingRegistry.SystemBaseUrl).ToNormalizedString())
         {
-            var configuration = await configurationFactory.GetConfigurationAsync();
-            var cookieHash = HashHelper.CreateMd5(DateTime.UtcNow.ToString(MelodeeBlazorCookieMiddleware.DateFormat) + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) ?? string.Empty;
-            requiresAuth = melodeeBlazorTokenCookie != cookieHash;
+            requiresAuth = false;
         }
+        else
+        {
+            context.HttpContext.Request.Cookies.TryGetValue("melodee_blazor_token", out var melodeeBlazorTokenCookie);
+            if (!string.IsNullOrWhiteSpace(melodeeBlazorTokenCookie))
+            {
+
+                var cookieHash = HashHelper.CreateMd5(DateTime.UtcNow.ToString(MelodeeBlazorCookieMiddleware.DateFormat) + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) ?? string.Empty;
+                requiresAuth = melodeeBlazorTokenCookie != cookieHash;
+            }
+        }
+
+
 
         values.Add(new KeyValue("QueryString", context.HttpContext.Request.QueryString.ToString()));
         ApiRequest = new ApiRequest

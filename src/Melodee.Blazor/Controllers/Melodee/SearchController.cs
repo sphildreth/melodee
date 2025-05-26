@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Melodee.Blazor.Controllers.Melodee.Extensions;
+using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
@@ -29,7 +30,7 @@ public class SearchController(
     configurationFactory)
 {
     [HttpGet]
-    public async Task<IActionResult> SearchAsync(string q, short? maxResults, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> SearchSongsAsync(string q, short? page, short? pageSize, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
         {
@@ -52,9 +53,29 @@ public class SearchController(
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
         }        
+        
+        var pageValue = page ?? 1;
+        var pageSizeValue = pageSize ?? 50;
+        
 
-        var searchResult = await searchService.DoSearchAsync(userResult.Data.ApiKey, ApiRequest.ApiRequestPlayer.UserAgent, q, maxResults ?? 50, SearchInclude.Songs, cancellationToken).ConfigureAwait(false);
+        var searchResult = await searchService.DoSearchAsync(userResult.Data.ApiKey,
+                ApiRequest.ApiRequestPlayer.UserAgent,
+                q,
+                pageValue,
+                pageSizeValue,
+                SearchInclude.Songs,
+                cancellationToken)
+            .ConfigureAwait(false);
         var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
-        return Ok(searchResult.Data.Songs.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)));
+        return Ok(new
+        {
+            meta = new PaginationMetadata(
+                searchResult.Data.TotalCount,
+                pageSizeValue,
+                pageValue,
+                searchResult.Data.TotalCount < 1 ? 0 : (searchResult.Data.TotalCount + pageSizeValue - 1) / pageSizeValue
+            ),
+            data = searchResult.Data.Songs.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey))
+        });
     }
 }

@@ -29,9 +29,19 @@ public sealed class SearchService(
     IBus bus)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    public async Task<OperationResult<SearchResult>> DoSearchAsync(Guid userApiKey, string? userAgent,
-        string? searchTerm, short maxResults, SearchInclude include, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<SearchResult>> DoSearchAsync(Guid userApiKey,
+        string? userAgent,
+        string? searchTerm,
+        short page,
+        short pageSize,
+        SearchInclude include,
+        CancellationToken cancellationToken = default)
     {
+        var totalArtists = 0;
+        var totalAlbums = 0;
+        var totalSongs = 0;
+        var totalMusicBrainzArtists = 0;
+        
         List<ArtistDataInfo> artists = new();
         List<AlbumDataInfo> albums = new();
         List<SongDataInfo> songs = new();
@@ -41,7 +51,7 @@ public sealed class SearchService(
         {
             return new OperationResult<SearchResult>("No Search Term Provided")
             {
-                Data = new SearchResult([], [], [], [])
+                Data = new SearchResult([],0, [], 0, [], 0, [], 0)
             };
         }
 
@@ -55,8 +65,8 @@ public sealed class SearchService(
         {
             var artistResult = await artistService.ListAsync(new PagedRequest
             {
-                Page = 1,
-                PageSize = maxResults,
+                Page = page,
+                PageSize = pageSize,
                 FilterBy =
                 [
                     new FilterOperatorInfo(nameof(ArtistDataInfo.NameNormalized), FilterOperator.Contains,
@@ -72,8 +82,8 @@ public sealed class SearchService(
         {
             var albumResult = await albumService.ListAsync(new PagedRequest
             {
-                Page = 1,
-                PageSize = maxResults,
+                Page = page,
+                PageSize = pageSize,
                 FilterBy =
                 [
                     new FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), FilterOperator.Contains,
@@ -82,14 +92,15 @@ public sealed class SearchService(
                         searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
             }, null, cancellationToken);
+            totalAlbums = albumResult.TotalCount;
             albums = albumResult.Data.ToList();
 
             if (include.HasFlag(SearchInclude.Contributors))
             {
                 var contributorAlbumsResult = await albumService.ListForContributorsAsync(new PagedRequest
                 {
-                    Page = 1,
-                    PageSize = maxResults
+                    Page = page,
+                    PageSize = pageSize,
                 }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorAlbumsResult.TotalCount > 0)
                 {
@@ -102,22 +113,23 @@ public sealed class SearchService(
         {
             var songResult = await songService.ListAsync(new PagedRequest
             {
-                Page = 1,
-                PageSize = maxResults,
+                Page = page,
+                PageSize = pageSize,
                 FilterBy =
                 [
                     new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains,
                         searchTermNormalized)
                 ]
             }, user.Data!.Id, cancellationToken);
+            totalSongs = songResult.TotalCount;
             songs = songResult.Data.ToList();
 
             if (include.HasFlag(SearchInclude.Contributors))
             {
                 var contributorSongResult = await songService.ListForContributorsAsync(new PagedRequest
                 {
-                    Page = 1,
-                    PageSize = maxResults
+                    Page = page,
+                    PageSize = pageSize,
                 }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorSongResult.TotalCount > 0)
                 {
@@ -131,7 +143,8 @@ public sealed class SearchService(
             var searchResult = await musicBrainzRepository.SearchArtist(new ArtistQuery
             {
                 Name = searchTerm ?? string.Empty
-            }, maxResults, cancellationToken);
+            }, page * pageSize, cancellationToken);
+            totalMusicBrainzArtists = searchResult.TotalCount;
             musicBrainzArtists = searchResult.Data
                 .Where(x => x.MusicBrainzId != null)
                 .Select(x => ArtistDataInfo.BlankArtistDataInfo with
@@ -159,7 +172,7 @@ public sealed class SearchService(
         }).ConfigureAwait(false);
         return new OperationResult<SearchResult>
         {
-            Data = new SearchResult(artists.ToArray(), albums.ToArray(), songs.ToArray(), musicBrainzArtists.ToArray())
+            Data = new SearchResult(artists.ToArray(), totalArtists, albums.ToArray(), totalAlbums, songs.ToArray(), totalSongs, musicBrainzArtists.ToArray(), totalMusicBrainzArtists)
         };
     }
 }

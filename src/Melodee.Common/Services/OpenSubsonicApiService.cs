@@ -1761,8 +1761,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> AuthenticateSubsonicApiAsync(ApiRequest apiRequest,
-        CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> AuthenticateSubsonicApiAsync(ApiRequest apiRequest, CancellationToken cancellationToken = default)
     {
         if (!apiRequest.RequiresAuthentication)
         {
