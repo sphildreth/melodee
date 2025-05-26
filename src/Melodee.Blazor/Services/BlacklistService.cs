@@ -1,5 +1,7 @@
 using System.Net;
-using Melodee.Blazor.Models;
+using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
+using Melodee.Common.Serialization;
 using Microsoft.Extensions.Options;
 
 namespace Melodee.Blazor.Services
@@ -9,15 +11,18 @@ namespace Melodee.Blazor.Services
     /// </summary>
     public sealed class BlacklistService : IBlacklistService
     {
-        private readonly MelodeeAppSettingsConfiguration _configuration;
+        private readonly ISerializer _serializer;
+        private readonly IMelodeeConfigurationFactory _configurationFactory;
 
+       
         /// <summary>
         /// Initializes a new instance of the <see cref="BlacklistService"/> class.
         /// </summary>
         /// <param name="configuration">The blacklist configuration</param>
-        public BlacklistService(IOptions<MelodeeAppSettingsConfiguration> configuration)
+        public BlacklistService(ISerializer serializer, IMelodeeConfigurationFactory configurationFactory)
         {
-            _configuration = configuration.Value;
+            _serializer = serializer;
+            _configurationFactory = configurationFactory;
         }
 
         /// <summary>
@@ -25,15 +30,17 @@ namespace Melodee.Blazor.Services
         /// </summary>
         /// <param name="email">Email to check</param>
         /// <returns>True if email is blacklisted, otherwise false</returns>
-        public Task<bool> IsEmailBlacklistedAsync(string email)
+        public async Task<bool> IsEmailBlacklistedAsync(string email)
         {
-            if (_configuration.Blacklist.BlacklistedEmails == null || _configuration.Blacklist.BlacklistedEmails.Length == 0 || string.IsNullOrWhiteSpace(email))
+            var configuration = await _configurationFactory.GetConfigurationAsync().ConfigureAwait(false);
+            var blacklistedEmails = MelodeeConfiguration.FromSerializedJsonArray(configuration.GetValue<string>(SettingRegistry.SecurityBlacklistedEmails), _serializer);
+            if (blacklistedEmails.Length == 0 || string.IsNullOrWhiteSpace(email))
             {
-                return Task.FromResult(false);
+                return false;
             }
 
             string normalizedEmail = email.Trim().ToLowerInvariant();
-            return Task.FromResult(_configuration.Blacklist.BlacklistedEmails!.Contains(normalizedEmail));
+            return blacklistedEmails.Contains(normalizedEmail);
         }
 
         /// <summary>
@@ -41,15 +48,17 @@ namespace Melodee.Blazor.Services
         /// </summary>
         /// <param name="ipAddress">IP address to check</param>
         /// <returns>True if IP address is blacklisted, otherwise false</returns>
-        public Task<bool> IsIpBlacklistedAsync(string ipAddress)
+        public async Task<bool> IsIpBlacklistedAsync(string ipAddress)
         {
-            if (_configuration.Blacklist.BlacklistedIPs == null || _configuration.Blacklist.BlacklistedIPs.Length == 0 || string.IsNullOrWhiteSpace(ipAddress))
+            var configuration = await _configurationFactory.GetConfigurationAsync().ConfigureAwait(false);
+            var blacklistedIPs = MelodeeConfiguration.FromSerializedJsonArray(configuration.GetValue<string>(SettingRegistry.SecurityBlacklistedIPs), _serializer);
+            if (blacklistedIPs.Length == 0 || string.IsNullOrWhiteSpace(ipAddress))
             {
-                return Task.FromResult(false);
+                return false;
             }
 
             string normalizedIp = ipAddress.Trim();
-            return Task.FromResult(_configuration.Blacklist.BlacklistedIPs!.Contains(normalizedIp));
+            return blacklistedIPs.Contains(normalizedIp);
         }
 
         /// <summary>
@@ -57,7 +66,7 @@ namespace Melodee.Blazor.Services
         /// </summary>
         /// <param name="ipAddress">IP address to check</param>
         /// <returns>True if IP address is blacklisted, otherwise false</returns>
-        public Task<bool> IsIpBlacklistedAsync(IPAddress ipAddress)
+        public Task<bool> IsIpBlacklistedAsync(IPAddress? ipAddress)
         {
             if (ipAddress == null)
             {

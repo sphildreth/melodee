@@ -1,17 +1,32 @@
+using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.OpenSubsonic.Requests;
+using Melodee.Common.Models.Scrobbling;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers;
 
 public abstract class CommonBase : Controller
 {
-    protected ApiRequest ApiRequest { get; set; } = null!;
+    protected ApiRequest ApiRequest { get; set; } = new ApiRequest([
+        ],
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        new UserPlayer(null, null, null, null));
 
-    protected string GetBaseUrl(IConfiguration configuration)
+    protected string GetBaseUrl(IMelodeeConfiguration configuration)
     {
         var baseUrl = $"{Request.Scheme}://{Request.Host.Value}";
-        var configuredDomain = configuration.GetSection("Melodee:BaseUrl").Value.Nullify();
+        var configuredDomain = configuration.GetValue<string>(SettingRegistry.SystemBaseUrl);
         return configuredDomain ?? baseUrl;
     }
     

@@ -33,7 +33,7 @@ public class PlaylistController(
     {
         if (!ApiRequest.IsAuthorized)
         {
-            return Unauthorized(new { error = "Authorization token is missing" });
+            return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
         var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
@@ -64,7 +64,7 @@ public class PlaylistController(
                 Page = pageValue
             },
             cancellationToken).ConfigureAwait(false);
-        var baseUrl = GetBaseUrl(Configuration);
+        var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
         return Ok(new
         {
             meta = new PaginationMetadata(

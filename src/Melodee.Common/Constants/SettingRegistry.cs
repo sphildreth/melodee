@@ -24,10 +24,7 @@ public static class SettingRegistry
     public const string ImagingLargeSize = "imaging.largeSize";
     public const string ImagingDuplicateThreshold = "imaging.duplicateThreshold";
     public const string JobsArtistHousekeepingCronExpression = "jobs.artistHousekeeping.cronExpression";
-
-    public const string JobsArtistSearchEngineHousekeepingCronExpression =
-        "jobs.artistSearchEngineHousekeeping.cronExpression";
-
+    public const string JobsArtistSearchEngineHousekeepingCronExpression = "jobs.artistSearchEngineHousekeeping.cronExpression";
     public const string JobsLibraryProcessCronExpression = "jobs.libraryProcess.cronExpression";
     public const string JobsLibraryInsertCronExpression = "jobs.libraryInsert.cronExpression";
     public const string JobsMusicBrainzUpdateDatabaseCronExpression = "jobs.musicbrainzUpdateDatabase.cronExpression";
@@ -52,19 +49,13 @@ public static class SettingRegistry
     public const string ProcessingAlbumTitleRemovals = "processing.albumTitleRemovals";
     public const string ProcessingArtistNameReplacements = "processing.artistNameReplacements";
     public const string ProcessingConvertedExtension = "processing.convertedExtension";
-
-    public const string ProcessingDoContinueOnDirectoryProcessingErrors =
-        "processing.doContinueOnDirectoryProcessingErrors";
-
+    public const string ProcessingDoContinueOnDirectoryProcessingErrors = "processing.doContinueOnDirectoryProcessingErrors";
     public const string ProcessingDoDeleteComments = "processing.doDeleteComments";
     public const string ProcessingDoDeleteOriginal = "processing.doDeleteOriginal";
     public const string ProcessingDontDeleteExistingMelodeeDataFiles = "processing.dontDeleteExisitingMelodeeDataFiles";
     public const string ProcessingFileExtensionsToDelete = "processing.fileExtensionsToDelete";
     public const string ProcessingDoOverrideExistingMelodeeDataFiles = "processing.doOverrideExistingMelodeeDataFiles";
-
-    public const string ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue =
-        "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue";
-
+    public const string ProcessingDoUseCurrentYearAsDefaultOrigAlbumYearValue = "processing.doUseCurrentYearAsDefaultOrigAlbumYearValue";
     public const string ProcessingDuplicateAlbumPrefix = "processing.duplicateAlbumPrefix";
     public const string ProcessingIgnoredArticles = "processing.ignoredArticles";
     public const string ProcessingIgnoredPerformers = "processing.ignoredPerformers";
@@ -90,24 +81,18 @@ public static class SettingRegistry
     public const string SearchEngineITunesEnabled = "searchEngine.itunes.enabled";
     public const string SearchEngineLastFmEnabled = "searchEngine.lastFm.Enabled";
     public const string SearchEngineMusicBrainzEnabled = "searchEngine.musicbrainz.enabled";
-
-    public const string SearchEngineMusicBrainzImportMaximumToProcess =
-        "searchEngine.musicbrainz.importMaximumToProcess";
-
+    public const string SearchEngineMusicBrainzImportMaximumToProcess = "searchEngine.musicbrainz.importMaximumToProcess";
     public const string SearchEngineMusicBrainzImportBatchSize = "searchEngine.musicbrainz.importBatchSize";
     public const string SearchEngineMusicBrainzStoragePath = "searchEngine.musicbrainz.storagePath";
-
-    public const string SearchEngineMusicBrainzImportLastImportTimestamp =
-        "searchEngine.musicbrainz.importLastImportTimestamp";
-
-    public const string SearchEngineArtistSearchDatabaseRefreshInDays =
-        "searchEngine.artistSearchDatabaseRefreshInDays";
-
+    public const string SearchEngineMusicBrainzImportLastImportTimestamp = "searchEngine.musicbrainz.importLastImportTimestamp";
+    public const string SearchEngineArtistSearchDatabaseRefreshInDays = "searchEngine.artistSearchDatabaseRefreshInDays";
     public const string SearchEngineSpotifyEnabled = "searchEngine.spotify.enabled";
     public const string SearchEngineSpotifyApiKey = "searchEngine.spotify.apiKey";
     public const string SearchEngineSpotifyClientSecret = "searchEngine.spotify.sharedSecret";
     public const string SearchEngineSpotifyAccessToken = "searchEngine.spotify.accessToken";
     public const string SearchEngineUserAgent = "searchEngine.userAgent";
+    public const string SecurityBlacklistedEmails = "security.blacklistedEmails";
+    public const string SecurityBlacklistedIPs = "security.blacklistedIPs";
     public const string SystemBaseUrl = "system.baseUrl";
     public const string SystemIsDownloadingEnabled = "system.isDownloadingEnabled";
     public const string TranscodingCommandAac = "transcoding.command.aac";

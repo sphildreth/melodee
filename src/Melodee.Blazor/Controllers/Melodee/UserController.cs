@@ -68,7 +68,11 @@ public class UserController(
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
-        return Ok(new { token = tokenHandler.WriteToken(token) });
+        return Ok(new
+        {
+            user = authResult.Data.ToUserModel(GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false))),
+            token = tokenHandler.WriteToken(token)
+        });
     }
 
     /// <summary>
@@ -80,7 +84,7 @@ public class UserController(
     {
         if (!ApiRequest.IsAuthorized)
         {
-            return Unauthorized(new { error = "Authorization token is missing" });
+            return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
         var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
@@ -89,7 +93,7 @@ public class UserController(
             return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
-        return Ok(userResult.Data.ToUserModel(GetBaseUrl(Configuration)));
+        return Ok(userResult.Data.ToUserModel(GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false))));
     }
 
     /// <summary>
@@ -101,7 +105,7 @@ public class UserController(
     {
         if (!ApiRequest.IsAuthorized)
         {
-            return Unauthorized(new { error = "Authorization token is missing" });
+            return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
         var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
@@ -140,7 +144,7 @@ public class UserController(
     {
         if (!ApiRequest.IsAuthorized)
         {
-            return Unauthorized(new { error = "Authorization token is missing" });
+            return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
         var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
@@ -163,7 +167,7 @@ public class UserController(
         var pageValue = page ?? 1;
         var pageSizeValue = pageSize ?? 50;
         var playlists = await playlistService.ListAsync(userResult.Data.ToUserInfo(), new PagedRequest { Page = pageValue, PageSize = pageSizeValue }, cancellationToken).ConfigureAwait(false);
-        var baseUrl = GetBaseUrl(Configuration);
+        var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
         return Ok(new
         {
             meta = new PaginationMetadata(

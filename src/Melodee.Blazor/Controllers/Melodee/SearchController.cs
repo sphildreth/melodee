@@ -33,7 +33,7 @@ public class SearchController(
     {
         if (!ApiRequest.IsAuthorized)
         {
-            return Unauthorized(new { error = "Authorization token is missing" });
+            return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
         var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
@@ -54,7 +54,7 @@ public class SearchController(
         }        
 
         var searchResult = await searchService.DoSearchAsync(userResult.Data.ApiKey, ApiRequest.ApiRequestPlayer.UserAgent, q, maxResults ?? 50, SearchInclude.Songs, cancellationToken).ConfigureAwait(false);
-        var baseUrl = GetBaseUrl(Configuration);
+        var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
         return Ok(searchResult.Data.Songs.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)));
     }
 }
