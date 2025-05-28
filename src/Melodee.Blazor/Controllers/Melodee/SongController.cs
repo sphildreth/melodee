@@ -28,6 +28,8 @@ public class SongController(
     configuration,
     configurationFactory)
 {
+
+
     [HttpGet]
     [Route("/song/stream/{apiKey:guid}/{userApiKey:guid}/{authToken}")]
     public async Task<IActionResult> StreamSong(Guid apiKey, Guid userApiKey, string authToken, CancellationToken cancellationToken = default)

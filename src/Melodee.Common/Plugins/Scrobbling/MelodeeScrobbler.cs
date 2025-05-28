@@ -36,8 +36,7 @@ public class MelodeeScrobbler(
     public async Task<OperationResult<bool>> Scrobble(UserInfo user, ScrobbleInfo scrobble,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext =
-                     await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
 
