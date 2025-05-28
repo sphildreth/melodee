@@ -89,7 +89,7 @@
             Username = user.Data!.UserName,
             Email = user.Data!.Email,
             Bio = user.Data!.Description ?? string.Empty,
-            ProfilePicturePath = $"/images/{user.Data.ToApiKey()}/32"
+            ProfilePicturePath = $"/images/{user.Data.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}"
         };
     }
 

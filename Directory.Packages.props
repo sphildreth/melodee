@@ -72,7 +72,7 @@
     <PackageVersion Include="Quartz.Jobs" Version="3.14.0" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
     <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />
-    <PackageVersion Include="Radzen.Blazor" Version="7.0.6" />
+    <PackageVersion Include="Radzen.Blazor" Version="7.0.7" />
     <PackageVersion Include="Rebus" Version="8.8.0" />
     <PackageVersion Include="Rebus.ServiceProvider" Version="10.3.0" />
     <PackageVersion Include="Serilog" Version="4.3.0" />

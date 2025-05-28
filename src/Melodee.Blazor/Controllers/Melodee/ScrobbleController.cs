@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Services;
@@ -6,12 +7,15 @@ using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
-using Melodee.Common.Utility;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.Melodee;
 
+[ApiController]
+[ApiVersion(1)]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class ScrobbleController(
+    Serilog.ILogger logger,
     ISerializer serializer,
     EtagRepository etagRepository,
     UserService userService,
@@ -27,7 +31,6 @@ public class ScrobbleController(
 {
     
     [HttpPost]
-    [Route("/scrobble")]
     public async Task<IActionResult> ScrobbleSong([FromBody]ScrobbleRequest scrobbleRequest, CancellationToken cancellationToken = default)
     {
         var userResult = await userService.GetByApiKeyAsync(scrobbleRequest.UserId, cancellationToken).ConfigureAwait(false);
@@ -45,6 +48,10 @@ public class ScrobbleController(
         var songRequest = await songService.GetByApiKeyAsync(scrobbleRequest.SongId, cancellationToken).ConfigureAwait(false);
         if (!songRequest.IsSuccess || songRequest.Data == null)
         {
+            logger.Warning("[{ControllerName}] [{MethodName}] Scrobble request for unknown song [{Request}]",
+                nameof(ScrobbleController),
+                nameof(ScrobbleSong),
+                scrobbleRequest);
             return BadRequest(new { error = "Unknown song" });
         }
         var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
@@ -52,7 +59,7 @@ public class ScrobbleController(
         
         OperationResult<bool>? result = null;
         
-        if (scrobbleRequest.ScrobbleType == ScrobbleRequestType.NowPlaying)
+        if (scrobbleRequest.ScrobbleTypeValue == ScrobbleRequestType.NowPlaying)
         {
             result = await scrobbleService.NowPlaying(
                     userResult.Data.ToUserInfo(),
@@ -63,7 +70,7 @@ public class ScrobbleController(
                 .ConfigureAwait(false); 
             
         }
-        else if (scrobbleRequest.ScrobbleType == ScrobbleRequestType.Played)
+        else if (scrobbleRequest.ScrobbleTypeValue == ScrobbleRequestType.Played)
         {
             result = await scrobbleService.Scrobble(
                     userResult.Data.ToUserInfo(),
@@ -80,8 +87,18 @@ public class ScrobbleController(
             {
                 return Ok();
             }
+            logger.Warning("[{ControllerName}] [{MethodName}] Scrobble request for unknown song [{Request}] Message [{Message}",
+                nameof(ScrobbleController),
+                nameof(ScrobbleSong),
+                scrobbleRequest,
+                result.Messages?.First() ?? "Unknown error");
             return BadRequest(result.Messages?.First() ?? "Unknown error");
         }
+        logger.Warning("[{ControllerName}] [{MethodName}] Scrobble request for unknown song [{Request}] Message [{Message}",
+            nameof(ScrobbleController),
+            nameof(ScrobbleSong),
+            scrobbleRequest,
+            $"Unknown scrobble type: { scrobbleRequest.ScrobbleType}");        
         return BadRequest($"Unknown scrobble type: { scrobbleRequest.ScrobbleType}");
     }
     

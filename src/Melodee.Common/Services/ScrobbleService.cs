@@ -137,8 +137,17 @@ public class ScrobbleService(
                 };
                 foreach (var scrobbler in _scrobblers.OrderBy(x => x.SortOrder).Where(x => x.IsEnabled))
                 {
-                    var scrobbleResult = await scrobbler.Scrobble(user, scrobble, cancellationToken).ConfigureAwait(false);
-                    result &= scrobbleResult.IsSuccess;
+                    try
+                    {
+                        var scrobbleResult = await scrobbler.Scrobble(user, scrobble, cancellationToken).ConfigureAwait(false);
+                        result &= scrobbleResult.IsSuccess;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e, "[{Plugin}] threw error with song [{Song}]", scrobbler.DisplayName, songId);
+                        result = false;
+                        break;
+                    }
                 }
 
                 Logger.Information("[{ServiceName}] Scrobbled song [{Song}] for User [{User}]",

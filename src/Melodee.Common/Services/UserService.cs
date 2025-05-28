@@ -1376,8 +1376,7 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> ToggleSongStarAsync(int userId, Guid songApiKey,
-        bool isStarred, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> ToggleSongStarAsync(int userId, Guid songApiKey, bool isStarred, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, userId, nameof(userId));
 

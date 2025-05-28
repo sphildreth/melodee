@@ -1,4 +1,5 @@
 using Melodee.Blazor.Controllers.Melodee.Models;
+using Melodee.Common.Configuration;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
 using MelodeeDataModels = Melodee.Common.Data.Models;
@@ -10,8 +11,8 @@ public static class PlaylistExtensions
     public static Playlist ToPlaylistModel(this MelodeeDataModels.Playlist playlist, string baseUrl, User currentUser)
     {
         return new Playlist(playlist.ApiKey,
-            $"{baseUrl}/images/{playlist.ToApiKey()}/32",
-            $"{baseUrl}/images/{playlist.ToApiKey()}/512",
+            $"{baseUrl}/images/{playlist.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
+            $"{baseUrl}/images/{playlist.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
             playlist.Name,
             playlist.Description,
             playlist.Duration.ToDuration(),

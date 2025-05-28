@@ -20,6 +20,12 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
 
     public const int DefaultImagingDuplicateThreshold = 80;
 
+    public const int DefaultThumbNailSize = 48;
+
+    public const int DefaultAvatarImageSize = 300;
+
+    public const int DefaultImageSize = 1024;
+
     public const string RequiredNotSetValue = "** REQUIRED: THIS MUST BE EDITED **";
 
     public const string FormattingDateTimeDisplayActivityFormatDefault = @"hh\:mm\:ss\.ffff";
