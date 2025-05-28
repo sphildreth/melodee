@@ -218,6 +218,7 @@ public class PlaylistService(
                            join "Albums" a on (s."AlbumId" = a."Id")
                            join "Artists" ar on (a."ArtistId" = ar."Id")
                            left join "UserSongs" us on (s."Id" = us."SongId")
+                           left join "UserSongs" uus on (s."Id" = uus."SongId" and uus."UserId" = {userInfo.Id})
                            where {dpWhere}
                            """;
                 songCount = await dbConn
@@ -227,11 +228,12 @@ public class PlaylistService(
                 sql = $"""
                            SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
                                   a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags", us."IsStarred" as "UserStarred", us."Rating" as "UserRating"
+                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags", uus."IsStarred" as "UserStarred", uus."Rating" as "UserRating"
                            FROM "Songs" s
                            join "Albums" a on (s."AlbumId" = a."Id")
                            join "Artists" ar on (a."ArtistId" = ar."Id")
                            left join "UserSongs" us on (s."Id" = us."SongId")
+                           left join "UserSongs" uus on (s."Id" = uus."SongId" and uus."UserId" = {userInfo.Id})
                            where {dpWhere}
                            order by {dpOrderBy}
                            offset {pagedRequest.SkipValue} rows fetch next {pagedRequest.TakeValue} rows only;
