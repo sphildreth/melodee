@@ -20,6 +20,7 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.OpenSubsonic.Searching;
 using Melodee.Common.Plugins.Conversion.Image;
+using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Extensions;
 using Melodee.Common.Services.Interfaces;
@@ -67,7 +68,8 @@ public class OpenSubsonicApiService(
     PlaylistService playlistService,
     ShareService shareService,
     ISerializer serializer,
-    IBus bus
+    IBus bus,
+    ILyricPlugin lyricPlugin
 )
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -387,8 +389,7 @@ public class OpenSubsonicApiService(
         Error? notAuthorizedError = null;
         var result = false;
 
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var apiKey = ApiKeyFromId(id);
             var share = await scopedContext
@@ -506,9 +507,8 @@ public class OpenSubsonicApiService(
                     .ConfigureAwait(false);
                 data = playLists.Select(x => x.ToApiPlaylist(false)).ToList();
 
-                var dynamicPlaylists = await playlistService.DynamicListAsync(authResponse.UserInfo, new PagedRequest { PageSize = short.MaxValue}, cancellationToken);
+                var dynamicPlaylists = await playlistService.DynamicListAsync(authResponse.UserInfo, new PagedRequest { PageSize = short.MaxValue }, cancellationToken);
                 data.AddRange(dynamicPlaylists.Data.Select(x => x.ToApiPlaylist(false, true)));
-
             }
         }
         catch (Exception e)
@@ -3699,8 +3699,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> GetInternetRadioStationsAsync(ApiRequest apiRequest,
-        CancellationToken cancellationToken)
+    public async Task<ResponseModel> GetInternetRadioStationsAsync(ApiRequest apiRequest, CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -3735,6 +3734,109 @@ public class OpenSubsonicApiService(
                 Data = data.ToArray(),
                 DataPropertyName = "internetRadioStations",
                 DataDetailPropertyName = apiRequest.IsXmlRequest ? string.Empty : "internetRadioStation"
+            }
+        };
+    }
+
+    public async Task<ResponseModel> GetLyricsListForSongIdAsync(string id, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
+        }
+
+        LyricsList[]? data = null;
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var apiKey = ApiKeyFromId(id);
+            var dbSong = await scopedContext.Songs
+                .Include(x => x.Album).ThenInclude(x => x.Artist).ThenInclude(x => x.Library)
+                .FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken).ConfigureAwait(false);
+
+            if (dbSong != null)
+            {
+                var lyricsResult = await lyricPlugin.GetLyricListAsync(
+                    Path.Combine(dbSong.Album.Artist.Library.Path, dbSong.Album.Artist.Directory).ToFileSystemDirectoryInfo(),
+                    new FileSystemFileInfo
+                    {
+                        Name = dbSong.FileName,
+                        Size = dbSong.FileSize
+                    },
+                    cancellationToken).ConfigureAwait(false);
+                if (lyricsResult.IsSuccess)
+                {
+                    data = [lyricsResult.Data!];
+                }
+            }
+        }
+
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data,
+                DataPropertyName = "structuredLyrics",
+                DataDetailPropertyName = string.Empty
+            }
+        };
+    }
+
+    public async Task<ResponseModel> GetLyricsForArtistAndTitleAsync(string? artist, string? title, ApiRequest apiRequest, CancellationToken cancellationToken)
+    {
+        var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
+        if (!authResponse.IsSuccess)
+        {
+            return authResponse with { UserInfo = UserInfo.BlankUserInfo };
+        }
+
+        Lyrics? data = null;
+
+        if (artist.Nullify() != null && title.Nullify() != null)
+        {
+            await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var artistNameValue = artist!.ToNormalizedString() ?? artist!;
+                var titleNameValue = title!.ToNormalizedString() ?? title!;
+                var dbArtist = await scopedContext
+                    .Artists
+                    .Include(x => x.Library)
+                    .Include(x => x.Albums).ThenInclude(x => x.Songs)
+                    .FirstOrDefaultAsync(x => x.NameNormalized == artistNameValue, cancellationToken).ConfigureAwait(false);
+
+                if (dbArtist != null)
+                {
+                    var dbSong = dbArtist.Albums.SelectMany(x => x.Songs).FirstOrDefault(x => x.TitleNormalized == titleNameValue);
+                    if (dbSong != null)
+                    {
+                        var lyricsResult = await lyricPlugin.GetLyricsAsync(
+                            Path.Combine(dbArtist.Library.Path, dbArtist.Directory).ToFileSystemDirectoryInfo(),
+                            new FileSystemFileInfo
+                            {
+                                Name = dbSong.FileName,
+                                Size = dbSong.FileSize
+                            },
+                            cancellationToken).ConfigureAwait(false);
+                        if (lyricsResult.IsSuccess)
+                        {
+                            data = lyricsResult.Data;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new ResponseModel
+        {
+            UserInfo = authResponse.UserInfo,
+            ResponseData = await DefaultApiResponse() with
+            {
+                Data = data,
+                DataPropertyName = "lyrics",
+                DataDetailPropertyName = string.Empty
             }
         };
     }

@@ -11,6 +11,7 @@ using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
 using Melodee.Common.Plugins.Conversion.Image;
+using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
@@ -242,7 +243,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetPlaylistService(),
             GetShareService(),
             Serializer,
-            MockBus());
+            MockBus(),
+            GetLyricPlugin());
     }
 
     // protected InMemoryEventBusPublisher<UserLoginEvent> MockUserLoginEventBusPublisher()
@@ -259,6 +261,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     protected AlbumService GetAlbumService()
     {
         return new AlbumService(Logger, CacheManager, MockConfigurationFactory(), MockFactory(), MockBus());
+    }
+
+    protected LyricPlugin GetLyricPlugin()
+    {
+        return new LyricPlugin(Serializer, MockConfigurationFactory());
     }
 
     protected ShareService GetShareService()

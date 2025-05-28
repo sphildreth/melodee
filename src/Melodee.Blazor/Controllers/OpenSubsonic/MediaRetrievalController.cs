@@ -14,9 +14,36 @@ namespace Melodee.Blazor.Controllers.OpenSubsonic;
 
 public class MediaRetrievalController(ISerializer serializer, EtagRepository etagRepository, OpenSubsonicApiService openSubsonicApiService, IMelodeeConfigurationFactory configurationFactory) : ControllerBase(etagRepository, serializer, configurationFactory)
 {
-    //TODO
-    //getLyrics
-    //getLyricsBySongId //https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
+    /// <summary>
+    /// Searches for and returns lyrics for a given song.
+    /// </summary>
+    /// <param name="artist">The artist name.</param>
+    /// <param name="title">The song title.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getLyrics.view")]
+    [Route("/rest/getLyrics")]
+    public Task<IActionResult> GetLyricsAsync(string? artist, string?  title, CancellationToken cancellationToken = default)
+    {
+        return MakeResult(openSubsonicApiService.GetLyricsForArtistAndTitleAsync(artist, title, ApiRequest, cancellationToken));
+    }
+    
+    /// <summary>
+    /// Add support for synchronized lyrics, multiple languages, and retrieval by song ID.
+    /// <remarks>Retrieves all structured lyrics from the server for a given song. The lyrics can come from embedded tags (SYLT/USLT), LRC file/text file, or any other external source.</remarks>
+    /// </summary>
+    /// <param name="id">The track ID.</param>
+    /// /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet]
+    [HttpPost]
+    [Route("/rest/getLyricsBySongId.view")]
+    [Route("/rest/getLyricsBySongId")]
+    public Task<IActionResult> GetLyricsAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return MakeResult(openSubsonicApiService.GetLyricsListForSongIdAsync(id, ApiRequest, cancellationToken));
+    }    
+    
 
 
     [HttpGet]

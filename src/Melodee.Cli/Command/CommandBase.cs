@@ -2,6 +2,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Metadata;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
+using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
@@ -87,7 +88,7 @@ public abstract class CommandBase<T> : AsyncCommand<T> where T : Spectre.Console
         services.AddScoped<SongService>();
         services.AddScoped<PlaylistService>();
         services.AddScoped<UserService>();
-
+        
         return services.BuildServiceProvider();
     }
 }

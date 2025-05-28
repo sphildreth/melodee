@@ -12,13 +12,19 @@ public class LocalStorageService(ProtectedLocalStorage protectedLocalStorage) : 
 
     public async Task<string?> GetItemAsStringAsync(string key)
     {
-        var result = await protectedLocalStorage.GetAsync<string?>(key);
-        if (!result.Success || result.Value == null)
+        try
+        {
+            var result = await protectedLocalStorage.GetAsync<string?>(key);
+            if (!result.Success || result.Value == null)
+            {
+                return null;
+            }
+            return result.Value;
+        }
+        catch (Exception e)
         {
             return null;
         }
-
-        return result.Value;
     }
 
     public async Task SetItemAsStringAsync(string key, string value)

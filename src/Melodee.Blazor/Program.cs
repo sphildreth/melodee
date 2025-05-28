@@ -16,6 +16,7 @@ using Melodee.Common.MessageBus.EventHandlers;
 using Melodee.Common.Metadata;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
+using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
@@ -168,7 +169,8 @@ builder.Services
     .AddScoped<PlaylistService>()
     .AddScoped<MelodeeMetadataMaker>()
     .AddScoped<AlbumRescanEventHandler>()
-    .AddScoped<AlbumAddEventHandler>();
+    .AddScoped<AlbumAddEventHandler>()
+    .AddScoped<ILyricPlugin, LyricPlugin>();
 
 #endregion
 
