@@ -48,12 +48,12 @@ Melodee is a comprehensive music management and streaming system built with .NET
 
 2. **Configure podman.environment variables**
    ```bash
-   # Copy and edit the podman.environment file
-   cp podman.podman.env .podman.env
-   nano .podman.env
+   # Copy and edit the example.environment file
+   cp example.env .env
+   nano .env
    ```
 
-   Update the following variables in `.podman.env`:
+   Update the following variables in `.env`:
    ```bash
    # Database password (change this!)
    DB_PASSWORD=your_secure_password_here
@@ -65,15 +65,18 @@ Melodee is a comprehensive music management and streaming system built with .NET
 3. **Deploy the application**
    ```bash
    # Using Podman Compose
-   podman-compose --podman.env-file .podman.env up -d
+   podman-compose --env-file .env up -d
 
    # Or using Docker Compose
-   docker-compose --podman.env-file .podman.env up -d
+   docker-compose --env-file .env up -d
    ```
 
 4. **Access the application**
    - Web Interface: http://localhost:8080
-   - Default admin credentials will be displayed in the container logs
+   - Register as a new user, the first user will be setup as administrator
+   - Read the [documentation](https://melodee.org) on how to configure and add music
+   - Configure clients to connect to your server
+   - Enjoy an ad-free and self-hosted music streaming service 🎉
 
 ### 📦 Updating Melodee
 
