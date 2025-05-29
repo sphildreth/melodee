@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       PGUSER: melodeeuser
     volumes:
-      - ${DB_VOLUME}:/var/lib/postgresql/data
+      - melodee_db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -21,11 +21,25 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Host=melodee-db;Port=5432;Database=melodeedb;Username=melodeeuser;Password=${DB_PASSWORD}
     volumes:
-      - ${STORAGE_VOLUME}:/app/storage
-      - ${INBOUND_VOLUME}:/app/inbound
-      - ${STAGING_VOLUME}:/app/staging
-      - ${USER_IMAGES_VOLUME}:/app/user-images
-      - ${PLAYLISTS_VOLUME}:/app/playlists
+      - melodee_storage:/app/storage
+      - melodee_inbound:/app/inbound
+      - melodee_staging:/app/staging
+      - melodee_user_images:/app/user-images
+      - melodee_playlists:/app/playlists
     ports:
       - "${MELODEE_PORT}:8080"
     restart: unless-stopped
+
+volumes:
+  melodee_db_data:
+    external: true
+  melodee_storage:
+    external: true
+  melodee_inbound:
+    external: true
+  melodee_staging:
+    external: true
+  melodee_user_images:
+    external: true
+  melodee_playlists:
+    external: true
