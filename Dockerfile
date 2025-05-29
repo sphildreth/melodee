@@ -59,6 +59,13 @@ ENV DOTNET_CLI_HOME="/home/melodee"
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 ENV HOME="/home/melodee"
 
+# Set volume path environment variables for the .NET application
+ENV MELODEE_STORAGE_PATH="/app/storage"
+ENV MELODEE_INBOUND_PATH="/app/inbound"
+ENV MELODEE_STAGING_PATH="/app/staging"
+ENV MELODEE_USER_IMAGES_PATH="/app/user-images"
+ENV MELODEE_PLAYLISTS_PATH="/app/playlists"
+
 USER melodee
 
 # Install EF Core tools globally for the melodee user

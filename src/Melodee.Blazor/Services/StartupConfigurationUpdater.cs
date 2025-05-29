@@ -16,7 +16,7 @@ public class StartupMelodeeConfigurationService(
     {
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var storagePath = configuration.GetValue<string>("StoragePath");
+            var storagePath = configuration.GetValue<string>("MELODEE_STORAGE_PATH");
             if (storagePath.Nullify() != null)
             {
                 var storageLibrary = await libraryService.GetStorageLibrariesAsync(cancellationToken).ConfigureAwait(false);
@@ -30,7 +30,7 @@ public class StartupMelodeeConfigurationService(
                     }
                 }
             }
-            var inboundPath = configuration.GetValue<string>("InboundPath");
+            var inboundPath = configuration.GetValue<string>("MELODEE_INBOUND_PATH");
             if (inboundPath.Nullify() != null)
             {
                 var inboundLibrary = await libraryService.GetInboundLibraryAsync(cancellationToken).ConfigureAwait(false);
@@ -44,7 +44,7 @@ public class StartupMelodeeConfigurationService(
                     }
                 }
             }            
-            var stagingPath = configuration.GetValue<string>("StagingPath");
+            var stagingPath = configuration.GetValue<string>("MELODEE_STAGING_PATH");
             if (stagingPath.Nullify() != null)
             {
                 var stagingLibrary = await libraryService.GetStagingLibraryAsync(cancellationToken).ConfigureAwait(false);
@@ -58,7 +58,7 @@ public class StartupMelodeeConfigurationService(
                     }
                 }
             }              
-            var userImagePath = configuration.GetValue<string>("UserImagePath");
+            var userImagePath = configuration.GetValue<string>("MELODEE_USER_IMAGES_PATH");
             if (userImagePath.Nullify() != null)
             {
                 var userImageLibrary = await libraryService.GetUserImagesLibraryAsync(cancellationToken).ConfigureAwait(false);
@@ -72,7 +72,7 @@ public class StartupMelodeeConfigurationService(
                     }
                 }
             }               
-            var playlistPath = configuration.GetValue<string>("PlaylistPath");
+            var playlistPath = configuration.GetValue<string>("MELODEE_PLAYLISTS_PATH");
             if (playlistPath.Nullify() != null)
             {
                 var playlistLibrary = await libraryService.GetPlaylistLibraryAsync(cancellationToken).ConfigureAwait(false);
