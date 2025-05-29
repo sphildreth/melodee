@@ -33,6 +33,8 @@ services:
     ports:
       - "${MELODEE_PORT}:8080"
     restart: unless-stopped
+    user: "0:0"  # Start as root to fix permissions
+    entrypoint: ["/entrypoint.sh"]
 
 volumes:
   db_data:

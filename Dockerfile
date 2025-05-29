@@ -44,6 +44,10 @@ RUN apt-get update && \
 # Copy the published application
 COPY --from=publish /app/publish .
 
+# Copy the entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Copy the source code needed for migrations (EF Core needs the project files)
 COPY --from=build /src/src/Melodee.Common/ /app/src/Melodee.Common/
 COPY --from=build /src/src/Melodee.Blazor/ /app/src/Melodee.Blazor/
