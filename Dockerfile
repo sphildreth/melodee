@@ -1,17 +1,47 @@
-RUN dotnet build "Melodee.Blazor.csproj" -c $BUILD_CONFIGURATION -o /app/build
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
 
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
+# Create a non-root user
+RUN groupadd -r melodee && useradd -r -g melodee melodee
+USER melodee
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Verify .NET 9 SDK is installed and available
+RUN dotnet --version && \
+    dotnet --list-sdks | grep "9.0" && \
+    echo ".NET 9 SDK verified successfully"
+
+# Copy project files
+COPY ["src/Melodee.Blazor/Melodee.Blazor.csproj", "src/Melodee.Blazor/"]
+COPY ["src/Melodee.Common/Melodee.Common.csproj", "src/Melodee.Common/"]
+
+# Restore as distinct layers
+RUN dotnet restore "src/Melodee.Blazor/Melodee.Blazor.csproj"
+
+# Create directories with proper permissions
+RUN mkdir -p /app/storage /app/inbound /app/staging /app/user-images /app/playlists \
+    && chown -R melodee:melodee /app
+
+USER melodee
+# Copy everything else and build
+COPY ["src/Melodee.Blazor/", "src/Melodee.Blazor/"]
+COPY ["src/Melodee.Common/", "src/Melodee.Common/"]
+
 WORKDIR "/src/src/Melodee.Blazor"
-RUN dotnet publish "Melodee.Blazor.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet build "Melodee.Blazor.csproj" -c Release -o /app/build
 
+# Publish
+FROM build AS publish
+RUN dotnet publish "Melodee.Blazor.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Final image
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-
-# Expose ports for the Blazor application
-EXPOSE 8080
-EXPOSE 8081
 
 # Create directories for volumes
 RUN mkdir -p /app/storage /app/inbound /app/staging /app/user-images /app/playlists
@@ -19,6 +49,7 @@ RUN mkdir -p /app/storage /app/inbound /app/staging /app/user-images /app/playli
 # Install PostgreSQL client tools for health checks
 USER root
 RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
-USER $APP_UID
+USER melodee
 
-ENTRYPOINT ["dotnet", "Melodee.Blazor.dll"]
+# For .NET Core, we use dotnet CLI to run the app
+ENTRYPOINT ["dotnet", "server.dll"]

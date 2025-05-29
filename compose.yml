@@ -14,7 +14,7 @@ services:
   melodee.blazor:
     build:
       context: .
-      dockerfile: src/Melodee.Blazor/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       - melodee-db
     environment:
