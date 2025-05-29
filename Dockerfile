@@ -31,8 +31,14 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-# Install PostgreSQL client tools and network debugging tools
-RUN apt-get update && apt-get install -y postgresql-client iputils-ping netcat-openbsd && rm -rf /var/lib/apt/lists/*
+# Install PostgreSQL client tools, network debugging tools, and nano editor
+RUN apt-get update && \
+    apt-get install -y \
+        postgresql-client \
+        iputils-ping \
+        netcat-openbsd \
+        nano \
+        && rm -rf /var/lib/apt/lists/*
 
 # Copy the published application
 COPY --from=publish /app/publish .

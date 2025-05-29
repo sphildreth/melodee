@@ -60,7 +60,7 @@
 
         _serverStats.Add(new KeyValue("API Version", configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? string.Empty));
         _serverStats.Add(new KeyValue("dotnet core version", RuntimeInformation.FrameworkDescription));
-        _serverStats.Add(new KeyValue("Melodee", "Melodee music system <a target=\"_blank\" href=\"https://github.com/sphildreth/melodee\">GitHub</a>"));
+        _serverStats.Add(new KeyValue("Melodee", "Melodee music system <a target=\"_blank\" href=\"https://github.com/melodee-project\">GitHub</a>"));
         _serverStats.Add(new KeyValue("UI Version", typeof(Program).Assembly.GetName().Version?.ToString() ?? string.Empty));
 
         _userClaimsToDisplay.AddRange(CurrentUser?.Claims.Where(x => _showClaimTypes.Contains(x.Type.ToUpper())) ?? []);
