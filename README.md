@@ -74,7 +74,7 @@ Melodee is a comprehensive music management and streaming system built with .NET
 4. **Access the application**
    - 📚 Read the [documentation](https://melodee.org) on how to get started
    - Web Interface: http://localhost:8080
-   - Register as a new user, the first user will be setup as administrator   -
+   - Register as a new user, the first user will be setup as administrator
    - Configure clients to connect to your server
    - Enjoy an ad-free and self-hosted music streaming service 🎉
 
@@ -90,7 +90,7 @@ podman-compose down
 git pull origin main
 
 # Rebuild and restart
-podman-compose --podman.env-file .podman.env up -d --build
+podman-compose --env-file .env up -d --build
 ```
 
 > **Note**: Database migrations are handled automatically during container startup.
