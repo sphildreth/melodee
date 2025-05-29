@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  melodee-blazor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${MELODEE_PORT:-8080}:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=melodee-db;Port=5432;Database=melodeedb;Username=melodeeuser;Password=${DB_PASSWORD:-melodeepassword}
+      - StoragePath=/app/storage
+      - InboundPath=/app/inbound
+      - StagingPath=/app/staging
+      - UserImagePath=/app/user-images
+      - PlaylistPath=/app/playlists
+    volumes:
+      - ${STORAGE_VOLUME:-./storage}:/app/storage
+      - ${INBOUND_VOLUME:-./inbound}:/app/inbound
+      - ${STAGING_VOLUME:-./staging}:/app/staging
+      - ${USER_IMAGES_VOLUME:-./user-images}:/app/user-images
+      - ${PLAYLISTS_VOLUME:-./playlists}:/app/playlists
+    depends_on:
+      - melodee-db
+    restart: unless-stopped
+
+  melodee-db:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=melodeeuser
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-melodeepassword}
+      - POSTGRES_DB=melodeedb
+    volumes:
+      - melodee-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  melodee-db-data:

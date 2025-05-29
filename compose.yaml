@@ -1,6 +1,0 @@
-﻿services:
-  melodee.blazor:
-    image: melodee.blazor
-    build:
-      context: .
-      dockerfile: src/Melodee.Blazor/Dockerfile

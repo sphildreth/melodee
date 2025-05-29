@@ -215,6 +215,9 @@ builder.Services.AddRebusHandler<UserStreamEventHandler>();
 
 builder.WebHost.UseSetting("DetailedErrors", "true");
 
+builder.Services.AddScoped<IStartupMelodeeConfigurationService, StartupMelodeeConfigurationService>();
+
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -341,5 +344,11 @@ app.UseCors(
 app.UseMelodeeBlazorHeader();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var configService = scope.ServiceProvider.GetRequiredService<IStartupMelodeeConfigurationService>();
+    await configService.UpdateConfigurationFromEnvironmentAsync();
+}
 
 app.Run();

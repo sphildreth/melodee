@@ -12,12 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\.dockerignore">
-      <Link>.dockerignore</Link>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Melodee.Common\Melodee.Common.csproj"/>
   </ItemGroup>
 

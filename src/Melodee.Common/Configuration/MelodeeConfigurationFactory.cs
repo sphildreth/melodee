@@ -1,3 +1,4 @@
+using System.Collections;
 using Melodee.Common.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,18 @@ public sealed class MelodeeConfigurationFactory(IDbContextFactory<MelodeeDbConte
                     .Settings
                     .ToDictionaryAsync(x => x.Key, object? (x) => x.Value, cancellationToken)
                     .ConfigureAwait(false);
+                
+                var allEnvVars = Environment.GetEnvironmentVariables()
+                    .Cast<DictionaryEntry>()
+                    .ToDictionary(entry => entry.Key.ToString(), entry => entry.Value?.ToString());
+
+                foreach (var (key, value) in allEnvVars)
+                {
+                    if (key != null)
+                    {
+                        settings[key] = value;
+                    }
+                }
                 _configuration = new MelodeeConfiguration(settings);
             }
         }
