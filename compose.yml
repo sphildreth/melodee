@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       PGUSER: melodeeuser
     volumes:
-      - melodee-db-data:/var/lib/postgresql/data
+      - ${DB_VOLUME}:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -29,11 +29,3 @@ services:
     ports:
       - "${MELODEE_PORT}:8080"
     restart: unless-stopped
-
-volumes:
-  melodee-db-data:          # Named volume for database persistence
-  melodee-storage:          # For processed music library
-  melodee-inbound:          # For incoming music files
-  melodee-staging:          # For staging area
-  melodee-user-images:      # For user profile images
-  melodee-playlists:        # For playlist data
