@@ -78,7 +78,8 @@ public class SettingService : ServiceBase
 
                     foreach (var envSetSetting in MelodeeConfigurationFactory.EnvironmentVariablesSettings())
                     {
-                        var setting = settings.FirstOrDefault(x => string.Equals(x.Key, envSetSetting.Key, StringComparison.OrdinalIgnoreCase));
+                        var kk = envSetSetting.Key.Replace("_", ".");
+                        var setting = settings.FirstOrDefault(x => string.Equals(x.Key, kk, StringComparison.OrdinalIgnoreCase));
                         if (setting != null)
                         {
                             setting.Value = envSetSetting.Value?.ToString() ?? string.Empty;

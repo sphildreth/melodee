@@ -34,6 +34,7 @@ EXPOSE 8081
 # Install PostgreSQL client tools, network debugging tools, and nano editor
 RUN apt-get update && \
     apt-get install -y \
+        ffmpeg \
         postgresql-client \
         iputils-ping \
         netcat-openbsd \
@@ -61,7 +62,7 @@ ENV HOME="/home/melodee"
 
 # Set volume path environment variables for the .NET application
 ENV MELODEE_STORAGE_PATH="/app/storage"
-ENV SEARCHENGINE.MUSICBRAINZ.STORAGEPATH="/app/storage/_search-engines/musicbrainz"
+ENV SEARCHENGINE_MUSICBRAINZ_STORAGEPATH="/app/storage/_search-engines/musicbrainz"
 ENV MELODEE_INBOUND_PATH="/app/inbound"
 ENV MELODEE_STAGING_PATH="/app/staging"
 ENV MELODEE_USER_IMAGES_PATH="/app/user-images"

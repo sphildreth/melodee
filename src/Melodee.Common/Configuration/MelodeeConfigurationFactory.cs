@@ -32,10 +32,11 @@ public sealed class MelodeeConfigurationFactory(IDbContextFactory<MelodeeDbConte
         var allEnvVars = EnvironmentVariablesSettings();
         foreach (var (key, value) in allEnvVars)
         {
-            if (settings.ContainsKey(key) && settings[key] != value)
+            var kk = key.Replace("_", ".");
+            if (settings.ContainsKey(kk) && settings[kk] != value)
             {
-                settings[key] = value;
-                Trace.WriteLine($"[{ nameof(MelodeeConfigurationFactory)}] Overriding setting [{key}] with environment variable value [{value}]");
+                settings[kk] = value;
+                Trace.WriteLine($"[{ nameof(MelodeeConfigurationFactory)}] Overriding setting [{kk}] with environment variable value [{value}]");
             }
         }
         return settings;

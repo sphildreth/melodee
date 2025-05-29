@@ -48,8 +48,7 @@ public class ArtistSearchEngineService(
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null,
         CancellationToken cancellationToken = default)
     {
-        _configuration = configuration ??
-                         await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        _configuration = configuration ?? await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
 
         _artistSearchEnginePlugins =
         [
@@ -73,8 +72,7 @@ public class ArtistSearchEngineService(
             }
         ];
 
-        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory
-                         .CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await artistSearchEngineServiceDbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             await scopedContext.Database.EnsureCreatedAsync(cancellationToken);
         }
