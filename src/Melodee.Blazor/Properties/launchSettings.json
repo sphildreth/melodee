@@ -16,8 +16,7 @@
       "launchBrowser": false,
       "applicationUrl": "https://localhost:7076;http://localhost:5157;http://192.168.8.130:5157",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "SEARCHENGINE.MUSICBRAINZ.STORAGEPATH": "/app/batman"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
   }

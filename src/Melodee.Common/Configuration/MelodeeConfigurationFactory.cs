@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics;
 using Melodee.Common.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,7 +32,11 @@ public sealed class MelodeeConfigurationFactory(IDbContextFactory<MelodeeDbConte
         var allEnvVars = EnvironmentVariablesSettings();
         foreach (var (key, value) in allEnvVars)
         {
-            settings[key] = value;
+            if (settings.ContainsKey(key) && settings[key] != value)
+            {
+                settings[key] = value;
+                Trace.WriteLine($"[{ nameof(MelodeeConfigurationFactory)}] Overriding setting [{key}] with environment variable value [{value}]");
+            }
         }
         return settings;
     }
