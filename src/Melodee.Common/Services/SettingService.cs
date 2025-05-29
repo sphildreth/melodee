@@ -42,11 +42,9 @@ public class SettingService : ServiceBase
         _melodeeConfigurationFactory = melodeeConfigurationFactory;
     }
 
-    public virtual async Task<Dictionary<string, object?>> GetAllSettingsAsync(
-        CancellationToken cancellationToken = default)
+    public virtual async Task<Dictionary<string, object?>> GetAllSettingsAsync(CancellationToken cancellationToken = default)
     {
-        var listResult =
-            await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken);
+        var listResult = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken);
         if (!listResult.IsSuccess)
         {
             throw new Exception("Failed to get settings from database");
@@ -56,13 +54,11 @@ public class SettingService : ServiceBase
         return MelodeeConfiguration.AllSettings(listDictionary);
     }
 
-    public async Task<MelodeeModels.PagedResult<Setting>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
-        CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<Setting>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         var settingsCount = 0;
         Setting[] settings = [];
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             try
             {
@@ -75,17 +71,19 @@ public class SettingService : ServiceBase
                 if (!pagedRequest.IsTotalCountOnlyRequest)
                 {
                     var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Settings\"");
-                    var listSql =
-                        $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                    if (dbConn is SqliteConnection)
-                    {
-                        listSql =
-                            $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                    }
-
+                    var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                     settings = (await dbConn
                         .QueryAsync<Setting>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();
+
+                    foreach (var envSetSetting in MelodeeConfigurationFactory.EnvironmentVariablesSettings())
+                    {
+                        var setting = settings.FirstOrDefault(x => string.Equals(x.Key, envSetSetting.Key, StringComparison.OrdinalIgnoreCase));
+                        if (setting != null)
+                        {
+                            setting.Value = envSetSetting.Value?.ToString() ?? string.Empty;
+                        }
+                    }
                 }
             }
             catch (Exception e)

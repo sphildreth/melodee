@@ -67,9 +67,14 @@
                 Width="75px"
                 FrozenPosition="FrozenColumnPosition.Right">
                 <Template Context="setting">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
-                                  Size="ButtonSize.Medium" Click="@(_ => EditRow(setting))"
-                                  @onclick:stopPropagation="true">
+                    <RadzenButton
+                        Icon="edit"
+                        ButtonStyle="ButtonStyle.Light"
+                        Variant="Variant.Flat"
+                        Size="ButtonSize.Medium"
+                        Click="@(_ => EditRow(setting))"
+                        Disabled="@(MelodeeConfigurationFactory.IsSetViaEnvironmentVariable(setting.Key))"
+                        @onclick:stopPropagation="true">
                     </RadzenButton>
                 </Template>
                 <EditTemplate Context="setting">

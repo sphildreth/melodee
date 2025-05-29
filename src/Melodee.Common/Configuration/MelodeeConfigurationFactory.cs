@@ -8,36 +8,50 @@ public sealed class MelodeeConfigurationFactory(IDbContextFactory<MelodeeDbConte
     : IMelodeeConfigurationFactory
 {
     private IMelodeeConfiguration? _configuration;
+    private static readonly Lazy<Dictionary<string, object?>> EnvironmentVariables = new(() =>
+        Environment.GetEnvironmentVariables()
+            .Cast<DictionaryEntry>()
+            .ToDictionary(
+                entry => entry.Key.ToString()!, 
+                entry => entry.Value,
+                StringComparer.OrdinalIgnoreCase));
 
     public void Reset()
     {
         _configuration = null;
     }
+    
+    public static bool IsSetViaEnvironmentVariable(string key) => EnvironmentVariablesSettings().ContainsKey(key);
 
+    public static Dictionary<string, object?> EnvironmentVariablesSettings() => EnvironmentVariables.Value;
+
+    
+    public static Dictionary<string, object?> UpdateWithEnvironmentVariables(Dictionary<string, object?> settings)
+    {
+        var allEnvVars = EnvironmentVariablesSettings();
+        foreach (var (key, value) in allEnvVars)
+        {
+            settings[key] = value;
+        }
+        return settings;
+    }
+    
     public async Task<IMelodeeConfiguration> GetConfigurationAsync(CancellationToken cancellationToken = default)
     {
         if (_configuration == null)
         {
-            await using (var scopedContext =
-                         await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var settings = await scopedContext
                     .Settings
-                    .ToDictionaryAsync(x => x.Key, object? (x) => x.Value, cancellationToken)
+                    .ToDictionaryAsync(
+                        x => x.Key, 
+                        object? (x) => x.Value, 
+                        comparer: StringComparer.OrdinalIgnoreCase,
+                        cancellationToken)
                     .ConfigureAwait(false);
-                
-                var allEnvVars = Environment.GetEnvironmentVariables()
-                    .Cast<DictionaryEntry>()
-                    .ToDictionary(entry => entry.Key.ToString(), entry => entry.Value?.ToString());
 
-                foreach (var (key, value) in allEnvVars)
-                {
-                    if (key != null)
-                    {
-                        settings[key] = value;
-                    }
-                }
-                _configuration = new MelodeeConfiguration(settings);
+                _configuration = new MelodeeConfiguration(UpdateWithEnvironmentVariables(settings));
             }
         }
 

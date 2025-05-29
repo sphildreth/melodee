@@ -9,7 +9,7 @@ using Melodee.Common.Utility;
 namespace Melodee.Common.Configuration;
 
 /// <summary>
-///     Configuration of Melodee system.
+///     Melodee Configuration.
 /// </summary>
 /// <param name="Configuration">Initial configuration from database.</param>
 public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : IMelodeeConfiguration
@@ -136,8 +136,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         return result;
     }
 
-    public static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName,
-        T? defaultValue = default)
+    public static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName, T? defaultValue = default)
     {
         if (settings.TryGetValue(settingName, out var setting))
         {

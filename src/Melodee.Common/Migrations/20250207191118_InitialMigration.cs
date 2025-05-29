@@ -776,7 +776,8 @@ namespace Melodee.Common.Migrations
                     { 1, null, new Guid("a7d0993b-992a-456c-bf1d-fbcd7625396c"), null, NodaTime.Instant.FromUnixTimeTicks(17389554776280915L), "Files in this directory are scanned and Album information is gathered via processing.", false, null, null, "Inbound", null, "/storage/inbound/", null, 0, null, 1 },
                     { 2, null, new Guid("bf06be32-c95f-4a5c-b241-752daef0478d"), null, NodaTime.Instant.FromUnixTimeTicks(17389554776280915L), "The staging directory to place processed files into (Inbound -> Staging -> Library).", false, null, null, "Staging", null, "/storage/staging/", null, 0, null, 2 },
                     { 3, null, new Guid("0bc1f88c-11ea-4750-9a34-5262473bb0ec"), null, NodaTime.Instant.FromUnixTimeTicks(17389554776280915L), "The library directory to place processed, reviewed and ready to use music files into.", false, null, null, "Storage", null, "/storage/library/", null, 0, null, 3 },
-                    { 4, null, new Guid("27bcb519-d9fd-4b59-97f9-82289b5be4b6"), null, NodaTime.Instant.FromUnixTimeTicks(17389554776280915L), "Library where user images are stored.", false, null, null, "User Images", null, "/storage/images/users/", null, 0, null, 4 }
+                    { 4, null, new Guid("27bcb519-d9fd-4b59-97f9-82289b5be4b6"), null, NodaTime.Instant.FromUnixTimeTicks(17389554776280915L), "Library where user images are stored.", false, null, null, "User Images", null, "/storage/images/users/", null, 0, null, 4 },
+                    { 5, null, new Guid("00942603-9D17-444B-8F04-5CEFC191A4DA"), null, NodaTime.Instant.FromUnixTimeTicks(17389554776280915L), "Library where playlist data is stored.", false, null, null, "Playlist Data", null, "/storage/playlists/", null, 0, null, 5 }
                 });
 
             migrationBuilder.InsertData(

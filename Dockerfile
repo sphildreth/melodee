@@ -61,6 +61,7 @@ ENV HOME="/home/melodee"
 
 # Set volume path environment variables for the .NET application
 ENV MELODEE_STORAGE_PATH="/app/storage"
+ENV SEARCHENGINE.MUSICBRAINZ.STORAGEPATH="/app/storage/_search-engines/musicbrainz"
 ENV MELODEE_INBOUND_PATH="/app/inbound"
 ENV MELODEE_STAGING_PATH="/app/staging"
 ENV MELODEE_USER_IMAGES_PATH="/app/user-images"

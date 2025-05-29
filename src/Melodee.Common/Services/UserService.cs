@@ -68,14 +68,7 @@ public sealed class UserService(
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Users\"");
-                var listSql =
-                    $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                if (dbConn is SqliteConnection)
-                {
-                    listSql =
-                        $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                }
-
+                var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 users = (await dbConn
                     .QueryAsync<User>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();
