@@ -1,0 +1,38 @@
+services:
+  melodee-db:
+    image: docker.io/library/postgres:17
+    environment:
+      POSTGRES_DB: melodeedb
+      POSTGRES_USER: melodeeuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - melodee-db-data:/var/lib/postgresql/data  # This is the critical line
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  melodee.blazor:
+    build:
+      context: .
+      dockerfile: src/Melodee.Blazor/Dockerfile
+    depends_on:
+      - melodee-db
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=melodee-db;Port=5432;Database=melodeedb;Username=melodeeuser;Password=${DB_PASSWORD}
+    volumes:
+      - melodee-storage:/app/storage
+      - melodee-inbound:/app/inbound
+      - melodee-staging:/app/staging
+      - melodee-user-images:/app/user-images
+      - melodee-playlists:/app/playlists
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  melodee-db-data:          # Named volume for database persistence
+  melodee-storage:          # For processed music library
+  melodee-inbound:          # For incoming music files
+  melodee-staging:          # For staging area
+  melodee-user-images:      # For user profile images
+  melodee-playlists:        # For playlist data
