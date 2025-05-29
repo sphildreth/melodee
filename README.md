@@ -3,7 +3,7 @@
 
   # Melodee
 
-  **A modern music system designed to manage and stream music libraries with tens of millions of songs**
+  **A music system designed to manage and stream music libraries with tens of millions of songs**
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![.NET](https://github.com/sphildreth/melodee/actions/workflows/dotnet.yml/badge.svg)](https://github.com/sphildreth/melodee/actions/workflows/dotnet.yml)
@@ -17,7 +17,7 @@
 
 ## 🎵 Overview
 
-Melodee is a comprehensive music management and streaming system built with .NET 9 and Blazor. It provides a complete solution for processing, organizing, and serving large music libraries through OpenSubsonic-compatible APIs.
+Melodee is a comprehensive music management and streaming system built with .NET 9 and Blazor. It provides a complete solution for processing, organizing, and serving large music libraries through both restful and OpenSubsonic-compatible APIs.
 
 ### Key Capabilities
 
