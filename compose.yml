@@ -1,3 +1,5 @@
+name: melodee
+
 services:
   melodee-db:
     image: docker.io/library/postgres:17
@@ -7,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       PGUSER: melodeeuser
     volumes:
-      - melodee_db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -21,25 +23,25 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Host=melodee-db;Port=5432;Database=melodeedb;Username=melodeeuser;Password=${DB_PASSWORD}
     volumes:
-      - melodee_storage:/app/storage
-      - melodee_inbound:/app/inbound
-      - melodee_staging:/app/staging
-      - melodee_user_images:/app/user-images
-      - melodee_playlists:/app/playlists
+      - storage:/app/storage
+      - inbound:/app/inbound
+      - staging:/app/staging
+      - user_images:/app/user-images
+      - playlists:/app/playlists
     ports:
       - "${MELODEE_PORT}:8080"
     restart: unless-stopped
 
 volumes:
-  melodee_db_data:
-    external: true
-  melodee_storage:
-    external: true
-  melodee_inbound:
-    external: true
-  melodee_staging:
-    external: true
-  melodee_user_images:
-    external: true
-  melodee_playlists:
-    external: true
+  db_data:
+    name: melodee_db_data
+  storage:
+    name: melodee_storage
+  inbound:
+    name: melodee_inbound
+  staging:
+    name: melodee_staging
+  user_images:
+    name: melodee_user_images
+  playlists:
+    name: melodee_playlists

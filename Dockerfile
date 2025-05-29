@@ -1,15 +1,3 @@
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
-
-# Install PostgreSQL client tools and network debugging tools (before switching to non-root user)
-RUN apt-get update && apt-get install -y postgresql-client iputils-ping netcat-openbsd && rm -rf /var/lib/apt/lists/*
-
-# Create a non-root user
-RUN groupadd -r melodee && useradd -r -g melodee melodee
-USER melodee
-
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
@@ -40,15 +28,11 @@ RUN dotnet publish "Melodee.Blazor.csproj" -c Release -o /app/publish /p:UseAppH
 # Final image - use SDK instead of runtime to support EF migrations
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS final
 WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
 
 # Install PostgreSQL client tools and network debugging tools
 RUN apt-get update && apt-get install -y postgresql-client iputils-ping netcat-openbsd && rm -rf /var/lib/apt/lists/*
-
-# Install EF Core tools globally
-RUN dotnet tool install --global dotnet-ef --version 9.0.5
-
-# Add dotnet tools to PATH
-ENV PATH="$PATH:/root/.dotnet/tools"
 
 # Copy the published application
 COPY --from=publish /app/publish .
@@ -58,9 +42,24 @@ COPY --from=build /src/src/Melodee.Common/ /app/src/Melodee.Common/
 COPY --from=build /src/src/Melodee.Blazor/ /app/src/Melodee.Blazor/
 COPY --from=build /src/Directory.Packages.props /app/
 
-# Create a non-root user
-RUN groupadd -r melodee && useradd -r -g melodee melodee
+# Create a non-root user and switch to it
+RUN groupadd -r melodee && useradd -r -g melodee -m melodee
+
+# Change ownership of the app directory to melodee user
+RUN chown -R melodee:melodee /app
+
+# Set dotnet environment variables to avoid permission issues
+ENV DOTNET_CLI_HOME="/home/melodee"
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+ENV HOME="/home/melodee"
+
 USER melodee
 
+# Install EF Core tools globally for the melodee user
+RUN dotnet tool install --global dotnet-ef --version 9.0.5
+
+# Add tools to PATH
+ENV PATH="$PATH:/home/melodee/.dotnet/tools"
+
 # Run database migration and start the application
-CMD ["sh", "-c", "echo 'Starting container...'; echo 'Container environment:'; env | grep -E '(DB|CONNECTION)' || true; echo 'Testing database connectivity...'; until pg_isready -h melodee-db -p 5432 -U melodeeuser -d melodeedb; do echo 'Waiting for database...'; sleep 2; done && echo 'Database is ready!' && echo 'Running database migrations...'; cd /app/src/Melodee.Blazor && dotnet ef database update && echo 'Migrations completed!' && echo 'Starting application...' && cd /app && dotnet server.dll"]
+CMD ["sh", "-c", "echo 'Starting container...'; echo 'Container environment:'; env | grep -E '(DB|CONNECTION)' || true; echo 'Testing database connectivity...'; until pg_isready -h melodee-db -p 5432 -U melodeeuser -d melodeedb; do echo 'Waiting for database...'; sleep 2; done && echo 'Database is ready!' && echo 'Running database migrations...'; cd /app/src/Melodee.Blazor && dotnet restore && dotnet ef database update --context MelodeeDbContext --connection \"$ConnectionStrings__DefaultConnection\" && echo 'Migrations completed!' && echo 'Starting application...' && cd /app && dotnet server.dll"]
