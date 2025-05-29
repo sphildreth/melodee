@@ -72,9 +72,9 @@ Melodee is a comprehensive music management and streaming system built with .NET
    ```
 
 4. **Access the application**
+   - 📚 Read the [documentation](https://melodee.org) on how to get started
    - Web Interface: http://localhost:8080
-   - Register as a new user, the first user will be setup as administrator
-   - Read the [documentation](https://melodee.org) on how to configure and add music
+   - Register as a new user, the first user will be setup as administrator   -
    - Configure clients to connect to your server
    - Enjoy an ad-free and self-hosted music streaming service 🎉
 
@@ -186,14 +186,6 @@ Full compatibility with Subsonic 1.16.1 and OpenSubsonic specifications:
 - **PostgreSQL 17** (included in container deployment)
 - **2GB RAM** minimum (4GB recommended)
 - **Storage**: Varies based on music library size
-
-## 📚 Documentation
-
-- [Installation Guide](docs/installation.md)
-- [Configuration Reference](docs/configuration.md)
-- [API Documentation](docs/api.md)
-- [Plugin Development](docs/plugins.md)
-- [Troubleshooting](docs/troubleshooting.md)
 
 ## 🤝 Contributing
 
