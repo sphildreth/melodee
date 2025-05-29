@@ -24,7 +24,8 @@ Melodee is a comprehensive music management and streaming system built with .NET
 - **📁 Smart Media Processing**: Automatically converts, cleans, and validates inbound media
 - **🎛️ Staging Workflow**: Manual editing capabilities before adding to production libraries
 - **🔄 Automated Jobs**: Cron-like scheduling for library scanning and updates
-- **🎵 OpenSubsonic API**: Compatible with popular Subsonic clients
+- **🎵 OpenSubsonic API**: Compatible with popular Subsonic and OpenSubsonic clients
+- **🌐 Melodee API**: Fast restful API
 - **🌐 Modern Web UI**: Blazor Server interface with Radzen UI components
 - **🐳 Container Ready**: Full Docker/Podman support with PostgreSQL
 
@@ -95,14 +96,14 @@ podman-compose --env-file .env up -d --build
 
 Melodee uses several persistent volumes for data storage:
 
-| Volume | Purpose | Description |
-|--------|---------|-------------|
-| `melodee_storage` | Music Library | Processed and organized music files |
-| `melodee_inbound` | Incoming Media | New media files to be processed |
-| `melodee_staging` | Staging Area | Media ready for manual review |
-| `melodee_user_images` | User Content | User-uploaded images and avatars |
-| `melodee_playlists` | Playlists | User-created playlists |
-| `melodee_db_data` | Database | PostgreSQL data |
+| Volume | Purpose | Description                                 |
+|--------|---------|---------------------------------------------|
+| `melodee_storage` | Music Library | Processed and organized music files         |
+| `melodee_inbound` | Incoming Media | New media files to be processed             |
+| `melodee_staging` | Staging Area | Media ready for manual review               |
+| `melodee_user_images` | User Content | User-uploaded avatars            |
+| `melodee_playlists` | Playlists | Admin defined (json base) dynamic playlists |
+| `melodee_db_data` | Database | PostgreSQL data                             |
 
 To backup your data:
 ```bash
