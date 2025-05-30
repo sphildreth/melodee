@@ -1,9 +1,13 @@
 using Asp.Versioning;
+using Melodee.Blazor.Controllers.Melodee.Extensions;
+using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Security;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
@@ -15,7 +19,7 @@ namespace Melodee.Blazor.Controllers.Melodee;
 [ApiController]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class SongController(
+public class SongsController(
     ISerializer serializer,
     EtagRepository etagRepository,
     UserService userService,
@@ -28,6 +32,61 @@ public class SongController(
     configuration,
     configurationFactory)
 {
+    
+    [HttpGet]
+    [Route("{id:guid}")]
+    public Task<IActionResult> SongById(Guid id, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }     
+    
+    [HttpGet]
+    public Task<IActionResult> ListAsync(short page, short pageSize, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }      
+    
+    [HttpPost]
+    [Route("recent")]
+    public async Task<IActionResult> RecentlyAddedAsync(short limit, CancellationToken cancellationToken = default)
+    {
+        if (!ApiRequest.IsAuthorized)
+        {
+            return Unauthorized(new { error = "Authorization token is invalid" });
+        }
+
+        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
+        if (!userResult.IsSuccess || userResult.Data == null)
+        {
+            return Unauthorized(new { error = "Authorization token is invalid" });
+        }        
+        
+        if (userResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
+        
+        var songRecentResult = await songService.ListAsync(new PagedRequest
+        {
+            Page = 1,
+            PageSize = limit,
+            OrderBy = new Dictionary<string, string>{{ nameof(AlbumDataInfo.CreatedAt), PagedRequest.OrderDescDirection}}
+        }, userResult.Data.Id, cancellationToken).ConfigureAwait(false);
+        
+        var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
+        
+        return Ok(new
+        {
+            meta = new PaginationMetadata(
+                songRecentResult.TotalCount,
+                limit,
+                1,
+                songRecentResult.TotalPages
+            ),
+            data = songRecentResult.Data.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)).ToArray()
+        });
+    }    
+    
     [HttpPost]
     [Route("starred/{apiKey:guid}/{isStarred:bool}")]
     public async Task<IActionResult>? ToggleSongStarred(Guid apiKey, bool isStarred, CancellationToken cancellationToken = default)

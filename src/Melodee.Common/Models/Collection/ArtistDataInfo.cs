@@ -19,6 +19,10 @@ public sealed record ArtistDataInfo(
     string Tags,
     Instant? LastUpdatedAt)
 {
+    public bool UserStarred { get; set; }
+    
+    public int UserRating { get; set; }
+    
     public object? State { get; set; }
 
     /// <summary>
@@ -30,6 +34,10 @@ public sealed record ArtistDataInfo(
 
     public string InfoLineData => $"{AlbumCount.ToStringPadLeft(4)} | {SongCount.ToStringPadLeft(5)}";
 
+    public Instant? LastUpdatedAt { get; set; }
+    
+    public string? Biography { get; set; }
+    
     public static ArtistDataInfo BlankArtistDataInfo =>
         new(0,
             Guid.Empty,

@@ -20,6 +20,30 @@ public static class SongDataInfoExtensions
         };
         return new Song(
             songDataInfo.ApiKey,
+            new Artist(songDataInfo.ArtistApiKey,
+                $"{baseUrl}/images/{artistInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
+                $"{baseUrl}/images/{artistInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
+                songDataInfo.ArtistName,
+                false,
+                0,
+                0,
+                0,
+                string.Empty,
+                string.Empty
+            ),
+            new Album(songDataInfo.AlbumApiKey,
+                $"{baseUrl}/images/{albumInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
+                $"{baseUrl}/images/{albumInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
+                songDataInfo.AlbumName,
+                songDataInfo.ReleaseDate.Year,
+                false,
+                0,
+                0,
+                0,
+                string.Empty,
+                string.Empty,
+                string.Empty
+            ),            
             $"{baseUrl}/song/stream/{songDataInfo.ApiKey}/{currentUser.Id}/{currentUser.CreateAuthUrlFragment(userSecret, songDataInfo.ApiKey.ToString())}",
             $"{baseUrl}/images/{songDataInfo.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
             $"{baseUrl}/images/{songDataInfo.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
@@ -28,19 +52,11 @@ public static class SongDataInfoExtensions
             currentUser.FormatDuration(songDataInfo.Duration.ToDuration()),
             songDataInfo.UserStarred,
             songDataInfo.UserRating,
-            new Artist(songDataInfo.ArtistApiKey,
-                $"{baseUrl}/images/{artistInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
-                $"{baseUrl}/images/{artistInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
-                songDataInfo.ArtistName,
-                false,
-                0),
-            new Album(songDataInfo.AlbumApiKey,
-                $"{baseUrl}/images/{albumInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
-                $"{baseUrl}/images/{albumInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
-                songDataInfo.AlbumName,
-                songDataInfo.ReleaseDate.Year,
-                false,
-                0
-            ));
+            songDataInfo.SongNumber,
+            320,
+            songDataInfo.PlayedCount,
+            currentUser.FormatInstant(songDataInfo.CreatedAt),
+            currentUser.FormatInstant(songDataInfo.LastUpdatedAt),
+            songDataInfo.Genre);
     }
 }

@@ -20,7 +20,7 @@ namespace Melodee.Blazor.Controllers.Melodee;
 [ApiController]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class UserController(
+public class UsersController(
     ISerializer serializer,
     EtagRepository etagRepository,
     UserService userService,
@@ -100,8 +100,8 @@ public class UserController(
     /// Return the last three songs played by the user
     /// </summary>
     [HttpGet]
-    [Route("last3played")]
-    public async Task<IActionResult> Last3PlayedSongsForUserAsync(CancellationToken cancellationToken = default)
+    [Route("lastPlayed")]
+    public async Task<IActionResult> Last3PlayedSongsForUserAsync(short page, short pageSize, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
         {
@@ -125,11 +125,12 @@ public class UserController(
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
         }
 
+        // TODO this should be paginated
         var userLastPlayedResult = await userService.UserLastPlayedSongsAsync(userResult.Data.Id, 3, cancellationToken).ConfigureAwait(false);
         return Ok(new
         {
             meta = new PaginationMetadata(
-                3,
+                10,
                 10,
                 1,
                 1

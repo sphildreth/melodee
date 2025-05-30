@@ -27,7 +27,7 @@ public abstract class CommonBase : Controller
     {
         var baseUrl = $"{Request.Scheme}://{Request.Host.Value}";
         var configuredDomain = configuration.GetValue<string>(SettingRegistry.SystemBaseUrl);
-        return configuredDomain ?? baseUrl;
+        return (configuredDomain ?? baseUrl).TrimEnd('/');
     }
     
     protected static string GetRequestIp(HttpContext? context, bool tryUseXForwardHeader = true)

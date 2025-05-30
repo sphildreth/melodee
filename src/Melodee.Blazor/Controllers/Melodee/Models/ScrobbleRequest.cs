@@ -11,7 +11,13 @@ namespace Melodee.Blazor.Controllers.Melodee.Models;
 /// <param name="ScrobbleType">Type of scrobble request</param>
 /// <param name="Timestamp">The timestamp of when the scrobble request was made.</param>
 /// <param name="PlayedDuration">The amount of time the song has been played. This is likely null on not Played scrobble request.</param>
-public record ScrobbleRequest(Guid SongId, Guid UserId, string PlayerName, string ScrobbleType, double? Timestamp, double? PlayedDuration)
+public record ScrobbleRequest(
+    Guid SongId,
+    Guid UserId,
+    string PlayerName,
+    string ScrobbleType,
+    double? Timestamp,
+    double? PlayedDuration)
 {
     public ScrobbleRequestType ScrobbleTypeValue => SafeParser.ToEnum<ScrobbleRequestType>(ScrobbleType);
 }

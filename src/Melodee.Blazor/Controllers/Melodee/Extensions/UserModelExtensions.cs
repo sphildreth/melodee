@@ -18,6 +18,11 @@ public static class UserModelExtensions
     {
         return duration.ToString("-H:mm:ss", user.GetCulture());
     }
+    
+    public static string FormatInstant(this Models.User user, Instant? instant)
+    {
+        return instant?.ToString("yyyy-MM-dd HH:mm:ss", user.GetCulture()) ?? MelodeeConfiguration.DefaultNoValuePlaceHolder;
+    }    
 
     public static string CreateAuthUrlFragment(this Models.User user, string secret, string seed)
     {

@@ -15,4 +15,6 @@ public record User(
     int AlbumsLiked,
     int AlbumsDisliked,
     int SongsLiked,
-    int SongsDisliked);
+    int SongsDisliked,
+    string CreatedAt,
+    string UpdatedAt);

@@ -3,8 +3,8 @@ using Melodee.Blazor.Controllers.Melodee.Extensions;
 using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
 using Melodee.Common.Configuration;
-using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Utility;
@@ -15,11 +15,11 @@ namespace Melodee.Blazor.Controllers.Melodee;
 [ApiController]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class PlaylistController(
+public sealed class AlbumsController(
     ISerializer serializer,
     EtagRepository etagRepository,
     UserService userService,
-    PlaylistService playlistService,
+    AlbumService albumService,
     IConfiguration configuration,
     IMelodeeConfigurationFactory configurationFactory) : ControllerBase(
     etagRepository,
@@ -27,9 +27,24 @@ public class PlaylistController(
     configuration,
     configurationFactory)
 {
+    
     [HttpGet]
-    [Route("{apiKey:guid}/songs")]
-    public async Task<IActionResult> SongsForPlaylist(Guid apiKey, int? page, short? pageSize, CancellationToken cancellationToken = default)
+    [Route("{id:guid}")]
+    public Task<IActionResult> AlbumById(Guid id, CancellationToken cancellationToken = default)
+    {
+        
+        throw new NotImplementedException();
+    }    
+    
+    [HttpGet]
+    public Task<IActionResult> ListAsync(short page, short pageSize, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }   
+    
+    [HttpPost]
+    [Route("recent")]
+    public async Task<IActionResult> RecentlyAddedAsync(short limit, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
         {
@@ -40,40 +55,39 @@ public class PlaylistController(
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }
-
+        }        
+        
         if (userResult.Data.IsLocked)
         {
             return Forbid("User is locked");
         }
-
-        var userInfo = userResult.Data.ToUserInfo();
-        var playlistResult = await playlistService.GetByApiKeyAsync(userInfo, apiKey, cancellationToken).ConfigureAwait(false);
-        if (!playlistResult.IsSuccess || playlistResult.Data == null)
+        
+        var albumRecentResult = await albumService.ListAsync(new PagedRequest
         {
-            return BadRequest(new { error = "Playlist not found" });
-        }
-
-        var pageValue = page ?? 1;
-        var pageSizeValue = pageSize ?? 50;
-        var songsForPlaylistResult = await playlistService.SongsForPlaylistAsync(apiKey,
-            userInfo,
-            new PagedRequest
-            {
-                PageSize = pageSizeValue,
-                Page = pageValue
-            },
-            cancellationToken).ConfigureAwait(false);
+            Page = 1,
+            PageSize = limit,
+            OrderBy = new Dictionary<string, string>{{ nameof(AlbumDataInfo.CreatedAt), PagedRequest.OrderDescDirection}}
+        }, null, cancellationToken).ConfigureAwait(false);
+        
         var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
+        
         return Ok(new
         {
             meta = new PaginationMetadata(
-                songsForPlaylistResult.TotalCount,
-                pageSizeValue,
-                pageValue,
-                songsForPlaylistResult.TotalPages
+                albumRecentResult.TotalCount,
+                limit,
+                1,
+                albumRecentResult.TotalPages
             ),
-            data = songsForPlaylistResult.Data.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey))
+            data = albumRecentResult.Data.Select(x => x.ToAlbumModel(baseUrl, userResult.Data.ToUserModel(baseUrl))).ToArray()
         });
     }
+    
+    [HttpPost]
+    [Route("{id:guid}/songs")]
+    public Task<IActionResult> AlbumSongsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+    
 }

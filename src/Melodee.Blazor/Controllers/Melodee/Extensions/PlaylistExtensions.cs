@@ -14,10 +14,14 @@ public static class PlaylistExtensions
             $"{baseUrl}/images/{playlist.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
             $"{baseUrl}/images/{playlist.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
             playlist.Name,
-            playlist.Description,
-            playlist.Duration.ToDuration(),
+            playlist.Description ?? string.Empty,
             playlist.Duration,
             currentUser.FormatDuration(playlist.Duration.ToDuration()),
-            playlist.SongCount ?? 0);
+            playlist.SongCount ?? 0,
+            playlist.IsPublic,
+            playlist.User.ToUserModel(baseUrl),
+            playlist.CreatedAt.ToString(),
+            playlist.LastUpdatedAt?.ToString() ?? string.Empty           
+            );
     }
 }

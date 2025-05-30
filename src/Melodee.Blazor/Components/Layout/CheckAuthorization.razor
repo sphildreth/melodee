@@ -1,6 +1,8 @@
-﻿<h1>@_message</h1>
+﻿@using SpotifyAPI.Web
+<h1>@_message</h1>
 
 @code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
     [Inject] private IAuthService AuthService { get; set; } = null!;
     [Inject] private NavigationManager NavigationManager { get; set; } = null!;
     string? _returnUrl;
@@ -9,6 +11,11 @@
     protected override void OnInitialized()
     {
         _returnUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        if (!string.IsNullOrEmpty(HttpContext?.Request.Headers.Authorization))
+        {
+            return;
+        }
+
         if (AuthService.IsLoggedIn)
         {
             _message = "Sorry, you are not authorized to view this page.";

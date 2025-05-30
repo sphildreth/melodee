@@ -8,7 +8,10 @@ public record Playlist(
     string ImageUrl,
     string Name,
     string Description,
-    Duration Duration,
     double DurationMs,
     string DurationFormatted,
-    short SongsCount);
+    short SongsCount,
+    bool IsPublic,
+    User Owner,
+    string CreatedAt,
+    string UpdatedAt);

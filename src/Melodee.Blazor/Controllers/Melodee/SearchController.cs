@@ -29,7 +29,15 @@ public class SearchController(
     configuration,
     configurationFactory)
 {
+
+    [HttpPost]
+    public Task<IActionResult> SearchAsync(string q, string? type, short? page, short? pageSize, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     [HttpGet]
+    [Route("songs")]
     public async Task<IActionResult> SearchSongsAsync(string q, short? page, short? pageSize, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
