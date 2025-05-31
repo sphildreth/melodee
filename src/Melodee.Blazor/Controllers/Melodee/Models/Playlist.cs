@@ -10,7 +10,7 @@ public record Playlist(
     string Description,
     double DurationMs,
     string DurationFormatted,
-    short SongsCount,
+    short SongCount,
     bool IsPublic,
     User Owner,
     string CreatedAt,

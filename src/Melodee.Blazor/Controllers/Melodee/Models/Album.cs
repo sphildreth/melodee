@@ -8,7 +8,7 @@ public record Album(
     int ReleaseYear,
     bool UserStarred,
     int UserRating,
-    int SongsCount,
+    int SongCount,
     double DurationMs,
     string DurationFormatted,
     string CreatedAt,

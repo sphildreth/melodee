@@ -4,7 +4,7 @@ public record User(
     Guid Id,
     string AvatarThumbnailUrl,
     string AvatarUrl,
-    string UserName,
+    string Username,
     string Email,
     bool IsAdmin,
     bool IsEditor,

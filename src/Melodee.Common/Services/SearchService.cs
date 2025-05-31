@@ -40,18 +40,20 @@ public sealed class SearchService(
         var totalArtists = 0;
         var totalAlbums = 0;
         var totalSongs = 0;
+        var totalPlaylists = 0;
         var totalMusicBrainzArtists = 0;
         
         List<ArtistDataInfo> artists = new();
         List<AlbumDataInfo> albums = new();
         List<SongDataInfo> songs = new();
+        List<PlaylistDataInfo> playlists = new();
         List<ArtistDataInfo> musicBrainzArtists = new();
 
         if (searchTerm.Nullify() == null)
         {
             return new OperationResult<SearchResult>("No Search Term Provided")
             {
-                Data = new SearchResult([],0, [], 0, [], 0, [], 0)
+                Data = new SearchResult([], 0, [], 0, [], 0, [], 0, [], 0)
             };
         }
 
@@ -69,10 +71,8 @@ public sealed class SearchService(
                 PageSize = pageSize,
                 FilterBy =
                 [
-                    new FilterOperatorInfo(nameof(ArtistDataInfo.NameNormalized), FilterOperator.Contains,
-                        searchTermNormalized),
-                    new FilterOperatorInfo(nameof(ArtistDataInfo.AlternateNames), FilterOperator.Contains,
-                        searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
+                    new FilterOperatorInfo(nameof(ArtistDataInfo.NameNormalized), FilterOperator.Contains, searchTermNormalized),
+                    new FilterOperatorInfo(nameof(ArtistDataInfo.AlternateNames), FilterOperator.Contains, searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
             }, cancellationToken);
             artists = artistResult.Data.ToList();
@@ -86,10 +86,8 @@ public sealed class SearchService(
                 PageSize = pageSize,
                 FilterBy =
                 [
-                    new FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), FilterOperator.Contains,
-                        searchTermNormalized),
-                    new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains,
-                        searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
+                    new FilterOperatorInfo(nameof(AlbumDataInfo.NameNormalized), FilterOperator.Contains, searchTermNormalized),
+                    new FilterOperatorInfo(nameof(AlbumDataInfo.AlternateNames), FilterOperator.Contains, searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
             }, null, cancellationToken);
             totalAlbums = albumResult.TotalCount;
@@ -117,8 +115,7 @@ public sealed class SearchService(
                 PageSize = pageSize,
                 FilterBy =
                 [
-                    new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains,
-                        searchTermNormalized)
+                    new FilterOperatorInfo(nameof(SongDataInfo.TitleNormalized), FilterOperator.Contains, searchTermNormalized)
                 ]
             }, user.Data!.Id, cancellationToken);
             totalSongs = songResult.TotalCount;
@@ -172,7 +169,16 @@ public sealed class SearchService(
         }).ConfigureAwait(false);
         return new OperationResult<SearchResult>
         {
-            Data = new SearchResult(artists.ToArray(), totalArtists, albums.ToArray(), totalAlbums, songs.ToArray(), totalSongs, musicBrainzArtists.ToArray(), totalMusicBrainzArtists)
+            Data = new SearchResult(artists.ToArray(),
+                totalArtists,
+                albums.ToArray(),
+                totalAlbums,
+                songs.ToArray(),
+                totalSongs,
+                playlists.ToArray(),
+                totalPlaylists,
+                musicBrainzArtists.ToArray(),
+                totalMusicBrainzArtists)
         };
     }
 }

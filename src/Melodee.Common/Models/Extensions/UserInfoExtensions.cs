@@ -1,5 +1,6 @@
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
+using Melodee.Common.Data.Constants;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
 
@@ -17,4 +18,9 @@ public static class UserInfoExtensions
     {
         return Path.Combine(libraryPath, $"{user.Id.ToStringPadLeft(8)}.gif");
     }
+    
+    public static string ToApiKey(this UserInfo user)
+    {
+        return $"user{OpenSubsonicServer.ApiIdSeparator}{user.ApiKey}";
+    }    
 }

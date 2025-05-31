@@ -162,7 +162,7 @@
 
     [Parameter] public required string Query { get; set; }
 
-    SearchResult _searchResult = new([], 0, [], 0, [], 0, [], 0);
+    SearchResult _searchResult = new([], 0, [], 0, [], 0, [], 0, [], 0);
     private short _defaultMaxResults;
 
     protected override async Task OnParametersSetAsync()

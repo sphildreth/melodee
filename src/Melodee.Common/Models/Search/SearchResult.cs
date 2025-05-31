@@ -9,8 +9,10 @@ public sealed record SearchResult(
     int TotalAlbums,
     SongDataInfo[] Songs,
     int TotalSongs,
+    PlaylistDataInfo[] Playlists,
+    int TotalPlaylists,    
     ArtistDataInfo[] MusicBrainzArtists,
     int TotalMusicBrainzArtists)
 {
-    public int TotalCount => TotalArtists + TotalAlbums + TotalSongs + TotalMusicBrainzArtists;
+    public int TotalCount => TotalArtists + TotalAlbums + TotalSongs + TotalPlaylists + TotalMusicBrainzArtists;
 }
