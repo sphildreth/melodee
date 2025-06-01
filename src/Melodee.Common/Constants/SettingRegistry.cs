@@ -95,6 +95,7 @@ public static class SettingRegistry
     public const string SecurityBlacklistedEmails = "security.blacklistedEmails";
     public const string SecurityBlacklistedIPs = "security.blacklistedIPs";
     public const string SystemBaseUrl = "system.baseUrl";
+    public const string SystemApiVersion = "system.apiVersion";
     public const string SystemIsDownloadingEnabled = "system.isDownloadingEnabled";
     public const string TranscodingCommandAac = "transcoding.command.aac";
     public const string TranscodingCommandMp3 = "transcoding.command.mp3";

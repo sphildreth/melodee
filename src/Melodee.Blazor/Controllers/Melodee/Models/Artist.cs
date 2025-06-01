@@ -12,4 +12,21 @@ public record Artist(
     string CreatedAt,
     string UpdatedAt,
     string? Biography = null,
-    string[]? Genres = null);
+    string[]? Genres = null)
+{
+    public static Artist BlankArtist()
+    {
+        return new Artist(Guid.Empty,
+            "",
+            "",
+            "",
+            false,
+            0,
+            0,
+            0,
+            "",
+            "",
+            null,
+            null);
+    }
+}

@@ -618,8 +618,7 @@ public sealed class UserService(
             };
         }
 
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
 

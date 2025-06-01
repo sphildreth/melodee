@@ -9,9 +9,13 @@ public static class SearchResultExtensions
         return new SearchResult(
             searchResult.TotalCount,
             searchResult.Artists.Select(x => x.ToArtistModel(baseUrl, currentUser)).ToArray(),
+            searchResult.TotalArtists,
             searchResult.Albums.Select(x => x.ToAlbumModel(baseUrl, currentUser)).ToArray(),
+            searchResult.TotalAlbums,
             searchResult.Songs.Select(x => x.ToSongModel(baseUrl, currentUser, userSecret)).ToArray(),
-            searchResult.Playlists.Select(x => x.ToPlaylistModel(baseUrl, currentUser)).ToArray()
+            searchResult.TotalSongs,
+            searchResult.Playlists.Select(x => x.ToPlaylistModel(baseUrl, currentUser)).ToArray(),
+            searchResult.TotalPlaylists           
             );
     }
 }

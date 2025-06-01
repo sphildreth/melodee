@@ -32,6 +32,11 @@ public static class SongDataInfoExtensions
                 string.Empty
             ),
             new Album(songDataInfo.AlbumApiKey,
+                Artist.BlankArtist() with
+                {
+                    Id = albumInfoData.ArtistApiKey,
+                    Name = albumInfoData.ArtistName
+                },                
                 $"{baseUrl}/images/{albumInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
                 $"{baseUrl}/images/{albumInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
                 songDataInfo.AlbumName,

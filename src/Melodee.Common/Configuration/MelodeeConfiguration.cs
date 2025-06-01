@@ -20,9 +20,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
 
     public const int DefaultImagingDuplicateThreshold = 80;
 
-    public const int DefaultThumbNailSize = 48;
-
-    public const int DefaultAvatarImageSize = 300;
+    public const int DefaultThumbNailSize = 80;
 
     public const int DefaultImageSize = 1024;
 
@@ -83,6 +81,8 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
     {
         Configuration[key] = value;
     }
+
+    public string ApiVersion() => GetValue<string>(SettingRegistry.SystemApiVersion) ?? GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? "1.0.0";
 
     public T? GetValue<T>(string key, Func<T?, T?>? returnValue = null)
     {

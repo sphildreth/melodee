@@ -90,7 +90,7 @@ public sealed class ArtistsController(
     }
     
     [HttpPost]
-    [Route("{id:guid}/song")]
+    [Route("{id:guid}/songs")]
     public Task<IActionResult> ArtistSongsAsync(Guid id, short page, short pageSize, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();

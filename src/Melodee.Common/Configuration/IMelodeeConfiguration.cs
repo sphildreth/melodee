@@ -17,4 +17,5 @@ public interface IMelodeeConfiguration
     int BatchProcessingSize();
 
     void SetSetting<T>(string key, T? value);
+    string ApiVersion();
 }

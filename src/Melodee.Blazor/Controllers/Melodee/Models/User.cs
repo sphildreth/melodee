@@ -2,8 +2,8 @@ namespace Melodee.Blazor.Controllers.Melodee.Models;
 
 public record User(
     Guid Id,
-    string AvatarThumbnailUrl,
-    string AvatarUrl,
+    string ThumbnailUrl,
+    string ImageUrl,
     string Username,
     string Email,
     bool IsAdmin,

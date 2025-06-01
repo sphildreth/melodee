@@ -7,6 +7,7 @@ using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
@@ -53,6 +54,7 @@ public class UsersController(
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
         }
+        
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(Configuration.GetSection("MelodeeAuthSettings:Token").Value!);
         var tokenHoursString = Configuration.GetSection("MelodeeAuthSettings:TokenHours").Value;
@@ -68,9 +70,12 @@ public class UsersController(
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
+        var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        var serverVersion = configuration.ApiVersion();
         return Ok(new
         {
             user = authResult.Data.ToUserModel(GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false))),
+            serverVersion = Configuration.GetSection("MelodeeSettings:Version").Value,
             token = tokenHandler.WriteToken(token)
         });
     }

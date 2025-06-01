@@ -2,6 +2,7 @@ namespace Melodee.Blazor.Controllers.Melodee.Models;
 
 public record Album(
     Guid Id,
+    Artist Artist,
     string ThumbnailUrl,
     string ImageUrl,
     string Name,
@@ -13,4 +14,5 @@ public record Album(
     string DurationFormatted,
     string CreatedAt,
     string UpdatedAt,
-    string? Description = null);
+    string? Description = null,
+    string? Genre = null);

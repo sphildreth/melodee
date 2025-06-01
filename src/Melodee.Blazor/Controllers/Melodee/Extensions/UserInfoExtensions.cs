@@ -12,7 +12,7 @@ public static class UserInfoExtensions
     {
         return new User(user.ApiKey,
             $"{baseUrl}/images/{user.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
-            $"{baseUrl}/images/{user.ToApiKey()}/{MelodeeConfiguration.DefaultAvatarImageSize}",
+            $"{baseUrl}/images/{user.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
             user.UserName,
             user.Email,
             false,

@@ -13,7 +13,7 @@ namespace Melodee.Blazor.Controllers.Melodee;
 [ApiController]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]")]
-public sealed class MetaController(
+public sealed class SystemController(
     ISerializer serializer,
     EtagRepository etagRepository,
     UserService userService,

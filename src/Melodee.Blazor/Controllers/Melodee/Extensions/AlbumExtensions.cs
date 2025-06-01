@@ -12,6 +12,11 @@ public static class AlbumExtensions
     public static Album ToAlbumModel(this MelodeeModelsCollection.AlbumDataInfo album, string baseUrl, User currentUser)
     {
         return new Album(album.ApiKey,
+            Artist.BlankArtist() with
+            {
+                Id = album.ArtistApiKey,
+                Name = album.ArtistName
+            },
             $"{baseUrl}/images/{album.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
             $"{baseUrl}/images/{album.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
             album.Name,

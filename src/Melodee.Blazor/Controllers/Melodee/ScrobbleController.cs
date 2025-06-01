@@ -7,6 +7,7 @@ using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
+using Melodee.Common.Utility;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Melodee.Blazor.Controllers.Melodee;
@@ -33,17 +34,21 @@ public class ScrobbleController(
     [HttpPost]
     public async Task<IActionResult> ScrobbleSong([FromBody]ScrobbleRequest scrobbleRequest, CancellationToken cancellationToken = default)
     {
-        var userResult = await userService.GetByApiKeyAsync(scrobbleRequest.UserId, cancellationToken).ConfigureAwait(false);
-        if (!userResult.IsSuccess || userResult.Data == null)
+        if (!ApiRequest.IsAuthorized)
         {
-            return Unauthorized(new { error = "Unknown user" });
+            return Unauthorized(new { error = "Authorization token is invalid" });
         }
 
-        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
-            await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
+        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
+        if (!userResult.IsSuccess || userResult.Data == null)
         {
-            return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
-        } 
+            return Unauthorized(new { error = "Authorization token is invalid" });
+        }
+
+        if (userResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
         
         var songRequest = await songService.GetByApiKeyAsync(scrobbleRequest.SongId, cancellationToken).ConfigureAwait(false);
         if (!songRequest.IsSuccess || songRequest.Data == null)
