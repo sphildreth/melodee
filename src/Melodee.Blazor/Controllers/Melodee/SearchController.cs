@@ -31,7 +31,7 @@ public class SearchController(
 {
 
     [HttpPost]
-    public async Task<IActionResult> SearchAsync(string q, string? type, short? page, short? pageSize, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> SearchAsync([FromBody]SearchRequest searchRequest, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
         {
@@ -55,11 +55,11 @@ public class SearchController(
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
         }        
         
-        var pageValue = page ?? 1;
-        var pageSizeValue = pageSize ?? 50;
+        var pageValue = searchRequest.Page ?? 1;
+        var pageSizeValue = searchRequest.PageSize ?? 50;
 
         var includedTyped = SearchInclude.Data;
-        var typeValue = type?.Split(',');
+        var typeValue = searchRequest.Type?.Split(',');
         if (typeValue is { Length: > 0 })
         {
             includedTyped = SearchInclude.Data;
@@ -74,7 +74,7 @@ public class SearchController(
 
         var searchResult = await searchService.DoSearchAsync(userResult.Data.ApiKey,
                 ApiRequest.ApiRequestPlayer.UserAgent,
-                q,
+                searchRequest.Query,
                 pageValue,
                 pageSizeValue,
                 includedTyped,

@@ -317,8 +317,8 @@ public class SongService(
                     Logger.Error(ex, "Reading song [{SongInfo}]", songStreamInfo);
                 }
             }
-
-           // await bus.SendLocal(new UserStreamEvent(apiRequest, request)).ConfigureAwait(false);
+            
+            var contentLength = numberOfBytesRead > 0 ? numberOfBytesRead : songStreamInfo.FileSize;
 
             return new MelodeeModels.OperationResult<StreamResponse>
             {
@@ -326,6 +326,7 @@ public class SongService(
                 (
                     new Dictionary<string, StringValues>
                     {
+                        { "Access-Control-Allow-Origin", "*" },
                         { "Accept-Ranges", "bytes" },
                         { "Cache-Control", "no-store, must-revalidate, no-cache, max-age=0" },
                         { "Content-Duration", songStreamInfo.Duration.ToString(CultureInfo.InvariantCulture) },

@@ -41,12 +41,49 @@ public class SongsController(
     }     
     
     [HttpGet]
-    public Task<IActionResult> ListAsync(short page, short pageSize, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ListAsync(short page, short pageSize,string? orderBy, string? orderDirection, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (!ApiRequest.IsAuthorized)
+        {
+            return Unauthorized(new { error = "Authorization token is invalid" });
+        }
+
+        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
+        if (!userResult.IsSuccess || userResult.Data == null)
+        {
+            return Unauthorized(new { error = "Authorization token is invalid" });
+        }        
+        
+        if (userResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
+        
+        var orderByValue = orderBy ?? nameof(AlbumDataInfo.CreatedAt);
+        var orderDirectionValue = orderDirection ?? PagedRequest.OrderDescDirection;
+        
+        var listResult = await songService.ListAsync(new PagedRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            OrderBy = new Dictionary<string, string>{{ orderByValue, orderDirectionValue}}
+        }, userResult.Data.Id, cancellationToken).ConfigureAwait(false);
+        
+        var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
+
+        return Ok(new
+        {
+            meta = new PaginationMetadata(
+                listResult.TotalCount,
+                pageSize,
+                page,
+                listResult.TotalPages
+            ),
+            data = listResult.Data.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)).ToArray()
+        }); 
     }      
     
-    [HttpPost]
+    [HttpGet]
     [Route("recent")]
     public async Task<IActionResult> RecentlyAddedAsync(short limit, CancellationToken cancellationToken = default)
     {
@@ -87,7 +124,7 @@ public class SongsController(
         });
     }    
     
-    [HttpPost]
+    [HttpGet]
     [Route("starred/{apiKey:guid}/{isStarred:bool}")]
     public async Task<IActionResult>? ToggleSongStarred(Guid apiKey, bool isStarred, CancellationToken cancellationToken = default)
     {
@@ -157,6 +194,8 @@ public class SongsController(
             return BadRequest(new { error = "Unable to load song" });
         }
 
+        Response.Headers.Clear();
+        
         foreach (var responseHeader in streamResult.Data.ResponseHeaders)
         {
             Response.Headers[responseHeader.Key] = responseHeader.Value;

@@ -31,7 +31,8 @@ public sealed class StatisticsService(
                 null,
                 null,
                 1,
-                "album"));
+                "album",
+                true));
 
             results.Add(new Statistic(StatisticType.Count,
                 "Artists",
@@ -40,7 +41,8 @@ public sealed class StatisticsService(
                 null,
                 null,
                 2,
-                "artist"));
+                "artist",
+                true));
 
             results.Add(new Statistic(StatisticType.Count,
                 "Contributors",
@@ -88,7 +90,8 @@ public sealed class StatisticsService(
                 null,
                 null,
                 6,
-                "playlist_play"));
+                "playlist_play",
+                true));
 
             results.Add(new Statistic(StatisticType.Count,
                 "Radio Stations",
@@ -115,7 +118,8 @@ public sealed class StatisticsService(
                 null,
                 null,
                 9,
-                "music_note"));
+                "music_note",
+                true));
 
             results.Add(new Statistic(StatisticType.Count,
                 "Songs: Played count",

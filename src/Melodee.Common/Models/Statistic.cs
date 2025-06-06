@@ -9,4 +9,5 @@ public sealed record Statistic(
     string? DisplayColor,
     string? Message = null,
     short? SortOrder = null,
-    string? Icon = null);
+    string? Icon = null,
+    bool? IncludeInApiResult = null);

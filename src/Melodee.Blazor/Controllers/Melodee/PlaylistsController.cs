@@ -29,9 +29,32 @@ public sealed class PlaylistsController(
 {
     [HttpGet]
     [Route("{id:guid}")]
-    public Task<IActionResult> PlaylistById(Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> PlaylistById(Guid id, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (!ApiRequest.IsAuthorized)
+        {
+            return Unauthorized(new { error = "Authorization token is invalid" });
+        }
+
+        var userResult = await userService.GetByApiKeyAsync(SafeParser.ToGuid(ApiRequest.ApiKey) ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
+        if (!userResult.IsSuccess || userResult.Data == null)
+        {
+            return Unauthorized(new { error = "Authorization token is invalid" });
+        }        
+        
+        if (userResult.Data.IsLocked)
+        {
+            return Forbid("User is locked");
+        }
+        
+        var playlistResult = await playlistService.GetByApiKeyAsync(userResult.Data.ToUserInfo(), id, cancellationToken).ConfigureAwait(false);
+        if (!playlistResult.IsSuccess || playlistResult.Data == null)
+        {
+            return NotFound(new { error = "Playlist not found" });
+        }
+        return Ok(playlistResult.Data.ToPlaylistModel(
+            GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false)),
+            userResult.Data.ToUserModel(GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false)))));
     }     
     
     [HttpGet]
