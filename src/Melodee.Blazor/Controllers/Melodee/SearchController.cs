@@ -55,7 +55,6 @@ public class SearchController(
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
         }        
         
-        var pageValue = searchRequest.Page ?? 1;
         var pageSizeValue = searchRequest.PageSize ?? 50;
 
         var includedTyped = SearchInclude.Data;
@@ -75,7 +74,9 @@ public class SearchController(
         var searchResult = await searchService.DoSearchAsync(userResult.Data.ApiKey,
                 ApiRequest.ApiRequestPlayer.UserAgent,
                 searchRequest.Query,
-                pageValue,
+                searchRequest.AlbumPageValue,
+                searchRequest.ArtistPageValue,
+                searchRequest.SongPageValue,
                 pageSizeValue,
                 includedTyped,
                 cancellationToken)
@@ -86,7 +87,7 @@ public class SearchController(
             meta = new PaginationMetadata(
                 searchResult.Data.TotalCount,
                 pageSizeValue,
-                pageValue,
+                1,
                 searchResult.Data.TotalCount < 1 ? 0 : (searchResult.Data.TotalCount + pageSizeValue - 1) / pageSizeValue
             ),
             data = searchResult.Data.ToSearchResultModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)
@@ -126,6 +127,8 @@ public class SearchController(
         var searchResult = await searchService.DoSearchAsync(userResult.Data.ApiKey,
                 ApiRequest.ApiRequestPlayer.UserAgent,
                 q,
+                0,
+                0,
                 pageValue,
                 pageSizeValue,
                 SearchInclude.Songs,

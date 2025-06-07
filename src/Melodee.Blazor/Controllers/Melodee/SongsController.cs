@@ -124,7 +124,7 @@ public class SongsController(
         });
     }    
     
-    [HttpGet]
+    [HttpPost]
     [Route("starred/{apiKey:guid}/{isStarred:bool}")]
     public async Task<IActionResult>? ToggleSongStarred(Guid apiKey, bool isStarred, CancellationToken cancellationToken = default)
     {

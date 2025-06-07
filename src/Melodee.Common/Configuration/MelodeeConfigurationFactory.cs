@@ -38,6 +38,12 @@ public sealed class MelodeeConfigurationFactory(IDbContextFactory<MelodeeDbConte
                 settings[kk] = value;
                 Trace.WriteLine($"[{ nameof(MelodeeConfigurationFactory)}] Overriding setting [{kk}] with environment variable value [{value}]");
             }
+            else
+            {
+                settings.Add(kk, value);
+                Trace.WriteLine($"[{ nameof(MelodeeConfigurationFactory)}] Added setting [{kk}] with environment variable value [{value}]");
+                
+            }
         }
         return settings;
     }

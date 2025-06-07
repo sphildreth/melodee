@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Melodee.Blazor.Controllers.Melodee.Extensions;
+using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
 using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
 using Melodee.Common.Utility;
@@ -27,6 +29,29 @@ public sealed class SystemController(
     configuration,
     configurationFactory)
 {
+    [HttpGet]
+    [Route("info")]
+    public async Task<IActionResult> GetServerInfo(CancellationToken cancellationToken = default)
+    {
+        var configuration = await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        var versionInfo = configuration.ApiVersion();
+
+        var versionParts = versionInfo.Split('.');
+        if (versionParts.Length < 3)
+        {
+            return BadRequest(new { error = "Invalid version format" });
+        }
+        var majorVersion = SafeParser.ToNumber<int?>(versionParts[0]) ?? 0;
+        var minorVersion = SafeParser.ToNumber<int?>(versionParts[1]) ?? 0;
+        var patchVersion = SafeParser.ToNumber<int?>(versionParts[2]) ?? 0;
+
+        return Ok(new ServerInfo(configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? "Melodee",
+            "Melodee API",
+            majorVersion,
+            minorVersion,
+            patchVersion));
+    }
+
     /// <summary>
     /// Return some statistics about the system.
     /// </summary>

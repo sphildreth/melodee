@@ -32,7 +32,9 @@ public sealed class SearchService(
     public async Task<OperationResult<SearchResult>> DoSearchAsync(Guid userApiKey,
         string? userAgent,
         string? searchTerm,
-        short page,
+        short albumPage,
+        short artistPage,
+        short songPage,
         short pageSize,
         SearchInclude include,
         CancellationToken cancellationToken = default)
@@ -67,7 +69,7 @@ public sealed class SearchService(
         {
             var artistResult = await artistService.ListAsync(new PagedRequest
             {
-                Page = page,
+                Page = artistPage,
                 PageSize = pageSize,
                 FilterBy =
                 [
@@ -82,7 +84,7 @@ public sealed class SearchService(
         {
             var albumResult = await albumService.ListAsync(new PagedRequest
             {
-                Page = page,
+                Page = albumPage,
                 PageSize = pageSize,
                 FilterBy =
                 [
@@ -97,7 +99,7 @@ public sealed class SearchService(
             {
                 var contributorAlbumsResult = await albumService.ListForContributorsAsync(new PagedRequest
                 {
-                    Page = page,
+                    Page = albumPage,
                     PageSize = pageSize,
                 }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorAlbumsResult.TotalCount > 0)
@@ -111,7 +113,7 @@ public sealed class SearchService(
         {
             var songResult = await songService.ListAsync(new PagedRequest
             {
-                Page = page,
+                Page = songPage,
                 PageSize = pageSize,
                 FilterBy =
                 [
@@ -125,7 +127,7 @@ public sealed class SearchService(
             {
                 var contributorSongResult = await songService.ListForContributorsAsync(new PagedRequest
                 {
-                    Page = page,
+                    Page = songPage,
                     PageSize = pageSize,
                 }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorSongResult.TotalCount > 0)
@@ -140,7 +142,7 @@ public sealed class SearchService(
             var searchResult = await musicBrainzRepository.SearchArtist(new ArtistQuery
             {
                 Name = searchTerm ?? string.Empty
-            }, page * pageSize, cancellationToken);
+            }, artistPage * pageSize, cancellationToken);
             totalMusicBrainzArtists = searchResult.TotalCount;
             musicBrainzArtists = searchResult.Data
                 .Where(x => x.MusicBrainzId != null)

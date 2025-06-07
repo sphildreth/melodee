@@ -36,6 +36,7 @@ public class UsersController(
 {
     [HttpPost]
     [Route("authenticate")]
+    [Route("auth")]
     public async Task<IActionResult> AuthenticateUserAsync([FromBody] LoginModel model, CancellationToken cancellationToken = default)
     {
         var authResult = await userService.LoginUserAsync(model.Email, model.Password, cancellationToken).ConfigureAwait(false);
@@ -75,7 +76,7 @@ public class UsersController(
         return Ok(new
         {
             user = authResult.Data.ToUserModel(GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false))),
-            serverVersion = Configuration.GetSection("MelodeeSettings:Version").Value,
+            serverVersion = configuration.ApiVersion(),
             token = tokenHandler.WriteToken(token)
         });
     }
