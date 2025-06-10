@@ -561,7 +561,7 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
                     Category = (int)SettingCategory.Api,
                     Key = SettingRegistry.OpenSubsonicServerVersion,
                     Comment = "OpenSubsonic server actual version. [Ex: 1.2.3 (beta)]",
-                    Value = "1.0.1 (beta)",
+                    Value = "1.0.1",
                     CreatedAt = now
                 },
                 new Setting

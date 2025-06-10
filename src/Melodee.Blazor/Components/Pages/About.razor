@@ -58,7 +58,8 @@
         var configuration = await MelodeeConfigurationFactory.GetConfigurationAsync();
         _siteTitle = configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerType) ?? string.Empty;
 
-        _serverStats.Add(new KeyValue("API Version", configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? string.Empty));
+        _serverStats.Add(new KeyValue("API: Melodee Version", configuration.ApiVersion()));
+        _serverStats.Add(new KeyValue("API: OpenSubsonic/SubSonic API Version", configuration.GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? string.Empty));
         _serverStats.Add(new KeyValue("dotnet core version", RuntimeInformation.FrameworkDescription));
         _serverStats.Add(new KeyValue("Melodee", "Melodee music system <a target=\"_blank\" href=\"https://github.com/melodee-project\">GitHub</a>"));
         _serverStats.Add(new KeyValue("UI Version", typeof(Program).Assembly.GetName().Version?.ToString() ?? string.Empty));
