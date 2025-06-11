@@ -5,7 +5,6 @@ using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Services.Interfaces;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
@@ -174,6 +173,46 @@ public class SettingService : ServiceBase
         };
     }
 
+    public async Task<MelodeeModels.OperationResult<Setting?>> AddAsync(Setting setting, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(setting, nameof(setting));
+
+        setting.ApiKey = Guid.NewGuid();
+        setting.CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+
+        var validationResult = ValidateModel(setting);
+        if (!validationResult.IsSuccess)
+        {
+            return new MelodeeModels.OperationResult<Setting?>(validationResult.Data.Item2
+                ?.Where(x => !string.IsNullOrWhiteSpace(x.ErrorMessage)).Select(x => x.ErrorMessage!).ToArray() ?? [])
+            {
+                Data = null,
+                Type = MelodeeModels.OperationResponseType.ValidationFailure
+            };
+        }
+
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            // Ensure the setting key is unique
+            var existingSetting = await scopedContext
+                .Settings
+                .FirstOrDefaultAsync(x => x.Key == setting.Key, cancellationToken)
+                .ConfigureAwait(false);
+            if (existingSetting != null)
+            {
+                return new MelodeeModels.OperationResult<Setting?>([$"Setting with key '{setting.Key}' already exists."])
+                {
+                    Data = null,
+                    Type = MelodeeModels.OperationResponseType.Error
+                };
+            }
+            scopedContext.Settings.Add(setting);
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return await GetAsync(setting.Key, cancellationToken);
+    }    
+    
     public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Setting detailToUpdate,
         CancellationToken cancellationToken = default)
     {

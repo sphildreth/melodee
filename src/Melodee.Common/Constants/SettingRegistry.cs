@@ -92,6 +92,7 @@ public static class SettingRegistry
     public const string SearchEngineSpotifyClientSecret = "searchEngine.spotify.sharedSecret";
     public const string SearchEngineSpotifyAccessToken = "searchEngine.spotify.accessToken";
     public const string SearchEngineUserAgent = "searchEngine.userAgent";
+    public const string SearchResultsDefaultPageSize = "searchResults.defaultPageSize";
     public const string SecurityBlacklistedEmails = "security.blacklistedEmails";
     public const string SecurityBlacklistedIPs = "security.blacklistedIPs";
     public const string SystemBaseUrl = "system.baseUrl";

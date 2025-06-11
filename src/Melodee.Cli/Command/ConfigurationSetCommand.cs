@@ -1,4 +1,5 @@
 using Melodee.Cli.CommandSettings;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
@@ -20,8 +21,27 @@ public class ConfigurationSetCommand : CommandBase<ConfigurationSetSetting>
             var config = await settingService.GetAsync(settings.Key).ConfigureAwait(false);
             if (!config.IsSuccess || config.Data == null)
             {
-                AnsiConsole.MarkupLine($":warning: Unknown configuration key [{settings.Key}]");
-                return 1;
+                AnsiConsole.MarkupLine(
+                    ":cross_mark: Configuration key [bold red]{0}[/] not found. Creating new entry.",
+                    settings.Key);
+                
+                var addResult = await settingService.AddAsync(new Setting
+                {
+                    Key = settings.Key,
+                    Value = settings.Value,
+                    CreatedAt = default
+                }).ConfigureAwait(false);
+                if (addResult.IsSuccess)
+                {
+                    AnsiConsole.MarkupLine(":party_popper: Configuration created.");
+                    return 0;
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine(":cross_mark: Failed to create configuration: {0}", addResult.Messages?.FirstOrDefault() ?? string.Empty);
+                    return 1;
+                }
+                
             }
 
             if (settings.Remove)

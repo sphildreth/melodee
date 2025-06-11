@@ -77,7 +77,7 @@ public sealed class SearchService(
                     new FilterOperatorInfo(nameof(ArtistDataInfo.AlternateNames), FilterOperator.Contains, searchTermNormalized, FilterOperatorInfo.OrJoinOperator)
                 ]
             }, cancellationToken);
-            artists = artistResult.Data.ToList();
+            artists = artistResult.Data.OrderBy(x => x.Name).ToList();
         }
 
         if (include.HasFlag(SearchInclude.Albums))
@@ -93,7 +93,7 @@ public sealed class SearchService(
                 ]
             }, null, cancellationToken);
             totalAlbums = albumResult.TotalCount;
-            albums = albumResult.Data.ToList();
+            albums = albumResult.Data.OrderBy(x => x.Name).ToList();
 
             if (include.HasFlag(SearchInclude.Contributors))
             {
@@ -121,7 +121,7 @@ public sealed class SearchService(
                 ]
             }, user.Data!.Id, cancellationToken);
             totalSongs = songResult.TotalCount;
-            songs = songResult.Data.ToList();
+            songs = songResult.Data.OrderBy(x => x.ArtistName).ThenBy(x => x.AlbumName).ToList();
 
             if (include.HasFlag(SearchInclude.Contributors))
             {

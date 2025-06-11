@@ -196,7 +196,9 @@
         _userAgent = await JsRuntime.InvokeAsync<string>("getUserAgent", []);
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync();
-        _defaultMaxResults = configuration.GetValue<short?>(SettingRegistry.DefaultsPageSize) ?? 50;
+        _defaultMaxResults = configuration.GetValue<short?>(SettingRegistry.SearchResultsDefaultPageSize) ??
+                             configuration.GetValue<short?>(SettingRegistry.DefaultsPageSize) ??
+                             50;
     }
 
     private async Task PlaySong(SongDataInfo song)
