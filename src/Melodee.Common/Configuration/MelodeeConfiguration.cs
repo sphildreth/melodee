@@ -82,7 +82,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         Configuration[key] = value;
     }
 
-    public string ApiVersion() => GetValue<string>(SettingRegistry.SystemApiVersion) ?? GetValue<string>(SettingRegistry.OpenSubsonicServerVersion) ?? "1.0.0";
+    public string ApiVersion() => GetValue<string?>(SettingRegistry.SystemApiVersion) ?? GetValue<string?>(SettingRegistry.OpenSubsonicServerVersion) ?? "1.0.0";
 
     public T? GetValue<T>(string key, Func<T?, T?>? returnValue = null)
     {

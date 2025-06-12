@@ -2,6 +2,7 @@
 @using Melodee.Common.Plugins.Scrobbling
 @inherits MelodeeComponentBase
 
+@inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
 @inject ICacheManager CacheManager
 @inject INowPlayingRepository NowPlayingInMemoryRepository
 @inject NotificationService NotificationService
@@ -39,6 +40,7 @@
     private void ClearCacheClicked()
     {
         CacheManager.Clear();
+        MelodeeConfigurationFactory.Reset();
         NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = true }, "cleared cache", ToastTime));
     }
 
