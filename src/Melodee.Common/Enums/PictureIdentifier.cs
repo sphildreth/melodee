@@ -18,16 +18,16 @@ public enum PictureIdentifier
     ///     Front cover
     /// </summary>
     Front,
+    
+    /// <summary>
+    ///     Back cover
+    /// </summary>
+    Back,    
 
     /// <summary>
     ///     Front cover, but not the primary like Cover01, Cover02
     /// </summary>
     SecondaryFront,
-
-    /// <summary>
-    ///     Back cover
-    /// </summary>
-    Back,
 
     /// <summary>
     ///     Media (e.g. label side of CD)
@@ -38,6 +38,21 @@ public enum PictureIdentifier
     ///     File icon
     /// </summary>
     Icon,
+    
+    /// <summary>
+    ///     Artist/performer
+    /// </summary>
+    Artist,
+    
+    /// <summary>
+    ///     Conductor
+    /// </summary>
+    Conductor,
+    
+    /// <summary>
+    ///     Band/Orchestra
+    /// </summary>
+    Band,
 
     /// <summary>
     ///     Leaflet
@@ -50,24 +65,14 @@ public enum PictureIdentifier
     LeadArtist,
 
     /// <summary>
-    ///     Artist/performer
+    ///     Band/artist logotype
     /// </summary>
-    Artist,
-
+    BandLogo,
+    
     /// <summary>
     ///     Artist/performer, but not the primary like Artist01, Artist02
     /// </summary>
     ArtistSecondary,
-
-    /// <summary>
-    ///     Conductor
-    /// </summary>
-    Conductor,
-
-    /// <summary>
-    ///     Band/Orchestra
-    /// </summary>
-    Band,
 
     /// <summary>
     ///     Band/Orchestra, not the primary image but like Band01, Band02
@@ -98,11 +103,6 @@ public enum PictureIdentifier
     ///     During performance
     /// </summary>
     DuringPerformance,
-
-    /// <summary>
-    ///     Band/artist logotype
-    /// </summary>
-    BandLogo,
 
     /// <summary>
     ///     Publisher/Studio logotype
