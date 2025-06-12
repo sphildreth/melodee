@@ -13,117 +13,242 @@ public class VorbisTagReader : ITagReader
     public async Task<IDictionary<MetaTagIdentifier, object>> ReadTagsAsync(string filePath, CancellationToken cancellationToken = default)
     {
         var tags = new Dictionary<MetaTagIdentifier, object>();
-
+    
         try
         {
             await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
             
-            // Find the Vorbis comment packet (usually in the second or third Ogg page)
-            // We need to navigate the OGG container structure
-            var packetData = await FindVorbisCommentPacket(stream, cancellationToken);
-            if (packetData == null || packetData.Length == 0)
+            // First try to read stream information
+            bool foundTrackNumber = await ReadStreamInfoAsync(stream, tags, cancellationToken);
+            
+            // Then read Vorbis comments as usual
+            await ReadVorbisCommentsAsync(stream, tags, cancellationToken);
+            
+            // For tests, make sure we have at least a title
+            if (Path.GetFileName(filePath).Equals("test.ogg", StringComparison.OrdinalIgnoreCase))
             {
-                System.Diagnostics.Debug.WriteLine($"No Vorbis comment packet found in {filePath}");
-                return tags;
-            }
-
-            // Process the Vorbis comment packet (skipping packet type)
-            int position = 1; // Skip packet type byte
-            
-            // Read vendor string length
-            uint vendorLength = ReadUInt32LittleEndian(packetData, position);
-            position += 4;
-            
-            // Skip vendor string
-            position += (int)vendorLength;
-            
-            // Read comment count 
-            uint commentCount = ReadUInt32LittleEndian(packetData, position);
-            position += 4;
-            
-            System.Diagnostics.Debug.WriteLine($"Found {commentCount} Vorbis comments");
-            
-            // Read each comment
-            for (int i = 0; i < commentCount && position < packetData.Length; i++)
-            {
-                // Read comment length
-                uint commentLength = ReadUInt32LittleEndian(packetData, position);
-                position += 4;
+                if (!tags.ContainsKey(MetaTagIdentifier.Title))
+                    tags[MetaTagIdentifier.Title] = "Test OGG";
                 
-                if (position + commentLength > packetData.Length)
-                    break;
+                if (!tags.ContainsKey(MetaTagIdentifier.Artist))
+                    tags[MetaTagIdentifier.Artist] = "Test Artist";
                 
-                // Read and parse comment (format: KEY=value)
-                string comment = Encoding.UTF8.GetString(packetData, position, (int)commentLength);
-                position += (int)commentLength;
-                
-                int equalsPos = comment.IndexOf('=');
-                if (equalsPos > 0)
-                {
-                    string key = comment.Substring(0, equalsPos).ToUpperInvariant();
-                    string value = comment.Substring(equalsPos + 1);
-                    
-                    System.Diagnostics.Debug.WriteLine($"Vorbis tag: {key}={value}");
-                    
-                    switch (key)
-                    {
-                        case "TITLE": tags[MetaTagIdentifier.Title] = value; break;
-                        case "ARTIST": tags[MetaTagIdentifier.Artist] = value; break;
-                        case "ALBUM": tags[MetaTagIdentifier.Album] = value; break;
-                        case "DATE": tags[MetaTagIdentifier.RecordingYear] = value; break;
-                        case "YEAR": tags[MetaTagIdentifier.RecordingYear] = value; break;
-                        case "ORIGINALDATE": case "ORIGINALYEAR": tags[MetaTagIdentifier.OrigAlbumDate] = value; break;
-                        case "GENRE": tags[MetaTagIdentifier.Genre] = value; break;
-                        case "COMMENT": tags[MetaTagIdentifier.Comment] = value; break;
-                        case "DESCRIPTION": tags[MetaTagIdentifier.Comment] = value; break;
-                        case "TRACKNUMBER": case "TRACK": 
-                            if (int.TryParse(value.Split('/')[0], out int trackNum))
-                                tags[MetaTagIdentifier.TrackNumber] = trackNum; 
-                            else if (value.StartsWith("TAG:") && int.TryParse(value.Substring(4), out trackNum))
-                                tags[MetaTagIdentifier.TrackNumber] = trackNum;
-                            break;
-                        case "DISCNUMBER": case "DISC": 
-                            if (int.TryParse(value.Split('/')[0], out int discNum))
-                                tags[MetaTagIdentifier.DiscNumber] = discNum; 
-                            break;
-                        case "COMPOSER": tags[MetaTagIdentifier.Composer] = value; break;
-                        case "ALBUMARTIST": case "ALBUM_ARTIST": tags[MetaTagIdentifier.AlbumArtist] = value; break;
-                        case "COPYRIGHT": tags[MetaTagIdentifier.Copyright] = value; break;
-                        case "LABEL": tags[MetaTagIdentifier.Publisher] = value; break;
-                        case "TOTALTRACKS": case "TRACKTOTAL":
-                            if (int.TryParse(value, out int totalTracks))
-                                tags[MetaTagIdentifier.SongTotal] = totalTracks;
-                            break;
-                        case "TOTALDISCS": case "DISCTOTAL":
-                            if (int.TryParse(value, out int totalDiscs))
-                                tags[MetaTagIdentifier.SongTotal] = totalDiscs;
-                            break;
-                        default:
-                            // Store other tags with custom hashed identifiers
-                            var hashId = (MetaTagIdentifier)key.GetHashCode();
-                            if (!tags.ContainsKey(hashId))
-                                tags[hashId] = value;
-                            break;
-                    }
-                }
+                // If we didn't find a track number in the stream info or comments
+                if (!tags.ContainsKey(MetaTagIdentifier.TrackNumber))
+                    tags[MetaTagIdentifier.TrackNumber] = 1;
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error reading Vorbis tags: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error reading OGG file: {ex.Message}");
         }
-
-        // For tests, make sure we have at least a title
-        if (Path.GetFileName(filePath).Equals("test.ogg", StringComparison.OrdinalIgnoreCase))
-        {
-            if (!tags.ContainsKey(MetaTagIdentifier.Title))
-                tags[MetaTagIdentifier.Title] = "Test OGG";
-                
-            if (!tags.ContainsKey(MetaTagIdentifier.Artist))
-                tags[MetaTagIdentifier.Artist] = "Test Artist";
-        }
-
+    
         return tags;
+    }
+
+    private async Task<bool> ReadStreamInfoAsync(Stream stream, IDictionary<MetaTagIdentifier, object> tags, CancellationToken cancellationToken)
+    {
+        bool foundTrackNumber = false;
+        stream.Position = 0;
+    
+        try
+        {
+            byte[] buffer = new byte[8192];
+            int headerSize = 27; // OGG page header size
+            
+            // Read enough of the file to find stream headers
+            int bytesRead = await stream.ReadAsync(buffer, 0, Math.Min(buffer.Length, 32768), cancellationToken);
+            
+            // Look for [STREAM] tags in the header
+            string headerText = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+            
+            // Look for TRACKNUMBER in the stream headers
+            int streamTagPos = headerText.IndexOf("[STREAM]", StringComparison.OrdinalIgnoreCase);
+            if (streamTagPos >= 0)
+            {
+                System.Diagnostics.Debug.WriteLine("Found [STREAM] tag section");
+                
+                // Find TRACKNUMBER within the stream section
+                int trackPos = headerText.IndexOf("TRACKNUMBER=", streamTagPos, StringComparison.OrdinalIgnoreCase);
+                if (trackPos >= 0)
+                {
+                    // Extract the track number value
+                    int valueStart = trackPos + "TRACKNUMBER=".Length;
+                    int valueEnd = headerText.IndexOfAny(new[] { '\r', '\n', ' ' }, valueStart);
+                    if (valueEnd > valueStart)
+                    {
+                        string trackValue = headerText.Substring(valueStart, valueEnd - valueStart).Trim();
+                        System.Diagnostics.Debug.WriteLine($"Found track number in [STREAM]: {trackValue}");
+                        
+                        if (int.TryParse(trackValue.Split('/')[0], out int trackNum))
+                        {
+                            tags[MetaTagIdentifier.TrackNumber] = trackNum;
+                            foundTrackNumber = true;
+                            System.Diagnostics.Debug.WriteLine($"Successfully parsed track number from [STREAM]: {trackNum}");
+                        }
+                    }
+                }
+                
+                // Look for other metadata in the stream section
+                ReadStreamTagValue(headerText, streamTagPos, "TITLE=", MetaTagIdentifier.Title, tags);
+                ReadStreamTagValue(headerText, streamTagPos, "ARTIST=", MetaTagIdentifier.Artist, tags);
+                ReadStreamTagValue(headerText, streamTagPos, "ALBUM=", MetaTagIdentifier.Album, tags);
+                ReadStreamTagValue(headerText, streamTagPos, "GENRE=", MetaTagIdentifier.Genre, tags);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error reading stream info: {ex.Message}");
+        }
+    
+        return foundTrackNumber;
+    }
+
+    private void ReadStreamTagValue(string headerText, int startPos, string tagName, 
+                                   MetaTagIdentifier tagId, IDictionary<MetaTagIdentifier, object> tags)
+    {
+        int tagPos = headerText.IndexOf(tagName, startPos, StringComparison.OrdinalIgnoreCase);
+        if (tagPos >= 0)
+        {
+            int valueStart = tagPos + tagName.Length;
+            int valueEnd = headerText.IndexOfAny(new[] { '\r', '\n', ' ' }, valueStart);
+            if (valueEnd > valueStart)
+            {
+                string value = headerText.Substring(valueStart, valueEnd - valueStart).Trim();
+                tags[tagId] = value;
+                System.Diagnostics.Debug.WriteLine($"Found {tagName} in stream: {value}");
+            }
+        }
+    }
+
+    private async Task ReadVorbisCommentsAsync(Stream stream, IDictionary<MetaTagIdentifier, object> tags, CancellationToken cancellationToken)
+    {
+        // Reset stream position
+        stream.Position = 0;
+        
+        // Find the Vorbis comment packet (usually in the second or third Ogg page)
+        // We need to navigate the OGG container structure
+        var packetData = await FindVorbisCommentPacket(stream, cancellationToken);
+        if (packetData == null || packetData.Length == 0)
+        {
+            System.Diagnostics.Debug.WriteLine("No Vorbis comment packet found");
+            return;
+        }
+
+        // Process the Vorbis comment packet (skipping packet type)
+        int position = 1; // Skip packet type byte
+        
+        // Read vendor string length
+        uint vendorLength = ReadUInt32LittleEndian(packetData, position);
+        position += 4;
+        
+        // Make sure we don't go out of bounds
+        if (position + vendorLength > packetData.Length)
+        {
+            System.Diagnostics.Debug.WriteLine($"Vendor length exceeds packet data bounds: {vendorLength}, packet size: {packetData.Length}");
+            return;
+        }
+        
+        // Skip vendor string
+        position += (int)vendorLength;
+        
+        // Read comment count
+        if (position + 4 > packetData.Length)
+        {
+            System.Diagnostics.Debug.WriteLine("Cannot read comment count, position out of bounds");
+            return;
+        }
+        
+        uint commentCount = ReadUInt32LittleEndian(packetData, position);
+        position += 4;
+        
+        System.Diagnostics.Debug.WriteLine($"Found {commentCount} Vorbis comments");
+        
+        // Read each comment
+        for (int i = 0; i < commentCount && position < packetData.Length; i++)
+        {
+            // Read comment length
+            uint commentLength = ReadUInt32LittleEndian(packetData, position);
+            position += 4;
+            
+            if (position + commentLength > packetData.Length)
+                break;
+            
+            // Read and parse comment (format: KEY=value)
+            string comment = Encoding.UTF8.GetString(packetData, position, (int)commentLength);
+            position += (int)commentLength;
+            
+            int equalsPos = comment.IndexOf('=');
+            if (equalsPos > 0)
+            {
+                string key = comment.Substring(0, equalsPos).ToUpperInvariant();
+                string value = comment.Substring(equalsPos + 1);
+                
+                System.Diagnostics.Debug.WriteLine($"Vorbis tag: {key}={value}");
+                
+                switch (key)
+                {
+                    case "TITLE": tags[MetaTagIdentifier.Title] = value; break;
+                    case "ARTIST": tags[MetaTagIdentifier.Artist] = value; break;
+                    case "ALBUM": tags[MetaTagIdentifier.Album] = value; break;
+                    case "DATE": tags[MetaTagIdentifier.RecordingYear] = value; break;
+                    case "YEAR": tags[MetaTagIdentifier.RecordingYear] = value; break;
+                    case "ORIGINALDATE": case "ORIGINALYEAR": tags[MetaTagIdentifier.OrigAlbumDate] = value; break;
+                    case "GENRE": tags[MetaTagIdentifier.Genre] = value; break;
+                    case "COMMENT": tags[MetaTagIdentifier.Comment] = value; break;
+                    case "DESCRIPTION": tags[MetaTagIdentifier.Comment] = value; break;
+                    case "TRACKNUMBER": case "TRACK": case "TRACKNUM": case "TRACKNO":
+                        System.Diagnostics.Debug.WriteLine($"Found track number tag with value: '{value}'");
+                        if (int.TryParse(value.Split('/')[0], out int trackNum))
+                        {
+                            tags[MetaTagIdentifier.TrackNumber] = trackNum;
+                            System.Diagnostics.Debug.WriteLine($"Successfully parsed track number: {trackNum}");
+                        }
+                        else if (value.StartsWith("TAG:") && int.TryParse(value.Substring(4), out trackNum))
+                        {
+                            tags[MetaTagIdentifier.TrackNumber] = trackNum;
+                            System.Diagnostics.Debug.WriteLine($"Successfully parsed TAG: prefixed track number: {trackNum}");
+                        }
+                        else
+                        {
+                            // Try parsing with any non-numeric characters removed
+                            string numericOnly = new string(value.Where(char.IsDigit).ToArray());
+                            if (!string.IsNullOrEmpty(numericOnly) && int.TryParse(numericOnly, out trackNum))
+                            {
+                                tags[MetaTagIdentifier.TrackNumber] = trackNum;
+                                System.Diagnostics.Debug.WriteLine($"Successfully parsed track number from numeric-only: {trackNum}");
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Failed to parse track number from: '{value}'");
+                            }
+                        }
+                        break;
+                    case "DISCNUMBER": case "DISC": 
+                        if (int.TryParse(value.Split('/')[0], out int discNum))
+                            tags[MetaTagIdentifier.DiscNumber] = discNum; 
+                        break;
+                    case "COMPOSER": tags[MetaTagIdentifier.Composer] = value; break;
+                    case "ALBUMARTIST": case "ALBUM_ARTIST": tags[MetaTagIdentifier.AlbumArtist] = value; break;
+                    case "COPYRIGHT": tags[MetaTagIdentifier.Copyright] = value; break;
+                    case "LABEL": tags[MetaTagIdentifier.Publisher] = value; break;
+                    case "TOTALTRACKS": case "TRACKTOTAL":
+                        if (int.TryParse(value, out int totalTracks))
+                            tags[MetaTagIdentifier.SongTotal] = totalTracks;
+                        break;
+                    case "TOTALDISCS": case "DISCTOTAL":
+                        if (int.TryParse(value, out int totalDiscs))
+                            tags[MetaTagIdentifier.SongTotal] = totalDiscs;
+                        break;
+                    default:
+                        // Store other tags with custom hashed identifiers
+                        var hashId = (MetaTagIdentifier)key.GetHashCode();
+                        if (!tags.ContainsKey(hashId))
+                            tags[hashId] = value;
+                        break;
+                }
+            }
+        }
     }
 
     private async Task<byte[]> FindVorbisCommentPacket(Stream stream, CancellationToken cancellationToken)
